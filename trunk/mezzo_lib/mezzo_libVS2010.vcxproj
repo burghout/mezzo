@@ -124,6 +124,7 @@ nmake release</NMakeReBuildCommandLine>
     <ClCompile Include="src\Graph.cpp" />
     <ClCompile Include="src\grid.cpp" />
     <ClCompile Include="src\icons.cpp" />
+    <ClCompile Include="src\kmlwriter.cpp" />
     <ClCompile Include="src\link.cpp" />
     <ClCompile Include="src\linktimes.cpp" />
     <ClCompile Include="src\main.cpp" />
@@ -152,6 +153,7 @@ nmake release</NMakeReBuildCommandLine>
     <ClInclude Include="src\Graph.h" />
     <ClInclude Include="src\grid.h" />
     <ClInclude Include="src\icons.h" />
+    <ClInclude Include="src\kmlwriter.h" />
     <ClInclude Include="src\link.h" />
     <ClInclude Include="src\linktimes.h" />
     <ClInclude Include="src\MMath.h" />

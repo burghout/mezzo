@@ -8,6 +8,7 @@
 #include <sstream>
 #include <set>
 #include <math.h>
+#include "kmlwriter.h"
 //#include <strstream> // OLD include for gcc2
 
 #include "od.h"
@@ -4200,6 +4201,7 @@ bool Network::writeall(unsigned int repl)
 	string routeflowsfile=workingdir+ "routeflows.dat";
 	string assignmentmatfile=workingdir + "assign.dat";
 	string vqueuesfile=workingdir + "v_queues.dat";
+	string kml_outputfile=workingdir + "kmlouput.kml";
 	if (replication >0)
 	{
 		stringstream repstr;
@@ -4227,6 +4229,7 @@ bool Network::writeall(unsigned int repl)
 	//writeheadways("timestamps.dat"); // commented out, since no-one uses them 
 	writeassmatrices(assignmentmatfile);
 	write_v_queues(vqueuesfile);
+	write_kml_output(kml_outputfile);
 	return true;
 }
 
@@ -4449,6 +4452,18 @@ bool Network::write_v_queues(string name)
 	return true;
 }
 
+bool Network::write_kml_output(string name)
+{
+	KmlWriter writer (name.c_str());
+	writer.init();
+	writer.add_style("style0","FF00FF00", "4.0");
+	writer.start_folder("network");
+	writer.write_link_placemark("Link: 709458988","2014-06-03T08:00:00Z","2014-06-03T08:01:00Z","#style0",
+		"18.06199,59.32729 18.06118,59.32771 18.06063,59.32801");
+	writer.end_folder();
+	writer.close();
+	return true;
+}
 
 bool Network::writeassmatrices(string name)
 {

@@ -40,7 +40,8 @@ HEADERS += ../mezzo_lib/src/busline.h \
            ../mezzo_lib/src/vehicle.h \
            ../mezzo_lib/src/vissimcom.h \
            ../mezzo_lib/src/vtypes.h \
-			../mezzo_lib/src/emitmodel.h 
+			../mezzo_lib/src/emitmodel.h \
+			../mezzo_lib/src/kmlwriter.h
 
 SOURCES += ../mezzo_lib/src/busline.cpp \
            ../mezzo_lib/src/eventlist.cpp \
@@ -66,4 +67,5 @@ SOURCES += ../mezzo_lib/src/busline.cpp \
            ../mezzo_lib/src/vissimcom.cpp \
            ../mezzo_lib/src/vtypes.cpp \
 		    ../mezzo_lib/src/main.cpp \
-			 ../mezzo_lib/src/emitmodel.cpp
+			 ../mezzo_lib/src/emitmodel.cpp \
+			 ../mezzo_lib/src/kmlwriter.cpp

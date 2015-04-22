@@ -5,12 +5,9 @@ CONFIG += staticlib
 TARGET = mezzo_lib
 DEPENDPATH += . src
 INCLUDEPATH += $(QTDIR)/include 
-#$(QTDIR)/include/Qt3Support 
 LIBS+=  -L$(QTDIR)/lib -lQtCore -lQtGui 
-#-lQt3Support 
 #-lpthread $(SUBLIBS)
 QT+= core gui 
-#qt3support 
 #activeqt xml network svg
 QMAKE= $(QTDIR)/bin/qmake
 win32 {
@@ -43,7 +40,8 @@ HEADERS += src/busline.h \
            src/vehicle.h \
            src/vissimcom.h \
            src/vtypes.h \
-		   src/emitmodel.h
+		   src/emitmodel.h \
+		   src/kmlwriter.h
 
 SOURCES += src/busline.cpp \
            src/eventlist.cpp \
@@ -68,4 +66,5 @@ SOURCES += src/busline.cpp \
            src/vehicle.cpp \
            src/vissimcom.cpp \
            src/vtypes.cpp \
-		   src/emitmodel.cpp
+		   src/emitmodel.cpp \
+		   src/kmlwriter.cpp
