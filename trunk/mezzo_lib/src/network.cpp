@@ -4458,8 +4458,21 @@ bool Network::write_kml_output(string name)
 	writer.init();
 	writer.add_style("style0","FF00FF00", "4.0");
 	writer.start_folder("network");
-	writer.write_link_placemark("Link: 709458988","2014-06-03T08:00:00Z","2014-06-03T08:01:00Z","#style0",
+
+	// write links in the network for now
+	for (map<int, Link*>::iterator l_iter=linkmap.begin();l_iter != linkmap.end(); l_iter++)
+	{
+		QString prefix ("Link: ");
+		QString linkname (prefix + QString::number(l_iter->first));
+		QString start ("2014-06-03T08:00:00Z");
+		QString end("2014-06-03T08:01:00Z");
+		QString style ("#style0");
+		
+		l_iter->second->get_coordinates();
+		/*QString upcoords=l_iter->second->get_in_node_id()*/
+		writer.write_link_placemark(linkname,start,end,style,
 		"18.06199,59.32729 18.06118,59.32771 18.06063,59.32801");
+	}
 	writer.end_folder();
 	writer.close();
 	return true;

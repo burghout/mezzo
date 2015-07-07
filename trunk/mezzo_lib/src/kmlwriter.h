@@ -1,3 +1,5 @@
+#ifndef KML_WRITER_HH
+#define KML_WRITER_HH
 #include <QFile>
 #include <QString>
 #include <QDir>
@@ -23,7 +25,7 @@ private:
 
 };
 
-
+#endif //KML_WRITER_HH
 
 
 

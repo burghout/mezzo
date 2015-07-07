@@ -55,6 +55,7 @@
 #endif // _NO_GUI
 #include "parameters.h"
 #include "linktimes.h"
+#include "kmlwriter.h"
 
 
 
@@ -109,6 +110,8 @@ public:
 	const int get_out_node_id () const ;
 	const int get_in_node_id() const ;
 	const int get_length() const  {return length;}	
+	const vector <double> get_coordinates() const ;
+
 	const double get_nr_lanes() const {return nr_lanes;}
 	const string get_name()const  {return name;}
 	void set_name(const string name_) {name=name_;}
@@ -192,6 +195,7 @@ public:
 	const double speed(const double time) const ;
 	// IO methods
 	const bool write(ostream& out);
+	void write_kml(KmlWriter& writer, int select = 0);
 	void write_time(ostream& out);	
 	void write_speeds(ostream & out, const int nrperiods ) {out << id << "\t" ; moe_speed->fill_missing(nrperiods,speed_density(0));
 														moe_speed->write_values(out, nrperiods);}

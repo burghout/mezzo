@@ -174,6 +174,16 @@ const int Link::get_out_node_id () const
 const int Link::get_in_node_id() const
 	{return in_node->get_id();}
 
+const vector <double> Link::get_coordinates() const 
+{
+	vector <double> result;
+	result.push_back (in_node->getxy().x);
+	result.push_back (in_node->getxy().y);
+	result.push_back (out_node->getxy().x);
+	result.push_back (out_node->getxy().y);
+	return result;
+}
+
 const bool Link::full() const
 	{
     return queue->full();
@@ -751,6 +761,11 @@ const bool Link::write(ostream&)      // unused ostream& out
 #endif //_COLLECT_ALL
 	
 }	
+
+void Link:: write_kml(KmlWriter& writer, int select)
+{
+
+}
 
 
 void Link::write_ass_matrix (ostream & out, const int linkflowperiod)
