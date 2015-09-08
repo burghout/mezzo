@@ -28,7 +28,7 @@
 
 #include <QDialog>
 // use the generated ui form header  
-#include "../ui_positionbackground.h"
+#include "ui_positionbackground.h"
 // network definition
 #include "../../mezzo_lib/src/network.h" // also includes the parameters
 

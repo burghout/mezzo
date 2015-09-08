@@ -54,7 +54,7 @@ class EmissionModel
 
 		// virtual functions
 		virtual const Emission* run_link(int linkid, int time, vector<double> inputs){return 0;}
-		virtual const list<Emission*> run_net(int time, list<int> links, list<vector<double>> inputs){return list<Emission*>();}
+		virtual const list<Emission*> run_net(int time, list<int> links, list<vector<double> > inputs){return list<Emission*>();}
 
 	protected:
 		int n_invars_; // the number of variables that the model depends on 
@@ -68,7 +68,7 @@ class AvgVelocityModel : public EmissionModel
 		~AvgVelocityModel() {}
 
 		const Emission* run_link(int linkid, int time, vector<double> inputs);
-		const list<Emission*> run_net(int time, list<int> links, list<vector<double>> inputs);
+		const list<Emission*> run_net(int time, list<int> links, list<vector<double> > inputs);
 
 	private:
       

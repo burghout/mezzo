@@ -2,9 +2,25 @@
 
 TEMPLATE = app
 TARGET = mezzo_gui
-INCLUDEPATH += $(QTDIR)/include 
+INCLUDEPATH += ../mezzoAnalyzer $(QTDIR)/include
 #$(QTDIR)/include/QtCore $(QTDIR)/include/QtGui $(QTDIR)/include/QtDesigner $(QTDIR)/include/QtNetwork $(QTDIR)/include/ActiveQt 
 
+
+
+macx {
+    CONFIG(debug, debug|release) {
+        INCLUDEPATH += ../mezzoAnalyzer/Debug
+        LIBS +=  -L../../mezzo_lib/Debug -lmezzo_lib -L../../mezzoAnalyzer/Debug -lmezzoAnalyzer
+        DEPENDS += ../../mezzo_lib/Debug/mezzo_lib.lib ../../mezzoAnalyzer/Debug/mezzoAnalyzer.lib
+    } else {
+        INCLUDEPATH += ../mezzoAnalyzer/Release
+        LIBS +=  -L../../mezzo_lib/Release -lmezzo_lib -L../../mezzoAnalyzer/Release -lmezzoAnalyzer
+    }
+
+            LIBS += -L$(QTDIR)/lib -framework QtCore -framework QtGui -framework QtNetwork
+
+
+}
 
 CONFIG(debug, debug|release) {
      LIBS +=  -L../mezzo_lib/Debug -lmezzo_lib -L../mezzoAnalyzer/Debug -lmezzoAnalyzer 
@@ -13,7 +29,9 @@ CONFIG(debug, debug|release) {
      LIBS +=  -L../mezzo_lib/Release -lmezzo_lib -L../mezzoAnalyzer/Release -lmezzoAnalyzer 
  }
 
-LIBS += -L$(QTDIR)/lib -lQtCore -lQtGui -lQtNetwork  
+win32 { LIBS += -L$(QTDIR)/lib -lQtCore -lQtGui -lQtNetwork }
+
+
 #-lQtDesigner 
 #-lQt3Support
 

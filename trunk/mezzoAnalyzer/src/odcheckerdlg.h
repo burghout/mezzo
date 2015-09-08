@@ -47,7 +47,7 @@
 
 
 // use the generated ui form header  
-#include "../ui_odcheckdlg.h"
+#include "ui_odcheckdlg.h"
 // use the mainwindow and network definitions 
 #include "../../mezzo_lib/src/network.h"
 // include custom item delegate

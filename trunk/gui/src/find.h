@@ -25,7 +25,7 @@
 
 #include <QDialog>
 // use the generated ui form header  
-#include "../ui_find.h"
+#include "ui_find.h"
 // network definition
 #include "../../mezzo_lib/src/network.h" // also includes the parameters
 

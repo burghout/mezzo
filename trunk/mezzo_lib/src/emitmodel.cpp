@@ -52,7 +52,7 @@ const Emission* AvgVelocityModel::run_link(int linkid, int time, vector<double> 
 /* 
 	function run Average Velocity Model for a network
 */
-const list<Emission*> AvgVelocityModel::run_net(int time, list<int> links, list<vector<double>> inputs)
+const list<Emission*> AvgVelocityModel::run_net(int time, list<int> links, list<vector<double> > inputs)
 {
 	return list<Emission*>();
 }
@@ -77,7 +77,7 @@ const Emission* DriveCycleModel::run_link(int linkid, int time, vector<double> i
 /* 
 	function run Drive Cycle Model for a network
 */
-const list<Emission*> DriveCycleModel::run_net(int time, list<int> links, list<vector<double>> inputs)
+const list<Emission*> DriveCycleModel::run_net(int time, list<int> links, list<vector<double> > inputs)
 {
 	return list<Emission*>();
 }
