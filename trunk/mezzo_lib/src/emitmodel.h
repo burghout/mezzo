@@ -84,7 +84,7 @@ class DriveCycleModel : public EmissionModel
 		void set_drive_cycle(map<int, double> dc){drive_cycle_=dc;}
 
 		const Emission* run_link(int linkid, int time, vector<double> inputs);
-		const list<Emission*> run_net(int time, list<int> links, list<vector<double>> inputs);
+        const list<Emission*> run_net(int time, list<int> links, list<vector<double> > inputs);
 
 	protected:
 		map<int, double> drive_cycle_;

@@ -9,10 +9,10 @@ LIBS+=  -L$(QTDIR)/lib -lQtCore -lQtGui
 #-lpthread $(SUBLIBS)
 QT+= core gui 
 #activeqt xml network svg
-QMAKE= $(QTDIR)/bin/qmake
-win32 {
-     QMAKE_LFLAGS += /LARGEADDRESSAWARE
-	 }
+#QMAKE= $(QTDIR)/bin/qmake
+#win32 {
+ #    QMAKE_LFLAGS += /LARGEADDRESSAWARE
+#	 }
 
 # Input
 HEADERS += src/busline.h \
