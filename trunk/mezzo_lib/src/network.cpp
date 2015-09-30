@@ -4468,10 +4468,14 @@ bool Network::write_kml_output(string name)
 		QString end("2014-06-03T08:01:00Z");
 		QString style ("#style0");
 		
-		l_iter->second->get_coordinates();
+        vector <double> coords_vec=l_iter->second->get_coordinates();
+        QString upcoords = QString::number (coords_vec[0],'f',6) +","+ QString::number (coords_vec[1],'f',6) ;
+        QString downcoords = QString::number (coords_vec[2],'f',6) +","+ QString::number (coords_vec[3],'f',6) ;
+        QString coords=upcoords + " " +downcoords;
 		/*QString upcoords=l_iter->second->get_in_node_id()*/
 		writer.write_link_placemark(linkname,start,end,style,
-		"18.06199,59.32729 18.06118,59.32771 18.06063,59.32801");
+        coords);
+        // coords = "18.06199,59.32729 18.06118,59.32771 18.06063,59.32801";
 	}
 	writer.end_folder();
 	writer.close();
