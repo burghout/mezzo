@@ -132,6 +132,8 @@ public:
    double moe_density_update; //!<  update interval for link density data
    double linktime_alpha; //!< smoothing factor for link travel times
 
+//#demand_format
+   bool use_triplist; //!< if true, a trip list is used instead of OD matrix for specifying demand
 // #assignment_matrix_parameters
    bool use_ass_matrix; //!< if true an assignment matrix is generated for all links in ass_links.dat
    double ass_link_period; //!< interval length for link periods in Ass. matrix

@@ -43,6 +43,9 @@ Parameters::Parameters ()
    moe_queue_update= 300.0;
    moe_density_update= 300.0;
    linktime_alpha= 0.6;    // REPLACES the time_alpha
+ //#demand_format
+   use_triplist= false;
+
 // #assignment_matrix_parameters
    use_ass_matrix= 0;
    ass_link_period= 900.0;
@@ -53,8 +56,6 @@ Parameters::Parameters ()
    use_giveway= false;
    max_wait= 5.0;
    critical_gap= 4.1;
-
-   // NEW
    min_headway_inflow= 1.44;
 
 // #server_parameters
@@ -390,7 +391,22 @@ bool Parameters::read_parameters (istream & in )
 	}
 	in >> linktime_alpha;
 
-///////
+/////// //
+
+    in >> keyword;
+    if (keyword!= "#demand_format")
+    {
+        eout << "ERROR reading Parameters file, expecting: #demand_format, read: " << keyword << endl;
+        return false;
+    }
+    in >> keyword;
+    if (keyword!= "use_triplist=")
+    {
+        eout << "ERROR reading Parameters file, expecting: use_triplist=, read: " << keyword << endl;
+        return false;
+    }
+    in >> use_triplist;
+
 	in >> keyword;
 	if (keyword!= "#assignment_matrix_parameters")
 	{
