@@ -132,6 +132,7 @@ public:
    double moe_density_update; //!<  update interval for link density data
    double linktime_alpha; //!< smoothing factor for link travel times
    bool track_link_entries_exits; //!< if true link entries and exits are tracked.
+   bool use_kml_output; //!< if true produces a KML output of link performance
 //#demand_format
    bool use_triplist; //!< if true, a trip list is used instead of OD matrix for specifying demand
 // #assignment_matrix_parameters

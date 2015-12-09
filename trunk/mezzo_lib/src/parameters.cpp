@@ -44,6 +44,7 @@ Parameters::Parameters ()
    moe_density_update= 300.0;
    linktime_alpha= 0.6;    // REPLACES the time_alpha
    track_link_entries_exits= false; //!<NEW
+   use_kml_output=false;//!<NEW
  //#demand_format
    use_triplist= false; //!<NEW
 
@@ -399,6 +400,14 @@ bool Parameters::read_parameters (istream & in )
         return false;
     }
     in >>track_link_entries_exits;
+
+    in >> keyword;
+    if (keyword!= "use_kml_output=")
+    {
+        eout << "ERROR reading Parameters file, expecting: use_kml_output=, read: " << keyword << endl;
+        return false;
+    }
+    in >>use_kml_output;
 
     in >> keyword;
     if (keyword!= "#demand_format")

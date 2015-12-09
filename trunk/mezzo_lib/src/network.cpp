@@ -4268,7 +4268,8 @@ bool Network::writeall(unsigned int repl)
 	//writeheadways("timestamps.dat"); // commented out, since no-one uses them 
 	writeassmatrices(assignmentmatfile);
 	write_v_queues(vqueuesfile);
-	write_kml_output(kml_outputfile);
+    if (theParameters->use_kml_output)
+        write_kml_output(kml_outputfile);
 	return true;
 }
 
