@@ -2707,7 +2707,41 @@ bool Network::readassignmentlinksfile(string name)
 	in.close();
 	return true;
 }
+bool Network::readtimestamplinksfile(string name)
+{
+    ifstream in(name.c_str());
+    assert(in);
+    string keyword,temp;
+    in >> keyword;
 
+#ifdef _DEBUG_NETWORK
+    eout << keyword << endl;
+#endif //_DEBUG_NETWORK
+    if (keyword!="no_obs_links:")
+    {
+        in.close();
+        return false;
+    }
+    int nr,lid;
+    in >> nr;
+    in >> temp;
+    if (temp != "{")
+        eout << "ERROR: Network::readtimestamplinksfile:expected {, read: " << temp << endl;
+    assert (temp=="{");
+    map <int, Link*>::iterator iter;
+    for (int i=0; i<nr;i++)
+    {
+        in >> lid;
+        iter = linkmap.find(lid);
+        assert (iter!=linkmap.end()); // assert it exists
+        (*iter).second->set_use_linkout(true);
+        no_ass_links++;
+    }
+    in >> temp;
+    assert (temp=="}");
+    in.close();
+    return true;
+}
 
 bool Network::readparameters(string name)
 {
@@ -4181,6 +4215,11 @@ double Network::executemaster()
 		if (!readassignmentlinksfile (workingdir + "assign_links.dat"))
 			eout << "ERROR: reading the assignment matrix links: assign_links.dat " << endl; // !!! WE NEED TO FIX THIS INTO THE MAIN READ& WRITE
 	}
+    if (theParameters->track_link_entries_exits)
+    {
+        if (!readtimestamplinksfile (workingdir + "timestamp_links.dat"))
+            eout << "ERROR: reading the links for entry exit timestamps : timestamp_links.dat " << endl; // !!! WE NEED TO FIX THIS INTO THE MAIN READ& WRITE
+    }
 	
 	return runtime;
 }

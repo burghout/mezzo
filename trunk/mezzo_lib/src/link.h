@@ -215,8 +215,9 @@ public:
 	const int max_moe_size() const {return _MAX(moe_speed->get_size(), _MAX (moe_inflow->get_size(),_MAX(moe_outflow->get_size(),_MAX(moe_queue->get_size(),moe_density->get_size()))));}
 	void add_blocked_exit() {nr_exits_blocked++;}
 	void remove_blocked_exit() {nr_exits_blocked--;}
-
+    void set_use_linkout(const bool value)  {use_linkout=value; /*set_selected(value);*/}
 	void set_use_ass_matrix(const bool value)  {use_ass_matrix=value; /*set_selected(value);*/}
+
 	void write_ass_matrix (ostream & out, const int linkflowperiod); // writes the Assignment matrix for this link and given linkflow period
 	void set_selected (const bool sel) ;
 	const bool get_selected () const {return selected;}
@@ -280,6 +281,7 @@ protected:
 // New 2008-01-30
 	multimap <int, Route*> routemap; // map storing routes by Destination_id
 	bool use_ass_matrix; // boolean set to true if this link collects assignment matrix data
+    bool use_linkout; // boolean set to true if this link collects assignment matrix data
 	bool selected; //true if link is 'selected'
 };
 

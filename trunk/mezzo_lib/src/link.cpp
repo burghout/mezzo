@@ -49,6 +49,7 @@ Link::Link(int id_, Node* in_, Node* out_, int length_, double nr_lanes_, Sdfunc
 		freeflowtime=1.0;
 	queue=new Q(maxcap, freeflowtime);    
 	use_ass_matrix = false;
+    use_linkout = false;
 	selected = false;
 }
 
@@ -631,7 +632,7 @@ Vehicle* const  Link::exit_veh(const double time, Link* const nextlink, const in
 	      veh->add_meters(length);
 	      moe_outflow->report_value(time);
 	      moe_speed->report_value((length/traveltime),time);
-		  if (use_ass_matrix)
+          if (use_linkout)
 		  {
 		  linkout << time << ' '<< id << ' ' <<veh->get_id() << ' ' << veh->get_entry_time() << ' ' << veh->get_exit_time() <<
 			  ' ' << density() << ' ' << this->queue_percentage<< endl;
@@ -704,7 +705,7 @@ Vehicle*const  Link::exit_veh(const double time)
 	   		veh->add_meters(length);
 	   		 moe_outflow->report_value(time);
 	   		 moe_speed->report_value((length/traveltime),time);
-			  if (use_ass_matrix)
+              if (use_linkout)
 			  {
 			  linkout << time << ' '<< id << ' ' <<veh->get_id() << ' ' << veh->get_entry_time() << ' ' << veh->get_exit_time() <<
 				  ' ' << density() << ' ' << this->queue_percentage<< endl;

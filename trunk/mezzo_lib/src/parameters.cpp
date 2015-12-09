@@ -43,8 +43,9 @@ Parameters::Parameters ()
    moe_queue_update= 300.0;
    moe_density_update= 300.0;
    linktime_alpha= 0.6;    // REPLACES the time_alpha
+   track_link_entries_exits= false; //!<NEW
  //#demand_format
-   use_triplist= false;
+   use_triplist= false; //!<NEW
 
 // #assignment_matrix_parameters
    use_ass_matrix= 0;
@@ -391,7 +392,13 @@ bool Parameters::read_parameters (istream & in )
 	}
 	in >> linktime_alpha;
 
-/////// //
+    in >> keyword;
+    if (keyword!= "track_link_entries_exits=")
+    {
+        eout << "ERROR reading Parameters file, expecting: track_link_entries_exits=, read: " << keyword << endl;
+        return false;
+    }
+    in >>track_link_entries_exits;
 
     in >> keyword;
     if (keyword!= "#demand_format")

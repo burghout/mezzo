@@ -199,7 +199,7 @@ public:
 	bool writeassmatrices(string name); //!< writes the assignment matrices
 	bool write_v_queues(string name); //!< writes the virtual queue lengths
 	bool write_kml_output(string name); //!< writes the network (and later MOE outputs) in a kml file
-	
+    bool readtimestamplinksfile(string name); //!< reads the file with the linkst for which the link timestamps are collected
 	bool readassignmentlinksfile(string name); //!< reads the file with the links for which the assignment matrix is collected
 
 	bool readvtypes (string name); //!< reads the vehicles types with their lentghs and percentages.
