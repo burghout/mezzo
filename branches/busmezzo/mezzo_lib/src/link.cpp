@@ -46,6 +46,7 @@ Link::Link(int id_, Node* in_, Node* out_, int length_, int nr_lanes_, Sdfunc* s
 	{
 		moe_passengers=new MOE(theParameters->moe_density_update);
 	}
+	moe_occupancy_rate=new MOE(theParameters->moe_density_update);
   blocked_until=-1.0; // -1.0 = not blocked, -2.0 = blocked until further notice, other value= blocked until value
   nr_exits_blocked=0; // set by the turning movements if they are blocked
   freeflowtime=(length/(sdfunc->speed(0.0)));
@@ -65,6 +66,7 @@ Link::Link()
 	moe_queue=new MOE(theParameters->moe_queue_update);
 	moe_density=new MOE(theParameters->moe_density_update);
 	moe_passengers=new MOE(theParameters->moe_density_update);
+	moe_occupancy_rate=new MOE(theParameters->moe_density_update);
 	blocked_until=-1.0; // -1.0 = not blocked, -2.0 = blocked until further notice, other value= blocked until value
 	nr_exits_blocked=0; // set by the turning movements if they are blocked
 	freeflowtime=1.0;	
@@ -80,6 +82,7 @@ Link::~Link()
 	delete(moe_queue);
 	delete(moe_density);
 	delete(moe_passengers);
+	delete(moe_occupancy_rate);
 #ifdef _COLLECT_TRAVELTIMES
 	if (grid!=null )
 		delete(grid);
@@ -279,6 +282,12 @@ pair<double,double> Link::set_output_moe_thickness(unsigned int val)// sets the 
 			moe_passengers->fill_missing(nr_periods, 0.0);
 			return pair <double,double> ( moe_passengers->get_min(), moe_passengers->get_max());
 			break;
+		case (7):
+			icon->setMOE_thickness(moe_occupancy_rate);
+			nr_periods= static_cast<int>(theParameters->moe_density_update/theParameters->running_time);
+			moe_occupancy_rate->fill_missing(nr_periods, 0.0);
+			return pair <double,double> ( moe_occupancy_rate->get_min(), moe_occupancy_rate->get_max());
+			break;
 		case (0):
 			icon->setMOE_thickness(NULL);
 
@@ -328,6 +337,12 @@ pair <double,double> Link::set_output_moe_colour(unsigned int val)// sets the ou
 			nr_periods= static_cast<int>(theParameters->moe_density_update/theParameters->running_time);
 			moe_passengers->fill_missing(nr_periods, 0.0);
 			return pair <double,double> ( moe_passengers->get_min(), moe_passengers->get_max());
+			break;
+		case (7):
+			icon->setMOE_colour(moe_occupancy_rate);
+			nr_periods= static_cast<int>(theParameters->moe_density_update/theParameters->running_time);
+			moe_occupancy_rate->fill_missing(nr_periods, 0.0);
+			return pair <double,double> ( moe_occupancy_rate->get_min(), moe_occupancy_rate->get_max());
 			break;
 		case (0):
 			icon->setMOE_colour(NULL);
@@ -515,10 +530,12 @@ bool Link::enter_veh(Vehicle* veh, double time)
 		if (theParameters->pass_day_to_day_indicator > 0)
 		{
 			moe_passengers->report_values(bus->get_occupancy(), time);
+			moe_occupancy_rate->report_value_day(static_cast<double>(bus->get_occupancy()) / static_cast<double>(bus->get_capacity()), time);
 		}
 		else
 		{
 			moe_passengers->report_passengers(bus->get_occupancy(), time);
+			moe_occupancy_rate->report_value(static_cast<double>(bus->get_occupancy()) / static_cast<double>(bus->get_capacity()), time);
 		}
 		//vector <Start_trip*>::iterator curr_trip = bus->get_curr_trip();
 		Bustrip* trip = bus->get_curr_trip();

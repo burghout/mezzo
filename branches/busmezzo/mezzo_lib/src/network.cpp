@@ -6941,11 +6941,11 @@ double Network::executemaster(QPixmap * pm_,QMatrix * wm_)
 	}
 	day = 1;
 	day2day = new Day2day(1);
-	if (theParameters->pass_day_to_day_indicator == 1)
+	if (theParameters->pass_day_to_day_indicator >= 1)
 	{
 		this->read_transitday2day (workingdir +"transit_day2day.dat");
 	}
-	if (theParameters->in_vehicle_d2d_indicator == 1)
+	if (theParameters->in_vehicle_d2d_indicator >= 1)
 	{
 		this->read_IVTT_day2day (workingdir +"transit_day2day_onboard.dat");
 	}

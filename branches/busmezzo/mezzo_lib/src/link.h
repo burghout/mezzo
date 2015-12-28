@@ -254,6 +254,7 @@ protected:
 	MOE* moe_queue;
 	MOE* moe_density;
 	MOE* moe_passengers;
+	MOE* moe_occupancy_rate;
 	// Newly added for Assignment matrix
 	map < int , map <odval, map <int,int>,less_odval > > ass_matrix; // assignment matrix which is indexed as follows:
 	// ass_matrix [linkflow_period] [od_pair] [od_period]

@@ -401,13 +401,19 @@ double Pass_path::calc_waiting_utility (vector <vector <Busstop*>>::iterator sto
 		{
 			return -10.0;
 		}
-		if ((*next_trip_iter).first != NULL && (*next_trip_iter).first->stops_map[(*stop_iter).front()] - time < theParameters->max_waiting_time)
-		{
+		
+		//if ((*next_trip_iter).first != NULL && (*next_trip_iter).first->stops_map[(*stop_iter).front()] - time < theParameters->max_waiting_time)
+		if ((*next_trip_iter).first != NULL) //Changed by Jens 2015-03-23 to avoid weird effects when the schedule is too pessimistic
 		// a dynamic filtering rule - if there is at least one line in the first leg which is available - then this waiting alternative is relevant
-			double avg_walking_speed = random->nrandom(theParameters->average_walking_speed, theParameters->average_walking_speed/4);
+		{
 			double ivt = calc_total_in_vehicle_time(time, pass);
+			double avg_walking_speed = random->nrandom(theParameters->average_walking_speed, theParameters->average_walking_speed/4);
 			double wt = calc_total_waiting_time(time, false, alighting_decision, avg_walking_speed, pass);
-			return (random->nrandom(theParameters->transfer_coefficient, theParameters->transfer_coefficient / 4) * number_of_transfers + random->nrandom(theParameters->in_vehicle_time_coefficient, theParameters->in_vehicle_time_coefficient / 4 ) * ivt + random->nrandom(theParameters->waiting_time_coefficient, theParameters->waiting_time_coefficient / 4) * wt + random->nrandom(theParameters->walking_time_coefficient, theParameters->walking_time_coefficient/4) * calc_total_walking_distance()/ avg_walking_speed);
+
+			if (wt < theParameters->max_waiting_time) //Changed by Jens 2015-03-23 to avoid weird effects when the schedule is too pessimistic
+			{
+				return (random->nrandom(theParameters->transfer_coefficient, theParameters->transfer_coefficient / 4) * number_of_transfers + random->nrandom(theParameters->in_vehicle_time_coefficient, theParameters->in_vehicle_time_coefficient / 4 ) * ivt + random->nrandom(theParameters->waiting_time_coefficient, theParameters->waiting_time_coefficient / 4) * wt + random->nrandom(theParameters->walking_time_coefficient, theParameters->walking_time_coefficient/4) * calc_total_walking_distance()/ avg_walking_speed);
+			}
 		}
 	} 
 	// if none of the lines in the first leg is available - then the waiting alternative is irrelevant

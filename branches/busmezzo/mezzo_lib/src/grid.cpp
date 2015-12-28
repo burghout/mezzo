@@ -110,6 +110,22 @@ void MOE::report_value(double value, double time)
  		    	*value_iter=((*value_iter)*(value_obs-1)+value ) /value_obs; 		 	
 }
 
+void MOE::report_value_day(double value, double time)
+{
+	 	if (time < value_update - 900)
+ 		 	{
+ 		 	 		value_period++;
+ 		 	 		values.push_back(0.0); // add a new interval to the list
+ 		 	 		value_iter++;
+ 		 	 		value_obs=0;
+ 		 	}
+ 		 	value_obs++;
+ 		    if (value_obs== 1)
+ 		    	*value_iter=value;
+ 		    else
+ 		    	*value_iter=((*value_iter)*(value_obs-1)+value ) /value_obs; 	
+			value_update = time;
+}
 
 void MOE::report_value(double time) // for flows
 {
@@ -129,7 +145,7 @@ void MOE::report_value(double time) // for flows
 
 void MOE::report_values(double value, double time) // for passenger flows per day
 {
-	 	if (time < value_update)
+	 	if (time < value_update - 900) //Changed by Jens 2015-11-25
  		{
  		 	value_period++;
  		 	values.push_back(0.0); // add a new interval to the list
@@ -142,7 +158,7 @@ void MOE::report_values(double value, double time) // for passenger flows per da
 		value_update = time;
 }
 
-void MOE::report_passengers(double value, double time) // for passenger flows per day
+void MOE::report_passengers(double value, double time) // for passenger flows per time period
 {
 	 	if (time > (value_period*value_update))
  		{

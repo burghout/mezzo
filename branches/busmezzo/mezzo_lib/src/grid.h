@@ -62,6 +62,7 @@ class MOE
 	void reset(); // resets the value list, NOT the scale_ or value_update
 	void fill_missing (const int nr_periods,const double default_value);
  	void report_value(double value, double time); // used to report values that are averaged
+	void report_value_day(double value, double time); // used to report values that are averaged per day
  	void report_value(double time); // used to report counts such as flows
 	void report_values(double value, double time); // used to report passenger flows per day
 	void report_passengers(double value, double time); // used to report passenger flows per time period
