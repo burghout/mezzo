@@ -3013,8 +3013,11 @@ bool Network::shortest_paths_all()
 					graph->labelCorrecting((*iter2)->get_id());  // find the shortest path from Link (*iter2) to ALL nodes
 	#else
 					if (linkinfo) // if there are link info times
+                    {
+                        Graph <double, LinkCostInfo > * graph2 (graph);
 						graph->labelCorrecting(link_to_graphlink[ (*iter2)->get_id() ],entrytime,linkinfo);  // find the shortest path from Link (*iter2) to ALL nodes
-					else
+                    }
+                    else
 						graph->labelCorrecting(link_to_graphlink[ (*iter2)->get_id() ]);  // find the shortest path from Link (*iter2) to ALL nodes NO LINKINFO
 	#endif // _USE_VAR_TIMES
 	#ifdef _DEBUG_SP
