@@ -497,7 +497,7 @@ bool Link::enter_veh(Vehicle* veh, double time)
 			if (id == (next_stop1->first->get_link_id()))
 			{
 				double stop_position = (next_stop1->first)->get_position();
-				double time_to_stop = time + ((exit_time - time) * (stop_position / length)) + trip->get_line()->extra_disruption_on_segment(next_stop1->first, time, time + ((exit_time - time) * (stop_position / length)));
+				double time_to_stop = time + ((exit_time - time) * (stop_position / length)) + trip->get_line()->extra_disruption_on_segment(next_stop1->first, time + ((exit_time - time) * (stop_position / length)));
 
 				// book  stop visit
 				trip->book_stop_visit (time_to_stop);
