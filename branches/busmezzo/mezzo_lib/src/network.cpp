@@ -2443,18 +2443,18 @@ bool Network::read_travel_time_disruptions (istream& in)
 {
 	char bracket;
 	int line, from_stop, to_stop;
-	double start_time, end_time;
+	double start_time, end_time, cap_reduction;
 	in >> bracket;
 	if (bracket != '{')
 	{
 		cout << "readfile::readsbusstop_distances scanner jammed at " << bracket;
 		return false;
 	}
-	in >> line >> from_stop >> to_stop >> start_time >> end_time;
+	in >> line >> from_stop >> to_stop >> start_time >> end_time >> cap_reduction;
 	Busline* d_line = (*(find_if(buslines.begin(), buslines.end(), compare <Busline> (line) )));
 	Busstop* from_bs = (*(find_if(busstops.begin(), busstops.end(), compare <Busstop> (from_stop) )));
 	Busstop* to_bs = (*(find_if(busstops.begin(), busstops.end(), compare <Busstop> (to_stop) )));
-	d_line->add_disruptions(from_bs, to_bs, start_time, end_time);
+	d_line->add_disruptions(from_bs, to_bs, start_time, end_time, cap_reduction);
 	in >> bracket;
 	if (bracket != '}')
 	{

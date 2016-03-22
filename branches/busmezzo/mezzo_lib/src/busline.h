@@ -118,7 +118,7 @@ public:
 	// initialization
 	void add_timepoints (vector <Busstop*> tp) {line_timepoint = tp;}
 	void add_trip(Bustrip* trip, double starttime){trips.push_back(Start_trip(trip,starttime));}
-	void add_disruptions (Busstop* from_stop, Busstop* to_stop, double disruption_start_time, double disruption_end_time);
+	void add_disruptions (Busstop* from_stop, Busstop* to_stop, double disruption_start_time, double disruption_end_time, double cap_reduction);
 	
 	// checks
 	bool is_line_timepoint (Busstop* stop); //!< returns true if stops is a time point for this busline, otherwise it returns false
@@ -167,10 +167,12 @@ protected:
 	Vtype* vtype; //!< the type of vehicle for the buses to be generated.
 	ODpair* odpair; 
 	float ratio_headway_holding;
+	double desired_offset, planned_headway; // relevant in case headway control is of type 10
 	int holding_strategy; 
 	double init_occup_per_stop;
 	int nr_stops_init_occup;
 	map <Busstop*,pair<Busstop*,pair<double,double>>> disruption_times; // contains the expected travel times between a pair of stops in case of disruption (does not affect actual travel time, only passenger information provision). Strat and end times
+	map <Busstop*, double> disruption_cap_reduction;
 	bool active; //!< is true when the busline has started generating trips
 	vector <Start_trip>::iterator curr_trip; //!< indicates the next trip
 	Output_Summary_Line output_summary;
