@@ -1,4 +1,10 @@
+# Ignore all the intermediate files built in the debug and release subdirectories
+**/debug
+**/release
+**/ui_h
+#ignore all these extensions (intermediate files, vs2012 database etc)
 *.obj
+<<<<<<< HEAD
 branches/busmezzo/gui/debug/mezzo.res
 branches/busmezzo/gui/Makefile.Release
 *.pdb
@@ -31,3 +37,14 @@ branches/busmezzo/mezzoAnalyzer/ui_odcheckdlg.h
 *.lib
 branches/busmezzo/gui/ui_outputview.h
 branches/busmezzo/mezzoAnalyzer/debug/moc_odtabledelegate.cpp
+=======
+*.res
+*.Debug
+*.Release
+*.opensdf
+*.sdf
+*.suo
+*.pdb
+Makefile*.*
+Makefile
+>>>>>>> refs/remotes/origin/master
