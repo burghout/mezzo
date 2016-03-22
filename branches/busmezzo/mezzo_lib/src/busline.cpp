@@ -123,13 +123,14 @@ vector<Busstop*>::iterator Busline::get_stop_iter (Busstop* stop)
 	return stops.end();
 }
 
-void Busline::add_disruptions (Busstop* from_stop, Busstop* to_stop, double disruption_start_time, double disruption_end_time)
+void Busline::add_disruptions (Busstop* from_stop, Busstop* to_stop, double disruption_start_time, double disruption_end_time, double cap_reduction)
 {
 	pair<Busstop*,pair<double,double>> pair_dis;
 	pair_dis.first = to_stop;
 	pair_dis.second.first = disruption_start_time;
 	pair_dis.second.second = disruption_end_time;
 	disruption_times[from_stop] = pair_dis;
+	disruption_cap_reduction [from_stop] = cap_reduction;
 }
 
 bool Busline::is_line_timepoint (Busstop* stop)
@@ -459,7 +460,16 @@ double Busline::extra_disruption_on_segment (Busstop* next_stop, double time)
 {
 	if (disruption_times.count(next_stop) > 0 && time > disruption_times[next_stop].second.first && time < disruption_times[next_stop].second.second) // if disruption starts from this stop and within the time window 
 	{
-		return disruption_times[next_stop].second.second-time;
+		if (disruption_cap_reduction[next_stop] == 1.0)
+		{
+			return disruption_times[next_stop].second.second-time;
+		}
+		else
+		{
+			double expected_headway = time - next_stop->get_last_departure(this);
+			double min_headway = calc_curr_line_headway() / (1-disruption_cap_reduction[next_stop]); // due to partial capacity reduction
+			return max(0.0, min_headway-expected_headway); // if needed to satisfy capacity limitation  
+		}
 	}
 	return 0.0;
 }
@@ -542,6 +552,8 @@ double Busline::calc_curr_line_ivt (Busstop* start_stop, Busstop* end_stop, int 
 	}
 	vector<Visit_stop*>::iterator board_stop;
 	vector<Visit_stop*>::iterator alight_stop;
+	bool found_board = false;
+	bool found_alight = false;
 	vector <Start_trip>::iterator check_trip;
 	if	(curr_trip == trips.end())
 	{
@@ -553,15 +565,21 @@ double Busline::calc_curr_line_ivt (Busstop* start_stop, Busstop* end_stop, int 
 	}
  	for (vector<Visit_stop*>::iterator stop = (*check_trip).first->stops.begin(); stop <(*check_trip).first->stops.end(); stop++)
 	{
-			if ((*stop)->first->get_id() == start_stop->get_id())
+			if ((*stop)->first->get_id() == start_stop->get_id() || (*stop)->first->get_name() == start_stop->get_name())
 			{
 				board_stop = stop;
+				found_board = true;
 			}
-			if ((*stop)->first->get_id() == end_stop->get_id())
+			if ((*stop)->first->get_id() == end_stop->get_id() || (*stop)->first->get_name() == end_stop->get_name())
 			{
 				alight_stop = stop;
+				found_alight = true;
 				break;
 			}
+	}
+	if (found_board == false || found_alight == false)
+	{
+		return 10000; // default in case no matching
 	}
 	return ((*alight_stop)->second - (*board_stop)->second) + extra_travel_time; // in seconds
 }
@@ -2265,10 +2283,148 @@ double Busstop::calc_exiting_time (Eventlist* eventlist, Bustrip* trip, double t
 						return max(ready_to_depart, holding_departure_time);
 					}
 			}
+			// for real-time corridor control 
+			case 10:
+				// find_next_downstream_hub();
+				// calc_planned_offset_Tomer_function (); // at the moment calc it exogenously
+				
+				if (trip->get_line()->is_line_timepoint(this) == true) // only if this is a time point stop
+				{
+					// calc_nr_intermediate_stops ();
+				
+
+				// predicting which of the parallel line trips is expected to arrive directly afterwards 
+				// double holding_departure_time = calc_optimal_corridor_holding (trip); // based on Giorgos thesis
+
+					
+				// gives as output the holding time at this stop only
+				
+				// account for passengers that board while the bus is holded at the time point
+				// double holding_time = last_departures[trip->get_line()].second - time - dwelltime;
+				// int additional_boarding = random -> poisson ((get_arrival_rates (trip)) * holding_time / 3600.0 );
+				// nr_boarding += additional_boarding;
+				// int curr_occupancy = trip->get_busv()->get_occupancy();  
+				// trip->get_busv()->set_occupancy(curr_occupancy + additional_boarding); // Updating the occupancy
+				// return max(ready_to_depart, holding_departure_time);
+				}
 		default:
 			return time + dwelltime;
 	}
 }
+
+/*
+double Busstop::calc_optimal_corridor_holding (Bustrip* trip)
+{
+	double local_holding_time;
+	local_holding_time = (-calc_corridor_holding_D(trip)-calc_corridor_holding_Lambda(trip))/(2*calc_corridor_holding_A(trip));
+	return local_holding_time;
+}
+
+double Busstop::calc_corridor_holding_D (Bustrip* trip)
+{
+	double holding_D;
+	holding_D = calc_corridor_holding_B(trip) + (trip->get_init_occup_per_stop() * trip->get_nr_stops_init_occup())  + calc_corridor_holding_X();
+	return holding_D;
+}
+
+double Busstop::calc_corridor_holding_A (Bustrip* trip)
+{
+	return calc_A_nominator_holding(trip)/calc_A_dominator_holding(trip);
+}
+
+double Busstop::calc_A_nominator_holding (Bustrip* trip)
+{
+	return (calc_pax_b_here_a_down(trip)-calc_pax_b_up_a_here(trip));
+}
+
+double Busstop::calc_A_dominator_holding (Bustrip* trip)
+{
+	double planned_headway = trip->get_line()->get_planned_headway();
+	Dwell_time_function* dt_func = trip->get_bustype()->get_dt_function();
+	double tau_a = dt_func->alighting_cofficient;
+	double tau_b = dt_func->boarding_coefficient;
+	return (planned_headway - tau_a * (calc_pax_b_up_a_here(trip)) + tau_b * (calc_pax_b_here_a_down(trip));
+}
+
+double Busstop::calc_pax_b_up_a_here (Bustrip* trip)
+{
+	double pax_b_up_a_here = 0.0;
+	vector<Busstop*> line_stops = trip->get_line()->stops;
+	vector <Busstop*>::iterator curr_stop_iter;
+	for (vector <Busstop*>::iterator iter_line_stop = line_stops.begin(); iter_line_stop < line_stops.end(); iter_line_stop++)
+	{
+		if ((*iter_line_stop) == this)
+		{
+			curr_stop_iter = iter_line_stop;
+			break;
+		}
+	}
+	// sum over all demand generated upstream and destined to this stop 
+	for (vector <Busstop*>::iterator iter_before_curr_stop = line_stops.begin(); iter_before_curr_stop < curr_stop_iter; iter_before_curr_stop++)
+	{
+			pax_b_up_a_here += (*iter_before_curr_stop)->get_stop_od_as_origin_per_stop(this)->get_arrivalrate();
+	}
+	return (pax_b_up_a_here/trip->get_line()->get_planned_headway()); // pass. demand per average trip
+}
+
+double Busstop::calc_pax_b_here_a_down (Bustrip* trip) 
+{
+	double pax_b_here_a_down = 0.0;
+	vector<Busstop*> line_stops = trip->get_line()->stops;
+	vector <Busstop*>::iterator curr_stop_iter;
+	for (vector <Busstop*>::iterator iter_line_stop = line_stops.begin(); iter_line_stop < line_stops.end(); iter_line_stop++)
+	{
+		if ((*iter_line_stop) == this)
+		{
+			curr_stop_iter = iter_line_stop;
+			break;
+		}
+	}
+	// sum over all demand generated at this stop and destined downstream 
+	for (vector <Busstop*>::iterator iter_beyond_curr_stop = curr_stop_iter+1; iter_beyond_curr_stop < line_stops.end(); iter_beyond_curr_stop++)
+	{
+			pax_b_here_a_down += this->get_stop_od_as_origin_per_stop(*iter_beyond_curr_stop)->get_arrivalrate();
+	}
+	return (pax_b_here_a_down/trip->get_line()->get_planned_headway()); // pass. demand per average trip
+}
+
+double Busstop::calc_corridor_holding_Lambda (Bustrip* trip)
+{
+	double holding_lambda;
+	double delta_planned_offset = calc_delta_planned_offset(trip);
+
+	return holding_lambda;
+}
+
+double Busstop::calc_delta_planned_offset(Bustrip* trip)
+{
+	double predicted_offset;	
+	// predicting arrival time of both lines at the next downstream hub
+
+	XXX
+
+
+	double delta_planned_offset = trip->get_line()->get_desired_offset() - predicted_offset;
+	return delta_planned_offset;
+}
+
+double Busstop::calc_corridor_holding_B (Bustrip* trip)
+{
+	double holding_B;
+	double planned_headway = trip->get_line()->get_planned_headway();
+	holding_B = (planned_headway * calc_pax_b_here_a_down(trip) - (current_headway) * (calc_A_nominator_holding(trip)))/calc_A_dominator_holding(trip);
+	return holding_B;
+}
+
+double Busstop::calc_corridor_holding_X (Bustrip* trip)
+{
+	double holding_X;
+	double planned_headway = trip->get_line()->get_planned_headway();
+	holding_X = (current_headway * (calc_A_nominator_holding(trip)))/(calc_A_dominator_holding(trip));
+	return holding_X;
+}
+
+*/
 
 int Busstop::calc_total_nr_waiting ()
 {
