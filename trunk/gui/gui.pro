@@ -3,7 +3,7 @@
 TEMPLATE = app
 TARGET = mezzo_gui
 UI_DIR= ui_h
-INCLUDEPATH += . ../mezzoAnalyzer $(QTDIR)/include ui_h
+INCLUDEPATH += . ../mezzoAnalyzer/ui_h $(QTDIR)/include ui_h
 
 LIBS += -L.
 
