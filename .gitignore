@@ -50,3 +50,5 @@ Makefile
 >>>>>>> refs/remotes/origin/master
 *.dat
 branches/busmezzo/gui/ui_parametersdialog_qt4.h
+
+*.user
