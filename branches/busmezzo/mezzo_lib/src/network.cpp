@@ -1592,6 +1592,7 @@ bool Network::readbusline(istream& in) // reads a busline
 		cout << "readfile::readsbusline scanner jammed at " << bracket << ", expected {";
 		return false;
 	}
+	bracket = ' '; // 2016-03-29 David added: reset bracket when we are checking for more than one consecutive '{', or '}'. Maybe use a bracket counter instead?
 	in >> busline_id >> opposite_busline_id >> name >> ori_id >> dest_id >> route_id >> vehtype >> holding_strategy >> ratio_headway_holding >> nr_stops_init_occup >>  init_occup_per_stop >> nr_stops;
 	in >> bracket;
 	if (bracket != '{')
@@ -1660,6 +1661,7 @@ bool Network::readbusline(istream& in) // reads a busline
 	return false;
   }
   bl->add_timepoints(line_timepoint);
+  bracket = ' '; // David added 2016-03-29
   in >> bracket;
   if (bracket != '}')
   {
