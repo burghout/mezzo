@@ -1432,7 +1432,8 @@ bool Busstop::execute(Eventlist* eventlist, double time) // is executed by the e
 	*/
 	return true;
 }
-double Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, double time) //!< progress passengers at stop: waiting, boarding and alighting
+
+void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, double time) //!< progress passengers at stop: waiting, boarding and alighting
 {
 	nr_boarding = 0.0;
 	nr_alighting = 0.0;
@@ -1694,11 +1695,11 @@ double Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip,
 				}
 			}
 		}
-		trip->passengers_on_board[this].clear(); 
-		trip->get_busv()->set_occupancy(trip->get_busv()->get_occupancy()-nr_alighting);
+		trip->passengers_on_board[this].clear(); // clear passengers with this stop as their alighting stop
+		trip->get_busv()->set_occupancy(trip->get_busv()->get_occupancy()-nr_alighting);	// update occupancy on bus
 
 		// * Passengers on-board
-		int avialable_seats = trip->get_busv()->get_occupancy() - trip->get_busv()->get_number_seats();
+		int available_seats = trip->get_busv()->get_occupancy() - trip->get_busv()->get_number_seats();
 		map <Busstop*, passengers> passengers_onboard = trip->get_passengers_on_board();
 		bool next_stop = false;
 		map <Busstop*, passengers>::iterator downstream_stops = passengers_onboard.end();
@@ -1716,11 +1717,11 @@ double Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip,
 				ODstops* od_stop = (*onboard_passenger)->get_original_origin()->get_stop_od_as_origin_per_stop((*onboard_passenger)->get_OD_stop()->get_destination());
 				od_stop->record_onboard_experience(*onboard_passenger, trip, time, this, riding_coeff);
 				// update sitting status - if a passenger stands and there is an available seat - allow sitting; sitting priority among pass. already on-board by remaning travel distance
-				int avialable_seats = trip->get_busv()->get_occupancy() < trip->get_busv()->get_number_seats();
-				if (avialable_seats > 0 && (*onboard_passenger)->get_pass_sitting() == false)
+				int available_seats = trip->get_busv()->get_occupancy() < trip->get_busv()->get_number_seats();
+				if (available_seats > 0 && (*onboard_passenger)->get_pass_sitting() == false)
 				{
 					(*onboard_passenger)->set_pass_sitting(true);
-					avialable_seats--;
+					available_seats--;
 				}
 			}
 			if (downstream_stops == passengers_onboard.begin())
@@ -1848,7 +1849,6 @@ double Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip,
 		trip->assign_segements[this] = trip->get_busv()->get_occupancy();
 		trip->record_passenger_loads(trip->get_next_stop());
 	}
-	return calc_dwelltime (trip); 
 }
 
 double Busstop::calc_dwelltime (Bustrip* trip)  //!< calculates the dwelltime of each bus serving this stop. currently includes: passenger service times ,out of stop, bay/lane		
@@ -1945,9 +1945,6 @@ double Busstop::calc_dwelltime (Bustrip* trip)  //!< calculates the dwelltime of
 	return dwelltime;
 }
 
-
-
-
 double Busstop::find_exit_time_bus_in_front () //Fixed by Jens 2014-08-26
 {
 	if (buses_currently_at_stop.empty() == true)
@@ -2028,49 +2025,56 @@ double Busstop::get_time_since_departure (Bustrip* trip, double time) // calcula
 
 double Busstop::calc_exiting_time (Eventlist* eventlist, Bustrip* trip, double time)
 {
-	dwelltime = passenger_activity_at_stop (eventlist, trip,time);
+	passenger_activity_at_stop (eventlist, trip,time); //progress passengers at stop (waiting, boarding, alighting)
+	dwelltime = calc_dwelltime(trip);
 
 	if (can_overtake == false) // if the buses can't overtake at this stop - then it depends on the bus in front
 	{
 		dwelltime = max(dwelltime, find_exit_time_bus_in_front() - time + 1.0);
 	}
 
-	double ready_to_depart = time + dwelltime;
+	//check if holding strategy is used for this trip
+	double holding_departure_time = calc_holding_departure_time(trip, time); //David added 2016-04-01
+	double ready_to_depart = max(time + dwelltime, holding_departure_time);
+
+	if(ready_to_depart > time + dwelltime)
+	{
+		// account for additional passengers that board while the bus is held at the time point
+		double holding_time = last_departures[trip->get_line()].second - time - dwelltime;
+		int additional_boarding = random -> poisson ((get_arrival_rates (trip)) * holding_time / 3600.0 );
+		nr_boarding += additional_boarding;
+		int curr_occupancy = trip->get_busv()->get_occupancy();  
+		trip->get_busv()->set_occupancy(curr_occupancy + additional_boarding); // Updating the occupancy
+	}
+
+	return ready_to_depart;
+}
+
+double Busstop::calc_holding_departure_time (Bustrip* trip, double time)
+{
 	switch (trip->get_line()->get_holding_strategy())
 	{
 		// for no control:
 		case 0:
-			return ready_to_depart; // since it isn't a time-point stop, it will simply exit after dwell time
+			return time + dwelltime; // since it isn't a time-point stop, it will simply exit after dwell time
 		// for headway based (looking on headway from preceding bus):
 		case 1:
 			if (trip->get_line()->is_line_timepoint(this) == true) // if it is a time point
 			{
 				double holding_departure_time = last_departures[trip->get_line()].second + (trip->get_line()->calc_curr_line_headway() * trip->get_line()->get_ratio_headway_holding());  
-				
-				// account for passengers that board while the bus is holded at the time point
-				double holding_time = last_departures[trip->get_line()].second - time - dwelltime;
-				int additional_boarding = random -> poisson ((get_arrival_rates (trip)) * holding_time / 3600.0 );
-				nr_boarding += additional_boarding;
-				int curr_occupancy = trip->get_busv()->get_occupancy();  
-				trip->get_busv()->set_occupancy(curr_occupancy + additional_boarding); // Updating the occupancy
 
-				return max(ready_to_depart, holding_departure_time);
+				return holding_departure_time;
 			}
-
+			break;
 		// for schedule based:
 		case 2:
 			if (trip->get_line()->is_line_timepoint(this) == true) // if it is a time point
 			{
 				double scheduled_departure_time = time + (trip->scheduled_arrival_time(this)-time)* trip->get_line()->get_ratio_headway_holding();  
-				// account for passengers that board while the bus is holded at the time point
-				double holding_time = last_departures[trip->get_line()].second - time - dwelltime;
-				int additional_boarding = random -> poisson ((get_arrival_rates (trip)) * holding_time / 3600.0 );
-				nr_boarding += additional_boarding;
-				int curr_occupancy = trip->get_busv()->get_occupancy();  
-				trip->get_busv()->set_occupancy(curr_occupancy + additional_boarding); // Updating the occupancy
 
-				return max(ready_to_depart, scheduled_departure_time);
+				return scheduled_departure_time;
 			}
+			break;
 		// for headway based (looking on headway from proceeding bus)
 		case 3:
 			if (trip->get_line()->is_line_timepoint(this) == true && trip->get_line()->check_last_trip(trip) == false) // if it is a time point and it is not the last trip
@@ -2090,149 +2094,119 @@ double Busstop::calc_exiting_time (Eventlist* eventlist, Bustrip* trip, double t
 					}
 					double expected_next_arrival = (*(next_trip_next_stop-1))->first->get_last_departure(trip->get_line()) + (*curr_stop)->second - (*(next_trip_next_stop-1))->second; // time at last stop + scheduled travel time between stops
 					double holding_departure_time = expected_next_arrival - (trip->get_line()->calc_curr_line_headway_forward() * (2 - trip->get_line()->get_ratio_headway_holding())); // headway ratio means here how tolerant we are to exceed the gap (1+(1-ratio)) -> 2-ratio
-				
-					// account for passengers that board while the bus is holded at the time point
-					double holding_time = last_departures[trip->get_line()].second - time - dwelltime;
-					int additional_boarding = random -> poisson ((get_arrival_rates (trip)) * holding_time / 3600.0 );
-					nr_boarding += additional_boarding;
-					int curr_occupancy = trip->get_busv()->get_occupancy();  
-					trip->get_busv()->set_occupancy(curr_occupancy + additional_boarding); // Updating the occupancy
-
-					return max(ready_to_depart, holding_departure_time);
+					
+					return holding_departure_time;
 				}
 			}
+			break;
 			// for headway-based (looking both backward and forward and averaging)
 			case 4:
-			if (trip->get_line()->is_line_timepoint(this) == true && trip->get_line()->check_last_trip(trip) == false && trip->get_line()->check_first_trip(trip) == false) // if it is a time point and it is not the first or last trip
-			{
-					Bustrip* next_trip = trip->get_line()->get_next_trip(trip);
-					Bustrip* previous_trip = trip->get_line()->get_previous_trip(trip);
-					vector <Visit_stop*> :: iterator& next_trip_next_stop = next_trip->get_next_stop();
-					if (next_trip->check_end_trip() == false && (*next_trip_next_stop)->first != trip->get_line()->stops.front()&& previous_trip->check_end_trip() == false) // in case the next trip already started and the previous trip hadn't finished yet(otherwise - no base for holding)
-					{
-						vector <Visit_stop*> :: iterator curr_stop; // hold the scheduled time for this trip at this stop
-						for (vector <Visit_stop*> :: iterator trip_stops = next_trip->stops.begin(); trip_stops < next_trip->stops.end(); trip_stops++)
+				if (trip->get_line()->is_line_timepoint(this) == true && trip->get_line()->check_last_trip(trip) == false && trip->get_line()->check_first_trip(trip) == false) // if it is a time point and it is not the first or last trip
+				{
+						Bustrip* next_trip = trip->get_line()->get_next_trip(trip);
+						Bustrip* previous_trip = trip->get_line()->get_previous_trip(trip);
+						vector <Visit_stop*> :: iterator& next_trip_next_stop = next_trip->get_next_stop();
+						if (next_trip->check_end_trip() == false && (*next_trip_next_stop)->first != trip->get_line()->stops.front()&& previous_trip->check_end_trip() == false) // in case the next trip already started and the previous trip hadn't finished yet(otherwise - no base for holding)
 						{
-							if ((*trip_stops)->first->get_id() == this->get_id())
+							vector <Visit_stop*> :: iterator curr_stop; // hold the scheduled time for this trip at this stop
+							for (vector <Visit_stop*> :: iterator trip_stops = next_trip->stops.begin(); trip_stops < next_trip->stops.end(); trip_stops++)
 							{
-								curr_stop = trip_stops;
-								break;
+								if ((*trip_stops)->first->get_id() == this->get_id())
+								{
+									curr_stop = trip_stops;
+									break;
+								}
 							}
+							double expected_next_arrival = (*(next_trip_next_stop-1))->first->get_last_departure(trip->get_line()) + (*curr_stop)->second - (*(next_trip_next_stop-1))->second; // time at last stop + scheduled travel time between stops
+							double average_curr_headway = ((expected_next_arrival - time) + (time - last_departures[trip->get_line()].second))/2; // average of the headway in front and behind
+							// double average_planned_headway = (trip->get_line()->calc_curr_line_headway_forward() + trip->get_line()->calc_curr_line_headway())/2;
+							double holding_departure_time = last_departures[trip->get_line()].second + average_curr_headway; // headway ratio means here how tolerant we are to exceed the gap (1+(1-ratio)) -> 2-ratio
+						
+							return holding_departure_time;
 						}
-						double expected_next_arrival = (*(next_trip_next_stop-1))->first->get_last_departure(trip->get_line()) + (*curr_stop)->second - (*(next_trip_next_stop-1))->second; // time at last stop + scheduled travel time between stops
-						double average_curr_headway = ((expected_next_arrival - time) + (time - last_departures[trip->get_line()].second))/2; // average of the headway in front and behind
-						// double average_planned_headway = (trip->get_line()->calc_curr_line_headway_forward() + trip->get_line()->calc_curr_line_headway())/2;
-						double holding_departure_time = last_departures[trip->get_line()].second + average_curr_headway; // headway ratio means here how tolerant we are to exceed the gap (1+(1-ratio)) -> 2-ratio
-				
-						// account for passengers that board while the bus is holded at the time point
-						double holding_time = last_departures[trip->get_line()].second - time - dwelltime;
-						int additional_boarding = random -> poisson ((get_arrival_rates (trip)) * holding_time / 3600.0 );
-						nr_boarding += additional_boarding;
-						int curr_occupancy = trip->get_busv()->get_occupancy();  
-						trip->get_busv()->set_occupancy(curr_occupancy + additional_boarding); // Updating the occupancy
-		
-						return max(ready_to_depart, holding_departure_time);
-					}
-			}
+				}
+				break;
 			// for headway-based (looking both backward and forward and averaging) with max. according to planned headway
 			case 5:
-			if (trip->get_line()->is_line_timepoint(this) == true && trip->get_line()->check_last_trip(trip) == false && trip->get_line()->check_first_trip(trip) == false) // if it is a time point and it is not the first or last trip
-			{
-					Bustrip* next_trip = trip->get_line()->get_next_trip(trip);
-					Bustrip* previous_trip = trip->get_line()->get_previous_trip(trip);
-					vector <Visit_stop*> :: iterator& next_trip_next_stop = next_trip->get_next_stop();
-					if (next_trip->check_end_trip() == false && (*next_trip_next_stop)->first != trip->get_line()->stops.front()&& previous_trip->check_end_trip() == false) // in case the next trip already started and the previous trip hadn't finished yet(otherwise - no base for holding)
-					{
-						vector <Visit_stop*> :: iterator curr_stop; // hold the scheduled time for this trip at this stop
-						for (vector <Visit_stop*> :: iterator trip_stops = next_trip->stops.begin(); trip_stops < next_trip->stops.end(); trip_stops++)
+				if (trip->get_line()->is_line_timepoint(this) == true && trip->get_line()->check_last_trip(trip) == false && trip->get_line()->check_first_trip(trip) == false) // if it is a time point and it is not the first or last trip
+				{
+						Bustrip* next_trip = trip->get_line()->get_next_trip(trip);
+						Bustrip* previous_trip = trip->get_line()->get_previous_trip(trip);
+						vector <Visit_stop*> :: iterator& next_trip_next_stop = next_trip->get_next_stop();
+						if (next_trip->check_end_trip() == false && (*next_trip_next_stop)->first != trip->get_line()->stops.front()&& previous_trip->check_end_trip() == false) // in case the next trip already started and the previous trip hadn't finished yet(otherwise - no base for holding)
 						{
-							if ((*trip_stops)->first->get_id() == this->get_id())
+							vector <Visit_stop*> :: iterator curr_stop; // hold the scheduled time for this trip at this stop
+							for (vector <Visit_stop*> :: iterator trip_stops = next_trip->stops.begin(); trip_stops < next_trip->stops.end(); trip_stops++)
 							{
-								curr_stop = trip_stops;
-								break;
+								if ((*trip_stops)->first->get_id() == this->get_id())
+								{
+									curr_stop = trip_stops;
+									break;
+								}
 							}
-						}
-						double expected_next_arrival = (*(next_trip_next_stop-1))->first->get_last_departure(trip->get_line()) + (*curr_stop)->second - (*(next_trip_next_stop-1))->second; // time at last stop + scheduled travel time between stops
-						double average_curr_headway = ((expected_next_arrival - time) + (time - last_departures[trip->get_line()].second))/2; // average of the headway in front and behind
-						// double average_planned_headway = (trip->get_line()->calc_curr_line_headway_forward() + trip->get_line()->calc_curr_line_headway())/2;
-						double holding_departure_time = min(last_departures[trip->get_line()].second + average_curr_headway, last_departures[trip->get_line()].second + (trip->get_line()->calc_curr_line_headway() * trip->get_line()->get_ratio_headway_holding())); // headway ratio means here how tolerant we are to exceed the gap (1+(1-ratio)) -> 2-ratio
-				
-						// account for passengers that board while the bus is holded at the time point
-						double holding_time = last_departures[trip->get_line()].second - time - dwelltime;
-						int additional_boarding = random -> poisson ((get_arrival_rates (trip)) * holding_time / 3600.0 );
-						nr_boarding += additional_boarding;
-						int curr_occupancy = trip->get_busv()->get_occupancy();  
-						trip->get_busv()->set_occupancy(curr_occupancy + additional_boarding); // Updating the occupancy
-		
-						return max(ready_to_depart, holding_departure_time);
+							double expected_next_arrival = (*(next_trip_next_stop-1))->first->get_last_departure(trip->get_line()) + (*curr_stop)->second - (*(next_trip_next_stop-1))->second; // time at last stop + scheduled travel time between stops
+							double average_curr_headway = ((expected_next_arrival - time) + (time - last_departures[trip->get_line()].second))/2; // average of the headway in front and behind
+							// double average_planned_headway = (trip->get_line()->calc_curr_line_headway_forward() + trip->get_line()->calc_curr_line_headway())/2;
+							double holding_departure_time = min(last_departures[trip->get_line()].second + average_curr_headway, last_departures[trip->get_line()].second + (trip->get_line()->calc_curr_line_headway() * trip->get_line()->get_ratio_headway_holding())); // headway ratio means here how tolerant we are to exceed the gap (1+(1-ratio)) -> 2-ratio
+						
+							return holding_departure_time;
+					}
 				}
-			}
+				break;
 			// for headway-based (looking both backward and forward and averaging)
 			case 6:
-			if (trip->get_line()->is_line_timepoint(this) == true && trip->get_line()->check_last_trip(trip) == false && trip->get_line()->check_first_trip(trip) == false) // if it is a time point and it is not the first or last trip
-			{
-					Bustrip* next_trip = trip->get_line()->get_next_trip(trip);
-					Bustrip* previous_trip = trip->get_line()->get_previous_trip(trip);
-					vector <Visit_stop*> :: iterator& next_trip_next_stop = next_trip->get_next_stop();
-					if (next_trip->check_end_trip() == false && (*next_trip_next_stop)->first != trip->get_line()->stops.front()&& previous_trip->check_end_trip() == false) // in case the next trip already started and the previous trip hadn't finished yet(otherwise - no base for holding)
-					{
-						vector <Visit_stop*> :: iterator curr_stop; // hold the scheduled time for this trip at this stop
-						for (vector <Visit_stop*> :: iterator trip_stops = next_trip->stops.begin(); trip_stops < next_trip->stops.end(); trip_stops++)
+				if (trip->get_line()->is_line_timepoint(this) == true && trip->get_line()->check_last_trip(trip) == false && trip->get_line()->check_first_trip(trip) == false) // if it is a time point and it is not the first or last trip
+				{
+						Bustrip* next_trip = trip->get_line()->get_next_trip(trip);
+						Bustrip* previous_trip = trip->get_line()->get_previous_trip(trip);
+						vector <Visit_stop*> :: iterator& next_trip_next_stop = next_trip->get_next_stop();
+						if (next_trip->check_end_trip() == false && (*next_trip_next_stop)->first != trip->get_line()->stops.front()&& previous_trip->check_end_trip() == false) // in case the next trip already started and the previous trip hadn't finished yet(otherwise - no base for holding)
 						{
-							if ((*trip_stops)->first->get_id() == this->get_id())
+							vector <Visit_stop*> :: iterator curr_stop; // hold the scheduled time for this trip at this stop
+							for (vector <Visit_stop*> :: iterator trip_stops = next_trip->stops.begin(); trip_stops < next_trip->stops.end(); trip_stops++)
 							{
-								curr_stop = trip_stops;
-								break;
+								if ((*trip_stops)->first->get_id() == this->get_id())
+								{
+									curr_stop = trip_stops;
+									break;
+								}
 							}
+							double expected_next_arrival = (*(next_trip_next_stop-1))->first->get_last_departure(trip->get_line()) + (*curr_stop)->second - (*(next_trip_next_stop-1))->second; // time at last stop + scheduled travel time between stops
+							double average_curr_headway = ((expected_next_arrival - time) + (time - last_departures[trip->get_line()].second))/2; // average of the headway in front and behind
+							// double average_planned_headway = (trip->get_line()->calc_curr_line_headway_forward() + trip->get_line()->calc_curr_line_headway())/2;
+							double holding_departure_time = last_departures[trip->get_line()].second + average_curr_headway; // headway ratio means here how tolerant we are to exceed the gap (1+(1-ratio)) -> 2-ratio
+						
+							return holding_departure_time;
 						}
-						double expected_next_arrival = (*(next_trip_next_stop-1))->first->get_last_departure(trip->get_line()) + (*curr_stop)->second - (*(next_trip_next_stop-1))->second; // time at last stop + scheduled travel time between stops
-						double average_curr_headway = ((expected_next_arrival - time) + (time - last_departures[trip->get_line()].second))/2; // average of the headway in front and behind
-						// double average_planned_headway = (trip->get_line()->calc_curr_line_headway_forward() + trip->get_line()->calc_curr_line_headway())/2;
-						double holding_departure_time = last_departures[trip->get_line()].second + average_curr_headway; // headway ratio means here how tolerant we are to exceed the gap (1+(1-ratio)) -> 2-ratio
-				
-						// account for passengers that board while the bus is holded at the time point
-						double holding_time = last_departures[trip->get_line()].second - time - dwelltime;
-						int additional_boarding = random -> poisson ((get_arrival_rates (trip)) * holding_time / 3600.0 );
-						nr_boarding += additional_boarding;
-						int curr_occupancy = trip->get_busv()->get_occupancy();  
-						trip->get_busv()->set_occupancy(curr_occupancy + additional_boarding); // Updating the occupancy
-		
-						return max(ready_to_depart, holding_departure_time);
-					}
-			}
+				}
+				break;
 			// for headway-based (looking both backward and forward and averaging) with max. according to planned headway
 			case 7:
-			if (trip->get_line()->is_line_timepoint(this) == true && trip->get_line()->check_last_trip(trip) == false && trip->get_line()->check_first_trip(trip) == false) // if it is a time point and it is not the first or last trip
-			{
-					Bustrip* next_trip = trip->get_line()->get_next_trip(trip);
-					Bustrip* previous_trip = trip->get_line()->get_previous_trip(trip);
-					vector <Visit_stop*> :: iterator& next_trip_next_stop = next_trip->get_next_stop();
-					if (next_trip->check_end_trip() == false && (*next_trip_next_stop)->first != trip->get_line()->stops.front()&& previous_trip->check_end_trip() == false) // in case the next trip already started and the previous trip hadn't finished yet(otherwise - no base for holding)
-					{
-						vector <Visit_stop*> :: iterator curr_stop; // hold the scheduled time for this trip at this stop
-						for (vector <Visit_stop*> :: iterator trip_stops = next_trip->stops.begin(); trip_stops < next_trip->stops.end(); trip_stops++)
+				if (trip->get_line()->is_line_timepoint(this) == true && trip->get_line()->check_last_trip(trip) == false && trip->get_line()->check_first_trip(trip) == false) // if it is a time point and it is not the first or last trip
+				{
+						Bustrip* next_trip = trip->get_line()->get_next_trip(trip);
+						Bustrip* previous_trip = trip->get_line()->get_previous_trip(trip);
+						vector <Visit_stop*> :: iterator& next_trip_next_stop = next_trip->get_next_stop();
+						if (next_trip->check_end_trip() == false && (*next_trip_next_stop)->first != trip->get_line()->stops.front()&& previous_trip->check_end_trip() == false) // in case the next trip already started and the previous trip hadn't finished yet(otherwise - no base for holding)
 						{
-							if ((*trip_stops)->first->get_id() == this->get_id())
+							vector <Visit_stop*> :: iterator curr_stop; // hold the scheduled time for this trip at this stop
+							for (vector <Visit_stop*> :: iterator trip_stops = next_trip->stops.begin(); trip_stops < next_trip->stops.end(); trip_stops++)
 							{
-								curr_stop = trip_stops;
-								break;
+								if ((*trip_stops)->first->get_id() == this->get_id())
+								{
+									curr_stop = trip_stops;
+									break;
+								}
 							}
-						}
-						double expected_next_arrival = (*(next_trip_next_stop-1))->first->get_last_departure(trip->get_line()) + (*curr_stop)->second - (*(next_trip_next_stop-1))->second; // time at last stop + scheduled travel time between stops
-						double average_curr_headway = ((expected_next_arrival - time) + (time - last_departures[trip->get_line()].second))/2; // average of the headway in front and behind
-						// double average_planned_headway = (trip->get_line()->calc_curr_line_headway_forward() + trip->get_line()->calc_curr_line_headway())/2;
-						double holding_departure_time = min(last_departures[trip->get_line()].second + average_curr_headway, last_departures[trip->get_line()].second + (trip->get_line()->calc_curr_line_headway() * trip->get_line()->get_ratio_headway_holding())); // headway ratio means here how tolerant we are to exceed the gap (1+(1-ratio)) -> 2-ratio
-				
-						// account for passengers that board while the bus is holded at the time point
-						double holding_time = last_departures[trip->get_line()].second - time - dwelltime;
-						int additional_boarding = random -> poisson ((get_arrival_rates (trip)) * holding_time / 3600.0 );
-						nr_boarding += additional_boarding;
-						int curr_occupancy = trip->get_busv()->get_occupancy();  
-						trip->get_busv()->set_occupancy(curr_occupancy + additional_boarding); // Updating the occupancy
+							double expected_next_arrival = (*(next_trip_next_stop-1))->first->get_last_departure(trip->get_line()) + (*curr_stop)->second - (*(next_trip_next_stop-1))->second; // time at last stop + scheduled travel time between stops
+							double average_curr_headway = ((expected_next_arrival - time) + (time - last_departures[trip->get_line()].second))/2; // average of the headway in front and behind
+							// double average_planned_headway = (trip->get_line()->calc_curr_line_headway_forward() + trip->get_line()->calc_curr_line_headway())/2;
+							double holding_departure_time = min(last_departures[trip->get_line()].second + average_curr_headway, last_departures[trip->get_line()].second + (trip->get_line()->calc_curr_line_headway() * trip->get_line()->get_ratio_headway_holding())); // headway ratio means here how tolerant we are to exceed the gap (1+(1-ratio)) -> 2-ratio
 		
-						return max(ready_to_depart, holding_departure_time);
+							return holding_departure_time;
+					}
 				}
-			}
+				break;
 			// for headway-based (looking both backward and forward and averaging and regarding not started trips) looking only at real departures
 			case 8:
 				if (trip->get_line()->is_line_timepoint(this) == true && trip->get_line()->check_last_trip(trip) == false && last_departures[trip->get_line()].second != 0 && this != trip->stops.front()->first) // if it is a time point and it is not the first or last trip or this is not the first stop
@@ -2272,17 +2246,11 @@ double Busstop::calc_exiting_time (Eventlist* eventlist, Bustrip* trip, double t
 						double average_curr_headway = ((expected_next_arrival - time) + (time - last_departures[trip->get_line()].second))/2; // average of the headway in front and behind
 						// double average_planned_headway = (trip->get_line()->calc_curr_line_headway_forward() + trip->get_line()->calc_curr_line_headway())/2;
 						double holding_departure_time = last_departures[trip->get_line()].second + average_curr_headway; // headway ratio means here how tolerant we are to exceed the gap (1+(1-ratio)) -> 2-ratio
-				
-						// account for passengers that board while the bus is holded at the time point
-						double holding_time = last_departures[trip->get_line()].second - time - dwelltime;
-						int additional_boarding = random -> poisson ((get_arrival_rates (trip)) * holding_time / 3600.0 );
-						nr_boarding += additional_boarding;
-						int curr_occupancy = trip->get_busv()->get_occupancy();  
-						trip->get_busv()->set_occupancy(curr_occupancy + additional_boarding); // Updating the occupancy
 		
-						return max(ready_to_depart, holding_departure_time);
+						return holding_departure_time;
 					}
-			}
+				}
+				break;
 			// for real-time corridor control 
 			case 10:
 				// find_next_downstream_hub();
@@ -2290,28 +2258,20 @@ double Busstop::calc_exiting_time (Eventlist* eventlist, Bustrip* trip, double t
 				
 				if (trip->get_line()->is_line_timepoint(this) == true) // only if this is a time point stop
 				{
-					// calc_nr_intermediate_stops ();
-				
+					// calc_nr_intermediate_stops ();	
 
 				// predicting which of the parallel line trips is expected to arrive directly afterwards 
 				// double holding_departure_time = calc_optimal_corridor_holding (trip); // based on Giorgos thesis
 
-					
 				// gives as output the holding time at this stop only
-				
-				// account for passengers that board while the bus is holded at the time point
-				// double holding_time = last_departures[trip->get_line()].second - time - dwelltime;
-				// int additional_boarding = random -> poisson ((get_arrival_rates (trip)) * holding_time / 3600.0 );
-				// nr_boarding += additional_boarding;
-				// int curr_occupancy = trip->get_busv()->get_occupancy();  
-				// trip->get_busv()->set_occupancy(curr_occupancy + additional_boarding); // Updating the occupancy
-				// return max(ready_to_depart, holding_departure_time);
+
+				// return holding_departure_time;
 				}
+				break;
 		default:
 			return time + dwelltime;
 	}
 }
-
 /*
 double Busstop::calc_optimal_corridor_holding (Bustrip* trip)
 {
