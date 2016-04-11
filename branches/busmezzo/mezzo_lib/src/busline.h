@@ -482,21 +482,21 @@ public:
 
 //	Action for visits to stop
 	bool execute(Eventlist* eventlist, double time);									  //!< is executed by the eventlist and means a bus needs to be processed
-	double passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, double time); //!< progress passengers at stop: waiting, boarding and alighting
+	void passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, double time);	  //!< progress passengers at stop: waiting, boarding and alighting
 	void book_bus_arrival(Eventlist* eventlist, double time, Bustrip* trip);			  //!< add to expected arrivals
 	double calc_exiting_time (Eventlist* eventlist, Bustrip* trip, double time);		  //!< To be implemented when time-points will work
-	double calc_holding_departure_time(Bustrip* trip, double time);						  // David added 2016-04-01 calculates departure time from stop when holding is used, returns dwelltime + time if no holding is used
 	
 // dwell-time calculation related functions	
-	double calc_dwelltime (Bustrip* trip);							//!< calculates the dwelltime of each bus serving this stop. currently includes: passenger service times ,out of stop, bay/lane		
-	bool check_out_of_stop (Bus* bus);								//!< returns TRUE if there is NO avaliable space for the bus at the stop (meaning the bus is out of the stop)
-	void occupy_length (Bus* bus);									//!< update avaliable length when bus arrives
-	void free_length (Bus* bus);									//!< update avaliable length when bus leaves
-	void update_last_arrivals (Bustrip* trip, double time);			//!< everytime a bus ENTERS it updates the last_arrivals vector 
-	void update_last_departures (Bustrip* trip, double time);		//!< everytime a bus EXITS it updates the last_departures vector 
-	double get_time_since_arrival (Bustrip* trip, double time);		//!< calculates the headway (defined as the differnece in time between sequential arrivals) 
-	double get_time_since_departure (Bustrip* trip, double time);	//!< calculates the headway (defined as the differnece in time between sequential departures) 
-	double find_exit_time_bus_in_front ();							//!< returns the exit time of the bus vehicle that entered the bus stop before a certain bus (the bus in front)
+	double calc_dwelltime (Bustrip* trip);								//!< calculates the dwelltime of each bus serving this stop. currently includes: passenger service times ,out of stop, bay/lane		
+	double calc_holding_departure_time(Bustrip* trip, double time);		// David added 2016-04-01 calculates departure time from stop when holding is used, returns dwelltime + time if no holding is used
+	bool check_out_of_stop (Bus* bus);									//!< returns TRUE if there is NO avaliable space for the bus at the stop (meaning the bus is out of the stop)
+	void occupy_length (Bus* bus);										//!< update avaliable length when bus arrives
+	void free_length (Bus* bus);										//!< update avaliable length when bus leaves
+	void update_last_arrivals (Bustrip* trip, double time);				//!< everytime a bus ENTERS it updates the last_arrivals vector 
+	void update_last_departures (Bustrip* trip, double time);			//!< everytime a bus EXITS it updates the last_departures vector 
+	double get_time_since_arrival (Bustrip* trip, double time);			//!< calculates the headway (defined as the differnece in time between sequential arrivals) 
+	double get_time_since_departure (Bustrip* trip, double time);		//!< calculates the headway (defined as the differnece in time between sequential departures) 
+	double find_exit_time_bus_in_front ();								//!< returns the exit time of the bus vehicle that entered the bus stop before a certain bus (the bus in front)
 
 // output-related functions
 	void write_output(ostream & out);
