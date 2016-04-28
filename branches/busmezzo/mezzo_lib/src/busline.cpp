@@ -2271,6 +2271,7 @@ double Busstop::calc_holding_departure_time (Bustrip* trip, double time)
 		default:
 			return time + dwelltime;
 	}
+	return time + dwelltime;
 }
 /*
 double Busstop::calc_optimal_corridor_holding (Bustrip* trip)
