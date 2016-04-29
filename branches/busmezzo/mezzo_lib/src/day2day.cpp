@@ -8,7 +8,7 @@ enum k {EXP, PK, RTI, anticip, anticip_EXP};
 enum l {e0, e1, crowding, e3, e4};
 enum m {wt, ivt};
 
-float &operator / (const Travel_time& lhs, const Travel_time& rhs)
+float operator/ (const Travel_time& lhs, const Travel_time& rhs)
 {
 	float quotient;
 	if (rhs.tt[anticip] > 0)
