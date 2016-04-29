@@ -46,7 +46,7 @@ class Grid
       bool write_empty(ostream& out);
       double sum (int column);
       double average (int column);
-      int size() {return grid.size();}
+      double size() {return grid.size();}
 	  vector <string> get_fieldnames () {return fnames;}
      private:
       int nr_fields;
@@ -72,7 +72,7 @@ class MOE
   double get_max();
  	void write_values(ostream & out, int nrperiods);
  	void write_value(ostream& out, int index);
- 	int get_size() {return values.size();}
+ 	double get_size() {return values.size();}
  private:
    double value_update;
    double scale;

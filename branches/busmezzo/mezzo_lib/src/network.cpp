@@ -320,7 +320,7 @@ void Network::delete_passengers()
 	}
 }
 
-void Network::end_of_simulation(double time)
+void Network::end_of_simulation()
 {
 	for (map<int,Link*>::iterator iter=linkmap.begin();iter != linkmap.end();iter++)
 	{
@@ -1050,7 +1050,7 @@ bool Network::readgiveway(istream& in)
 	in  >>  nid >> tin >> tcontr;
 	// check
 	assert (nodemap.count(nid));
-	Node* node = nodemap [nid];
+	// Node* node = nodemap [nid];
 	assert (turningmap.count(tin));
 	Turning * t_in = turningmap [tin];
 	assert (turningmap.count(tcontr));
@@ -1498,7 +1498,7 @@ return true;
 bool Network::readbusstop (istream& in) // reads a busstop
 {
   char bracket;
-  int stop_id, link_id, can_disregard, RTI_stop;
+  int stop_id, link_id, RTI_stop;
   double position, length, min_DT;
   string name;
 	bool has_bay, can_overtake;
@@ -1981,7 +1981,6 @@ bool Network::read_od_pairs_for_generation (string name)
 	ifstream in(name.c_str()); // open input file
 	assert (in);
 	string keyword;
-	int format, limit;
 	int nr= 0;
 	in >> keyword;
 	if (keyword!="ODpairs:")
@@ -2379,7 +2378,7 @@ bool Network::readbusstops_distances_format1 (istream& in)
 bool Network::readbusstops_distances_format2 (istream& in)
 {
 	char bracket;
-	int from_stop_id, to_stop_id, nr_stops;
+	int from_stop_id, nr_stops;
 	double distance;
 	string name;
 	in >> bracket;
@@ -2642,7 +2641,7 @@ void Network::generate_indirect_paths()
 	}
 	*/
 	vector<vector<Busline*>> lines_sequence = compose_line_sequence(collect_im_stops.back());
-	ODstops* od = collect_im_stops.front()->get_stop_od_as_origin_per_stop(collect_im_stops.back());
+	// ODstops* od = collect_im_stops.front()->get_stop_od_as_origin_per_stop(collect_im_stops.back());
 	/*
 	if (totaly_dominancy_rule(od,lines_sequence, stops_sequence) == true)
 	// in case it is dominated by an existing path - don't generate the path
@@ -4115,7 +4114,7 @@ bool Network::check_path_no_repeating_lines (vector<vector<Busline*>> lines, vec
 					// checking whether the two lines have the same path on the relevant segment (if so - no reason for transfer)
 					if ((*leg_lines1)->stops.size() != (*leg_lines2)->stops.size())
 					{
-						int i = 0;
+					
 					}
 					if ((*leg_lines1)->get_id() == (*leg_lines2)->get_id() || compare_common_partial_routes((*leg_lines1),(*leg_lines2),(*stops).front(), (*(stops+1)).front()) == true)
 					{
@@ -4777,7 +4776,7 @@ bool Network::read_OD_IVTT (pair<const ODSLL, Travel_time>& ivt_row)
 	const int& line_id = ivt_row.first.line;
 	const int& leg_id = ivt_row.first.leg;
 	double anticipated_in_vehicle_time = ivt_row.second.tt[anticip];
-	double alpha_exp = ivt_row.second.alpha[EXP];
+	// double alpha_exp = ivt_row.second.alpha[EXP];
 	
 	Busstop* bs_o = (*(find_if(busstops.begin(), busstops.end(), compare <Busstop> (origin_stop_id) )));	
 	Busstop* bs_d = (*(find_if(busstops.begin(), busstops.end(), compare <Busstop> (destination_stop_id) )));
@@ -4799,7 +4798,7 @@ bool Network::read_pass_IVTT (pair<const ODSLL, Travel_time>& ivt_row)
 	const int& line_id = ivt_row.first.line;
 	const int& leg_id = ivt_row.first.leg;
 	double anticipated_in_vehicle_time = ivt_row.second.tt[anticip];
-	double alpha_exp = ivt_row.second.alpha[EXP];
+	// double alpha_exp = ivt_row.second.alpha[EXP];
 	
 	Busstop* bs_o = (*(find_if(busstops.begin(), busstops.end(), compare <Busstop> (origin_stop_id) )));	
 	Busstop* bs_d = (*(find_if(busstops.begin(), busstops.end(), compare <Busstop> (destination_stop_id) )));
@@ -6480,7 +6479,7 @@ bool Network::find_alternatives_all (int lid, double penalty, Incident* incident
 	// Find all the affected links
 	Link* incident_link=linkmap[lid];
 	multimap <int, Route*> i_routemap = incident_link->get_routes();// get all routes through incident link
-	unsigned int nr_affected_routes = i_routemap.size();
+	// unsigned int nr_affected_routes = i_routemap.size();
 	multimap <int, Route*>::iterator rmiter=i_routemap.begin();
 	// get all affected (links,destinations) from each route, and store the origins as well
 	for (rmiter;rmiter != i_routemap.end(); rmiter++)
@@ -7067,7 +7066,7 @@ bool Network::writeall(unsigned int repl)
 	replication=repl;
 	string rep="";
 	string cleantimes;
-	end_of_simulation(runtime);
+	end_of_simulation();
 	string linktimesfile = filenames[10];
 	cleantimes=linktimesfile+".clean";
 	string summaryfile=filenames[12];
@@ -7206,7 +7205,6 @@ double Network::calc_rms_input_output_odtimes()
 	double n = odpairs.size();
 	double diff= 0.0;
 	double ssq = 0.0;
-	int nr_passed = 0;
 	for (vector<ODpair*>::iterator od_iter=odpairs.begin(); od_iter != odpairs.end(); od_iter++)
 	{
 		diff=(*od_iter)->get_diff_odtimes();

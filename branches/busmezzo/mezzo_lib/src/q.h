@@ -62,7 +62,7 @@ class Q
   inline const bool full() {return (vehicles.size() >= maxcap);}
   inline const bool empty(){return vehicles.empty();}
   inline const bool exit_ok() {return ok;}
-  inline const int size() {return vehicles.size();}
+  int size() {return vehicles.size();}
   inline const int queue(double time) {return (size()-nr_running(time));}
   inline const int nr_running(double time) 	{list <Veh_in_Q> :: iterator iter=(find_if (vehicles.begin(),vehicles.end(), compare_time (time) ) ); 	
   																	return distance(iter,vehicles.end());}

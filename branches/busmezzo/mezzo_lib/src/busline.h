@@ -216,8 +216,8 @@ public:
 	void set_line (Busline* line_) {line = line_;}
 	Busline* get_line () {return line;}
 	double get_starttime () {return starttime;}
-	int get_init_occup_per_stop () {return init_occup_per_stop;}
-	double get_nr_stops_init_occup () {return nr_stops_init_occup;}
+	double get_init_occup_per_stop () {return init_occup_per_stop;}
+	int get_nr_stops_init_occup () {return nr_stops_init_occup;}
 	vector <Visit_stop*> :: iterator& get_next_stop() {return next_stop;} //!< returns pointer to next stop
 	void set_enter_time (double enter_time_) {enter_time = enter_time_;}
 	double get_enter_time () {return enter_time;}
@@ -503,7 +503,7 @@ public:
 	Change_arrival_rate(double time); 
 	virtual ~Change_arrival_rate(); //!< destructor
 	void book_update_arrival_rates (Eventlist* eventlist, double time);
-	bool execute(Eventlist* eventlist, double time);
+	bool execute();
 	void add_line_nr_boarding_TD(Busstop* stop, Busline* line, double value){TD_single_pair TD; TD.first = line; TD.second = value; arrival_rates_TD[stop].insert(TD);}
 	void add_line_nr_alighting_TD(Busstop* stop, Busline* line, double value){TD_single_pair TD; TD.first = line; TD.second = value; alighting_fractions_TD[stop].insert(TD);}
 	

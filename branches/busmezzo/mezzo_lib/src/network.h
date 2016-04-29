@@ -149,7 +149,7 @@ public:
 	double executemaster(); //!< without GUI
 	int reset(); //!< resets the simulation to 0, clears all the state variables. returns runtime
 	void delete_passengers(); //Delete all passengers
-	void end_of_simulation(double time); //!< finalise all the temp values into containers (linktimes)
+	void end_of_simulation(); //!< finalise all the temp values into containers (linktimes)
 	double step(double timestep); //!< executes one step of simulation, called by the gui, returns current value of time
 	bool writeall(unsigned int repl=0); //writes the output, appends replication number to output files
 	bool readnetwork(string name); //!< reads the network and creates the appropriate structures

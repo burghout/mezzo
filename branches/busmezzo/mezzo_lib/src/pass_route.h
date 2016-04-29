@@ -41,7 +41,7 @@ class Pass_path
 //	double calc_total_scheduled_waiting_time (double time, bool without_first_waiting);
 	double calc_curr_leg_headway (vector<Busline*> leg_lines, vector <vector <Busstop*>>::iterator stop_iter, double time);
 //	double calc_curr_leg_waiting_schedule (vector<Busline*> leg_lines, vector <vector <Busstop*>>::iterator stop_iter, double arriving_time);
-	double calc_curr_leg_waiting_RTI (vector<Busline*> leg_lines, vector <vector <Busstop*>>::iterator stop_iter, double arriving_time, Passenger* pass);
+	double calc_curr_leg_waiting_RTI (vector<Busline*> leg_lines, vector <vector <Busstop*>>::iterator stop_iter, double arriving_time);
 
 	double calc_arriving_utility (double time, Passenger* pass);
 	double calc_waiting_utility (vector <vector <Busstop*>>::iterator stop_iter, double time, bool alighting_decision, Passenger* pass);
