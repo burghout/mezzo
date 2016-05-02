@@ -1699,11 +1699,8 @@ void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, d
 		trip->get_busv()->set_occupancy(trip->get_busv()->get_occupancy()-nr_alighting);	// update occupancy on bus
 
 		// * Passengers on-board
-<<<<<<< HEAD
 		//int avialable_seats = trip->get_busv()->get_occupancy() - trip->get_busv()->get_number_seats();
-=======
 		int available_seats = trip->get_busv()->get_occupancy() - trip->get_busv()->get_number_seats();
->>>>>>> origin/busmezzo_test
 		map <Busstop*, passengers> passengers_onboard = trip->get_passengers_on_board();
 		bool next_stop = false;
 		map <Busstop*, passengers>::iterator downstream_stops = passengers_onboard.end();
@@ -2253,13 +2250,12 @@ double Busstop::calc_holding_departure_time (Bustrip* trip, double time)
 		
 						return holding_departure_time;
 					}
-<<<<<<< HEAD
 			}
 			// Rule-based headway-based control with passenger load to boarding ratio (based on Erik's formulation)
 			// basically copying case 6 and then substracting the passenegr ratio term
 			case 9:
-			if (trip->get_line()->is_line_timepoint(this) == true && trip->get_line()->check_last_trip(trip) == false && trip->get_line()->check_first_trip(trip) == false) // if it is a time point and it is not the first or last trip
-			{
+				if (trip->get_line()->is_line_timepoint(this) == true && trip->get_line()->check_last_trip(trip) == false && trip->get_line()->check_first_trip(trip) == false) // if it is a time point and it is not the first or last trip
+			    {
 					Bustrip* next_trip = trip->get_line()->get_next_trip(trip);
 					Bustrip* previous_trip = trip->get_line()->get_previous_trip(trip);
 					vector <Visit_stop*> :: iterator& next_trip_next_stop = next_trip->get_next_stop();
@@ -2295,14 +2291,11 @@ double Busstop::calc_holding_departure_time (Bustrip* trip, double time)
 						nr_boarding += additional_boarding;
 						int curr_occupancy = trip->get_busv()->get_occupancy();  
 						trip->get_busv()->set_occupancy(curr_occupancy + additional_boarding); // Updating the occupancy
-						return max(ready_to_depart, holding_departure_time);
+						return holding_departure_time;
 					}
 			}
-=======
-				}
-				break;
->>>>>>> origin/busmezzo_test
 			// for real-time corridor control 
+			/*
 			case 10:
 				// find_next_downstream_hub();
 				// calc_planned_offset_Tomer_function (); // at the moment calc it exogenously
@@ -2315,7 +2308,6 @@ double Busstop::calc_holding_departure_time (Bustrip* trip, double time)
 				// double holding_departure_time = calc_optimal_corridor_holding (trip); // based on Giorgos thesis
 
 				// gives as output the holding time at this stop only
-<<<<<<< HEAD
 				
 				// account for passengers that board while the bus is holded at the time point
 				// double holding_time = last_departures[trip->get_line()].second - time - dwelltime;
@@ -2326,12 +2318,10 @@ double Busstop::calc_holding_departure_time (Bustrip* trip, double time)
 				// return max(ready_to_depart, holding_departure_time);
 				}	
 
-=======
 
 				// return holding_departure_time;
-				}
 				break;
->>>>>>> origin/busmezzo_test
+			*/
 		default:
 			return time + dwelltime;
 	}
