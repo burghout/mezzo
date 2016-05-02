@@ -1589,7 +1589,7 @@ void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, d
 	if (theParameters->demand_format == 3 || theParameters->demand_format == 4)   // demand is given in terms of arrival rate of individual passengers per OD of stops (future - route choice)
 	{	
 		// * Alighting passengers *
-		nr_alighting =  trip->passengers_on_board[this].size(); 
+		nr_alighting = static_cast<int> ( trip->passengers_on_board[this].size()); 
 		for (vector <Passenger*> ::iterator alighting_passenger = trip->passengers_on_board[this].begin(); alighting_passenger != trip->passengers_on_board[this].end(); alighting_passenger++)
 		{
 			pair<Busstop*,double> stop_time;
@@ -2458,7 +2458,7 @@ int Busstop::calc_total_nr_waiting ()
 		for (map <Busstop*, ODstops*>::iterator destination_stop = stop_as_origin.begin(); destination_stop != stop_as_origin.end(); destination_stop++)
 				// going through all the stops that this stop is their origin on a given OD pair
 		{
-			total_nr_waiting += (*destination_stop).second->get_waiting_passengers().size();
+			total_nr_waiting += static_cast<int>((*destination_stop).second->get_waiting_passengers().size());
 		}
 	}
 return total_nr_waiting;

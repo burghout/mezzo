@@ -988,7 +988,7 @@ creates automatically new turnings for all junctions, using server nr 0 from the
 */
 {
 	cout << "network::create turnings :" << endl;
-	int tid=turningmap.size();
+	int tid=static_cast<int>(turningmap.size());
 	int size= theParameters->default_lookback_size;
 	vector<Link*> incoming;
 	vector<Link*> outgoing;
@@ -4938,6 +4938,7 @@ bool Network::read_dwell_time_function (istream& in)
     cout << "readfile::readbustype scanner jammed at " << bracket;
     return false;
   }
+  return true;
 }
 
 bool Network::read_bustype (istream& in) // reads a bustype
@@ -5348,7 +5349,7 @@ bool Network::add_od_routes()
 			//nr_deleted += (*iter)->delete_spurious_routes(runtime/4).size(); // deletes all the spurious routes in the route set.
 		}
 	}
-	nr_deleted = deleted_routes.size();
+	nr_deleted = static_cast<int>(deleted_routes.size());
 	if (nr_deleted > 0 )
 		cout << nr_deleted << " routes deleted" << endl;
 
@@ -6275,7 +6276,7 @@ bool Network::init_shortest_path()
 */
 {
 	int lid,in,out,routenr;
-	routenr=routemap.size();
+	routenr=static_cast<int>(routemap.size());
 	double cost, mu, sd;
 	random=new (Random);
 

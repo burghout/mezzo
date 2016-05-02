@@ -283,6 +283,7 @@ double ODstops::calc_boarding_probability (Busline* arriving_bus, double time, P
 		staying_utility = 2.0;
 		return 0;
 	}
+	return 0;
 }
 
 bool ODstops::check_if_path_is_dominated (Pass_path* considered_path, vector<Pass_path*> arriving_paths)

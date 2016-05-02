@@ -710,7 +710,7 @@ void Link::write_ass_matrix (ostream & out, int linkflowperiod)
 		
 		for (unsigned int h=0; h<ass_matrix[linkflowperiod].size(); ++h)
 		{
-			no_entries += ass_iter->second.size();
+			no_entries += static_cast<int>(ass_iter->second.size());
 			ass_iter++;
 		}
 		
