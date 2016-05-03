@@ -1115,6 +1115,15 @@ pair<double, double> Bustrip::crowding_dt_factor (double nr_boarding, double nr_
 	return crowding_factor;
 }
 
+vector <Busstop*> Bustrip::get_downstream_stops()
+{
+	vector <Busstop*> remaining_stops;
+	for(vector <Visit_stop*> :: iterator stop = next_stop; stop < stops.end(); stop++)
+	{
+		remaining_stops.push_back((*stop)->first);
+	}
+	return remaining_stops;
+}
 /* will be relevant only when time points will be trip-specific
 bool Bustrip::is_trip_timepoint (Busstop* stop)
 {

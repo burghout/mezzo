@@ -280,6 +280,8 @@ public:
 	static double find_crowding_coeff (bool sits, double load_factor);					//!< returns the crowding coefficeint based on lod factor and pass. seating/standing
 	pair<double, double> crowding_dt_factor (double nr_boarding, double nr_alighting);
 
+	vector <Busstop*> get_downstream_stops(); //!< return the remaining stops to be visited starting from 'next_stop', returns empty Busstop vector if there are none
+
 // output-related functions
 	void write_assign_segments_output(ostream & out);
 	void record_passenger_loads (vector <Visit_stop*>::iterator start_stop); //!< creates a log-file for passenegr load assignment info
