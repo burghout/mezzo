@@ -2291,7 +2291,7 @@ double Busstop::calc_holding_departure_time (Bustrip* trip, double time)
 						{
 							vector <Visit_stop*> :: iterator& next_stop = trip->get_next_stop(); // finding the arrival rate (lambda) at the next stop along this line 
 							double arrival_rate_next_stop = (*next_stop)->first->get_arrival_rates(trip); 
-							pass_ratio = (trip->get_busv()->get_occupancy() - nr_alighting) / ((2/60) * arrival_rate_next_stop); 
+							pass_ratio = (trip->get_busv()->get_occupancy() - nr_alighting + nr_boarding) / ((2/60) * arrival_rate_next_stop); 
 						}
 						double holding_departure_time = max(last_departures[trip->get_line()].second + average_curr_headway - (pass_ratio*60), last_departures[trip->get_line()].second + (trip->get_line()->calc_curr_line_headway() * trip->get_line()->get_ratio_headway_holding())); // headway ratio means here how tolerant we are to exceed the gap (1+(1-ratio)) -> 2-ratio
 				
