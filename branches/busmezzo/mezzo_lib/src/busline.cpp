@@ -756,6 +756,7 @@ Bustrip::Bustrip ()
 	last_stop_exit_time = 0;
 	last_stop_enter_time = 0;
 	last_stop_visited = stops.front()->first;
+	holding_at_stop = false;
 	actual_dispatching_time = 0.0;
 	for (vector <Visit_stop*>::iterator visit_stop_iter = stops.begin(); visit_stop_iter < stops.end(); visit_stop_iter++)
 	{
@@ -780,6 +781,7 @@ Bustrip::Bustrip (int id_, double start_time_, Busline* line_): id(id_), startti
 	actual_dispatching_time = 0.0;
 	last_stop_enter_time = 0;
 	last_stop_exit_time = 0;
+	holding_at_stop = false;
 	for (vector<Visit_stop*>::iterator visit_stop_iter = stops.begin(); visit_stop_iter < stops.end(); visit_stop_iter++)
 	{
 		assign_segements[(*visit_stop_iter)->first] = 0;
@@ -1012,8 +1014,18 @@ void Bustrip::write_assign_segments_output(ostream & out)
 
 void Bustrip::record_passenger_loads (vector <Visit_stop*>::iterator start_stop)
 {	
-	output_passenger_load.push_back(Bustrip_assign(line->get_id(), id, busv->get_id(), (*start_stop)->first->get_id() , (*(start_stop+1))->first->get_id()  ,assign_segements[(*start_stop)->first]));
-	this->get_line()->add_record_passenger_loads_line((*start_stop)->first, (*(start_stop+1))->first,assign_segements[(*start_stop)->first]);
+	if(!holding_at_stop) 
+	{
+		output_passenger_load.push_back(Bustrip_assign(line->get_id(), id, busv->get_id(), (*start_stop)->first->get_id() , (*(start_stop+1))->first->get_id()  ,assign_segements[(*start_stop)->first]));
+		this->get_line()->add_record_passenger_loads_line((*start_stop)->first, (*(start_stop+1))->first,assign_segements[(*start_stop)->first]);
+	}
+	else //David added 2016-05-26: overwrite previous record_passenger_loads if this is the second call to pass_activity_at_stop
+	{
+		--start_stop; //decrement start stop since we have already advanced 'next_stop'
+		output_passenger_load.pop_back();
+		output_passenger_load.push_back(Bustrip_assign(line->get_id(), id, busv->get_id(), (*start_stop)->first->get_id() , (*(start_stop+1))->first->get_id()  ,assign_segements[(*start_stop)->first]));
+		this->get_line()->add_record_passenger_loads_line((*start_stop)->first, (*(start_stop+1))->first,assign_segements[(*start_stop)->first]);
+	}
 }
 
 double Bustrip::find_crowding_coeff (Passenger* pass)
@@ -1260,6 +1272,12 @@ bool Busstop::execute(Eventlist* eventlist, double time) // is executed by the e
 	if (bus_exit == true) 
 	// if there is an exiting bus
 	{
+		if(exiting_trip->get_holding_at_stop()) //David added 2016-05-26: the exiting trip is holding and needs to account for additional passengers that board during the holding period
+		{
+			passenger_activity_at_stop(eventlist,exiting_trip,time);
+			exiting_trip->set_holding_at_stop(false); //exiting trip is not holding anymore
+		}
+
 		Vehicle* veh =  (Vehicle*)(exiting_trip->get_busv()); // so we can do vehicle operations
 		free_length (exiting_trip->get_busv());
 		double relative_length;
@@ -2047,14 +2065,23 @@ double Busstop::calc_exiting_time (Eventlist* eventlist, Bustrip* trip, double t
 	double holding_departure_time = calc_holding_departure_time(trip, time); //David added 2016-04-01
 	double ready_to_depart = max(time + dwelltime, holding_departure_time);
 
-	if(ready_to_depart > time + dwelltime)
+	if(theParameters->demand_format == 1 || theParameters->demand_format == 2 || theParameters->demand_format == 10)
+		if(ready_to_depart > time + dwelltime)
+		{
+			// account for additional passengers that board while the bus is held at the time point
+			double holding_time = last_departures[trip->get_line()].second - time - dwelltime;
+			int additional_boarding = random -> poisson ((get_arrival_rates (trip)) * holding_time / 3600.0 );
+			nr_boarding += additional_boarding;
+			int curr_occupancy = trip->get_busv()->get_occupancy();  
+			trip->get_busv()->set_occupancy(curr_occupancy + additional_boarding); // Updating the occupancy
+		}
+
+	if(theParameters->demand_format == 3 || theParameters->demand_format == 4) 
 	{
-		// account for additional passengers that board while the bus is held at the time point
-		double holding_time = last_departures[trip->get_line()].second - time - dwelltime;
-		int additional_boarding = random -> poisson ((get_arrival_rates (trip)) * holding_time / 3600.0 );
-		nr_boarding += additional_boarding;
-		int curr_occupancy = trip->get_busv()->get_occupancy();  
-		trip->get_busv()->set_occupancy(curr_occupancy + additional_boarding); // Updating the occupancy
+		if(ready_to_depart > time + dwelltime)
+		{
+			trip->set_holding_at_stop(true); //David added 2016-05-26: set indicator that additional passengers that board whil bus is held at time point need to be accounting for at the bus's exit time
+		}
 	}
 
 	return ready_to_depart;

@@ -265,6 +265,9 @@ public:
 	double get_actual_dispatching_time () {return actual_dispatching_time;}
 	map <Busstop*, passengers> get_passengers_on_board () {return passengers_on_board;}
 
+	void set_holding_at_stop(bool holding_at_stop_){holding_at_stop = holding_at_stop_;} //David added 2016-05-26
+	bool get_holding_at_stop(){return holding_at_stop;} //David added 2016-05-26
+
 // other functions:	
 //	bool is_trip_timepoint(Busstop* stop); //!< returns 1 if true, 0 if false, -1 if busstop not found
 	bool activate (double time, Route* route, ODpair* odpair, Eventlist* eventlist_);	//!< activates the trip. Generates the bus and inserts in net.
@@ -310,6 +313,7 @@ protected:
 	double last_stop_exit_time;					  //!< the time stamp of the exit time from the last stop that had been visited by this trip
 	double last_stop_enter_time; 
 	Busstop* last_stop_visited;
+	bool holding_at_stop;						 //!< David added 2016-05-26: true if the trip is currently holding at a stop, false otherwise (used for progressing passengers in case of holding for demand format 3 and 4, should always be false for other formats)
 	//	map <Busstop*,bool> trips_timepoint;	 //!< will be relevant only when time points are trip-specific. binary map with time point indicatons for stops on route only (according to the schedule input file)  
 	Eventlist* eventlist;						 //!< for use by busstops etc to book themselves.
 };
