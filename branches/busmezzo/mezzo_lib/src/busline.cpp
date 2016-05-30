@@ -2066,6 +2066,7 @@ double Busstop::calc_exiting_time (Eventlist* eventlist, Bustrip* trip, double t
 	double ready_to_depart = max(time + dwelltime, holding_departure_time);
 
 	if(theParameters->demand_format == 1 || theParameters->demand_format == 2 || theParameters->demand_format == 10)
+	{
 		if(ready_to_depart > time + dwelltime)
 		{
 			// account for additional passengers that board while the bus is held at the time point
@@ -2075,6 +2076,7 @@ double Busstop::calc_exiting_time (Eventlist* eventlist, Bustrip* trip, double t
 			int curr_occupancy = trip->get_busv()->get_occupancy();  
 			trip->get_busv()->set_occupancy(curr_occupancy + additional_boarding); // Updating the occupancy
 		}
+	}
 
 	if(theParameters->demand_format == 3 || theParameters->demand_format == 4) 
 	{
