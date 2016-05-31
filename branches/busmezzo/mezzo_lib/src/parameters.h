@@ -194,6 +194,8 @@ public:
    double dwell_time_weight;
    double waiting_time_weight;
    double holding_time_weight;
+   int Bus_horizon;
+   int Stop_horizon;
 
 // day2day assignment
    double default_alpha_RTI;

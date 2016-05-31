@@ -713,6 +713,20 @@ bool Parameters::read_parameters (istream & in )
 	}
 	in >> holding_time_weight;
 	in >> keyword;
+	if (keyword!= "Bus_horizon=")
+	{
+		cout << "ERROR reading Parameters file, expecting: Bus_horizon=, read: " << keyword << endl;
+		return false;
+	}
+	in >> Bus_horizon;
+	in >> keyword;
+	if (keyword!= "Stop_horizon=")
+	{
+		cout << "ERROR reading Parameters file, expecting: Stop_horizon=, read: " << keyword << endl;
+		return false;
+	}
+	in >> Stop_horizon;
+	in >> keyword;
 	if (keyword!= "#day2day_assignment")
 	{
 		cout << "ERROR reading Parameters file, expecting: #day2day_assignment, read: " << keyword << endl;
