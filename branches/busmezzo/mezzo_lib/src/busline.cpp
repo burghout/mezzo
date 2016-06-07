@@ -2312,20 +2312,25 @@ double Busstop::calc_holding_departure_time (Bustrip* trip, double time)
 						double average_curr_headway = ((expected_next_arrival - time) + (time - last_departures[trip->get_line()].second))/2; // average of the headway in front and behind
 						// double average_planned_headway = (trip->get_line()->calc_curr_line_headway_forward() + trip->get_line()->calc_curr_line_headway())/2;
 						double pass_ratio;
-						if (arrival_rates[trip->get_line()] == 0)
+		
+						vector <Visit_stop*> :: iterator& next_stop = trip->get_next_stop(); // finding the arrival rate (lambda) at the next stop along this line 
+						double sum_arrival_rate_next_stops = 0.0;
+						for (vector <Visit_stop*> :: iterator trip_stops = trip->get_next_stop(); trip_stops < trip->stops.end(); trip_stops++)
+						{
+							sum_arrival_rate_next_stops += (*trip_stops)->first->get_arrival_rates(trip); 
+						}
+						if (sum_arrival_rate_next_stops == 0)
 						{
 							pass_ratio = 0.0;
 						}
 						else
 						{
-							vector <Visit_stop*> :: iterator& next_stop = trip->get_next_stop(); // finding the arrival rate (lambda) at the next stop along this line 
-							double arrival_rate_next_stop = (*next_stop)->first->get_arrival_rates(trip); 
-							pass_ratio = (trip->get_busv()->get_occupancy() - nr_alighting + nr_boarding) / ((2/60) * arrival_rate_next_stop); 
+							sum_arrival_rate_next_stops = sum_arrival_rate_next_stops / 3600;
+							pass_ratio = (trip->get_busv()->get_occupancy() - nr_alighting + nr_boarding) / (2 * 2 * sum_arrival_rate_next_stops); 
 						}
-						double holding_departure_time = max(last_departures[trip->get_line()].second + average_curr_headway - (pass_ratio*60), last_departures[trip->get_line()].second + (trip->get_line()->calc_curr_line_headway() * trip->get_line()->get_ratio_headway_holding())); // headway ratio means here how tolerant we are to exceed the gap (1+(1-ratio)) -> 2-ratio
+						double holding_departure_time = min(last_departures[trip->get_line()].second + average_curr_headway - (pass_ratio), last_departures[trip->get_line()].second + (trip->get_line()->calc_curr_line_headway() * trip->get_line()->get_ratio_headway_holding())); // headway ratio means here how tolerant we are to exceed the gap (1+(1-ratio)) -> 2-ratio
 				
-
-						// account for passengers that board while the bus is holded at the time point
+						// account for passengers that board while the bus is held at the time point
 						double holding_time = last_departures[trip->get_line()].second - time - dwelltime;
 						int additional_boarding = random -> poisson ((get_arrival_rates (trip)) * holding_time / 3600.0 );
 						nr_boarding += additional_boarding;
@@ -2333,6 +2338,7 @@ double Busstop::calc_holding_departure_time (Bustrip* trip, double time)
 						trip->get_busv()->set_occupancy(curr_occupancy + additional_boarding); // Updating the occupancy
 						return holding_departure_time;
 					}
+				
 			}
 			// for real-time corridor control 
 			/*
