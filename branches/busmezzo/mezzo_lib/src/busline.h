@@ -146,6 +146,7 @@ public:
 	void add_disruptions (Busstop* from_stop, Busstop* to_stop, double disruption_start_time, double disruption_end_time, double cap_reduction);
 	
 	// checks
+	bool check_last_stop (Busstop* stop);
 	bool is_line_timepoint (Busstop* stop);											//!< returns true if stops is a time point for this busline, otherwise it returns false
 	bool check_first_stop (Busstop* stop);											//!< returns true if the stop is the first stop on the bus line, otherwise it returns false 
 	bool check_first_trip (Bustrip* trip);											//!< returns true if the trip is the first trip on the bus line, otherwise it returns false  
@@ -279,11 +280,12 @@ public:
 	bool check_end_trip ();																//!< returns 1 if true, 0 if false
 	double calc_departure_time (double time);											//!< calculates departure time from origin according to arrival time and schedule (including layover effect)
 	void convert_stops_vector_to_map();													//!< building stops_map
+	void convert_downstreamstops_vector_to_map(vector <Visit_stop*> down_stops);													//!< building stops_map
 	double find_crowding_coeff (Passenger* pass);										//!< returns the crowding coefficeint based on lod factor and pass. seating/standing
 	static double find_crowding_coeff (bool sits, double load_factor);					//!< returns the crowding coefficeint based on lod factor and pass. seating/standing
 	pair<double, double> crowding_dt_factor (double nr_boarding, double nr_alighting);
-
 	vector <Busstop*> get_downstream_stops(); //!< return the remaining stops to be visited starting from 'next_stop', returns empty Busstop vector if there are none
+	vector <Visit_stop*> get_downstream_stops_till_horizon(Visit_stop* target_stop); //!< return the remaining stops to be visited starting from 'next_stop'
 
 // output-related functions
 	void write_assign_segments_output(ostream & out);
@@ -292,11 +294,12 @@ public:
 // public vectors
 	vector <Visit_stop*> stops;						//!< contains all the busstops and the times that they are supposed to be served. NOTE: this can be a subset of the total nr of stops in the Busline (according to the schedule input file)
 	map <Busstop*, double> stops_map;
+	map <Busstop*, double> downstream_stops_map;
 	vector <Start_trip*> driving_roster;			//!< trips assignment for each bus vehicle.
 	map <Busstop*, passengers> passengers_on_board; //!< passenger on-board stored by their alighting stop (format 3)
 	map <Busstop*, int> nr_expected_alighting;		//!< number of passengers expected to alight at the busline's stops (format 2)
 	map <Busstop*, int> assign_segements;			//!< contains the number of pass. travelling between trip segments
-
+	vector <Busstop*> down_stops;
 protected:
 	int id;										  //!< course nr
 	Bus* busv;									  //!< pointer to the bus vehicle

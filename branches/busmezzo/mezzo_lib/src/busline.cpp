@@ -154,6 +154,15 @@ bool Busline::check_first_stop (Busstop* stop)
 return false;
 }
 
+bool Busline::check_last_stop (Busstop* stop)
+{
+	if (stop== stops.back())
+	{
+		return true;
+	}
+	return false;
+}
+
 bool Busline::check_first_trip (Bustrip* trip)
 {
 	if (trip == trips.begin()->first)
@@ -833,6 +842,15 @@ void Bustrip::convert_stops_vector_to_map ()
 	}
 }
 
+void Bustrip::convert_downstreamstops_vector_to_map (vector <Visit_stop*> down_stops)
+{
+	for (vector <Visit_stop*>::iterator stop_iter = down_stops.begin(); stop_iter < down_stops.end(); stop_iter++)
+	{
+		downstream_stops_map[(*stop_iter)->first] =(*stop_iter)->second;
+	}
+}
+
+
 double Bustrip::calc_departure_time (double time) // calculates departure time from origin according to arrival time and schedule (including layover effect)
 {
 	double min_recovery = 30.00; 
@@ -874,6 +892,7 @@ double Bustrip::calc_departure_time (double time) // calculates departure time f
 
 bool Bustrip::advance_next_stop (double time, Eventlist* eventlist)
 {
+	// TODO - vec.end is post last 
 	if (busv->get_on_trip()== true && next_stop < stops.end()) // progress to the next stop, unless it is the last stop for this trip
 	{
 		next_stop++;
@@ -1133,6 +1152,24 @@ vector <Busstop*> Bustrip::get_downstream_stops()
 	for(vector <Visit_stop*> :: iterator stop = next_stop; stop < stops.end(); stop++)
 	{
 		remaining_stops.push_back((*stop)->first);
+	}
+	return remaining_stops;
+}
+
+vector <Visit_stop*> Bustrip::get_downstream_stops_till_horizon(Visit_stop *target_stop)
+{
+	vector <Visit_stop*> remaining_stops;
+	for(vector <Visit_stop*> :: iterator stop = next_stop; stop < stops.end(); stop++)
+	{
+		if ((*stop)->first != (target_stop)->first)
+		{
+			remaining_stops.push_back(*stop);
+		}
+		else
+		{
+			remaining_stops.push_back(*stop);
+			break;
+		}
 	}
 	return remaining_stops;
 }
@@ -2341,13 +2378,76 @@ double Busstop::calc_holding_departure_time (Bustrip* trip, double time)
 				
 			}
 			// for real-time corridor control 
-			/*
+			
 			case 10:
 				// find_next_downstream_hub();
 				// calc_planned_offset_Tomer_function (); // at the moment calc it exogenously
 				
-				if (trip->get_line()->is_line_timepoint(this) == true) // only if this is a time point stop
+				if ( (trip->get_line()->is_line_timepoint(this)) && !(trip->get_line()->check_last_trip(trip)) ) // if it is a time point and it is not the last trip
 				{
+					vector <Visit_stop*> :: iterator target_stop = trip->get_next_stop(); //target stop contains a pointer to the target stop according to the stop horizon
+					for (int i=1; i<theParameters->Stop_horizon; i++, ++target_stop)
+					{
+						if (trip->get_line()->check_last_stop((*target_stop)->first))
+						{	
+							break;
+						}
+					}
+					vector<Start_trip> trips = trip->get_line()->get_trips();  //return the trips for the line
+					for (vector <Start_trip> :: iterator it = trips.begin(); it < trips.end(); ++it)
+					{
+						vector <Visit_stop*> down_stops = (*it).first->get_downstream_stops_till_horizon(*target_stop); //Check what if the trip is after the target stop
+						for (size_t i=1; i< down_stops.size(); ++i)
+						{
+							if (i != 0) {
+								down_stops[i]->second = it->first->get_last_stop_exit_time() - down_stops[0]->second  + down_stops[i]->second; //down_stops[0] give me the scheduale time of the stop that I exited
+							}
+							if (down_stops[i]->first == this)
+							{
+								it->second = down_stops[i]->second;
+							}
+						}	
+					}
+					
+					Start_trip temp_trip = trips.begin;
+					for (size_t i=0; i< trips.size(); ++i) {
+						for (size_t j=0; j< trips.size()-i-1; ++j) {
+							if (trips[j].second < trips[j+1].second) {
+								temp_trip = trips[j];
+								trips[j] = trips[j+1];
+								trips[j+1] = temp_trip;
+							}
+						}
+					}
+
+
+
+					
+					/*
+					size_t best1 = 0 , best2 = 0 , best3 = 0;
+					
+					for (size_t i=1; i< trips.size(); ++i) {
+						if (trips[i].second < trips[best1].second) {
+							best3 = best2;
+							best2 =  best1;
+							best1 = i;
+							continue;
+						}
+						if (trips[i].second < trips[best2].second) {
+							best3 = best2;
+							best2 = i;
+							continue;
+						}
+						if (trips[i].second < trips[best2].second) {
+							best3 = i;
+						}
+					}*/
+
+
+
+
+					
+					
 					// calc_nr_intermediate_stops ();	
 
 				// predicting which of the parallel line trips is expected to arrive directly afterwards 
@@ -2367,7 +2467,7 @@ double Busstop::calc_holding_departure_time (Bustrip* trip, double time)
 
 				// return holding_departure_time;
 				break;
-			*/
+			
 		default:
 			return time + dwelltime;
 	}
