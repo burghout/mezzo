@@ -2377,8 +2377,7 @@ double Busstop::calc_holding_departure_time (Bustrip* trip, double time)
 					}
 				
 			}
-			// for real-time corridor control 
-			
+			// for real-time corridor control 		
 			case 10:
 				// find_next_downstream_hub();
 				// calc_planned_offset_Tomer_function (); // at the moment calc it exogenously
@@ -2396,29 +2395,49 @@ double Busstop::calc_holding_departure_time (Bustrip* trip, double time)
 					vector<Start_trip> trips = trip->get_line()->get_trips();  //return the trips for the line
 					for (vector <Start_trip> :: iterator it = trips.begin(); it < trips.end(); ++it)
 					{
-						vector <Visit_stop*> down_stops = (*it).first->get_downstream_stops_till_horizon(*target_stop); //Check what if the trip is after the target stop
-						for (size_t i=1; i< down_stops.size(); ++i)
+						(*it).first->down_stops = (*it).first->get_downstream_stops_till_horizon(*target_stop); //Check what if the trip is after the target stop
+						for (size_t i=0; i< (*it).first->down_stops.size(); ++i)
 						{
 							if (i != 0) {
-								down_stops[i]->second = it->first->get_last_stop_exit_time() - down_stops[0]->second  + down_stops[i]->second; //down_stops[0] give me the scheduale time of the stop that I exited
+								 (*it).first->down_stops[i]->second = it->first->get_last_stop_exit_time() -  (*it).first->down_stops[i-1]->second  +  (*it).first->down_stops[i]->second; //down_stops[0] give me the scheduale time of the stop that I exited
 							}
-							if (down_stops[i]->first == this)
+							if ( (*it).first->down_stops[i]->first == this)
 							{
-								it->second = down_stops[i]->second;
+								it->second =  (*it).first->down_stops[i]->second;
 							}
 						}	
 					}
-					
-					Start_trip temp_trip = trips.begin;
+					//sort trips according to their start trip time. maybe not needed (if already sorted)
+					Start_trip temp_trip = trips[0];
 					for (size_t i=0; i< trips.size(); ++i) {
 						for (size_t j=0; j< trips.size()-i-1; ++j) {
-							if (trips[j].second < trips[j+1].second) {
+							if (trips[j].second > trips[j+1].second) {
 								temp_trip = trips[j];
 								trips[j] = trips[j+1];
 								trips[j+1] = temp_trip;
 							}
 						}
 					}
+					//build a vector of trips to handle on the same line, these trips are all the trips that already
+					//visited my stop and did not pass the target stop and trips behind me according to the bus_horizon
+					vector<Start_trip> trips_to_handle;
+					int k=0;
+					while (trips[k].first != trip)
+					{
+						if (trips[k].first->down_stops.size() > 0) {
+							trips_to_handle.push_back(trips[k]);
+						}
+						k++;
+					}
+					int j=0;
+					while (j < theParameters->Bus_horizon & !trips[k].first->get_line()->check_last_trip(trips[k].first) )
+					{
+						if (trips[k].first->down_stops.size() > 0) {
+							trips_to_handle.push_back(trips[k]);
+						}
+						k++,j++;
+					}
+					
 
 
 
