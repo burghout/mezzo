@@ -140,10 +140,18 @@ public:
 	vector <Start_trip>::iterator get_curr_trip() {return curr_trip;} 
 	vector <Start_trip> get_trips () {return trips;}
 
+	//transfer gets and sets
+	int	get_tr_line_id() {return tr_line_id;}
+	vector <Busstop*> get_tr_stops() {return tr_stops;}
+
 	// initialization
 	void add_timepoints (vector <Busstop*> tp) {line_timepoint = tp;}
 	void add_trip(Bustrip* trip, double starttime){trips.push_back(Start_trip(trip,starttime));}
 	void add_disruptions (Busstop* from_stop, Busstop* to_stop, double disruption_start_time, double disruption_end_time, double cap_reduction);
+
+	//transfer initilization
+	void add_tr_line_id (int id) {tr_line_id = id;}
+	void add_tr_stops (vector <Busstop*> stops) {tr_stops = stops;}
 	
 	// checks
 	bool check_last_stop (Busstop* stop);
@@ -197,8 +205,14 @@ protected:
 	int holding_strategy; 
 	double init_occup_per_stop;
 	int nr_stops_init_occup;
+
+	//transfer attributes
+	int	tr_line_id; //!< id of line 'this' line synchronizes transfers with, should be 0 if 'this' line is not synchronizing transfers
+	vector <Busstop*> tr_stops;	//!< contains all transfer stops for line
+
 	map <Busstop*,pair<Busstop*,pair<double,double>>> disruption_times; //!< contains the expected travel times between a pair of stops in case of disruption (does not affect actual travel time, only passenger information provision). Strat and end times
 	map <Busstop*, double> disruption_cap_reduction;
+
 	bool active;														//!< is true when the busline has started generating trips
 	vector <Start_trip>::iterator curr_trip;							//!< indicates the next trip
 	Output_Summary_Line output_summary;

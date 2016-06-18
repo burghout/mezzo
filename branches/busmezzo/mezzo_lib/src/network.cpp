@@ -1585,6 +1585,14 @@ bool Network::readbusline(istream& in) // reads a busline
   vector <Busstop*> stops, line_timepoint;
   Busstop* stop;
   Busstop* tp;
+
+  //David added 2016-04-18, transfer related variables
+  int tr_line_id;	//!< id of line that 'this' busline synchronizes transfers with, 0 if line is not synchronizing transfers
+  int nr_tr_stops;	//!< number of transfer stops for this pair of lines
+  int tr_stop_id;	//!< ids of each transfer stop
+  vector <Busstop*> tr_stops;
+  Busstop* tr_stop;
+
 	bool ok= true;
 	in >> bracket;
 	if (bracket != '{')
@@ -1593,7 +1601,12 @@ bool Network::readbusline(istream& in) // reads a busline
 		return false;
 	}
 	bracket = ' '; // 2016-03-29 David added: reset bracket when we are checking for more than one consecutive '{', or '}'. Maybe use a bracket counter instead?
-	in >> busline_id >> opposite_busline_id >> name >> ori_id >> dest_id >> route_id >> vehtype >> holding_strategy >> ratio_headway_holding >> nr_stops_init_occup >>  init_occup_per_stop >> nr_stops;
+	in >> busline_id >> opposite_busline_id >> name >> ori_id >> dest_id >> route_id >> vehtype >> holding_strategy >> ratio_headway_holding >> nr_stops_init_occup >>  init_occup_per_stop;
+	if(theParameters->transfer_sync)
+	{
+		in >> tr_line_id;
+	}
+	in >> nr_stops;
 	in >> bracket;
 	if (bracket != '{')
 	{
@@ -1661,6 +1674,37 @@ bool Network::readbusline(istream& in) // reads a busline
 	return false;
   }
   bl->add_timepoints(line_timepoint);
+  
+  // reading transfer stops
+  if(theParameters->transfer_sync)
+  {
+	  bl->add_tr_line_id(tr_line_id);
+	  if(tr_line_id != 0) //if we are synchronizing transfers with another line
+	  {
+		  //read transfer stops and add to busline
+		  in >> nr_tr_stops;
+		  in >> bracket;
+		  if (bracket != '{')
+		  {
+			  cout << "readfile::readsbusline scanner jammed when reading transfer stops at " << bracket << ", expected {";
+			  return false;
+		  }
+		  for (int i=0; i < nr_tr_stops; i++)
+		  {
+			  in >> tr_stop_id;
+			  tr_stop = (*(find_if(stops.begin(), stops.end(), compare <Busstop> (tr_stop_id) )));
+			  tr_stops.push_back(tr_stop);
+		  }
+		  in >> bracket;
+		  if (bracket != '}')
+		  {
+			  cout << "readfile::readsbusline scanner jammed when reading transfer stops at " << bracket << ", expected }";
+			  return false;
+		  }
+		  bl->add_tr_stops(tr_stops);
+	  }
+  }
+
   bracket = ' '; // David added 2016-03-29
   in >> bracket;
   if (bracket != '}')
