@@ -196,6 +196,7 @@ public:
    double holding_time_weight;
    int Bus_horizon;
    int Stop_horizon;
+   bool transfer_sync; //!< true if transfer synchronization is being used. Will effect the way the line definition in transit_network.dat is read.
 
 // day2day assignment
    double default_alpha_RTI;

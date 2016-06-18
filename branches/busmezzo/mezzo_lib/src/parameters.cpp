@@ -106,6 +106,7 @@ Parameters::Parameters ()
    dwell_time_weight = 0.0;
    waiting_time_weight = 0.0;
    holding_time_weight = 0.0;
+   transfer_sync = false;
 
 // day2day assignment
    default_alpha_RTI = 0.5;
@@ -726,6 +727,13 @@ bool Parameters::read_parameters (istream & in )
 		return false;
 	}
 	in >> Stop_horizon;
+	in >> keyword; //transfer_sync parameter, David added 2016-04-18
+	if (keyword!= "transfer_sync=")
+	{
+		cout << "ERROR reading Parameters file, expecting: transfer_sync=, read: " << keyword << endl;
+		return false;
+	}
+	in >> transfer_sync;
 	in >> keyword;
 	if (keyword!= "#day2day_assignment")
 	{
