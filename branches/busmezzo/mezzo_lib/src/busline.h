@@ -484,6 +484,9 @@ public:
 	const bool check_walkable_stop ( Busstop* const & stop);
 	bool check_destination_stop (Busstop* stop); 
 
+	//transfer related checks
+	bool is_awaiting_transfers(Bustrip* trip); //David added 2016-05-30: returns true if trip is currently awaiting transfers at stop
+
 	Output_Summary_Stop_Line get_output_summary (int line_id) {return output_summary[line_id];}
 
 // functions for initializing lines-specific vectors at the busstop level
@@ -582,6 +585,9 @@ protected:
 
 	// walking distances between stops (relevant only for demand format 3 and 4)
 	map<Busstop*,double> distances;			//!< contains the distances [meters] from other bus stops
+
+	// transfer synchronization
+	vector<pair<Bustrip*, int>> trips_awaiting_transfers;	//!< David added 2016-05-30: contains trips that are currently waiting to synchronize transfers with a connecting trip, paired with the line ID of the connecting trip
 
 	// output structures
 	list <Busstop_Visit> output_stop_visits;			//!< list of output data for buses visiting stops

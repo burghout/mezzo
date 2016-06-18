@@ -2813,6 +2813,19 @@ bool Busstop::check_destination_stop (Busstop* stop)
 	return false;
 }
 
+bool Busstop::is_awaiting_transfers(Bustrip* trip)
+{
+	int trip_id = trip->get_id();
+	for(auto& trip_awaiting_transfer : trips_awaiting_transfers)
+	{
+		if(trip_awaiting_transfer.first->get_id() == trip_id)
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
 Change_arrival_rate::Change_arrival_rate(double time)
 {
 	loadtime = time;	
