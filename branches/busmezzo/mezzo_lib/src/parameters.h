@@ -204,6 +204,12 @@ public:
 // TODO: Implement the use of the following paramaters
    double vissim_step; //!< time step for the VISSIM micro model
    double sim_speed_factor; //!< REALTIME factor to keep the hybrid model running at a fixed speed
+
+//busmezzo RTI_CL parameters
+   bool RTI_CL;
+   double beta_CL;
+
+
 };
 
 

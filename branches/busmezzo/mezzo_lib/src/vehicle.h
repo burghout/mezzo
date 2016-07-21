@@ -82,6 +82,7 @@ class Vehicle
 	int switched;
 	int meters;
 };
+#define _BUSES
 #ifdef _BUSES
 class Bustrip;
 typedef pair<Bustrip*,double> Start_trip;

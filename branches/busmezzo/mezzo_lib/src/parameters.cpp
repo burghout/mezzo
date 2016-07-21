@@ -110,6 +110,9 @@ Parameters::Parameters ()
 
 // day2day assignment
    default_alpha_RTI = 0.5;
+
+//RTI_CL
+   RTI_CL = true;
 }
 
 bool Parameters::read_parameters (istream & in )

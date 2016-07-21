@@ -19,6 +19,7 @@
 #include <stddef.h>
 
 
+
 class Busroute;
 class Busstop;
 class Bustrip;
@@ -243,7 +244,7 @@ public:
 	int vehicle_id;
 	int start_stop_id;
 	int end_stop_id;
-	int passenger_load;
+	int passenger_load;	
 };
 
 class Bustrip 
@@ -296,6 +297,8 @@ public:
 	void convert_stops_vector_to_map();													//!< building stops_map
 	void convert_downstreamstops_vector_to_map(vector <Visit_stop*> down_stops);													//!< building stops_map
 	double find_crowding_coeff (Passenger* pass);										//!< returns the crowding coefficeint based on lod factor and pass. seating/standing
+	//RTI_CL
+	double find_crowding_coeff_RTI_CL (double load_factor);
 	static double find_crowding_coeff (bool sits, double load_factor);					//!< returns the crowding coefficeint based on lod factor and pass. seating/standing
 	pair<double, double> crowding_dt_factor (double nr_boarding, double nr_alighting);
 	vector <Busstop*> get_downstream_stops(); //!< return the remaining stops to be visited starting from 'next_stop', returns empty Busstop vector if there are none
@@ -314,6 +317,9 @@ public:
 	map <Busstop*, int> nr_expected_alighting;		//!< number of passengers expected to alight at the busline's stops (format 2)
 	map <Busstop*, int> assign_segements;			//!< contains the number of pass. travelling between trip segments
 	vector <Visit_stop*> down_stops;
+	//RTI_CL
+	map <Busstop*, pair<double,double>> crowding_factors;		//!< contains all the crowding factors (.first) and times (.second) computed up to now in the passaneger_activity_at_stop()
+
 protected:
 	int id;										  //!< course nr
 	Bus* busv;									  //!< pointer to the bus vehicle
@@ -326,6 +332,7 @@ protected:
 	vector <Visit_stop*> :: iterator next_stop; 
 	Random* random;
 	list <Bustrip_assign> output_passenger_load;  //!< contains the information on travelling on the segment starting at stop
+	
 	double enter_time;							  //!< the time it entered the most recently bus stop
 	double last_stop_exit_time;					  //!< the time stamp of the exit time from the last stop that had been visited by this trip
 	double last_stop_enter_time; 
@@ -402,7 +409,7 @@ public:
 	int occupancy;
 	int nr_waiting;
 	double total_waiting_time;
-	double holding_time;
+	double holding_time;	
 };
 
 class Output_Summary_Stop_Line // container object holding output data for stop visits

@@ -34,6 +34,7 @@ struct compare_pair
  int id;
 };
 
+
 // ***** Busline functions *****
 
 Busline::Busline ()
@@ -555,6 +556,9 @@ Bustrip* Busline::get_previous_trip (Bustrip* reference_trip) //!< returns the t
 double Busline::calc_curr_line_ivt (Busstop* start_stop, Busstop* end_stop, int rti, double time)
 {
 	double extra_travel_time = 0.0;
+	bool RTI_CL_start_counting = false;
+	double toReturn = 0.0;
+	double previous = 0.0;
 	if (rti == 3)
 	{
 		extra_travel_time = check_subline_disruption(start_stop, end_stop, time);
@@ -563,7 +567,13 @@ double Busline::calc_curr_line_ivt (Busstop* start_stop, Busstop* end_stop, int 
 	vector<Visit_stop*>::iterator alight_stop;
 	bool found_board = false;
 	bool found_alight = false;
+	//RTI_CL
+	int iter=0;
 	vector <Start_trip>::iterator check_trip;
+	vector <Start_trip>::iterator searched_trip;
+	vector<Visit_stop>::iterator trip_stop;
+	vector <Start_trip> all_trips;
+
 	if	(curr_trip == trips.end())
 	{
 		check_trip = curr_trip-1;
@@ -578,6 +588,7 @@ double Busline::calc_curr_line_ivt (Busstop* start_stop, Busstop* end_stop, int 
 			{
 				board_stop = stop;
 				found_board = true;
+				RTI_CL_start_counting = true;
 			}
 			if ((*stop)->first->get_id() == end_stop->get_id() || (*stop)->first->get_name() == end_stop->get_name())
 			{
@@ -585,12 +596,59 @@ double Busline::calc_curr_line_ivt (Busstop* start_stop, Busstop* end_stop, int 
 				found_alight = true;
 				break;
 			}
+			if ((RTI_CL_start_counting == true)&(theParameters->RTI_CL = true))
+		{	
+			//RTI_CL
+			//several ways to access the crowding and use it in utility - just a demo of ways I could think of.
+			double crowding_used_in_u;
+			//1. actual crowding at this stop of this trip (probably not computed)
+			crowding_used_in_u = curr_trip->first->crowding_factors[start_stop].first; 
+			//2. actual crowding at previous stop of this trip (should be computed)
+			crowding_used_in_u = curr_trip->first->crowding_factors[curr_trip->first->get_last_stop_visited].first; 
+			
+			//3. maximal crowding of arriving run
+			vector<Visit_stop*> all_stops; //vector of all stops
+			all_stops = curr_trip->first->stops; //assign to a vector
+			iter=0; //initialize iterator
+			crowding_used_in_u=0; //set return to 0
+			for (vector<Visit_stop*>::iterator stop = all_stops.begin(); stop < all_stops.end(); stop++) //loop
+			{
+				//overwrite if greated - obtain maximum
+				crowding_used_in_u = (crowding_used_in_u < curr_trip->first->crowding_factors[all_stops[iter]->first].first) ? curr_trip->first->crowding_factors[all_stops[iter]->first].first : crowding_used_in_u;
+				iter++; //iterate
+			}
+
+			//3. maximal crowding of arriving run
+			vector<Visit_stop*> all_stops; //vector of all stops
+			all_stops = curr_trip->first->stops; //assign to a vector
+			iter=0; //initialize iterator
+			crowding_used_in_u=0; //set return to 0
+			for (vector<Visit_stop*>::iterator stop = all_stops.begin(); stop < all_stops.end(); stop++) //loop
+			{
+				//overwrite if greated - obtain maximum
+				crowding_used_in_u = (crowding_used_in_u < curr_trip->first->crowding_factors[all_stops[iter]->first].first) ? curr_trip->first->crowding_factors[all_stops[iter]->first].first : crowding_used_in_u;
+				iter++; //iterate
+			}
+			
+			// now multiply the IVT of current segment with crowding computed above
+
+			toReturn += ((*stop)->second - previous)
+				*theParameters->beta_CL
+				* crowding_used_in_u;
+				
+			previous = (*stop)->second;
+		}
 	}
 	if (found_board == false || found_alight == false)
 	{
 		return 10000; // default in case no matching
 	}
-	return ((*alight_stop)->second - (*board_stop)->second) + extra_travel_time; // in seconds
+	if (!theParameters->RTI_CL)
+	{
+	toReturn = ((*alight_stop)->second - (*board_stop)->second) + extra_travel_time; // in seconds
+	}
+	return toReturn;
+	
 }
 
 double Busline::check_subline_disruption (Busstop* last_visited_stop, Busstop* pass_stop, double time)
@@ -1125,6 +1183,12 @@ double Bustrip::find_crowding_coeff (bool sits, double load_factor)
 		}
 	}
 }
+
+double Bustrip::find_crowding_coeff_RTI_CL (double load_factor)
+{
+	return (load_factor<1) ? find_crowding_coeff(true, load_factor) : find_crowding_coeff(false, load_factor);
+}
+
 
 pair<double, double> Bustrip::crowding_dt_factor (double nr_boarding, double nr_alighting)
 {
@@ -1907,7 +1971,14 @@ void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, d
 	}
 	if (theParameters->demand_format!=3 && theParameters->demand_format!=4)
 	{
-		trip->get_busv()->set_occupancy(starting_occupancy + get_nr_boarding() - get_nr_alighting()); // updating the occupancy
+		trip->get_busv()->set_occupancy(starting_occupancy + get_nr_boarding() - get_nr_alighting()); // updating the occupancy		
+		//RTI_CL
+		if (theParameters->RTI_CL)
+		{
+			trip->crowding_factors[this].first=trip->find_crowding_coeff_RTI_CL(trip->get_busv()->get_occupancy());	//compute the occupancy at the departure and assign it for the Bustrip* of a current
+			trip->crowding_factors[this].second=time;	//assign a time when the occupancy is computed
+		}
+
 	}
 	if (id != trip->stops.back()->first->get_id()) // if it is not the last stop for this trip
 	{
