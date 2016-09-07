@@ -38,15 +38,45 @@ class Output_Summary_Line // container object holding output data for busline
 {
 public:
 	virtual ~Output_Summary_Line(); //!< destructor
-	void write (ostream& out, int line_id) { out << line_id << '\t'<< line_avg_headway << '\t'<< line_avg_DT << '\t'<< line_avg_abs_deviation << '\t'
-												 << line_avg_waiting_per_stop << '\t'<< line_total_boarding << '\t'<< line_sd_headway << '\t'
-												 << line_sd_DT << '\t'<< line_on_time << '\t'<< line_early <<'\t'<< line_late << '\t'
-												 << total_pass_riding_time << '\t'<< total_pass_dwell_time << '\t'<< total_pass_waiting_time << '\t'
-												 << total_pass_holding_time << '\t' << control_objective_function << '\t' << total_travel_time_crowding << '\t' << endl; }
+	void write (ostream& out, int line_id) { 
+		out << line_id << '\t'
+			<< line_avg_headway << '\t'
+			<< line_avg_DT << '\t'
+			<< line_avg_abs_deviation << '\t'
+			<< line_avg_waiting_per_stop << '\t'
+			<< line_total_boarding << '\t'
+			<< line_sd_headway << '\t'
+			<< line_sd_DT << '\t'
+			<< line_on_time << '\t'
+			<< line_early << '\t'
+			<< line_late << '\t'
+			<< total_pass_riding_time << '\t'
+			<< total_pass_dwell_time << '\t'
+			<< total_pass_waiting_time << '\t'
+			<< total_pass_holding_time << '\t' 
+			<< control_objective_function << '\t' 
+			<< total_travel_time_crowding << '\t' 
+			<< endl; 
+	}
 
-	void reset () { line_avg_headway = 0;  line_avg_DT = 0; line_avg_abs_deviation = 0; line_avg_waiting_per_stop = 0; line_total_boarding = 0;
-	line_sd_headway = 0; line_sd_DT = 0; line_on_time = 0; line_early = 0; line_late = 0; total_pass_riding_time = 0; total_pass_dwell_time = 0; total_pass_waiting_time = 0; total_pass_holding_time = 0;
-	control_objective_function = 0; total_travel_time_crowding = 0;}
+	void reset () { 
+		line_avg_headway = 0;
+		line_avg_DT = 0;
+		line_avg_abs_deviation = 0;
+		line_avg_waiting_per_stop = 0;
+		line_total_boarding = 0;
+		line_sd_headway = 0;
+		line_sd_DT = 0;
+		line_on_time = 0;
+		line_early = 0;
+		line_late = 0;
+		total_pass_riding_time = 0;
+		total_pass_dwell_time = 0;
+		total_pass_waiting_time = 0;
+		total_pass_holding_time = 0;
+		control_objective_function = 0;
+		total_travel_time_crowding = 0;
+	}
 
 	// line summary measures
 	double line_avg_headway;
@@ -75,12 +105,25 @@ public:
 		int start_stop_id_, 
 		int end_stop_id_,	
 		int passenger_load_
-	): line_id(line_id_), start_stop_id(start_stop_id_), end_stop_id(end_stop_id_), passenger_load(passenger_load_) {}
+		): line_id(line_id_), start_stop_id(start_stop_id_), end_stop_id(end_stop_id_), passenger_load(passenger_load_) {}
 
 	Busline_assign();			//!< simple constructor
 	virtual ~Busline_assign();  //!< destructor
-	void write (ostream& out) { out << line_id << '\t'<< start_stop_id<< '\t'<<end_stop_id << '\t'<< passenger_load  << '\t' << endl; }
-	void reset () {start_stop_id = 0; end_stop_id = 0; passenger_load = 0;}
+
+	void write(ostream& out){
+		out << line_id << '\t'
+			<< start_stop_id << '\t'
+			<< end_stop_id << '\t'
+			<< passenger_load << '\t' 
+			<< endl; 
+	}
+
+	void reset(){
+		start_stop_id = 0;
+		end_stop_id = 0;
+		passenger_load = 0;
+	}
+
 	int line_id;
 	int start_stop_id;
 	int end_stop_id;
@@ -90,14 +133,21 @@ public:
 class Busline_travel_times // container that holds the total travel time experienced by line's trips
 {
 public:
-	Busline_travel_times (
+	Busline_travel_times(
 		int		trip_id_, 
 		double	total_travel_time_
 	):	trip_id(trip_id_), total_travel_time(total_travel_time_) {}
 
 	virtual ~Busline_travel_times(); //!< destructor
-	void write (ostream& out) { out << trip_id << '\t'<< total_travel_time<< '\t' << endl; }
-	void reset () {total_travel_time = 0;}
+
+	void write(ostream& out){ 
+		out << trip_id << '\t'
+			<< total_travel_time << '\t'
+			<< endl; 
+	}
+
+	void reset(){ total_travel_time = 0; }
+
 	int trip_id;
 	double total_travel_time;
 };
@@ -236,8 +286,26 @@ public:
 	): line_id(line_id_),trip_id(trip_id_),vehicle_id(vehicle_id_), start_stop_id(start_stop_id_),end_stop_id(end_stop_id_),passenger_load(passenger_load_) {}
 
 	virtual ~Bustrip_assign(); //!< destructor
-	void write (ostream& out) { out << line_id << '\t'<< trip_id << '\t'<< vehicle_id << '\t'<< start_stop_id<< '\t'<<end_stop_id << '\t'<< passenger_load  << '\t' << endl; }
-	void reset () {line_id = 0 ; trip_id = 0; vehicle_id = 0; start_stop_id = 0; end_stop_id = 0; passenger_load = 0;}
+	
+	void write(ostream& out){
+		out << line_id << '\t'
+			<< trip_id << '\t'
+			<< vehicle_id << '\t'
+			<< start_stop_id << '\t'
+			<< end_stop_id << '\t'
+			<< passenger_load << '\t' 
+			<< endl;
+	}
+
+	void reset(){
+		line_id = 0;
+		trip_id = 0;
+		vehicle_id = 0;
+		start_stop_id = 0;
+		end_stop_id = 0;
+		passenger_load = 0;
+	}
+
 	int line_id;
 	int trip_id;
 	int vehicle_id;
@@ -373,14 +441,48 @@ public:
 	   nr_alighting(nr_alighting_),nr_boarding(nr_boarding_),occupancy(occupancy_),nr_waiting(nr_waiting_), total_waiting_time(total_waiting_time_),holding_time(holding_time_) {}
 
 	virtual ~Busstop_Visit(); //!< destructor
-	void write (ostream& out) { out << line_id << '\t'<< trip_id << '\t'<< vehicle_id << '\t'<< stop_id<< '\t'<<entering_time << '\t'<< sched_arr_time << '\t'
-									<< dwell_time << '\t'<< lateness << '\t'<< exit_time <<'\t'<< riding_time << '\t' << riding_pass_time << '\t'
-									<< time_since_arr << '\t'<< time_since_dep << '\t'<< nr_alighting << '\t'<< nr_boarding << '\t'<< occupancy << '\t'
-									<< nr_waiting << '\t'<< total_waiting_time << '\t' << holding_time << '\t'	<< endl; }
-	void reset () {line_id = 0 ; trip_id = 0; vehicle_id = 0; stop_id = 0; entering_time = 0; sched_arr_time = 0; 
-				   dwell_time = 0; lateness = 0; exit_time = 0; riding_time = 0; riding_pass_time = 0; 
-				   time_since_arr = 0; time_since_dep = 0; nr_alighting = 0; nr_boarding = 0; occupancy = 0; 
-				   nr_waiting = 0; total_waiting_time = 0; holding_time = 0; }
+	void write (ostream& out) { 
+		out << line_id << '\t'
+			<< trip_id << '\t'
+			<< vehicle_id << '\t'
+			<< stop_id<< '\t'
+			<< entering_time << '\t'
+			<< sched_arr_time << '\t'
+			<< dwell_time << '\t'
+			<< lateness << '\t'
+			<< exit_time <<'\t'
+			<< riding_time << '\t' 
+			<< riding_pass_time << '\t'
+			<< time_since_arr << '\t'
+			<< time_since_dep << '\t'
+			<< nr_alighting << '\t'
+			<< nr_boarding << '\t'
+			<< occupancy << '\t'
+			<< nr_waiting << '\t'
+			<< total_waiting_time << '\t' 
+			<< holding_time << '\t'	<< endl; 
+	}
+	void reset () {
+		line_id = 0; 
+		trip_id = 0; 
+		vehicle_id = 0; 
+		stop_id = 0; 
+		entering_time = 0; 
+		sched_arr_time = 0; 
+		dwell_time = 0; 
+		lateness = 0; 
+		exit_time = 0; 
+		riding_time = 0; 
+		riding_pass_time = 0; 
+		time_since_arr = 0; 
+		time_since_dep = 0; 
+		nr_alighting = 0; 
+		nr_boarding = 0; 
+		occupancy = 0; 
+		nr_waiting = 0; 
+		total_waiting_time = 0; 
+		holding_time = 0; 
+	}
 	int line_id;
 	int trip_id;
 	int vehicle_id;
@@ -409,10 +511,46 @@ class Output_Summary_Stop_Line // container object holding output data for stop 
 {
 public:
 	virtual ~Output_Summary_Stop_Line(); //!< destructor
-	void write (ostream& out, int stop_id, int line_id, string name) { out << stop_id <<  '\t' << name << '\t' << line_id <<  '\t'<<stop_avg_headway << '\t'<< stop_avg_DT << '\t'<< stop_avg_abs_deviation << '\t'<< stop_avg_waiting_per_stop<< '\t'<< stop_total_boarding << '\t'<< stop_sd_headway << '\t'
-		<< stop_sd_DT << '\t'<< stop_on_time << '\t'<< stop_early <<'\t'<< stop_late << '\t' << total_stop_pass_riding_time << '\t' << total_stop_pass_dwell_time << '\t' << total_stop_pass_waiting_time << '\t' << total_stop_pass_holding_time << '\t' << stop_avg_holding_time << '\t' << endl; }
-	void reset () { stop_avg_headway = 0; stop_avg_DT = 0; stop_avg_abs_deviation = 0; stop_avg_waiting_per_stop = 0; stop_total_boarding = 0;
-	stop_sd_headway = 0; stop_sd_DT = 0; stop_on_time = 0; stop_early = 0; stop_late = 0; total_stop_pass_riding_time = 0; total_stop_pass_dwell_time = 0; total_stop_pass_waiting_time = 0; total_stop_pass_holding_time = 0; total_stop_travel_time_crowding = 0;}
+	void write (ostream& out, int stop_id, int line_id, string name) { 
+		out << stop_id <<  '\t' 
+			<< name << '\t' 
+			<< line_id << '\t'
+			<< stop_avg_headway << '\t'
+			<< stop_avg_DT << '\t'
+			<< stop_avg_abs_deviation << '\t'
+			<< stop_avg_waiting_per_stop<< '\t'
+			<< stop_total_boarding << '\t'
+			<< stop_sd_headway << '\t'
+			<< stop_sd_DT << '\t'
+			<< stop_on_time << '\t'
+			<< stop_early <<'\t'
+			<< stop_late << '\t' 
+			<< total_stop_pass_riding_time << '\t' 
+			<< total_stop_pass_dwell_time << '\t' 
+			<< total_stop_pass_waiting_time << '\t' 
+			<< total_stop_pass_holding_time << '\t' 
+			<< stop_avg_holding_time << '\t' 
+			<< total_stop_travel_time_crowding << '\t'
+			<< endl; 
+	}
+	void reset () { 
+		stop_avg_headway = 0; 
+		stop_avg_DT = 0; 
+		stop_avg_abs_deviation = 0; 
+		stop_avg_waiting_per_stop = 0; 
+		stop_total_boarding = 0;
+		stop_sd_headway = 0; 
+		stop_sd_DT = 0; 
+		stop_on_time = 0; 
+		stop_early = 0; 
+		stop_late = 0; 
+		total_stop_pass_riding_time = 0; 
+		total_stop_pass_dwell_time = 0; 
+		total_stop_pass_waiting_time = 0; 
+		total_stop_pass_holding_time = 0;
+		stop_avg_holding_time = 0;
+		total_stop_travel_time_crowding = 0;
+	}
 	double stop_avg_headway;
 	double stop_avg_DT;
 	double stop_avg_abs_deviation;
