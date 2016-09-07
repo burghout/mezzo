@@ -263,7 +263,6 @@ public:
 	bool read_pass_IVTT (pair<const ODSLL, Travel_time>& wt_row);
 	bool readbusroute(istream& in); //!< reads a transit route
 	bool readbusstop (istream& in); //!< reads a busstop
-	bool readtransitzones (istream& in); //!< reads a transit travel zone
 	bool readbusline(istream& in); //!< reads a busline
 	bool readbustrip_format1(istream& in); //!< reads trips based on detailed time-table
 	bool readbustrip_format2(istream& in); //!< reads trips based on dispatching time-table (time-independent intervals between stops)
@@ -273,7 +272,6 @@ public:
   bool read_passenger_rates_format1_TD_slices (istream& in);
   bool read_passenger_rates_format2 (istream& in); // reads the passenger rates in the format of arrival rate per line, origin stop and destination stop combination
   bool read_passenger_rates_format3 (istream& in); // reads the passenger rates in the format of arrival rate per OD in terms of stops (no path is pre-determined)
-  bool read_passenger_rates_format4 (istream& in); // reads the passenger rates in the format of arrival rate per OD in terms of travel zones (no path is pre-determined)
   bool readbusstops_distances_format1 (istream& in); // !< reads distances between stops through vectors at the stop level - relevant only for demand format 3
   bool readbusstops_distances_format2 (istream& in); // !< reads distances between stops through matrices between sets of stops - relevant only for demand format 3
   bool read_travel_time_disruptions (istream& in); // reads the expected travel time between stops due to disruptions - does not affect the actual travel time, just passengers expectations in case of information provision

@@ -1330,30 +1330,8 @@ bool Network::readtransitnetwork(string name) //!< reads the stops, distances be
 			return false;
 		} 
 	}
-	// in case that demand format is an OD matrix at the zone level
-	if (theParameters->demand_format == 4)
-	{
-		in >> keyword;
-		if (keyword!="zones:")
-		{
-			cout << " readbuslines: no << zones: >> keyword " << endl;
-			in.close();
-			return false;
-		}	
-		in >> nr;
-		limit = i + nr;
-		for (i; i<limit;i++)
-		{
-			if (!readtransitzones(in))
-			{
-				cout << " readbuslines: readbusstop returned false for line nr " << (i+1) << endl;
-				in.close();
-				return false;
-			} 	
-		}
-	}
 	// in case of passenger route choice - read walking distances between stops
-	if (theParameters->demand_format == 3 || theParameters->demand_format == 4)
+	if (theParameters->demand_format == 3)
 	{
 		in >> keyword;
 		if (keyword!="stops_distances:")
@@ -1530,49 +1508,6 @@ bool Network::readbusstop (istream& in) // reads a busstop
 	cout << " read busstop"<< stop_id <<endl;
 #endif //_DEBUG_NETWORK
 	return ok;
-}
-
-bool Network::readtransitzones(istream &in) // reads a transit travel zone
-{
-  char bracket;
-  Busstop* stop;
-  int zone_id, nr_stops, stop_id;
-  double mean_distance, sd_distance;
-	bool ok= true;
-	in >> bracket;
-	if (bracket != '{')
-	{
-		cout << "readfile::readsbusstop scanner jammed at " << bracket;
-		return false;
-	}
-  in >> zone_id >> nr_stops;
-  ODzone* od_zone = new ODzone(zone_id); 
-  for (int i=0; i< nr_stops; i++)
-  {
-		in >> bracket;
-		if (bracket != '{')
-		{
-			cout << "readfile::readsbusstop scanner jammed at " << bracket;
-			return false;
-		}
-		in >> stop_id >> mean_distance >> sd_distance;
-		stop = (*(find_if(busstops.begin(), busstops.end(), compare <Busstop> (stop_id) ))); // find the stop 
-		od_zone->add_stop_distance(stop, mean_distance, sd_distance);
-		in >> bracket;
-		if (bracket != '}')
-		{
-			cout << "readfile::readsbusstop scanner jammed at " << bracket;
-			return false;
-		}
-  }
-  odzones.push_back(od_zone);
-  in >> bracket;
-  if (bracket != '}')
-   {
-		cout << "readfile::readsbusstop scanner jammed at " << bracket;
-		return false;
-	}
-  return ok;
 }
 
 bool Network::readbusline(istream& in) // reads a busline
@@ -1934,7 +1869,7 @@ in >> keyword;
 #endif //_DEBUG_NETWORK
 	if (keyword!="passenger_rates:")
 	{
-		cout << " readbuslines: no << passenger_rates: >> keyword " << endl;
+		cout << "readtransitdemand: no << passenger_rates: >> keyword " << endl;
 		return false;
 	}
 	in >> nr;
@@ -1943,7 +1878,7 @@ in >> keyword;
 	in >> keyword;
 	if (keyword!="format:")
 	{
-		cout << " readbuslines: no << format: >> keyword " << endl;
+		cout << "readtransitdemand: no << format: >> keyword " << endl;
 		return false;
 	}
 	in >> format; // Give an indication for demand matrix format
@@ -1959,7 +1894,7 @@ in >> keyword;
 		{
 			if (!read_passenger_rates_format1(in))
 			{
-				cout << " readbuslines: read_passenger_rates returned false for line nr " << (i+1) << endl;
+				cout << "readtransitdemand: read_passenger_rates returned false for line nr " << (i+1) << endl;
    				return false;
 			} 
 		}
@@ -1967,7 +1902,7 @@ in >> keyword;
 		{
 			if (!read_passenger_rates_format1_TD_basic(in, nr))
 			{
-				cout << " readbuslines: read_passenger_rates returned false" << endl;
+				cout << "readtransitdemand: read_passenger_rates returned false" << endl;
    				return false;
 			} 
 			i = limit;
@@ -1976,7 +1911,7 @@ in >> keyword;
 		{
 			if (!read_passenger_rates_format2(in))
 			{
-				cout << " readbuslines: read_passenger_rates returned false for line nr " << (i+1) << endl;
+				cout << "readtransitdemand: read_passenger_rates returned false for line nr " << (i+1) << endl;
    				return false;
 			} 
 		}
@@ -1984,25 +1919,17 @@ in >> keyword;
 		{
 			if (!read_passenger_rates_format3(in))
 			{
-				cout << " readbuslines: read_passenger_rates returned false for line nr " << (i+1) << endl;
+				cout << "readtransitdemand: read_passenger_rates returned false for line nr " << (i+1) << endl;
    				return false;
 			} 
 		}
-		if (format == 4)
+		if (format!=1 && format!=2 && format!=3 && format!=10)
 		{
-			if (!read_passenger_rates_format4(in))
-			{
-				cout << " readbuslines: read_passenger_rates returned false for line nr " << (i+1) << endl;
-   				return false;
-			} 
-		}
-		if (format!=1 && format!=2 && format!=3 && format!=4 && format!=10)
-		{
-			cout << " readbuslines: read_passenger_rates returned false for wrong format coding " << (i+1) << endl;
+			cout << "readtransitdemand: read_passenger_rates returned false for wrong format coding " << (i+1) << endl;
    			return false;
 		}
 	}
-	if (format == 3 || format == 4)
+	if (format == 3)
 	{
 		//generate_stop_ods();
 		if (theParameters->choice_set_indicator == 0)
@@ -2059,7 +1986,7 @@ bool Network::read_passenger_rates_format1 (istream& in) // reads the passenger 
   in >> bracket;
   if (bracket != '{')
   {
-  	cout << "readfile::readsbusstop scanner jammed at " << bracket;
+  	cout << "readfile::read_passenger_rates1 scanner jammed at " << bracket;
   	return false;
   }
 
@@ -2072,7 +1999,7 @@ bool Network::read_passenger_rates_format1 (istream& in) // reads the passenger 
   in >> bracket;
   if (bracket != '}')
   {
-    cout << "readfile::readbusstop scanner jammed at " << bracket;
+    cout << "readfile::read_passenger_rates1 scanner jammed at " << bracket;
     return false;
   }
 
@@ -2086,12 +2013,12 @@ bool Network::read_passenger_rates_format1_TD_basic (istream& in, int nr_rates) 
   char bracket;
   int slices, origin_stop_id, busline_id;
   double scale, arrival_rate, alighting_fraction;
-  bool ok= true;
+  
   string keyword;
 	in >> keyword;
 	if (keyword!="scale:")
 	{
-		cout << " readPassengerDemand: no << scale: >> keyword " << endl;
+		cout << "readfile::read_passenger_rates10 no << scale: >> keyword " << endl;
 		return false;
 	}
 	in >> scale;
@@ -2100,7 +2027,7 @@ bool Network::read_passenger_rates_format1_TD_basic (istream& in, int nr_rates) 
 		in >> bracket;
 		if (bracket != '{')
 		{
-  			cout << "readfile::readsbusstop scanner jammed at " << bracket;
+  			cout << "readfile::read_passenger_rates10 scanner jammed at " << bracket;
   		return false;
 		}
 		in >> origin_stop_id >> busline_id >> arrival_rate >> alighting_fraction;
@@ -2111,14 +2038,14 @@ bool Network::read_passenger_rates_format1_TD_basic (istream& in, int nr_rates) 
 		in >> bracket;
 		if (bracket != '}')
 		{
-			cout << "readfile::readbusstop scanner jammed at " << bracket;
+			cout << "readfile::read_passenger_rates10 scanner jammed at " << bracket;
 			return false;
 		}
 	}
 	in >> keyword;
 	if (keyword!="slices:")
 	{
-		cout << " readPassengerDemand: no << slices: >> keyword " << endl;
+		cout << "readfile::read_passenger_rates10 no << slices: >> keyword " << endl;
 		return false;
 	}
 	in >> slices;
@@ -2128,7 +2055,7 @@ bool Network::read_passenger_rates_format1_TD_basic (istream& in, int nr_rates) 
 	}
 #ifdef _DEBUG_NETWORK
 #endif //_DEBUG_NETWORK
-  return ok;
+  return true;
 }
 
 bool Network::read_passenger_rates_format1_TD_slices (istream& in) // reads the passenger rates in the format of arrival rate and alighting fraction per line and stop combination
@@ -2136,26 +2063,26 @@ bool Network::read_passenger_rates_format1_TD_slices (istream& in) // reads the 
   char bracket;
   int nr_rates, origin_stop_id, busline_id;
   double scale, loadtime, arrival_rate, alighting_fraction;
-  bool ok= true;
+ 
   string keyword;
 	in >> keyword;
 	if (keyword!="passenger_rates:")
 	{
-		cout << " readPassengerDemand: no << passenger_rates: >> keyword " << endl;
+		cout << "readfile::read_passenger_rates10_slices no << passenger_rates: >> keyword " << endl;
 		return false;
 	}
 	in >> nr_rates;
 	in >> keyword;
 	if (keyword!="scale:")
 	{
-		cout << " readPassengerDemand: no << scale: >> keyword " << endl;
+		cout << "readfile::read_passenger_rates10_slices no << scale: >> keyword " << endl;
 		return false;
 	}
 	in >> scale;
 	in >> keyword;
 	if (keyword!="loadtime:")
 	{
-		cout << " readPassengerDemand: no << loadtime: >> keyword " << endl;
+		cout << "readfile::read_passenger_rates10_slices no << loadtime: >> keyword " << endl;
 		return false;
 	}
 	in >> loadtime;
@@ -2166,7 +2093,7 @@ bool Network::read_passenger_rates_format1_TD_slices (istream& in) // reads the 
 		in >> bracket;
 		if (bracket != '{')
 		{
-  			cout << "readfile::readsbusstop scanner jammed at " << bracket;
+  			cout << "readfile::read_passenger_rates10_slices scanner jammed at " << bracket;
   		return false;
 		}
 		in >> origin_stop_id >> busline_id >> arrival_rate >> alighting_fraction;
@@ -2178,13 +2105,13 @@ bool Network::read_passenger_rates_format1_TD_slices (istream& in) // reads the 
 		in >> bracket;
 		if (bracket != '}')
 		{
-			cout << "readfile::readbusstop scanner jammed at " << bracket;
+			cout << "readfile::read_passenger_rates10_slices scanner jammed at " << bracket;
 			return false;
 		}
 	}
 #ifdef _DEBUG_NETWORK
 #endif //_DEBUG_NETWORK
-  return ok;
+  return true;
 }
 
 bool Network::read_passenger_rates_format2 (istream& in) // reads the passenger rates in the format of arrival rate per line, origin stop and destination stop combination
@@ -2197,7 +2124,7 @@ bool Network::read_passenger_rates_format2 (istream& in) // reads the passenger 
 	in >> bracket;
 	if (bracket != '{')
 	{
-		cout << "readfile::readsbusstop scanner jammed at " << bracket << ", expected {";
+		cout << "readfile::read_passenger_rates2 scanner jammed at " << bracket << ", expected {";
 		return false;
 	}
 
@@ -2218,7 +2145,7 @@ bool Network::read_passenger_rates_format2 (istream& in) // reads the passenger 
 		in >> bracket;
 		if (bracket != '{')
 		{
-			cout << "readfile::readsbustrip scanner jammed at " << bracket << ", expected {";
+			cout << "readfile::read_passenger_rates2 scanner jammed at " << bracket << ", expected {";
 			return false;
 		}
 		in >> origin_stop_id >> nr_stops_info;
@@ -2234,7 +2161,7 @@ bool Network::read_passenger_rates_format2 (istream& in) // reads the passenger 
 			in >> bracket;
 			if (bracket != '{')
 			{
-				cout << "readfile::readsbustrip scanner jammed at " << bracket << ", expected {";
+				cout << "readfile::read_passenger_rates2 scanner jammed at " << bracket << ", expected {";
 				return false;
 			}
 			in >> destination_stop_id >> arrival_rate;
@@ -2253,7 +2180,7 @@ bool Network::read_passenger_rates_format2 (istream& in) // reads the passenger 
 			in >> bracket;
 			if (bracket != '}')
 			{
-				cout << "readfile::readsbustrip scanner jammed at " << bracket << ", expected }, (at origin " << origin_stop_id << ", destination " << destination_stop_id << ")";
+				cout << "readfile::read_passenger_rates2 scanner jammed at " << bracket << ", expected }, (at origin " << origin_stop_id << ", destination " << destination_stop_id << ")";
 				return false;
 			}
 		}
@@ -2261,14 +2188,14 @@ bool Network::read_passenger_rates_format2 (istream& in) // reads the passenger 
 		bs_o->multi_arrival_rates.insert(multi_rate_d);
 		if (bracket != '}')
 		{
-			cout << "readfile::readsbustrip scanner jammed at " << bracket << ", expected }, (at origin " << origin_stop_id << ")";
+			cout << "readfile::read_passenger_rates2 scanner jammed at " << bracket << ", expected }, (at origin " << origin_stop_id << ")";
 			return false;
 		}
 	}
 	in >> bracket;
 	if (bracket != '}')
 	{
-	cout << "readfile::readbusstop scanner jammed at " << bracket << ", expected }";
+	cout << "readfile::read_passenger_rates2 scanner jammed at " << bracket << ", expected }";
 	return false;
 	}
 
@@ -2279,14 +2206,13 @@ bool Network::read_passenger_rates_format2 (istream& in) // reads the passenger 
 
 bool Network::read_passenger_rates_format3 (istream& in) // reads the passenger rates in the format of arrival rate per OD in terms of stops (no path is pre-determined)
 {
-  bool ok= true;
   char bracket;
   int origin_stop_id, destination_stop_id;
   double arrival_rate;
   in >> bracket;
   if (bracket != '{')
   {
-  	cout << "readfile::readsbusstop scanner jammed at " << bracket;
+  	cout << "readfile::read_passenger_rates3 scanner jammed at " << bracket;
   	return false;
   }
   in >> origin_stop_id >> destination_stop_id >> arrival_rate; // 
@@ -2317,53 +2243,13 @@ bool Network::read_passenger_rates_format3 (istream& in) // reads the passenger 
   in >> bracket;
   if (bracket != '}')
   {
-    cout << "readfile::readbusstop scanner jammed at " << bracket;
+    cout << "readfile::read_passenger_rates3 scanner jammed at " << bracket;
     return false;
   }
 
 #ifdef _DEBUG_NETWORK
 #endif //_DEBUG_NETWORK
-  return ok;
-}
-
-bool Network::read_passenger_rates_format4 (istream& in)
-{
-  bool ok= true;
-  char bracket;
-  int origin_taz_id, destination_taz_id;
-  double arrival_rate;
-  in >> bracket;
-  if (bracket != '{')
-  {
-  	cout << "readfile::readsbusstop scanner jammed at " << bracket;
-  	return false;
-  }
-  in >> origin_taz_id >> destination_taz_id >> arrival_rate; 
-  ODzone* taz_o=(*(find_if(odzones.begin(), odzones.end(), compare <ODzone> (origin_taz_id) ))); 
-  ODzone* taz_d=(*(find_if(odzones.begin(), odzones.end(), compare <ODzone> (destination_taz_id) ))); 
-  taz_o->add_arrival_rates(taz_d,arrival_rate); 
-  map<Busstop*,pair<double,double>> o_walk_dis = taz_o->get_stop_distances();
-  map<Busstop*,pair<double,double>> d_walk_dis = taz_d->get_stop_distances();
-  for (map<Busstop*,pair<double,double>>::iterator o_stops_iter = o_walk_dis.begin(); o_stops_iter != o_walk_dis.end(); o_stops_iter++)
-  {
-	  for (map <Busstop*,pair<double,double>>::iterator d_stops_iter = d_walk_dis.begin(); d_stops_iter != d_walk_dis.end(); d_stops_iter++)
-	  {
-		Busstop* bs_o = (*o_stops_iter).first;
-		Busstop* bs_d = (*d_stops_iter).first;
-		ODstops* od_stop = new ODstops (bs_o, bs_d);
-		odstops.push_back(od_stop);
-		odstops_demand.push_back(od_stop);
-		bs_o->add_odstops_as_origin(bs_d, od_stop);
-		bs_d->add_odstops_as_destination(bs_o, od_stop);
-	  }
-   }
-  in >> bracket;
-  if (bracket != '}')
-  {
-  	cout << "readfile::readsbusstop scanner jammed at " << bracket;
-  	return false;
-  }
-  return ok;
+  return true;
 }
 
 bool Network::readbusstops_distances_format1 (istream& in)
@@ -4909,7 +4795,7 @@ in >> keyword;
 #endif //_DEBUG_NETWORK
 	if (keyword!="vehicle_scheduling:")
 	{
-		cout << " readbusvehicle: no << busvehicles: >> keyword " << endl;
+		cout << " readbusvehicle: no << vehicle_scheduling: >> keyword " << endl;
 		return false;
 	}
 	in >> nr;
@@ -4986,13 +4872,11 @@ bool Network::read_dwell_time_function (istream& in)
 
 bool Network::read_bustype (istream& in) // reads a bustype
 {
-
-//{ type_id	length	number_seats	capacity }
   char bracket;
   int type_id, number_seats, capacity, dtf_id;
   double length;
   string bus_type_name;
-  bool ok= true;
+  
   vector <Bustype*> types;
   in >> bracket;
   if (bracket != '{')
@@ -5014,7 +4898,7 @@ bool Network::read_bustype (istream& in) // reads a bustype
 #ifdef _DEBUG_NETWORK
   cout << " read bustype"<< type_id <<endl;
 #endif //_DEBUG_NETWORK
-  return ok;
+  return true;
 }
  
 bool Network::read_busvehicle(istream& in) // reads a bus vehicle
@@ -5857,14 +5741,8 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
 				map <Passenger*,list<Pass_alighting_decision>> alighting_decisions = od_iter->second->get_alighting_output();
 				for (map<Passenger*,list<Pass_alighting_decision>>::iterator pass_iter2 = alighting_decisions.begin(); pass_iter2 != alighting_decisions.end(); pass_iter2++)
 				{
-					switch (theParameters->demand_format)
-					{
-						case 3:
-							od_iter->second->write_alighting_output(out6, (*pass_iter2).first);
-							break;
-						case 4:
-							break;
-					}
+					od_iter->second->write_alighting_output(out6, (*pass_iter2).first);
+					break;
 				}
 			
 				map <Passenger*,list<Pass_connection_decision>> connection_decisions = od_iter->second->get_connection_output();
@@ -5887,37 +5765,7 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
 			}
 		}
 	}
-	/*
-	out1.close();
-	out2.close();
-	out3.close();
-	out4.close();
-	out5.close();
-	out6.close();
-	out7.close();
-	out8.close();
-	out9.close();
-	out10.close();
-	out11.close();
-	out12.close();
-	out13.close();
-/*
-	if (theParameters->demand_format == 4)
-	{
-		for (vector<ODzone*>::iterator od_iter = odzones.begin(); od_iter < odzones.end(); od_iter++)
-		{
-			map <Passenger*,list<Pass_boarding_decision_zone>> boarding_decisions = (*od_iter)->get_boarding_output_zone();
-			for (map<Passenger*,list<Pass_boarding_decision_zone>>::iterator pass_iter1 = boarding_decisions.begin(); pass_iter1 != boarding_decisions.end(); pass_iter1++)
-			{
-				(*od_iter)->write_boarding_output_zone(out11, (*pass_iter1).first);
-			}	
-			map <Passenger*,list<Pass_alighting_decision_zone>> alighting_decisions = (*od_iter)->get_alighting_output_zone();
-			for (map<Passenger*,list<Pass_alighting_decision_zone>>::iterator pass_iter1 = alighting_decisions.begin(); pass_iter1 != alighting_decisions.end(); pass_iter1++)
-			{
-				(*od_iter)->write_alighting_output_zone(out12, (*pass_iter1).first);
-			}
-		}
-*/
+	
 	return true;
 }
 

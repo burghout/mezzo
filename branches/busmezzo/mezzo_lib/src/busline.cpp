@@ -1270,7 +1270,7 @@ bool Busstop::execute(Eventlist* eventlist, double time) // is executed by the e
 {
   	// progress the vehicle when entering or exiting a stop
 	
-	if (theParameters->demand_format == 3 || theParameters->demand_format == 4)
+	if (theParameters->demand_format == 3)
 	{
 		for (map <Busstop*, ODstops*>::iterator destination_stop = stop_as_origin.begin(); destination_stop != stop_as_origin.end(); destination_stop++)
 		{
@@ -1650,7 +1650,7 @@ void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, d
 			}
 		}
 	}
-	if (theParameters->demand_format == 3 || theParameters->demand_format == 4)   // demand is given in terms of arrival rate of individual passengers per OD of stops (future - route choice)
+	if (theParameters->demand_format == 3)   // demand is given in terms of arrival rate of individual passengers per OD of stops (future - route choice)
 	{	
 		// * Alighting passengers *
 		nr_alighting = static_cast<int> ( trip->passengers_on_board[this].size()); 
@@ -2115,7 +2115,7 @@ double Busstop::calc_exiting_time (Eventlist* eventlist, Bustrip* trip, double t
 		}
 	}
 
-	if(theParameters->demand_format == 3 || theParameters->demand_format == 4) 
+	if(theParameters->demand_format == 3) 
 	{
 		if(ready_to_depart > time + dwelltime)
 		{
@@ -2618,7 +2618,7 @@ int Busstop::calc_total_nr_waiting ()
 		}
 	}
 	// format 3
-	else if (theParameters->demand_format == 3 || theParameters->demand_format == 4)
+	else if (theParameters->demand_format == 3)
 	{
 		for (map <Busstop*, ODstops*>::iterator destination_stop = stop_as_origin.begin(); destination_stop != stop_as_origin.end(); destination_stop++)
 				// going through all the stops that this stop is their origin on a given OD pair
