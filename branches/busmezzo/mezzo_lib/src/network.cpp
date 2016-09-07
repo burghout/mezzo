@@ -6994,7 +6994,24 @@ bool Network::writeall(unsigned int repl)
 	//writeheadways("timestamps.dat"); // commented out, since no-one uses them 
 	writeassmatrices(assignmentmatfile);
 	write_v_queues(vqueuesfile);
-	this->write_busstop_output(workingdir + "o_buslog_out.dat", workingdir + "o_busstop_sum.dat", workingdir + "o_busline_sum.dat", workingdir + "o_bus_trajectory.dat", workingdir + "o_passenger_boarding.dat", workingdir + "o_passenger_alighting.dat", workingdir + "o_segments_trip_loads.dat", workingdir + "o_selected_paths.dat", workingdir + "o_segments_line_loads.dat", workingdir + "o_od_stops_summary.dat", workingdir + "o_trip_total_travel_time.dat", workingdir + "o_od_stop_summary_without_paths.dat", workingdir + "o_passenger_waiting_experience.dat", workingdir + "o_passenger_onboard_experience.dat", workingdir + "o_passenger_connection.dat");
+	this->write_busstop_output(
+		workingdir + "o_buslog_out.dat", 
+		workingdir + "o_busstop_sum.dat", 
+		workingdir + "o_busline_sum.dat", 
+		workingdir + "o_bus_trajectory.dat", 
+		workingdir + "o_passenger_boarding.dat", 
+		workingdir + "o_passenger_alighting.dat", 
+		workingdir + "o_segments_trip_loads.dat", 
+		workingdir + "o_selected_paths.dat", 
+		workingdir + "o_segments_line_loads.dat", 
+		workingdir + "o_od_stops_summary.dat", 
+		workingdir + "o_trip_total_travel_time.dat", 
+		workingdir + "o_od_stop_summary_without_paths.dat", 
+		workingdir + "o_passenger_waiting_experience.dat", 
+		workingdir + "o_passenger_onboard_experience.dat", 
+		workingdir + "o_passenger_connection.dat"
+		);
+
 	return true;
 }
 

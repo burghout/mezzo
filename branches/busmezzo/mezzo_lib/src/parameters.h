@@ -183,7 +183,7 @@ public:
    double max_waiting_time;
    double dominancy_perception_threshold;
    int choice_model; // !< RUM used at passengers' route choice decisions: 1 - MNL; 2 - PSL with legs defining overlapping.
-   int real_time_info; //!< real-time information at the network: 0 - none; 1 - for all lines stoping at each stop; 2 - for all lines stoping at all connected stop; 3 - for the entire network.
+   int real_time_info; //!< real-time information at the network: 0 - none; 1 - for all lines stoping at each stop; 2 - for all lines stopping at all connected stop; 3 - for the entire network; 4 - based on the stop-specific values
    double share_RTI_network; // indicates the share of the population of travellers that has access to RTI at the network-level (smart phone penetration rate), takes 0 to 1 values
    double start_pass_generation; 
    double stop_pass_generation;
