@@ -764,24 +764,38 @@ void ODstops::calc_pass_measures ()
 
 void Pass_alighting_decision::write (ostream& out) 
 { 
-	out << pass_id << '\t' << original_origin << '\t' << destination_stop << '\t' << line_id << '\t'<< trip_id << '\t'<< stop_id<< '\t'<< time << '\t'<< generation_time << '\t' << chosen_alighting_stop << '\t' ;
+	out << pass_id << '\t'
+		<< original_origin << '\t'
+		<< destination_stop << '\t'
+		<< line_id << '\t'
+		<< trip_id << '\t'
+		<< stop_id<< '\t'
+		<< time << '\t'
+		<< generation_time << '\t'
+		<< chosen_alighting_stop << '\t';
 	for (map<Busstop*,pair<double,double>>::iterator iter = alighting_MNL.begin(); iter != alighting_MNL.end(); iter++)
 	{
-		out<< (*iter).first->get_id() << '\t';
-		out<< (*iter).second.first << '\t';
-		out<< (*iter).second.second << '\t';
+		out << (*iter).first->get_id() << '\t';
+		out << (*iter).second.first << '\t';
+		out << (*iter).second.second << '\t';
 	}
 	out << endl; 
 }
 
 void Pass_connection_decision::write (ostream& out)
 { 
-	out << pass_id << '\t' << original_origin << '\t' << destination_stop << '\t' << stop_id<< '\t' << time << '\t'<< generation_time << '\t' << chosen_connection_stop << '\t';
+	out << pass_id << '\t' 
+		<< original_origin << '\t' 
+		<< destination_stop << '\t' 
+		<< stop_id << '\t' 
+		<< time << '\t'
+		<< generation_time << '\t' 
+		<< chosen_connection_stop << '\t';
 	for (map<Busstop*,pair<double,double>>::iterator iter = connecting_MNL.begin(); iter != connecting_MNL.end(); iter++)
 	{
-		out<< (*iter).first->get_id() << '\t';
-		out<< (*iter).second.first << '\t';
-		out<< (*iter).second.second << '\t';
+		out << (*iter).first->get_id() << '\t';
+		out << (*iter).second.first << '\t';
+		out << (*iter).second.second << '\t';
 	}
 	out << endl;
 }
