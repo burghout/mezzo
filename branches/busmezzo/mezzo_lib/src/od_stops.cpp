@@ -675,7 +675,15 @@ void ODstops::write_connection_output(ostream & out, Passenger* pass)
 void ODstops::write_od_summary(ostream & out)
 {
 	calc_pass_measures();
-	out << origin_stop->get_id() << '\t' << destination_stop->get_id() << '\t' << nr_pass_completed << '\t' << avg_tt << '\t' << avg_nr_boardings << '\t' << endl; 
+	int nr_paths = paths_tt.size();
+	out << origin_stop->get_id() << '\t' 
+		<< destination_stop->get_id() << '\t' 
+		<< nr_pass_completed << '\t' 
+		<< avg_tt << '\t' 
+		<< avg_nr_boardings << '\t'
+		<< nr_paths << '\t'
+		<< endl;
+
 	for (vector <pair<vector<Busstop*>, pair <int,double>>>::iterator path_iter = paths_tt.begin(); path_iter < paths_tt.end(); path_iter++)
 	{
 		for (vector<Busstop*>::iterator stop_iter = (*path_iter).first.begin(); stop_iter < (*path_iter).first.end(); stop_iter++)
@@ -688,7 +696,12 @@ void ODstops::write_od_summary(ostream & out)
 
 void ODstops::write_od_summary_without_paths(ostream & out)
 {
-	out << origin_stop->get_id() << '\t' << destination_stop->get_id() << '\t' << nr_pass_completed << '\t' << avg_tt << '\t' << avg_nr_boardings << '\t' << endl; 
+	out << origin_stop->get_id() << '\t' 
+		<< destination_stop->get_id() << '\t' 
+		<< nr_pass_completed << '\t' 
+		<< avg_tt << '\t' 
+		<< avg_nr_boardings << '\t' 
+		<< endl; 
 }
 
 void ODstops::calc_pass_measures ()
