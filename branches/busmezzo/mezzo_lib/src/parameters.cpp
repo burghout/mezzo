@@ -529,7 +529,7 @@ bool Parameters::read_parameters (istream & in )
 		return false;
 	}
 	in >> demand_scale;
-	if (demand_format == 3 || demand_format == 4)
+	if (demand_format == 3)
 	{
 		in >> keyword;
 		if (keyword!= "choice_set_indicator=")
