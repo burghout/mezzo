@@ -4927,39 +4927,36 @@ in >> keyword;
 
 bool Network::read_dwell_time_function (istream& in)
 {
-   char bracket;
+	char bracket;
 	int func_id;
-// dwell time parameters
-   int dwell_time_function_form; 
+	// dwell time parameters
+	int dwell_time_function_form; 
 	// 11 - Linear function of boarding and alighting
-    // 12 - Linear function of boarding and alighting + non-linear crowding effect (Weidmann) 
-    // 13 - Max (boarding, alighting) + non-linear crowding effect (Weidmann) 
-    // 20 - TCRP(max doors with crowding, boarding from x doors, alighting from y doors) + bay + stop capacity
-    // 21 - TCRP(max doors with crowding, boarding from front door, alighting from both doors) + bay + stop capacity
-   double dwell_constant;
-   double boarding_coefficient;
-   double alighting_cofficient;
-   double dwell_std_error;
-   
-   // in case of TCRP function form
-   double share_alighting_front_door;
-   double crowdedness_binary_factor;
-   double number_boarding_doors, number_alighting_doors;
+	// 12 - Linear function of boarding and alighting + non-linear crowding effect (Weidmann) 
+	// 13 - Max (boarding, alighting) + non-linear crowding effect (Weidmann) 
+	// 21 - TCRP(max doors with crowding, boarding from front door, alighting from both doors) + bay + stop capacity
+	// 22 - TCRP(max doors with crowding, boarding from x doors, alighting from y doors) + bay + stop capacity
+	double dwell_constant;
+	double boarding_coefficient;
+	double alighting_cofficient;
+	double dwell_std_error;
 
-   // extra delays
-   double bay_coefficient;
-   double over_stop_capacity_coefficient;
-  in >> bracket;
-  if (bracket != '{')
-  {
-  	cout << "readfile::readsbusstop scanner jammed at " << bracket;
-  	return false;
-  }
-	in >> func_id >> dwell_time_function_form >> dwell_constant >> boarding_coefficient >> alighting_cofficient >> dwell_std_error >> bay_coefficient >> over_stop_capacity_coefficient;
-	if (dwell_time_function_form == 20)
+	// in case of TCRP function form
+	double share_alighting_front_door;
+	double crowdedness_binary_factor;
+	double number_boarding_doors, number_alighting_doors;
+
+	// extra delays
+	double bay_coefficient;
+	double over_stop_capacity_coefficient;
+	in >> bracket;
+	if (bracket != '{')
 	{
-		in >> number_boarding_doors >> number_alighting_doors >> share_alighting_front_door >> crowdedness_binary_factor;
+		cout << "readfile::readsbusstop scanner jammed at " << bracket;
+		return false;
 	}
+	in >> func_id >> dwell_time_function_form >> dwell_constant >> boarding_coefficient >> alighting_cofficient >> dwell_std_error >> bay_coefficient >> over_stop_capacity_coefficient;
+
 	if (dwell_time_function_form == 21)
 	{
 		in >> share_alighting_front_door >> crowdedness_binary_factor;
@@ -4968,7 +4965,8 @@ bool Network::read_dwell_time_function (istream& in)
 	}
 	if (dwell_time_function_form == 22)
 	{
-		Dwell_time_function* dt= new Dwell_time_function (func_id,dwell_time_function_form,dwell_constant,boarding_coefficient,alighting_cofficient,dwell_std_error,share_alighting_front_door,number_boarding_doors,number_alighting_doors,crowdedness_binary_factor,bay_coefficient,over_stop_capacity_coefficient);
+		in >> number_boarding_doors >> number_alighting_doors >> share_alighting_front_door >> crowdedness_binary_factor;
+		Dwell_time_function* dt= new Dwell_time_function (func_id,dwell_time_function_form,dwell_constant,boarding_coefficient,alighting_cofficient,dwell_std_error,number_boarding_doors,number_alighting_doors,share_alighting_front_door,crowdedness_binary_factor,bay_coefficient,over_stop_capacity_coefficient);
 		dt_functions.push_back (dt);
 	}	
 	else
@@ -4976,13 +4974,14 @@ bool Network::read_dwell_time_function (istream& in)
 		Dwell_time_function* dt= new Dwell_time_function (func_id,dwell_time_function_form,dwell_constant,boarding_coefficient,alighting_cofficient,dwell_std_error,bay_coefficient,over_stop_capacity_coefficient);
 		dt_functions.push_back (dt);
 	}
-  in >> bracket;
-  if (bracket != '}')
-  {
-    cout << "readfile::readbustype scanner jammed at " << bracket;
-    return false;
-  }
-  return true;
+
+	in >> bracket;
+	if (bracket != '}')
+	{
+		cout << "readfile::readbustype scanner jammed at " << bracket;
+		return false;
+	}
+	return true;
 }
 
 bool Network::read_bustype (istream& in) // reads a bustype

@@ -625,13 +625,13 @@ public:
 		double boarding_coefficient_, 
 		double alighting_cofficient_, 
 		double dwell_std_error_, 
-		double share_alighting_front_door_, 
 		double number_boarding_doors_, 
-		double number_alighting_doors_, 
+		double number_alighting_doors_,
+		double share_alighting_front_door_, 
 		double crowdedness_binary_factor_, 
 		double bay_coefficient_, 
 		double over_stop_capacity_coefficient_
-	): function_id(function_id_), dwell_time_function_form (dwell_time_function_form_), dwell_constant(dwell_constant_), boarding_coefficient(boarding_coefficient_), alighting_cofficient(alighting_cofficient_), dwell_std_error(dwell_std_error_), share_alighting_front_door(share_alighting_front_door_),number_boarding_doors(number_boarding_doors_),number_alighting_doors(number_alighting_doors_),crowdedness_binary_factor(crowdedness_binary_factor_),bay_coefficient(bay_coefficient_),over_stop_capacity_coefficient(over_stop_capacity_coefficient_) {}
+	): function_id(function_id_), dwell_time_function_form (dwell_time_function_form_), dwell_constant(dwell_constant_), boarding_coefficient(boarding_coefficient_), alighting_cofficient(alighting_cofficient_), dwell_std_error(dwell_std_error_),number_boarding_doors(number_boarding_doors_),number_alighting_doors(number_alighting_doors_),share_alighting_front_door(share_alighting_front_door_),crowdedness_binary_factor(crowdedness_binary_factor_),bay_coefficient(bay_coefficient_),over_stop_capacity_coefficient(over_stop_capacity_coefficient_) {}
 	
 	Dwell_time_function (
 		int function_id_, 
@@ -666,15 +666,23 @@ public:
 	// 11 - Linear function of boarding and alighting
     // 12 - Linear function of boarding and alighting + non-linear crowding effect (Weidmann) 
     // 13 - Max (boarding, alighting) + non-linear crowding effect (Weidmann) 
-    // 20 - TCRP(max doors with crowding, boarding from x doors, alighting from y doors) + bay + stop capacity
     // 21 - TCRP(max doors with crowding, boarding from front door, alighting from both doors) + bay + stop capacity
-  
+	// 22 - TCRP(max doors with crowding, boarding from x doors, alighting from y doors) + bay + stop capacity
 
-   double dwell_constant, boarding_coefficient, alighting_cofficient, dwell_std_error;
-   
-   double number_boarding_doors,number_alighting_doors,share_alighting_front_door, crowdedness_binary_factor; // only for TCRP functions
-   
-   double bay_coefficient, over_stop_capacity_coefficient; // extra delays
+	double dwell_constant; 
+	double boarding_coefficient;
+	double alighting_cofficient;
+	double dwell_std_error;
+
+	// only for TCRP functions
+	double number_boarding_doors;
+	double number_alighting_doors;
+	double share_alighting_front_door;
+	double crowdedness_binary_factor; 
+
+	// extra delays
+	double bay_coefficient;
+	double over_stop_capacity_coefficient; 
 };
 
 #endif //_BUSLINE
