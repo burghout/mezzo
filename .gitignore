@@ -55,3 +55,5 @@ branches/busmezzo/gui/ui_parametersdialog_qt4.h
 
 *.user
 >>>>>>> origin/busmezzo_test
+
+*.DS_Store
