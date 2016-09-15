@@ -42,7 +42,6 @@ int main ( int argc, char **argv)
   NetworkThread* net1 = new NetworkThread(argv[1],1,seed);
   net1->init(); // reads the input files
   bool steady_state=false;
-  int max_days = 5;
 
   if (replications <=1)
   {

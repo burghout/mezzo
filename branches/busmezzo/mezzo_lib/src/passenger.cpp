@@ -1090,25 +1090,37 @@ void Passenger::write_selected_path(ostream& out)
 	// claculate passenger travel time components
 	if (end_time > 0)
 	{
-	
-	double total_waiting_time = calc_total_waiting_time();
-	double total_IVT = calc_total_IVT();
-	double total_IVT_crowding = calc_IVT_crowding();
-	double total_walking_time = calc_total_walking_time();
-	double total_waiting_time_due_to_denied_boarding = calc_total_waiting_time_due_to_denied_boarding();
-	
-	out << passenger_id << '\t'<< original_origin->get_id() << '\t' << OD_stop->get_destination()->get_id() << '\t' << start_time << '\t' << total_walking_time << '\t' << total_waiting_time << '\t' << total_waiting_time_due_to_denied_boarding << '\t' << total_IVT << '\t' << total_IVT_crowding << '\t' << end_time << '\t' << '{';
-	for (vector <pair<Busstop*,double>>::iterator stop_iter = selected_path_stops.begin(); stop_iter < selected_path_stops.end(); stop_iter++)
-	{
-		out << (*stop_iter).first->get_id() << '\t';
-	}
-	out << '}' << '\t' << '{' << '\t';
-	for (vector <pair<Bustrip*,double>>::iterator trip_iter = selected_path_trips.begin(); trip_iter < selected_path_trips.end(); trip_iter++)
-	{
-		out << (*trip_iter).first->get_id() << '\t';
-	}	
-	out << '}' << endl;
+		double total_waiting_time = calc_total_waiting_time();
+		double total_IVT = calc_total_IVT();
+		double total_IVT_crowding = calc_IVT_crowding();
+		double total_walking_time = calc_total_walking_time();
+		double total_waiting_time_due_to_denied_boarding = calc_total_waiting_time_due_to_denied_boarding();
 
+		out << passenger_id << '\t'
+			<< original_origin->get_id() << '\t'
+			<< OD_stop->get_destination()->get_id() << '\t'
+			<< start_time << '\t'
+			<< total_walking_time << '\t'
+			<< total_waiting_time << '\t'
+			<< total_waiting_time_due_to_denied_boarding << '\t'
+			<< total_IVT << '\t'
+			<< total_IVT_crowding << '\t'
+			<< end_time << '\t'
+			
+			<< '{';
+		for (vector <pair<Busstop*,double>>::iterator stop_iter = selected_path_stops.begin(); stop_iter < selected_path_stops.end(); stop_iter++)
+		{
+			out << (*stop_iter).first->get_id() << '\t';
+		}
+
+		out << '}' << '\t' 
+			
+			<< '{' << '\t';
+		for (vector <pair<Bustrip*,double>>::iterator trip_iter = selected_path_trips.begin(); trip_iter < selected_path_trips.end(); trip_iter++)
+		{
+			out << (*trip_iter).first->get_id() << '\t';
+		}	
+		out << '}' << endl;
 	}
 }
 

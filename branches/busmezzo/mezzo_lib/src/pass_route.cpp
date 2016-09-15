@@ -215,7 +215,7 @@ double Pass_path::calc_total_waiting_time (double time, bool without_first_waiti
 					if (second_stops.size() == 1 && first_stops.front() == second_stops.front()) // staying at the same stop
 					{
 						leg_has_RTI = true;
-						wt_rti = calc_curr_leg_waiting_RTI((*iter_alt_lines), alt_transfer_stops_iter, pass_arrival_time_at_next_stop, pass);
+						wt_rti = calc_curr_leg_waiting_RTI((*iter_alt_lines), alt_transfer_stops_iter, pass_arrival_time_at_next_stop);
 					}
 					else // using a connected stop
 					{
@@ -233,7 +233,7 @@ double Pass_path::calc_total_waiting_time (double time, bool without_first_waiti
 				if (first_line == true)
 				{
 					leg_has_RTI = true;
-					wt_rti = calc_curr_leg_waiting_RTI((*iter_alt_lines), alt_transfer_stops_iter, pass_arrival_time_at_next_stop, pass);
+					wt_rti = calc_curr_leg_waiting_RTI((*iter_alt_lines), alt_transfer_stops_iter, pass_arrival_time_at_next_stop);
 					break; 
 				}
 				else
@@ -244,7 +244,7 @@ double Pass_path::calc_total_waiting_time (double time, bool without_first_waiti
 			case 3:
 				// all legs are estimated based on real-time info
 				leg_has_RTI = true;
-				wt_rti = calc_curr_leg_waiting_RTI((*iter_alt_lines), alt_transfer_stops_iter, pass_arrival_time_at_next_stop, pass);
+				wt_rti = calc_curr_leg_waiting_RTI((*iter_alt_lines), alt_transfer_stops_iter, pass_arrival_time_at_next_stop);
 				break;
 		}
 
@@ -355,7 +355,7 @@ double Pass_path::calc_curr_leg_waiting_schedule (vector<Busline*> leg_lines, ve
 }
 */
 
-double Pass_path::calc_curr_leg_waiting_RTI (vector<Busline*> leg_lines, vector <vector <Busstop*>>::iterator stop_iter, double arriving_time, Passenger* pass)
+double Pass_path::calc_curr_leg_waiting_RTI (vector<Busline*> leg_lines, vector <vector <Busstop*>>::iterator stop_iter, double arriving_time)
 { 
 	double min_waiting_time;
 	bool first_time = true;

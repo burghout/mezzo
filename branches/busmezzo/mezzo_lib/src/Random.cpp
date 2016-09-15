@@ -353,7 +353,7 @@ Random::poisson1 (double lambda, double duration) // using calls to erandom() ac
 	return (counter);
 }
 
-int Random::inverse_gamma (double k_shape, int theta_scale)
+int Random::inverse_gamma (int k_shape, double theta_scale)
 {
 	int random_number = 0;
 	for (int i=0; i < k_shape; i++)

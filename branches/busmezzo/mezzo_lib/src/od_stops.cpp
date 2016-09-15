@@ -283,6 +283,7 @@ double ODstops::calc_boarding_probability (Busline* arriving_bus, double time, P
 		staying_utility = 2.0;
 		return 0;
 	}
+	return 0;
 }
 
 bool ODstops::check_if_path_is_dominated (Pass_path* considered_path, vector<Pass_path*> arriving_paths)
@@ -612,7 +613,7 @@ void ODstops::record_waiting_experience(Passenger* pass, Bustrip* trip, double t
 	output_pass_waiting_experience[pass].push_back(Pass_waiting_experience(pass->get_id(), pass->get_original_origin()->get_id(), pass->get_OD_stop()->get_destination()->get_id(), trip->get_line()->get_id(), trip->get_id() , pass->get_OD_stop()->get_origin()->get_id() , time, pass->get_start_time(), expected_WT_PK, level_of_rti_upon_decision, projected_RTI ,experienced_WT, AWT, nr_missed)); 
 }
 
-void ODstops::record_onboard_experience(Passenger* pass, Bustrip* trip, double time, Busstop* stop, pair<double,double> riding_coeff)
+void ODstops::record_onboard_experience(Passenger* pass, Bustrip* trip, Busstop* stop, pair<double,double> riding_coeff)
 {
 	double expected_ivt;
 	double first_stop_time;
@@ -674,7 +675,15 @@ void ODstops::write_connection_output(ostream & out, Passenger* pass)
 void ODstops::write_od_summary(ostream & out)
 {
 	calc_pass_measures();
-	out << origin_stop->get_id() << '\t' << destination_stop->get_id() << '\t' << nr_pass_completed << '\t' << avg_tt << '\t' << avg_nr_boardings << '\t' << endl; 
+	int nr_paths = paths_tt.size();
+	out << origin_stop->get_id() << '\t' 
+		<< destination_stop->get_id() << '\t' 
+		<< nr_pass_completed << '\t' 
+		<< avg_tt << '\t' 
+		<< avg_nr_boardings << '\t'
+		<< nr_paths << '\t'
+		<< endl;
+
 	for (vector <pair<vector<Busstop*>, pair <int,double>>>::iterator path_iter = paths_tt.begin(); path_iter < paths_tt.end(); path_iter++)
 	{
 		for (vector<Busstop*>::iterator stop_iter = (*path_iter).first.begin(); stop_iter < (*path_iter).first.end(); stop_iter++)
@@ -687,7 +696,12 @@ void ODstops::write_od_summary(ostream & out)
 
 void ODstops::write_od_summary_without_paths(ostream & out)
 {
-	out << origin_stop->get_id() << '\t' << destination_stop->get_id() << '\t' << nr_pass_completed << '\t' << avg_tt << '\t' << avg_nr_boardings << '\t' << endl; 
+	out << origin_stop->get_id() << '\t' 
+		<< destination_stop->get_id() << '\t' 
+		<< nr_pass_completed << '\t' 
+		<< avg_tt << '\t' 
+		<< avg_nr_boardings << '\t' 
+		<< endl; 
 }
 
 void ODstops::calc_pass_measures ()
@@ -750,24 +764,38 @@ void ODstops::calc_pass_measures ()
 
 void Pass_alighting_decision::write (ostream& out) 
 { 
-	out << pass_id << '\t' << original_origin << '\t' << destination_stop << '\t' << line_id << '\t'<< trip_id << '\t'<< stop_id<< '\t'<< time << '\t'<< generation_time << '\t' << chosen_alighting_stop << '\t' ;
+	out << pass_id << '\t'
+		<< original_origin << '\t'
+		<< destination_stop << '\t'
+		<< line_id << '\t'
+		<< trip_id << '\t'
+		<< stop_id<< '\t'
+		<< time << '\t'
+		<< generation_time << '\t'
+		<< chosen_alighting_stop << '\t';
 	for (map<Busstop*,pair<double,double>>::iterator iter = alighting_MNL.begin(); iter != alighting_MNL.end(); iter++)
 	{
-		out<< (*iter).first->get_id() << '\t';
-		out<< (*iter).second.first << '\t';
-		out<< (*iter).second.second << '\t';
+		out << (*iter).first->get_id() << '\t';
+		out << (*iter).second.first << '\t';
+		out << (*iter).second.second << '\t';
 	}
 	out << endl; 
 }
 
 void Pass_connection_decision::write (ostream& out)
 { 
-	out << pass_id << '\t' << original_origin << '\t' << destination_stop << '\t' << stop_id<< '\t' << time << '\t'<< generation_time << '\t' << chosen_connection_stop << '\t';
+	out << pass_id << '\t' 
+		<< original_origin << '\t' 
+		<< destination_stop << '\t' 
+		<< stop_id << '\t' 
+		<< time << '\t'
+		<< generation_time << '\t' 
+		<< chosen_connection_stop << '\t';
 	for (map<Busstop*,pair<double,double>>::iterator iter = connecting_MNL.begin(); iter != connecting_MNL.end(); iter++)
 	{
-		out<< (*iter).first->get_id() << '\t';
-		out<< (*iter).second.first << '\t';
-		out<< (*iter).second.second << '\t';
+		out << (*iter).first->get_id() << '\t';
+		out << (*iter).second.first << '\t';
+		out << (*iter).second.second << '\t';
 	}
 	out << endl;
 }

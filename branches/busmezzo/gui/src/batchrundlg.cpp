@@ -149,7 +149,7 @@ void BatchrunDlg::run_iterations()
 			qApp->processEvents();
 			repaint();
 		}
-		theNetwork->end_of_simulation(runtime);
+		theNetwork->end_of_simulation();
 		rmsn_ltt_= theNetwork->calc_rmsn_input_output_linktimes();
 		if (i>1)
 			rmsn_odtt_=theNetwork->calc_rmsn_input_output_odtimes();

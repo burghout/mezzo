@@ -78,7 +78,7 @@ public:
 	void reset();
 // GETS
 	odval  odids();
-	const long get_nr_routes() {return routes.size();}
+	int get_nr_routes() {return static_cast<int>(routes.size());}
 	Route* get_route(int id);
 	Origin* get_origin();
 	Destination* get_destination();

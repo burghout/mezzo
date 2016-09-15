@@ -710,7 +710,7 @@ void Link::write_ass_matrix (ostream & out, int linkflowperiod)
 		
 		for (unsigned int h=0; h<ass_matrix[linkflowperiod].size(); ++h)
 		{
-			no_entries += ass_iter->second.size();
+			no_entries += static_cast<int>(ass_iter->second.size());
 			ass_iter++;
 		}
 		
@@ -847,13 +847,12 @@ unsigned int Link::nr_alternative_routes(int dest, int incidentlink_id)
 	}
   return count;
 }
-void Link::set_incident(Sdfunc* sdptr, bool blocked_, double blocked_until_)
+void Link::set_incident(Sdfunc* sdptr, bool blocked_, double blocked_until)
 {
 	temp_sdfunc=sdfunc;
 	sdfunc=sdptr;
 	blocked=blocked_;
 	blocked_until=-2.0; 
-	// NOTE : Check why blocked_until_ is ignored!
 }
 
 void Link::unset_incident()
