@@ -7219,9 +7219,8 @@ bool Network::writeassmatrices(string name)
 
 
 bool Network::init()
-
 {
-	// initialise the turining events
+	// initialise the turning events
 	double initvalue =0.1;
 	for(map<int,Turning*>::iterator iter=turningmap.begin(); iter!=turningmap.end(); iter++)
 	{
@@ -7242,28 +7241,20 @@ bool Network::init()
 		(*iter3)->execute(eventlist,initvalue);
 		initvalue+=0.00001;
 	}
-	switch (theParameters->demand_format)
+	
+	if(theParameters->demand_format == 3)
 	{
-		case 3:
-			for (vector<ODstops*>::iterator iter_odstops = odstops_demand.begin(); iter_odstops < odstops_demand.end(); iter_odstops++ )
+		for (vector<ODstops*>::iterator iter_odstops = odstops_demand.begin(); iter_odstops < odstops_demand.end(); iter_odstops++ )
+		{
+			if ((*iter_odstops)->get_arrivalrate() != 0.0 )
 			{
-				if ((*iter_odstops)->get_arrivalrate() != 0.0 )
+				if ((*iter_odstops)->check_path_set() == true)
 				{
-					if ((*iter_odstops)->check_path_set() == true)
-					{
-						(*iter_odstops)->execute(eventlist,initvalue); // adds an event for the generation time of the first passenger per OD in terms of stops
-					}
-					initvalue+=0.00001;
+					(*iter_odstops)->execute(eventlist,initvalue); // adds an event for the generation time of the first passenger per OD in terms of stops
 				}
-			}
-			break;
-		case 4:
-			for (vector<ODzone*>::iterator iter_odzones = odzones.begin(); iter_odzones < odzones.end(); iter_odzones++ )
-			{
-				(*iter_odzones)->execute(eventlist,initvalue); // adds an event for the generation time of the first passenger per origin zone
 				initvalue+=0.00001;
 			}
-			break;
+		}
 	}
 #endif //_BUSES
 #ifdef _DEBUG_NETWORK	
