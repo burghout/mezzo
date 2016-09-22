@@ -2312,7 +2312,7 @@ bool Network::readbusstops_distances_format2 (istream& in)
 	char bracket;
 	int from_stop_id, nr_stops;
 	double distance;
-	string name;
+	string name; //name of hub (as opposed to individual bus shelter/platform)
 	in >> bracket;
 	if (bracket != '{')
 	{
@@ -4830,7 +4830,8 @@ bool Network::read_dwell_time_function (istream& in)
 	// in case of TCRP function form
 	double share_alighting_front_door;
 	double crowdedness_binary_factor;
-	double number_boarding_doors, number_alighting_doors;
+	int number_boarding_doors;
+	int number_alighting_doors;
 
 	// extra delays
 	double bay_coefficient;
@@ -6995,10 +6996,10 @@ bool Network::writeall(unsigned int repl)
 	writeassmatrices(assignmentmatfile);
 	write_v_queues(vqueuesfile);
 	this->write_busstop_output(
-		workingdir + "o_buslog_out.dat", 
-		workingdir + "o_busstop_sum.dat", 
-		workingdir + "o_busline_sum.dat", 
-		workingdir + "o_bus_trajectory.dat", 
+		workingdir + "o_transitlog_out.dat", 
+		workingdir + "o_transitstop_sum.dat", 
+		workingdir + "o_transitline_sum.dat", 
+		workingdir + "o_transit_trajectory.dat", 
 		workingdir + "o_passenger_boarding.dat", 
 		workingdir + "o_passenger_alighting.dat", 
 		workingdir + "o_segments_trip_loads.dat", 

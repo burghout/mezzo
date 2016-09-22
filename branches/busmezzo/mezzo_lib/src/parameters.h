@@ -199,7 +199,7 @@ public:
    bool transfer_sync; //!< true if transfer synchronization is being used. Will effect the way the line definition in transit_network.dat is read.
 
 // day2day assignment
-   double default_alpha_RTI;
+   double default_alpha_RTI; //!< Initial value of the real-time information credibility coefficient set for all travellers
 
 // TODO: Implement the use of the following paramaters
    double vissim_step; //!< time step for the VISSIM micro model

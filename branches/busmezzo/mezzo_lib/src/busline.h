@@ -763,8 +763,8 @@ public:
 		double boarding_coefficient_, 
 		double alighting_cofficient_, 
 		double dwell_std_error_, 
-		double number_boarding_doors_, 
-		double number_alighting_doors_,
+		int number_boarding_doors_, 
+		int number_alighting_doors_,
 		double share_alighting_front_door_, 
 		double crowdedness_binary_factor_, 
 		double bay_coefficient_, 
@@ -813,8 +813,8 @@ public:
 	double dwell_std_error;
 
 	// only for TCRP functions
-	double number_boarding_doors;
-	double number_alighting_doors;
+	int number_boarding_doors;
+	int number_alighting_doors;
 	double share_alighting_front_door;
 	double crowdedness_binary_factor; 
 
