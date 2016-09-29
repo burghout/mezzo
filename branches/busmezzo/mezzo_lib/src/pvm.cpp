@@ -71,9 +71,9 @@ int PVM::receive_now ()
 	bool ok=false;
 	if (rcv)
 	{
-		(*this) > > rcvcount;
+		(*this) >> rcvcount;
 		// Check the rcvcount with previous messages.
-		(*this) > > nrsigs;
+		(*this) >> nrsigs;
 		switch (rcvcount)
 		{
 			case -1 :
@@ -83,14 +83,14 @@ int PVM::receive_now ()
 			case -2 :
 				for (int i=0; i<nrsigs;i++) // for all signals of boundary blockage / unblockage
 				{
-					(*this) > > nodeid; // get the nodeid
+					(*this) >> nodeid; // get the nodeid
 					
 					// do what is needed for blocking virtual links from Boundary Out node
 					vector <BoundaryOut*>::iterator optr=find_if(boundaryouts->begin(),boundaryouts->end(),compare <BoundaryOut> (nodeid));
 				 	if (optr < (*boundaryouts).end() )
 				 	{
-						(*this) > > code;
-                     (*this) > > speed;
+						(*this) >> code;
+                     (*this) >> speed;
 						(*optr)->block(code,speed);   // if code > 0 then code= upstream density
 						cout << "Mezzo::(un)blocking node " << nodeid <<" code " << code  << " speed " << speed << endl;
                       cout.flush();
