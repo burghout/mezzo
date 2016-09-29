@@ -529,10 +529,10 @@ bool BoundaryIn::receive_message(PVM* com)
 {
 	    int rid, signr;
 	    bool ok=false;
-		(*com) >> rid; // first is always the node id
+		(*com) > > rid; // first is always the node id
 		if (id!=rid)
 			return false;
-		(*com) >> signr; // number of signatures
+		(*com) > > signr; // number of signatures
 		if (signr > 0)
 			for (int i=0; i<signr;i++)
 			{
