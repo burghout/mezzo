@@ -832,6 +832,7 @@ void Bustrip::reset ()
 	passengers_on_board.clear();
 	output_passenger_load.clear();
 	last_stop_visited = stops.front()->first;
+	holding_at_stop = false;
 }
 
 void Bustrip::convert_stops_vector_to_map ()
