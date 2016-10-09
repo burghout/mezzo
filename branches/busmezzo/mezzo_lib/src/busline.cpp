@@ -145,6 +145,18 @@ bool Busline::is_line_timepoint (Busstop* stop)
 return false;
 }
 
+bool Busline::is_line_transfer_stop (Busstop* stop)
+{
+	for (vector <Busstop*>::iterator tr = tr_stops.begin(); tr < tr_stops.end(); tr++ )
+	{
+		if (stop == *(tr))
+		{
+			return true;
+		}
+	}
+return false;
+}
+
 bool Busline::check_first_stop (Busstop* stop)
 {
 	if (stop==*(stops.begin()))
@@ -179,6 +191,14 @@ bool Busline::check_last_trip (Bustrip* trip)
 		return true;
 	}
 return false;
+}
+
+void Busline::get_transfer_stops(vector<Visit_stop> visit_transfers)
+{
+	for(size_t i=0; i<tr_stops.size(); ++i)
+	{
+		visit_transfers.push_back(make_pair(tr_stops[i],0.0));
+	}
 }
 
 /*
@@ -889,6 +909,157 @@ double Bustrip::calc_departure_time (double time) // calculates departure time f
 		actual_dispatching_time = Max (time + min_recovery , starttime) + theRandomizers[0]->lnrandom (mean_error_recovery, std_error_recovery);
 		return actual_dispatching_time; // error factor following log normal distribution;
 	}
+}
+
+vector<Visit_stop*>::iterator Bustrip:: get_target_stop(Bustrip *trip, vector <Visit_stop*> :: iterator& next_stop)
+{
+	vector <Visit_stop*>::iterator target_stop = next_stop; //target stop contains a pointer to the target stop according to the stop horizon
+	for(int i=1; i<theParameters->Stop_horizon; i++, ++target_stop)
+	{
+		if (trip->get_line()->check_last_stop((*target_stop)->first))
+		{	
+			break;
+		}
+	}
+	return target_stop;
+}
+
+vector<Start_trip> Bustrip::calc_predic_times(Start_trip trip, Visit_stop *target_stop, vector<Start_trip> trips_to_handle)
+{				
+	//calculate delay/earliness of trips
+	double offset = 0.0;
+	Busstop* succ_trip_next_stop;			//next stop for succeeding trip
+	if((trip.first->get_last_stop_visited()) !=trip.first->get_line()->stops.back()) //if last stop visited is the last stop in line, so no next_stop 
+	{
+		succ_trip_next_stop = (*(trip.first->get_next_stop()))->first;
+		if(trip.first->get_line()->check_first_stop(succ_trip_next_stop) == false) //if the next stop is not the first in the trip
+		{
+			Busstop* succ_trip_last_stop;					//last stop visited by succeeded trips
+			double succ_trip_actual_arrival_last_stop;	//actual arrival time at last stop entered by succeeded trip
+			double succ_trip_sched_arrival_last_stop;		//scheduled arrival time at last stop entered by succeeded trip
+
+			succ_trip_last_stop = trip.first->get_last_stop_visited();
+			succ_trip_actual_arrival_last_stop = trip.first->get_enter_time(); 
+			succ_trip_sched_arrival_last_stop = trip.first->stops_map[succ_trip_last_stop];
+
+			offset = succ_trip_actual_arrival_last_stop - succ_trip_sched_arrival_last_stop;	//delay or earliness of succeeded trip
+		}
+		else
+		{
+			offset = 0;
+		}
+	}					
+	trip.first->down_stops = trip.first->get_downstream_stops_till_horizon(target_stop); 
+	for(vector <Visit_stop*> :: iterator down_stp=trip.first->down_stops.begin(); down_stp<trip.first->down_stops.end(); ++down_stp)
+	{
+		(*down_stp)->second = offset + trip.first->stops_map[(*down_stp)->first];
+	}
+	trips_to_handle.push_back(trip);
+	return trips_to_handle;
+}
+
+vector<double> Bustrip::get_first_and_last_trips(vector<Start_trip> trips_to_handle,Visit_stop* transfer_stop)
+{
+	vector<double> first_and_last_times;
+	for(vector<Start_trip>::iterator tr_it = trips_to_handle.begin(); tr_it < trips_to_handle.end(); ++tr_it)
+	{
+		for(vector<Visit_stop*>::iterator down_stp = tr_it->first->down_stops.begin(); down_stp< tr_it->first->down_stops.end(); ++down_stp)
+		{
+			if((*down_stp)->first == transfer_stop->first)
+			{
+				first_and_last_times.push_back((*down_stp)->second);
+				break;
+			}
+		}
+		if(first_and_last_times.size()) break;
+	}
+	for(vector<Visit_stop*>::iterator down_stp = trips_to_handle.back().first->down_stops.begin(); down_stp< trips_to_handle.back().first->down_stops.end(); ++down_stp)
+	{
+		if((*down_stp)->first == transfer_stop->first)
+		{
+			first_and_last_times.push_back((*down_stp)->second);
+			break;
+		}
+	}
+	return first_and_last_times;
+}
+
+Busline* Bustrip::get_tr_line(Busstop* it_stp, int tr_id)
+{
+	Busline* transfer_line;
+	vector<Busline*> network_lines = (*it_stp).get_lines();
+	for(vector<Busline*>::iterator tr_lines = network_lines.begin(); tr_lines < network_lines.end(); ++tr_lines)
+	{
+		if((*tr_lines)->get_id() == tr_id)
+		{
+			transfer_line = (*tr_lines);
+			break;
+		}
+	}
+	return transfer_line;
+}
+
+vector<Visit_stop*> Bustrip::get_transfers_in_downstream(Bustrip* trip)
+{
+	vector<Visit_stop*> transfer_in_downstream;
+	vector <Visit_stop> visit_transfers;
+	trip->get_line()->get_transfer_stops(visit_transfers); 
+
+	for(size_t down_stp_i= 0;  down_stp_i< trip->down_stops.size(); ++down_stp_i)
+	{
+		for( size_t trns_stp_j = 0; trns_stp_j < visit_transfers.size(); ++trns_stp_j)
+		{
+			if(trip->down_stops[down_stp_i]->first == visit_transfers[trns_stp_j].first)
+			{
+				transfer_in_downstream.push_back(&visit_transfers[trns_stp_j]);
+			}
+		}
+	}
+	return transfer_in_downstream;
+}
+
+bool Bustrip::is_trip_exist (vector<Start_trip> trips_in_transfer, Bustrip* transfer_trip)
+{
+	for(vector<Start_trip>::iterator trnsfer_itr=trips_in_transfer.begin(); trnsfer_itr<trips_in_transfer.end(); ++trnsfer_itr)
+	{
+		if(trnsfer_itr->first==transfer_trip) return true;
+	}
+	return false;
+}
+
+double Bustrip::get_predict_time_to_trnsfr(Visit_stop *transfer_stop)
+{
+	for(vector<Visit_stop*>::iterator down_stp=down_stops.begin(); down_stp<down_stops.end();++down_stp)
+	{
+		if(*down_stp == transfer_stop) return (*down_stp)->second;
+	}
+	return 0;
+}
+
+vector<Start_trip> Bustrip::get_trips_in_transfer_line(vector<Start_trip> transfer_trips, Visit_stop *transfer_stop ,vector<double> limited_tr_stop, vector<Start_trip> trips_in_transfer)
+{
+	for(size_t tr=transfer_trips.size()-1; tr=0; --tr)
+	{
+		if(!transfer_trips[tr].first->is_trip_exist(trips_in_transfer,transfer_trips[tr].first))
+		{
+			double predict_trnsfr = transfer_trips[tr].first->get_predict_time_to_trnsfr(transfer_stop);
+			if(predict_trnsfr>=limited_tr_stop[0] && predict_trnsfr<=limited_tr_stop[1])
+			{
+				trips_in_transfer.push_back(transfer_trips[tr]);
+			}
+		}
+	}
+	return trips_in_transfer;
+}
+
+bool Bustrip:: is_stop_in_downstream(Visit_stop *target_stop)
+{
+	for(vector <Visit_stop*> :: iterator stop = next_stop; stop < stops.end(); stop++)
+	{
+		if ((*stop)->first == (target_stop)->first)
+		{return true;}
+	}
+	return false;
 }
 
 bool Bustrip::advance_next_stop (double time, Eventlist* eventlist)
@@ -2277,34 +2448,12 @@ double Busstop::calc_holding_departure_time (Bustrip* trip, double time)
 			}
 			// for real-time corridor control 		
 			case 10:
-				// find_next_downstream_hub();
-				// calc_planned_offset_Tomer_function (); // at the moment calc it exogenously
-				
-				if ( (trip->get_line()->is_line_timepoint(this)) && !(trip->get_line()->check_last_trip(trip)) ) // if it is a time point and it is not the last trip
+				// find_next_downstream_hub();			
+				if ( (trip->get_line()->is_line_timepoint(this)) || (trip->get_line()->is_line_transfer_stop(this))  && !(trip->get_line()->check_last_trip(trip)) ) // if it is a time point or transfer stop and it is not the last trip
 				{
-					vector <Visit_stop*> :: iterator target_stop = trip->get_next_stop(); //target stop contains a pointer to the target stop according to the stop horizon
-					for (int i=1; i<theParameters->Stop_horizon; i++, ++target_stop)
-					{
-						if (trip->get_line()->check_last_stop((*target_stop)->first))
-						{	
-							break;
-						}
-					}
+					vector <Visit_stop*>::iterator target_stop = trip->get_target_stop(trip, trip->get_next_stop());
 					vector<Start_trip> trips = trip->get_line()->get_trips();  //return the trips for the line
-					for (vector <Start_trip> :: iterator it = trips.begin(); it < trips.end(); ++it)
-					{
-						(*it).first->down_stops = (*it).first->get_downstream_stops_till_horizon(*target_stop); //Check what if the trip is after the target stop
-						for (size_t i=0; i< (*it).first->down_stops.size(); ++i)
-						{
-							if (i != 0) {
-								 (*it).first->down_stops[i]->second = it->first->get_last_stop_exit_time() -  (*it).first->down_stops[i-1]->second  +  (*it).first->down_stops[i]->second; //down_stops[0] give me the scheduale time of the stop that I exited
-							}
-							if ( (*it).first->down_stops[i]->first == this)
-							{
-								it->second =  (*it).first->down_stops[i]->second;
-							}
-						}	
-					}
+					/*
 					//sort trips according to their start trip time. maybe not needed (if already sorted)
 					Start_trip temp_trip = trips[0];
 					for (size_t i=0; i< trips.size(); ++i) {
@@ -2316,56 +2465,79 @@ double Busstop::calc_holding_departure_time (Bustrip* trip, double time)
 							}
 						}
 					}
+					*/
+					
 					//build a vector of trips to handle on the same line, these trips are all the trips that already
 					//visited my stop and did not pass the target stop and trips behind me according to the bus_horizon
 					vector<Start_trip> trips_to_handle;
 					int k=0;
+					//For preceeding trips:
 					while (trips[k].first != trip)
 					{
-						if (trips[k].first->down_stops.size() > 0) {
-							trips_to_handle.push_back(trips[k]);
+						if (trips[k].first->is_stop_in_downstream(*target_stop))//if the trip didn't pass the target stop
+						{	
+							trips_to_handle = trips[k].first->calc_predic_times(trips[k], *target_stop, trips_to_handle);//check if it returns the updated trips_to_handle????
+							trips[k].first->trip_occupancy.push_back(make_pair(trips[k].first, trips[k].first->get_busv()->get_occupancy()));
 						}
 						k++;
 					}
+					//For proceeding trips:
 					int j=0;
-					while (j < theParameters->Bus_horizon & !trips[k].first->get_line()->check_last_trip(trips[k].first) )
+					while (j<theParameters->Bus_horizon && !trips[k].first->get_line()->check_last_trip(trips[k].first))
 					{
-						if (trips[k].first->down_stops.size() > 0) {
-							trips_to_handle.push_back(trips[k]);
+						if (trips[k].first->is_stop_in_downstream(*target_stop))//if the trip didn't pass the target stop
+						{
+							trips_to_handle = trips[k].first->calc_predic_times(trips[k], *target_stop, trips_to_handle);//check if it returns the updated trips_to_handle????
+							trips[k].first->trip_occupancy.push_back(make_pair(trips[k].first, trips[k].first->get_busv()->get_occupancy()));
 						}
 						k++,j++;
 					}
+					//deal with synchronizing transfer stops:
+					if(theParameters->transfer_sync == 1) // if we are synchronizing transfers
+					{
+						vector<Start_trip> trips_in_transfer;
+						vector<Start_trip> transfer_trips;
+						vector<Visit_stop*> transfer_stops_to_handle = trip->get_transfers_in_downstream(trip);//get the transfer stops in the horizon
+						if(transfer_stops_to_handle.size()) //if there are transfer stops downstream
+						{
+							map<int,vector <Busstop*>> transfer_lines = trip->get_line()->get_transfer_lines(trip->get_line());//get map of the transfer lines
+							for(vector<Visit_stop*>::iterator tr_stps= transfer_stops_to_handle.begin(); tr_stps< transfer_stops_to_handle.end(); ++tr_stps)  
+							//for(size_t tr_stps_i =0; tr_stps_i<transfer_stops_to_handle.size(); ++tr_stps_i)//for each transfer stop
+							{
+								vector<double> limited_tr_stop = trip->get_first_and_last_trips(trips_to_handle, *tr_stps);//return the time of the first trip and last trip on the ransfer stop
+								for(map<int,vector <Busstop*>>::iterator tr_it=transfer_lines.begin(); tr_it!=transfer_lines.end(); ++tr_it)//for each transfer line
+								{
+									if((*tr_it).first==trip->get_line()->get_id()) break; //loop is on the same trip
+									Busline* transfer_line = trip->get_tr_line((*tr_stps)->first, (*tr_it).first);
+
+									vector<Start_trip> tr_trip = transfer_line->get_trips();  //return the trips for the transfer line
+									for(vector<Start_trip>:: iterator trnsfr_it = tr_trip.begin(); trnsfr_it<tr_trip.end(); ++trnsfr_it)
+									{		
+										if ((*trnsfr_it).first->is_stop_in_downstream(*tr_stps))//if the trip didn't pass the target stop
+										{	
+											//first calculate the new target_stop taking into account the transfer stop + stop horizon
+											vector <Visit_stop*>::iterator transfer_target_stop = trips[k].first->get_target_stop(trips[k].first, tr_stps);
+											transfer_trips = trips[k].first->calc_predic_times(trips[k], *transfer_target_stop, transfer_trips);//check if it returns the updated trips_to_handle????
+										}
+										k++;
+									}
+									trips_in_transfer = trip->get_trips_in_transfer_line(transfer_trips,*tr_stps,limited_tr_stop, trips_in_transfer);
+									if(trips_in_transfer.size())
+									{
+										for(size_t tr_in=0; tr_in<trips_awaiting_transfers.size(); ++tr_in)
+										{
+											trips_in_transfer[tr_in].first->trip_occupancy.push_back(make_pair(trips_in_transfer[tr_in].first, trips_in_transfer[tr_in].first->get_busv()->get_occupancy()));
+										}
+									}
+								}// for transfer_lines
+							}//for transfer stops
+						}//if there is transfer stops downstream
+					} //if transfer_sync == 1
+				}//if time point or transfer stop 
 					
 
 
-
-					
-					/*
-					size_t best1 = 0 , best2 = 0 , best3 = 0;
-					
-					for (size_t i=1; i< trips.size(); ++i) {
-						if (trips[i].second < trips[best1].second) {
-							best3 = best2;
-							best2 =  best1;
-							best1 = i;
-							continue;
-						}
-						if (trips[i].second < trips[best2].second) {
-							best3 = best2;
-							best2 = i;
-							continue;
-						}
-						if (trips[i].second < trips[best2].second) {
-							best3 = i;
-						}
-					}*/
-
-
-
-
-					
-					
-					// calc_nr_intermediate_stops ();	
+				// calc_nr_intermediate_stops ();	
 
 				// predicting which of the parallel line trips is expected to arrive directly afterwards 
 				// double holding_departure_time = calc_optimal_corridor_holding (trip); // based on Giorgos thesis
@@ -2379,7 +2551,8 @@ double Busstop::calc_holding_departure_time (Bustrip* trip, double time)
 				// int curr_occupancy = trip->get_busv()->get_occupancy();  
 				// trip->get_busv()->set_occupancy(curr_occupancy + additional_boarding); // Updating the occupancy
 				// return max(ready_to_depart, holding_departure_time);
-				}	
+				
+				
 
 
 				// return holding_departure_time;

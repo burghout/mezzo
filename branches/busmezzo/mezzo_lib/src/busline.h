@@ -152,6 +152,9 @@ public:
 	double total_travel_time;
 };
 
+typedef pair<Busstop*,double> Visit_stop;
+typedef map<int,vector<Busstop*>> tr_line; //2016-06-23 Hend: contains the id of each transfer line and the transfer_stops
+
 class Busline: public Action
 {
 public:
@@ -193,19 +196,25 @@ public:
 	//transfer gets and sets
 	int	get_tr_line_id() {return tr_line_id;}
 	vector <Busstop*> get_tr_stops() {return tr_stops;}
+	void get_transfer_stops(vector<Visit_stop> visit_transfers);
 
 	// initialization
 	void add_timepoints (vector <Busstop*> tp) {line_timepoint = tp;}
 	void add_trip(Bustrip* trip, double starttime){trips.push_back(Start_trip(trip,starttime));}
+	void add_transferstops (vector <Busstop*> tr) {tr_stops = tr;} //!< Hend added 071016 add transfer stops
 	void add_disruptions (Busstop* from_stop, Busstop* to_stop, double disruption_start_time, double disruption_end_time, double cap_reduction);
 
 	//transfer initilization
 	void add_tr_line_id (int id) {tr_line_id = id;}
 	void add_tr_stops (vector <Busstop*> stops) {tr_stops = stops;}
+	map<int,vector <Busstop*>> transfer_lines; //!< Hend added 070116 transfer lines
+	map<int,vector <Busstop*>> get_transfer_lines (Busline*) {return transfer_lines;}
+	void add_transfer_line (map<int,vector <Busstop*>> transfer_line ) { transfer_lines = transfer_line;} //!< Hend added 070116 add transfer line
 	
 	// checks
 	bool check_last_stop (Busstop* stop);
 	bool is_line_timepoint (Busstop* stop);											//!< returns true if stops is a time point for this busline, otherwise it returns false
+	bool is_line_transfer_stop (Busstop* stop);									    //!< returns true if stops is a transfer stop for this busline, otherwise it returns false
 	bool check_first_stop (Busstop* stop);											//!< returns true if the stop is the first stop on the bus line, otherwise it returns false 
 	bool check_first_trip (Bustrip* trip);											//!< returns true if the trip is the first trip on the bus line, otherwise it returns false  
 	bool check_last_trip (Bustrip* trip);											//!< returns true if the trip is the last trip on the bus line, otherwise it returns false  
@@ -271,7 +280,7 @@ protected:
 	list <Busline_travel_times> output_travel_times;
 };
 
-typedef pair<Busstop*,double> Visit_stop;
+
 
 class Bustrip_assign // container object holding output data for trip assignments
 {
@@ -363,11 +372,20 @@ public:
 	double calc_departure_time (double time);											//!< calculates departure time from origin according to arrival time and schedule (including layover effect)
 	void convert_stops_vector_to_map();													//!< building stops_map
 	void convert_downstreamstops_vector_to_map(vector <Visit_stop*> down_stops);													//!< building stops_map
+	vector <Visit_stop*> ::iterator get_target_stop(Bustrip *trip, vector<Visit_stop*> :: iterator& next_stop); //Hend added 190716 get target stop according to the stop horizon
+	vector<Start_trip> calc_predic_times(Start_trip trip, Visit_stop *target_stop, vector<Start_trip> trips_to_handle); ////Hend added 130716: calc the predictions of the arrival times of trips
+	vector<double> get_first_and_last_trips(vector<Start_trip> trips_to_handle,Visit_stop* transfer_stop);//Hend added 130716: get the first and last trip to enter transfer stop
+	Busline* get_tr_line(Busstop* it_stp, int tr_id);//Hend added 130716: get busline of the transfer line
+	vector <Visit_stop*> get_transfers_in_downstream(Bustrip* trip); //Hend added 120716: return a vector of transfer stops till the target stop
+	bool is_trip_exist(vector<Start_trip> trips_in_transfer, Bustrip* transfer_trip); //Hend added 190716 checks if trips in transfer contain transfer trip
+	double get_predict_time_to_trnsfr(Visit_stop *transfer_stop); //Hend added 200716 find the handled transfer and return the predict arrival time
+	vector<Start_trip> get_trips_in_transfer_line(vector<Start_trip> transfer_trips, Visit_stop *transfer_stop ,vector<double> limited_tr_stop, vector<Start_trip> trips_in_transfer);//Hend added 190716 return transfer trips that in the horizon
 	double find_crowding_coeff (Passenger* pass);										//!< returns the crowding coefficeint based on lod factor and pass. seating/standing
 	static double find_crowding_coeff (bool sits, double load_factor);					//!< returns the crowding coefficeint based on lod factor and pass. seating/standing
 	pair<double, double> crowding_dt_factor (double nr_boarding, double nr_alighting);
 	vector <Busstop*> get_downstream_stops(); //!< return the remaining stops to be visited starting from 'next_stop', returns empty Busstop vector if there are none
 	vector <Visit_stop*> get_downstream_stops_till_horizon(Visit_stop* target_stop); //!< return the remaining stops to be visited starting from 'next_stop'
+	bool is_stop_in_downstream(Visit_stop *target_stop);  //!< return true if the trip didnt get yet to the target stop
 
 // output-related functions
 	void write_assign_segments_output(ostream & out);
@@ -382,6 +400,7 @@ public:
 	map <Busstop*, int> nr_expected_alighting;		//!< number of passengers expected to alight at the busline's stops (format 2)
 	map <Busstop*, int> assign_segements;			//!< contains the number of pass. travelling between trip segments
 	vector <Visit_stop*> down_stops;
+	vector <pair<Bustrip*, int>> trip_occupancy;    //Hend added 2401716: occupancy of buses on each trip on the horizon
 protected:
 	int id;										  //!< course nr
 	Bus* busv;									  //!< pointer to the bus vehicle
