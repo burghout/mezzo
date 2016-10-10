@@ -9,9 +9,11 @@ LIBS+=  -L$(QTDIR)/lib -lQtCore -lQtGui
 #-lQt3Support 
 QT+= core gui 
 #qt3support 
-QMAKE= $(QTDIR)/bin/qmake
+QMAKE= $(QTDIR)/bin/qmake #comment by Flurin: is this really needed?
 DEFINES += _BUSES
-QMAKE_LFLAGS += /LARGEADDRESSAWARE
+win32 {
+    QMAKE_LFLAGS += /LARGEADDRESSAWARE
+}
 
 # Input
 HEADERS += src/busline.h \

@@ -6,7 +6,7 @@
 #include <sstream>
 #include <set>
 #include <math.h>
-#include <windows.h>
+//#include <windows.h> // Make Clang compatible. Why is this header used in the first place?
 //#include <strstream> // OLD include for gcc2
 
 
@@ -104,6 +104,14 @@ bool route_id_less_than (Route* r1, Route* r2)
 	return ( r1->get_id() < r2->get_id() );
 }
 
+template <typename T>
+string To_String(T val)
+{
+    stringstream stream;
+    stream << val;
+    return stream.str();
+}
+
 Network::Network()
 {
 #ifndef _NO_GUI
@@ -131,6 +139,8 @@ Network::~Network()
 #ifdef _MIME
 	delete communicator;
 #endif //_MIME
+    // OLD way of cleaning up stuff
+   /*
 	for (map <int, Origin*>::iterator iter=originmap.begin();iter!=originmap.end();)
 	{			
 		delete (iter->second); // calls automatically destructor
@@ -149,7 +159,32 @@ Network::~Network()
 	for (map <int,Node*>::iterator iter3=nodemap.begin();iter3!=nodemap.end();)
 	{			
 		iter3=nodemap.erase(iter3);	
-	}
+    }
+    */
+    // New way
+    for (map <int, Origin*>::iterator iter=originmap.begin();iter!=originmap.end();++iter)
+    {
+        if (NULL != iter->second) {
+            delete (iter->second); // calls automatically destructor
+        }
+    }
+    originmap.clear();
+    for (map <int, Destination*>::iterator iter1=destinationmap.begin();iter1!=destinationmap.end();++iter1)
+    {
+        if (NULL != iter1->second) {
+            delete (iter1->second); // calls automatically destructor
+        }
+    }
+    destinationmap.clear();
+    for (map <int, Junction*>::iterator iter2=junctionmap.begin();iter2!=junctionmap.end();++iter2)
+    {
+        if (NULL!=iter2->second) {
+            delete (iter2->second); // calls automatically destructor
+        }
+    }
+    junctionmap.clear();
+    nodemap.clear();
+    /** OLD WAY
 	for (map <int,Link*>::iterator iter4=linkmap.begin();iter4!=linkmap.end();)
 	{			
 		delete (iter4->second); // calls automatically destructor
@@ -160,8 +195,23 @@ Network::~Network()
 		delete (*iter5); // calls automatically destructor
 		iter5=incidents.erase(iter5);	
 	}	
-
+*/
+    for (map <int,Link*>::iterator iter4=linkmap.begin();iter4!=linkmap.end();++iter4)
+    {
+        if (NULL != iter4->second) {
+        delete (iter4->second); // calls automatically destructor
+        }
+    }
+    linkmap.clear();
+    for (vector <Incident*>::iterator iter5=incidents.begin();iter5<incidents.end();++iter5)
+    {
+        if (NULL != *iter5) {
+        delete (*iter5); // calls automatically destructor
+        }
+    }
+    incidents.clear();
 	// for now keep OD pairs in vector
+    /****** OLD
 	for (vector <ODpair*>::iterator iter6=odpairs.begin();iter6!=odpairs.end();)
 	{
 		delete (*iter6);
@@ -182,6 +232,37 @@ Network::~Network()
 		delete (iter9->second); // calls automatically destructor
 		iter9=servermap.erase(iter9);	
 	}
+    ***********/
+    for (vector <ODpair*>::iterator iter6=odpairs.begin();iter6!=odpairs.end();++iter6)
+    {
+        if (NULL != *iter6) {
+        delete (*iter6);
+        }
+    }
+    odpairs.clear();
+    for (multimap <odval, Route*>::iterator iter7=routemap.begin();iter7!=routemap.end();++iter7)
+    {
+        if (NULL != iter7->second) {
+        delete (iter7->second); // calls automatically destructor
+        }
+    }
+    routemap.clear();
+    for (map <int, Sdfunc*>::iterator iter8=sdfuncmap.begin();iter8!=sdfuncmap.end();++iter8)
+    {
+        if (NULL != iter8->second) {
+        delete (iter8->second); // calls automatically destructor
+        }
+    }
+    sdfuncmap.clear();
+    for (map <int, Server*>::iterator iter9=servermap.begin();iter9!=servermap.end();++iter9)
+    {
+        if (NULL != iter9->second) {
+        delete (iter9->second); // calls automatically destructor
+        }
+    }
+    servermap.clear();
+
+    /******* OLD
 	for (map <int, Turning*>::iterator iter10=turningmap.begin();iter10!=turningmap.end();)
 	{			
 		delete (iter10->second); // calls automatically destructor
@@ -197,6 +278,30 @@ Network::~Network()
 		delete (*iter12);
 		iter12=turnpenalties.erase(iter12);
 	}
+    ***********/
+    for (map <int, Turning*>::iterator iter10=turningmap.begin();iter10!=turningmap.end();++iter10)
+    {
+        if (NULL != iter10->second) {
+        delete (iter10->second); // calls automatically destructor
+        }
+    }
+    turningmap.clear();
+    for (vector <Vtype*>::iterator iter11=vehtypes.vtypes.begin();iter11<vehtypes.vtypes.end();++iter11)
+    {
+        if (NULL != *iter11) {
+        delete (*iter11); // calls automatically destructor
+        }
+    }
+    vehtypes.vtypes.clear();
+    for (vector <TurnPenalty*>::iterator iter12= turnpenalties.begin(); iter12 < turnpenalties.end();++iter12)
+    {
+        if (NULL != *iter12) {
+        delete (*iter12);
+        }
+    }
+    turnpenalties.clear();
+
+    // TODO: check if Stage SignalPlan and SignalControl need to be cleaned up now (in Trunk they are cleaned up here)
 }
 
 int Network::reset()
@@ -2480,8 +2585,8 @@ bool Network::find_direct_paths (Busstop* bs_origin, Busstop* bs_destination)
 				{	
 					bool original_path = true;
 					vector<Busline*> last_line;
-					vector<vector<Busline*>> lines_sequence;
-					vector<vector<Busstop*>> stops_sequence;
+                    vector<vector<Busline*> > lines_sequence;
+                    vector<vector<Busstop*> > stops_sequence;
 					vector<double> walking_distances_sequence;
 					// in any case - add this specific direct path
 					vector<Busstop*> o_stop;
@@ -2559,7 +2664,7 @@ void Network::generate_indirect_paths()
 {
 	vector<Pass_path*> updated_paths;
 	vector<Pass_path*> paths;
-	vector<vector<Busstop*>> stops_sequence = compose_stop_sequence(); // compose the list of intermediate stops
+    vector<vector<Busstop*> > stops_sequence = compose_stop_sequence(); // compose the list of intermediate stops
 	
 	/* count how many combinations of paths you can make (multiply number of direct lines on segments) - don't need it
 	int nr_path_combinations = 1;
@@ -2568,11 +2673,11 @@ void Network::generate_indirect_paths()
 		map <Busstop*, ODstops*> od_as_origin = (*im_iter)->get_stop_as_origin();
 		int origin_id = (*im_iter)->get_id();
 		int destination_id = (*(im_iter+1))->get_id();
-		map <int, vector<Busline*>> origin_map = direct_lines[origin_id];
+        map <int, vector<Busline*> > origin_map = direct_lines[origin_id];
 		nr_path_combinations = nr_path_combinations * origin_map[destination_id].size();
 	}
 	*/
-	vector<vector<Busline*>> lines_sequence = compose_line_sequence(collect_im_stops.back());
+    vector<vector<Busline*> > lines_sequence = compose_line_sequence(collect_im_stops.back());
 	// ODstops* od = collect_im_stops.front()->get_stop_od_as_origin_per_stop(collect_im_stops.back());
 	/*
 	if (totaly_dominancy_rule(od,lines_sequence, stops_sequence) == true)
@@ -2586,7 +2691,7 @@ void Network::generate_indirect_paths()
 	paths.push_back(indirect_path);
 	/*
 	int stop_leg = 0;
-	vector<vector<Busline*>>::iterator lines_sequence_iter = lines_sequence.begin();
+    vector<vector<Busline*> >::iterator lines_sequence_iter = lines_sequence.begin();
 	for (vector<Busstop*>::iterator im_iter = collect_im_stops.begin()+1; im_iter < collect_im_stops.end()-1; im_iter = im_iter+2)
 	{
 		stop_leg++;
@@ -2598,10 +2703,10 @@ void Network::generate_indirect_paths()
 			p_lines.push_back((*d_lines));
 			for (vector<Pass_path*>::iterator existing_paths = paths.begin(); existing_paths < paths.end(); existing_paths++)
 			{
-				vector<vector<Busline*>> permute_path_lines;
-				vector<vector<Busline*>> path_lines = (*existing_paths)->get_alt_lines();
+                vector<vector<Busline*> > permute_path_lines;
+                vector<vector<Busline*> > path_lines = (*existing_paths)->get_alt_lines();
 				int line_leg = 0;
-				for (vector<vector<Busline*>>::iterator path_lines_iter = path_lines.begin(); path_lines_iter < path_lines.end(); path_lines_iter++)
+                for (vector<vector<Busline*> >::iterator path_lines_iter = path_lines.begin(); path_lines_iter < path_lines.end(); path_lines_iter++)
 				{
 					line_leg++;
 					if (stop_leg != line_leg)
@@ -2652,10 +2757,10 @@ void Network::generate_indirect_paths()
 	}
 }
 
-vector<vector<Busline*>> Network::compose_line_sequence (Busstop* destination)
+vector<vector<Busline*> > Network::compose_line_sequence (Busstop* destination)
 {
 // compose the list of direct lines between each pair of intermediate stops
-	vector<vector<Busline*>> lines_sequence;
+    vector<vector<Busline*> > lines_sequence;
 	for (vector<Busstop*>::iterator im_iter = collect_im_stops.begin()+1; im_iter < collect_im_stops.end()-1; im_iter = im_iter+2)
 	{
 		vector<Busline*> d_lines = get_direct_lines((*im_iter)->get_stop_od_as_origin_per_stop((*(im_iter+1))));
@@ -2703,9 +2808,9 @@ vector<vector<Busline*>> Network::compose_line_sequence (Busstop* destination)
 	return lines_sequence;
 }
 
-vector<vector<Busstop*>> Network::compose_stop_sequence ()
+vector<vector<Busstop*> > Network::compose_stop_sequence ()
 {
-	vector<vector<Busstop*>> stop_seq;
+    vector<vector<Busstop*> > stop_seq;
 	vector<Busstop*> stop_vec;
 	for (vector<Busstop*>::iterator stop_iter = collect_im_stops.begin(); stop_iter < collect_im_stops.end(); stop_iter++)
 	{	
@@ -2910,7 +3015,7 @@ void Network::find_all_paths_with_OD_for_generation ()
 		for (vector <Busstop*>::iterator basic_destination = busstops.begin(); basic_destination < busstops.end(); basic_destination++)
 		{
 			bool relevant_od = false;
-			for (vector<pair<Busstop*,Busstop*>>::iterator iter = od_pairs_for_generation.begin(); iter < od_pairs_for_generation.end(); iter ++)
+            for (vector<pair<Busstop*,Busstop*> >::iterator iter = od_pairs_for_generation.begin(); iter < od_pairs_for_generation.end(); iter ++)
 			{
 				if ((*basic_origin)->get_id() == (*iter).first->get_id() && (*basic_destination)->get_id() == (*iter).second->get_id())
 				{
@@ -2974,14 +3079,14 @@ void Network:: find_recursive_connection (Busstop* origin, Busstop* destination)
 				
 				int intermediate_id = intermediate_destination->get_id();
 				int previous_stop_id = collect_im_stops.back()->get_id();
-				map <int, vector<Busline*>> origin_map = direct_lines[previous_stop_id];
+                map <int, vector<Busline*> > origin_map = direct_lines[previous_stop_id];
 				if (origin_map[intermediate_id].size() != 0)
 				{
 					collect_im_stops.push_back(intermediate_destination);
 						if (intermediate_destination->get_id() != destination->get_id())
 						{
 							int destination_id = destination->get_id();
-							map <int, vector<Busline*>> origin_map = direct_lines[intermediate_id];
+                            map <int, vector<Busline*> > origin_map = direct_lines[intermediate_id];
 							if (origin_map[destination_id].size() != 0)
 							{			
 								collect_im_stops.push_back(destination);
@@ -3159,15 +3264,15 @@ void Network:: find_recursive_connection_with_walking (Busstop* origin)
 
 bool Network::check_path_constraints(Busstop* destination)
 {
-	vector<vector<Busline*>> lines = compose_line_sequence(destination);
-	for (vector<vector<Busline*>>::iterator lines_iter = lines.begin(); lines_iter < lines.end(); lines_iter++)
+    vector<vector<Busline*> > lines = compose_line_sequence(destination);
+    for (vector<vector<Busline*> >::iterator lines_iter = lines.begin(); lines_iter < lines.end(); lines_iter++)
 	{
 		if ((*lines_iter).empty() == true)
 		{
 			return false;
 		}
 	}
-	vector<vector<Busstop*>> stops = compose_stop_sequence();
+    vector<vector<Busstop*> > stops = compose_stop_sequence();
 	if (check_sequence_no_repeating_stops(collect_im_stops) == true)
 	{
 		if (check_path_no_repeating_lines(lines,stops) == true)
@@ -3204,7 +3309,7 @@ void Network::merge_paths_by_stops (Busstop* origin_stop, Busstop* destination_s
 				for (vector <Pass_path*>::iterator path1 = path_set.begin(); path1 < path_set.end()-1; path1++)
 				{
 					bool perform_merge = false;
-					vector <vector <Busstop*>> stops1 = (*path1)->get_alt_transfer_stops();	
+                    vector <vector <Busstop*> > stops1 = (*path1)->get_alt_transfer_stops();
 					if (flagged_paths[(*path1)] == false)
 					{
 						for (vector <Pass_path*>::iterator path2 = path1 + 1; path2 < path_set.end(); path2++)
@@ -3213,12 +3318,12 @@ void Network::merge_paths_by_stops (Busstop* origin_stop, Busstop* destination_s
 							if (fulfilled_conditions == true)
 							{
 							// both have exactly the same lines for all legs 
-								vector<vector<Busline*>> path2_lines = (*path2)->get_alt_lines();
-								vector<vector<Busline*>>::iterator path2_line = path2_lines.begin();
-								vector<vector<Busline*>> path1_lines = (*path1)->get_alt_lines();
-								vector<vector<Busstop*>> path1_set_stops = (*path1)->get_alt_transfer_stops();
-								vector<vector<Busstop*>>::iterator start_stops = path1_set_stops.begin()+1;
-								for(vector<vector<Busline*>>::iterator path1_line = path1_lines.begin(); path1_line < path1_lines.end(); path1_line++)
+                                vector<vector<Busline*> > path2_lines = (*path2)->get_alt_lines();
+                                vector<vector<Busline*> >::iterator path2_line = path2_lines.begin();
+                                vector<vector<Busline*> > path1_lines = (*path1)->get_alt_lines();
+                                vector<vector<Busstop*> > path1_set_stops = (*path1)->get_alt_transfer_stops();
+                                vector<vector<Busstop*> >::iterator start_stops = path1_set_stops.begin()+1;
+                                for(vector<vector<Busline*> >::iterator path1_line = path1_lines.begin(); path1_line < path1_lines.end(); path1_line++)
 								{
 									vector<Busline*> line1 = (*path1_line);
 									vector<Busline*> line2 = (*path2_line);
@@ -3241,9 +3346,9 @@ void Network::merge_paths_by_stops (Busstop* origin_stop, Busstop* destination_s
 							if (fulfilled_conditions == true )
 							// both have exactly the same lines for all legs AND the same route for lines on leg 1 and lines on leg 2 between stops
 							{			
-								vector <vector <Busstop*>> stops2 = (*path2)->get_alt_transfer_stops();
-								vector <vector <Busstop*>>::iterator stops2_iter = stops2.begin();
-								for (vector <vector <Busstop*>>::iterator stops1_iter = stops1.begin(); stops1_iter < stops1.end(); stops1_iter++)
+                                vector <vector <Busstop*> > stops2 = (*path2)->get_alt_transfer_stops();
+                                vector <vector <Busstop*> >::iterator stops2_iter = stops2.begin();
+                                for (vector <vector <Busstop*> >::iterator stops1_iter = stops1.begin(); stops1_iter < stops1.end(); stops1_iter++)
 								{
 									for (vector<Busstop*>::iterator stops2_leg = (*stops2_iter).begin(); stops2_leg < (*stops2_iter).end(); stops2_leg++)
 									{
@@ -3329,28 +3434,28 @@ void Network::merge_paths_by_common_lines (Busstop* origin_stop, Busstop* destin
 			for (vector <Pass_path*>::iterator path1 = path_set.begin(); path1 < path_set.end()-1; path1++)
 			{
 				bool perform_merge = false;
-				vector<vector<Busline*>> transfer_lines1_collect = (*path1)->get_alt_lines();	
+                vector<vector<Busline*> > transfer_lines1_collect = (*path1)->get_alt_lines();
 				if (flagged_paths[(*path1)] == false)
 				{
 					for (vector <Pass_path*>::iterator path2 = path1 + 1; path2 < path_set.end(); path2++)
 					{
-						vector<vector<Busline*>> transfer_lines1_ = (*path1)->get_alt_lines();						
-						vector<vector<Busline*>>::iterator transfer_lines1 = transfer_lines1_.begin();
-						vector<vector<Busline*>>::iterator transfer_lines1_collect_iter = transfer_lines1_collect.begin();
-						vector<vector<Busstop*>> transfer_stops1_ = (*path1)->get_alt_transfer_stops();
+                        vector<vector<Busline*> > transfer_lines1_ = (*path1)->get_alt_lines();
+                        vector<vector<Busline*> >::iterator transfer_lines1 = transfer_lines1_.begin();
+                        vector<vector<Busline*> >::iterator transfer_lines1_collect_iter = transfer_lines1_collect.begin();
+                        vector<vector<Busstop*> > transfer_stops1_ = (*path1)->get_alt_transfer_stops();
 						if (transfer_lines1_.size() == 0) // a walking-only path - there is no need in merging
 						{
 							break;
 						}
-						vector<vector<Busstop*>> transfer_stops2_ = (*path2)->get_alt_transfer_stops();
-						vector<vector<Busline*>> transfer_lines2_ = (*path2)->get_alt_lines();
-						vector<vector<Busstop*>>::iterator transfer_stops2 = transfer_stops2_.begin()+1;
-						vector<vector<Busline*>>::iterator transfer_lines2 = transfer_lines2_.begin();
+                        vector<vector<Busstop*> > transfer_stops2_ = (*path2)->get_alt_transfer_stops();
+                        vector<vector<Busline*> > transfer_lines2_ = (*path2)->get_alt_lines();
+                        vector<vector<Busstop*> >::iterator transfer_stops2 = transfer_stops2_.begin()+1;
+                        vector<vector<Busline*> >::iterator transfer_lines2 = transfer_lines2_.begin();
 						if (transfer_lines2_.size() == 0) // a walking-only path - there is no need in merging
 						{
 							break;
 						}
-						for (vector<vector<Busstop*>>::iterator transfer_stops1 = transfer_stops1_.begin()+1; transfer_stops1 < transfer_stops1_.end()-1; transfer_stops1 = transfer_stops1 + 2)
+                        for (vector<vector<Busstop*> >::iterator transfer_stops1 = transfer_stops1_.begin()+1; transfer_stops1 < transfer_stops1_.end()-1; transfer_stops1 = transfer_stops1 + 2)
 						{
 							int counter_shared_current = 0;
 							int coutner_shared_next = 0;
@@ -3514,15 +3619,15 @@ void Network::static_filtering_rules (Busstop* stop)
 				// eliminating dominated stops by upstream transfer stops (avoiding further downstream transfer stops
 				// downstream_dominancy_rule(*path);
 				// maybe worthwhile to wait (with worst case headway)
-				vector<vector<Busline*>> alt_lines = (*path)->get_alt_lines();
-				for (vector<vector<Busline*>>::iterator line_set_iter = alt_lines.begin(); line_set_iter < alt_lines.end(); line_set_iter++)
+                vector<vector<Busline*> > alt_lines = (*path)->get_alt_lines();
+                for (vector<vector<Busline*> >::iterator line_set_iter = alt_lines.begin(); line_set_iter < alt_lines.end(); line_set_iter++)
 				{
 					map <Busline*,bool> lines_to_be_deleted;
 					for (vector <Busline*>::iterator line_iter = (*line_set_iter).begin(); line_iter < (*line_set_iter).end(); line_iter++)
 					{
 						lines_to_be_deleted[(*line_iter)] = false;
 					}
-					vector<vector<Busstop*>> alt_stops = (*path)->get_alt_transfer_stops();
+                    vector<vector<Busstop*> > alt_stops = (*path)->get_alt_transfer_stops();
 					map<Busline*, bool> lines_to_include = (*path)->check_maybe_worthwhile_to_wait((*path)->get_alt_lines().front(), alt_stops.begin(), 0);
 					for (map<Busline*, bool>::iterator lines_to_include_iter = lines_to_include.begin(); lines_to_include_iter != lines_to_include.end(); lines_to_include_iter++)
 					{
@@ -3553,8 +3658,8 @@ void Network::static_filtering_rules (Busstop* stop)
 			}
 				/*
 				// apply dominancy rule at stop level
-				vector<vector<Busstop*>> alt_stops = (*path)->get_alt_transfer__stops();
-				for (vector<vector<Busstop*>>::iterator stop_set_iter = alt_stops.begin()+1; stop_set_iter < alt_stops.end(); stop_set_iter+2) 
+                vector<vector<Busstop*> > alt_stops = (*path)->get_alt_transfer__stops();
+                for (vector<vector<Busstop*> >::iterator stop_set_iter = alt_stops.begin()+1; stop_set_iter < alt_stops.end(); stop_set_iter+2)
 					// goes over connected stops (even locations - 2,4,...)
 				{
 					map <Busstop*,bool> stops_to_be_deleted;
@@ -3701,7 +3806,7 @@ void Network::dominancy_rules (Busstop* stop)
 	}
 }
 
-bool Network::totaly_dominancy_rule (ODstops* odstops, vector<vector<Busline*>> lines, vector<vector<Busstop*>> stops) // check if there is already a path with shorter IVT than the potential one
+bool Network::totaly_dominancy_rule (ODstops* odstops, vector<vector<Busline*> > lines, vector<vector<Busstop*> > stops) // check if there is already a path with shorter IVT than the potential one
 {
 	vector <Pass_path*> path_set = odstops->get_path_set();
 	if (path_set.size() < 1) // if it has no othe paths yet - then there is nothing to compare
@@ -3715,8 +3820,8 @@ bool Network::totaly_dominancy_rule (ODstops* odstops, vector<vector<Busline*>> 
 	}
 	for (vector <Pass_path*>::iterator path_iter = path_set.begin(); path_iter < path_set.end(); path_iter++)
 	{
-		vector<vector<Busline*>> lines1 = (*path_iter)->get_alt_lines();
-		vector<vector<Busstop*>> stops1 = (*path_iter)->get_alt_transfer_stops();
+        vector<vector<Busline*> > lines1 = (*path_iter)->get_alt_lines();
+        vector<vector<Busstop*> > stops1 = (*path_iter)->get_alt_transfer_stops();
 		double total_walk = 0.0;
 		for (vector<double>::iterator walk_iter = collect_walking_distances.begin(); walk_iter < collect_walking_distances.end(); walk_iter++)
 		{
@@ -3786,12 +3891,12 @@ bool Network::totaly_dominancy_rule (ODstops* odstops, vector<vector<Busline*>> 
 	return false;
 }
 
-double Network::calc_total_in_vechile_time (vector<vector<Busline*>> lines, vector<vector<Busstop*>> stops)
+double Network::calc_total_in_vechile_time (vector<vector<Busline*> > lines, vector<vector<Busstop*> > stops)
 {
 	double sum_in_vehicle_time = 0.0;
-	vector<vector <Busstop*>>::iterator iter_stops = stops.begin();
+    vector<vector <Busstop*> >::iterator iter_stops = stops.begin();
 	iter_stops++; // starting from the second stop
-	for (vector<vector <Busline*>>::iterator iter_lines = lines.begin(); iter_lines < lines.end(); iter_lines++)
+    for (vector<vector <Busline*> >::iterator iter_lines = lines.begin(); iter_lines < lines.end(); iter_lines++)
 	{
 		sum_in_vehicle_time += (*iter_lines).front()->calc_curr_line_ivt((*iter_stops).front(),(*(iter_stops+1)).front(), stops.front().front()->get_rti(), 0.0);
 		iter_stops++;
@@ -3803,10 +3908,10 @@ double Network::calc_total_in_vechile_time (vector<vector<Busline*>> lines, vect
 /*
 bool Network::downstream_dominancy_rule (Pass_path* check_path)
 {
-	vector<vector<Busstop*>> alt_stops = check_path->get_alt_transfer__stops();
-	vector<vector<Busline*>> alt_lines = check_path->get_alt_lines();
-	vector<vector<Busline*>>::iterator alt_lines_iter = alt_lines.begin();
-	for (vector<vector<Busstop*>>::iterator alt_stops_iter = alt_stops.begin()+2; alt_stops_iter < alt_stops.end(); alt_stops_iter = alt_stops_iter + 2)
+    vector<vector<Busstop*> > alt_stops = check_path->get_alt_transfer__stops();
+    vector<vector<Busline*> > alt_lines = check_path->get_alt_lines();
+    vector<vector<Busline*> >::iterator alt_lines_iter = alt_lines.begin();
+    for (vector<vector<Busstop*> >::iterator alt_stops_iter = alt_stops.begin()+2; alt_stops_iter < alt_stops.end(); alt_stops_iter = alt_stops_iter + 2)
 	{
 		if ((*alt_stops_iter).size() > 1) // no need if there is only one transfer stop
 		{
@@ -3878,12 +3983,12 @@ bool Network::compare_same_lines_paths (Pass_path* path1, Pass_path* path2)
 	if (path1->get_number_of_transfers() == path2->get_number_of_transfers())
 	{
 		vector <bool> is_shared;
-		vector <vector <Busline*>> lines1 = path1->get_alt_lines();	
-		vector <vector <Busline*>> lines2 = path2->get_alt_lines();
+        vector <vector <Busline*> > lines1 = path1->get_alt_lines();
+        vector <vector <Busline*> > lines2 = path2->get_alt_lines();
 		if (lines1.size() > 0 && lines2.size() > 0)
 		{
-			vector <vector <Busline*>>::iterator lines2_iter = lines2.begin();
-			for (vector <vector <Busline*>>::iterator lines1_iter = lines1.begin(); lines1_iter < lines1.end(); lines1_iter++)
+            vector <vector <Busline*> >::iterator lines2_iter = lines2.begin();
+            for (vector <vector <Busline*> >::iterator lines1_iter = lines1.begin(); lines1_iter < lines1.end(); lines1_iter++)
 			{	
 				for (vector <Busline*>::iterator leg_lines1 = (*lines1_iter).begin(); leg_lines1 < (*lines1_iter).end(); leg_lines1++)
 				{
@@ -3920,10 +4025,10 @@ bool Network::compare_same_stops_paths (Pass_path* path1, Pass_path* path2)
 	if (path1->get_number_of_transfers() == path2->get_number_of_transfers())
 	{
 		vector <bool> is_shared;
-		vector <vector <Busstop*>> stops1 = path1->get_alt_transfer_stops();	
-		vector <vector <Busstop*>> stops2 = path2->get_alt_transfer_stops();
-		vector <vector <Busstop*>>::iterator stops2_iter = stops2.begin();
-		for (vector <vector <Busstop*>>::iterator stops1_iter = stops1.begin(); stops1_iter < stops1.end(); stops1_iter++)
+        vector <vector <Busstop*> > stops1 = path1->get_alt_transfer_stops();
+        vector <vector <Busstop*> > stops2 = path2->get_alt_transfer_stops();
+        vector <vector <Busstop*> >::iterator stops2_iter = stops2.begin();
+        for (vector <vector <Busstop*> >::iterator stops1_iter = stops1.begin(); stops1_iter < stops1.end(); stops1_iter++)
 		{	
 			for (vector <Busstop*>::iterator leg_stops1 = (*stops1_iter).begin(); leg_stops1 < (*stops1_iter).end(); leg_stops1++)
 			{
@@ -4025,19 +4130,19 @@ bool Network::check_constraints_paths (Pass_path* path) // checks if the path me
 return true;
 }
 
-bool Network::check_path_no_repeating_lines (vector<vector<Busline*>> lines, vector<vector<Busstop*>> stops_) // checks if the path does not include going on and off the same bus line at the same stop
+bool Network::check_path_no_repeating_lines (vector<vector<Busline*> > lines, vector<vector<Busstop*> > stops_) // checks if the path does not include going on and off the same bus line at the same stop
 {
 	if (lines.size() < 2)
 	{
 		return true;
 	}
-	vector <vector <Busstop*>>::iterator stops = stops_.begin()+1;
-	for (vector <vector <Busline*>>::iterator lines_iter1 = lines.begin(); lines_iter1 < (lines.end()-1); lines_iter1++)
+    vector <vector <Busstop*> >::iterator stops = stops_.begin()+1;
+    for (vector <vector <Busline*> >::iterator lines_iter1 = lines.begin(); lines_iter1 < (lines.end()-1); lines_iter1++)
 	{
 		stops = stops + 2; // start at fourth place and then jumps two every next pair of lines
 		for (vector <Busline*>::iterator leg_lines1 = (*lines_iter1).begin(); leg_lines1 < (*lines_iter1).end(); leg_lines1++)
 		{
-			for (vector <vector <Busline*>>::iterator lines_iter2 = lines_iter1 + 1; lines_iter2 < lines.end(); lines_iter2++)
+            for (vector <vector <Busline*> >::iterator lines_iter2 = lines_iter1 + 1; lines_iter2 < lines.end(); lines_iter2++)
 			{
 				int counter_sim = 0; 
 				// checking all legs
@@ -4064,14 +4169,14 @@ bool Network::check_path_no_repeating_lines (vector<vector<Busline*>> lines, vec
 }
 
 /*
-bool Network::check_sequence_no_repeating_lines(vector<vector<Busline*>> lines, vector<Busstop*> stops_)
+bool Network::check_sequence_no_repeating_lines(vector<vector<Busline*> > lines, vector<Busstop*> stops_)
 {
 	vector <Busstop*>::iterator stops = stops_.begin();
-	for (vector <vector <Busline*>>::iterator lines_iter1 = lines.begin(); lines_iter1 < (lines.end()-1); lines_iter1++)
+    for (vector <vector <Busline*> >::iterator lines_iter1 = lines.begin(); lines_iter1 < (lines.end()-1); lines_iter1++)
 	{
 		for (vector <Busline*>::iterator leg_lines1 = (*lines_iter1).begin(); leg_lines1 < (*lines_iter1).end(); leg_lines1++)
 		{
-			for (vector <vector <Busline*>>::iterator lines_iter2 = lines_iter1 + 1; lines_iter2 < lines.end(); lines_iter2++)
+            for (vector <vector <Busline*> >::iterator lines_iter2 = lines_iter1 + 1; lines_iter2 < lines.end(); lines_iter2++)
 			{
 				int counter_sim = 0; 
 				// checking all legs
@@ -4096,8 +4201,8 @@ bool Network::check_sequence_no_repeating_lines(vector<vector<Busline*>> lines, 
 
 bool Network::check_path_no_repeating_stops (Pass_path* path) // chceks if the path does not include going through the same stop more than once
 {
-	vector <vector <Busstop*>> stops = path->get_alt_transfer_stops();	
-	for (vector <vector <Busstop*>>::iterator stops_iter1 = stops.begin(); stops_iter1 < stops.end(); stops_iter1++)
+    vector <vector <Busstop*> > stops = path->get_alt_transfer_stops();
+    for (vector <vector <Busstop*> >::iterator stops_iter1 = stops.begin(); stops_iter1 < stops.end(); stops_iter1++)
 	{	
 		for (vector <Busstop*>::iterator leg_stops1 = (*stops_iter1).begin(); leg_stops1 < (*stops_iter1).end()-1; leg_stops1++)
 		{
@@ -4110,7 +4215,7 @@ bool Network::check_path_no_repeating_stops (Pass_path* path) // chceks if the p
 				}
 			}
 			// go over all the stops in consecutive legs
-			for (vector <vector <Busstop*>>::iterator stops_iter2 = stops_iter1+1; stops_iter2 < stops.end(); stops_iter2++)
+            for (vector <vector <Busstop*> >::iterator stops_iter2 = stops_iter1+1; stops_iter2 < stops.end(); stops_iter2++)
 			{
 				for (vector <Busstop*>::iterator leg_stops2 = (*stops_iter2).begin(); leg_stops1 < (*stops_iter1).end()-1; leg_stops1++)
 				{
@@ -4140,14 +4245,14 @@ bool Network::check_sequence_no_repeating_stops (vector<Busstop*> stops) // chce
 return true;
 }
 
-bool Network::check_path_no_opposing_lines (vector<vector<Busline*>> lines)
+bool Network::check_path_no_opposing_lines (vector<vector<Busline*> > lines)
 {
 	if (lines.empty()) 
 		return true;
 
-	for (vector<vector<Busline*>>::iterator lines_leg = lines.begin(); lines_leg < lines.end()-1; lines_leg++)
+    for (vector<vector<Busline*> >::iterator lines_leg = lines.begin(); lines_leg < lines.end()-1; lines_leg++)
 	{
-		for (vector<vector<Busline*>>::iterator lines_leg1 = lines_leg + 1; lines_leg1 < lines.end(); lines_leg1++)
+        for (vector<vector<Busline*> >::iterator lines_leg1 = lines_leg + 1; lines_leg1 < lines.end(); lines_leg1++)
 		{
 			for (vector<Busline*>::iterator line_iter = (*lines_leg).begin(); line_iter < (*lines_leg).end(); line_iter++)
 			{
@@ -4179,11 +4284,11 @@ bool Network::write_path_set (string name1)
 			for (vector<Pass_path*>::iterator path_iter = path_set.begin(); path_iter < path_set.end(); path_iter++)
 			{
 				pathcounter++;
-				vector<vector<Busstop*>> stops = (*path_iter)->get_alt_transfer_stops();
-				vector<vector<Busline*>> lines = (*path_iter)->get_alt_lines();
+                vector<vector<Busstop*> > stops = (*path_iter)->get_alt_transfer_stops();
+                vector<vector<Busline*> > lines = (*path_iter)->get_alt_lines();
 				vector<double> walking = (*path_iter)->get_walking_distances();
 				out1 << (*basic_destination).second->get_origin()->get_id() << '\t'<< (*basic_destination).second->get_destination()->get_id() << '\t' << (*path_iter)->get_id()  << '\t' << stops.size() << '\t' << '{' << '\t';
-				for (vector<vector <Busstop*>>::iterator stop_leg = stops.begin(); stop_leg < stops.end(); stop_leg++)
+                for (vector<vector <Busstop*> >::iterator stop_leg = stops.begin(); stop_leg < stops.end(); stop_leg++)
 				{
 					out1 << (*stop_leg).size() << '\t' << '{' << '\t';
 					for (vector<Busstop*>::iterator stop_iter = (*stop_leg).begin(); stop_iter < (*stop_leg).end(); stop_iter++)
@@ -4193,7 +4298,7 @@ bool Network::write_path_set (string name1)
 					out1 << '}' << '\t' ;
 				}	
 				out1 << '}' << '\t' << lines.size() << '\t' << '{';
-				for (vector<vector <Busline*>>::iterator line_leg = lines.begin(); line_leg < lines.end(); line_leg++)
+                for (vector<vector <Busline*> >::iterator line_leg = lines.begin(); line_leg < lines.end(); line_leg++)
 				{
 					out1 << (*line_leg).size() << '{' << '\t';
 					for (vector<Busline*>::iterator line_iter = (*line_leg).begin(); line_iter < (*line_leg).end(); line_iter++)
@@ -4225,11 +4330,11 @@ bool Network::write_path_set_per_stop (string name1, Busstop* stop)
 		vector <Pass_path*> path_set = (*basic_destination).second->get_path_set();
 		for (vector<Pass_path*>::iterator path_iter = path_set.begin(); path_iter < path_set.end(); path_iter++)
 		{
-			vector<vector<Busstop*>> stops = (*path_iter)->get_alt_transfer_stops();
-			vector<vector<Busline*>> lines = (*path_iter)->get_alt_lines();
+            vector<vector<Busstop*> > stops = (*path_iter)->get_alt_transfer_stops();
+            vector<vector<Busline*> > lines = (*path_iter)->get_alt_lines();
 			vector<double> walking = (*path_iter)->get_walking_distances();
 			out1 << (*basic_destination).second->get_origin()->get_id() << '\t'<< (*basic_destination).second->get_destination()->get_id() << '\t' << (*path_iter)->get_id()  << '\t' << stops.size() << '\t' << '{' << '\t';
-			for (vector<vector <Busstop*>>::iterator stop_leg = stops.begin(); stop_leg < stops.end(); stop_leg++)
+            for (vector<vector <Busstop*> >::iterator stop_leg = stops.begin(); stop_leg < stops.end(); stop_leg++)
 			{
 				out1 << (*stop_leg).size() << '\t' << '{' << '\t';
 				for (vector<Busstop*>::iterator stop_iter = (*stop_leg).begin(); stop_iter < (*stop_leg).end(); stop_iter++)
@@ -4239,7 +4344,7 @@ bool Network::write_path_set_per_stop (string name1, Busstop* stop)
 				out1 << '}' << '\t' ;
 			}	
 			out1 << '}' << '\t' << lines.size() << '\t' << '{';
-			for (vector<vector <Busline*>>::iterator line_leg = lines.begin(); line_leg < lines.end(); line_leg++)
+            for (vector<vector <Busline*> >::iterator line_leg = lines.begin(); line_leg < lines.end(); line_leg++)
 			{
 				out1 << (*line_leg).size() << '{' << '\t';
 				for (vector<Busline*>::iterator line_iter = (*line_leg).begin(); line_iter < (*line_leg).end(); line_iter++)
@@ -4267,11 +4372,11 @@ bool Network::write_path_set_per_od (string name1, Busstop* origin_stop, Busstop
 	vector<Pass_path*> path_set = od->get_path_set();
 	for (vector<Pass_path*>::iterator path_iter = path_set.begin(); path_iter < path_set.end(); path_iter++)
 	{
-		vector<vector<Busstop*>> stops = (*path_iter)->get_alt_transfer_stops();
-		vector<vector<Busline*>> lines = (*path_iter)->get_alt_lines();
+        vector<vector<Busstop*> > stops = (*path_iter)->get_alt_transfer_stops();
+        vector<vector<Busline*> > lines = (*path_iter)->get_alt_lines();
 		vector<double> walking = (*path_iter)->get_walking_distances();
 		out1 << od->get_origin()->get_id() << '\t'<< od->get_destination()->get_id() << '\t' << (*path_iter)->get_id()  << '\t' << stops.size() << '\t' << '{' << '\t';
-		for (vector<vector <Busstop*>>::iterator stop_leg = stops.begin(); stop_leg < stops.end(); stop_leg++)
+        for (vector<vector <Busstop*> >::iterator stop_leg = stops.begin(); stop_leg < stops.end(); stop_leg++)
 		{
 			out1 << (*stop_leg).size() << '\t' << '{' << '\t';
 			for (vector<Busstop*>::iterator stop_iter = (*stop_leg).begin(); stop_iter < (*stop_leg).end(); stop_iter++)
@@ -4281,7 +4386,7 @@ bool Network::write_path_set_per_od (string name1, Busstop* origin_stop, Busstop
 			out1 << '}' << '\t' ;
 		}	
 		out1 << '}' << '\t' << lines.size() << '\t' << '{';
-		for (vector<vector <Busline*>>::iterator line_leg = lines.begin(); line_leg < lines.end(); line_leg++)
+        for (vector<vector <Busline*> >::iterator line_leg = lines.begin(); line_leg < lines.end(); line_leg++)
 		{
 			out1 << (*line_leg).size() << '{' << '\t';
 			for (vector<Busline*>::iterator line_iter = (*line_leg).begin(); line_iter < (*line_leg).end(); line_iter++)
@@ -4337,8 +4442,8 @@ bool Network::read_transit_path(istream& in)
 	int origin_id, destination_id, nr_stop_legs, nr_line_legs, nr_stops, nr_lines, nr_walks, stop_id, line_id;
 	double walk_dis;
 	string path_id;
-	vector<vector<Busstop*>> alt_stops;
-	vector<vector<Busline*>> alt_lines;
+    vector<vector<Busstop*> > alt_stops;
+    vector<vector<Busline*> > alt_lines;
 	vector<double> alt_walking;
 	in >> origin_id >> destination_id >> path_id >> nr_stop_legs;
 
@@ -5733,33 +5838,33 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
 			map <Busstop*, ODstops*> stop_as_origin = (*stop_iter)->get_stop_as_origin();
 			for (map <Busstop*, ODstops*>::iterator od_iter = stop_as_origin.begin(); od_iter != stop_as_origin.end(); od_iter++)
 			{
-				map <Passenger*,list<Pass_boarding_decision>> boarding_decisions = od_iter->second->get_boarding_output();
-				for (map<Passenger*,list<Pass_boarding_decision>>::iterator pass_iter1 = boarding_decisions.begin(); pass_iter1 != boarding_decisions.end(); pass_iter1++)
+                map <Passenger*,list<Pass_boarding_decision> > boarding_decisions = od_iter->second->get_boarding_output();
+                for (map<Passenger*,list<Pass_boarding_decision> >::iterator pass_iter1 = boarding_decisions.begin(); pass_iter1 != boarding_decisions.end(); pass_iter1++)
 				{
 					od_iter->second->write_boarding_output(out5, (*pass_iter1).first);
 				}
 
-				map <Passenger*,list<Pass_alighting_decision>> alighting_decisions = od_iter->second->get_alighting_output();
-				for (map<Passenger*,list<Pass_alighting_decision>>::iterator pass_iter2 = alighting_decisions.begin(); pass_iter2 != alighting_decisions.end(); pass_iter2++)
+                map <Passenger*,list<Pass_alighting_decision> > alighting_decisions = od_iter->second->get_alighting_output();
+                for (map<Passenger*,list<Pass_alighting_decision> >::iterator pass_iter2 = alighting_decisions.begin(); pass_iter2 != alighting_decisions.end(); pass_iter2++)
 				{
 					od_iter->second->write_alighting_output(out6, (*pass_iter2).first);
 					break;
 				}
 			
-				map <Passenger*,list<Pass_connection_decision>> connection_decisions = od_iter->second->get_connection_output();
-				for (map<Passenger*,list<Pass_connection_decision>>::iterator pass_iter1 = connection_decisions.begin(); pass_iter1 != connection_decisions.end(); pass_iter1++)
+                map <Passenger*,list<Pass_connection_decision> > connection_decisions = od_iter->second->get_connection_output();
+                for (map<Passenger*,list<Pass_connection_decision> >::iterator pass_iter1 = connection_decisions.begin(); pass_iter1 != connection_decisions.end(); pass_iter1++)
 				{
 					od_iter->second->write_connection_output(out15, (*pass_iter1).first);
 				}
 
-				map <Passenger*,list<Pass_waiting_experience>> waiting_experience = od_iter->second->get_waiting_output();
-				for (map<Passenger*,list<Pass_waiting_experience>>::iterator pass_iter1 = waiting_experience.begin(); pass_iter1 != waiting_experience.end(); pass_iter1++)
+                map <Passenger*,list<Pass_waiting_experience> > waiting_experience = od_iter->second->get_waiting_output();
+                for (map<Passenger*,list<Pass_waiting_experience> >::iterator pass_iter1 = waiting_experience.begin(); pass_iter1 != waiting_experience.end(); pass_iter1++)
 				{
 					od_iter->second->write_waiting_exp_output(out13, (*pass_iter1).first);
 				}
 
-				map <Passenger*,list<Pass_onboard_experience>> onboard_experience = od_iter->second->get_onboard_output();
-				for (map<Passenger*,list<Pass_onboard_experience>>::iterator pass_iter1 = onboard_experience.begin(); pass_iter1 != onboard_experience.end(); pass_iter1++)
+                map <Passenger*,list<Pass_onboard_experience> > onboard_experience = od_iter->second->get_onboard_output();
+                for (map<Passenger*,list<Pass_onboard_experience> >::iterator pass_iter1 = onboard_experience.begin(); pass_iter1 != onboard_experience.end(); pass_iter1++)
 				{
 					od_iter->second->write_onboard_exp_output(out14, (*pass_iter1).first);
 				}
@@ -6151,7 +6256,9 @@ bool Network::readparameters(string name)
 	if (theParameters->read_parameters(inputfile))
 	{
 		if (theParameters->pass_day_to_day_indicator)
-			SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX);
+            cout << "theParameters->pass_day_to_day_indicator: " << theParameters->pass_day_to_day_indicator << endl;
+            // WILCO : deleted windows specific error code
+            //SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX);
 		inputfile.close();
 		return true;
 	}
@@ -6367,10 +6474,10 @@ bool Network::shortest_paths_all()
 bool Network::find_alternatives_all (int lid, double penalty, Incident* incident)
 // Makes sure that each affected link has an alternative
 {
-	map <int, map <int,Link*>> affected_links_per_dest; // indexed by destination, each destination will have a nr of affected links
+    map <int, map <int,Link*> > affected_links_per_dest; // indexed by destination, each destination will have a nr of affected links
 	map <int, Origin*> affected_origins; // Simple map of affected origins
 	map <int, Link*> affected_links; // simple map of affected links
-	map <int, set <int>> links_without_alternative; // all links,dests without a 'ready' alternative. indexed by link_id, dest_id
+    map <int, set <int> > links_without_alternative; // all links,dests without a 'ready' alternative. indexed by link_id, dest_id
 	// Find all the affected links
 	Link* incident_link=linkmap[lid];
 	multimap <int, Route*> i_routemap = incident_link->get_routes();// get all routes through incident link
@@ -6395,7 +6502,7 @@ bool Network::find_alternatives_all (int lid, double penalty, Incident* incident
 		affected_origins [oid] = ori;
 	}
 	// per destination, for all affected links, find out if they have an alternative that does not go through incident link
-	map<int, map <int,Link*>>::iterator lm_iter=affected_links_per_dest.begin();
+    map<int, map <int,Link*> >::iterator lm_iter=affected_links_per_dest.begin();
 	for (lm_iter; lm_iter!=affected_links_per_dest.end(); lm_iter++)
 	{
 		int dest = (*lm_iter).first;
@@ -6443,7 +6550,7 @@ bool Network::find_alternatives_all (int lid, double penalty, Incident* incident
 			initok = init_shortest_path();
 		if (initok)
 		{
-			map <int, set <int >>::iterator mi = links_without_alternative.begin();
+            map <int, set <int > >::iterator mi = links_without_alternative.begin();
 			for (mi; mi != links_without_alternative.end();mi++)
 		 {
 			 // get shortest path and add.
@@ -7435,7 +7542,7 @@ double Network::step(double timestep)
 				crit[ivt] = insert(ivt_rec, day2day->process_ivt_replication(odstops, ivt_rec)); //insert result from day2day learning in data container
 			}
 
-			string addition = to_string((long double)crit[wt]) + "\t" + to_string((long double)crit[ivt]);
+            string addition = To_String((long double)crit[wt]) + "\t" + To_String((long double)crit[ivt]);
 			day2day->write_output(workingdir + "o_convergence.dat", addition);
 			cout << "Convergence: " << crit[wt] << " " << crit[ivt] << endl;
 

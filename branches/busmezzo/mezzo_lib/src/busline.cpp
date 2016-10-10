@@ -125,7 +125,7 @@ vector<Busstop*>::iterator Busline::get_stop_iter (Busstop* stop)
 
 void Busline::add_disruptions (Busstop* from_stop, Busstop* to_stop, double disruption_start_time, double disruption_end_time, double cap_reduction)
 {
-	pair<Busstop*,pair<double,double>> pair_dis;
+	pair<Busstop*,pair<double,double> > pair_dis;
 	pair_dis.first = to_stop;
 	pair_dis.second.first = disruption_start_time;
 	pair_dis.second.second = disruption_end_time;
@@ -1297,7 +1297,7 @@ bool Busstop::execute(Eventlist* eventlist, double time) // is executed by the e
 	}
 	bool bus_exit = false;
 	Bustrip* exiting_trip;
-	vector<pair<Bustrip*,double>>::iterator iter_departure; 
+	vector<pair<Bustrip*,double> >::iterator iter_departure; 
 	for (iter_departure = buses_currently_at_stop.begin(); iter_departure<buses_currently_at_stop.end(); iter_departure++)
 	{
 		if ((*iter_departure).second == time)
@@ -1438,7 +1438,7 @@ bool Busstop::execute(Eventlist* eventlist, double time) // is executed by the e
 	*/
 	bool bus_enter = false;
 	Bustrip* entering_trip;
-	vector<pair<Bustrip*,double>>::iterator iter_arrival;
+	vector<pair<Bustrip*,double> >::iterator iter_arrival;
 	for (iter_arrival = expected_bus_arrivals.begin(); iter_arrival<expected_bus_arrivals.end(); iter_arrival++)
 	{
 		if ((*iter_arrival).second == time)
@@ -2019,7 +2019,7 @@ double Busstop::find_exit_time_bus_in_front () //Fixed by Jens 2014-08-26
 	}
 	else
 	{
-		vector<pair<Bustrip*,double>>::iterator iter_bus = buses_currently_at_stop.end();
+		vector<pair<Bustrip*,double> >::iterator iter_bus = buses_currently_at_stop.end();
 		iter_bus--;
 		return iter_bus->second;
 	}
