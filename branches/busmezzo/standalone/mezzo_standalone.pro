@@ -1,15 +1,13 @@
-
 # Makes standalone version of Mezzo
 TEMPLATE = app
-
-CONFIG +=  console embed_manifest_exe
-#CONFIG -= qt
+CONFIG += console
+QT -= gui
 TARGET = mezzo_s
-DEPENDPATH += . ../mezzo_lib/src
-QT -=  gui
-#core
-DEFINES += _NO_GUI _BUSES
-QMAKE= $(QTDIR)/bin/qmake
+DEFINES += _BUSES
+DEFINES += _NO_GUI
+macx {
+    CONFIG   -= app_bundle # for mac remove the application bundling
+}
 win32 {
      QMAKE_LFLAGS += /LARGEADDRESSAWARE
 }
@@ -41,10 +39,9 @@ HEADERS += ../mezzo_lib/src/busline.h \
            ../mezzo_lib/src/vehicle.h \
            ../mezzo_lib/src/vissimcom.h \
            ../mezzo_lib/src/vtypes.h \
-            ./mezzo_lib/src/passenger.h \
-            ./mezzo_lib/src/od_stops.h \
-            ./mezzo_lib/src/pass_route.h
-#           ../mezzo_lib/src/Graph.cpp
+           ../mezzo_lib/src/passenger.h \
+           ../mezzo_lib/src/od_stops.h \
+           ../mezzo_lib/src/pass_route.h
 SOURCES += ../mezzo_lib/src/busline.cpp \
 		   ../mezzo_lib/src/day2day.cpp \
            ../mezzo_lib/src/eventlist.cpp \

@@ -74,6 +74,8 @@ struct Travel_time //structure for saving and adding data
 	float tt[5];
 	float alpha[3];
 	float convergence;
+    
+    friend float operator/ (const Travel_time& lhs, const Travel_time& rhs);
 
 	Travel_time &operator += (const Travel_time& rhs)
 	{

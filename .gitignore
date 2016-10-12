@@ -59,3 +59,6 @@ branches/busmezzo/gui/ui_parametersdialog_qt4.h
 *.DS_Store
 *.o
 *.a
+*.tmp
+branches/busmezzo/standalone/mezzo_s.xcodeproj
+branches/busmezzo/mezzo_lib/mezzo_lib.xcodeproj
