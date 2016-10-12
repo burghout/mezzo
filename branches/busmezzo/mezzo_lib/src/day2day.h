@@ -106,9 +106,11 @@ struct Travel_time //structure for saving and adding data
 } ;
 
 template <typename id_type> float insert (map<id_type, Travel_time>& ODSL_reg, map<id_type, Travel_time>& ODSL_data); //Method for inserting data for one day into record
-// NOTE WILCO: removed 'template' from following functions
-float insert  (map<ODSL, Travel_time>& ODSL_reg, map<ODSL, Travel_time>& ODSL_data);
-float insert (map<ODSLL, Travel_time>& ODSL_reg, map<ODSLL, Travel_time>& ODSL_data);
+// NOTE: MSVC needs hint from following functions
+#ifdef _WIN32
+template float insert  (map<ODSL, Travel_time>& ODSL_reg, map<ODSL, Travel_time>& ODSL_data);
+template float insert (map<ODSLL, Travel_time>& ODSL_reg, map<ODSLL, Travel_time>& ODSL_data);
+#endif
 
 class Day2day
 {
