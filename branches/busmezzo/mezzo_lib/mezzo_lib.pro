@@ -12,7 +12,7 @@ QT+= core gui
 QMAKE= $(QTDIR)/bin/qmake #comment by Flurin: is this really needed?
 DEFINES += _BUSES
 win32 {
-    QMAKE_LFLAGS += /LARGEADDRESSAWARE
+    QMAKE_LFLAGS +=
 }
 
 # Input

@@ -9,7 +9,7 @@ macx {
     CONFIG   -= app_bundle # for mac remove the application bundling
 }
 win32 {
-     QMAKE_LFLAGS += /LARGEADDRESSAWARE
+     QMAKE_LFLAGS +=
 }
 
 # Input
