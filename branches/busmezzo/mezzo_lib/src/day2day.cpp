@@ -34,8 +34,11 @@ map<id_type, Travel_time>& operator << (map<id_type, Travel_time>& ODSLreg, pair
 	return ODSLreg;
 };
 
-template <typename id_type>
-float insert (map<id_type, Travel_time>& ODSL_reg, map<id_type, Travel_time>& ODSL_data) //Method for inserting data for one day into record
+
+//note by Flurin: replace template by adding the specializations as two normal functions (see below)
+/*
+ template <typename id_type>
+ float insert (map<id_type, Travel_time>& ODSL_reg, map<id_type, Travel_time>& ODSL_data) //Method for inserting data for one day into record
 {
 	float crit = 0;
     for (typename map<id_type, Travel_time>::iterator row = ODSL_data.begin(); row != ODSL_data.end(); row++) //aggregate over days
@@ -50,6 +53,41 @@ float insert (map<id_type, Travel_time>& ODSL_reg, map<id_type, Travel_time>& OD
 	crit /= ODSL_data.size(); //to get the average
 
 	return crit;
+};
+ */
+
+float insert (map<ODSL, Travel_time>& ODSL_reg, map<ODSL, Travel_time>& ODSL_data) //Method for inserting data for one day into record
+{
+    float crit = 0;
+    for (map<ODSL, Travel_time>::iterator row = ODSL_data.begin(); row != ODSL_data.end(); row++) //aggregate over days
+    {
+        row->second /= row->second.counter; //finish the averaging by dividing by the number of occurences which is counted when adding
+        
+        ODSL_reg << *row; //if existing ODSL is found, data is replaced else a new row is inserted
+        
+        crit += abs(row->second.convergence - 1); //for the break criterium
+    }
+    
+    crit /= ODSL_data.size(); //to get the average
+    
+    return crit;
+};
+
+float insert (map<ODSLL, Travel_time>& ODSL_reg, map<ODSLL, Travel_time>& ODSL_data) //Method for inserting data for one day into record
+{
+    float crit = 0;
+    for (map<ODSLL, Travel_time>::iterator row = ODSL_data.begin(); row != ODSL_data.end(); row++) //aggregate over days
+    {
+        row->second /= row->second.counter; //finish the averaging by dividing by the number of occurences which is counted when adding
+        
+        ODSL_reg << *row; //if existing ODSL is found, data is replaced else a new row is inserted
+        
+        crit += abs(row->second.convergence - 1); //for the break criterium
+    }
+    
+    crit /= ODSL_data.size(); //to get the average
+    
+    return crit;
 };
 
 template <typename id_type>
