@@ -33,7 +33,7 @@
 
 #include <QDialog>
 // use the generated ui form header  
-#include "../ui_batchrundlg.h"
+#include "ui_batchrundlg.h"
 // network definition
 #include "../mezzo_lib/src/network.h"
 #include "../mezzo_lib/src/linktimes.h"
