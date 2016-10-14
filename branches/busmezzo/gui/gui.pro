@@ -4,7 +4,7 @@ TEMPLATE = app
 TARGET = mezzo_gui
 DEFINES += _BUSES
 #$(QTDIR)/include/Qt3Support
-INCLUDEPATH += ../mezzoAnalyzer/Debug $(QTDIR)/include ui_h
+INCLUDEPATH += ../mezzoAnalyzer/Debug ../mezzoAnalyzer $(QTDIR)/include ui_h
 
 LIBS += -L.
 
