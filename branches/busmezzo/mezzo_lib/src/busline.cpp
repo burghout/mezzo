@@ -2234,7 +2234,7 @@ double Busstop::calc_holding_departure_time (Bustrip* trip, double time)
 			// basically copying case 5 and then substracting the passenegr ratio term
 			case 9:
 				if (trip->get_line()->is_line_timepoint(this) == true && trip->get_line()->check_last_trip(trip) == false && trip->get_line()->check_first_trip(trip) == false) // if it is a time point and it is not the first or last trip
-			    {
+				{
 					Bustrip* next_trip = trip->get_line()->get_next_trip(trip);
 					Bustrip* previous_trip = trip->get_line()->get_previous_trip(trip);
 					vector <Visit_stop*> :: iterator& next_trip_next_stop = next_trip->get_next_stop();
@@ -2253,7 +2253,7 @@ double Busstop::calc_holding_departure_time (Bustrip* trip, double time)
 						double average_curr_headway = ((expected_next_arrival - time) + (time - last_departures[trip->get_line()].second))/2; // average of the headway in front and behind
 						// double average_planned_headway = (trip->get_line()->calc_curr_line_headway_forward() + trip->get_line()->calc_curr_line_headway())/2;
 						double pass_ratio;
-		
+
 						vector <Visit_stop*> :: iterator& next_stop = trip->get_next_stop(); // finding the arrival rate (lambda) at the next stop along this line 
 						double sum_arrival_rate_next_stops = 0.0;
 						for (vector <Visit_stop*> :: iterator trip_stops = trip->get_next_stop(); trip_stops < trip->stops.end(); trip_stops++)
@@ -2270,11 +2270,11 @@ double Busstop::calc_holding_departure_time (Bustrip* trip, double time)
 							pass_ratio = (trip->get_busv()->get_occupancy() - nr_alighting + nr_boarding) / (2 * 2 * sum_arrival_rate_next_stops); 
 						}
 						double holding_departure_time = min(last_departures[trip->get_line()].second + average_curr_headway - (pass_ratio), last_departures[trip->get_line()].second + (trip->get_line()->calc_curr_line_headway() * trip->get_line()->get_ratio_headway_holding())); // headway ratio means here how tolerant we are to exceed the gap (1+(1-ratio)) -> 2-ratio
-				
+
 						return holding_departure_time;
 					}
-				
-			}
+				}
+				break;
 			// for real-time corridor control 		
 			case 10:
 				// find_next_downstream_hub();
