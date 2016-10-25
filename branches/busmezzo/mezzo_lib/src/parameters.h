@@ -197,6 +197,7 @@ public:
    int Bus_horizon;
    int Stop_horizon;
    bool transfer_sync; //!< true if transfer synchronization is being used. Will effect the way the line definition in transit_network.dat is read.
+   int Real_time_control_info; //!<  real time control information. if =0 then use historical data
 
 // day2day assignment
    double default_alpha_RTI; //!< Initial value of the real-time information credibility coefficient set for all travellers

@@ -196,7 +196,7 @@ public:
 	//transfer gets and sets
 	int	get_tr_line_id() {return tr_line_id;}
 	vector <Busstop*> get_tr_stops() {return tr_stops;}
-	void get_transfer_stops(vector<Visit_stop> visit_transfers);
+	vector<Visit_stop> get_transfer_stops(vector<Visit_stop> visit_transfers);
 
 	// initialization
 	void add_timepoints (vector <Busstop*> tp) {line_timepoint = tp;}
@@ -373,10 +373,11 @@ public:
 	void convert_stops_vector_to_map();													//!< building stops_map
 	void convert_downstreamstops_vector_to_map(vector <Visit_stop*> down_stops);													//!< building stops_map
 	vector <Visit_stop*> ::iterator get_target_stop(Bustrip *trip, vector<Visit_stop*> :: iterator& next_stop); //Hend added 190716 get target stop according to the stop horizon
-	vector<Start_trip> calc_predic_times(Start_trip trip, Visit_stop *target_stop, vector<Start_trip> trips_to_handle); ////Hend added 130716: calc the predictions of the arrival times of trips
+	vector <Visit_stop*> ::iterator get_transfer_target_stop(Bustrip *trip, vector<Visit_stop*> :: iterator& trnsfr_stop); //Hend added 171016 get target stop for transfer lines
+	vector<Start_trip> calc_predict_times(Start_trip trip, Visit_stop *target_stop, vector<Start_trip> trips_to_handle); ////Hend added 130716: calc the predictions of the arrival times of trips
 	vector<double> get_first_and_last_trips(vector<Start_trip> trips_to_handle,Visit_stop* transfer_stop);//Hend added 130716: get the first and last trip to enter transfer stop
 	Busline* get_tr_line(Busstop* it_stp, int tr_id);//Hend added 130716: get busline of the transfer line
-	vector <Visit_stop*> get_transfers_in_downstream(Bustrip* trip); //Hend added 120716: return a vector of transfer stops till the target stop
+	vector<Visit_stop*> get_transfers_in_downstream(Bustrip* trip, vector<Visit_stop*> transfer_in_downstream, vector <Visit_stop> visit_transfers); //Hend added 120716: return a vector of transfer stops till the target stop
 	bool is_trip_exist(vector<Start_trip> trips_in_transfer, Bustrip* transfer_trip); //Hend added 190716 checks if trips in transfer contain transfer trip
 	double get_predict_time_to_trnsfr(Visit_stop *transfer_stop); //Hend added 200716 find the handled transfer and return the predict arrival time
 	vector<Start_trip> get_trips_in_transfer_line(vector<Start_trip> transfer_trips, Visit_stop *transfer_stop ,vector<double> limited_tr_stop, vector<Start_trip> trips_in_transfer);//Hend added 190716 return transfer trips that in the horizon
@@ -384,7 +385,7 @@ public:
 	static double find_crowding_coeff (bool sits, double load_factor);					//!< returns the crowding coefficeint based on lod factor and pass. seating/standing
 	pair<double, double> crowding_dt_factor (double nr_boarding, double nr_alighting);
 	vector <Busstop*> get_downstream_stops(); //!< return the remaining stops to be visited starting from 'next_stop', returns empty Busstop vector if there are none
-	vector <Visit_stop*> get_downstream_stops_till_horizon(Visit_stop* target_stop); //!< return the remaining stops to be visited starting from 'next_stop'
+	vector <Visit_stop*> get_downstream_stops_till_horizon(Bustrip *trip, Visit_stop* target_stop); //!< return the remaining stops to be visited starting from 'next_stop'
 	bool is_stop_in_downstream(Visit_stop *target_stop);  //!< return true if the trip didnt get yet to the target stop
 
 // output-related functions

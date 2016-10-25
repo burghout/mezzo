@@ -734,6 +734,14 @@ bool Parameters::read_parameters (istream & in )
 		return false;
 	}
 	in >> transfer_sync;
+	in >> keyword; //Real-time control info- Hend added 2016-10-17
+	if (keyword!= "Real_time_control_info=")
+	{
+		cout << "ERROR reading Parameters file, expecting: Real_time_control_info=, read: " << keyword << endl;
+		return false;
+	}
+	in >> Real_time_control_info;
+
 	in >> keyword;
 	if (keyword!= "#day2day_assignment")
 	{

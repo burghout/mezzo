@@ -1672,7 +1672,7 @@ bool Network::readbusline(istream& in) // reads a busline
 		if (bracket != '}')
 		{
 			cout << "readfile::readsbusline scanner jammed when reading time point stops at " << bracket << ", expected }";
-		return false;
+			return false;
 		}
 		bl->add_transferstops(tr_stops);
 		
@@ -1682,9 +1682,14 @@ bool Network::readbusline(istream& in) // reads a busline
 			cout << "readfile::readsbusline scanner jammed when reading synchronized lines at " << bracket << ", expected {";
 			return false;
 		}
-		
 		for (int j=0; j < num_tran_sync; j++)
 		{
+			in >> bracket;
+			if (bracket != '{')
+			{
+				cout << "readfile::readsbusline scanner jammed when reading synchronized lines at " << bracket << ", expected {";
+				return false;
+			}
 			in >> tr_line_id;
 			//bl->add_tr_line_id(tr_line_id);
 			if(tr_line_id != 0) //if we are synchronizing transfers with another line
@@ -1714,16 +1719,23 @@ bool Network::readbusline(istream& in) // reads a busline
 				
 				transfer_line[tr_line_id] = tr_stops;
 				
+				in >> bracket;
+				if (bracket != '}')
+				{
+					cout << "readfile::readsbusline scanner jammed when reading transfer stops at " << bracket << ", expected }";
+					return false;
+				}
 			}
 		}
 		bl->add_transfer_line(transfer_line);
+		in >> bracket;
+		if (bracket != '}')
+			{
+				cout << "readfile::readsbusline scanner jammed when reading transfer stops at " << bracket << ", expected }";
+				return false;
+			}
 	 }
-	 in >> bracket;
-	if (bracket != '}')
-	{
-		cout << "readfile::readsbusline scanner jammed when reading transfer stops at " << bracket << ", expected }";
-		return false;
-	}
+	
   }
 
   bracket = ' '; // David added 2016-03-29
