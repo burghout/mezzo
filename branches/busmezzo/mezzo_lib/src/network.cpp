@@ -1494,7 +1494,7 @@ bool Network::readbusstop (istream& in) // reads a busstop
 	  cout << "readfile::readsbusstop error at stop " << stop_id << ". Link " << link_id << " does not exist." << endl;
   }
 
-  Busstop* st= new Busstop (stop_id, name, link_id, position, length, has_bay, can_overtake, min_DT, RTI_stop);
+  Busstop* st= new Busstop (stop_id, name, link_id, position, length, has_bay, can_overtake, min_DT, RTI_stop, &history_summary_map);
   st->add_distance_between_stops(st,0.0);
 	in >> bracket;
 	if (bracket != '}')
@@ -1520,7 +1520,7 @@ bool Network::readbusline(istream& in) // reads a busline
   vector <Busstop*> stops, line_timepoint;
   Busstop* stop;
   Busstop* tp;
-  Busstop* tr;
+  
 
   //David added 2016-04-18, transfer related variables
   int tr_line_id;	//!< id of line that 'this' busline synchronizes transfers with, 0 if line is not synchronizing transfers
@@ -1532,7 +1532,7 @@ bool Network::readbusline(istream& in) // reads a busline
   tr_line transfer_line;
   int num_tran_sync;  //!< 2016-06-22 Hend: number of lines that are synchronized with this line, 0 if line is not synchronizing transfers 
   vector <Busstop*> tr_stops;
-  Busstop* tr_stop;
+  
 
 	bool ok= true;
 	in >> bracket;
@@ -1637,7 +1637,7 @@ bool Network::readbusline(istream& in) // reads a busline
 		  for (int i=0; i < nr_tr_stops; i++)
 		  {
 			  in >> tr_stop_id;
-			  tr_stop = (*(find_if(stops.begin(), stops.end(), compare <Busstop> (tr_stop_id) )));
+			  Busstop* tr_stop = (*(find_if(stops.begin(), stops.end(), compare <Busstop> (tr_stop_id) )));
 			  tr_stops.push_back(tr_stop);
 		  }
 		  in >> bracket;
@@ -1664,7 +1664,7 @@ bool Network::readbusline(istream& in) // reads a busline
 		 for (int i=0; i < nr_tr; i++)
 		{
 			in >> tr_id;
-			tr = (*(find_if(stops.begin(), stops.end(), compare <Busstop> (tr_id) ))); 
+			Busstop* tr = (*(find_if(stops.begin(), stops.end(), compare <Busstop> (tr_id) ))); 
 			// search for it in the stops route of the line - 'transfer_stops' is a subset of 'stops' 
 			tr_stops.push_back(tr); // and add it
 		}
@@ -1706,7 +1706,7 @@ bool Network::readbusline(istream& in) // reads a busline
 				for (int i=0; i < nr_tr_stops; i++)
 				{
 					in >> tr_stop_id;
-					tr_stop = (*(find_if(stops.begin(), stops.end(), compare <Busstop> (tr_stop_id) )));
+					Busstop* tr_stop = (*(find_if(stops.begin(), stops.end(), compare <Busstop> (tr_stop_id) )));
 					tr_stops.push_back(tr_stop);
 				}
 				in >> bracket;
@@ -2492,6 +2492,129 @@ bool Network::read_travel_time_disruptions (istream& in)
 	}
 	return true;
 }
+
+bool Network::readhistoricaldata (string name)
+{
+	ifstream in(name.c_str()); // open input file
+	assert (in);
+	string keyword;
+	in >> keyword;
+#ifdef _DEBUG_NETWORK
+	cout << keyword << endl;
+#endif //_DEBUG_NETWORK
+	if (keyword!="historical_inputs:")
+	{
+		cout << " readhistoricaldata: no << historical_inputs: >> keyword " << endl;
+		in.close();
+		return false;
+	}
+	int nr= 0;
+	in >> nr;
+	int i=0;
+	for (i; i<nr;i++)
+	{
+		if (!read_history(in))
+		{
+			cout << " readhistoricaldata: read_history returned false for line nr " << (i+1) << endl;
+			in.close();
+			return false;
+		} 
+	}
+	cout << "Read history completed" << endl;
+	return true;
+}
+
+bool Network::read_history(istream& in)
+{
+	int line_id, trip_id, vehicle_id, stop_id, nr_alighting, nr_boarding, occupancy, nr_waiting ;
+	double entering_time, sched_arr_time, dwell_time, lateness, exit_time, riding_time, riding_pass_time, time_since_arr, time_since_dep, total_waiting_time, holding_time;
+	
+	in >> line_id >> trip_id>> vehicle_id >> stop_id >> entering_time >> sched_arr_time >> dwell_time >> lateness >> exit_time >> riding_time >> riding_pass_time >> time_since_arr >> time_since_dep >> nr_alighting >> nr_boarding >> occupancy >> nr_waiting >> total_waiting_time >> holding_time;
+
+//	Busstop* bs_stp = (*(find_if(busstops.begin(), busstops.end(), compare <Busstop> (stop_id))));	
+//	Busline* bl = (*(find_if(buslines.begin(), buslines.end(), compare <Busline> (line_id) )));
+	
+	hist_set* hist = new hist_set(line_id, trip_id, vehicle_id, stop_id, entering_time, sched_arr_time, dwell_time, lateness, exit_time, riding_time, riding_pass_time, time_since_arr, time_since_dep, nr_alighting, nr_boarding, occupancy, nr_waiting, total_waiting_time, holding_time); 
+	history_inputs.push_back(hist);
+	return true;
+}
+
+void Network::find_average_line_stop_schedule() 
+{
+	for(int i=0; i<history_inputs.size(); i++) 
+	{
+		if(is_first_time_line_id_stop_schedule(i)) 
+		{
+			hist_set* hist = find_average_line_stop(i);
+			history_summary.push_back(hist);
+			int line_id = history_inputs[i]->line_id;
+			int stop_id = history_inputs[i]->stop_id;
+			double sched_arr_time = history_inputs[i]->sched_arr_time;
+			LineIdStopSchedule lineId(line_id, stop_id,sched_arr_time);
+			history_summary_map.insert(std::pair<LineIdStopSchedule, hist_set*>(lineId, hist));
+		}
+	}
+}
+
+bool Network::is_first_time_line_id_stop_schedule(int index) {
+	int line_id = history_inputs[index]->line_id;
+	int stop_id = history_inputs[index]->stop_id;
+	double sched_arr_time = history_inputs[index]->sched_arr_time;
+	for(int i=0; i<index; i++ ) {
+		if(history_inputs[i]->line_id == line_id && history_inputs[i]->stop_id == stop_id && history_inputs[i]->sched_arr_time == sched_arr_time) {
+			return false;
+		}
+	}
+	return true;
+}
+
+// Index: is the first index in history_inputs where  line_id,stop_id and schedule_arrive_time appear for the first time.
+hist_set* Network::find_average_line_stop(int index) {
+	int line_id = history_inputs[index]->line_id;
+	int stop_id = history_inputs[index]->stop_id;
+	double sched_arr_time = history_inputs[index]->sched_arr_time;
+	//
+	double entering_time = 0;
+	double dwell_time = 0;
+	double lateness = 0;
+	double exit_time = 0;
+	double riding_time = 0;
+	double riding_pass_time = 0;
+	double time_since_arr = 0;
+	double time_since_dep = 0;
+	int nr_alighting = 0;
+	int nr_boarding = 0;
+	int occupancy = 0;
+	int nr_waiting = 0;
+	double total_waiting_time = 0;
+	double holding_time = 0;
+	int number_of_elements = 0;
+	//
+	for(int i=index; i<history_inputs.size(); i++ ) {
+		if(history_inputs[i]->line_id == line_id && history_inputs[i]->stop_id == stop_id && history_inputs[i]->sched_arr_time == sched_arr_time) {
+			entering_time += history_inputs[i]->entering_time;
+			dwell_time += history_inputs[i]->dwell_time;
+			lateness += history_inputs[i]->lateness;
+			exit_time += history_inputs[i]->exit_time;
+			riding_time += history_inputs[i]->riding_time;
+			riding_pass_time += history_inputs[i]->riding_pass_time;
+			time_since_arr += history_inputs[i]->time_since_arr;
+			time_since_dep += history_inputs[i]->time_since_dep;
+			nr_alighting += history_inputs[i]->nr_alighting;
+			nr_boarding += history_inputs[i]->nr_boarding;
+			occupancy += history_inputs[i]->occupancy;
+			nr_waiting += history_inputs[i]->nr_waiting;
+			total_waiting_time += history_inputs[i]->total_waiting_time;
+			holding_time += history_inputs[i]->holding_time;
+			number_of_elements++;
+		}
+	}
+	return new hist_set(line_id, history_inputs[index]->trip_id, history_inputs[index]->vehicle_id, 
+		stop_id, entering_time/number_of_elements, sched_arr_time/number_of_elements, dwell_time/number_of_elements, lateness/number_of_elements, exit_time/number_of_elements, riding_time/number_of_elements, riding_pass_time/number_of_elements, time_since_arr/number_of_elements, 
+		time_since_dep/number_of_elements, nr_alighting/number_of_elements, nr_boarding/number_of_elements, occupancy/number_of_elements, nr_waiting/number_of_elements, total_waiting_time/number_of_elements, holding_time/number_of_elements); 
+}
+
+
 
 /////////////// Transit path-set generation functions: start
 
@@ -6941,6 +7064,11 @@ double Network::executemaster(QPixmap * pm_,QMatrix * wm_)
 	{
 		this->read_IVTT_day2day (workingdir +"transit_day2day_onboard.dat");
 	}
+	if(theParameters->Real_time_control_info == 0 && theParameters->transfer_sync == 1)
+	{
+		this->readhistoricaldata (workingdir + "transitlog.dat");
+		find_average_line_stop_schedule();
+	}
 #endif // _BUSES
 	if (!init())
 		cout << "Problem initialising " << endl;
@@ -7037,6 +7165,10 @@ double Network::executemaster()
 	if (theParameters->in_vehicle_d2d_indicator >= 1)
 	{
 		this->read_IVTT_day2day (workingdir +"transit_day2day_onboard.dat");
+	}
+	if(theParameters->Real_time_control_info == 0 && theParameters->transfer_sync == 1)
+	{
+		this->readhistoricaldata (workingdir + "transitlog.dat");
 	}
 	
 #endif //_BUSES

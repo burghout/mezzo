@@ -30,6 +30,7 @@ class ODstops;
 class Change_arrival_rate;
 class Bustrip_assign;
 class Dwell_time_function;
+class hist_set;
 
 typedef pair<Bustrip*,double> Start_trip;
 typedef vector <Passenger*> passengers;
@@ -527,6 +528,24 @@ public:
 	double holding_time;
 };
 
+class LineIdStopSchedule {
+public:
+	int line_id_;
+	int stop_id_;
+	double sched_arr_time_;
+	LineIdStopSchedule(int line_id, int stop_id, int sched_arr_time):
+		line_id_(line_id), stop_id_(stop_id), sched_arr_time_(sched_arr_time) {}
+};
+
+struct CompareLineStopSched { 
+	bool operator()(const LineIdStopSchedule& left,const LineIdStopSchedule& right ) const {
+		if(left.line_id_ == right.line_id_ && 
+			left.stop_id_ == right.stop_id_ &&
+			left.sched_arr_time_ == right.sched_arr_time_)
+			return false;
+		return true;
+	}
+};
 class Output_Summary_Stop_Line // container object holding output data for stop visits
 {
 public:
@@ -604,6 +623,18 @@ public:
 		bool	can_overtake_, 
 		double	min_DT_, 
 		int		rti_
+	);
+	Busstop::Busstop (
+		int		id_, 
+		string	name_, 
+		int		link_id_, 
+		double	position_, 
+		double	length_, 
+		bool	has_bay_, 
+		bool	can_overtake_, 
+		double	min_DT_, 
+		int		rti_,
+		map<LineIdStopSchedule, hist_set*, CompareLineStopSched>* history_summary_map_
 	);
 
 	void reset (); 
@@ -688,6 +719,7 @@ public:
 	static double calc_crowded_travel_time (double travel_time, int nr_riders, int nr_seats);
 	
 	void calculate_sum_output_stop_per_line(int line_id); //!< calculates for a single line that visits the stop (identified by line_id)
+	//void calculate_sum_output_stop_per_line_and_sched_at(int line_id, stop_sched_arrtime_T stop_sched);  //!< Hend added 301016 prepare a historical data
 	int calc_total_nr_waiting ();
 
 // relevant only for demand format 2
@@ -750,10 +782,13 @@ protected:
 	// output structures
 	list <Busstop_Visit> output_stop_visits;			//!< list of output data for buses visiting stops
 	map<int,Output_Summary_Stop_Line> output_summary;	//!< int value is line_id
+
+	map<LineIdStopSchedule, hist_set*, CompareLineStopSched>* history_summary_map_;
 };
 
 typedef pair<Busline*,double> TD_single_pair;
 typedef map<Busstop*, map<Busline*,double>> TD_demand;
+//typedef map<Busline*, map<Busstop*,double>> stop_sched_arrtime_T; //!<Hend added 301016: a map for each stop and the schedule arrival time
 
 class Change_arrival_rate : public Action
 {
@@ -841,6 +876,37 @@ public:
 	// extra delays
 	double bay_coefficient;
 	double over_stop_capacity_coefficient; 
+};
+
+class hist_set
+{
+ public:
+	hist_set ();
+	//Pass_path (int path_id, vector<vector<Busline*>> alt_lines_);
+	//Pass_path (int path_id, vector<vector<Busline*>> alt_lines_, vector <vector <Busstop*>> alt_transfer_stops_);
+	hist_set (int line_id_, int trip_id_, int vehicle_id_, int stop_id_, double entering_time_, double sched_arr_time_, double dwell_time_, double lateness_, double exit_time_, double riding_time_, double riding_pass_time_, double time_since_arr_, double time_since_dep_, int nr_alighting_, int nr_boarding_, int occupancy_, int nr_waiting_, double total_waiting_time_, double holding_time_);
+	~hist_set ();
+	//void reset();
+
+	int line_id;
+	int trip_id;
+	int vehicle_id;
+	int stop_id;
+	double entering_time;
+	double sched_arr_time;
+	double dwell_time;
+	double lateness;
+	double exit_time;
+	double riding_time;
+	double riding_pass_time;
+	double time_since_arr;
+	double time_since_dep;
+	int nr_alighting;
+	int nr_boarding;
+	int occupancy;
+	int nr_waiting;
+	double total_waiting_time;
+	double holding_time;
 };
 
 #endif //_BUSLINE

@@ -1,10 +1,9 @@
-///! busline.cpp: implementation of the busline class.
-
-#include "busline.h"
-#include <math.h>
-#include "MMath.h"
 #include <sstream>
 #include <stddef.h>
+#include <math.h>
+#include "busline.h"
+#include "MMath.h"
+
 
 template<class T>
 struct compare
@@ -968,7 +967,7 @@ vector<Start_trip> Bustrip::calc_predict_times(Start_trip trip, Visit_stop *targ
 	//calculate delay/earliness of trips
 	double offset = 0.0; 
 	trip.first->down_stops = trip.first->get_downstream_stops_till_horizon(trip.first, target_stop); 
-	if(trip.first->get_line()->check_first_trip(trip.first) == true)  //if this is the first trip, get the scheduale arrival times
+	if(trip.first->get_line()->check_first_trip(trip.first) == true)  //if this is the first trip, get the schedule arrival times
 	{
 		for(vector <Visit_stop*> :: iterator down_stp=trip.first->down_stops.begin(); down_stp<trip.first->down_stops.end(); ++down_stp)
 		{
@@ -987,7 +986,7 @@ vector<Start_trip> Bustrip::calc_predict_times(Start_trip trip, Visit_stop *targ
 				}
 				else
 				{
-					offset = last_stop_enter_time - trip.first->stops_map[last_stop_visited]; 
+					offset = last_stop_enter_time - trip.first->stops_map[last_stp_visited]; 
 					(*down_stp)->second = offset + trip.first->stops_map[(*down_stp)->first];
 				}
 			}
@@ -1017,7 +1016,7 @@ vector<Start_trip> Bustrip::calc_predict_times(Start_trip trip, Visit_stop *targ
 				}
 				else
 				{
-					offset = last_stop_enter_time - trip.first->stops_map[last_stop_visited]; 
+					offset = last_stop_enter_time - trip.first->stops_map[last_stp_visited]; 
 					(*down_stp)->second = offset + trip.first->stops_map[(*down_stp)->first];
 				}
 			}
@@ -1468,6 +1467,31 @@ Busstop::Busstop()
 
 Busstop::Busstop (int id_, string name_, int link_id_, double position_, double length_, bool has_bay_, bool can_overtake_, double min_DT_, int rti_):
 	id(id_), name(name_), link_id(link_id_), position (position_), length(length_), has_bay(has_bay_), can_overtake(can_overtake_), min_DT(min_DT_), rti (rti_)
+{
+	avaliable_length = length;
+	nr_boarding = 0;
+	nr_alighting = 0;
+	dwelltime = 0;
+	is_origin = false;
+	is_destination = false;
+	last_arrivals.clear();
+	last_departures.clear();
+	random = new (Random);
+	if (randseed != 0)
+		{
+		random->seed(randseed);
+		}
+	else
+	{
+		random->randomize();
+	}
+}
+
+Busstop::Busstop (int id_, string name_, int link_id_, double position_, double length_, bool has_bay_, bool can_overtake_, double min_DT_, int rti_,
+				  map<LineIdStopSchedule, hist_set*, CompareLineStopSched>* history_summary_map):
+	id(id_), name(name_), link_id(link_id_), position (position_), length(length_), 
+	has_bay(has_bay_), can_overtake(can_overtake_), min_DT(min_DT_), rti (rti_),
+	history_summary_map_(history_summary_map)
 {
 	avaliable_length = length;
 	nr_boarding = 0;
@@ -2576,7 +2600,15 @@ double Busstop::calc_holding_departure_time (Bustrip* trip, double time)
 						if (line_trips[k].first->is_stop_in_downstream(*target_stop))//if the trip didn't pass the target stop
 						{	
 							trips_to_handle = line_trips[k].first->calc_predict_times(line_trips[k], *target_stop, trips_to_handle);//check if it returns the updated trips_to_handle????
-							line_trips[k].first->trip_occupancy.push_back(make_pair(line_trips[k].first, line_trips[k].first->get_busv()->get_occupancy()));// need to know which kind of input we know, if occupancy is included or not******
+							if(theParameters->Real_time_control_info==1){
+								line_trips[k].first->trip_occupancy.push_back(make_pair(line_trips[k].first, line_trips[k].first->get_busv()->get_occupancy()));
+							}
+							else{
+								//here we have to put function that get the occupancy of the trip at this stop
+								LineIdStopSchedule lineIdStopIdSched(line_trips[k].first->get_id(),this->get_id(),line_trips[k].first->get_id());
+								(*history_summary_map_)[lineIdStopIdSched]->occupancy; 
+							}
+
 						}
 						k++;
 					}
@@ -2587,7 +2619,12 @@ double Busstop::calc_holding_departure_time (Bustrip* trip, double time)
 						if (line_trips[k].first->is_stop_in_downstream(*target_stop))//if the trip didn't pass the target stop
 						{
 							trips_to_handle = line_trips[k].first->calc_predict_times(line_trips[k], *target_stop, trips_to_handle);//check if it returns the updated line_trips_to_handle????
-							line_trips[k].first->trip_occupancy.push_back(make_pair(line_trips[k].first, line_trips[k].first->get_busv()->get_occupancy()));
+							if(theParameters->Real_time_control_info==1){
+								line_trips[k].first->trip_occupancy.push_back(make_pair(line_trips[k].first, line_trips[k].first->get_busv()->get_occupancy()));
+							}
+							else{
+								//here we have to put function that get the occupancy of the trip at this stop
+							}
 						}
 						k++,j++;
 					}
@@ -2645,7 +2682,13 @@ double Busstop::calc_holding_departure_time (Bustrip* trip, double time)
 									{
 										for(size_t tr_in=0; tr_in<trips_awaiting_transfers.size(); ++tr_in)
 										{
-											trips_in_transfer[tr_in].first->trip_occupancy.push_back(make_pair(trips_in_transfer[tr_in].first, trips_in_transfer[tr_in].first->get_busv()->get_occupancy()));
+											if(theParameters->Real_time_control_info==1){
+												trips_in_transfer[tr_in].first->trip_occupancy.push_back(make_pair(trips_in_transfer[tr_in].first, trips_in_transfer[tr_in].first->get_busv()->get_occupancy()));
+											}
+											else{
+												//here we have to put function that get the occupancy of the trip at this stop
+											}
+
 										}
 									}
 								}// for transfer_lines
@@ -3006,6 +3049,139 @@ void Busstop::calculate_sum_output_stop_per_line(int line_id)
 	output_summary[line_id].stop_sd_DT = sqrt(output_summary[line_id].stop_sd_DT/(counter-1));
 }
 
+/*
+void Busstop::calculate_sum_output_stop_per_line_and_sched_at(int line_id, stop_sched_arrtime_T stop_sched)
+{
+	int counter = 0;
+	// initialize all output measures
+	Busline* bl=(*(find_if(lines.begin(), lines.end(), compare <Busline> (line_id) )));
+	vector<Start_trip> trips = bl->get_trips();
+	for (stop_sched_arrtime_T::iterator stop_iter = stop_sched.begin(); stop_iter != stop_sched.end(); stop_iter++)
+	{
+		output_summary_sched[stop_iter].stop_avg_headway=0;
+		output_summary_sched[stop_iter].stop_avg_DT = 0;
+		output_summary_sched[stop_iter].stop_avg_abs_deviation = 0;
+		output_summary_sched[stop_iter].stop_total_boarding = 0;
+		output_summary_sched[stop_iter].stop_avg_waiting_per_stop = 0;
+		output_summary_sched[stop_iter].stop_sd_headway = 0;
+		output_summary_sched[stop_iter].stop_sd_DT = 0;
+		output_summary_sched[stop_iter].stop_on_time = 0;
+		output_summary_sched[stop_iter].stop_early = 0;
+		output_summary_sched[stop_iter].stop_late = 0;
+		output_summary_sched[stop_iter].total_stop_pass_riding_time = 0;
+		output_summary_sched[stop_iter].total_stop_pass_dwell_time = 0;
+		output_summary_sched[stop_iter].total_stop_pass_waiting_time = 0;
+		output_summary_sched[stop_iter].total_stop_pass_holding_time = 0;
+		output_summary_sched[stop_iter].stop_avg_holding_time = 0;
+		output_summary_sched[stop_iter].total_stop_travel_time_crowding = 0;
+	}
+	
+	for (stop_sched_arrtime_T::iterator stop_iter1 = stop_sched.begin(); stop_iter1 != stop_sched.end(); stop_iter1++)
+	{
+		//for (stops_rate::iterator stop_iter1 = stop_sched.begin(); stop_iter1 != stop_sched.end(); stop_iter1++)
+		//{
+		for (list <Busstop_Visit>::iterator iter1 = output_stop_visits.begin(); iter1!=output_stop_visits.end();iter1++)
+		{
+			if ((*iter1).line_id == line_id && stop_iter1->first->get_id == line_id)
+			{
+				if((*iter1).stop_id == stop_iter1[]
+				// accumulating all the measures
+				counter++; // should equal the total number of trips for this bus line passing at this bus stop
+				if (trips.size()>2)
+				{
+					vector<Start_trip>::iterator iter = trips.begin();
+					if ((*iter1).trip_id != (*iter).first->get_id())
+					{
+						iter++;
+						if ((*iter1).trip_id != (*iter).first->get_id())
+						{
+							output_summary_sched[line_id].stop_avg_headway += (*iter1).time_since_dep;
+						}
+					}
+				}
+				else 
+				{
+					output_summary_sched[line_id].stop_avg_headway += (*iter1).time_since_dep;
+				}
+				output_summary_sched[line_id].stop_avg_DT += (*iter1).dwell_time;
+				output_summary_sched[line_id].stop_avg_abs_deviation += abs((*iter1).lateness);
+				output_summary_sched[line_id].stop_total_boarding += (*iter1).nr_boarding;
+				output_summary_sched[line_id].stop_avg_waiting_per_stop += (*iter1).nr_waiting;
+				output_summary_sched[line_id].total_stop_pass_riding_time += (*iter1).riding_pass_time;
+				output_summary_sched[line_id].total_stop_pass_dwell_time += (*iter1).dwell_time * (*iter1).occupancy;
+				output_summary_sched[line_id].total_stop_pass_waiting_time += ((*iter1).time_since_arr * (*iter1).nr_boarding) / 2;
+				output_summary_sched[line_id].total_stop_pass_holding_time += (*iter1).holding_time * (*iter1).occupancy;
+				//output_summary_sched[line_id].total_stop_pass_holding_time += (*iter1).holding_time;
+				output_summary_sched[line_id].total_stop_travel_time_crowding += (*iter1).crowded_pass_riding_time + (*iter1).crowded_pass_dwell_time + (*iter1).crowded_pass_holding_time;
+				if ((*iter1).lateness > 300)
+				{
+					output_summary_sched[line_id].stop_late ++;
+				}
+				else if ((*iter1).lateness < -60)
+				{
+					output_summary_sched[line_id].stop_early ++;
+				}
+				else 
+				{
+					output_summary_sched[line_id].stop_on_time ++;
+				}
+			}
+	}
+	// dividing all the average measures by the number of records	
+	if (trips.size()>2)	
+	{
+		output_summary_sched[line_id].stop_avg_headway = output_summary_sched[line_id].stop_avg_headway/(counter-2);
+	}
+	else
+	{
+		output_summary_sched[line_id].stop_avg_headway = output_summary_sched[line_id].stop_avg_headway/(counter);
+	}
+	output_summary_sched[line_id].stop_avg_DT = output_summary_sched[line_id].stop_avg_DT/counter;
+	output_summary_sched[line_id].stop_avg_abs_deviation = output_summary_sched[line_id].stop_avg_abs_deviation/counter;
+	output_summary_sched[line_id].stop_total_boarding = output_summary_sched[line_id].stop_total_boarding/counter;
+	output_summary_sched[line_id].stop_avg_waiting_per_stop = output_summary_sched[line_id].stop_avg_waiting_per_stop/counter;
+	output_summary_sched[line_id].stop_on_time = output_summary_sched[line_id].stop_on_time/counter;
+	output_summary_sched[line_id].stop_early = output_summary_sched[line_id].stop_early/counter;
+	output_summary_sched[line_id].stop_late = output_summary_sched[line_id].stop_late/counter;
+	output_summary_sched[line_id].stop_avg_holding_time = output_summary_sched[line_id].stop_avg_holding_time/counter;
+
+	// now go over again for SD calculations
+	for (list <Busstop_Visit>::iterator iter1 = output_stop_visits.begin(); iter1!=output_stop_visits.end();iter1++)
+	{
+		if ((*iter1).line_id == line_id)
+		{
+			vector<Start_trip>::iterator iter = trips.begin();
+			if (trips.size()>2)
+			{
+				if ((*iter1).trip_id != (*iter).first->get_id())
+				{
+					iter++;
+					if ((*iter1).trip_id != (*iter).first->get_id())
+					{
+						output_summary_sched[line_id].stop_sd_headway += pow ((*iter1).time_since_dep - output_summary_sched[line_id].stop_avg_headway, 2);
+					}
+				}
+			}
+			else 
+			{
+				output_summary_sched[line_id].stop_sd_headway += pow ((*iter1).time_since_dep - output_summary_sched[line_id].stop_avg_headway, 2);
+			}
+			output_summary_sched[line_id].stop_sd_DT += pow ((*iter1).dwell_time - output_summary_sched[line_id].stop_avg_DT, 2);
+		}
+	}
+	// finish calculating all the SD measures 
+	if (trips.size()>2)	
+	{
+		output_summary_sched[line_id].stop_sd_headway = sqrt(output_summary_sched[line_id].stop_sd_headway/(counter-3));
+	}
+	else
+	{
+		output_summary_sched[line_id].stop_sd_headway = sqrt(output_summary_sched[line_id].stop_sd_headway/(counter-1));
+	}
+	output_summary_sched[line_id].stop_sd_DT = sqrt(output_summary_sched[line_id].stop_sd_DT/(counter-1));
+}
+*/
+
 const bool Busstop::check_walkable_stop ( Busstop* const & stop)
 {
 	if (distances.count(stop) > 0)
@@ -3068,4 +3244,33 @@ bool Change_arrival_rate::execute()
 		}
 	}
 	return true;
+}
+
+hist_set:: hist_set ()
+{
+}
+
+hist_set:: hist_set (int line_id_, int trip_id_, int vehicle_id_, int stop_id_, double entering_time_, double sched_arr_time_, double dwell_time_, 
+					 double lateness_, double exit_time_, double riding_time_, double riding_pass_time_, double time_since_arr_, double time_since_dep_, 
+					 int nr_alighting_, int nr_boarding_, int occupancy_, int nr_waiting_, double total_waiting_time_, double holding_time_)
+{
+	line_id = line_id_;
+	trip_id = trip_id_;
+	vehicle_id = vehicle_id_;
+	stop_id = stop_id_;
+	entering_time = entering_time_;
+	sched_arr_time = sched_arr_time_;
+	dwell_time = dwell_time_;
+	lateness = lateness_;
+	exit_time = exit_time_;
+	riding_time = riding_time_;
+	riding_pass_time = riding_pass_time_;
+	time_since_arr = time_since_arr_;
+	time_since_dep = time_since_dep_;
+	nr_alighting = nr_alighting_;
+	nr_boarding = nr_boarding_;
+	occupancy = occupancy_;
+	nr_waiting = nr_waiting_;
+	total_waiting_time = total_waiting_time_;
+	holding_time = holding_time_;
 }
