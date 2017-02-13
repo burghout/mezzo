@@ -1619,7 +1619,7 @@ bool Network::readbusline(istream& in) // reads a busline
 {
   char bracket;
   int busline_id, opposite_busline_id, ori_id, dest_id, route_id, vehtype, holding_strategy, nr_stops, stop_id, nr_tp, tp_id, nr_stops_init_occup;
-  float ratio_headway_holding;
+  float max_headway_holding;
   double init_occup_per_stop;
   string name;
   vector <Busstop*> stops, line_timepoint;
@@ -1641,7 +1641,7 @@ bool Network::readbusline(istream& in) // reads a busline
 		return false;
 	}
 	bracket = ' '; // 2016-03-29 David added: reset bracket when we are checking for more than one consecutive '{', or '}'. Maybe use a bracket counter instead?
-	in >> busline_id >> opposite_busline_id >> name >> ori_id >> dest_id >> route_id >> vehtype >> holding_strategy >> ratio_headway_holding >> init_occup_per_stop >> nr_stops_init_occup;
+	in >> busline_id >> opposite_busline_id >> name >> ori_id >> dest_id >> route_id >> vehtype >> holding_strategy >> max_headway_holding >> init_occup_per_stop >> nr_stops_init_occup;
 	if(theParameters->transfer_sync)
 	{
 		in >> tr_line_id;
@@ -1672,7 +1672,7 @@ bool Network::readbusline(istream& in) // reads a busline
 	ODpair* odptr=(*(find_if (odpairs.begin(),odpairs.end(), compareod (odid) )));
 	Busroute* br=(*(find_if(busroutes.begin(), busroutes.end(), compare <Route> (route_id) )));
 	Vtype* vt= (*(find_if(vehtypes.vtypes.begin(), vehtypes.vtypes.end(), compare <Vtype> (vehtype) )));
-	Busline* bl= new Busline (busline_id, opposite_busline_id, name, br, stops, vt, odptr, holding_strategy, ratio_headway_holding, init_occup_per_stop, nr_stops_init_occup);
+	Busline* bl= new Busline (busline_id, opposite_busline_id, name, br, stops, vt, odptr, holding_strategy, max_headway_holding, init_occup_per_stop, nr_stops_init_occup);
 	
 	for (vector<Busstop*>::iterator stop_iter = bl->stops.begin(); stop_iter < bl->stops.end(); stop_iter++)
 	{

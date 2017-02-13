@@ -714,6 +714,13 @@ bool Parameters::read_parameters (istream & in )
 	}
 	in >> holding_time_weight;
 	in >> keyword;
+	if (keyword!= "Compliance_rate=")
+	{
+		cout << "ERROR reading Parameters file, expecting: Compliance_rate=, read: " << keyword << endl;
+		return false;
+	}
+	in >> Compliance_rate;
+	in >> keyword;
 	if (keyword!= "Bus_horizon=")
 	{
 		cout << "ERROR reading Parameters file, expecting: Bus_horizon=, read: " << keyword << endl;

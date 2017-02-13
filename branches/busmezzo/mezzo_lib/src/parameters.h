@@ -194,6 +194,7 @@ public:
    double dwell_time_weight;
    double waiting_time_weight;
    double holding_time_weight;
+   double Compliance_rate;
    int Bus_horizon;
    int Stop_horizon;
    bool transfer_sync; //!< true if transfer synchronization is being used. Will effect the way the line definition in transit_network.dat is read.

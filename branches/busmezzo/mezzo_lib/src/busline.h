@@ -164,7 +164,7 @@ public:
 		vector <Busstop*>		stops_,						//!< stops on line
 		Vtype* vtype_, ODpair*	odpair_,					//!< OD pair
 		int						holding_strategy_,			//!< indicates the type of holding strategy used for line
-		float					ratio_headway_holding_,		//!< threshold parameter relevant in case holding strategies 1 or 3 are chosen
+		float					max_headway_holding_,		//!< threshold parameter relevant in case holding strategies 1 or 3 are chosen or max holding time in [sec] in case of holding strategy 6
 		double					init_occup_per_stop_,		//!< average number of passengers that are on-board per prior upstream stops (scale of a Gamma distribution)
 		int						nr_stops_init_occup			//!< number of prior upstream stops resulting with initial occupancy (shape of a Gamma distribution)
 	); //!< Initialising constructor
@@ -179,7 +179,7 @@ public:
 	Busroute* get_busroute() {return busroute;}							//!< returns Busroute
 	Vtype*	  get_vtype() {return vtype;}								//!< returns Vtype
 	ODpair*	  get_odpair() {return odpair;}								//!< returns ODpair
-	float	get_ratio_headway_holding() {return ratio_headway_holding;}	//!< returns ratio_headway_holding
+	float	get_max_headway_holding() {return max_headway_holding;}	//!< returns ratio_headway_holding
 	int		get_holding_strategy() {return holding_strategy;}			//!< returns the holding strategy
 	double	get_init_occup_per_stop() {return init_occup_per_stop;}
 	int		get_nr_stops_init_occup () {return nr_stops_init_occup;}
@@ -251,7 +251,7 @@ protected:
 	Busroute* busroute;						//!< the route (in terms of links) that the busses follow
 	Vtype* vtype;							//!< the type of vehicle for the buses to be generated.
 	ODpair* odpair; 
-	float ratio_headway_holding;
+	float max_headway_holding;
 	double desired_offset, planned_headway; //!< relevant in case headway control is of type 10
 	int holding_strategy; 
 	double init_occup_per_stop;
@@ -351,6 +351,7 @@ public:
 
 	void set_holding_at_stop(bool holding_at_stop_){holding_at_stop = holding_at_stop_;} //David added 2016-05-26
 	bool get_holding_at_stop(){return holding_at_stop;} //David added 2016-05-26
+	bool get_complying(){return complying_bustrip;}
 
 // other functions:	
 //	bool is_trip_timepoint(Busstop* stop); //!< returns 1 if true, 0 if false, -1 if busstop not found
@@ -390,6 +391,7 @@ protected:
 	Busline* line;								  //!< pointer to the line it serves
 	double init_occup_per_stop;					  //!< initial occupancy, usually 0
 	int nr_stops_init_occup;
+	bool complying_bustrip;						  //!< indicates whether this trip complies with the control strategy in place or not  
 	double starttime;							  //!< when the trip is schedule to departure from the origin
 	double actual_dispatching_time;
 	vector <Visit_stop*> :: iterator next_stop; 
