@@ -720,20 +720,6 @@ bool Parameters::read_parameters (istream & in )
 		return false;
 	}
 	in >> Compliance_rate;
-	in >> keyword;
-	if (keyword!= "Bus_horizon=")
-	{
-		cout << "ERROR reading Parameters file, expecting: Bus_horizon=, read: " << keyword << endl;
-		return false;
-	}
-	in >> Bus_horizon;
-	in >> keyword;
-	if (keyword!= "Stop_horizon=")
-	{
-		cout << "ERROR reading Parameters file, expecting: Stop_horizon=, read: " << keyword << endl;
-		return false;
-	}
-	in >> Stop_horizon;
 	in >> keyword; //transfer_sync parameter, David added 2016-04-18
 	if (keyword!= "transfer_sync=")
 	{
