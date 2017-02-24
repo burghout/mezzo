@@ -843,15 +843,6 @@ void Bustrip::convert_stops_vector_to_map ()
 	}
 }
 
-void Bustrip::convert_downstreamstops_vector_to_map (vector <Visit_stop*> down_stops)
-{
-	for (vector <Visit_stop*>::iterator stop_iter = down_stops.begin(); stop_iter < down_stops.end(); stop_iter++)
-	{
-		downstream_stops_map[(*stop_iter)->first] =(*stop_iter)->second;
-	}
-}
-
-
 double Bustrip::calc_departure_time (double time) // calculates departure time from origin according to arrival time and schedule (including layover effect)
 {
 	double min_recovery = 30.00; 
