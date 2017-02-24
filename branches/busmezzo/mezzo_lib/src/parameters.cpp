@@ -106,6 +106,7 @@ Parameters::Parameters ()
    dwell_time_weight = 0.0;
    waiting_time_weight = 0.0;
    holding_time_weight = 0.0;
+   compliance_rate = 1.0;
    transfer_sync = false;
 
 // day2day assignment
@@ -714,12 +715,12 @@ bool Parameters::read_parameters (istream & in )
 	}
 	in >> holding_time_weight;
 	in >> keyword;
-	if (keyword!= "Compliance_rate=")
+	if (keyword!= "compliance_rate=")
 	{
-		cout << "ERROR reading Parameters file, expecting: Compliance_rate=, read: " << keyword << endl;
+		cout << "ERROR reading Parameters file, expecting: compliance_rate=, read: " << keyword << endl;
 		return false;
 	}
-	in >> Compliance_rate;
+	in >> compliance_rate;
 	in >> keyword; //transfer_sync parameter, David added 2016-04-18
 	if (keyword!= "transfer_sync=")
 	{

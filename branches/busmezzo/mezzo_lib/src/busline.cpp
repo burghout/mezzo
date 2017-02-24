@@ -942,7 +942,7 @@ bool Bustrip::activate (double time, Route* route, ODpair* odpair, Eventlist* ev
 	double first_dispatch_time = time;
 	eventlist = eventlist_;
 	next_stop = stops.begin();
-	complying_bustrip = random->brandom(theParameters->Compliance_rate);
+	complying_bustrip = random->brandom(theParameters->compliance_rate);
 	bool ok = false; // flag to check if all goes ok
 	vector <Start_trip*>::iterator curr_trip, previous_trip; // find the pointer to the current and previous trip
 	if (driving_roster.empty()) cout << "Error: Driving roster empty for trip nr " << id << endl;
