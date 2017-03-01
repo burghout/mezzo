@@ -1835,13 +1835,9 @@ void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, d
 							{
 								(*check_pass)->set_pass_sitting(true);
 							}
-							switch (theParameters->demand_format)
+							if(theParameters->demand_format == 3)
 							{
-								case 3:
-									trip->passengers_on_board[(*check_pass)->make_alighting_decision(trip, time)].push_back((*check_pass)); 
-									break;
-								case 4:
-									trip->passengers_on_board[(*check_pass)->make_alighting_decision_zone(trip, time)].push_back((*check_pass)); 	
+								trip->passengers_on_board[(*check_pass)->make_alighting_decision(trip, time)].push_back((*check_pass)); 
 							}
 							trip->get_busv()->set_occupancy(trip->get_busv()->get_occupancy()+1);
 							if (check_pass < pass_waiting_od.end()-1)
@@ -1897,7 +1893,7 @@ void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, d
 			}
 		}	
 	}
-	if (theParameters->demand_format!=3 && theParameters->demand_format!=4)
+	if (theParameters->demand_format!=3)
 	{
 		trip->get_busv()->set_occupancy(starting_occupancy + get_nr_boarding() - get_nr_alighting()); // updating the occupancy
 	}
