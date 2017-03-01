@@ -7,7 +7,7 @@ INCLUDEPATH += . $(QTDIR)/include $(QTDIR)/include/QtCore $(QTDIR)/include/QtGui
 
 LIBS+= $(SUBLIBS) -L../mezzo_lib/Debug -lmezzo_lib -L$(QTDIR)/lib -lQtCore -lQtGui 
 
-QT+= core gui 
+QT+= core gui widgets
 
 QMAKE= $(QTDIR)/bin/qmake
 CONFIG += uic4 staticlib debug

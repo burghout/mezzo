@@ -66,3 +66,5 @@ branches/busmezzo/mezzo_lib/mezzo_lib.xcodeproj
 trunk/gui/gui.pro.user.c969961
 
 trunk/mezzoAnalyzer/mezzoAnalyzer.pro.user.c969961
+
+*.c969961

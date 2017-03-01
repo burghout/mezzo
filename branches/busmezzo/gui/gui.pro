@@ -35,7 +35,7 @@ win32{
 }
 #-lQt3Support
 
-QT+= core gui 
+QT+= core gui widgets
 #qt3support 
 #activeqt xml network svg
 CONFIG += uic4 embed_manifest_exe
