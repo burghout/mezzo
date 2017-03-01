@@ -9,7 +9,7 @@ INCLUDEPATH += .. . ui_h $(QTDIR)/include $(QTDIR)/include/QtCore $(QTDIR)/inclu
 LIBS+= $(SUBLIBS) -L../mezzo_lib/Debug -lmezzo_lib -L$(QTDIR)/lib -lQtCore -lQtGui 
 # -lQt3Support 
 #-lQtDesigner -lQtNetwork
-QT+= core gui 
+QT+= core gui widgets
 #qt3support 
 # activeqt xml network svg
 QMAKE= $(QTDIR)/bin/qmake

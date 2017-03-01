@@ -7,7 +7,7 @@ DEPENDPATH += . src
 INCLUDEPATH += $(QTDIR)/include 
 LIBS+=  -L$(QTDIR)/lib -lQtCore -lQtGui 
 #-lpthread $(SUBLIBS)
-QT+= core gui 
+QT+= core gui widgets
 #activeqt xml network svg
 #QMAKE= $(QTDIR)/bin/qmake
 #win32 {

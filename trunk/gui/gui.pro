@@ -36,7 +36,7 @@ win32 { LIBS += -L$(QTDIR)/lib -lQtCore -lQtGui -lQtNetwork }
 #-lQtDesigner 
 #-lQt3Support
 
-QT+= core gui 
+QT+= core gui widgets
 
 CONFIG += uic4 embed_manifest_exe
 

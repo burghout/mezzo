@@ -1,5 +1,6 @@
 #include <QtGui>
 #include "batchrundlg.h"
+#include <QMessageBox>
 
 BatchrunDlg::BatchrunDlg( QWidget* parent ):QDialog(parent)
 {
