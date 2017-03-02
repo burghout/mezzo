@@ -68,3 +68,5 @@ trunk/gui/gui.pro.user.c969961
 trunk/mezzoAnalyzer/mezzoAnalyzer.pro.user.c969961
 
 *.c969961
+*.db
+branches/busmezzo/mezzo.VC.VC.opendb
