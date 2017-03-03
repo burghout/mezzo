@@ -70,3 +70,6 @@ trunk/mezzoAnalyzer/mezzoAnalyzer.pro.user.c969961
 *.c969961
 *.db
 branches/busmezzo/mezzo.VC.VC.opendb
+*.opendb
+trunk/gui/debug_log.txt
+trunk/gui/link_log.txt

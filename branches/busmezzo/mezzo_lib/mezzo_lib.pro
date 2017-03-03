@@ -4,16 +4,13 @@ CONFIG += staticlib debug
 TARGET = mezzo_lib
 DEPENDPATH += . src
 INCLUDEPATH += $(QTDIR)/include 
-#$(QTDIR)/include/Qt3Support 
-#LIBS+=  -L$(QTDIR)/lib -lQtCore -lQtGui 
-#-lQt3Support 
+
 QT+= core gui 
-#qt3support 
-QMAKE= $(QTDIR)/bin/qmake #comment by Flurin: is this really needed?
+
 #DEFINES += _BUSES
-win32 {
-    QMAKE_LFLAGS +=
-}
+#win32 {
+#    QMAKE_LFLAGS +=
+#}
 
 # Input
 HEADERS += src/busline.h \

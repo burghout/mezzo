@@ -5,14 +5,11 @@ CONFIG += staticlib
 TARGET = mezzo_lib
 DEPENDPATH += . src
 INCLUDEPATH += $(QTDIR)/include 
-LIBS+=  -L$(QTDIR)/lib -lQtCore -lQtGui 
-#-lpthread $(SUBLIBS)
-QT+= core gui widgets
-#activeqt xml network svg
-#QMAKE= $(QTDIR)/bin/qmake
-#win32 {
- #    QMAKE_LFLAGS += /LARGEADDRESSAWARE
-#	 }
+#LIBS+=  -L$(QTDIR)/lib -lQtCore -lQtGui
+
+QT+= core gui
+#widgets
+
 
 # Input
 HEADERS += src/busline.h \

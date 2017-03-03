@@ -30,7 +30,7 @@ CONFIG(debug, debug|release) {
      LIBS +=  -L../mezzo_lib/Release -lmezzo_lib -L../mezzoAnalyzer/Release -lmezzoAnalyzer 
  }
 
-win32 { LIBS += -L$(QTDIR)/lib -lQtCore -lQtGui -lQtNetwork }
+#win32 { LIBS += -L$(QTDIR)/lib -lQtCore -lQtGui -lQtNetwork }
 
 
 #-lQtDesigner 
