@@ -18,7 +18,7 @@ macx {
         LIBS +=  -L../../mezzo_lib/Release -lmezzo_lib -L../../mezzoAnalyzer/Release -lmezzoAnalyzer
     }
 
-            LIBS += -L$(QTDIR)/lib -framework QtCore -framework QtGui -framework QtNetwork
+       #     LIBS += -L$(QTDIR)/lib -framework QtCore -framework QtGui -framework QtNetwork
 
 
 }
