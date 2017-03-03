@@ -39,7 +39,7 @@
 #define _DETERMINISTIC_VTYPES
 //#define _MULTINOMIAL_LOGIT
 #define _UNSAFE // faster reading, but less checking of input data
-//#define _BUSES
+#define _BUSES
 
 // GLOBAL VARIABLES
 extern long int randseed; // random seed

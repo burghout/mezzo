@@ -2,7 +2,7 @@
 
 TEMPLATE = app
 TARGET = mezzo_gui
-DEFINES += _BUSES
+#DEFINES += _BUSES
 INCLUDEPATH += ../mezzoAnalyzer/Debug ../mezzoAnalyzer $(QTDIR)/include ui_h
 #INCLUDEPATH += . $(QTDIR)/include $(QTDIR)/include/QtCore $(QTDIR)/include/QtGui $(QTDIR)/include/QtDesigner $(QTDIR)/include/QtNetwork $(QTDIR)/include/ActiveQt
 

@@ -10,7 +10,7 @@ INCLUDEPATH += $(QTDIR)/include
 QT+= core gui 
 #qt3support 
 QMAKE= $(QTDIR)/bin/qmake #comment by Flurin: is this really needed?
-DEFINES += _BUSES
+#DEFINES += _BUSES
 win32 {
     QMAKE_LFLAGS +=
 }
