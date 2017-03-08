@@ -9,7 +9,6 @@
 //#include <windows.h> // Make Clang compatible. Why is this header used in the first place?
 //#include <strstream> // OLD include for gcc2
 
-
 #include "network.h"
 #include "od.h"
 
@@ -1500,6 +1499,44 @@ bool Network::readtransitnetwork(string name) //!< reads the stops, distances be
 			return false;
 		} 
 	}
+	
+	if (theParameters->short_turning)
+	{
+		//Build short-turning multimap of connections between lines (maybe change this to a method of network so this doesnt have to clutter up readtransitnetwork)
+		for (vector<Busline*>::iterator line_iter = buslines.begin(); line_iter < buslines.end(); line_iter++)
+		{
+			if (!(*line_iter)->get_stpair_to_stfunc().empty()) //if this line uses short-turning
+			{
+				int start_stop_id;
+				int end_stop_id;
+				int stfunc_id;
+
+				for (auto& triplet : (*line_iter)->get_stpair_to_stfunc()) { //for each stpair_to_stfunc map entry for this line
+					start_stop_id = triplet.first.first;
+					end_stop_id = triplet.first.second;
+					stfunc_id = triplet.second;
+
+					//find start stop on this line
+					vector<Busstop*> line_stops; //all stops on this line
+					Busstop* start_stop;
+					line_stops = (*line_iter)->stops;
+					start_stop = *(find_if(line_stops.begin(), line_stops.end(), compare <Busstop>(start_stop_id)));
+
+					//find end stop on opposite line
+					Busline* opposite_line; //opposite line to current line that uses short-turning
+					vector<Busstop*> opposite_stops; //all stops on opposite line
+					Busstop* end_stop;
+
+					opposite_line = *(find_if(buslines.begin(), buslines.end(), compare <Busline>((*line_iter)->get_opposite_id())));
+					(*line_iter)->set_opposite_line(opposite_line);
+					opposite_stops = opposite_line->stops;
+					end_stop = *(find_if(opposite_stops.begin(), opposite_stops.end(), compare <Busstop>(end_stop_id)));
+
+					(*line_iter)->add_st_stop_pair(start_stop, end_stop); //build short-turning multimap in busline
+				}
+			}//if stpair_to_stfunc is empty
+		}
+	}
 	/*
 	for (vector<Busline*>::iterator line_iter = buslines.begin(); line_iter < buslines.end(); line_iter++)
 	{
@@ -1633,6 +1670,12 @@ bool Network::readbusline(istream& in) // reads a busline
   vector <Busstop*> tr_stops;
   Busstop* tr_stop;
 
+  //David added 2017-03-07
+  int nr_st_stops; //!< number of short-turning stop pairs for this line
+  int start_stop_id; //!< to search for start_stop in stops vector
+  int end_stop_id;
+  int stfunc_id;
+
 	bool ok= true;
 	in >> bracket;
 	if (bracket != '{')
@@ -1745,6 +1788,56 @@ bool Network::readbusline(istream& in) // reads a busline
 	  }
   }
 
+
+  if (theParameters->short_turning)
+  {
+	  in >> bracket;
+	  if (bracket == '}') //if short-turning stop pairs are defined for this line
+		  in.putback(bracket);
+	  else
+	  {
+		  in.putback(bracket);
+		  in >> nr_st_stops;
+
+		  bracket = ' ';
+		  in >> bracket;
+		  if (bracket != '{')
+		  {
+			  cout << "readfile::readsbusline scanner jammed when reading short-turn stops at " << bracket << ", expected {";
+			  return false;
+		  }
+		  for (int i = 0; i < nr_st_stops; i++)
+		  {
+			  bracket = ' ';
+			  in >> bracket;
+			  if (bracket != '{')
+			  {
+				  cout << "readfile::readsbusline scanner jammed when reading short-turn stops at " << bracket << ", expected {";
+				  return false;
+			  }
+			  
+			  in >> start_stop_id;
+			  in >> end_stop_id;
+			  in >> stfunc_id;
+
+			  bl->add_stpair_to_stfunc(make_pair(start_stop_id, end_stop_id), stfunc_id); //build map of <start_id, end_id> -> stfunc_id in busline
+
+			  in >> bracket;
+			  if (bracket != '}')
+			  {
+				  cout << "readfile::readsbusline scanner jammed when reading short-turn stops at " << bracket << ", expected }";
+				  return false;
+			  }
+		  }
+		  bracket = ' ';
+		  in >> bracket;
+		  if (bracket != '}')
+		  {
+			  cout << "readfile::readsbusline scanner jammed when reading short-turn stops at " << bracket << ", expected }";
+			  return false;
+		  }
+	  }
+  }
   bracket = ' '; // David added 2016-03-29
   in >> bracket;
   if (bracket != '}')

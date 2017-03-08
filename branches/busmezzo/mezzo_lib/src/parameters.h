@@ -196,6 +196,7 @@ public:
    double holding_time_weight;
    double compliance_rate; //!< Share [0,1] of bus trips that comply with the control strategy (assigned per trip)
    bool transfer_sync; //!< true if transfer synchronization is being used. Will effect the way the line definition in transit_network.dat is read.
+   bool short_turning; //!< true if we also attempt to read short-turning start and end stops from the line definition in transit_network.dat
 
 // day2day assignment
    double default_alpha_RTI; //!< Initial value of the real-time information credibility coefficient set for all travellers

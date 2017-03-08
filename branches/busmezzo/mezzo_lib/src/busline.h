@@ -185,8 +185,8 @@ public:
 	int		get_nr_stops_init_occup () {return nr_stops_init_occup;}
 	int		get_opposite_id () {return opposite_id;}
 	void	set_curr_trip(vector <Start_trip>::iterator curr_trip_) {curr_trip = curr_trip_;}
-	//void set_opposite_line (Busline* line) {opposite_line = line;}
-	//Busline* get_opposite_line () {return opposite_line;}
+	void set_opposite_line (Busline* line) {opposite_line = line;}
+	Busline* get_opposite_line () {return opposite_line;}
 	Output_Summary_Line get_output_summary () {return output_summary;}
 	vector <Start_trip>::iterator get_curr_trip() {return curr_trip;} 
 	vector <Start_trip> get_trips () {return trips;}
@@ -194,6 +194,10 @@ public:
 	//transfer gets and sets
 	int	get_tr_line_id() {return tr_line_id;}
 	vector <Busstop*> get_tr_stops() {return tr_stops;}
+
+	//short-turning gets and sets
+	map<pair<int, int>, int> get_stpair_to_stfunc() { return stpair_to_stfunc; }
+	multimap<Busstop*, Busstop*> get_st_map() { return st_map; }
 
 	// initialization
 	void add_timepoints (vector <Busstop*> tp) {line_timepoint = tp;}
@@ -203,6 +207,10 @@ public:
 	//transfer initilization
 	void add_tr_line_id (int id) {tr_line_id = id;}
 	void add_tr_stops (vector <Busstop*> stops) {tr_stops = stops;}
+
+	//short-turn initilization
+	void add_stpair_to_stfunc(pair<int, int> stpair, int stfunc) { stpair_to_stfunc[stpair] = stfunc; }
+	void add_st_stop_pair(Busstop* start_stop, Busstop* end_stop) { st_map.insert(make_pair(start_stop, end_stop)); }
 	
 	// checks
 	bool check_last_stop (Busstop* stop);
@@ -260,6 +268,11 @@ protected:
 	//transfer attributes
 	int	tr_line_id; //!< id of line 'this' line synchronizes transfers with, should be 0 if 'this' line is not synchronizing transfers
 	vector <Busstop*> tr_stops;	//!< contains all transfer stops for line
+
+	//short-turn attributes
+	Busline* opposite_line; //!< Line in opposite direction of this line, uses opposite_id
+	map<pair<int, int>, int> stpair_to_stfunc; //!< maps start-stop id and end-stop id to associated short-turning function id
+	multimap<Busstop*, Busstop*> st_map;//!< map of short-turning stop pairs. key: start-stop on this line, value: end_stop on opposite_line
 
     map <Busstop*,pair<Busstop*,pair<double,double> > > disruption_times; //!< contains the expected travel times between a pair of stops in case of disruption (does not affect actual travel time, only passenger information provision). Strat and end times
 	map <Busstop*, double> disruption_cap_reduction;
