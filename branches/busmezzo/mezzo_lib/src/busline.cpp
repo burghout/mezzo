@@ -482,6 +482,14 @@ double Busline::extra_disruption_on_segment (Busstop* next_stop, double time)
 	}
 	return 0.0;
 }
+bool Busline::is_st_startstop(Busstop * stop)
+{
+	if (this->st_map.count(stop) > 0)
+	{
+		return true;
+	}
+	return false;
+}
 double Busline::calc_curr_line_headway ()
 {
 	if (curr_trip == trips.end()) 

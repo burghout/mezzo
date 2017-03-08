@@ -229,6 +229,8 @@ public:
 	double check_subline_disruption (Busstop* last_visited_stop, Busstop* pass_stop, double time);	//!< check if this pair of stops is included in the disruption area and return extra time due to disrupution
 	double extra_disruption_on_segment (Busstop* next_stop, double time);
 	
+	bool is_st_startstop(Busstop* stop); //!< returns true if stop is a short-turning stop for this busline, otherwise it returns false
+
 	bool execute(Eventlist* eventlist, double time); //!< re-implemented from virtual function in Action this function does the real work. It initiates the current Bustrip and books the next one
 	
 	// calc attributes (for pass_paths)
