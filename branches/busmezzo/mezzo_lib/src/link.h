@@ -98,17 +98,17 @@ public:
 	void end_of_simulation(); // consolidates all temp values in their containers
 	virtual void reset();  // resets the link for restart
 	// accessors, they are inline where possible, but inline keyword not necessary
-	const int get_id () {return id;}
-	const int get_out_node_id () ;
-	const int get_in_node_id() ;
-	const int get_length() {return length;}	
-	const int get_nr_lanes() {return nr_lanes;}
+	int get_id () {return id;}
+	int get_out_node_id () ;
+	int get_in_node_id() ;
+	int get_length() {return length;}	
+	int get_nr_lanes() {return nr_lanes;}
 	Sdfunc* get_sdfunc() {return sdfunc;}
 	Q* get_queue () {return queue;}
 	const string get_name() {return name;}
 	void set_name(string name_) {name=name_;}
 	//const int Link::size();
-	const int size();
+	int size();
 	pair<double,double> set_output_moe_thickness(unsigned int val); // sets the output MOE for the link icon returns min/max
 	pair <double,double>  set_output_moe_colour(unsigned int val); // sets the output MOE for the link icon returns min/max
 	void set_hist_time(double time) {	hist_time=time;}
@@ -125,21 +125,21 @@ public:
 		tmp_passed=0;
 		}
 	bool copy_linktimes_out_in(); //!< copies the output travel times to input (historical) travel times
-	const double get_hist_time() {return hist_time;}
+	double get_hist_time() {return hist_time;}
 	double get_cost (double time) {
 		if (histtimes)	
 			return histtimes->cost(time);
 		else	
 			return get_freeflow_time();
 		}
-	const double get_freeflow_time() {return freeflowtime;}
-	const double get_blocked() {return (blocked_until);}  // -1.0 = not blocked, -2.0 = blocked until further notice, other value= blocked until value
-	const void set_blocked(double time) {blocked_until=time;}  // -1.0 = not blocked, -2.0 = blocked until further notice, other value= blocked until value
-	virtual const bool full();
-	virtual const bool full(double time);
-	const bool empty();
-	const bool exit_ok() {	return ok;}
-	const double next_action (double time);
+	double get_freeflow_time() {return freeflowtime;}
+	double get_blocked() {return (blocked_until);}  // -1.0 = not blocked, -2.0 = blocked until further notice, other value= blocked until value
+	void set_blocked(double time) {blocked_until=time;}  // -1.0 = not blocked, -2.0 = blocked until further notice, other value= blocked until value
+	virtual bool full();
+	virtual bool full(double time);
+	bool empty();
+	bool exit_ok() {	return ok;}
+	double next_action (double time);
 	bool veh_exiting(double time, Link* nextlink, int lookback); 
 	void update_icon(double time);
 
@@ -173,9 +173,9 @@ public:
 	virtual Vehicle* exit_veh(double time, Link* nextlink, int lookback);
 	void update_exit_times(double time,Link* nextlink, int lookback);
 	virtual Vehicle* exit_veh(double time);
-	virtual const double density();
-	const double density_running(double time);
-	const double density_running_only(double time);
+	virtual double density();
+	double density_running(double time);
+	double density_running_only(double time);
 	virtual double speed_density(double density_);
 	double speed(double time);
 	// IO methods
@@ -295,9 +295,9 @@ class VirtualLink : public Link
 	void block (int code){ blocked=(code<0 ? true:false);}
 	void set_density(const double density_) {linkdensity=density_;}
 	void set_speed(const double speed_) {linkspeed=speed_;}
-	const double density() {return linkdensity;}
-	const bool full();
-	const bool full(double time);
+	double density() {return linkdensity;}
+	bool full();
+	bool full(double time);
 	double speed_density(double density_);
 	void write_in_headways(ostream & out);
 	void write_out_headways(ostream & out);

@@ -608,7 +608,7 @@ public:
 	void set_nr_alighting (int nr_alighting_) {nr_alighting = nr_alighting_;}	
 	int get_nr_alighting () {return nr_alighting;}
 	int get_nr_waiting (Bustrip* trip) {return nr_waiting[trip->get_line()];}
-	const double get_position () { return position;}
+	double get_position () { return position;}
 	double get_exit_time() { return exit_time;}
 	vector<Busline*> get_lines () {return lines;}
 	void set_position (double position_ ) {position = position_;}
@@ -616,11 +616,11 @@ public:
 	double get_last_departure (Busline* line) {return last_departures[line].second;}
 	Bustrip* get_last_trip_departure (Busline* line) {return last_departures[line].first;}
 	map<Busstop*,double> & get_walking_distances () {return distances;}
-	const bool get_had_been_visited ( Busline * line) {return had_been_visited[line];} 
+	bool get_had_been_visited ( Busline * line) {return had_been_visited[line];} 
 	double get_walking_distance_stop (Busstop* stop) {return distances[stop];}
 	void save_previous_arrival_rates () {previous_arrival_rates.swap(arrival_rates);}
 	void save_previous_alighting_fractions () {previous_alighting_fractions.swap(alighting_fractions);}
-	const bool check_walkable_stop ( Busstop* const & stop);
+	bool check_walkable_stop ( Busstop* const & stop);
 	bool check_destination_stop (Busstop* stop); 
 
 	//transfer related checks

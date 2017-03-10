@@ -82,7 +82,7 @@ public:
 	Route* get_route(int id);
 	Origin* get_origin();
 	Destination* get_destination();
-	const double get_rate();
+	double get_rate();
 	vector <rateval> get_route_rates();
 	vector<Route*>& get_allroutes(){return routes;}
 	Vtypes* vehtypes() {return vtypes;}

@@ -26,7 +26,7 @@ Node::Node(int id_): id(id_)
 
 Node::~Node() {}
 
-const int Node::get_id()
+int Node::get_id()
 {
 	return id;
 }

@@ -410,7 +410,7 @@ int Network::reset()
 	// all the Hybrid functions: BoundaryIn, BoundaryOut etc.
 
 	// AND FINALLY Init the next run
-	bool ok = init();
+	init();
 
 	return runtime;
 }
@@ -7453,7 +7453,7 @@ bool Network::run(int period)
 			next_an_update+=an_step;    // update next step.
 		}
 	}
-	double tstop=timestamp();
+	//double tstop=timestamp();
 
 	//cout << "running time " << (tstop-t0) << endl;
 	return 0;
@@ -7463,11 +7463,11 @@ bool Network::run(int period)
 double Network::step(double timestep)
 // same as run, but more stripped down. Called every timestep by the GUI
 {
-	double t0=timestamp();
+	//double t0=timestamp();
 #ifndef _NO_GUI
 	double tc; // current time
 #endif //_NO_GUI  
-	double next_an_update=t0+timestep;   // when to exit
+	//double next_an_update=t0+timestep;   // when to exit
 
 	if (theParameters->pass_day_to_day_indicator == 0 && theParameters->in_vehicle_d2d_indicator == 0)
 	{

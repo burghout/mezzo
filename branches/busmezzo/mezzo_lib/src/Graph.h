@@ -229,7 +229,7 @@ class Graph
 
 		// added by Wilco Burghout 2001-11-13
 		vector<int> shortest_path_vector(int des);
-		inline const bool reachable(int des)
+		inline bool reachable(int des)
 			{return (node(des)->predecessor_!=SP_UNSET);}
       // added by Wilco 2004_06_01
       void set_downlink_indices();

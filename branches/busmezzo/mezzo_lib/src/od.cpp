@@ -370,7 +370,7 @@ bool ODpair::execute(Eventlist* eventlist, double time)
 
 }
 
-const double ODpair::get_rate()
+double ODpair::get_rate()
 {
 	return rate;
 }

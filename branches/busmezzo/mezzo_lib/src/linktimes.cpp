@@ -33,7 +33,7 @@ struct compare
  int id;
 };
 
-const double LinkTime::cost(const double time)
+double LinkTime::cost(const double time)
 {
 
       /* ORIGINAL
@@ -81,7 +81,7 @@ const double LinkTime::cost(const double time)
     
 }
 
-const double LinkTime::mean ()
+double LinkTime::mean ()
 {
 	totaltime=0.0;
 	map<int,double>::iterator t_iter = times.begin();
@@ -93,7 +93,7 @@ const double LinkTime::mean ()
 
 }
 
-const double LinkTimeInfo::mean()
+double LinkTimeInfo::mean()
 {	
 	double totaltime = 0.0;
 	map <int,LinkTime*>::iterator iter = times.begin();
@@ -105,7 +105,7 @@ const double LinkTimeInfo::mean()
 
 }
 
-const double LinkTimeInfo::cost (const int i, const double time)  // to be repaired. It caused crashes in the Graph.cc routines (which contain some archaic C-style array magic)
+double LinkTimeInfo::cost (const int i, const double time)  // to be repaired. It caused crashes in the Graph.cc routines (which contain some archaic C-style array magic)
 
 
 {

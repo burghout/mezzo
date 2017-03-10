@@ -140,19 +140,19 @@ void Link::end_of_simulation()
 
 }
 
-const int Link::get_out_node_id ()
+ int Link::get_out_node_id ()
 	{return out_node->get_id();}
 	
-const int Link::get_in_node_id()
+int Link::get_in_node_id()
 	{return in_node->get_id();}
 
-const bool Link::full()
+ bool Link::full()
 	{
     return queue->full();
   }
 
   
-const bool Link::full(double time)
+ bool Link::full(double time)
 
 {
   moe_density->report_value(density(),time); // to make sure even values are reported when queue is full
@@ -182,10 +182,10 @@ const bool Link::full(double time)
    }   
 }
      
-const bool Link::empty()
+ bool Link::empty()
 	{return queue->empty();}		
 
-const double Link::next_action (double time)
+ double Link::next_action (double time)
 	{ double newtime;
       if (queue->empty() )
 			newtime= (time+freeflowtime);
@@ -196,7 +196,7 @@ const double Link::next_action (double time)
       return newtime;
 	}	 // optimisation: return freeflow time if queue is empty
 
-const int Link::size()
+ int Link::size()
 	{return queue->size();}	
 	
 	
@@ -650,20 +650,20 @@ Vehicle* Link::exit_veh(double time)
 	return NULL;
 }
 
-const double Link::density()
+ double Link::density()
 {
    int qsize=queue->size() ;
    	return (qsize/(nr_lanes*(length/1000.0))); // veh/km/lane and length is in meters	
 }
 
-const double Link::density_running(double time)
+ double Link::density_running(double time)
 {
  	int nr_running=queue->nr_running(time);
    return (nr_running/(nr_lanes*(length/1000.0))); // veh/km and length is in meters
 }
 
 // 2002-07-25: new: queue space calculated using individual vehicles lengths
-const double Link::density_running_only(double time)
+ double Link::density_running_only(double time)
 {
   int nr_running=queue->nr_running(time);// nr cars in running segment
  // double queue_space=(queue->size()-nr_running)*theParameters->standard_veh_length; // length of queue
@@ -1024,12 +1024,12 @@ VirtualLink::~VirtualLink()
 #endif //_VISSIMCOM
  }
 
-const  bool VirtualLink::full()
+  bool VirtualLink::full()
  {
   	return blocked;
  }
 
- const bool VirtualLink::full(double ) // double time unused
+  bool VirtualLink::full(double ) // double time unused
  {
    return blocked;
  }
