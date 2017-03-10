@@ -116,7 +116,7 @@ class MatrixAction: public Action
 {
 public:
 	MatrixAction(Eventlist* eventlist, double time, ODSlice* slice_, vector<ODpair*> *ods_);
-	bool execute(Eventlist* eventlist, double time);
+    bool execute(Eventlist* eventlist, double);
 private:
 	ODSlice* slice;
 	vector <ODpair*> * ods;
@@ -474,6 +474,7 @@ class Incident: public Action
 {
 public:
 	Incident (int lid_, int sid_, double start_, double stop_,double info_start_,double info_stop_, Eventlist* eventlist, Network* network_, bool blocked_);
+    virtual ~Incident() {}
 	bool execute(Eventlist* eventlist, double time); //!< Creates the events needed for setting and ending the incident and information broadcast
 	void broadcast_incident_start(int lid); //!< Broadcasts the incident to all the affected links and origins. At origins a flag will be set so all created vehicles will automatically switch, until notification that incident is over
 	void broadcast_incident_stop(int lid); //!< Broadcasts the end of an incident to all Origins (Not needed for Links? Check...)
@@ -517,6 +518,7 @@ public:
 
 	NetworkThread (string masterfile,int threadnr = 1,long int seed=0):masterfile_(masterfile),threadnr_(threadnr),seed_(seed) 
 		{
+        Q_UNUSED(threadnr_)
 			theNetwork= new Network();
 			 
 			 if (seed != 0)
@@ -553,11 +555,13 @@ public:
 			delete theNetwork;
 	  }
 private:
-	Network* theNetwork;
-	long int seed_;
+
     string masterfile_;
-	double runtime_;
-	int threadnr_;
+    int threadnr_;
+    long int seed_;
+
+    Network* theNetwork;
+    double runtime_;
 
 };
 

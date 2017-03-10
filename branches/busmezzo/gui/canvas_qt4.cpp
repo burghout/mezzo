@@ -112,9 +112,9 @@ MainForm::MainForm(QWidget *parent): QMainWindow(parent)
 	statusBar()->addWidget (status_label);
 	statusBar()->addWidget(simprogress_widget);
 	statusBar()->addWidget(this->TextLabel12,10);
-	statusBar()->addWidget(this->LCDNumber),10;
-	statusBar()->addWidget(this->progressbar),10;
-	statusBar()->addWidget(mouse_label),10;
+    statusBar()->addWidget(this->LCDNumber,10);
+    statusBar()->addWidget(this->progressbar,10);
+    statusBar()->addWidget(mouse_label,10);
 	
 	simprogress_widget->setVisible(false);
 }
@@ -343,7 +343,7 @@ void MainForm::on_showhandle_triggered(bool triggered)
 		//for( unsigned i=0; i<alllinks.size(); i++)
 		//	alllinks[i]->get_icon()->sethandle(triggered);
 		map <int,Link*>::iterator l_iter=alllinks.begin();
-		for(l_iter;l_iter!=alllinks.end();l_iter++)
+        for( ;l_iter!=alllinks.end();l_iter++)
 		{
 			(*l_iter).second->get_icon()->sethandle(triggered);
 		}
@@ -560,7 +560,7 @@ void MainForm::copyPixmap()
 	Canvas->repaint();  
 }
 
-void MainForm::paintEvent(QPaintEvent *  event )
+void MainForm::paintEvent(QPaintEvent *   )
 {}
 
 void MainForm::seed(int sd )
@@ -691,7 +691,7 @@ void MainForm::mousePressEvent ( QMouseEvent * event )
 			unselectLinks();
 
 			// show the current mouse position 
-			QPoint pos_view = QPoint (x_current,y_current);
+            //QPoint pos_view = QPoint (x_current,y_current);
 			QString mesg=QString("Mouse: X %1, Y %2").arg(x_current).arg(y_current);
 			mouse_label->setText(mesg);
 		}
@@ -744,7 +744,7 @@ void MainForm::mouseMoveEvent(QMouseEvent* mev)
 /**
 * mouse release event
 */
-void MainForm::mouseReleaseEvent(QMouseEvent* mev) 
+void MainForm::mouseReleaseEvent(QMouseEvent* )
 {
 	if(lmouse_pressed_)
 	{
@@ -765,7 +765,7 @@ void MainForm::mouseReleaseEvent(QMouseEvent* mev)
 	lmouse_pressed_=false;
 }
 
-void MainForm::mouseDoubleClickEvent(QMouseEvent* mev)
+void MainForm::mouseDoubleClickEvent(QMouseEvent* )
 {
 }
 
@@ -854,7 +854,7 @@ void MainForm::selectNodes(QPoint pos)
 
 	int rad=theParameters->node_radius/mod2stdViewMat_.m11();
 	map<int,Node*>::iterator n_iter = allnodes.begin();
-	for( n_iter; n_iter!=allnodes.end(); n_iter++){
+    for(  ; n_iter!=allnodes.end(); n_iter++){
 		if ((*n_iter).second->get_icon()->within_boundary(pos.x(),pos.y(),rad))
 		{
 			nodes_sel_.push_back((*n_iter).second);
@@ -885,7 +885,7 @@ void MainForm::selectLinks(QPoint pos)
 	int rad=5;
 	
 	map <int,Link*>::iterator l_iter = alllinks.begin();
-	for (l_iter;l_iter != alllinks.end(); l_iter++)
+    for ( ;l_iter != alllinks.end(); l_iter++)
 	{
 		if ((*l_iter).second->get_icon()->within_boundary(pos.x(),pos.y(),rad))
 		{

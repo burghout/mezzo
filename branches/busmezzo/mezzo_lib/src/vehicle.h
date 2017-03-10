@@ -234,8 +234,8 @@ public:
 	
 	int line_id;
 	int trip_id;
+    int stop_id;
 	int vehicle_id;
-	int stop_id;
 	int link_id;
 	bool entering_stop;
 	double time;

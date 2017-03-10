@@ -245,12 +245,14 @@ protected:
 	//Busline* opposite_line;
 	string name;				//!< name of the busline "46 Sofia"
 //	int vtype;					//!< vehicle type. There are usually multiple types of Busses
+    Busroute* busroute;						//!< the route (in terms of links) that the busses follow
 
+    ODpair* odpair;
 	vector <Busstop*> line_timepoint;
 	vector <Start_trip> trips;				//!< the trips that are to be made
-	Busroute* busroute;						//!< the route (in terms of links) that the busses follow
+
 	Vtype* vtype;							//!< the type of vehicle for the buses to be generated.
-	ODpair* odpair; 
+
 	float max_headway_holding;
 	double desired_offset, planned_headway; //!< relevant in case headway control is of type 10
 	int holding_strategy; 

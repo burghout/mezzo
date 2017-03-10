@@ -45,7 +45,7 @@
 
 #ifdef _VISSIMCOM
 //#include "vissimcom.h"
-#endif _VISSIMCOM
+#endif// _VISSIMCOM
 
 
 //#define _DEBUG_NODE

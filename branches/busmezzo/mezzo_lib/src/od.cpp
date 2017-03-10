@@ -172,7 +172,7 @@ vector <Route*> ODpair::delete_spurious_routes(double time)
 	vector <Route*>::iterator iter1=routes.begin();
 	vector <Route*>::iterator shortest_route=routes.begin();
 	double min_cost = (*iter1)->cost(time);
-	for (iter1; iter1<routes.end(); iter1++)
+    for ( ; iter1<routes.end(); iter1++)
 	{
 	  if ((*iter1)->cost(time) < min_cost)
 	  {
@@ -200,7 +200,7 @@ vector <Route*> ODpair::delete_spurious_routes(double time)
 	}
 
 	iter1=routes.begin();
-	for (iter1; iter1<routes.end(); )
+    for ( ; iter1<routes.end(); )
 	{
 	  if ((*iter1)->cost(time) > (threshold*min_cost))
 	  {
@@ -220,7 +220,7 @@ vector <Route*> ODpair::delete_spurious_routes(double time)
 	cout << "cost of sorted routes " << endl;
 	reason = " Max nr routes reached ";
 	vector <Route*>::iterator r_iter = routes.begin();
-	for (r_iter; r_iter < routes.end(); r_iter++)
+    for ( ; r_iter < routes.end(); r_iter++)
 	{
 		cout << " route " << (*r_iter)->get_id() << " costs " << (*r_iter)->cost(0.0) << endl;
 	}	
@@ -325,7 +325,7 @@ ODpair::ODpair(Origin* origin_, Destination* destination_, double rate_, Vtypes*
 	oldgrid =new Grid(nr_fields,fields);
 }
 
-ODpair::ODpair(): id (-1), odaction (NULL), origin (NULL), destination (NULL), 
+ODpair::ODpair(): /*id (-1),*/ odaction (NULL), origin (NULL), destination (NULL),
                   rate (-1), random (NULL), start_rate(-1), grid(NULL), oldgrid(NULL)
 {
 

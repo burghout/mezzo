@@ -171,6 +171,7 @@ public:
 	// general methods  for entering, exiting vehicles etc.
 	virtual bool enter_veh(Vehicle* veh, double time);
 	virtual Vehicle* exit_veh(double time, Link* nextlink, int lookback);
+    virtual bool exit_veh(Vehicle* , double )  {return true;}
 	void update_exit_times(double time,Link* nextlink, int lookback);
 	virtual Vehicle* exit_veh(double time);
 	virtual double density();

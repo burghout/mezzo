@@ -7832,7 +7832,7 @@ void Incident::broadcast_incident_start(int lid)
 
 	// for all origins
 	map <int,Origin*>::iterator oriter= affected_origins.begin();
-	for (oriter;oriter != affected_origins.end(); oriter++)
+    for ( ;oriter != affected_origins.end(); oriter++)
 	{
 		(*oriter).second->broadcast_incident_start (lid,incident_parameters);
 	}
@@ -7842,7 +7842,7 @@ void Incident::broadcast_incident_stop(int lid)
 {
 
 	map <int,Origin*>::iterator oriter= affected_origins.begin();
-	for (oriter;oriter != affected_origins.end(); oriter++)
+    for ( ;oriter != affected_origins.end(); oriter++)
 	{
 		(*oriter).second->broadcast_incident_stop (lid);
 	}
@@ -7856,7 +7856,7 @@ ODMatrix::ODMatrix (){}
 void ODMatrix::reset(Eventlist* eventlist, vector <ODpair*> * odpairs)
 {
 	vector < pair <double,ODSlice*> >::iterator s_iter=slices.begin();
-	for (s_iter;s_iter != slices.end(); s_iter++)
+    for ( ;s_iter != slices.end(); s_iter++)
 	{
 		//create and book the MatrixAction
 		double loadtime = (*s_iter).first;
@@ -7882,7 +7882,7 @@ MatrixAction::MatrixAction(Eventlist* eventlist, double time, ODSlice* slice_, v
 	eventlist->add_event(time, this);
 }
 
-bool MatrixAction::execute(Eventlist* eventlist, double time)
+bool MatrixAction::execute(Eventlist* eventlist, double  )
 {
 	assert (eventlist != NULL);
 	//cout << time << " : MATRIXACTION:: set new rates "<< endl;

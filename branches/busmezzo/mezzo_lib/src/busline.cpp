@@ -1474,7 +1474,7 @@ void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, d
 			//ODstops* od_stop = (*alighting_passenger)->get_OD_stop();
 			ODstops* od_stop = (*alighting_passenger)->get_original_origin()->get_stop_od_as_origin_per_stop((*alighting_passenger)->get_OD_stop()->get_destination());
 			od_stop->record_onboard_experience(*alighting_passenger, trip, this, riding_coeff);
-			Busstop* next_stop;	
+            Busstop* next_stop=nullptr;
 			bool final_stop = false;
 			// if this stop is not passenger's final destination then make a connection decision
 			ODstops* od;

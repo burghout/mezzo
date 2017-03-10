@@ -122,8 +122,8 @@ void Link::end_of_simulation()
 		tmp_avg = histtimes->times [curr_period];
 		//tmp_avg=freeflowtime;
 	avgtimes->times[curr_period] = tmp_avg;
-	int i= 0;
-	for (i;i<histtimes->nrperiods;i++)
+
+    for (int i= 0 ;i<histtimes->nrperiods;i++)
 	{
 		if (avgtimes->times.count(i)==0) // no avg time exists, should be impossible, but to be sure...
 		{
@@ -227,6 +227,7 @@ void Link::set_selected (const bool sel)
 
 pair<double,double> Link::set_output_moe_thickness(unsigned int val)// sets the output MOE for the link icon
 {
+
 #ifndef _NO_GUI	
 	int nr_periods;
 	//double min, max;
@@ -740,7 +741,7 @@ void Link::write_time(ostream& out)
 	int i = 0;
 	this->end_of_simulation(); // check everything is stored as it should, including current temp values, no empty values in avg times, etc.
 	out << "{\t" << id ;
-	for (i; i<histtimes->nrperiods;i++)
+    for ( ; i<histtimes->nrperiods;i++)
 	{
 		newtime=time_alpha * (avgtimes->times[i]) + (1-time_alpha) * (histtimes->times[i]);
 		out << "\t"<< newtime;
@@ -825,7 +826,7 @@ vector <Route*> Link::get_routes_to_dest(int dest)
 	start = routemap.lower_bound(dest);
 	stop = routemap.upper_bound(dest);
 	vector <Route*> return_routes;
-	for (start; start != stop; start++)
+    for ( ; start != stop; start++)
 	{
 		return_routes.push_back((*start).second);
 	}
@@ -837,7 +838,7 @@ unsigned int Link::nr_alternative_routes(int dest, int incidentlink_id)
 	unsigned int count = 0;
 	vector <Route*> routes_to_dest=get_routes_to_dest(dest);
 	vector <Route*>::iterator route_iter= routes_to_dest.begin();
-	for (route_iter; route_iter!=routes_to_dest.end();route_iter++)
+    for ( ; route_iter!=routes_to_dest.end();route_iter++)
 	{	
 		if ( ! ((*route_iter)->has_link(incidentlink_id)) )
 		{

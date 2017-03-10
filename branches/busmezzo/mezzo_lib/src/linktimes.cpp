@@ -85,7 +85,7 @@ double LinkTime::mean ()
 {
 	totaltime=0.0;
 	map<int,double>::iterator t_iter = times.begin();
-	for (t_iter;t_iter!=times.end();t_iter++)
+    for ( ;t_iter!=times.end();t_iter++)
 	{
 		totaltime+=(*t_iter).second;	
 	}
@@ -97,7 +97,7 @@ double LinkTimeInfo::mean()
 {	
 	double totaltime = 0.0;
 	map <int,LinkTime*>::iterator iter = times.begin();
-	for (iter;iter!=times.end();iter++)
+    for ( ;iter!=times.end();iter++)
 	{
 		totaltime+=(*iter).second->mean();
 	}

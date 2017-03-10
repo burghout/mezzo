@@ -112,7 +112,7 @@ public:
 	vector <Route*> delete_spurious_routes(double time=0.0); // deletes spurious routes (with unrealistic costs) and returns ids of routes deleted
 	Route* filteredRoute(int index);
 private:
-	int id;  // for later use
+    //int id;  // for later use
 	ODaction* odaction;
 	Origin* origin;
 	Destination* destination;
