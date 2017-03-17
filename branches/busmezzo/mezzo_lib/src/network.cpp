@@ -1484,7 +1484,7 @@ bool Network::readtransitnetwork(string name) //!< reads the stops, distances be
 #endif //_DEBUG_NETWORK
 	if (keyword!="lines:")
 	{
-		cout << " readbuslines: no << buslines: >> keyword " << endl;
+		cout << " readbuslines: no << lines: >> keyword " << endl;
 		in.close();
 		return false;
 	}
@@ -1500,7 +1500,7 @@ bool Network::readtransitnetwork(string name) //!< reads the stops, distances be
 		} 
 	}
 	
-	if (theParameters->short_turning)
+	if (theParameters->short_turn_control)
 	{
 		//Build short-turning multimap of connections between lines (maybe change this to a method of network so this doesnt have to clutter up readtransitnetwork)
 		for (vector<Busline*>::iterator line_iter = buslines.begin(); line_iter < buslines.end(); line_iter++)
@@ -1789,7 +1789,7 @@ bool Network::readbusline(istream& in) // reads a busline
   }
 
 
-  if (theParameters->short_turning)
+  if (theParameters->short_turn_control)
   {
 	  in >> bracket;
 	  if (bracket == '}') //if short-turning stop pairs are defined for this line
