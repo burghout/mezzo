@@ -210,6 +210,9 @@ public:
 	//short-turn initilization
 	void add_stpair_to_stfunc(pair<int, int> stpair, int stfunc) { stpair_to_stfunc[stpair] = stfunc; }
 	void add_st_stop_pair(Busstop* start_stop, Busstop* end_stop) { st_map.insert(make_pair(start_stop, end_stop)); }
+
+	//short-turning methods
+	bool is_st_startstop(Busstop* stop); //!< returns true if stop is a short-turning stop for this busline, otherwise it returns false
 	
 	// checks
 	bool check_last_stop (Busstop* stop);
@@ -227,8 +230,6 @@ public:
 	vector<Busstop*>::iterator get_stop_iter (Busstop* stop);										//!< returns the location of stop on the stops sequence for this line
 	double check_subline_disruption (Busstop* last_visited_stop, Busstop* pass_stop, double time);	//!< check if this pair of stops is included in the disruption area and return extra time due to disrupution
 	double extra_disruption_on_segment (Busstop* next_stop, double time);
-	
-	bool is_st_startstop(Busstop* stop); //!< returns true if stop is a short-turning stop for this busline, otherwise it returns false
 
 	bool execute(Eventlist* eventlist, double time); //!< re-implemented from virtual function in Action this function does the real work. It initiates the current Bustrip and books the next one
 	
@@ -367,6 +368,11 @@ public:
 	bool get_holding_at_stop(){return holding_at_stop;} //David added 2016-05-26
 	bool get_complying(){return complying_bustrip;}
 
+	//short-turning
+	bool check_last_in_tripchain(); //!< checks if this trip is the last in chain assigned to vehicle (i.e. last in Bustrip driving roster)
+	bool get_short_turned() { return short_turned; }
+	void set_short_turned(bool short_turned_) { short_turned = short_turned_; }
+
 // other functions:	
 //	bool is_trip_timepoint(Busstop* stop); //!< returns 1 if true, 0 if false, -1 if busstop not found
 	bool activate (double time, Route* route, ODpair* odpair, Eventlist* eventlist_);	//!< activates the trip. Generates the bus and inserts in net.
@@ -416,6 +422,8 @@ protected:
 	bool holding_at_stop;						 //!< David added 2016-05-26: true if the trip is currently holding at a stop, false otherwise (used for progressing passengers in case of holding for demand format 3, should always be false for other formats)
 	//	map <Busstop*,bool> trips_timepoint;	 //!< will be relevant only when time points are trip-specific. binary map with time point indicatons for stops on route only (according to the schedule input file)  
 	Eventlist* eventlist;						 //!< for use by busstops etc to book themselves.
+
+	bool short_turned; //!< true if bus has been short-turned to begin before its scheduled start time (according to trips vector in Busline), false otherwise
 };
 
 typedef pair<Busstop*, double> stop_rate;

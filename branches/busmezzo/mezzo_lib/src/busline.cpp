@@ -774,6 +774,7 @@ Bustrip::Bustrip ()
 	last_stop_enter_time = 0;
 	last_stop_visited = stops.front()->first;
 	holding_at_stop = false;
+	short_turned = false;
 	actual_dispatching_time = 0.0;
 	for (vector <Visit_stop*>::iterator visit_stop_iter = stops.begin(); visit_stop_iter < stops.end(); visit_stop_iter++)
 	{
@@ -799,6 +800,7 @@ Bustrip::Bustrip (int id_, double start_time_, Busline* line_): id(id_), startti
 	last_stop_enter_time = 0;
 	last_stop_exit_time = 0;
 	holding_at_stop = false;
+	short_turned = false;
 	for (vector<Visit_stop*>::iterator visit_stop_iter = stops.begin(); visit_stop_iter < stops.end(); visit_stop_iter++)
 	{
 		assign_segements[(*visit_stop_iter)->first] = 0;
@@ -841,6 +843,7 @@ void Bustrip::reset ()
 	output_passenger_load.clear();
 	last_stop_visited = stops.front()->first;
 	holding_at_stop = false;
+	short_turned = false;
 }
 
 void Bustrip::convert_stops_vector_to_map ()
@@ -932,6 +935,13 @@ bool Bustrip::advance_next_stop (double time, Eventlist* eventlist)
 	{
 		return true;
 	}
+}
+
+bool Bustrip::check_last_in_tripchain()
+{
+	if (this->get_id() == driving_roster.back()->first->get_id())
+		return true;
+	return false;
 }
 
 bool Bustrip::activate (double time, Route* route, ODpair* odpair, Eventlist* eventlist_)
