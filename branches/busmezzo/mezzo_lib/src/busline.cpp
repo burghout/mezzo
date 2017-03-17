@@ -1277,6 +1277,104 @@ void Busstop::book_bus_arrival(Eventlist* eventlist, double time, Bustrip* trip)
 	eventlist->add_event(time,this);
 } 
 
+void Busstop::short_turn_exit(Bustrip * st_trip, int target_stop_id, double time, Eventlist* eventlist)
+{
+	assert(theParameters->short_turn_control == true);
+	assert(st_trip->get_busv()->get_short_turning() == true);
+
+	Busline* opposite_line;
+	vector<Busstop*>::iterator endstop_iter;
+	Busstop* end_stop;
+
+	opposite_line = st_trip->get_line()->get_opposite_line();
+	endstop_iter = find_if(opposite_line->stops.begin(), opposite_line->stops.end(), compare <Busstop>(target_stop_id)); //find end stop on opposite line
+	if (endstop_iter == opposite_line->stops.end())
+	{
+		cout << "End stop " << target_stop_id << " does not exist on opposite line " << opposite_line->get_id() << "!" << endl;
+		cin.ignore();
+	}
+	end_stop = *endstop_iter;
+
+	//short-turning version of bus_enter in Busstop::execute
+	exit_time = time; // + 0.0000000000001; // leave stop immediately
+	st_trip->set_enter_time(time);
+	pair<Bustrip*, double> exiting_trip;
+	exiting_trip.first = st_trip;
+	exiting_trip.second = exit_time;
+	//occupy_length(entering_trip->get_busv());
+	
+	//teleport bus to EXIT last stop
+	Busstop* last_stop = st_trip->stops.back()->first;
+	last_stop->add_to_buses_currently_at_stop(exiting_trip);
+	eventlist->add_event(exit_time, last_stop); // book an event for the time it exits the last stop on this direction
+	
+	//update teleported bus' current link to the link the last busstop is on
+	Busroute* orig_route; //!< the original route of the short-turned bus
+	vector<Link*> orig_route_links;
+	vector<Link*>::iterator link_iter;
+	Link* last_link; //!< stop that last link is on
+	int last_link_id = last_stop->get_link_id();
+	
+	orig_route = st_trip->get_line()->get_busroute();
+	orig_route_links = orig_route->get_links();
+
+	for (link_iter = orig_route_links.begin(); link_iter < orig_route_links.end(); link_iter++)
+	{
+		if ((*link_iter)->get_id() == last_link_id){
+			last_link = (*link_iter);
+			break;
+		}
+	}
+	if (link_iter == orig_route_links.end())
+		cout << "last stop link id " << last_link_id << "not found on route " << orig_route->get_id() << endl;
+	
+	//Link* last_link = orig_route->lastlink();
+	st_trip->get_busv()->set_curr_link(last_link);
+
+	//record_busstop_visit(entering_trip, entering_trip->get_enter_time()); // document stop-related info
+																		  // done BEFORE update_last_arrivals in order to calc the headway and BEFORE set_last_stop_exit_time
+	
+	//entering_trip->get_busv()->record_busvehicle_location(entering_trip, this, entering_trip->get_enter_time());
+	st_trip->set_last_stop_exit_time(exit_time);
+	st_trip->set_last_stop_visited(this);
+	update_last_arrivals(st_trip, st_trip->get_enter_time()); // in order to follow the arrival times (AFTER dwell time is calculated)
+	update_last_departures(st_trip, exit_time); // in order to follow the departure times (AFTER the dwell time and time point stuff)
+	//set_had_been_visited(st_trip->get_line(), false);
+	st_trip->advance_next_stop(exit_time, eventlist);
+}
+
+void Busstop::short_turn_enter(Bustrip * st_trip, double time, Eventlist * eventlist)
+{
+	st_trip->get_busv()->set_end_stop_id(0); //reset end stop id
+	st_trip->get_busv()->set_short_turning(false); //bus is not short-turning anymore
+}
+
+int Busstop::calc_short_turning(Bustrip * trip, double time)
+{
+	int end_stop_id = 0;
+	if (!trip->get_line()->is_st_startstop(this)) // current stop is not a short-turning start stop in st_map
+		return end_stop_id;
+
+	if (trip->check_last_in_tripchain()) //if there is no trip that this bus vehicle is scheduled to has no other trips in its trip chain
+		return end_stop_id;
+
+	multimap<Busstop*, Busstop*> st_map = trip->get_line()->get_st_map();
+	//insert control algorithm here
+	end_stop_id = st_map.find(this)->second->get_id(); //currently assumes one-to-one start and end stops
+	
+	if (end_stop_id)
+	{
+		//perform_short_turn is where the bus first forces passengers to alight, abort its current trip and begin its next trip in the opposite direction but skipping the first stops until end-stop
+		DEBUG_MSG(endl << "trip " << trip->get_id() << " should short-turn from stop " << this->get_id() << " to stop " << end_stop_id);
+	}
+
+	//Decision rule taking into account three passenger categories, set short-turn to true if costs to pass groups i and ii are less than group iii
+	map<pair<int, int>, int> stpair_to_stfunc = trip->get_line()->get_stpair_to_stfunc();
+	int st_func = stpair_to_stfunc[make_pair(this->get_id(), end_stop_id)]; //used for calculating short-turning time
+	
+	return end_stop_id;
+}
+
 bool Busstop::execute(Eventlist* eventlist, double time) // is executed by the eventlist and means a bus needs to be processed
 {
   	// progress the vehicle when entering or exiting a stop
