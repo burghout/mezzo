@@ -19,7 +19,6 @@
 #include "od_stops.h"
 #include <stddef.h>
 
-
 class Busroute;
 class Busstop;
 class Bustrip;
@@ -195,10 +194,6 @@ public:
 	int	get_tr_line_id() {return tr_line_id;}
 	vector <Busstop*> get_tr_stops() {return tr_stops;}
 
-	//short-turning gets and sets
-	map<pair<int, int>, int> get_stpair_to_stfunc() { return stpair_to_stfunc; }
-	multimap<Busstop*, Busstop*> get_st_map() { return st_map; }
-
 	// initialization
 	void add_timepoints (vector <Busstop*> tp) {line_timepoint = tp;}
 	void add_trip(Bustrip* trip, double starttime){trips.push_back(Start_trip(trip,starttime));}
@@ -207,6 +202,10 @@ public:
 	//transfer initilization
 	void add_tr_line_id (int id) {tr_line_id = id;}
 	void add_tr_stops (vector <Busstop*> stops) {tr_stops = stops;}
+
+	//short-turning gets and sets
+	map<pair<int, int>, int> get_stpair_to_stfunc() { return stpair_to_stfunc; }
+	multimap<Busstop*, Busstop*> get_st_map() { return st_map; }
 
 	//short-turn initilization
 	void add_stpair_to_stfunc(pair<int, int> stpair, int stfunc) { stpair_to_stfunc[stpair] = stfunc; }
@@ -665,7 +664,7 @@ public:
 	void passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, double time);	  //!< progress passengers at stop: waiting, boarding and alighting
 	void book_bus_arrival(Eventlist* eventlist, double time, Bustrip* trip);			  //!< add to expected arrivals
 	double calc_exiting_time (Eventlist* eventlist, Bustrip* trip, double time);		  //!< To be implemented when time-points will work
-	
+
 // dwell-time calculation related functions	
 	double calc_dwelltime (Bustrip* trip);								//!< calculates the dwelltime of each bus serving this stop. currently includes: passenger service times ,out of stop, bay/lane		
 	double calc_holding_departure_time(Bustrip* trip, double time);		// David added 2016-04-01 calculates departure time from stop when holding is used, returns dwelltime + time if no holding is used
