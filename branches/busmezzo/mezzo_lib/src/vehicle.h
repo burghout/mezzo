@@ -113,6 +113,8 @@ public:
 	{
 		occupancy = 0;
 		on_trip = false;
+		short_turning = false;
+		end_stop_id = 0;
 		number_seats = 45;
 		capacity = 70;
 		type = 4;
@@ -130,6 +132,8 @@ public:
 	Vehicle(id_, type_,length_,route_,odpair_,time_)
 	{	occupancy = 0;
 		on_trip = false;
+		short_turning = false;
+		end_stop_id = 0;
 		number_seats = 50;
 		capacity = 70;
 		type = 4;
@@ -148,6 +152,8 @@ public:
 		type = 4;
 		occupancy = 0;
 		on_trip = false;
+		short_turning = false;
+		end_stop_id = 0;
 		length = bty->get_length();
 		number_seats = bty->get_number_seats();
 		capacity = bty->get_capacity();
@@ -175,6 +181,12 @@ public:
 	Bustype* get_bus_type () {return bus_type;}
 	void set_curr_trip (Bustrip* curr_trip_) {curr_trip = curr_trip_;}
 	Bustrip* get_curr_trip () {return curr_trip;}
+
+	//short-turning
+	void set_short_turning(bool short_turning_) { short_turning = short_turning_; }
+	bool get_short_turning() { return short_turning; }
+	void set_end_stop_id(int end_stop_id_) { end_stop_id = end_stop_id_; }
+	int get_end_stop_id() { return end_stop_id; }
 	
 // other functions:	
 	void set_bustype_attributes (Bustype* bty); // change the fields that are determined by the bustype
@@ -194,6 +206,8 @@ protected:
 	Bustrip* curr_trip;
 	bool on_trip; // is true when bus is on a trip and false when waiting for the next trip
 	list <Busvehicle_location> output_vehicle; //!< list of output data for buses visiting stops
+	bool short_turning;	//!< David added 2017-03-09: true if bus is in the process of performing a short-turn, false otherwise. Should always be false if theParameters->short_turning = false
+	int end_stop_id; //!< David added 2017-03-13: contains the id of the end stop when a bus is short-turning. Otherwise this should be zero
 };
 
 class Busvehicle_location // container object holding output data for stop visits

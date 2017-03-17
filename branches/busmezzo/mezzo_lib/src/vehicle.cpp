@@ -114,6 +114,8 @@ void Bus::reset ()
 {
 	occupancy = 0;
 	on_trip = true;
+	short_turning = false;
+	end_stop_id = 0;
 	type = 4;
 	output_vehicle.clear();
 }
@@ -149,6 +151,25 @@ void Bus::advance_curr_trip (double time, Eventlist* eventlist) // progresses tr
 	on_trip = false;  // the bus is avaliable for its next trip
 	if (next_trip != curr_trip->driving_roster.end()) // there are more trips for this bus
 	{
+		if (this->short_turning) //if bus is short-turning we want to advance to next trip immediately to start skipping stops from origin of opposite line to end stop
+		{
+			assert((*next_trip)->first->get_busv() != curr_trip->get_busv());
+			DEBUG_MSG("Bus::advance_curr_trip bus " << this->get_bus_id() << " is starting trip " << (*next_trip)->first->get_id() << " before skipping stops");
+			Busline* line = (*next_trip)->first->get_line();
+			(*next_trip)->first->get_busv()->set_short_turning(true);
+			(*next_trip)->first->get_busv()->set_end_stop_id(curr_trip->get_busv()->get_end_stop_id()); //pass the end_stop_id over from curr_trip to next trip
+			//DEBUG_MSG( "First bus memory address : " << curr_trip->get_busv() );
+			//DEBUG_MSG( "Second bus memory address: " << (*next_trip)->first->get_busv() );
+			(*next_trip)->first->set_last_stop_visited(curr_trip->get_last_stop_visited());
+			(*next_trip)->first->set_short_turned(true); //set indicator that this trip start is the result of a short_turn
+			//if ((*next_trip)->first->get_starttime() > time) { //if bus is early for next trip
+			//	Busline* next_line = (*next_trip)->first->get_line();
+			//	next_line->set_curr_trip(next_line->get_curr_trip()+1); //advance current trip for next trip busline
+			//	DEBUG_MSG("Advancing trip " << (*next_trip)->first->get_id() << " for bus " << curr_trip->get_busv()->get_bus_id() << "on busline level");
+			//}
+			(*next_trip)->first->activate(time, line->get_busroute(), line->get_odpair(), eventlist);
+
+		}
 		if ((*next_trip)->first->get_starttime() <= time) // if the bus is already late for the next trip
 		{
 			Busline* line = (*next_trip)->first->get_line();

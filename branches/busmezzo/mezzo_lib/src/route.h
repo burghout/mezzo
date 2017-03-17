@@ -43,6 +43,7 @@ class Route
 	void reset();
 	Link* nextlink(Link* currentlink);
 	Link* firstlink() {	return (links.front());}
+	Link* lastlink() { return (links.back()); }
 	const int get_id () {return id;}
 	void set_id(int id_) {id=id_;}
 	Origin* get_origin() {return origin;}

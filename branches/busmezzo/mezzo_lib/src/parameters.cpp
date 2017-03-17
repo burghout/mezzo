@@ -108,7 +108,7 @@ Parameters::Parameters ()
    holding_time_weight = 0.0;
    compliance_rate = 1.0;
    transfer_sync = false;
-   short_turning = false;
+   short_turn_control = false;
 
 // day2day assignment
    default_alpha_RTI = 0.5;
@@ -729,13 +729,13 @@ bool Parameters::read_parameters (istream & in )
 		return false;
 	}
 	in >> transfer_sync;
-	in >> keyword; //short_turning parameter, David added 2017-03-07
-	if (keyword != "short_turning=")
+	in >> keyword; //short_turn_control parameter, David added 2017-03-07
+	if (keyword != "short_turn_control=")
 	{
-		cout << "ERROR reading Parameters file, expecting: short_turning=, read: " << keyword << endl;
+		cout << "ERROR reading Parameters file, expecting: short_turn_control=, read: " << keyword << endl;
 		return false;
 	}
-	in >> short_turning;
+	in >> short_turn_control;
 	in >> keyword;
 	if (keyword!= "#day2day_assignment")
 	{
