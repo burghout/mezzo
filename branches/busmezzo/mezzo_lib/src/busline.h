@@ -370,6 +370,7 @@ public:
 
 	//short-turning
 	bool check_last_in_tripchain(); //!< checks if this trip is the last in chain assigned to vehicle (i.e. last in Bustrip driving roster)
+	void set_next_stop(vector<Visit_stop*>::iterator next_stop_) { next_stop = next_stop_; } //!<for changing next stop to end stop of short-turn
 	bool get_short_turned() { return short_turned; }
 	void set_short_turned(bool short_turned_) { short_turned = short_turned_; }
 
