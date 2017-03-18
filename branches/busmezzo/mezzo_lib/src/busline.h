@@ -178,7 +178,7 @@ public:
 	Busroute* get_busroute() {return busroute;}							//!< returns Busroute
 	Vtype*	  get_vtype() {return vtype;}								//!< returns Vtype
 	ODpair*	  get_odpair() {return odpair;}								//!< returns ODpair
-	float	get_max_headway_holding() {return max_headway_holding;}	//!< returns ratio_headway_holding
+	double	get_max_headway_holding() {return max_headway_holding;}	//!< returns ratio_headway_holding
 	int		get_holding_strategy() {return holding_strategy;}			//!< returns the holding strategy
 	double	get_init_occup_per_stop() {return init_occup_per_stop;}
 	int		get_nr_stops_init_occup () {return nr_stops_init_occup;}
@@ -261,7 +261,7 @@ protected:
 	Busroute* busroute;						//!< the route (in terms of links) that the busses follow
 	Vtype* vtype;							//!< the type of vehicle for the buses to be generated.
 	ODpair* odpair; 
-	float max_headway_holding;
+	double max_headway_holding;
 	double desired_offset, planned_headway; //!< relevant in case headway control is of type 10
 	int holding_strategy; 
 	double init_occup_per_stop;

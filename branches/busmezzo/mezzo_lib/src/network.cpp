@@ -1656,7 +1656,7 @@ bool Network::readbusline(istream& in) // reads a busline
 {
   char bracket;
   int busline_id, opposite_busline_id, ori_id, dest_id, route_id, vehtype, holding_strategy, nr_stops, stop_id, nr_tp, tp_id, nr_stops_init_occup;
-  float max_headway_holding;
+  double max_headway_holding;
   double init_occup_per_stop;
   string name;
   vector <Busstop*> stops, line_timepoint;
