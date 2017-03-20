@@ -116,6 +116,7 @@ void Bus::reset ()
 	on_trip = true;
 	short_turning = false;
 	end_stop_id = 0;
+	short_turn_counter = 0;
 	type = 4;
 	output_vehicle.clear();
 }

@@ -115,6 +115,7 @@ public:
 		on_trip = false;
 		short_turning = false;
 		end_stop_id = 0;
+		short_turn_counter = 0;
 		number_seats = 45;
 		capacity = 70;
 		type = 4;
@@ -134,6 +135,7 @@ public:
 		on_trip = false;
 		short_turning = false;
 		end_stop_id = 0;
+		short_turn_counter = 0;
 		number_seats = 50;
 		capacity = 70;
 		type = 4;
@@ -154,6 +156,7 @@ public:
 		on_trip = false;
 		short_turning = false;
 		end_stop_id = 0;
+		short_turn_counter = 0;
 		length = bty->get_length();
 		number_seats = bty->get_number_seats();
 		capacity = bty->get_capacity();
@@ -187,6 +190,8 @@ public:
 	bool get_short_turning() { return short_turning; }
 	void set_end_stop_id(int end_stop_id_) { end_stop_id = end_stop_id_; }
 	int get_end_stop_id() { return end_stop_id; }
+	void set_short_turn_counter(int short_turn_counter_) { short_turn_counter = short_turn_counter_; }
+	int get_short_turn_counter() { return short_turn_counter; }
 	
 // other functions:	
 	void set_bustype_attributes (Bustype* bty); // change the fields that are determined by the bustype
@@ -208,6 +213,7 @@ protected:
 	list <Busvehicle_location> output_vehicle; //!< list of output data for buses visiting stops
 	bool short_turning;	//!< David added 2017-03-09: true if bus is in the process of performing a short-turn, false otherwise. Should always be false if theParameters->short_turning = false
 	int end_stop_id; //!< David added 2017-03-13: contains the id of the end stop when a bus is short-turning. Otherwise this should be zero
+	int short_turn_counter; //!< David added 2017-03-17: number of times this bus has short-turned
 };
 
 class Busvehicle_location // container object holding output data for stop visits
