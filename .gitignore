@@ -54,3 +54,5 @@ branches/busmezzo/gui/ui_parametersdialog_qt4.h
 *.user
 
 .DS_Store
+branches/busmezzo/mezzo.VC.db
+*.opendb
