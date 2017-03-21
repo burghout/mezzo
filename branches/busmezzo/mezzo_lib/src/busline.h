@@ -31,8 +31,6 @@ class Change_arrival_rate;
 class Bustrip_assign;
 class Dwell_time_function;
 class hist_set;
-class hist_paths;
-class hist_demand;
 
 typedef pair<Bustrip*,double> Start_trip;
 typedef vector <Passenger*> passengers;
@@ -376,7 +374,6 @@ public:
 	void convert_stops_vector_to_map();													//!< building stops_map
 	void convert_downstreamstops_vector_to_map(vector <Visit_stop*> down_stops);													//!< building stops_map
 	vector <Visit_stop*> ::iterator get_target_stop(Bustrip *trip, vector<Visit_stop*> :: iterator& next_stop); //Hend added 190716 get target stop according to the stop horizon
-	vector<Visit_stop*>::iterator  get_previous_stop(Bustrip *trip, vector <Visit_stop*> :: iterator& down_stp); // Hend added 190317 get the previous stop of the trip
 	vector <Visit_stop*> ::iterator get_transfer_target_stop(Bustrip *trip, vector<Visit_stop*> :: iterator& trnsfr_stop); //Hend added 171016 get target stop for transfer lines
 	vector<Start_trip> calc_predict_times(Start_trip trip, Visit_stop *target_stop, vector<Start_trip> trips_to_handle); ////Hend added 130716: calc the predictions of the arrival times of trips
 	vector<double> get_first_and_last_trips(vector<Start_trip> trips_to_handle,Visit_stop* transfer_stop);//Hend added 130716: get the first and last trip to enter transfer stop
@@ -405,8 +402,7 @@ public:
 	map <Busstop*, int> nr_expected_alighting;		//!< number of passengers expected to alight at the busline's stops (format 2)
 	map <Busstop*, int> assign_segements;			//!< contains the number of pass. travelling between trip segments
 	vector <Visit_stop*> down_stops;
-	
-
+	vector <pair<Bustrip*, int>> trip_occupancy;    //Hend added 2401716: occupancy of buses on each trip on the horizon
 protected:
 	int id;										  //!< course nr
 	Bus* busv;									  //!< pointer to the bus vehicle
@@ -536,42 +532,20 @@ class LineIdStopSchedule {
 public:
 	int line_id_;
 	int stop_id_;
-	//double sched_arr_time_;
-	LineIdStopSchedule(int line_id, int stop_id): //, int sched_arr_time
-		line_id_(line_id), stop_id_(stop_id) {}  //, sched_arr_time_(sched_arr_time)
+	double sched_arr_time_;
+	LineIdStopSchedule(int line_id, int stop_id, int sched_arr_time):
+		line_id_(line_id), stop_id_(stop_id), sched_arr_time_(sched_arr_time) {}
 };
 
 struct CompareLineStopSched { 
 	bool operator()(const LineIdStopSchedule& left,const LineIdStopSchedule& right ) const {
 		if(left.line_id_ == right.line_id_ && 
-			left.stop_id_ == right.stop_id_) //&&
-			//left.sched_arr_time_ == right.sched_arr_time_)
-			return false;
-		if(left.line_id_ > right.line_id_ || 
-			(left.line_id_ == right.line_id_ &&left.stop_id_ > right.stop_id_)) 
+			left.stop_id_ == right.stop_id_ &&
+			left.sched_arr_time_ == right.sched_arr_time_)
 			return false;
 		return true;
 	}
 };
-
-class StopSchedule {
-public:
-	int stop_id_;
-	StopSchedule(int stop_id): 
-		stop_id_(stop_id) {}
-};
-
-struct CompareStopID {
-	bool operator() (const StopSchedule& left, const StopSchedule& right ) const {
-		if(left.stop_id_ == right.stop_id_)
-			return false;
-		if(left.stop_id_ > right.stop_id_)
-			return false;
-		return true;
-	}
-}; 
-
-
 class Output_Summary_Stop_Line // container object holding output data for stop visits
 {
 public:
@@ -660,9 +634,7 @@ public:
 		bool	can_overtake_, 
 		double	min_DT_, 
 		int		rti_,
-		map<LineIdStopSchedule, hist_set*, CompareLineStopSched>* history_summary_map_,
-		map<StopSchedule, hist_demand*, CompareStopID>* hist_demand_map_
-
+		map<LineIdStopSchedule, hist_set*, CompareLineStopSched>* history_summary_map_
 	);
 
 	void reset (); 
@@ -700,8 +672,6 @@ public:
 	void save_previous_alighting_fractions () {previous_alighting_fractions.swap(alighting_fractions);}
 	const bool check_walkable_stop ( Busstop* const & stop);
 	bool check_destination_stop (Busstop* stop); 
-	//double get_holding_time(Busstop* stop) {return holding_time;}
-	//void set_holding_time(double holding_time_) {holding_time = holding_time_;}
 
 	//transfer related checks
 	bool is_awaiting_transfers(Bustrip* trip); //David added 2016-05-30: returns true if trip is currently awaiting transfers at stop
@@ -752,22 +722,8 @@ public:
 	//void calculate_sum_output_stop_per_line_and_sched_at(int line_id, stop_sched_arrtime_T stop_sched);  //!< Hend added 301016 prepare a historical data
 	int calc_total_nr_waiting ();
 
-	map<LineIdStopSchedule, hist_set*, CompareLineStopSched>* history_summary_map_;//Hend added 30/10/16 to save historical data
-	map<LineIdStopSchedule, hist_set*, CompareLineStopSched>* stops_map_handle;    //Hend added 20/3/17 to save data that enters the optimization
-	map<StopSchedule, hist_demand*, CompareStopID>* hist_demand_map_; //Hend added 30/10/16 to save historical data
-
 // relevant only for demand format 2
 	multi_rates multi_arrival_rates; //!< parameter lambda that defines the poission proccess of passengers arriving at the stop for each sequential stop
-
-	//control case 10: historical data for each stop 
-	vector <pair<Busstop*, double>> dwell_time;      //Hend added 2401716: occupancy of buses on each trip on the horizon
-	vector <pair<Busstop*, double>> trip_occupancy;      //Hend added 2401716: occupancy of buses on each trip on the horizon
-	vector <pair<Busstop*, double>> riding_time;    //Hend added 05/02/17: riding time of buses on each trip on the horizon
-	vector <pair<Busstop*, double>> trip_nr_boardings;   //Hend added 05/02/17: number of boardings of buses on each trip on the horizon
-	vector <pair<Busstop*, double>> trip_nr_alightings;  //Hend added 05/02/17: number of alightings of buses on each trip on the horizon
-	vector <pair<Busstop*, double>> trip_nr_denied;	  //Hend added 05/02/17: number of denied boardings of buses on each trip on the horizon
-	vector <pair<Busstop*, double>> holding_time;	  //Hend added 30/03/17: number of denied boardings of buses on each trip on the horizon
-	vector <pair<Busstop*, double>> expected_arrival_time;//Hend added 30/03/17: expected arrival time
 
 protected:
 	int id;						//!< stop id
@@ -823,12 +779,11 @@ protected:
 	// transfer synchronization
 	vector<pair<Bustrip*, int>> trips_awaiting_transfers;	//!< David added 2016-05-30: contains trips that are currently waiting to synchronize transfers with a connecting trip, paired with the line ID of the connecting trip
 
-  
 	// output structures
 	list <Busstop_Visit> output_stop_visits;			//!< list of output data for buses visiting stops
 	map<int,Output_Summary_Stop_Line> output_summary;	//!< int value is line_id
 
-	
+	map<LineIdStopSchedule, hist_set*, CompareLineStopSched>* history_summary_map_;
 };
 
 typedef pair<Busline*,double> TD_single_pair;
@@ -929,7 +884,7 @@ class hist_set
 	hist_set ();
 	//Pass_path (int path_id, vector<vector<Busline*>> alt_lines_);
 	//Pass_path (int path_id, vector<vector<Busline*>> alt_lines_, vector <vector <Busstop*>> alt_transfer_stops_);
-	hist_set (int line_id_, int trip_id_, int vehicle_id_, int stop_id_, double entering_time_, double sched_arr_time_, double dwell_time_, double lateness_, double exit_time_, double riding_time_, double riding_pass_time_, double time_since_arr_, double time_since_dep_, double nr_alighting_, double nr_boarding_, double occupancy_, double nr_waiting_, double total_waiting_time_, double holding_time_);
+	hist_set (int line_id_, int trip_id_, int vehicle_id_, int stop_id_, double entering_time_, double sched_arr_time_, double dwell_time_, double lateness_, double exit_time_, double riding_time_, double riding_pass_time_, double time_since_arr_, double time_since_dep_, int nr_alighting_, int nr_boarding_, int occupancy_, int nr_waiting_, double total_waiting_time_, double holding_time_);
 	~hist_set ();
 	//void reset();
 
@@ -946,48 +901,12 @@ class hist_set
 	double riding_pass_time;
 	double time_since_arr;
 	double time_since_dep;
-	double nr_alighting;
-	double nr_boarding;
-	double occupancy;
-	double nr_waiting;
+	int nr_alighting;
+	int nr_boarding;
+	int occupancy;
+	int nr_waiting;
 	double total_waiting_time;
 	double holding_time;
-};
-
-class hist_paths
-{
- public:
-	hist_paths ();
-
-	hist_paths (int passenger_ID_, int origin_ID_, int destination_ID_, double start_time_, double total_walking_time_, double total_waiting_time_, double total_waiting_time_denied_, double total_IVT_, double total_IVT_crowding_, double end_time_, vector<int> stops_, vector<int> trips_);
-	~hist_paths ();
-
-	int passenger_ID;
-	int origin_ID;
-	int destination_ID;
-	double start_time;
-	double total_walking_time;
-	double total_waiting_time;
-	double total_waiting_time_denied;
-	double total_IVT;
-	double total_IVT_crowding;
-	double end_time;
-	vector<int> stops;
-	vector<int> trips; 
-};
-
-class hist_demand
-{
- public:
-	hist_demand ();
-
-	hist_demand (int stop_id_, double origin_d_, double destination_d_, double transfer_d_);
-	~hist_demand ();
-
-	int stop_id;
-	double origin_d;
-	double destination_d;
-	double transfer_d;
 };
 
 #endif //_BUSLINE
