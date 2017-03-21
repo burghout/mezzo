@@ -983,15 +983,23 @@ bool Bustrip::activate (double time, Route* route, ODpair* odpair, Eventlist* ev
 		previous_trip = curr_trip-1;
 		if ((*previous_trip)->first->busv->get_on_trip() == true) // if the assigned bus isn't avaliable
 		{
-			ok=false;
-			return ok;
+			return false;
 		}
 		busv->set_curr_trip(this);	
 		first_dispatch_time = (*previous_trip)->first->get_last_stop_exit_time(); //Added by Jens 2014-07-03
 		/*if (busv->get_route() != NULL)
 			cout << "Warning, the route is changing!" << endl;*/
 	}
-	double dispatch_time = calc_departure_time(first_dispatch_time);
+	double dispatch_time;
+	if (busv->get_short_turning()) {
+		map<pair<int, int>, int> stpair_to_stfunc = (*previous_trip)->first->get_line()->get_stpair_to_stfunc();
+		int st_func = stpair_to_stfunc[make_pair(this->get_last_stop_visited()->get_id(), this->get_busv()->get_end_stop_id())]; //used for calculating short-turning time (currently just a constant but can refer to the id of a function)
+		dispatch_time = time + st_func; //dispatch immediately to start skipping stops to end stop
+		actual_dispatching_time = time + st_func; //sets short-turning dispatch for this trip to end time of short-turn
+	}
+	else
+		dispatch_time = calc_departure_time(first_dispatch_time);
+
 	if (dispatch_time < time)
 		cout << "Warning, dispatch time is before current time for bus trip " << id << endl;
 	busv->init(busv->get_id(),4,busv->get_length(),route,odpair,time); // initialize with the trip specific details
@@ -1001,8 +1009,9 @@ bool Bustrip::activate (double time, Route* route, ODpair* odpair, Eventlist* ev
   		busv->set_on_trip(true); // turn on indicator for bus on a trip
 		ok = true;
 	}
-	else // if insert returned false
+	else // if insert returned false (if inputqueue is full which should never happen)
   	{
+		cout << "Bustrip::activate inserting bus at origin node " << odpair->get_origin()->get_id() << "failed for bus " << busv->get_bus_id() <<  endl;
   		ok = false; 
   	}	
 	return ok;
