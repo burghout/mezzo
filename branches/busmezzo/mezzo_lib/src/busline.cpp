@@ -1495,7 +1495,8 @@ bool Busstop::execute(Eventlist* eventlist, double time) // is executed by the e
 		}
 
 		Vehicle* veh =  (Vehicle*)(exiting_trip->get_busv()); // so we can do vehicle operations
-		free_length (exiting_trip->get_busv());
+		if(!exiting_trip->get_busv()->get_short_turning()) //bus does not occupy any space at stop when short-turning
+			free_length (exiting_trip->get_busv());
 		double relative_length;
 		// calculate the updated exit time from the link	
 		double ro =0.0;
@@ -1528,6 +1529,8 @@ bool Busstop::execute(Eventlist* eventlist, double time) // is executed by the e
 			}
 			else // the next stop is NOT on this link
 			{
+				if (exiting_trip->get_busv()->get_short_turning())
+					DEBUG_MSG( "Short-turning bus " << exiting_trip->get_busv()->get_bus_id() << " is attempting to exit link " << veh->get_curr_link()->get_id() << " before its final stop " );
 				relative_length = (veh->get_curr_link()->get_length()-position)/ veh->get_curr_link()->get_length(); // calculated for the remaining part of the link
 				double exit_time = time + link_total_travel_time * relative_length;
 				veh->set_exit_time(exit_time);
@@ -1629,6 +1632,34 @@ bool Busstop::execute(Eventlist* eventlist, double time) // is executed by the e
 	// if this is for a bus ENTERING the stop:
 	if (bus_enter == true) 
 	{
+		//Short-turning
+		if (theParameters->short_turn_control)
+		{
+			if (!entering_trip->get_busv()->get_short_turning()) //if the bus isnt already short-turning
+			{
+				int target_stop_id;
+				target_stop_id = this->calc_short_turning(entering_trip, time);
+				if (target_stop_id) //if the decision to short-turn has been made
+				{
+					entering_trip->get_busv()->set_short_turning(true);
+					entering_trip->get_busv()->set_end_stop_id(target_stop_id);
+					expected_bus_arrivals.erase(iter_arrival);
+					this->short_turn_exit(entering_trip, target_stop_id, time, eventlist); //initiate alternative exit_stop process
+					return true; //TODO: check if returning true here effects anything else, now we've basically just created an event that this trip will instantly arrive at its last stop
+				}
+			}
+			else  //if a entering trip is a short-turning bus
+			{
+				if (entering_trip->get_busv()->get_end_stop_id() == this->get_id()) //if this is its end stop
+				{
+					assert(entering_trip->get_busv()->get_short_turning());
+					short_turn_enter(entering_trip, time, eventlist); //complete the short-turn and continue the bus enter process as usual
+					DEBUG_MSG( "Bus " << entering_trip->get_busv()->get_bus_id() << " has now successfully completed short-turn from stop " << entering_trip->get_last_stop_visited()->get_id() << " to stop "
+						<< this->get_id() << " in " << time - entering_trip->get_last_stop_visited()->get_exit_time() << " seconds" );
+				}
+			}
+		}
+
 		exit_time = calc_exiting_time(eventlist, entering_trip, time); // get the expected exit time according to dwell time calculations and time point considerations
 		entering_trip->set_enter_time (time);
 		pair<Bustrip*,double> exiting_trip;
