@@ -99,7 +99,9 @@ bool Busline::execute(Eventlist* eventlist, double time)
 	}
 	else // if the Busline is active
 	{
-		curr_trip->first->activate(time, busroute, odpair, eventlist); // activates the trip, generates bus etc.
+		if (curr_trip->first->get_busv()->get_short_turn_counter() == 0) //if bus has short-turned earlier than it is no longer running according to scheduling constraints, if it has not then we wish to adhere to predefined schedule
+			curr_trip->first->activate(time, busroute, odpair, eventlist); // activates the trip, generates bus etc.
+		
 		curr_trip++; // now points to next trip
 		if (curr_trip < trips.end()) // if there exists a next trip
 		{
