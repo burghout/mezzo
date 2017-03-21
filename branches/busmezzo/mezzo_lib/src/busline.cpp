@@ -903,6 +903,13 @@ double Bustrip::calc_departure_time (double time) // calculates departure time f
 bool Bustrip::advance_next_stop (double time, Eventlist* eventlist)
 {
 	// TODO - vec.end is post last 
+	if (busv->get_short_turning() && busv->get_on_trip() == true) //if bus is short-turning and has not been teleported to the last stop on its line yet 
+	{
+		DEBUG_MSG( "Bustrip::advance_next_stop is setting next_stop to final stop of trip " << this->get_id() );
+		next_stop = stops.end(); //short-turned bus has teleported to exit last stop for this trip
+		return true;
+	}
+
 	if (busv->get_on_trip()== true && next_stop < stops.end()) // progress to the next stop, unless it is the last stop for this trip
 	{
 		next_stop++;
