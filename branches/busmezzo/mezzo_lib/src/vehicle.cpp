@@ -152,32 +152,34 @@ void Bus::advance_curr_trip (double time, Eventlist* eventlist) // progresses tr
 	on_trip = false;  // the bus is avaliable for its next trip
 	if (next_trip != curr_trip->driving_roster.end()) // there are more trips for this bus
 	{
+		Bus* bus_copy = (*next_trip)->first->get_busv();
+		bus_copy->set_short_turn_counter(this->short_turn_counter); //pass the short_turn counter over from curr_trip to next trip
 		if (this->short_turning) //if bus is short-turning we want to advance to next trip immediately to start skipping stops from origin of opposite line to end stop
 		{
 			assert((*next_trip)->first->get_busv() != curr_trip->get_busv());
 			DEBUG_MSG("Bus::advance_curr_trip bus " << this->get_bus_id() << " is starting trip " << (*next_trip)->first->get_id() << " before skipping stops");
 			Busline* line = (*next_trip)->first->get_line();
-			(*next_trip)->first->get_busv()->set_short_turning(true);
-			(*next_trip)->first->get_busv()->set_end_stop_id(curr_trip->get_busv()->get_end_stop_id()); //pass the end_stop_id over from curr_trip to next trip
-			//DEBUG_MSG( "First bus memory address : " << curr_trip->get_busv() );
-			//DEBUG_MSG( "Second bus memory address: " << (*next_trip)->first->get_busv() );
-			(*next_trip)->first->set_last_stop_visited(curr_trip->get_last_stop_visited());
+
+			bus_copy->set_short_turning(true);
+			bus_copy->set_short_turn_counter(bus_copy->get_short_turn_counter() + 1); //increment short turn counter by one
+			bus_copy->set_end_stop_id(this->get_end_stop_id()); //pass the end_stop_id over from curr_trip to next trip
+
+			(*next_trip)->first->set_last_stop_visited(curr_trip->get_last_stop_visited()); //pass over last stop visited
 			(*next_trip)->first->set_short_turned(true); //set indicator that this trip start is the result of a short_turn
-			//if ((*next_trip)->first->get_starttime() > time) { //if bus is early for next trip
-			//	Busline* next_line = (*next_trip)->first->get_line();
-			//	next_line->set_curr_trip(next_line->get_curr_trip()+1); //advance current trip for next trip busline
-			//	DEBUG_MSG("Advancing trip " << (*next_trip)->first->get_id() << " for bus " << curr_trip->get_busv()->get_bus_id() << "on busline level");
-			//}
 			(*next_trip)->first->activate(time, line->get_busroute(), line->get_odpair(), eventlist);
 
 		}
 		if ((*next_trip)->first->get_starttime() <= time) // if the bus is already late for the next trip
 		{
 			Busline* line = (*next_trip)->first->get_line();
-			// then the trip is activated
-			(*next_trip)->first->activate(time, line->get_busroute(), line->get_odpair(), eventlist);
+			(*next_trip)->first->activate(time, line->get_busroute(), line->get_odpair(), eventlist); //activate next trip
 		}
-		// if the bus is early for the next trip, then it will be activated at the scheduled time from Busline
+		if ((*next_trip)->first->get_starttime() > time && bus_copy->get_short_turn_counter() > 0 && this->short_turning == false) //if bus ready earlier for its next scheduled trip due to short-turning we do not care about schedule adherence anymore
+		{
+			Busline* line = (*next_trip)->first->get_line();
+			(*next_trip)->first->activate(time, line->get_busroute(), line->get_odpair(), eventlist); //activate next trip
+		}
+		 //if the bus is early for the next trip, then it will be activated at the scheduled time from Busline (unless bus has previously short-turned)
 	}
 }
 
