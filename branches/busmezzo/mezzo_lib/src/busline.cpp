@@ -1289,8 +1289,52 @@ void Busstop::book_bus_arrival(Eventlist* eventlist, double time, Bustrip* trip)
 	pair<Bustrip*,double> bus_arrival_time;
 	bus_arrival_time.first = trip;
 	bus_arrival_time.second = time;
-	expected_bus_arrivals.push_back(bus_arrival_time);
-	eventlist->add_event(time,this);
+
+	if (trip->get_busv()->get_short_turning()) //if the short-turned bus has just teleported to the beginning of its next trip we wish to schedule its arrival to the end stop instead of the first stop
+	{
+		vector<Visit_stop*>::iterator endstop_iter;
+		Busstop* end_stop;
+		for (endstop_iter = trip->stops.begin(); endstop_iter < trip->stops.end(); endstop_iter++) //find end stop 
+		{
+			if ((*endstop_iter)->first->get_id() == trip->get_busv()->get_end_stop_id()) {
+				DEBUG_MSG("Busstop::book_bus_arrival booking arrival to end stop " << (*endstop_iter)->first->get_id() << " for bus " << trip->get_busv()->get_bus_id() << " at time " << time);
+				trip->set_next_stop(endstop_iter);
+				end_stop = (*endstop_iter)->first;
+				break;
+			}	
+		}
+		if (endstop_iter == trip->stops.end())
+			cout << "Busstop::bus_bus_arrival did not find end stop for short-turned bus " << trip->get_busv()->get_bus_id() << "!!!" << endl;
+
+		end_stop->add_to_expected_bus_arrivals(bus_arrival_time);
+		eventlist->add_event(time, end_stop);
+
+		//update teleported bus' current link to the link the end stop is on
+		Busroute* end_route; //!< the route that the short-turned bus ends up on
+		vector<Link*> end_route_links;
+		vector<Link*>::iterator link_iter;
+		Link* end_link;
+		int end_link_id = end_stop->get_link_id();
+		
+		end_route = trip->get_line()->get_busroute();
+		end_route_links = end_route->get_links();
+		for (link_iter = end_route_links.begin(); link_iter < end_route_links.end(); link_iter++) //find end stop link on route links
+		{
+			if ((*link_iter)->get_id() == end_link_id) {
+				end_link = (*link_iter);
+				break;
+			}
+		}
+		if (link_iter == end_route_links.end())
+			cout << "end stop link id " << end_link_id << "not found on route " << end_route->get_id() << endl;
+
+		trip->get_busv()->set_curr_link(end_link);
+	}
+	else
+	{
+		expected_bus_arrivals.push_back(bus_arrival_time);
+		eventlist->add_event(time, this);
+	}
 } 
 
 void Busstop::short_turn_exit(Bustrip * st_trip, int target_stop_id, double time, Eventlist* eventlist)
