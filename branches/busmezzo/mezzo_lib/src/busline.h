@@ -255,13 +255,16 @@ protected:
 	//Busline* opposite_line;
 	string name;				//!< name of the busline "46 Sofia"
 //	int vtype;					//!< vehicle type. There are usually multiple types of Busses
+    Busroute* busroute;						//!< the route (in terms of links) that the busses follow
 
+    ODpair* odpair;
 	vector <Busstop*> line_timepoint;
 	vector <Start_trip> trips;				//!< the trips that are to be made
-	Busroute* busroute;						//!< the route (in terms of links) that the busses follow
+
 	Vtype* vtype;							//!< the type of vehicle for the buses to be generated.
-	ODpair* odpair; 
-	double max_headway_holding;
+
+	float max_headway_holding;
+
 	double desired_offset, planned_headway; //!< relevant in case headway control is of type 10
 	int holding_strategy; 
 	double init_occup_per_stop;
@@ -631,7 +634,7 @@ public:
 	void set_nr_alighting (int nr_alighting_) {nr_alighting = nr_alighting_;}	
 	int get_nr_alighting () {return nr_alighting;}
 	int get_nr_waiting (Bustrip* trip) {return nr_waiting[trip->get_line()];}
-	const double get_position () { return position;}
+	double get_position () { return position;}
 	double get_exit_time() { return exit_time;}
 	vector<Busline*> get_lines () {return lines;}
 	void set_position (double position_ ) {position = position_;}
@@ -639,11 +642,11 @@ public:
 	double get_last_departure (Busline* line) {return last_departures[line].second;}
 	Bustrip* get_last_trip_departure (Busline* line) {return last_departures[line].first;}
 	map<Busstop*,double> & get_walking_distances () {return distances;}
-	const bool get_had_been_visited ( Busline * line) {return had_been_visited[line];} 
+	bool get_had_been_visited ( Busline * line) {return had_been_visited[line];} 
 	double get_walking_distance_stop (Busstop* stop) {return distances[stop];}
 	void save_previous_arrival_rates () {previous_arrival_rates.swap(arrival_rates);}
 	void save_previous_alighting_fractions () {previous_alighting_fractions.swap(alighting_fractions);}
-	const bool check_walkable_stop ( Busstop* const & stop);
+	bool check_walkable_stop ( Busstop* const & stop);
 	bool check_destination_stop (Busstop* stop); 
 
 	//transfer related checks
@@ -704,22 +707,26 @@ public:
 // relevant only for demand format 2
 	multi_rates multi_arrival_rates; //!< parameter lambda that defines the poission proccess of passengers arriving at the stop for each sequential stop
 
+    //id(id_), name(name_), link_id(link_id_), position (position_), length(length_), has_bay(has_bay_), can_overtake(can_overtake_), min_DT(min_DT_), rti (rti_)
+
 protected:
 	int id;						//!< stop id
 	string name;				//!< name of the bus stop "T-centralen"
 	int link_id;				//!< link it is on, maybe later a pointer to the respective link if needed
-	bool has_bay;				//!< TRUE if it has a bay so it has an extra dwell time
+    double position;		    //!< relative position from the upstream node of the link (beteen 0 to 1)
+    double length;				//!< length of the busstop, determines how many buses can be served at the same time
+    bool has_bay;				//!< TRUE if it has a bay so it has an extra dwell time
 	bool can_overtake;			//!< 0 - can't overtake, 1 - can overtake freely; TRUE if it is possible for a bus to overtake another bus that stops in front of it (if FALSE - dwell time is subject to the exit time of a blocking bus)
-	double length;				//!< length of the busstop, determines how many buses can be served at the same time
-	double position;		    //!< relative position from the upstream node of the link (beteen 0 to 1)
+    double min_DT;
+    int rti;					//!< indicates the level of real-time information at this stop: 0 - none; 1 - for all lines stoping at each stop; 2 - for all lines stoping at all connected stop; 3 - for the entire network.
+
 	double avaliable_length;	//!< length of the busstop minus occupied length
 	double exit_time;
 	double dwelltime;			//!< standard dwell time
-	double min_DT;
+
 	int nr_boarding;			//!< pass. boarding
 	int nr_alighting;			//!< pass alighting 
 	Random* random;
-	int rti;					//!< indicates the level of real-time information at this stop: 0 - none; 1 - for all lines stoping at each stop; 2 - for all lines stoping at all connected stop; 3 - for the entire network.
 	
 	vector <Busline*> lines;
 	map <double,Bus*> expected_arrivals;					//!< booked arrivals of buses on the link on their way to the stop

@@ -45,7 +45,7 @@
 
 #ifdef _VISSIMCOM
 //#include "vissimcom.h"
-#endif _VISSIMCOM
+#endif// _VISSIMCOM
 
 
 //#define _DEBUG_NODE
@@ -84,7 +84,7 @@ class Node
   public:
 	Node(int id_);
 	virtual ~Node();
-	virtual const int get_id();
+	virtual int get_id();
 	virtual const string className(){return "Node";}
 	virtual void reset(); // resets the state variables to 0
 	void setxy(double x, double y);

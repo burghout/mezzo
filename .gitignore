@@ -62,3 +62,14 @@ branches/busmezzo/gui/ui_parametersdialog_qt4.h
 *.tmp
 branches/busmezzo/standalone/mezzo_s.xcodeproj
 branches/busmezzo/mezzo_lib/mezzo_lib.xcodeproj
+
+trunk/gui/gui.pro.user.c969961
+
+trunk/mezzoAnalyzer/mezzoAnalyzer.pro.user.c969961
+
+*.c969961
+*.db
+branches/busmezzo/mezzo.VC.VC.opendb
+*.opendb
+trunk/gui/debug_log.txt
+trunk/gui/link_log.txt

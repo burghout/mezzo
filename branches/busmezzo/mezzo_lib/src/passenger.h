@@ -22,7 +22,7 @@ public:
 		ODstops*   OD_stop_
 	);
 	Passenger ();
-	~Passenger ();
+    virtual ~Passenger ();
 	void init ();
 	void init_zone (int pass_id, double start_time_, ODzone* origin_, ODzone* destination_);
 	void reset();

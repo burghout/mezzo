@@ -28,7 +28,7 @@ class Sdfunc
   public:
   	 Sdfunc(int id_,double vfree_, double vmin_, double romax_, double romin_);
 	 virtual double speed(double ro);     // speed in m/s everywhere...
-	 const int get_id();
+	 int get_id();
 	 double get_romax();
   protected:
   	 int id;

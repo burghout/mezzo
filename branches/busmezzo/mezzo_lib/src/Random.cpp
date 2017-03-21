@@ -293,7 +293,7 @@ Random::rrandom(double one_by_lambda)
 int
 Random::drandom(int n, double cdf[])
 {
-   register int i;
+    int i;
    double r = urandom();
    for (n = n - 1, i = 0; i < n && r > cdf[i]; i ++);
    return i;
@@ -302,7 +302,7 @@ Random::drandom(int n, double cdf[])
 int
 Random::drandom(int n, float cdf[])
 {
-   register int i;
+    int i;
    double r = urandom();
    for (n = n - 1, i = 0; i < n && r > cdf[i]; i ++);
    return (i);
@@ -344,7 +344,7 @@ int
 Random::poisson1 (double lambda, double duration) // using calls to erandom() according to a given duration
 {
 	double sum = 0.0;
-	register int counter = -1;
+     int counter = -1;
 	while (sum < duration )
 	{	
 		counter = counter + 1;
@@ -369,7 +369,7 @@ int Random::inverse_gamma (int k_shape, double theta_scale)
 void
 Random::permute(int n, int *perm)
 {
-   register int i;
+    int i;
    int r, tmp;
 
    for (i = 0; i < n; i ++)  perm[i] = i;

@@ -21,7 +21,7 @@ Route::Route(int id_, Origin* origin_, Destination* destination_, vector <Link*>
  	last_calc_time=0.0;
 	links=links_;
 	vector <Link*>::iterator iter = links.begin();
-	for (iter; iter < links.end(); iter++)
+    for ( ; iter < links.end(); iter++)
 	{
 			Link* link=(*iter);
 			link->register_route(this);
@@ -109,7 +109,7 @@ odval Route::get_oid_did()
  void Route::set_selected(bool selected) // sets the links' selected attribute
  {
 	 vector <Link*>::iterator iter = links.begin();
-	 for (iter;iter < links.end(); iter++)
+     for ( ;iter < links.end(); iter++)
 	 {
 		 (*iter)->set_selected(selected);
 	 }

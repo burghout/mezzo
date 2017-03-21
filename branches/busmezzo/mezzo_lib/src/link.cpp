@@ -122,8 +122,8 @@ void Link::end_of_simulation()
 		tmp_avg = histtimes->times [curr_period];
 		//tmp_avg=freeflowtime;
 	avgtimes->times[curr_period] = tmp_avg;
-	int i= 0;
-	for (i;i<histtimes->nrperiods;i++)
+
+    for (int i= 0 ;i<histtimes->nrperiods;i++)
 	{
 		if (avgtimes->times.count(i)==0) // no avg time exists, should be impossible, but to be sure...
 		{
@@ -140,19 +140,19 @@ void Link::end_of_simulation()
 
 }
 
-const int Link::get_out_node_id ()
+ int Link::get_out_node_id ()
 	{return out_node->get_id();}
 	
-const int Link::get_in_node_id()
+int Link::get_in_node_id()
 	{return in_node->get_id();}
 
-const bool Link::full()
+ bool Link::full()
 	{
     return queue->full();
   }
 
   
-const bool Link::full(double time)
+ bool Link::full(double time)
 
 {
   moe_density->report_value(density(),time); // to make sure even values are reported when queue is full
@@ -182,10 +182,10 @@ const bool Link::full(double time)
    }   
 }
      
-const bool Link::empty()
+ bool Link::empty()
 	{return queue->empty();}		
 
-const double Link::next_action (double time)
+ double Link::next_action (double time)
 	{ double newtime;
       if (queue->empty() )
 			newtime= (time+freeflowtime);
@@ -196,7 +196,7 @@ const double Link::next_action (double time)
       return newtime;
 	}	 // optimisation: return freeflow time if queue is empty
 
-const int Link::size()
+ int Link::size()
 	{return queue->size();}	
 	
 	
@@ -227,6 +227,7 @@ void Link::set_selected (const bool sel)
 
 pair<double,double> Link::set_output_moe_thickness(unsigned int val)// sets the output MOE for the link icon
 {
+
 #ifndef _NO_GUI	
 	int nr_periods;
 	//double min, max;
@@ -650,20 +651,20 @@ Vehicle* Link::exit_veh(double time)
 	return NULL;
 }
 
-const double Link::density()
+ double Link::density()
 {
    int qsize=queue->size() ;
    	return (qsize/(nr_lanes*(length/1000.0))); // veh/km/lane and length is in meters	
 }
 
-const double Link::density_running(double time)
+ double Link::density_running(double time)
 {
  	int nr_running=queue->nr_running(time);
    return (nr_running/(nr_lanes*(length/1000.0))); // veh/km and length is in meters
 }
 
 // 2002-07-25: new: queue space calculated using individual vehicles lengths
-const double Link::density_running_only(double time)
+ double Link::density_running_only(double time)
 {
   int nr_running=queue->nr_running(time);// nr cars in running segment
  // double queue_space=(queue->size()-nr_running)*theParameters->standard_veh_length; // length of queue
@@ -740,7 +741,7 @@ void Link::write_time(ostream& out)
 	int i = 0;
 	this->end_of_simulation(); // check everything is stored as it should, including current temp values, no empty values in avg times, etc.
 	out << "{\t" << id ;
-	for (i; i<histtimes->nrperiods;i++)
+    for ( ; i<histtimes->nrperiods;i++)
 	{
 		newtime=time_alpha * (avgtimes->times[i]) + (1-time_alpha) * (histtimes->times[i]);
 		out << "\t"<< newtime;
@@ -825,7 +826,7 @@ vector <Route*> Link::get_routes_to_dest(int dest)
 	start = routemap.lower_bound(dest);
 	stop = routemap.upper_bound(dest);
 	vector <Route*> return_routes;
-	for (start; start != stop; start++)
+    for ( ; start != stop; start++)
 	{
 		return_routes.push_back((*start).second);
 	}
@@ -837,7 +838,7 @@ unsigned int Link::nr_alternative_routes(int dest, int incidentlink_id)
 	unsigned int count = 0;
 	vector <Route*> routes_to_dest=get_routes_to_dest(dest);
 	vector <Route*>::iterator route_iter= routes_to_dest.begin();
-	for (route_iter; route_iter!=routes_to_dest.end();route_iter++)
+    for ( ; route_iter!=routes_to_dest.end();route_iter++)
 	{	
 		if ( ! ((*route_iter)->has_link(incidentlink_id)) )
 		{
@@ -1024,12 +1025,12 @@ VirtualLink::~VirtualLink()
 #endif //_VISSIMCOM
  }
 
-const  bool VirtualLink::full()
+  bool VirtualLink::full()
  {
   	return blocked;
  }
 
- const bool VirtualLink::full(double ) // double time unused
+  bool VirtualLink::full(double ) // double time unused
  {
    return blocked;
  }
