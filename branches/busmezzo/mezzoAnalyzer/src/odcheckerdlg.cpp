@@ -2,7 +2,7 @@
 #include <algorithm>
 #include "odcheckerdlg.h"
 #include "assist.h"
-
+#include <QMessageBox>
 
 /**
  *  constructor of OD check dialog

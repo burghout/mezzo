@@ -277,193 +277,6 @@ double Busline::time_till_next_arrival_at_stop_after_time (Busstop* stop, double
 	return  max(min_display*60,0);
 }
 
-/*
-double Busline::time_till_next_arrival_at_stop_after_time (Busstop* stop, double time)
-{
-	
-
-	if (another_trip == false) // the next trip has not started yet - find the next trip and calc. according to schedule
-	{
-		vector<Start_trip>::iterator next_trip_to_start = trips.end();	
-		for (vector<Start_trip>::iterator trip_iter = trips.begin(); trip_iter < trips.end(); trip_iter++)
-		{
-			if ((*trip_iter).first->get_id() == stop->get_last_trip_departure(this)->get_id())
-			{
-				next_trip_to_start = trip_iter+1;
-				break;
-			}
-		}
-		if (next_trip_to_start == trips.end()) // no more scheduled trips
-		{
-			return 100000;
-		}
-		time_till_next_visit = (*next_trip_to_start).first->stops_map[(*this_stop)] - time; // acoording to the schedule
-		while (time_till_next_visit < 0) // if the next trip is planned to visit the stop before the relevant time, then look for the next trip
-		{
-			next_trip_to_start++;
-			if (next_trip_to_start == trips.end()) // no more scheduled trips
-			{
-				return 100000;
-			}
-			time_till_next_visit = (*next_trip_to_start).first->stops_map[(*this_stop)] - time; // acoording to the schedule
-		}
-	}
-	else  // in case the next trip has already started 
-	{	
-		time_till_next_visit = last_visited_stop->get_last_departure(this) + last_dispatched_trip->stops_map[(*this_stop)] - last_dispatched_trip->stops_map[last_visited_stop] - time;
-		// calc the expected arrival time at stop according to arrival time at last stop plus shceduled travel time to this stop	
-		while (time_till_next_visit < 0)
-		{
-			last_dispatched_trip_iter++; 
-			if (last_dispatched_trip_iter == trips.end()) // no more scheduled trips
-			{
-				return 100000;
-			}
-			last_visited_stop =  (*last_dispatched_trip_iter).first->get_last_stop_visited();
-			if (last_visited_stop->get_id() == stops.front()->get_id())
-			// if the next trip have not started yet
-			{
-				time_till_next_visit = (*last_dispatched_trip_iter).first->stops_map[(*this_stop)] - time; // acoording to the schedule
-			}
-			else
-			{
-				time_till_next_visit = last_visited_stop->get_last_departure(this) + last_dispatched_trip->stops_map[(*this_stop)] - last_dispatched_trip->stops_map[last_visited_stop] - time;
-			}
-		}
-		if (check_subline_disruption(last_visited_stop,stop) == true) // if the disruption is in between the last visited stop and this stop then take this into account
-		{
-			time_till_next_visit += (*disruption_times.begin()).second.second.second - (*disruption_times.begin()).second.second.first;
-		}
-	}
-
-	return time_till_next_visit;
-}
-
-/*
-double Busline::time_till_next_arrival_at_stop_after_time (Busstop* stop, double time)
-{
-	if (stops.front()->get_had_been_visited(this) == false) 
-	// in case no trip started yet - according to time table of the first trip
-	{
-		return (trips.front().first->stops_map[stop] - time);
-	}
-	// find the iterator for this stop
-	vector<Busstop*>::iterator this_stop;
-	for (vector <Busstop*>::iterator stop_iter = stops.begin(); stop_iter < stops.end(); stop_iter++)
-	{
-		if ((*stop_iter)->get_id() == stop->get_id())
-		{
-			this_stop = stop_iter;
-			break;
-		}
-	}
-	if (stop->get_last_departure(this) > time)
-	{
-		return stop->get_last_departure(this) - time;
-	}
-	bool another_trip = false;
-	Busstop* last_visited_stop;
-	Bustrip* last_dispatched_trip;
-	// find the last trip that had visited a downstream stop
-	for (vector<Busstop*>::iterator stop_iter = this_stop; stop_iter > stops.begin(); stop_iter--)
-	{
-		if ((*stop_iter)->get_had_been_visited(this) == true)
-		{
-			if ((*this_stop)->get_had_been_visited(this) == true)
-			{
-				if ((*this_stop)->get_last_trip_departure(this)->get_id() == stops.front()->get_last_trip_departure(this)->get_id())
-				// a shortcut in case that no later trip had started yet
-				{
-					last_dispatched_trip = (*this_stop)->get_last_trip_departure(this);
-					break;
-				}
-				if ((*stop_iter)->get_last_trip_departure(this)->get_id() != (*this_stop)->get_last_trip_departure(this)->get_id())
-				{
-					last_visited_stop = (*stop_iter);
-					last_dispatched_trip = last_visited_stop->get_last_trip_departure(this);
-					another_trip = true;
-					break;
-				}
-			}
-			else // the most recent stop to be first visited
-			{
-				last_visited_stop = (*stop_iter);
-				last_dispatched_trip = last_visited_stop->get_last_trip_departure(this);
-				another_trip = true;
-				break;
-			}	
-		}
-	} 
-	double time_till_next_visit;
-	if (another_trip == false)// find the next trip and calc. according to schedule
-	{
-		vector<Start_trip>::iterator next_trip_to_start = trips.end();	
-		for (vector<Start_trip>::iterator trip_iter = trips.begin(); trip_iter < trips.end(); trip_iter++)
-		{
-			if ((*trip_iter).first->get_id() == stop->get_last_trip_departure(this)->get_id())
-			{
-				next_trip_to_start = trip_iter+1;
-				break;
-			}
-		}
-		if (next_trip_to_start == trips.end()) // no more scheduled trips
-		{
-			return 100000;
-		}
-		time_till_next_visit = (*next_trip_to_start).first->stops_map[(*this_stop)] - time; // acoording to the schedule
-		while (time_till_next_visit < 0) // if the next trip is planned to visit the stop before the relevant time, then look for the next trip
-		{
-			next_trip_to_start++;
-			if (next_trip_to_start == trips.end()) // no more scheduled trips
-			{
-				return 100000;
-			}
-			time_till_next_visit = (*next_trip_to_start).first->stops_map[(*this_stop)] - time; // acoording to the schedule
-		}
-	}
-	else  // in case the next trip have started already
-	{
-		// find the iterator for last_dispatched_trip
-		vector<Start_trip>::iterator last_dispatched_trip_iter;	
-		for (vector<Start_trip>::iterator trip_iter = trips.begin(); trip_iter < trips.end(); trip_iter++)
-		{
-			if ((*trip_iter).first->get_id() == last_dispatched_trip->get_id())
-			{
-				last_dispatched_trip_iter = trip_iter;
-				break;
-			}
-		}		
-		time_till_next_visit = last_visited_stop->get_last_departure(this) + last_dispatched_trip->stops_map[(*this_stop)] - last_dispatched_trip->stops_map[last_visited_stop] - time;
-		// calc the expected arrival time at stop according to arrival time at last stop plus shceduled travel time to this stop	
-		while (time_till_next_visit < 0)
-		{
-			last_dispatched_trip_iter++; 
-			if (last_dispatched_trip_iter == trips.end()) // no more scheduled trips
-			{
-				return 100000;
-			}
-			Visit_stop* last_stop_visit =  *((*last_dispatched_trip_iter).first->get_next_stop());
-			if (last_stop_visit->first->get_id() == stops.front()->get_id())
-			// if the next trip have not started yet
-			{
-				time_till_next_visit = (*last_dispatched_trip_iter).first->stops_map[(*this_stop)] - time; // acoording to the schedule
-			}
-			else
-			{
-				last_stop_visit =  *((*last_dispatched_trip_iter).first->get_next_stop()-1);
-				last_visited_stop = last_stop_visit->first;
-				time_till_next_visit = last_visited_stop->get_last_departure(this) + last_dispatched_trip->stops_map[(*this_stop)] - last_dispatched_trip->stops_map[last_visited_stop] - time;
-			}
-		}
-		if (check_subline_disruption(last_visited_stop,stop) == true) // if the disruption is in between the last visited stop and this stop then take this into account
-		{
-			time_till_next_visit += (*disruption_times.begin()).second.second.second - (*disruption_times.begin()).second.second.first;
-		}
-	}
-
-	return time_till_next_visit;
-}
-*/
 
 double Busline::extra_disruption_on_segment (Busstop* next_stop, double time)
 {
@@ -1661,7 +1474,7 @@ void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, d
 			//ODstops* od_stop = (*alighting_passenger)->get_OD_stop();
 			ODstops* od_stop = (*alighting_passenger)->get_original_origin()->get_stop_od_as_origin_per_stop((*alighting_passenger)->get_OD_stop()->get_destination());
 			od_stop->record_onboard_experience(*alighting_passenger, trip, this, riding_coeff);
-			Busstop* next_stop;	
+            Busstop* next_stop=nullptr;
 			bool final_stop = false;
 			// if this stop is not passenger's final destination then make a connection decision
 			ODstops* od;
@@ -2617,7 +2430,7 @@ void Busstop::calculate_sum_output_stop_per_line(int line_id)
 	output_summary[line_id].stop_sd_DT = sqrt(output_summary[line_id].stop_sd_DT/(counter-1));
 }
 
-const bool Busstop::check_walkable_stop ( Busstop* const & stop)
+bool Busstop::check_walkable_stop ( Busstop* const & stop)
 {
 	if (distances.count(stop) > 0)
 	{

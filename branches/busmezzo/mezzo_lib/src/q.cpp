@@ -22,7 +22,7 @@ Q::~Q()
 		// delete the vehicles:
 	}
 	list  <Veh_in_Q>::iterator veh_iter=vehicles.begin();
-	for (veh_iter; veh_iter!=vehicles.end(); )
+    for ( ; veh_iter!=vehicles.end(); )
 	{
 		delete (*veh_iter).second;
 		veh_iter=vehicles.erase(veh_iter);
@@ -35,7 +35,7 @@ void Q::reset()
 	next_action = 0.0;
 	// delete the vehicles:
 	list  <Veh_in_Q>::iterator veh_iter=vehicles.begin();
-	for (veh_iter; veh_iter!=vehicles.end(); )
+    for ( ; veh_iter!=vehicles.end(); )
 	{
 		if (veh_iter->second->get_type() != 4) //Buses should not be deleted!
 		{
@@ -137,7 +137,7 @@ bool Q::veh_exiting (double time, Link* nextlink, int lookback)
 	{
 	    int i=0;
 		list <Veh_in_Q>::iterator v_it = vehicles.begin();
-		for (v_it; (v_it != vehicles.end()) && (i<lookback);v_it++,i++)
+        for ( ; (v_it != vehicles.end()) && (i<lookback);v_it++,i++)
 		{
 			next=v_it->second->nextlink()->get_id();
 			if (nextlink->get_id() == next)

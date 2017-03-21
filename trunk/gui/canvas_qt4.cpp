@@ -198,7 +198,7 @@ void MainForm::updateCanvas()
 }
 
 // AUTOCONNECTED SLOTS
-void MainForm::on_closenetwork_activated()
+void MainForm::on_closenetwork_triggered()
 {
 	//break current simulation
 	breaknow = true;
@@ -243,7 +243,7 @@ void MainForm::on_closenetwork_activated()
 }
 
 
-void MainForm::on_stop_activated()
+void MainForm::on_stop_triggered()
 {
 	//break current simulation
 	breaknow = true;
@@ -276,14 +276,14 @@ void MainForm::on_stop_activated()
 
 
 
-void MainForm::on_quit_activated()
+void MainForm::on_quit_triggered()
 { 
 	
 	closing();
 }
 
 
-void MainForm::on_openmasterfile_activated()
+void MainForm::on_openmasterfile_triggered()
 {
 	fn = "";
 	fn = (QFileDialog::getOpenFileName(this, "Select a MEZZO master file", QString::null,"Mezzo Files (*.mime *.mezzo)") );
@@ -322,7 +322,7 @@ void MainForm::process_masterfile()
 	}
 }
 
-void MainForm::on_zoomin_activated()
+void MainForm::on_zoomin_triggered()
 {
 	// the view center
 	int xviewcenter=viewSize_.width()/2;
@@ -345,7 +345,7 @@ void MainForm::on_zoomin_activated()
 	updateCanvas();
 }
 
-void MainForm::on_zoomout_activated()
+void MainForm::on_zoomout_triggered()
 {	
 	// the view center
 	int xviewcenter=viewSize_.width()/2;
@@ -390,14 +390,14 @@ void MainForm::on_inselectmode_triggered(bool triggered)
 	inselection_=triggered;
 }
 
-void MainForm::on_savescreenshot_activated()
+void MainForm::on_savescreenshot_triggered()
 {
 	QString fn = QFileDialog::getSaveFileName(this, "Save Image", QString::null, "PNG Files (*.png)" );
     if (!fn.isEmpty())
        pm1.save(fn,"PNG");
 }
 
-void MainForm::on_loadbackground_activated()
+void MainForm::on_loadbackground_triggered()
 {
 	QString fn( QFileDialog::getOpenFileName(this, "Open background image",QString::null,"PNG Files (*.png)" ) );
     if (!fn.isEmpty())
@@ -407,13 +407,13 @@ void MainForm::on_loadbackground_activated()
     }
 }
 
-void MainForm::on_breakoff_activated()
+void MainForm::on_breakoff_triggered()
 {
 	breaknow=true;
 	run->setEnabled(true);
 }
 
-void MainForm::on_run_activated()
+void MainForm::on_run_triggered()
 {
 	simprogress_widget->setVisible(true);
 	run->setEnabled(false);
@@ -434,7 +434,7 @@ void MainForm::panfactor_valueChanged( int value )
    panpixels = value;
 }
 
-void MainForm::on_parametersdialog_activated()
+void MainForm::on_parametersdialog_triggered()
 {
 	if (initialised)
 	{
@@ -445,7 +445,7 @@ void MainForm::on_parametersdialog_activated()
 	}
 } 
 
-void MainForm::on_batch_run_activated()
+void MainForm::on_batch_run_triggered()
 {
 	if (initialised)
 	{	
@@ -461,7 +461,7 @@ void MainForm::on_batch_run_activated()
 /**
 * if the mezzoAnalyzer is triggered
 */
-void MainForm::on_inspectdialog_activated()
+void MainForm::on_inspectdialog_triggered()
 {
     // if initialized (network is built)
 	if (this->initialised){
@@ -485,7 +485,7 @@ void MainForm::on_inspectdialog_activated()
 
 }
 
-void MainForm::on_finddialog_activated()
+void MainForm::on_finddialog_triggered()
 {
 	if (this->initialised){
 		finddialog->set_network(theNetwork);
@@ -495,7 +495,7 @@ void MainForm::on_finddialog_activated()
 }
 
 
-void MainForm::on_saveresults_activated()
+void MainForm::on_saveresults_triggered()
 {
 	 theNetwork->writeall();
 }
@@ -568,7 +568,7 @@ void MainForm::simspeed_valueChanged( int  value)
     theParameters->sim_speed_factor =(value/100);
 }
 
-void MainForm::on_actionPositionBackground_activated()
+void MainForm::on_actionPositionBackground_triggered()
 {
 	posbackground->set_network(theNetwork);
 	posbackground->show();
@@ -661,10 +661,10 @@ void MainForm::keyPressEvent( QKeyEvent *e )
 	switch (e->key() ) 
 	{
 		case (Qt::Key_Plus):	// zoom in
-			on_zoomin_activated();
+            on_zoomin_triggered();
 			break;
 		case (Qt::Key_Minus):	// zoom out
-			on_zoomout_activated();	 
+            on_zoomout_triggered();
 			break;
 		case (Qt::Key_Up):		// pan up
 			dy=panfactor;

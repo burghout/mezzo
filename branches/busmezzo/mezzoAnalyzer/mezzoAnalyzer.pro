@@ -3,15 +3,17 @@
 TEMPLATE = lib
 TARGET = mezzoAnalyzer
 DEPENDPATH += . src ui
-INCLUDEPATH += . $(QTDIR)/include $(QTDIR)/include/QtCore $(QTDIR)/include/QtGui $(QTDIR)/include/QtDesigner $(QTDIR)/include/QtNetwork $(QTDIR)/include/ActiveQt 
 
-LIBS+= $(SUBLIBS) -L../mezzo_lib/Debug -lmezzo_lib -L$(QTDIR)/lib -lQtCore -lQtGui 
+LIBS+= $(SUBLIBS) -L../mezzo_lib/Debug -lmezzo_lib 
+#-L$(QTDIR)/lib -lQtCore -lQtGui 
 
-QT+= core gui 
+QT+= core gui widgets
 
 QMAKE= $(QTDIR)/bin/qmake
-CONFIG += uic4 staticlib debug
-QMAKE_LFLAGS +=
+CONFIG +=  staticlib
+#uic4
+
+#QMAKE_LFLAGS +=
 
 # Input
 HEADERS += src/assist.h \

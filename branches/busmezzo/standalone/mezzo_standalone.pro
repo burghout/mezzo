@@ -3,14 +3,14 @@ TEMPLATE = app
 CONFIG += console
 QT -= gui
 TARGET = mezzo_s
-DEFINES += _BUSES
+#DEFINES += _BUSES
 DEFINES += _NO_GUI
 macx {
     CONFIG   -= app_bundle # for mac remove the application bundling
 }
-win32 {
-     QMAKE_LFLAGS +=
-}
+#win32 {
+ #    QMAKE_LFLAGS +=
+#}
 
 # Input
 HEADERS += ../mezzo_lib/src/busline.h \

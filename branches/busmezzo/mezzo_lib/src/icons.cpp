@@ -62,12 +62,12 @@ void Drawing::draw(QPixmap* pm,QMatrix * wm)
     vector <int> result;
     for (list <Icon*>::iterator iter=icons.begin(); iter != icons.end(); iter++)
     {
-       register int x = (*iter)->get_x();
+        int x = (*iter)->get_x();
        if (x < min_x)
          min_x = x;
        if (x > max_x)
          max_x=x;
-       register int y = (*iter)->get_y();    
+        int y = (*iter)->get_y();
        if (y < min_y)
          min_y=y;
        if (y > max_y)
@@ -84,7 +84,7 @@ void Drawing::draw(QPixmap* pm,QMatrix * wm)
 ////////////////////////////////////////
 // Icon functions
 ////////////////////////////////////////
-const bool Icon::within_boundary(const double x, const double y, const int rad)
+bool Icon::within_boundary(const double x, const double y, const int rad)
 {
 	if (x<=startx+rad && x>=startx-rad)
 		if(y<=starty+rad && y>=starty-rad)
@@ -352,7 +352,7 @@ void LinkIcon::draw(QPixmap * pm,QMatrix * wm)   // draw the stuff on pixmap
 	}
 }
 
-const bool LinkIcon::within_boundary(const double x, const double y, const int rad)
+ bool LinkIcon::within_boundary(const double x, const double y, const int rad)
 {
 
 	int rad2=linkicon_leng_/12;

@@ -150,7 +150,7 @@ void Graph<T, I>::labelSetting(int s, const T scp)
    int *next = new int[nlinks];
    int front, p, n;
 
-   register int i;
+   int i;
    int num, u, v;
    T newlabel, *penalties;
    GraphNode<T, I> *pivot;
@@ -335,7 +335,7 @@ void Graph<T, I>::labelCorrecting(int s, double entry, I *info)
 
    int front;			// current first link in list
    int rear;			// current last link in list
-   register int i;
+    int i;
    int num, u, v;
    T newlabel, *penalties;
    GraphLink<T, I> *s_link, *p_link;
@@ -693,7 +693,7 @@ void Graph<T, I>::set_downlink_indices()
   for (n_iter=nodes_.begin(); n_iter<nodes_.end();n_iter++)
   {
     // for all downlinks
-     register int i = 0;
+      int i = 0;
      vector<int>::iterator l_iter; 
      for ( l_iter = (*n_iter).dnLinks_.begin(); l_iter< (*n_iter).dnLinks_.end();l_iter++)
      {

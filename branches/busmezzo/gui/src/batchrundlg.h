@@ -61,7 +61,7 @@ public:
 private:
 	
 	void run_iterations();
-	const bool checkConvergence(const int i, const double rmsn_ltt_, const double rmsn_odtt_);
+    bool checkConvergence(const int i, const double rmsn_ltt_, const double rmsn_odtt_);
 
 	int max_iter;
 	double max_rmsn;

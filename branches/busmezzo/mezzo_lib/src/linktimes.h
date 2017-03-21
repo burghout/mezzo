@@ -43,14 +43,14 @@ LinkTimeInfo contains the LinkTime for all links in the network. It is used by t
 					//times.resize(nrperiods); 
 				}
   int id;   // link id
-  const int get_id() {return id;}
-  const double mean ();
+  int get_id() {return id;}
+  double mean ();
 
   int nrperiods;   // number of time periods
   double periodlength; //periodlength
   //vector <double> times;  // the vector of times
   map <int,double> times; // maps period to link time
-  const double cost(const double time) ;            // this function returns the correct travel time (cost) based on the entry time
+  double cost(const double time) ;            // this function returns the correct travel time (cost) based on the entry time
   double totaltime;
 
  } ;
@@ -58,8 +58,8 @@ LinkTimeInfo contains the LinkTime for all links in the network. It is used by t
  class LinkTimeInfo
  {
  	public:
- 	const double cost (const int i, const double time=0.0);
-	const double mean ();
+ 	double cost (const int i, const double time=0.0);
+	double mean ();
 
  	//vector <LinkTime*> times;
 	map <int, LinkTime*> times;

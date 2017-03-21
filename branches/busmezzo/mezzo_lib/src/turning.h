@@ -71,7 +71,7 @@ public:
 	bool init(Eventlist* eventlist, double time);
 	bool execute(Eventlist* eventlist, double time);
 	double nexttime;
-	const int get_id() {return id;}
+	int get_id() {return id;}
 	void write(ostream& out);
 private:
 	//TurnAction* turnaction;    // performs the action of transferring vehicles at the right times
