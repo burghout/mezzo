@@ -777,6 +777,10 @@ bool Bustrip::activate (double time, Route* route, ODpair* odpair, Eventlist* ev
 {
 	// inserts the bus at the origin of the route
 	// if the assigned bus isn't avaliable at the scheduled time, then the trip is activated by Bus::advance_curr_trip as soon as it is done with the previous trip
+
+	if (this->get_busv()->get_short_turning() == true)
+		DEBUG_MSG( "Bustrip::activate for short-turning busv " << this->get_busv()->get_bus_id() << " for trip " << this->get_id() );
+
 	double first_dispatch_time = time;
 	eventlist = eventlist_;
 	next_stop = stops.begin();
@@ -1301,6 +1305,9 @@ bool Busstop::execute(Eventlist* eventlist, double time) // is executed by the e
 	if (bus_exit == true) 
 	// if there is an exiting bus
 	{
+		if (exiting_trip->get_busv()->get_short_turning())
+			DEBUG_MSG("Short-turning trip " << exiting_trip->get_id() << " has successfully teleported to last stop " << this->get_id() << " at time " << time);
+
 		if(exiting_trip->get_holding_at_stop()) //David added 2016-05-26: the exiting trip is holding and needs to account for additional passengers that board during the holding period
 		{
 			passenger_activity_at_stop(eventlist,exiting_trip,time);
@@ -1692,7 +1699,7 @@ void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, d
 			//ODstops* od_stop = (*alighting_passenger)->get_OD_stop();
 			ODstops* od_stop = (*alighting_passenger)->get_original_origin()->get_stop_od_as_origin_per_stop((*alighting_passenger)->get_OD_stop()->get_destination());
 			od_stop->record_onboard_experience(*alighting_passenger, trip, this, riding_coeff);
-            Busstop* next_stop=nullptr;
+			Busstop* next_stop = this; //David added: 2017-03-11 changed nullptr to 'this'. Assuming that we wish to add this stop as a new origin for alighting passenger
 			bool final_stop = false;
 			// if this stop is not passenger's final destination then make a connection decision
 			ODstops* od;
