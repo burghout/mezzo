@@ -1435,7 +1435,7 @@ int Busstop::calc_short_turning(Bustrip * trip, double time)
 	if (end_stop_id)
 	{
 		//perform_short_turn is where the bus first forces passengers to alight, abort its current trip and begin its next trip in the opposite direction but skipping the first stops until end-stop
-		DEBUG_MSG(endl << "trip " << trip->get_id() << " should short-turn from stop " << this->get_id() << " to stop " << end_stop_id);
+		DEBUG_MSG(endl << "trip " << trip->get_id() << " should short-turn from stop " << this->get_id() << " to stop " << end_stop_id << " at time " << time);
 	}
 
 	//Decision rule taking into account three passenger categories, set short-turn to true if costs to pass groups i and ii are less than group iii
@@ -1653,9 +1653,10 @@ bool Busstop::execute(Eventlist* eventlist, double time) // is executed by the e
 				if (entering_trip->get_busv()->get_end_stop_id() == this->get_id()) //if this is its end stop
 				{
 					assert(entering_trip->get_busv()->get_short_turning());
+					assert(time - entering_trip->get_actual_dispatching_time() > 0); //the time taken to short turn should never be negative
 					short_turn_enter(entering_trip, time, eventlist); //complete the short-turn and continue the bus enter process as usual
 					DEBUG_MSG( "Bus " << entering_trip->get_busv()->get_bus_id() << " has now successfully completed short-turn from stop " << entering_trip->get_last_stop_visited()->get_id() << " to stop "
-						<< this->get_id() << " in " << time - entering_trip->get_last_stop_visited()->get_exit_time() << " seconds" );
+						<< this->get_id() << " in " << time - entering_trip->get_actual_dispatching_time() << " seconds" );
 				}
 			}
 		}
