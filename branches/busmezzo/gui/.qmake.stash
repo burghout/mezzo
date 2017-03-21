@@ -1,0 +1,16 @@
+QMAKE_DEFAULT_INCDIRS = \
+    D:\\QTnew\\5.8\\5.8\\msvc2015_64\\include\\QtGui \
+    D:\\QTnew\\5.8\\5.8\\msvc2015_64\\include\\QtCore \
+    D:\\QTnew\\5.8\\5.8\\msvc2015_64\\include \
+    "C:\\Program Files (x86)\\Microsoft Visual Studio 14.0\\VC\\include" \
+    "C:\\Program Files (x86)\\Microsoft Visual Studio 14.0\\VC\\atlmfc\\include" \
+    "C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.10150.0\\ucrt" \
+    "C:\\Program Files (x86)\\Windows Kits\\8.1\\Include\\um" \
+    "C:\\Program Files (x86)\\Windows Kits\\8.1\\Include\\shared" \
+    "C:\\Program Files (x86)\\Windows Kits\\8.1\\Include\\winrt"
+QMAKE_DEFAULT_LIBDIRS = \
+    "C:\\Program Files (x86)\\Microsoft Visual Studio 14.0\\VC\\lib\\amd64" \
+    "C:\\Program Files (x86)\\Microsoft Visual Studio 14.0\\VC\\atlmfc\\lib\\amd64" \
+    "C:\\Program Files (x86)\\Windows Kits\\10\\lib\\10.0.10150.0\\ucrt\\x64" \
+    "C:\\Program Files (x86)\\Windows Kits\\8.1\\lib\\winv6.3\\um\\x64" \
+    "C:\\Program Files (x86)\\Windows Kits\\NETFXSDK\\4.6\\Lib\\um\\x64"
