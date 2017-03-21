@@ -888,7 +888,14 @@ double Bustrip::calc_departure_time (double time) // calculates departure time f
 				return actual_dispatching_time;
 			}
 		}
-		actual_dispatching_time = Max (time + min_recovery , starttime) + theRandomizers[0]->lnrandom (mean_error_recovery, std_error_recovery);
+		if (this->get_busv()->get_short_turn_counter() > 0) // if we have short-turned before we do not care about schedule adherence (starttime) anymore
+		{
+			actual_dispatching_time = time + min_recovery + theRandomizers[0]->lnrandom(mean_error_recovery, std_error_recovery);
+		}
+		else
+		{
+			actual_dispatching_time = Max(time + min_recovery, starttime) + theRandomizers[0]->lnrandom(mean_error_recovery, std_error_recovery);
+		}
 		return actual_dispatching_time; // error factor following log normal distribution;
 	}
 }
