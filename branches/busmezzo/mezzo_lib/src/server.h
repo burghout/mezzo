@@ -45,13 +45,13 @@ class Server  // standard n(mu,sd2) server  type: 1
   Server(const int id_, const int type_, const double mu_, const double sd_, const double delay_);
   void reset();
   virtual ~Server();
-  const int get_id() const;
+  int get_id() const;
   virtual  double next(const double time);
-  const double get_mu() const;
+  double get_mu();
   void set_mu(const double mu_);
-  const double get_sd() const;
+  double get_sd() const;
   void set_sd(const double sd_);
-  virtual const double get_delay () {return delay;}
+  virtual double get_delay () {return delay;}
   protected:
   Random* random;
   
@@ -132,7 +132,7 @@ public:
 	  Server (id_,type_,mu_,sd_,delay_){}
 	double next (const double time);
 	void reset();
-	const double get_delay ();
+	double get_delay ();
 };
 
 class LogLogisticDelayServer : public Server

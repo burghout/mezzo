@@ -246,7 +246,7 @@ void MOE::fill_missing (const int nr_periods, const double default_value)
 	}
 	if (static_cast<int>(values.size()) < nr_periods)
 	{
-		list <double>::iterator iter=values.begin();
+        //list <double>::iterator iter=values.begin();
 		for (int i = static_cast<int>(values.size())-1; i != nr_periods; i++)
 		{	
 			values.push_back(default_value);

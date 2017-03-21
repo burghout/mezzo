@@ -106,6 +106,7 @@ Parameters::Parameters ()
    dwell_time_weight = 0.0;
    waiting_time_weight = 0.0;
    holding_time_weight = 0.0;
+   compliance_rate = 1.0;
    transfer_sync = false;
 
 // day2day assignment
@@ -714,14 +715,21 @@ bool Parameters::read_parameters (istream & in )
 	}
 	in >> holding_time_weight;
 	in >> keyword;
-	if (keyword!= "Bus_horizon=")
+	if (keyword!= "compliance_rate=")
+	{
+		cout << "ERROR reading Parameters file, expecting: compliance_rate=, read: " << keyword << endl;
+		return false;
+	}
+	in >> compliance_rate;
+	in >> keyword;
+	if (keyword != "Bus_horizon=")
 	{
 		cout << "ERROR reading Parameters file, expecting: Bus_horizon=, read: " << keyword << endl;
 		return false;
 	}
 	in >> Bus_horizon;
 	in >> keyword;
-	if (keyword!= "Stop_horizon=")
+	if (keyword != "Stop_horizon=")
 	{
 		cout << "ERROR reading Parameters file, expecting: Stop_horizon=, read: " << keyword << endl;
 		return false;

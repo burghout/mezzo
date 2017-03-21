@@ -44,22 +44,22 @@ class Vehicle
    virtual ~Vehicle(); //!< destructor
    Vehicle(int id_, int type_, double length_,Route* route_, ODpair* odpair_, double time_);
    void init (int id_, int type_, double length_, Route* route_, ODpair* odpair_, double time_);
-   const double get_length(){return length;}
+   double get_length(){return length;}
    void set_length (double length_) {length = length_;}
-   const double get_exit_time(){return exit_time;}
-   const double get_start_time(){return start_time;}
+   double get_exit_time(){return exit_time;}
+   double get_start_time(){return start_time;}
    const odval get_odids () ;
    void set_exit_time(double time){exit_time=time;}
    void set_entry_time(double time){entry_time=time;}
    void set_route (Route* route_) {route=route_; switched=1;}
    void set_switched(int i) {switched=i;}
-   const double get_entry_time() {return entry_time;}
+   double get_entry_time() {return entry_time;}
    void set_curr_link(Link* curr_link_);
    Link* get_curr_link();
    Route* get_route() {return route;}
    Link* nextlink();
-   const int get_id() {return id;}
-   const int get_type() {return type;}
+   int get_id() {return id;}
+   int get_type() {return type;}
    int get_oid();
    int get_did();
 	void set_entered() {entered=true;}
@@ -166,7 +166,7 @@ public:
 // GETS and SETS
 	int get_bus_id () {return bus_id;}
 	void set_bus_id (int bus_id_) {bus_id = bus_id_;}
-	const int get_occupancy() {return occupancy;}
+	int get_occupancy() {return occupancy;}
 	void set_occupancy (const int occup) {occupancy=occup;}
 	int get_number_seats () {return number_seats;}
 	int get_capacity () {return capacity;}
@@ -234,8 +234,8 @@ public:
 	
 	int line_id;
 	int trip_id;
+    int stop_id;
 	int vehicle_id;
-	int stop_id;
 	int link_id;
 	bool entering_stop;
 	double time;

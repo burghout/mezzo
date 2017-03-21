@@ -95,7 +95,7 @@ public:
 		double time_,
 		double generation_time_,
 		int chosen_alighting_stop_,
-		map<Busstop*,pair<double,double>> alighting_MNL_
+        map<Busstop*,pair<double,double> > alighting_MNL_
 	): pass_id(pass_id_),original_origin(original_origin_),destination_stop(destination_stop_),line_id(line_id_),trip_id(trip_id_), stop_id(stop_id_),time(time_),generation_time(generation_time_),chosen_alighting_stop(chosen_alighting_stop_),alighting_MNL(alighting_MNL_){}
 
 	virtual ~Pass_alighting_decision(); //!< destructor
@@ -122,7 +122,7 @@ public:
 	double time;
 	double generation_time;
 	int chosen_alighting_stop;
-	map<Busstop*,pair<double,double>> alighting_MNL;
+    map<Busstop*,pair<double,double> > alighting_MNL;
 };
 
 class Pass_connection_decision // container object holding output data for passenger connection decision
@@ -136,7 +136,7 @@ public:
 		double time_, 
 		double generation_time_, 
 		int chosen_connection_stop_, 
-		map<Busstop*,pair<double,double>> connecting_MNL_
+        map<Busstop*,pair<double,double> > connecting_MNL_
 	):	pass_id(pass_id_), original_origin(original_origin_), destination_stop(destination_stop_), stop_id(stop_id_),time(time_), generation_time(generation_time_), chosen_connection_stop(chosen_connection_stop_), connecting_MNL(connecting_MNL_) {}
 	
 	virtual ~Pass_connection_decision(); //!< destructor
@@ -159,7 +159,7 @@ public:
 	double time;
 	double generation_time;
 	int chosen_connection_stop;
-	map<Busstop*,pair<double,double>> connecting_MNL;
+    map<Busstop*,pair<double,double> > connecting_MNL;
 };
 
 class Pass_waiting_experience // container object holding output data for passenger waiting experience
@@ -315,11 +315,11 @@ public:
 	void set_origin (Busstop* origin_stop_) {origin_stop=origin_stop_;}
 	void set_destination (Busstop* destination_stop_) {destination_stop=destination_stop_;}
 	void set_min_transfers (int min_transfers_) {min_transfers = min_transfers_;}
-	map <Passenger*,list<Pass_boarding_decision>> get_boarding_output () {return output_pass_boarding_decision;}
-	map <Passenger*,list<Pass_alighting_decision>> get_alighting_output () {return output_pass_alighting_decision;}
-	map <Passenger*,list<Pass_connection_decision>> get_connection_output () {return output_pass_connection_decision;}
-	map <Passenger*,list<Pass_waiting_experience>> get_waiting_output () {return output_pass_waiting_experience;}
-	map <Passenger*,list<Pass_onboard_experience>> get_onboard_output () {return output_pass_onboard_experience;}
+    map <Passenger*,list<Pass_boarding_decision> > get_boarding_output () {return output_pass_boarding_decision;}
+    map <Passenger*,list<Pass_alighting_decision> > get_alighting_output () {return output_pass_alighting_decision;}
+    map <Passenger*,list<Pass_connection_decision> > get_connection_output () {return output_pass_connection_decision;}
+    map <Passenger*,list<Pass_waiting_experience> > get_waiting_output () {return output_pass_waiting_experience;}
+    map <Passenger*,list<Pass_onboard_experience> > get_onboard_output () {return output_pass_onboard_experience;}
 	vector <Passenger*> get_passengers_during_simulation () {return passengers_during_simulation;}
 	void add_pass_waiting (Passenger* add_pass) {waiting_passengers.push_back(add_pass);}
 	
@@ -332,7 +332,7 @@ public:
 	double calc_boarding_probability (Busline* arriving_bus, double time, Passenger* pass);
 	double calc_binary_logit (double utility_i, double utility_j);
 	double calc_multinomial_logit (double utility_i, double utility_sum);
-	double calc_path_size_logit (map<Pass_path*,pair<bool,double>> set_utilities, double utliity_i, double utliity_j);
+    double calc_path_size_logit (map<Pass_path*,pair<bool,double> > set_utilities, double utliity_i, double utliity_j);
 	map<Pass_path*,double> calc_path_size_factor_nr_stops (map<Pass_path*,double> cluster_set_utilities);
 	double calc_path_size_factor_between_clusters (Pass_path* path, map<Pass_path*,double> cluster_probs);
 	double calc_combined_set_utility_for_alighting (Passenger* pass, Bustrip* bus_on_board, double time); // the trip that the pass. is currently on-board when calc. utility from downstream stop
@@ -343,8 +343,8 @@ public:
 
 	// output-related functions
 	void record_passenger_boarding_decision (Passenger* pass, Bustrip* trip, double time, double boarding_probability, bool boarding_decision); //!< creates a log-file for boarding decision related info
-	void record_passenger_alighting_decision (Passenger* pass, Bustrip* trip, double time, Busstop* chosen_alighting_stop, map<Busstop*,pair<double,double>> alighting_MNL); // !< creates a log-file for alighting decision related info
-	void record_passenger_connection_decision (Passenger* pass, double time, Busstop* chosen_alighting_stop, map<Busstop*,pair<double,double>> connecting_MNL_);
+    void record_passenger_alighting_decision (Passenger* pass, Bustrip* trip, double time, Busstop* chosen_alighting_stop, map<Busstop*,pair<double,double> > alighting_MNL); // !< creates a log-file for alighting decision related info
+    void record_passenger_connection_decision (Passenger* pass, double time, Busstop* chosen_alighting_stop, map<Busstop*,pair<double,double> > connecting_MNL_);
 	void record_waiting_experience (Passenger* pass, Bustrip* trip, double time, double experienced_WT, int level_of_rti_upon_decision, double projected_RTI, double AWT, int nr_missed); // !< creates a log-file for a decision and related waiting time components
 	void record_onboard_experience(Passenger* pass, Bustrip* trip, Busstop* stop, pair<double,double> riding_coeff);
 	void write_boarding_output(ostream & out, Passenger* pass);
@@ -380,16 +380,16 @@ protected:
 	double staying_utility;
 
 	// output structures and measures (all output stored by origin zone)
-	map <Passenger*,list<Pass_boarding_decision>> output_pass_boarding_decision;
-	map <Passenger*,list<Pass_alighting_decision>> output_pass_alighting_decision;
-	map <Passenger*,list<Pass_connection_decision>> output_pass_connection_decision;
-	map <Passenger*,list<Pass_waiting_experience>> output_pass_waiting_experience;
-	map <Passenger*,list<Pass_onboard_experience>> output_pass_onboard_experience;
+    map <Passenger*,list<Pass_boarding_decision> > output_pass_boarding_decision;
+    map <Passenger*,list<Pass_alighting_decision> > output_pass_alighting_decision;
+    map <Passenger*,list<Pass_connection_decision> > output_pass_connection_decision;
+    map <Passenger*,list<Pass_waiting_experience> > output_pass_waiting_experience;
+    map <Passenger*,list<Pass_onboard_experience> > output_pass_onboard_experience;
 	vector <Passenger*> passengers_during_simulation;
 	int nr_pass_completed;
 	double avg_tt;
 	double avg_nr_boardings;
-	vector <pair<vector<Busstop*>, pair <int,double>>> paths_tt;
+    vector <pair<vector<Busstop*>, pair <int,double> > > paths_tt;
 
 	Random* random;
 	Eventlist* eventlist; //!< to book passenger generation events
@@ -434,7 +434,7 @@ class Pass_alighting_decision_zone // container object holding output data for p
 {
 public:
 	Pass_alighting_decision_zone (int pass_id_, int origin_zone_, int destination_zone_, int line_id_, int trip_id_, int stop_id_, double time_,	double generation_time_, int chosen_alighting_stop_,
-							map<Busstop*,pair<double,double>> alighting_MNL_):
+                            map<Busstop*,pair<double,double> > alighting_MNL_):
 							pass_id(pass_id_),origin_zone(origin_zone_),destination_zone(destination_zone_),line_id(line_id_),trip_id(trip_id_), stop_id(stop_id_),time(time_),generation_time(generation_time_),chosen_alighting_stop(chosen_alighting_stop_),alighting_MNL(alighting_MNL_) {}
 	virtual ~Pass_alighting_decision_zone(); //!< destructor
 	void write (ostream& out);
@@ -449,7 +449,7 @@ public:
 	double time;
 	double generation_time;
 	int chosen_alighting_stop;
-	map<Busstop*,pair<double,double>> alighting_MNL;
+    map<Busstop*,pair<double,double> > alighting_MNL;
 };
 
 class ODzone : public Action
@@ -459,7 +459,7 @@ public:
 	~ODzone ();
 	int get_id () {return id;}
 	void reset (); 
-	map <Busstop*,pair<double,double>> get_stop_distances() {return stops_distances;}
+    map <Busstop*,pair<double,double> > get_stop_distances() {return stops_distances;}
 	void set_boarding_u (double boarding_utility_) {boarding_utility = boarding_utility_;}
 	void set_staying_u (double staying_utility_) {staying_utility = staying_utility_;}
 	
@@ -472,17 +472,17 @@ public:
 
 	// output-related functions
 	void record_passenger_boarding_decision_zone (Passenger* pass, Bustrip* trip, double time, double boarding_probability, bool boarding_decision); //!< creates a log-file for boarding decision related info
-	void record_passenger_alighting_decision_zone (Passenger* pass, Bustrip* trip, double time, Busstop* chosen_alighting_stop, map<Busstop*,pair<double,double>> alighting_MNL); // !< creates a log-file for alighting decision related info
+    void record_passenger_alighting_decision_zone (Passenger* pass, Bustrip* trip, double time, Busstop* chosen_alighting_stop, map<Busstop*,pair<double,double> > alighting_MNL); // !< creates a log-file for alighting decision related info
 	void write_boarding_output_zone(ostream & out, Passenger* pass);
 	void write_alighting_output_zone(ostream & out, Passenger* pass);
-	map <Passenger*,list<Pass_boarding_decision_zone>> get_boarding_output_zone () {return output_pass_boarding_decision_zone;}
-	map <Passenger*,list<Pass_alighting_decision_zone>> get_alighting_output_zone () {return output_pass_alighting_decision_zone;}
+    map <Passenger*,list<Pass_boarding_decision_zone> > get_boarding_output_zone () {return output_pass_boarding_decision_zone;}
+    map <Passenger*,list<Pass_alighting_decision_zone> > get_alighting_output_zone () {return output_pass_alighting_decision_zone;}
 
 protected:
 	int id;
 	double boarding_utility;
 	double staying_utility;
-	map <Busstop*,pair<double,double>> stops_distances; // the mean and SD of the distances to busstops included in the zone
+    map <Busstop*,pair<double,double> > stops_distances; // the mean and SD of the distances to busstops included in the zone
 	map <ODzone*,double> arrival_rates; // hourly arrival rate from this origin zone to the specified destination zone 
 	Random* random;
 	Eventlist* eventlist; //!< to book passenger generation events
@@ -490,13 +490,13 @@ protected:
 
 	
 	// output structures and measures
-	map <Passenger*,list<Pass_boarding_decision_zone>> output_pass_boarding_decision_zone;
-	map <Passenger*,list<Pass_alighting_decision_zone>> output_pass_alighting_decision_zone;
+    map <Passenger*,list<Pass_boarding_decision_zone> > output_pass_boarding_decision_zone;
+    map <Passenger*,list<Pass_alighting_decision_zone> > output_pass_alighting_decision_zone;
 	vector <Passenger*> passengers_during_simulation;
 	int nr_pass_completed;
 	double avg_tt;
 	double avg_nr_boardings;
-	vector <pair<vector<Busstop*>, pair <int,double>>> paths_tt;
+    vector <pair<vector<Busstop*>, pair <int,double> > > paths_tt;
 };
 
 #endif // OD

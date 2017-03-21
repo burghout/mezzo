@@ -116,7 +116,7 @@ class MatrixAction: public Action
 {
 public:
 	MatrixAction(Eventlist* eventlist, double time, ODSlice* slice_, vector<ODpair*> *ods_);
-	bool execute(Eventlist* eventlist, double time);
+    bool execute(Eventlist* eventlist, double);
 private:
 	ODSlice* slice;
 	vector <ODpair*> * ods;
@@ -293,8 +293,8 @@ public:
   void generate_consecutive_stops (); // stores for each stop all the stops that can be reached within a direct trip
   bool find_direct_paths (Busstop* bs_origin, Busstop* bs_destination); // finds direct paths and generate new direct paths
   void generate_indirect_paths (); // generates new indirect paths
-  vector<vector<Busline*>> compose_line_sequence (Busstop* destination);  // compose the list of direct lines between each pair of intermediate stops
-  vector<vector<Busstop*>> compose_stop_sequence ();  // compose the list of stops in path definiton structure
+  vector<vector<Busline*> > compose_line_sequence (Busstop* destination);  // compose the list of direct lines between each pair of intermediate stops
+  vector<vector<Busstop*> > compose_stop_sequence ();  // compose the list of stops in path definiton structure
  void find_all_paths (); // goes over all OD pairs to generate their path choice set
  void find_all_paths_fast ();
  void find_all_paths_with_OD_for_generation ();
@@ -307,21 +307,21 @@ public:
   bool compare_same_stops_paths (Pass_path* path1, Pass_path* path2); // checks if two paths are identical in terms of stops
   bool compare_common_partial_routes (Busline* line1, Busline* line2, Busstop* start_section, Busstop* end_section); // checks if two lines have the same route between two given stops
   bool check_constraints_paths (Pass_path* path); // checks if the path meets all the constraints
-  bool check_path_no_repeating_lines (vector<vector<Busline*>> lines, vector<vector<Busstop*>> stops_); // checks if the path does not include going on and off the same bus line at the same stop
-//  bool check_sequence_no_repeating_lines(vector<vector<Busline*>> lines, vector <Busstop*> stops_); 
+  bool check_path_no_repeating_lines (vector<vector<Busline*> > lines, vector<vector<Busstop*> > stops_); // checks if the path does not include going on and off the same bus line at the same stop
+//  bool check_sequence_no_repeating_lines(vector<vector<Busline*> > lines, vector <Busstop*> stops_); 
   bool check_path_no_repeating_stops (Pass_path* path); // chceks if the path deos not include going through the same stop more than once
   bool check_sequence_no_repeating_stops (vector<Busstop*> stops); // chceks if the sequence does not include going through the same stop more than once
   void static_filtering_rules (Busstop* stop); // delete paths which do not fulfill the global filtering rules
   void dominancy_rules (Busstop* stop); // delete paths which are dominated by other alterantive paths
-  bool totaly_dominancy_rule (ODstops* odstops, vector<vector<Busline*>> lines, vector<vector<Busstop*>> stops); // check if there is already a path with shorter IVT than the potential one
+  bool totaly_dominancy_rule (ODstops* odstops, vector<vector<Busline*> > lines, vector<vector<Busstop*> > stops); // check if there is already a path with shorter IVT than the potential one
 //  bool downstream_dominancy_rule (Pass_path* check_path); // check whether there is already a path with a transfer stop closer to the destination (to avoid further downstream transfers on the same line)
   bool check_consecutive (Busstop* first, Busstop* second); // checks whether second is consecutive of first 
   bool check_path_constraints(Busstop* destination); // check constraints during search process, return true if constraints are fulfilled
   bool check_stops_opposing_directions (Busstop* origin, Busstop* destination); // checks whether the
-  bool check_path_no_opposing_lines (vector<vector<Busline*>> lines);
+  bool check_path_no_opposing_lines (vector<vector<Busline*> > lines);
   const vector<Busstop*> & get_cons_stops (Busstop* stop) {return consecutive_stops[stop];}
   const vector<Busline*> & get_direct_lines (ODstops* odstops) {return od_direct_lines[odstops];}
-  double calc_total_in_vechile_time (vector<vector<Busline*>> lines, vector<vector<Busstop*>> stops); // according to scheduled time
+  double calc_total_in_vechile_time (vector<vector<Busline*> > lines, vector<vector<Busstop*> > stops); // according to scheduled time
   bool read_od_pairs_for_generation (string name);
 
 #ifndef _NO_GUI
@@ -377,15 +377,15 @@ protected:
     vector <Bustype*> bustypes; // types of bus vehicles
     vector <Bus*> busvehicles; // a list of the bus vehicles
 	vector <ODstops*> odstops;
-	map <Busstop*,vector<ODstops*>> odstops_map;
+	map <Busstop*,vector<ODstops*> > odstops_map;
 	vector <ODzone*> odzones; 
 	vector <ODstops*> odstops_demand; // contains only ODs with a non-zero demand
-	vector<pair<Busstop*,Busstop*>> od_pairs_for_generation;
+	vector<pair<Busstop*,Busstop*> > od_pairs_for_generation;
 	vector<Busstop*> collect_im_stops; // compose the list of stops for a path
 	vector<double> collect_walking_distances; // compose the list of walking distances for a path
-	map <ODstops*, vector<Busline*>> od_direct_lines; // contains all direct lines between a pair of stops
-//	map<int,map<int, vector<Busline*>>> direct_lines; // contains all direct lines between a couple of stops
-	map<Busstop*,vector<Busstop*>> consecutive_stops; // contains all the stops that can be reached within no transfer per stop
+	map <ODstops*, vector<Busline*> > od_direct_lines; // contains all direct lines between a pair of stops
+//	map<int,map<int, vector<Busline*> > > direct_lines; // contains all direct lines between a couple of stops
+	map<Busstop*,vector<Busstop*> > consecutive_stops; // contains all the stops that can be reached within no transfer per stop
 	vector<hist_set*> history_inputs; //hend added 1/11/16 for historical inputs.
 	vector<hist_set*> history_summary; //hend added 1/11/16 for historical inputs.
 	map<LineIdStopSchedule, hist_set*, CompareLineStopSched> history_summary_map;
@@ -486,6 +486,7 @@ class Incident: public Action
 {
 public:
 	Incident (int lid_, int sid_, double start_, double stop_,double info_start_,double info_stop_, Eventlist* eventlist, Network* network_, bool blocked_);
+    virtual ~Incident() {}
 	bool execute(Eventlist* eventlist, double time); //!< Creates the events needed for setting and ending the incident and information broadcast
 	void broadcast_incident_start(int lid); //!< Broadcasts the incident to all the affected links and origins. At origins a flag will be set so all created vehicles will automatically switch, until notification that incident is over
 	void broadcast_incident_stop(int lid); //!< Broadcasts the end of an incident to all Origins (Not needed for Links? Check...)
@@ -529,6 +530,7 @@ public:
 
 	NetworkThread (string masterfile,int threadnr = 1,long int seed=0):masterfile_(masterfile),threadnr_(threadnr),seed_(seed) 
 		{
+        Q_UNUSED(threadnr_)
 			theNetwork= new Network();
 			 
 			 if (seed != 0)
@@ -565,11 +567,13 @@ public:
 			delete theNetwork;
 	  }
 private:
-	Network* theNetwork;
-	long int seed_;
+
     string masterfile_;
-	double runtime_;
-	int threadnr_;
+    int threadnr_;
+    long int seed_;
+
+    Network* theNetwork;
+    double runtime_;
 
 };
 

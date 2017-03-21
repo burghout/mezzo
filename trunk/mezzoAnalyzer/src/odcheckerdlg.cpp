@@ -2,6 +2,7 @@
 #include <algorithm>
 #include "odcheckerdlg.h"
 #include "assist.h"
+#include <QMessageBox>
 
 
 /**

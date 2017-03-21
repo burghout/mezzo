@@ -15,6 +15,7 @@
 #include "q.h"
 #include "passenger.h"
 #include "MMath.h" 
+#include <cmath>
 #include "od_stops.h"
 #include <stddef.h>
 
@@ -167,7 +168,7 @@ public:
 		vector <Busstop*>		stops_,						//!< stops on line
 		Vtype* vtype_, ODpair*	odpair_,					//!< OD pair
 		int						holding_strategy_,			//!< indicates the type of holding strategy used for line
-		float					ratio_headway_holding_,		//!< threshold parameter relevant in case holding strategies 1 or 3 are chosen
+		float					max_headway_holding_,		//!< threshold parameter relevant in case holding strategies 1 or 3 are chosen or max holding time in [sec] in case of holding strategy 6
 		double					init_occup_per_stop_,		//!< average number of passengers that are on-board per prior upstream stops (scale of a Gamma distribution)
 		int						nr_stops_init_occup			//!< number of prior upstream stops resulting with initial occupancy (shape of a Gamma distribution)
 	); //!< Initialising constructor
@@ -182,7 +183,7 @@ public:
 	Busroute* get_busroute() {return busroute;}							//!< returns Busroute
 	Vtype*	  get_vtype() {return vtype;}								//!< returns Vtype
 	ODpair*	  get_odpair() {return odpair;}								//!< returns ODpair
-	float	get_ratio_headway_holding() {return ratio_headway_holding;}	//!< returns ratio_headway_holding
+	double	get_max_headway_holding() {return max_headway_holding;}	//!< returns ratio_headway_holding
 	int		get_holding_strategy() {return holding_strategy;}			//!< returns the holding strategy
 	double	get_init_occup_per_stop() {return init_occup_per_stop;}
 	int		get_nr_stops_init_occup () {return nr_stops_init_occup;}
@@ -254,13 +255,16 @@ protected:
 	//Busline* opposite_line;
 	string name;				//!< name of the busline "46 Sofia"
 //	int vtype;					//!< vehicle type. There are usually multiple types of Busses
+    Busroute* busroute;						//!< the route (in terms of links) that the busses follow
 
+    ODpair* odpair;
 	vector <Busstop*> line_timepoint;
 	vector <Start_trip> trips;				//!< the trips that are to be made
-	Busroute* busroute;						//!< the route (in terms of links) that the busses follow
+
 	Vtype* vtype;							//!< the type of vehicle for the buses to be generated.
-	ODpair* odpair; 
-	float ratio_headway_holding;
+
+	float max_headway_holding;
+
 	double desired_offset, planned_headway; //!< relevant in case headway control is of type 10
 	int holding_strategy; 
 	double init_occup_per_stop;
@@ -270,7 +274,7 @@ protected:
 	int	tr_line_id; //!< id of line 'this' line synchronizes transfers with, should be 0 if 'this' line is not synchronizing transfers
 	vector <Busstop*> tr_stops;	//!< contains all transfer stops for line
 
-	map <Busstop*,pair<Busstop*,pair<double,double>>> disruption_times; //!< contains the expected travel times between a pair of stops in case of disruption (does not affect actual travel time, only passenger information provision). Strat and end times
+    map <Busstop*,pair<Busstop*,pair<double,double> > > disruption_times; //!< contains the expected travel times between a pair of stops in case of disruption (does not affect actual travel time, only passenger information provision). Strat and end times
 	map <Busstop*, double> disruption_cap_reduction;
 
 	bool active;														//!< is true when the busline has started generating trips
@@ -360,6 +364,7 @@ public:
 
 	void set_holding_at_stop(bool holding_at_stop_){holding_at_stop = holding_at_stop_;} //David added 2016-05-26
 	bool get_holding_at_stop(){return holding_at_stop;} //David added 2016-05-26
+	bool get_complying(){return complying_bustrip;}
 
 // other functions:	
 //	bool is_trip_timepoint(Busstop* stop); //!< returns 1 if true, 0 if false, -1 if busstop not found
@@ -410,6 +415,7 @@ protected:
 	Busline* line;								  //!< pointer to the line it serves
 	double init_occup_per_stop;					  //!< initial occupancy, usually 0
 	int nr_stops_init_occup;
+	bool complying_bustrip;						  //!< indicates whether this trip complies with the control strategy in place or not  
 	double starttime;							  //!< when the trip is schedule to departure from the origin
 	double actual_dispatching_time;
 	vector <Visit_stop*> :: iterator next_stop; 
@@ -613,7 +619,7 @@ class Busstop : public Action
 public:
 	Busstop ();
 	~Busstop ();
-	Busstop::Busstop (
+    Busstop (
 		int		id_, 
 		string	name_, 
 		int		link_id_, 
@@ -658,19 +664,19 @@ public:
 	void set_nr_alighting (int nr_alighting_) {nr_alighting = nr_alighting_;}	
 	int get_nr_alighting () {return nr_alighting;}
 	int get_nr_waiting (Bustrip* trip) {return nr_waiting[trip->get_line()];}
-	const double get_position () { return position;}
+	double get_position () { return position;}
 	double get_exit_time() { return exit_time;}
 	vector<Busline*> get_lines () {return lines;}
 	void set_position (double position_ ) {position = position_;}
-	map <Busline*, pair<Bustrip*, double>> get_last_departures () {return last_departures;}
+	map <Busline*, pair<Bustrip*, double> > get_last_departures () {return last_departures;}
 	double get_last_departure (Busline* line) {return last_departures[line].second;}
 	Bustrip* get_last_trip_departure (Busline* line) {return last_departures[line].first;}
 	map<Busstop*,double> & get_walking_distances () {return distances;}
-	const bool get_had_been_visited ( Busline * line) {return had_been_visited[line];} 
+	bool get_had_been_visited ( Busline * line) {return had_been_visited[line];} 
 	double get_walking_distance_stop (Busstop* stop) {return distances[stop];}
 	void save_previous_arrival_rates () {previous_arrival_rates.swap(arrival_rates);}
 	void save_previous_alighting_fractions () {previous_alighting_fractions.swap(alighting_fractions);}
-	const bool check_walkable_stop ( Busstop* const & stop);
+	bool check_walkable_stop ( Busstop* const & stop);
 	bool check_destination_stop (Busstop* stop); 
 
 	//transfer related checks
@@ -725,30 +731,34 @@ public:
 // relevant only for demand format 2
 	multi_rates multi_arrival_rates; //!< parameter lambda that defines the poission proccess of passengers arriving at the stop for each sequential stop
 
+    //id(id_), name(name_), link_id(link_id_), position (position_), length(length_), has_bay(has_bay_), can_overtake(can_overtake_), min_DT(min_DT_), rti (rti_)
+
 protected:
 	int id;						//!< stop id
 	string name;				//!< name of the bus stop "T-centralen"
 	int link_id;				//!< link it is on, maybe later a pointer to the respective link if needed
-	bool has_bay;				//!< TRUE if it has a bay so it has an extra dwell time
+    double position;		    //!< relative position from the upstream node of the link (beteen 0 to 1)
+    double length;				//!< length of the busstop, determines how many buses can be served at the same time
+    bool has_bay;				//!< TRUE if it has a bay so it has an extra dwell time
 	bool can_overtake;			//!< 0 - can't overtake, 1 - can overtake freely; TRUE if it is possible for a bus to overtake another bus that stops in front of it (if FALSE - dwell time is subject to the exit time of a blocking bus)
-	double length;				//!< length of the busstop, determines how many buses can be served at the same time
-	double position;		    //!< relative position from the upstream node of the link (beteen 0 to 1)
+    double min_DT;
+    int rti;					//!< indicates the level of real-time information at this stop: 0 - none; 1 - for all lines stoping at each stop; 2 - for all lines stoping at all connected stop; 3 - for the entire network.
+
 	double avaliable_length;	//!< length of the busstop minus occupied length
 	double exit_time;
 	double dwelltime;			//!< standard dwell time
-	double min_DT;
+
 	int nr_boarding;			//!< pass. boarding
 	int nr_alighting;			//!< pass alighting 
 	Random* random;
-	int rti;					//!< indicates the level of real-time information at this stop: 0 - none; 1 - for all lines stoping at each stop; 2 - for all lines stoping at all connected stop; 3 - for the entire network.
 	
 	vector <Busline*> lines;
 	map <double,Bus*> expected_arrivals;					//!< booked arrivals of buses on the link on their way to the stop
-	vector<pair<Bustrip*,double>> expected_bus_arrivals;	//!< booked arrivals of buses on the link on their way to the stop
+	vector<pair<Bustrip*,double> > expected_bus_arrivals;	//!< booked arrivals of buses on the link on their way to the stop
 	map <double,Bus*> buses_at_stop;						//!< buses currently visiting stop
-	vector<pair<Bustrip*,double>> buses_currently_at_stop;	//!< buses currently visiting stop
-	map <Busline*, pair<Bustrip*, double>> last_arrivals;	//!< contains the arrival time of the last bus from each line that stops at the stop (can result headways)
-	map <Busline*, pair<Bustrip*, double>> last_departures; //!< contains the departure time of the last bus from each line that stops at the stop (can result headways)
+	vector<pair<Bustrip*,double> > buses_currently_at_stop;	//!< buses currently visiting stop
+	map <Busline*, pair<Bustrip*, double> > last_arrivals;	//!< contains the arrival time of the last bus from each line that stops at the stop (can result headways)
+	map <Busline*, pair<Bustrip*, double> > last_departures; //!< contains the departure time of the last bus from each line that stops at the stop (can result headways)
 	map <Busline*,bool> had_been_visited;					//!< indicates if this stop had been visited by a given line till now
 
 	// relevant only for demand format 1
@@ -758,7 +768,7 @@ protected:
 	// relevant only for demand format 1 TD (format 10)
 	map <Busline*, double> previous_arrival_rates;
 	map <Busline*, double> previous_alighting_fractions; 
-	map <Busline*, vector<double>> update_rates_times;		//!< contains the information about when there is a change in rates (but not the actual change)
+	map <Busline*, vector<double> > update_rates_times;		//!< contains the information about when there is a change in rates (but not the actual change)
 	
 	// relevant only for demand format 2
 	multi_rates multi_nr_waiting;			//!< for demant format is from type 2. 
@@ -777,7 +787,7 @@ protected:
 	map<Busstop*,double> distances;			//!< contains the distances [meters] from other bus stops
 
 	// transfer synchronization
-	vector<pair<Bustrip*, int>> trips_awaiting_transfers;	//!< David added 2016-05-30: contains trips that are currently waiting to synchronize transfers with a connecting trip, paired with the line ID of the connecting trip
+	vector<pair<Bustrip*, int> > trips_awaiting_transfers;	//!< David added 2016-05-30: contains trips that are currently waiting to synchronize transfers with a connecting trip, paired with the line ID of the connecting trip
 
 	// output structures
 	list <Busstop_Visit> output_stop_visits;			//!< list of output data for buses visiting stops
@@ -787,7 +797,7 @@ protected:
 };
 
 typedef pair<Busline*,double> TD_single_pair;
-typedef map<Busstop*, map<Busline*,double>> TD_demand;
+typedef map<Busstop*, map<Busline*,double> > TD_demand;
 //typedef map<Busline*, map<Busstop*,double>> stop_sched_arrtime_T; //!<Hend added 301016: a map for each stop and the schedule arrival time
 
 class Change_arrival_rate : public Action

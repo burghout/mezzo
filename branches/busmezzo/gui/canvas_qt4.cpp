@@ -112,9 +112,9 @@ MainForm::MainForm(QWidget *parent): QMainWindow(parent)
 	statusBar()->addWidget (status_label);
 	statusBar()->addWidget(simprogress_widget);
 	statusBar()->addWidget(this->TextLabel12,10);
-	statusBar()->addWidget(this->LCDNumber),10;
-	statusBar()->addWidget(this->progressbar),10;
-	statusBar()->addWidget(mouse_label),10;
+    statusBar()->addWidget(this->LCDNumber,10);
+    statusBar()->addWidget(this->progressbar,10);
+    statusBar()->addWidget(mouse_label,10);
 	
 	simprogress_widget->setVisible(false);
 }
@@ -163,7 +163,7 @@ void MainForm::updateCanvas()
 }
 
 // AUTOCONNECTED SLOTS
-void MainForm::on_closenetwork_activated()
+void MainForm::on_closenetwork_triggered()
 {
 	//break current simulation
 	breaknow = true;
@@ -207,7 +207,7 @@ void MainForm::on_closenetwork_activated()
 }
 
 
-void MainForm::on_stop_activated()
+void MainForm::on_stop_triggered()
 {
 	//break current simulation
 	breaknow = true;
@@ -239,7 +239,7 @@ void MainForm::on_stop_activated()
 
 }
 
-void MainForm::on_quit_activated()
+void MainForm::on_quit_triggered()
 {
 	//theNetwork->~Network(); 
 	delete theNetwork;
@@ -250,7 +250,7 @@ void MainForm::on_quit_activated()
 }
 
 
-void MainForm::on_openmasterfile_activated()
+void MainForm::on_openmasterfile_triggered()
 {
 	fn = "";
 	fn = (QFileDialog::getOpenFileName(this, "Select a MEZZO master file", QString::null,"Mezzo Files (*.mime *.mezzo)") );
@@ -267,7 +267,7 @@ void MainForm::process_masterfile()
 		QString workingdir = fn.left(pos+1);
 		theNetwork->set_workingdir (string(workingdir.toLatin1()));
 		// make a STL compatible string
-		string name=fn.toLatin1();
+        string name=string(fn.toLatin1().data());
 		if (theNetwork->readmaster(name))
 			runtime=theNetwork->executemaster(&pm2,&wm);
 		else
@@ -288,7 +288,7 @@ void MainForm::process_masterfile()
 	}
 }
 
-void MainForm::on_zoomin_activated()
+void MainForm::on_zoomin_triggered()
 {
 	// the view center
 	int xviewcenter=viewSize_.width()/2;
@@ -311,7 +311,7 @@ void MainForm::on_zoomin_activated()
 	updateCanvas();
 }
 
-void MainForm::on_zoomout_activated()
+void MainForm::on_zoomout_triggered()
 {	
 	// the view center
 	int xviewcenter=viewSize_.width()/2;
@@ -343,7 +343,7 @@ void MainForm::on_showhandle_triggered(bool triggered)
 		//for( unsigned i=0; i<alllinks.size(); i++)
 		//	alllinks[i]->get_icon()->sethandle(triggered);
 		map <int,Link*>::iterator l_iter=alllinks.begin();
-		for(l_iter;l_iter!=alllinks.end();l_iter++)
+        for( ;l_iter!=alllinks.end();l_iter++)
 		{
 			(*l_iter).second->get_icon()->sethandle(triggered);
 		}
@@ -356,30 +356,30 @@ void MainForm::on_inselectmode_triggered(bool triggered)
 	inselection_=triggered;
 }
 
-void MainForm::on_savescreenshot_activated()
+void MainForm::on_savescreenshot_triggered()
 {
 	QString fn = QFileDialog::getSaveFileName(this, "Save Image", QString::null, "PNG Files (*.png)" );
     if (!fn.isEmpty())
        pm1.save(fn,"PNG");
 }
 
-void MainForm::on_loadbackground_activated()
+void MainForm::on_loadbackground_triggered()
 {
 	QString fn( QFileDialog::getOpenFileName(this, "Open background image",QString::null,"PNG Files (*.png)" ) );
     if (!fn.isEmpty())
     {
-		string haha=fn.toLatin1();
+        string haha=string(fn.toLatin1().data());
 		theNetwork->set_background (haha);
     }
 }
 
-void MainForm::on_breakoff_activated()
+void MainForm::on_breakoff_triggered()
 {
 	breaknow=true;
 	run->setEnabled(true);
 }
 
-void MainForm::on_run_activated()
+void MainForm::on_run_triggered()
 {
 	simprogress_widget->setVisible(true);
 	run->setEnabled(false);
@@ -400,7 +400,7 @@ void MainForm::on_panfactor_valueChanged( int value )
    panpixels = value;
 }
 
-void MainForm::on_parametersdialog_activated()
+void MainForm::on_parametersdialog_triggered()
 {
 	if (initialised)
 	{
@@ -411,7 +411,7 @@ void MainForm::on_parametersdialog_activated()
 	}
 } 
 
-void MainForm::on_batch_run_activated()
+void MainForm::on_batch_run_triggered()
 {
 	if (initialised)
 	{	
@@ -427,7 +427,7 @@ void MainForm::on_batch_run_activated()
 /**
 * if the mezzoAnalyzer is triggered
 */
-void MainForm::on_inspectdialog_activated()
+void MainForm::on_inspectdialog_triggered()
 {
     // if initialized (network is built)
 	if (this->initialised){
@@ -452,7 +452,7 @@ void MainForm::on_inspectdialog_activated()
 }
 
 
-void MainForm::on_saveresults_activated()
+void MainForm::on_saveresults_triggered()
 {
 	 theNetwork->writeall();
 }
@@ -498,7 +498,7 @@ void MainForm::on_simspeed_valueChanged( int  value)
     theParameters->sim_speed_factor =(value/100);
 }
 
-void MainForm::on_actionPositionBackground_activated()
+void MainForm::on_actionPositionBackground_triggered()
 {
 	posbackground->set_network(theNetwork);
 	posbackground->show();
@@ -560,7 +560,7 @@ void MainForm::copyPixmap()
 	Canvas->repaint();  
 }
 
-void MainForm::paintEvent(QPaintEvent *  event )
+void MainForm::paintEvent(QPaintEvent *   )
 {}
 
 void MainForm::seed(int sd )
@@ -583,10 +583,10 @@ void MainForm::keyPressEvent( QKeyEvent *e )
 	switch (e->key() ) 
 	{
 		case (Qt::Key_Plus):	// zoom in
-			on_zoomin_activated();
+			on_zoomin_triggered();
 			break;
 		case (Qt::Key_Minus):	// zoom out
-			on_zoomout_activated();	 
+			on_zoomout_triggered();	 
 			break;
 		case (Qt::Key_Up):		// pan up
 			dy=panfactor;
@@ -691,7 +691,7 @@ void MainForm::mousePressEvent ( QMouseEvent * event )
 			unselectLinks();
 
 			// show the current mouse position 
-			QPoint pos_view = QPoint (x_current,y_current);
+            //QPoint pos_view = QPoint (x_current,y_current);
 			QString mesg=QString("Mouse: X %1, Y %2").arg(x_current).arg(y_current);
 			mouse_label->setText(mesg);
 		}
@@ -744,7 +744,7 @@ void MainForm::mouseMoveEvent(QMouseEvent* mev)
 /**
 * mouse release event
 */
-void MainForm::mouseReleaseEvent(QMouseEvent* mev) 
+void MainForm::mouseReleaseEvent(QMouseEvent* )
 {
 	if(lmouse_pressed_)
 	{
@@ -765,7 +765,7 @@ void MainForm::mouseReleaseEvent(QMouseEvent* mev)
 	lmouse_pressed_=false;
 }
 
-void MainForm::mouseDoubleClickEvent(QMouseEvent* mev)
+void MainForm::mouseDoubleClickEvent(QMouseEvent* )
 {
 }
 
@@ -854,7 +854,7 @@ void MainForm::selectNodes(QPoint pos)
 
 	int rad=theParameters->node_radius/mod2stdViewMat_.m11();
 	map<int,Node*>::iterator n_iter = allnodes.begin();
-	for( n_iter; n_iter!=allnodes.end(); n_iter++){
+    for(  ; n_iter!=allnodes.end(); n_iter++){
 		if ((*n_iter).second->get_icon()->within_boundary(pos.x(),pos.y(),rad))
 		{
 			nodes_sel_.push_back((*n_iter).second);
@@ -885,7 +885,7 @@ void MainForm::selectLinks(QPoint pos)
 	int rad=5;
 	
 	map <int,Link*>::iterator l_iter = alllinks.begin();
-	for (l_iter;l_iter != alllinks.end(); l_iter++)
+    for ( ;l_iter != alllinks.end(); l_iter++)
 	{
 		if ((*l_iter).second->get_icon()->within_boundary(pos.x(),pos.y(),rad))
 		{

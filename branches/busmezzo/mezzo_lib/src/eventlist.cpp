@@ -13,19 +13,23 @@ bool Action::execute(Eventlist*, double)        // unused Eventlist* eventlist, 
 Eventlist::~Eventlist()
 
 {
-	
+    /********** Delete old way of cleaning up actions
 	multimap <double, Action*> :: iterator iter = thelist.begin();
 	for (iter; iter != thelist.end(); iter)
 	{
 		
 			//delete (*iter).second; // All the objects clean up their own actions
-			iter = thelist.erase(iter);
+            iter = thelist.erase(iter);
 	}
-
+*/
+    // New way (from Mezzo Trunk)
+    thelist.clear();
+    lastupdate=thelist.end();
 }
 
 void Eventlist::reset()
 {
+    /********* Delete old way of cleaning up
 	multimap <double, Action*> :: iterator iter = thelist.begin();
 	for (iter; iter != thelist.end(); iter)
 	{
@@ -33,5 +37,9 @@ void Eventlist::reset()
 		iter = thelist.erase(iter);
 	}
 	lastupdate=thelist.end();
+    */
+    // new way from Mezzo Trunk
+    thelist.clear();
+    lastupdate=thelist.end();
 }
 	

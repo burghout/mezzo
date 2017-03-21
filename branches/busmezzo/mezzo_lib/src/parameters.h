@@ -39,7 +39,7 @@
 #define _DETERMINISTIC_VTYPES
 //#define _MULTINOMIAL_LOGIT
 #define _UNSAFE // faster reading, but less checking of input data
-//#define _BUSES
+#define _BUSES
 
 // GLOBAL VARIABLES
 extern long int randseed; // random seed
@@ -194,6 +194,7 @@ public:
    double dwell_time_weight;
    double waiting_time_weight;
    double holding_time_weight;
+   double compliance_rate; //!< Share [0,1] of bus trips that comply with the control strategy (assigned per trip)
    int Bus_horizon;
    int Stop_horizon;
    bool transfer_sync; //!< true if transfer synchronization is being used. Will effect the way the line definition in transit_network.dat is read.

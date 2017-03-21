@@ -22,7 +22,7 @@ public:
 		ODstops*   OD_stop_
 	);
 	Passenger ();
-	~Passenger ();
+    virtual ~Passenger ();
 	void init ();
 	void init_zone (int pass_id, double start_time_, ODzone* origin_, ODzone* destination_);
 	void reset();
@@ -43,7 +43,7 @@ public:
 	
 	Busstop*	get_original_origin () {return original_origin;}
 	int			get_nr_boardings () {return nr_boardings;}
-	vector <pair<Busstop*,double>> get_chosen_path_stops () {return selected_path_stops;}
+    vector <pair<Busstop*,double> > get_chosen_path_stops () {return selected_path_stops;}
 	void		set_ODstop (ODstops* ODstop_) {OD_stop = ODstop_;}
 	// bool get_already_walked () {return already_walked;}
 	// void set_already_walked (bool already_walked_) {already_walked = already_walked_;}
@@ -56,7 +56,7 @@ public:
 	void	set_pass_sitting (bool sits) {sitting = sits;}
 	bool	get_pass_sitting () {return sitting;}
 	double	get_latest_boarding_time () {return (selected_path_trips.back().second);}
-	vector <pair<Busstop*,double>> get_selected_path_stops() {return selected_path_stops;}
+    vector <pair<Busstop*,double> > get_selected_path_stops() {return selected_path_stops;}
 
 	bool execute(Eventlist* eventlist, double time); //!< called every time passengers choose to walk to another stop (origin/transfer), puts the passenger at the waiting list at the right timing
 	void walk(double time);
@@ -125,10 +125,10 @@ protected:
 	bool already_walked;
 	bool sitting;		//!< 0 - sits; 1 - stands
 	int nr_boardings;	//!< counts the number of times pass boarded a vehicle
-	vector <pair<Busstop*,double>> selected_path_stops;				 //!< stops and corresponding arrival times
-	vector <pair<Bustrip*,double>> selected_path_trips;				 //!< trips and corresponding boarding times
-	vector <pair<double,double>> experienced_crowding_levels;		 //!< IVT and corresponding crowding levels (route segment level)
-	vector <pair<Busstop*,double>> waiting_time_due_denied_boarding; //!< stops at which the pass. experienced denied boarding and the corresponding time at which it was experienced
+    vector <pair<Busstop*,double> > selected_path_stops;				 //!< stops and corresponding arrival times
+    vector <pair<Bustrip*,double> > selected_path_trips;				 //!< trips and corresponding boarding times
+    vector <pair<double,double> > experienced_crowding_levels;		 //!< IVT and corresponding crowding levels (route segment level)
+    vector <pair<Busstop*,double> > waiting_time_due_denied_boarding; //!< stops at which the pass. experienced denied boarding and the corresponding time at which it was experienced
 	vector<int> rejected_lines; //!< To keep track of the lines that the passenger chose not to board earlier, these should not be regarded next time
 	bool RTI_network_level;
 	double arrival_time_at_stop;

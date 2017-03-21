@@ -51,10 +51,10 @@ public:
 			process_masterfile();}
 	void auto_run() // when run from commandline, autorun and save results, then closes the application.
 	{
-		on_batch_run_activated();
+        on_batch_run_triggered();
 		brdlg->autorun();
 		brdlg->close();
-		on_quit_activated();
+        on_quit_triggered();
 	}
 	void process_masterfile();
 	
@@ -65,30 +65,30 @@ signals:
 	void closing();
 private slots: 
 	// Using the Auto-Connect feature with the on_<signal>_<event>() syntax
-	void on_closenetwork_activated(); //!< Closes the current network and resets to the initial state.
-	void on_quit_activated(); //!< Quits the program
-	void on_stop_activated(); //!< Stops and resets the simulation
-	void on_openmasterfile_activated();  //!< Opens a 'Open master file' dialog
-	void on_zoomin_activated();  //!< Zooms in on the network
-	void on_zoomout_activated();  //!< Zooms out on the network
+    void on_closenetwork_triggered(); //!< Closes the current network and resets to the initial state.
+    void on_quit_triggered(); //!< Quits the program
+    void on_stop_triggered(); //!< Stops and resets the simulation
+    void on_openmasterfile_triggered();  //!< Opens a 'Open master file' dialog
+    void on_zoomin_triggered();  //!< Zooms in on the network
+    void on_zoomout_triggered();  //!< Zooms out on the network
 	void on_zoombywin_triggered(bool);  //!< Zooms in on the indicated rectangle
 	void showhandle_triggered(bool);  //!< Shows the Link handle icons, enables selecting them
 	void on_inselectmode_triggered(bool);  //!< Triggers selection mode
-	void on_savescreenshot_activated();  //!< Saves screenshot of network
-	void on_loadbackground_activated();  //!< Opens a Load background dialog
-	void on_breakoff_activated ();  //!< Pauses the simulation
-	void on_run_activated();	 //!< Starts the simulation
-	void on_batch_run_activated(); //!< Shows the Batch Run dialog
-	void on_parametersdialog_activated();  //!< Shows parameters dialog
-	void on_inspectdialog_activated();  //!< Shows Route inspect dialog
-	void on_finddialog_activated();  //!< Shows Route inspect dialog
+    void on_savescreenshot_triggered();  //!< Saves screenshot of network
+    void on_loadbackground_triggered();  //!< Opens a Load background dialog
+    void on_breakoff_triggered ();  //!< Pauses the simulation
+    void on_run_triggered();	 //!< Starts the simulation
+    void on_batch_run_triggered(); //!< Shows the Batch Run dialog
+    void on_parametersdialog_triggered();  //!< Shows parameters dialog
+    void on_inspectdialog_triggered();  //!< Shows Route inspect dialog
+    void on_finddialog_triggered();  //!< Shows Route inspect dialog
 	void simspeed_valueChanged(int value);  //!< changes the simspeed
 	void zoomfactor_valueChanged(int value);  //!< changes the zoom step for zooming in/out
 	void panfactor_valueChanged(int value );  //!< changes the pan step for panning the network
-	void on_saveresults_activated();  //!< Saves the results of the simulation 
+    void on_saveresults_triggered();  //!< Saves the results of the simulation
 	void on_actionAnalyzeOutput_toggled(); //!< Turns on output analysis dialogue
 	void on_horizontalSlider_valueChanged(); // !< changes output view period
-	void on_actionPositionBackground_activated();//!< opens Position Background Dialogue
+    void on_actionPositionBackground_triggered();//!< opens Position Background Dialogue
 	void on_actionSlow_toggled(bool); //!< if checked the simulation is slowed down
 		
 	// other slots	

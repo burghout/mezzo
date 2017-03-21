@@ -29,7 +29,7 @@
 
 #include <QDialog>
 // use the generated ui form header  
-#include "../ui_nodedlg.h"
+#include "ui_nodedlg.h"
 // node definition
 #include "../mezzo_lib/src/node.h"
 
