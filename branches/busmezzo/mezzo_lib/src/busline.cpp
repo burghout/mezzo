@@ -965,6 +965,7 @@ bool Bustrip::activate (double time, Route* route, ODpair* odpair, Eventlist* ev
 	double first_dispatch_time = time;
 	eventlist = eventlist_;
 	next_stop = stops.begin();
+
 	complying_bustrip = random->brandom(theParameters->compliance_rate);
 	bool ok = false; // flag to check if all goes ok
 	vector <Start_trip*>::iterator curr_trip, previous_trip; // find the pointer to the current and previous trip
@@ -1401,12 +1402,12 @@ void Busstop::short_turn_exit(Bustrip * st_trip, int target_stop_id, double time
 	//record_busstop_visit(entering_trip, entering_trip->get_enter_time()); // document stop-related info
 																		  // done BEFORE update_last_arrivals in order to calc the headway and BEFORE set_last_stop_exit_time
 	
-	//entering_trip->get_busv()->record_busvehicle_location(entering_trip, this, entering_trip->get_enter_time());
+	st_trip->get_busv()->record_busvehicle_location(st_trip, this, st_trip->get_enter_time());
 	st_trip->set_last_stop_exit_time(exit_time);
 	st_trip->set_last_stop_visited(this);
 	update_last_arrivals(st_trip, st_trip->get_enter_time()); // in order to follow the arrival times (AFTER dwell time is calculated)
 	update_last_departures(st_trip, exit_time); // in order to follow the departure times (AFTER the dwell time and time point stuff)
-	//set_had_been_visited(st_trip->get_line(), false);
+	set_had_been_visited(st_trip->get_line(), true);
 	st_trip->advance_next_stop(exit_time, eventlist);
 }
 
