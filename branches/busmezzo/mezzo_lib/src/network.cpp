@@ -1599,7 +1599,7 @@ bool Network::readbusstop (istream& in) // reads a busstop
       cout << "readfile::readsbusstop error at stop " << stop_id << ". Link " << link_id << " does not exist." << endl;
   }
 
-  Busstop* st= new Busstop (stop_id, name, link_id, position, length, has_bay, can_overtake, min_DT, RTI_stop, &history_summary_map);
+  Busstop* st= new Busstop (stop_id, name, link_id, position, length, has_bay, can_overtake, min_DT, RTI_stop, &history_summary_map, &history_demand_map);
   st->add_distance_between_stops(st,0.0);
     in >> bracket;
     if (bracket != '}')
@@ -2631,8 +2631,8 @@ bool Network::readhistoricaldata (string name)
 
 bool Network::read_history(istream& in)
 {
-	int line_id, trip_id, vehicle_id, stop_id, nr_alighting, nr_boarding, occupancy, nr_waiting ;
-	double entering_time, sched_arr_time, dwell_time, lateness, exit_time, riding_time, riding_pass_time, time_since_arr, time_since_dep, total_waiting_time, holding_time;
+	int line_id, trip_id, vehicle_id, stop_id;
+	double entering_time, sched_arr_time, dwell_time, lateness, exit_time, riding_time, riding_pass_time, time_since_arr, time_since_dep, total_waiting_time, holding_time, nr_alighting, nr_boarding, occupancy, nr_waiting;
 	
 	in >> line_id >> trip_id>> vehicle_id >> stop_id >> entering_time >> sched_arr_time >> dwell_time >> lateness >> exit_time >> riding_time >> riding_pass_time >> time_since_arr >> time_since_dep >> nr_alighting >> nr_boarding >> occupancy >> nr_waiting >> total_waiting_time >> holding_time;
 
@@ -2644,6 +2644,59 @@ bool Network::read_history(istream& in)
 	return true;
 }
 
+bool Network::readselectedpath(string name)
+{
+	ifstream in(name.c_str()); // open input file
+	assert(in);
+	string keyword;
+	in >> keyword;
+#ifdef _DEBUG_NETWORK
+	cout << keyword << endl;
+#endif //_DEBUG_NETWORK
+	if (keyword != "selected_path_inputs:")
+	{
+		cout << " readhistoricaldata: no << historical_inputs: >> keyword " << endl;
+		in.close();
+		return false;
+	}
+	int nr = 0;
+	in >> nr;
+	int first_id;
+	int ids_number = 0;
+	int i = 0;
+	for (i; i<nr; i++)
+	{
+		if (!read_selected_path(in))
+		{
+			cout << " readselectedpath: read_selected_path returned false for line nr " << (i + 1) << endl;
+			in.close();
+			return false;
+		}
+		if (i == 0)
+		{
+			first_id = history_paths.front()->passenger_ID;
+		}
+		else {
+			if (history_paths.back()->passenger_ID == first_id && ids_number != 0) {
+				ids_number = i;
+			}
+		}
+	}
+	int rounds = (ids_number == 0) ? 1 : history_paths.size() / ids_number;
+	for (pair<int, int> src : source) {
+		src.second /= rounds;
+	}
+	for (pair<int, int> src : destination) {
+		src.second /= rounds;
+	}
+	for (pair<int, int> src : transfer) {
+		src.second /= rounds;
+	}
+	cout << "Read Selected path completed" << endl;
+	return true;
+}
+
+
 void Network::find_average_line_stop_schedule() 
 {
 	for(int i=0; i<history_inputs.size(); i++) 
@@ -2651,11 +2704,10 @@ void Network::find_average_line_stop_schedule()
 		if(is_first_time_line_id_stop_schedule(i)) 
 		{
 			hist_set* hist = find_average_line_stop(i);
-			history_summary.push_back(hist);
+			//history_summary.push_back(hist);
 			int line_id = history_inputs[i]->line_id;
 			int stop_id = history_inputs[i]->stop_id;
-			double sched_arr_time = history_inputs[i]->sched_arr_time;
-			LineIdStopSchedule lineId(line_id, stop_id,sched_arr_time);
+			LineIdStopSchedule lineId(line_id, stop_id);
 			history_summary_map.insert(std::pair<LineIdStopSchedule, hist_set*>(lineId, hist));
 		}
 	}
@@ -2664,9 +2716,10 @@ void Network::find_average_line_stop_schedule()
 bool Network::is_first_time_line_id_stop_schedule(int index) {
 	int line_id = history_inputs[index]->line_id;
 	int stop_id = history_inputs[index]->stop_id;
-	double sched_arr_time = history_inputs[index]->sched_arr_time;
+	//double sched_arr_time = history_inputs[index]->sched_arr_time;
 	for(int i=0; i<index; i++ ) {
-		if(history_inputs[i]->line_id == line_id && history_inputs[i]->stop_id == stop_id && history_inputs[i]->sched_arr_time == sched_arr_time) {
+		if (history_inputs[i]->line_id == line_id && history_inputs[i]->stop_id == stop_id)//&& history_inputs[i]->sched_arr_time == sched_arr_time
+		{
 			return false;
 		}
 	}
@@ -2677,8 +2730,8 @@ bool Network::is_first_time_line_id_stop_schedule(int index) {
 hist_set* Network::find_average_line_stop(int index) {
 	int line_id = history_inputs[index]->line_id;
 	int stop_id = history_inputs[index]->stop_id;
-	double sched_arr_time = history_inputs[index]->sched_arr_time;
-	//
+	//double sched_arr_time = history_inputs[index]->sched_arr_time;
+	double sched_arr_time = 0;
 	double entering_time = 0;
 	double dwell_time = 0;
 	double lateness = 0;
@@ -2687,16 +2740,16 @@ hist_set* Network::find_average_line_stop(int index) {
 	double riding_pass_time = 0;
 	double time_since_arr = 0;
 	double time_since_dep = 0;
-	int nr_alighting = 0;
-	int nr_boarding = 0;
-	int occupancy = 0;
-	int nr_waiting = 0;
+	double nr_alighting = 0;
+	double nr_boarding = 0;
+	double occupancy = 0;
+	double nr_waiting = 0;
 	double total_waiting_time = 0;
 	double holding_time = 0;
 	int number_of_elements = 0;
 	//
 	for(int i=index; i<history_inputs.size(); i++ ) {
-		if(history_inputs[i]->line_id == line_id && history_inputs[i]->stop_id == stop_id && history_inputs[i]->sched_arr_time == sched_arr_time) {
+		if (history_inputs[i]->line_id == line_id && history_inputs[i]->stop_id == stop_id) {
 			entering_time += history_inputs[i]->entering_time;
 			dwell_time += history_inputs[i]->dwell_time;
 			lateness += history_inputs[i]->lateness;
@@ -2715,10 +2768,128 @@ hist_set* Network::find_average_line_stop(int index) {
 		}
 	}
 	return new hist_set(line_id, history_inputs[index]->trip_id, history_inputs[index]->vehicle_id, 
-		stop_id, entering_time/number_of_elements, sched_arr_time/number_of_elements, dwell_time/number_of_elements, lateness/number_of_elements, exit_time/number_of_elements, riding_time/number_of_elements, riding_pass_time/number_of_elements, time_since_arr/number_of_elements, 
-		time_since_dep/number_of_elements, nr_alighting/number_of_elements, nr_boarding/number_of_elements, occupancy/number_of_elements, nr_waiting/number_of_elements, total_waiting_time/number_of_elements, holding_time/number_of_elements); 
+		stop_id, sched_arr_time / number_of_elements / theParameters->running_time, entering_time / number_of_elements / theParameters->running_time, dwell_time / number_of_elements / theParameters->running_time, lateness / number_of_elements / theParameters->running_time,
+		exit_time / number_of_elements / theParameters->running_time, riding_time / number_of_elements / theParameters->running_time, riding_pass_time / number_of_elements / theParameters->running_time, time_since_arr / number_of_elements / theParameters->running_time,
+		time_since_dep / number_of_elements / theParameters->running_time, nr_alighting / number_of_elements / theParameters->running_time, nr_boarding / number_of_elements / theParameters->running_time, occupancy / number_of_elements / theParameters->running_time,
+		nr_waiting / number_of_elements / theParameters->running_time, total_waiting_time / number_of_elements / theParameters->running_time, holding_time / number_of_elements / theParameters->running_time);
 }
 
+bool Network::read_selected_path(istream& in)
+{
+	char bracket, input_s[7];
+	//string input_s;
+	int passenger_ID, origin_ID, destination_ID, stop_id, stop_count, trip_count;
+	double start_time, total_walking_time, total_waiting_time, total_waiting_time_denied, total_IVT, total_IVT_crowding, end_time;
+	vector<int> stops;
+	vector<int> trips;
+
+	in >> passenger_ID >> origin_ID >> destination_ID >> start_time >> total_walking_time >> total_waiting_time >> total_waiting_time_denied >> total_IVT >> total_IVT_crowding >> end_time;
+	in >> bracket;
+	if (bracket != '{')
+	{
+		cout << "readfile::read_selected_path scanner jammed at " << bracket;
+		return false;
+	}
+	//in >> stop_id;
+	while (in >> input_s) {
+		int val = atoi(input_s);
+		stop_count = 0;
+		if (val)
+		{
+			stops.push_back(val);
+			stop_count += 1;
+		}
+		else //get into "}"
+		{
+			break;
+		}
+	}
+	//Now get the trip ids
+	in >> bracket;
+	if (bracket != '{')
+	{
+		cout << "readfile::read_selected_path scanner jammed at " << bracket;
+		return false;
+	}
+	while (in >> input_s) {
+		int val = atoi(input_s);
+		trip_count = 0;
+		if (val)
+		{
+			trips.push_back(val);
+			trip_count += 1;
+		}
+		else //get into "}"
+		{
+			break;
+		}
+	}
+
+	// Add source stop
+	int sourceStop = stops.front();
+	map<int, int>::iterator  sr = source.find(sourceStop);
+	if (sr != source.end()) {
+		sr->second++;
+	}
+	else {
+		source.insert(make_pair(sourceStop, 1));
+	}
+	// Add destination stop
+	int destStop = stops.back();
+	sr = destination.find(destStop);
+	if (sr != destination.end()) {
+		sr->second++;
+	}
+	else {
+		destination.insert(make_pair(destStop, 1));
+	}
+	// Add transfer stop
+	list<int> transferStop;
+	int i = 0;
+	for (int stop : stops) {
+		if (i == 0 || i % 2 == 1 || i == stops.size() - 2) {
+			i++;
+			continue;
+		}
+		i++;
+		transferStop.push_back(stop);
+	}
+	for (int stop : transferStop) {
+		map<int, int>::iterator  sr = transfer.find(stop);
+		if (sr != transfer.end()) {
+			sr->second++;
+		}
+		else {
+			transfer.insert(make_pair(stop, 1));
+		}
+	}
+
+	hist_paths* histpaths = new hist_paths(passenger_ID, origin_ID, destination_ID, start_time, total_walking_time, total_waiting_time, total_waiting_time_denied, total_IVT, total_IVT_crowding, end_time, stops, trips);
+	history_paths.push_back(histpaths);
+	return true;
+}
+
+void Network::find_average_demand_stop()
+{
+	for (vector<Busstop*>::iterator iter_stop = busstops.begin(); iter_stop < busstops.end(); iter_stop++)
+	{
+		hist_demand* hist_d = find_average_demand((*iter_stop)->get_id());
+		StopSchedule StopID((*iter_stop)->get_id());
+		history_demand_map.insert(std::pair<StopSchedule, hist_demand*>(StopID, hist_d));
+
+
+		//LineIdStopSchedule lineId(line_id, stop_id); 
+		//history_summary_map.insert(std::pair<LineIdStopSchedule, hist_set*>(lineId, hist));
+
+	}
+}
+
+hist_demand* Network::find_average_demand(int stop_id) {
+	double origin_d = source[stop_id] / theParameters->running_time * 3600; //get the hourly demand for origin 
+	double dest_d = destination[stop_id] / theParameters->running_time * 3600; //get the hourly demand for destination
+	double trnsfr_d = transfer[stop_id] / theParameters->running_time * 3600; //get the hourly demand for trsnsfer
+	return new hist_demand(stop_id, origin_d, dest_d, trnsfr_d);
+}
 
 
 /////////////// Transit path-set generation functions: start
