@@ -1262,6 +1262,199 @@ int Busstop::calc_short_turning(Bustrip * trip, double time)
 	return end_stop_id;
 }
 
+int Busstop::alight_passengers(Eventlist* eventlist, Bustrip* st_trip, double time, passengers& alighting_passengers)
+{
+	assert(theParameters->demand_format == 3 && "Inside Busstop::alight_passengers with demand_format != 3");
+	assert(theParameters->short_turn_control == true && "Inside Busstop::alight_passengers with short_turn_control != 1");
+
+	int npass_alighted; //!< number of passengers that alight via this method
+	npass_alighted = static_cast<int> (alighting_passengers.size());
+
+	if (theParameters->demand_format == 3)   // demand is given in terms of arrival rate of individual passengers per OD of stops (future - route choice)
+	{
+		// * Process passengers that wish to alight at this stop anyways * 
+		for (vector <Passenger*> ::iterator alighting_passenger = alighting_passengers.begin(); alighting_passenger != alighting_passengers.end(); alighting_passenger++)
+		{
+			pair<Busstop*, double> stop_time;
+			stop_time.first = this;
+			stop_time.second = time;
+			(*alighting_passenger)->add_to_selected_path_stop(stop_time);
+			// update experienced crowding on-board
+			pair<double, double> riding_coeff;
+			riding_coeff.first = time - st_trip->get_enter_time(); // refers to difference between departures
+			riding_coeff.second = st_trip->find_crowding_coeff((*alighting_passenger));
+			(*alighting_passenger)->add_to_experienced_crowding_levels(riding_coeff);
+			//ODstops* od_stop = (*alighting_passenger)->get_OD_stop();
+			ODstops* od_stop = (*alighting_passenger)->get_original_origin()->get_stop_od_as_origin_per_stop((*alighting_passenger)->get_OD_stop()->get_destination());
+			od_stop->record_onboard_experience(*alighting_passenger, st_trip, this, riding_coeff);
+
+			Busstop* next_stop = this;
+			bool final_stop = false;
+			//if this stop is not passenger's final destination then make a connection decision
+			ODstops* od;
+			if (check_stop_od_as_origin_per_stop((*alighting_passenger)->get_OD_stop()->get_destination()) == false) //check if this stop is already an origin to the destination of the passenger
+			{
+				od = new ODstops(next_stop, (*alighting_passenger)->get_OD_stop()->get_destination());
+				add_odstops_as_origin((*alighting_passenger)->get_OD_stop()->get_destination(), od);
+				(*alighting_passenger)->get_OD_stop()->get_destination()->add_odstops_as_destination(next_stop, od);
+			}
+			else
+			{
+				od = stop_as_origin[(*alighting_passenger)->get_OD_stop()->get_destination()];
+			}
+			(*alighting_passenger)->set_ODstop(od); // set the connected stop as passenger's new origin (new OD)
+			if (id == (*alighting_passenger)->get_OD_stop()->get_destination()->get_id() || (*alighting_passenger)->get_OD_stop()->check_path_set() == false) // if this stop is passenger's destination
+			{
+				// passenger has no further conection choice
+				next_stop = this;
+				final_stop = true;
+				pair<Busstop*, double> stop_time;
+				stop_time.first = this;
+				stop_time.second = time;
+				(*alighting_passenger)->add_to_selected_path_stop(stop_time);
+				(*alighting_passenger)->set_end_time(time);
+				//pass_recycler.addPassenger(*alighting_passenger); // terminate passenger
+			}
+			if (final_stop == false) //if this stop is not passenger's final destination then make a connection decision
+			{
+				next_stop = (*alighting_passenger)->make_connection_decision(time);
+				// set connected_stop as the new origin
+				ODstops* new_od;
+				if (next_stop->check_stop_od_as_origin_per_stop((*alighting_passenger)->get_OD_stop()->get_destination()) == false)
+				{
+					new_od = new ODstops(next_stop, (*alighting_passenger)->get_OD_stop()->get_destination());
+					next_stop->add_odstops_as_origin((*alighting_passenger)->get_OD_stop()->get_destination(), new_od);
+					(*alighting_passenger)->get_OD_stop()->get_destination()->add_odstops_as_destination(next_stop, new_od);
+				}
+				else
+				{
+					new_od = next_stop->get_stop_od_as_origin_per_stop((*alighting_passenger)->get_OD_stop()->get_destination());
+				}
+				(*alighting_passenger)->set_ODstop(new_od); // set the connected stop as passenger's new origin (new OD)
+				ODstops* odstop = (*alighting_passenger)->get_OD_stop();
+				//if (odstop->get_waiting_passengers().size() != 0) //Why was it like this??
+				if (true)  //Changed by Jens 2014-06-23
+				{
+					if (next_stop->get_id() == this->get_id())  // pass stays at the same stop
+					{
+						passengers wait_pass = odstop->get_waiting_passengers(); // add passanger's to the waiting queue on the new OD
+						wait_pass.push_back(*alighting_passenger);
+						odstop->set_waiting_passengers(wait_pass);
+						(*alighting_passenger)->set_arrival_time_at_stop(time);
+						pair<Busstop*, double> stop_time;
+						stop_time.first = this;
+						stop_time.second = time;
+						(*alighting_passenger)->add_to_selected_path_stop(stop_time);
+						if ((*alighting_passenger)->get_pass_RTI_network_level() == true || this->get_rti() > 0)
+						{
+							vector<Busline*> lines_at_stop = this->get_lines();
+							for (vector <Busline*>::iterator line_iter = lines_at_stop.begin(); line_iter < lines_at_stop.end(); line_iter++)
+							{
+								pair<Busstop*, Busline*> stopline;
+								stopline.first = this;
+								stopline.second = (*line_iter);
+								(*alighting_passenger)->set_memory_projected_RTI(this, (*line_iter), (*line_iter)->time_till_next_arrival_at_stop_after_time(this, time));
+								//(*alighting_passenger)->set_AWT_first_leg_boarding();
+							}
+						}
+					}
+					else  // pass walks to another stop
+					{
+						// booking an event to the arrival time at the new stop
+						double arrival_time_connected_stop = time + distances[next_stop] * 60 / random->nrandom(theParameters->average_walking_speed, theParameters->average_walking_speed / 4);
+						//(*alighting_passenger)->execute(eventlist,arrival_time_connected_stop);
+						eventlist->add_event(arrival_time_connected_stop, *alighting_passenger);
+						pair<Busstop*, double> stop_time;
+						stop_time.first = next_stop;
+						stop_time.second = arrival_time_connected_stop;
+						(*alighting_passenger)->add_to_selected_path_stop(stop_time);
+					}
+				}
+				else
+				{
+					passengers wait_pass;
+					wait_pass.push_back(*alighting_passenger);
+					odstop->set_waiting_passengers(wait_pass);
+					(*alighting_passenger)->add_to_selected_path_stop(stop_time);
+				}
+			}
+		}
+		alighting_passengers.clear(); // clear passengers with this stop as their alighting stop
+		st_trip->get_busv()->set_occupancy(st_trip->get_busv()->get_occupancy() - npass_alighted);	// update occupancy on bus
+	} //demand format == 3
+
+	return npass_alighted;
+}
+
+void Busstop::short_turn_force_alighting(Eventlist* eventlist, Bustrip* st_trip, double time)
+{
+	/* List of output file updates in this method (and most likely in pass_activity_at_stop)
+	Alighting passenger:
+		selected_paths.dat
+			- add_to_selected_path_stop
+		passenger_on_board_experience.dat
+			- add_to_experienced_crowding_levels
+			- record_onboard_experience
+		***passenger_alighting.dat
+			- want to make this happen in this function for all forced alighters! This was never registered for them when they were boarding. 
+				What was previously registered as an alighting decision for this passenger will now never actually occur.
+		passenger_connection.dat
+			- make_connection_decision
+				record_passenger_connection_decision
+
+	Boarding passenger:
+		selected_paths.dat
+			- add_to_selected_path_trips
+		passenger_waiting_experience.dat
+			- record_waiting_experience
+		passenger_boarding.dat
+			- make_boarding_decision
+				record_passenger_boarding_decision
+		passenger_alighting.dat
+			- make_alighting_decision
+				record_passenger_alighting_decision
+	*/
+
+	assert(theParameters->short_turn_control == true && "Inside Busstop::short_turn_force_alighting with short_turn_control != 1"); 
+	nr_boarding = 0; //reset nr_boarding for stop
+	nr_alighting = 0;
+	
+	int starting_occupancy; //bus crowdedness factor
+	starting_occupancy = st_trip->get_busv()->get_occupancy();
+
+	int nr_reg_alighting; // number of passengers that wish to alight at this stop anyways
+	int nr_forced_alighting; // number of passengers that are forced to alight at this stop
+		
+	nr_reg_alighting = static_cast<int> (st_trip->passengers_on_board[this].size()); //passengers that wish to alight at this stop anyways
+	nr_forced_alighting = starting_occupancy - nr_reg_alighting;
+
+	DEBUG_MSG(endl << "Passengers waiting at this stop BEFORE forced alighting: " << this->calc_total_nr_waiting());
+	DEBUG_MSG("Starting occupancy         : " << starting_occupancy);
+	DEBUG_MSG("Number of regular alighters: " << nr_reg_alighting);
+	DEBUG_MSG("Number of forced alighters : " << nr_forced_alighting);
+	
+	// * Process passengers that wish to alight at this stop anyways * 
+	nr_reg_alighting = alight_passengers(eventlist, st_trip, time, st_trip->passengers_on_board[this]);
+	DEBUG_MSG("Occupancy after normal alighting: " << st_trip->get_busv()->get_occupancy());
+	DEBUG_MSG("Passengers waiting at this stop AFTER normal alighting: " << calc_total_nr_waiting());
+	/* Process passengers that are forced to alight */
+	nr_forced_alighting = 0;
+	for (auto& pass_on_board : st_trip->passengers_on_board) //loop through all alighting stop -> passengers pairs for this trip
+	{
+		if (pass_on_board.second.empty())
+			continue;
+
+		nr_forced_alighting += alight_passengers(eventlist, st_trip, time, pass_on_board.second); //force passengers to alight and make walking connection decisions
+	} 
+	DEBUG_MSG("Occupancy after forced alighting: " << st_trip->get_busv()->get_occupancy());
+	DEBUG_MSG("Number of forced alighters : " << nr_forced_alighting);
+	assert(st_trip->get_busv()->get_occupancy() == 0 && "Busstop::short_turn_force_alighting occupancy of bus after forced alighting != 0");
+	
+	DEBUG_MSG("Passengers waiting at this stop AFTER forced alighting: " << this->calc_total_nr_waiting() << endl);
+
+	nr_alighting = nr_reg_alighting + nr_forced_alighting;
+}
+
 bool Busstop::execute(Eventlist* eventlist, double time) // is executed by the eventlist and means a bus needs to be processed
 {
   	// progress the vehicle when entering or exiting a stop
@@ -1463,6 +1656,7 @@ bool Busstop::execute(Eventlist* eventlist, double time) // is executed by the e
 				{
 					entering_trip->get_busv()->set_short_turning(true);
 					entering_trip->get_busv()->set_end_stop_id(target_stop_id);
+					short_turn_force_alighting(eventlist, entering_trip, time); //process voluntary alighters and force other passengers to alight, record corresponding output data
 					expected_bus_arrivals.erase(iter_arrival);
 					this->short_turn_exit(entering_trip, target_stop_id, time, eventlist); //initiate alternative exit_stop process
 					return true; //TODO: check if returning true here effects anything else, now we've basically just created an event that this trip will instantly arrive at its last stop

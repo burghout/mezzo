@@ -677,6 +677,8 @@ public:
 	int calc_short_turning(Bustrip* trip, double time);	//!< calculate short-turning decision, returns id of end-stop of short-turn if bus associated with trip should short-turn and 0 otherwise (Note: this assumes that no stops have id = 0)
 	void add_to_buses_currently_at_stop(pair<Bustrip*, double> exiting_trip_) { buses_currently_at_stop.push_back(exiting_trip_); }//!< used to teleport short-turned bus to the start of its next trip in bus_exit
 	void add_to_expected_bus_arrivals(pair<Bustrip*, double> bus_arrival_time_) { expected_bus_arrivals.push_back(bus_arrival_time_); } //!< used to teleport short-turned bus from the beginning of its next trip to the end stop of the short-turn
+	void short_turn_force_alighting(Eventlist * eventlist, Bustrip * st_trip, double time); //!< force passengers on-board a bus that is scheduled to short-turn to alight
+	int alight_passengers(Eventlist * eventlist, Bustrip * st_trip, double time, passengers& alighting_passengers); //!< alights passengers at this stop, records alighting output, passengers make connection decision or stay, returns size of alighting_passengers
 
 //	Action for visits to stop
 	bool execute(Eventlist* eventlist, double time);									  //!< is executed by the eventlist and means a bus needs to be processed
