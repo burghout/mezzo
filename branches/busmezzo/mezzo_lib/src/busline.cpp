@@ -1245,6 +1245,14 @@ int Busstop::calc_short_turning(Bustrip * trip, double time)
 	if (trip->check_last_in_tripchain()) //if there is no trip that this bus vehicle is scheduled to has no other trips in its trip chain
 		return end_stop_id;
 
+	if (!trip->get_line()->check_first_trip(trip))
+	{
+		if (trip->get_line()->get_previous_trip(trip)->get_short_turned()) //DEBUG testing purposes, do not short-turn consequtive trips
+		{
+			DEBUG_MSG(endl << "Trip " << trip->get_id() << " will not short-turn because previous trip " << trip->get_line()->get_previous_trip(trip)->get_id() << " was short-turned");
+			return end_stop_id;
+		}
+	}
 	multimap<Busstop*, Busstop*> st_map = trip->get_line()->get_st_map();
 	//insert control algorithm here
 	end_stop_id = st_map.find(this)->second->get_id(); //currently assumes one-to-one start and end stops
@@ -1656,6 +1664,7 @@ bool Busstop::execute(Eventlist* eventlist, double time) // is executed by the e
 				{
 					entering_trip->get_busv()->set_short_turning(true);
 					entering_trip->get_busv()->set_end_stop_id(target_stop_id);
+					entering_trip->set_short_turned(true); 
 					short_turn_force_alighting(eventlist, entering_trip, time); //process voluntary alighters and force other passengers to alight, record corresponding output data
 					expected_bus_arrivals.erase(iter_arrival);
 					this->short_turn_exit(entering_trip, target_stop_id, time, eventlist); //initiate alternative exit_stop process
