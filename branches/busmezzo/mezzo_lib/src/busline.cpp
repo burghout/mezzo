@@ -1893,10 +1893,24 @@ void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, d
 			//ODstops* od_stop = (*alighting_passenger)->get_OD_stop();
 			ODstops* od_stop = (*alighting_passenger)->get_original_origin()->get_stop_od_as_origin_per_stop((*alighting_passenger)->get_OD_stop()->get_destination());
 			od_stop->record_onboard_experience(*alighting_passenger, trip, this, riding_coeff);
-
-			// if this stop is not passenger's final destination then make a connection decision
-			Busstop* next_stop;
+			
+			Busstop* next_stop = this;
 			bool final_stop = false;
+			if (id != (*alighting_passenger)->get_OD_stop()->get_destination()->get_id())
+				DEBUG_MSG("an alighting passenger has arrived to stop " << id << " with origin " << (*alighting_passenger)->get_original_origin()->get_id() << " and destination " << (*alighting_passenger)->get_OD_stop()->get_destination()->get_id());
+			 //if this stop is not passenger's final destination then make a connection decision
+			ODstops* od;
+			if (check_stop_od_as_origin_per_stop((*alighting_passenger)->get_OD_stop()->get_destination()) == false) //check if this stop is already an origin to the destination of the passenger
+			{
+				od = new ODstops(next_stop, (*alighting_passenger)->get_OD_stop()->get_destination());
+				add_odstops_as_origin((*alighting_passenger)->get_OD_stop()->get_destination(), od);
+				(*alighting_passenger)->get_OD_stop()->get_destination()->add_odstops_as_destination(next_stop, od);
+			}
+			else
+			{
+				od = stop_as_origin[(*alighting_passenger)->get_OD_stop()->get_destination()];
+			}
+			(*alighting_passenger)->set_ODstop(od); // set the connected stop as passenger's new origin (new OD)
 			if (id == (*alighting_passenger)->get_OD_stop()->get_destination()->get_id() || (*alighting_passenger)->get_OD_stop()->check_path_set() == false) // if this stop is passenger's destination
 			{
 				// passenger has no further conection choice
@@ -1909,7 +1923,7 @@ void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, d
 				(*alighting_passenger)->set_end_time(time);
 				//pass_recycler.addPassenger(*alighting_passenger); // terminate passenger
 			}		
-			if (final_stop == false)
+			if (final_stop == false) //if this stop is not passenger's final destination then make a connection decision
 			{
 				next_stop =(*alighting_passenger)->make_connection_decision(time);
 				// set connected_stop as the new origin
@@ -2056,7 +2070,7 @@ void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, d
 							{
 								(*check_pass)->set_pass_sitting(true);
 							}
-							if(theParameters->demand_format == 3)
+							if(theParameters->demand_format == 3) //this is here because previously there was a demand format 4 'else' case
 							{
 								trip->passengers_on_board[(*check_pass)->make_alighting_decision(trip, time)].push_back((*check_pass)); 
 							}
