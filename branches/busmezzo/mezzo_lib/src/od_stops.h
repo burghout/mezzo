@@ -95,8 +95,9 @@ public:
 		double time_,
 		double generation_time_,
 		int chosen_alighting_stop_,
-        map<Busstop*,pair<double,double> > alighting_MNL_
-	): pass_id(pass_id_),original_origin(original_origin_),destination_stop(destination_stop_),line_id(line_id_),trip_id(trip_id_), stop_id(stop_id_),time(time_),generation_time(generation_time_),chosen_alighting_stop(chosen_alighting_stop_),alighting_MNL(alighting_MNL_){}
+        map<Busstop*,pair<double,double> > alighting_MNL_,
+		bool forced_alighting_
+	): pass_id(pass_id_),original_origin(original_origin_),destination_stop(destination_stop_),line_id(line_id_),trip_id(trip_id_), stop_id(stop_id_),time(time_),generation_time(generation_time_),chosen_alighting_stop(chosen_alighting_stop_),alighting_MNL(alighting_MNL_),forced_alighting(forced_alighting_){}
 
 	virtual ~Pass_alighting_decision(); //!< destructor
 	
@@ -111,6 +112,7 @@ public:
 		stop_id = 0;
 		time = 0;
 		generation_time = 0;
+		forced_alighting = false;
 	}
 	
 	int pass_id;
@@ -123,6 +125,7 @@ public:
 	double generation_time;
 	int chosen_alighting_stop;
     map<Busstop*,pair<double,double> > alighting_MNL;
+	bool forced_alighting; //!< indicates whether or not this alighting decision was a result of short-turning
 };
 
 class Pass_connection_decision // container object holding output data for passenger connection decision
@@ -343,7 +346,7 @@ public:
 
 	// output-related functions
 	void record_passenger_boarding_decision (Passenger* pass, Bustrip* trip, double time, double boarding_probability, bool boarding_decision); //!< creates a log-file for boarding decision related info
-    void record_passenger_alighting_decision (Passenger* pass, Bustrip* trip, double time, Busstop* chosen_alighting_stop, map<Busstop*,pair<double,double> > alighting_MNL); // !< creates a log-file for alighting decision related info
+    void record_passenger_alighting_decision (Passenger* pass, Bustrip* trip, double time, Busstop* chosen_alighting_stop, map<Busstop*,pair<double,double> > alighting_MNL, bool forced_alighting); // !< creates a log-file for alighting decision related info
     void record_passenger_connection_decision (Passenger* pass, double time, Busstop* chosen_alighting_stop, map<Busstop*,pair<double,double> > connecting_MNL_);
 	void record_waiting_experience (Passenger* pass, Bustrip* trip, double time, double experienced_WT, int level_of_rti_upon_decision, double projected_RTI, double AWT, int nr_missed); // !< creates a log-file for a decision and related waiting time components
 	void record_onboard_experience(Passenger* pass, Bustrip* trip, Busstop* stop, pair<double,double> riding_coeff);

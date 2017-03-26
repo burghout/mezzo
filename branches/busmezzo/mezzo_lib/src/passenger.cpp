@@ -3,6 +3,7 @@
 Passenger::Passenger ()
 {
 	boarding_decision = false;
+	forced_alighting = false;
 	already_walked = false;
 	end_time = 0;
 	nr_boardings = 0;
@@ -29,6 +30,7 @@ Passenger::Passenger (int pass_id, double start_time_, ODstops* OD_stop_)
 	original_origin = OD_stop_->get_origin();
 	OD_stop = OD_stop_;
 	boarding_decision = false;
+	forced_alighting = false;
 	already_walked = false;
 	AWT_first_leg_boarding = 0;
 	random = new (Random);
@@ -53,6 +55,7 @@ Passenger::~Passenger()
 void Passenger::reset ()
 {
 	boarding_decision = false;
+	forced_alighting = false;
 	already_walked = false;
 
 	double new_start_time = 0; 
@@ -113,6 +116,7 @@ void Passenger::init_zone (int pass_id, double start_time_, ODzone* origin_, ODz
 	o_zone = origin_;
 	d_zone = destination_;
 	boarding_decision = false;
+	forced_alighting = false;
 	already_walked = false;
 	this_is_the_last_stop = false;
 }
@@ -425,8 +429,19 @@ void Passenger::record_waiting_experience(Bustrip* arriving_bus, double time)
 	}
 }
 
+void Passenger::forced_alighting_decision(Bustrip* st_bus, Busstop* alighting_stop, double time)
+{
+	assert(forced_alighting == true && "Passenger::forced_alighting_decision for this->forced_alighting != true");
+	//Busstop* fa_stop = OD_stop->get_origin(); //origin for od pair is the stop where forced alighting occured
+	map<Busstop*, pair<double, double> > alighting_MNL; 
+	alighting_MNL[alighting_stop].first = -100000; //large negative utility for staying
+	alighting_MNL[alighting_stop].second = 1; //100% probability of alighting
+	OD_stop->record_passenger_alighting_decision(this, st_bus, time, alighting_stop, alighting_MNL, forced_alighting);
+}
+
 Busstop* Passenger::make_alighting_decision (Bustrip* boarding_bus, double time) // assuming that all passenger paths involve only direct trips
 {
+	this->set_forced_alighting(false); //!< this is a 'normal' alighting decision
 	// assuming that a pass. boards only paths from his path set
 	map <Busstop*, double> candidate_transfer_stops_u; // the double value is the utility associated with the respective stop
 	map <Busstop*, double> candidate_transfer_stops_p; // the double value is the probability associated with the respective stop

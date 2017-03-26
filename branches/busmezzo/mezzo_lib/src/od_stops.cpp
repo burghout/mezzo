@@ -596,9 +596,9 @@ void ODstops::record_passenger_boarding_decision (Passenger* pass, Bustrip* trip
 	output_pass_boarding_decision[pass].push_back(Pass_boarding_decision(pass->get_id(), original_origin_id, destination_id, trip->get_line()->get_id(), trip->get_id() , origin_id , time, pass->get_start_time(), boarding_probability , boarding_decision, boarding_utility, staying_utility)); 
 }
 
-void ODstops::record_passenger_alighting_decision (Passenger* pass, Bustrip* trip, double time, Busstop* chosen_alighting_stop, map<Busstop*,pair<double,double> > alighting_MNL)  //  add to output structure alighting decision info
+void ODstops::record_passenger_alighting_decision (Passenger* pass, Bustrip* trip, double time, Busstop* chosen_alighting_stop, map<Busstop*,pair<double,double> > alighting_MNL, bool forced_alighting)  //  add to output structure alighting decision info
 {
-	output_pass_alighting_decision[pass].push_back(Pass_alighting_decision(pass->get_id(), pass->get_original_origin()->get_id(), pass->get_OD_stop()->get_destination()->get_id(), trip->get_line()->get_id(), trip->get_id() , pass->get_OD_stop()->get_origin()->get_id() , time, pass->get_start_time(), chosen_alighting_stop->get_id(), alighting_MNL)); 
+	output_pass_alighting_decision[pass].push_back(Pass_alighting_decision(pass->get_id(), pass->get_original_origin()->get_id(), pass->get_OD_stop()->get_destination()->get_id(), trip->get_line()->get_id(), trip->get_id() , pass->get_OD_stop()->get_origin()->get_id() , time, pass->get_start_time(), chosen_alighting_stop->get_id(), alighting_MNL, forced_alighting)); 
 }
 
 void ODstops::record_passenger_connection_decision (Passenger* pass, double time, Busstop* chosen_alighting_stop, map<Busstop*,pair<double,double> > connecting_MNL_)  //  add to output structure connection decision info
@@ -779,6 +779,7 @@ void Pass_alighting_decision::write (ostream& out)
 		out << (*iter).second.first << '\t';
 		out << (*iter).second.second << '\t';
 	}
+	out << forced_alighting << '\t';
 	out << endl; 
 }
 

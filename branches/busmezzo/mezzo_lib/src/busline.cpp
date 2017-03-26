@@ -1452,6 +1452,12 @@ void Busstop::short_turn_force_alighting(Eventlist* eventlist, Bustrip* st_trip,
 		if (pass_on_board.second.empty())
 			continue;
 
+		for (auto& passenger : pass_on_board.second)
+		{
+			passenger->set_forced_alighting(true);
+			passenger->forced_alighting_decision(st_trip, this, time); //record forced alighting output for each passenger
+		}
+
 		nr_forced_alighting += alight_passengers(eventlist, st_trip, time, pass_on_board.second); //force passengers to alight and make walking connection decisions
 	} 
 	DEBUG_MSG("Occupancy after forced alighting: " << st_trip->get_busv()->get_occupancy());
