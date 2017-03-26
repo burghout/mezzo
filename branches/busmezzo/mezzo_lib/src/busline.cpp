@@ -1585,65 +1585,7 @@ bool Busstop::execute(Eventlist* eventlist, double time) // is executed by the e
 		buses_currently_at_stop.erase(iter_departure);
 		return true;
 	}
-	/*
-	if (buses_at_stop.count(time) > 0) 
-	// if this is for a bus EXITING the stop:
-	{
-		Bus* bus = buses_at_stop [time]; // identify the relevant bus
-		free_length (bus);
-		buses_at_stop.erase(time);
-		double relative_length;
-		// calculate the updated exit time from the link	
-		double ro =0.0;
-		#ifdef _RUNNING     // if running segment is seperate density is calculated on that part only
-			ro=bus->get_curr_link()->density_running(time);
-		#else
-			#ifdef _RUNNING_ONLY
-				ro = bus->get_curr_link()->density_running_only(time);
-			#else	
-			ro=bus->get_curr_link()->density();
-			#endif	//_RUNNING_ONLY
-		#endif  //_RUNNING
 	
-		double speed = bus->get_curr_link()->get_sdfunc()->speed(ro);	
-		double link_total_travel_time = bus->get_curr_link()->get_length()/speed ;
-
-		#ifdef _USE_EXPECTED_DELAY
-			double exp_delay = 1.44 * (queue->queue(time)) / bus->get_curr_link()->get_nr_lanes();
-			exit_time = exit_time + exp_delay;
-		#endif //_USE_EXPECTED_DELAY
-		if (bus->get_curr_trip()->check_end_trip() == false) // if there are more stops on the bus's route
-		{
-			Visit_stop* next_stop1 = *(bus->get_curr_trip()->get_next_stop());
-			if (bus->get_curr_link()->get_id() == (next_stop1->first->get_link_id())) // the next stop IS on this link
-			{
-				double stop_position = (next_stop1->first)->get_position();
-				relative_length = (stop_position - position)/(bus->get_curr_link()->get_length()); // calculated for the interval between the two sequential stops
-				double time_to_stop = time + link_total_travel_time * relative_length;
-				bus->get_curr_trip()->book_stop_visit (time_to_stop, bus); // book  stop visit
-			}
-			else // the next stop is NOT on this link
-			{
-				//Vehicle* veh =  (Vehicle*)(bus); // so we can do vehicle operations
-				relative_length = (bus->get_curr_link()->get_length()-position)/ bus->get_curr_link()->get_length(); // calculated for the remaining part of the link
-				double exit_time = time + link_total_travel_time * relative_length;
-				bus->set_exit_time(exit_time);
-				bus->get_curr_link()->get_queue()->enter_veh(bus);
-			}
-		}
-		else // there are no more stops on this route
-		{
-			bus->get_curr_trip()->get_line()->update_total_travel_time (bus->get_curr_trip(), time);
-			Vehicle* veh =  (Vehicle*)(bus); // so we can do vehicle operations
-			relative_length = (bus->get_curr_link()->get_length()-position)/ bus->get_curr_link()->get_length(); // calculated for the remaining part of the link 
-			double exit_time = time + link_total_travel_time * relative_length;
-			veh->set_exit_time(exit_time);
-			veh->get_curr_link()->get_queue()->enter_veh(veh);
-			bus->set_on_trip(false); // indicate that there are no more stops on this route
-			bus->get_curr_trip()->advance_next_stop(exit_time, eventlist); 
-		}
-	}
-	*/
 	bool bus_enter = false;
 	Bustrip* entering_trip;
 	vector<pair<Bustrip*,double> >::iterator iter_arrival;
@@ -2150,7 +2092,7 @@ void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, d
 	if (id != trip->stops.back()->first->get_id()) // if it is not the last stop for this trip
 	{
 		trip->assign_segements[this] = trip->get_busv()->get_occupancy();
-		trip->record_passenger_loads(trip->get_next_stop());
+		trip->record_passenger_loads(trip->get_next_stop()); //next_stop still refers to 'this' stop here, has not been updated yet
 	}
 }
 
