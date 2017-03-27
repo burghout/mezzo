@@ -1061,6 +1061,8 @@ Busstop::Busstop (int id_, string name_, int link_id_, double position_, double 
 	is_destination = false;
 	last_arrivals.clear();
 	last_departures.clear();
+	arrivals_per_line.clear();
+	departures_per_line.clear();
 	random = new (Random);
 	if (randseed != 0)
 		{
@@ -1091,6 +1093,8 @@ void Busstop::reset()
 	buses_at_stop.clear();
 	last_arrivals.clear();
 	last_departures.clear();
+	arrivals_per_line.clear();
+	departures_per_line.clear();
 	had_been_visited.clear();
 	multi_nr_waiting.clear();
 	nr_waiting.clear();
@@ -1226,8 +1230,13 @@ void Busstop::short_turn_exit(Bustrip * st_trip, int target_stop_id, double time
 	st_trip->set_last_stop_visited(this);
 	update_last_arrivals(st_trip, st_trip->get_enter_time()); // in order to follow the arrival times (AFTER dwell time is calculated)
 	update_last_departures(st_trip, exit_time); // in order to follow the departure times (AFTER the dwell time and time point stuff)
+	update_arrivals_per_line(st_trip, st_trip->get_enter_time());
+	update_departures_per_line(st_trip, exit_time);
+	//st_trip->actual_departure_times[this] = exit_time;
+
 	set_had_been_visited(st_trip->get_line(), true);
 	st_trip->advance_next_stop(exit_time, eventlist);
+	st_trip->set_entering_stop(false);
 }
 
 void Busstop::short_turn_enter(Bustrip * st_trip, double time, Eventlist * eventlist)
@@ -1601,6 +1610,8 @@ bool Busstop::execute(Eventlist* eventlist, double time) // is executed by the e
 	// if this is for a bus ENTERING the stop:
 	if (bus_enter == true) 
 	{
+		entering_trip->set_entering_stop(true);
+		entering_trip->visited_stop[this] = true;
 		//Short-turning
 		if (theParameters->short_turn_control)
 		{
@@ -1647,8 +1658,11 @@ bool Busstop::execute(Eventlist* eventlist, double time) // is executed by the e
 		entering_trip->set_last_stop_visited(this);
 		update_last_arrivals (entering_trip, entering_trip->get_enter_time()); // in order to follow the arrival times (AFTER dwell time is calculated)
 		update_last_departures (entering_trip, exit_time); // in order to follow the departure times (AFTER the dwell time and time point stuff)
+		update_arrivals_per_line(entering_trip, entering_trip->get_enter_time());
+		update_departures_per_line(entering_trip, exit_time);
 		set_had_been_visited (entering_trip->get_line(), true);
 		entering_trip->advance_next_stop(exit_time, eventlist);
+		entering_trip->set_entering_stop(false);
 		expected_bus_arrivals.erase(iter_arrival);
 	}
 	/*
@@ -2248,25 +2262,176 @@ void Busstop::update_last_departures (Bustrip* trip, double time) // everytime a
 	last_departures [trip->get_line()] = trip_time;
 }
 
-double Busstop::get_time_since_arrival (Bustrip* trip, double time) // calculates the headway (between arrivals)
-{  
-	if (last_arrivals.empty()) //Added by Jens 2014-07-03
+void Busstop::update_arrivals_per_line(Bustrip* trip, double arrival_time) //everytime a bus ENTERS a stop this should be update
+{
+	arrivals_per_line[trip->get_line()][arrival_time] = trip; //Note: we are now assuming that two trips do not arrive at EXACTLY the same time (will overwrite arrival entry)
+}
+
+void Busstop::update_departures_per_line(Bustrip* trip, double departure_time) //everytime a bus ENTERS a stop this should be update
+{
+	departures_per_line[trip->get_line()][departure_time] = trip; //Note: we are now assuming that two trips do not arrive at EXACTLY the same time (will overwrite arrival entry)
+}
+
+double Busstop::get_last_arrival(Busline* line)
+{
+	assert(arrivals_per_line.count(line) != 0 && "Attempted to call Busstop::get_last_arrival when no trip has arrived to this stop from this line yet!");
+
+	return arrivals_per_line[line].rbegin()->first;
+}
+
+double Busstop::get_last_departure(Busline* line)
+{
+	assert(departures_per_line.count(line) != 0 && "Attempted to call Busstop::get_last_departure when no trip has departed from this stop from this line yet!");
+
+	return departures_per_line[line].rbegin()->first;
+}
+
+double Busstop::get_time_since_arrival(Bustrip* trip, double time)
+{
+	if (arrivals_per_line.count(trip->get_line()) == 0) //if no trip from this trips line has arrived to this stop
 		return trip->get_line()->calc_curr_line_headway();
-	double time_since_arrival = time - last_arrivals[trip->get_line()].second;
-	// the headway is defined as the differnece in time between sequential arrivals
+
+	double time_since_arrival = time - get_last_arrival(trip->get_line());
 	return time_since_arrival;
 }
 
-double Busstop::get_time_since_departure (Bustrip* trip, double time) // calculates the headway (between departures)
-{  
-	if (trip->get_line()->check_first_trip(trip)==true && trip->get_line()->check_first_stop(this)==true) // for the first stop on the first trip on that line - use the planned headway value
-	{
+double Busstop::get_time_since_departure(Bustrip* trip, double time)
+{
+	if (departures_per_line.count(trip->get_line()) == 0) // if no trip from this trips line has departed from this stop
 		return trip->get_line()->calc_curr_line_headway();
-	}
-	double time_since_departure = time - last_departures[trip->get_line()].second;
-	// the headway is defined as the differnece in time between sequential departures
+
+	double time_since_departure = time - get_last_departure(trip->get_line());
 	return time_since_departure;
 }
+
+double Bustrip::calc_scheduled_travel_time_between_stops(Busstop * stop1, Busstop * stop2)
+{
+	double scheduled_tt = stops_map[stop1] - stops_map[stop2];
+	if (scheduled_tt < 0) //if stop1 is earlier on line than stop2
+		scheduled_tt = -scheduled_tt;
+	assert(scheduled_tt > 0);
+	return scheduled_tt;
+}
+
+double Bustrip::calc_forward_arrival_headway(double arrival_time)
+{	
+	double forward_arr_headway; //headway between this trip and the trip in front based on the last stop visited by this trip
+	Busstop* last_visited; //last stop visited by this trip
+	
+	if (entering_stop)
+		last_visited = (*next_stop)->first; //if trip is currently entering a stop then last_stop_visited has not been updated yet
+	else
+		last_visited = last_stop_visited;
+
+	map<double, Bustrip*> last_stop_arrivals = last_visited->get_arrivals_per_line()[line];
+	map<double, Bustrip*>::iterator it_closest_arrival = last_stop_arrivals.lower_bound(arrival_time); //find the latest arrival to last stop visited before this one
+	double prec_arrival; //latest arrival time of a preceding trip that previously visited the last stop visited by this trip
+	if (it_closest_arrival == last_stop_arrivals.begin()) //no trip has arrived to this stop before this one
+		return 0;
+	else
+	{
+
+		--it_closest_arrival;
+next_arrival:
+		if (theParameters->short_turn_control && it_closest_arrival->second->get_short_turned() && it_closest_arrival != last_stop_arrivals.begin()) //temporary solution, only solves some corner cases
+		{
+			--it_closest_arrival;
+			goto next_arrival;
+		}
+
+		assert(it_closest_arrival->second->get_id() != this->get_id()); //make sure that we are not finding the forward headway of a trip with itself
+		prec_arrival = it_closest_arrival->first;
+	}
+
+	forward_arr_headway = arrival_time - prec_arrival;
+	assert(forward_arr_headway >= 0);
+
+	return forward_arr_headway;
+}
+
+double Bustrip::calc_backward_arrival_headway(double arrival_time)
+{
+	double backward_arr_headway; //headway between this trip and the first trip found behind based on arrivals at upstream stops
+	Busstop* last_visited; //last stop visited by this trip
+	double succ_arrival; //arrival time of closest succeeding trip
+	double scheduled_tt; //scheduled travel time between last stop visited by succeding trip and last stop visited by this trip
+	double expected_arrival; //expected arrival time of succeding trop to last stop visited by this trip
+
+	vector<Busstop*> us_stops = get_upstream_stops();
+
+	if (entering_stop)
+		last_visited = (*next_stop)->first; //if trip is currently entering a stop then last_stop_visited has not been updated yet
+	else
+		last_visited = last_stop_visited;
+
+	vector<Busstop*>::reverse_iterator stop_it;
+	for (stop_it = us_stops.rbegin(); stop_it != us_stops.rend(); stop_it++) //loop through all upstream stops (starting from most downstream stop) until we find the closest following trip
+	{
+		map<double, Bustrip*> us_stop_arrivals = (*stop_it)->get_arrivals_per_line()[line]; //all arrivals for this upstream stop
+		map<double, Bustrip*>::reverse_iterator rit_closest_arrival = us_stop_arrivals.rbegin(); //start from latest arrival time in arrivals map
+		
+		if (rit_closest_arrival != us_stop_arrivals.rend())//check if arrival list at previous stop is empty (i.e., skipped by this trip and has not been visited by any others)
+		{
+			if (rit_closest_arrival->second->get_id() == this->get_id()) //the latest arrival to the upstream stop is this trip
+			{
+				//check if the next latest arrival to the upstream stop has overtaken this trip (i.e. visited last_visited before this trip)
+				bool found = false; //true if another arrival before this trip has been found that has not overtaken this trip
+				for (++rit_closest_arrival; rit_closest_arrival != us_stop_arrivals.rend(); rit_closest_arrival++)//loop through other arrivals before this trip at this upstream stop
+				{
+					if (!rit_closest_arrival->second->has_visited(last_visited)) //true if this trip has not overtaken by the next closest arrival
+					{
+						if (theParameters->short_turn_control && rit_closest_arrival->second->get_short_turned()) //true if this trip has been overtaken via a short-turned trip
+							continue;
+
+						found = true;
+						succ_arrival = rit_closest_arrival->first; //this trip has not been overtaken by the next latest arrival
+						break;
+					}
+				}
+				if (found)
+					break;
+			}
+			else //there is another bus that has arrived at this upstream stop after this trip
+			{
+				if (!rit_closest_arrival->second->has_visited(last_visited))//true if this other bus has overtaken this trip
+				{
+					succ_arrival = rit_closest_arrival->first; //this trip has not been overtaken so this is the closest succeeding bus based on arrival
+					break;
+				}
+			}
+		}
+	}
+	if (stop_it == us_stops.rend()) //no other trips have arrived to any stops upstream of this one
+		return 0;
+
+	scheduled_tt = calc_scheduled_travel_time_between_stops(last_visited, (*stop_it));
+	expected_arrival = succ_arrival + scheduled_tt;
+	backward_arr_headway = expected_arrival - arrival_time;
+	if (backward_arr_headway < 0)
+		cout << "Bustrip::calc_backward_arrival_headway - warning: expected arrival time to last stop visited by trip has already passed" << endl;
+
+	return backward_arr_headway;
+}
+
+//double Busstop::get_time_since_arrival (Bustrip* trip, double time) // calculates the headway (between arrivals)
+//{  
+//	if (last_arrivals.empty()) //Added by Jens 2014-07-03
+//		return trip->get_line()->calc_curr_line_headway();
+//	double time_since_arrival = time - last_arrivals[trip->get_line()].second;
+//	// the headway is defined as the differnece in time between sequential arrivals
+//	return time_since_arrival;
+//}
+//
+//double Busstop::get_time_since_departure (Bustrip* trip, double time) // calculates the headway (between departures)
+//{  
+//	if (trip->get_line()->check_first_trip(trip)==true && trip->get_line()->check_first_stop(this)==true) // for the first stop on the first trip on that line - use the planned headway value
+//	{
+//		return trip->get_line()->calc_curr_line_headway();
+//	}
+//	double time_since_departure = time - last_departures[trip->get_line()].second;
+//	// the headway is defined as the differnece in time between sequential departures
+//	return time_since_departure;
+//}
 
 double Busstop::calc_exiting_time (Eventlist* eventlist, Bustrip* trip, double time)
 {
