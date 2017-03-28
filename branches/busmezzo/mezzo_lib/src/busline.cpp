@@ -1475,9 +1475,21 @@ void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, d
 			ODstops* od_stop = (*alighting_passenger)->get_original_origin()->get_stop_od_as_origin_per_stop((*alighting_passenger)->get_OD_stop()->get_destination());
 			od_stop->record_onboard_experience(*alighting_passenger, trip, this, riding_coeff);
 
-			// if this stop is not passenger's final destination then make a connection decision
-			Busstop* next_stop;
+			//set current stop as origin for alighting passenger's OD stop pair
+			Busstop* next_stop = this;
 			bool final_stop = false;
+			ODstops* od;
+			if (check_stop_od_as_origin_per_stop((*alighting_passenger)->get_OD_stop()->get_destination()) == false) //check if OD stop pair exists with this stop as origin to the destination of the passenger
+			{
+				od = new ODstops(next_stop, (*alighting_passenger)->get_OD_stop()->get_destination());
+				add_odstops_as_origin((*alighting_passenger)->get_OD_stop()->get_destination(), od);
+				(*alighting_passenger)->get_OD_stop()->get_destination()->add_odstops_as_destination(next_stop, od);
+			}
+			else
+			{
+				od = stop_as_origin[(*alighting_passenger)->get_OD_stop()->get_destination()];
+			}
+			(*alighting_passenger)->set_ODstop(od); // set this stop as passenger's new origin
 			if (id == (*alighting_passenger)->get_OD_stop()->get_destination()->get_id() || (*alighting_passenger)->get_OD_stop()->check_path_set() == false) // if this stop is passenger's destination
 			{
 				// passenger has no further conection choice
