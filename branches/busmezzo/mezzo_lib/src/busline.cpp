@@ -1481,31 +1481,6 @@ void Busstop::short_turn_force_alighting(Eventlist* eventlist, Bustrip* st_trip,
 bool Busstop::execute(Eventlist* eventlist, double time) // is executed by the eventlist and means a bus needs to be processed
 {
   	// progress the vehicle when entering or exiting a stop
-	
-	if (theParameters->demand_format == 3)
-	{
-		for (map <Busstop*, ODstops*>::iterator destination_stop = stop_as_origin.begin(); destination_stop != stop_as_origin.end(); destination_stop++)
-		{
-			//if (id != destination_stop->first->get_id())
-			//{
-				passengers pass_waiting_od = (*destination_stop).second->get_waiting_passengers();		
-				passengers::iterator check_pass = pass_waiting_od.begin();
-				//Passenger* next_pass;
-				//bool last_waiting_pass = false;
-				while (check_pass < pass_waiting_od.end())
-				{
-					// progress each waiting passenger   
-					/*
-					if ((*check_pass)->get_OD_stop()->get_origin()->get_id() != this->get_id())
-					{
-						break;
-					}
-					*/
-					check_pass++;
-				}
-			//}
-		}
-	}
 	bool bus_exit = false;
 	Bustrip* exiting_trip;
 	vector<pair<Bustrip*,double> >::iterator iter_departure; 
@@ -1594,7 +1569,7 @@ bool Busstop::execute(Eventlist* eventlist, double time) // is executed by the e
 		buses_currently_at_stop.erase(iter_departure);
 		return true;
 	}
-	
+
 	bool bus_enter = false;
 	Bustrip* entering_trip;
 	vector<pair<Bustrip*,double> >::iterator iter_arrival;
@@ -1665,31 +1640,7 @@ bool Busstop::execute(Eventlist* eventlist, double time) // is executed by the e
 		entering_trip->set_entering_stop(false);
 		expected_bus_arrivals.erase(iter_arrival);
 	}
-	/*
-	else if (expected_arrivals.count(time) > 0) 
-	{		
-		Bus* bus = expected_arrivals [time]; // identify the relevant bus
-		bus->get_curr_trip()->set_enter_time (time);
-		exit_time = calc_exiting_time(eventlist, bus->get_curr_trip(), time); // get the expected exit time according to dwell time calculations and time point considerations
-		occupy_length (bus);
-		while (buses_at_stop.find(exit_time) != buses_at_stop.end()) // in case there is another bus listed with exactly the same time
-		{
-			exit_time += 1.0;
-		}
-		buses_at_stop [exit_time] = bus; 
-		eventlist->add_event (exit_time, this); // book an event for the time it exits the stop
-		record_busstop_visit ( bus->get_curr_trip(), bus->get_curr_trip()->get_enter_time()); // document stop-related info
-								// done BEFORE update_last_arrivals in order to calc the headway and BEFORE set_last_stop_exit_time
-		bus->record_busvehicle_location (bus->get_curr_trip(), this, bus->get_curr_trip()->get_enter_time());
-		bus->get_curr_trip()->advance_next_stop(exit_time, eventlist); 
-		bus->get_curr_trip()->set_last_stop_exit_time(exit_time);
-		bus->get_curr_trip()->set_last_stop_visited(this);
-		update_last_arrivals (bus->get_curr_trip(), bus->get_curr_trip()->get_enter_time()); // in order to follow the arrival times (AFTER dwell time is calculated)
-		update_last_departures (bus->get_curr_trip(), exit_time); // in order to follow the departure times (AFTER the dwell time and time point stuff)
-		set_had_been_visited (bus->get_curr_trip()->get_line(), true);
-		expected_arrivals.erase(time);
-	}
-	*/
+	
 	return true;
 }
 
