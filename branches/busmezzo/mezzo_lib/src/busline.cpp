@@ -795,10 +795,6 @@ bool Bustrip::activate (double time, Route* route, ODpair* odpair, Eventlist* ev
 {
 	// inserts the bus at the origin of the route
 	// if the assigned bus isn't avaliable at the scheduled time, then the trip is activated by Bus::advance_curr_trip as soon as it is done with the previous trip
-
-	if (this->get_busv()->get_short_turning() == true)
-		DEBUG_MSG( "Bustrip::activate for short-turning busv " << this->get_busv()->get_bus_id() << " for trip " << this->get_id() );
-
 	double first_dispatch_time = time;
 	eventlist = eventlist_;
 	next_stop = stops.begin();
@@ -1228,7 +1224,8 @@ void Busstop::short_turn_exit(Bustrip * st_trip, int target_stop_id, double time
 	end_stop = *endstop_iter;
 
 	//short-turning version of bus_enter in Busstop::execute
-	exit_time = time; // + 0.0000000000001; // leave stop immediately
+	//dwelltime calculated in short_turn_force_alighting
+	exit_time = time + dwelltime; // leave stop immediately after forced alighting dwelltime
 	st_trip->set_enter_time(time);
 	pair<Bustrip*, double> exiting_trip;
 	exiting_trip.first = st_trip;
@@ -1280,7 +1277,7 @@ void Busstop::short_turn_exit(Bustrip * st_trip, int target_stop_id, double time
 	st_trip->set_entering_stop(false);
 }
 
-void Busstop::short_turn_enter(Bustrip * st_trip, double time, Eventlist * eventlist)
+void Busstop::short_turn_enter(Bustrip * st_trip)
 {
 	st_trip->get_busv()->set_end_stop_id(0); //reset end stop id
 	st_trip->get_busv()->set_short_turning(false); //bus is not short-turning anymore
@@ -1502,16 +1499,10 @@ void Busstop::short_turn_force_alighting(Eventlist* eventlist, Bustrip* st_trip,
 		
 	nr_reg_alighting = static_cast<int> (st_trip->passengers_on_board[this].size()); //passengers that wish to alight at this stop anyways
 	nr_forced_alighting = starting_occupancy - nr_reg_alighting;
-
-	DEBUG_MSG(endl << "Passengers waiting at this stop BEFORE forced alighting: " << this->calc_total_nr_waiting());
-	DEBUG_MSG("Starting occupancy         : " << starting_occupancy);
-	DEBUG_MSG("Number of regular alighters: " << nr_reg_alighting);
-	DEBUG_MSG("Number of forced alighters : " << nr_forced_alighting);
 	
 	// * Process passengers that wish to alight at this stop anyways * 
 	nr_reg_alighting = alight_passengers(eventlist, st_trip, time, st_trip->passengers_on_board[this]);
-	DEBUG_MSG("Occupancy after normal alighting: " << st_trip->get_busv()->get_occupancy());
-	DEBUG_MSG("Passengers waiting at this stop AFTER normal alighting: " << calc_total_nr_waiting());
+
 	/* Process passengers that are forced to alight */
 	nr_forced_alighting = 0;
 	for (auto& pass_on_board : st_trip->passengers_on_board) //loop through all alighting stop -> passengers pairs for this trip
@@ -1519,7 +1510,7 @@ void Busstop::short_turn_force_alighting(Eventlist* eventlist, Bustrip* st_trip,
 		if (pass_on_board.second.empty())
 			continue;
 
-		for (auto& passenger : pass_on_board.second)
+		for (Passenger* passenger : pass_on_board.second)
 		{
 			passenger->set_forced_alighting(true);
 			passenger->forced_alighting_decision(st_trip, this, time); //record forced alighting output for each passenger
@@ -1527,13 +1518,13 @@ void Busstop::short_turn_force_alighting(Eventlist* eventlist, Bustrip* st_trip,
 
 		nr_forced_alighting += alight_passengers(eventlist, st_trip, time, pass_on_board.second); //force passengers to alight and make walking connection decisions
 	} 
-	DEBUG_MSG("Occupancy after forced alighting: " << st_trip->get_busv()->get_occupancy());
-	DEBUG_MSG("Number of forced alighters : " << nr_forced_alighting);
+
 	assert(st_trip->get_busv()->get_occupancy() == 0 && "Busstop::short_turn_force_alighting occupancy of bus after forced alighting != 0");
 	
 	DEBUG_MSG("Passengers waiting at this stop AFTER forced alighting: " << this->calc_total_nr_waiting() << endl);
 
 	nr_alighting = nr_reg_alighting + nr_forced_alighting;
+	dwelltime = calc_dwelltime(st_trip); //used in short_turn_exit
 }
 
 bool Busstop::execute(Eventlist* eventlist, double time) // is executed by the eventlist and means a bus needs to be processed
@@ -1554,9 +1545,6 @@ bool Busstop::execute(Eventlist* eventlist, double time) // is executed by the e
 	if (bus_exit == true) 
 	// if there is an exiting bus
 	{
-		if (exiting_trip->get_busv()->get_short_turning())
-			DEBUG_MSG("Short-turning trip " << exiting_trip->get_id() << " has successfully teleported to last stop " << this->get_id() << " at time " << time);
-
 		if(exiting_trip->get_holding_at_stop()) //David added 2016-05-26: the exiting trip is holding and needs to account for additional passengers that board during the holding period
 		{
 			passenger_activity_at_stop(eventlist,exiting_trip,time);
@@ -1645,13 +1633,14 @@ bool Busstop::execute(Eventlist* eventlist, double time) // is executed by the e
 	{
 		entering_trip->set_entering_stop(true);
 		entering_trip->visited_stop[this] = true;
+
 		//Short-turning
 		if (theParameters->short_turn_control)
 		{
 			if (!entering_trip->get_busv()->get_short_turning()) //if the bus isnt already short-turning
 			{
 				int target_stop_id;
-				target_stop_id = this->calc_short_turning(entering_trip, time);
+				target_stop_id = calc_short_turning(entering_trip, time);
 				if (target_stop_id) //if the decision to short-turn has been made
 				{
 					entering_trip->get_busv()->set_short_turning(true);
@@ -1659,7 +1648,7 @@ bool Busstop::execute(Eventlist* eventlist, double time) // is executed by the e
 					entering_trip->set_short_turned(true); 
 					short_turn_force_alighting(eventlist, entering_trip, time); //process voluntary alighters and force other passengers to alight, record corresponding output data
 					expected_bus_arrivals.erase(iter_arrival);
-					this->short_turn_exit(entering_trip, target_stop_id, time, eventlist); //initiate alternative exit_stop process
+					short_turn_exit(entering_trip, target_stop_id, time, eventlist); //initiate alternative exit_stop process
 					return true; //TODO: check if returning true here effects anything else, now we've basically just created an event that this trip will instantly arrive at its last stop
 				}
 			}
@@ -2281,15 +2270,17 @@ void Busstop::update_departures_per_line(Bustrip* trip, double departure_time) /
 
 double Busstop::get_last_arrival(Busline* line)
 {
-	assert(arrivals_per_line.count(line) != 0 && "Attempted to call Busstop::get_last_arrival when no trip has arrived to this stop from this line yet!");
-
+	//assert(arrivals_per_line.count(line) != 0 && "Attempted to call Busstop::get_last_arrival when no trip has arrived to this stop from this line yet!");
+	if (arrivals_per_line.count(line) == 0)
+		return 0;
 	return arrivals_per_line[line].rbegin()->first;
 }
 
 double Busstop::get_last_departure(Busline* line)
 {
-	assert(departures_per_line.count(line) != 0 && "Attempted to call Busstop::get_last_departure when no trip has departed from this stop from this line yet!");
-
+	//assert(departures_per_line.count(line) != 0 && "Attempted to call Busstop::get_last_departure when no trip has departed from this stop from this line yet!");
+	if (departures_per_line.count(line) == 0)
+		return 0;
 	return departures_per_line[line].rbegin()->first;
 }
 
@@ -2397,14 +2388,16 @@ double Bustrip::calc_forward_arrival_headway(double arrival_time)
 		return 0;
 	else
 	{
-
 		--it_closest_arrival;
 next_arrival:
-		if (theParameters->short_turn_control && it_closest_arrival->second->get_short_turned() && it_closest_arrival != last_stop_arrivals.begin()) //temporary solution, only solves some corner cases
+		if (theParameters->short_turn_control && it_closest_arrival->second->get_short_turned() && it_closest_arrival != last_stop_arrivals.begin()) //temporary solution, only solves some corner cases. 
+				//Could possibly check each downstream stop for buses that may have skipped this one and then estimate this buses arrival to that stop (or the downstreams bus would be arrival to this one)
 		{
 			--it_closest_arrival;
 			goto next_arrival;
 		}
+		if (it_closest_arrival->second->get_short_turned()) //we are at the beginning of the arrival list for this stop and that bus was short-turned
+			return 0;
 
 		assert(it_closest_arrival->second->get_id() != this->get_id()); //make sure that we are not finding the forward headway of a trip with itself
 		prec_arrival = it_closest_arrival->first;
@@ -2445,7 +2438,7 @@ double Bustrip::calc_backward_arrival_headway(double arrival_time)
 				bool found = false; //true if another arrival before this trip has been found that has not overtaken this trip
 				for (++rit_closest_arrival; rit_closest_arrival != us_stop_arrivals.rend(); rit_closest_arrival++)//loop through other arrivals before this trip at this upstream stop
 				{
-					if (!rit_closest_arrival->second->has_visited(last_visited)) //true if this trip has not overtaken by the next closest arrival
+					if (!rit_closest_arrival->second->has_visited(last_visited)) //true if this trip was not overtaken by the next closest arrival
 					{
 						if (theParameters->short_turn_control && rit_closest_arrival->second->get_short_turned()) //true if this trip has been overtaken via a short-turned trip
 							continue;
@@ -2468,7 +2461,7 @@ double Bustrip::calc_backward_arrival_headway(double arrival_time)
 			}
 		}
 	}
-	if (stop_it == us_stops.rend()) //no other trips have arrived to any stops upstream of this one
+	if (stop_it == us_stops.rend()) //no other trips have arrived to any stops upstream that have not already overtaken this trip
 		return 0;
 
 	scheduled_tt = calc_scheduled_travel_time_between_stops(last_visited, (*stop_it));

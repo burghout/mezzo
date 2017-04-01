@@ -635,7 +635,7 @@ public:
 	int get_rti () {return rti;}
 	double get_arrival_rates (Bustrip* trip) {return arrival_rates[trip->get_line()];}
 	double get_alighting_fractions (Bustrip* trip) {return alighting_fractions[trip->get_line()];}
-	const ODs_for_stop & get_stop_as_origin () {return stop_as_origin;}
+	ODs_for_stop & get_stop_as_origin () {return stop_as_origin;}
 	ODstops* get_stop_od_as_origin_per_stop (Busstop* stop) {return stop_as_origin[stop];}
 	bool check_stop_od_as_origin_per_stop (Busstop* stop) {if (stop_as_origin.count(stop)==0) return false; else return true;}
 	double get_length () {return length;}
@@ -686,7 +686,7 @@ public:
 
 //Short turning methods
 	void short_turn_exit(Bustrip* st_trip, int target_stop_id, double time, Eventlist* eventlist);	//!< alternative "bus exiting stop" sequence in Busstop::execute when a bus is scheduled to short-turn to target_stop
-	void short_turn_enter(Bustrip* st_trip, double time, Eventlist* eventlist); //!< marks the end of the short-turn when st_trip enters its short-turn end-stop
+	void short_turn_enter(Bustrip* st_trip); //!< marks the end of the short-turn when st_trip enters its short-turn end-stop
 	int calc_short_turning(Bustrip* trip, double time);	//!< calculate short-turning decision, returns id of end-stop of short-turn if bus associated with trip should short-turn and 0 otherwise (Note: this assumes that no stops have id = 0)
 	void add_to_buses_currently_at_stop(pair<Bustrip*, double> exiting_trip_) { buses_currently_at_stop.push_back(exiting_trip_); }//!< used to teleport short-turned bus to the start of its next trip in bus_exit
 	void add_to_expected_bus_arrivals(pair<Bustrip*, double> bus_arrival_time_) { expected_bus_arrivals.push_back(bus_arrival_time_); } //!< used to teleport short-turned bus from the beginning of its next trip to the end stop of the short-turn
