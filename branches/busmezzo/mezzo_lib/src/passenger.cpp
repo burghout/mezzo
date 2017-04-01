@@ -441,7 +441,7 @@ void Passenger::forced_alighting_decision(Bustrip* st_bus, Busstop* alighting_st
 
 Busstop* Passenger::make_alighting_decision (Bustrip* boarding_bus, double time) // assuming that all passenger paths involve only direct trips
 {
-	this->set_forced_alighting(false); //!< this is a 'normal' alighting decision
+	this->set_forced_alighting(false); //!< this is a 'normal' alighting decision (probably redundant but just to be safe for debugging)
 	// assuming that a pass. boards only paths from his path set
 	map <Busstop*, double> candidate_transfer_stops_u; // the double value is the utility associated with the respective stop
 	map <Busstop*, double> candidate_transfer_stops_p; // the double value is the probability associated with the respective stop
@@ -537,7 +537,7 @@ Busstop* Passenger::make_alighting_decision (Bustrip* boarding_bus, double time)
 			{
 				alighting_MNL[(*iter_p).first].second = (*iter_p).second;
 			}
-			OD_stop->record_passenger_alighting_decision(this, boarding_bus, time, (*stops_probs).first, alighting_MNL);
+			OD_stop->record_passenger_alighting_decision(this, boarding_bus, time, (*stops_probs).first, alighting_MNL, forced_alighting);
 			return ((*stops_probs).first); // rerurn the chosen stop by MNL choice model
 		}
 	}
@@ -550,7 +550,7 @@ Busstop* Passenger::make_connection_decision (double time)
 	map <Busstop*, double> candidate_connection_stops_p; // the double value is the probability associated with the respective stop
 	Busstop* bs_o = OD_stop->get_origin();
 	Busstop* bs_d = OD_stop->get_destination();
-	vector<Pass_path*> path_set = bs_o->get_stop_od_as_origin_per_stop(bs_d)->get_path_set();
+	vector<Pass_path*> path_set = bs_o->get_stop_od_as_origin_per_stop(bs_d)->get_path_set(); //get path set for this OD pair
 	//	OD_stop->get_path_set();
 	if (path_set.empty() == true) // move to a nearby stop in case needed
 	{

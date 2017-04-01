@@ -70,6 +70,7 @@ public:
 	//Short-turning
 	void forced_alighting_decision(Bustrip * st_bus, Busstop* alighting_stop, double time); //!< force passengers to alight and make record of this, alighting_stop is the stop for which forced alighting occured
 	void set_forced_alighting(bool forced_alighting_) { forced_alighting = forced_alighting_; } //!< changes passenger status to being forced to alight at a stop
+	bool get_forced_alighting() { return forced_alighting; } 
 
 	// Demand in terms of zones
 	map<Busstop*,double> sample_walking_distances (ODzone* zone);
