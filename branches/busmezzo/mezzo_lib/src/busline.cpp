@@ -773,6 +773,24 @@ bool Bustrip::check_last_in_tripchain()
 	return false;
 }
 
+Bustrip* Bustrip::find_previous_in_tripchain()
+{
+	Bustrip* prev_trip;
+	if (this->get_id() == driving_roster.front()->first->get_id()) //trip is first in chain
+		return nullptr;
+
+	for (vector<Start_trip*>::iterator trip_it = (driving_roster.begin()+1); trip_it != driving_roster.end(); trip_it++)
+	{
+		if (this->get_id() == (*trip_it)->first->get_id())
+		{
+			--trip_it;
+			prev_trip = (*trip_it)->first;
+			break;
+		}
+	}
+	return prev_trip;
+}
+
 bool Bustrip::activate (double time, Route* route, ODpair* odpair, Eventlist* eventlist_)
 {
 	// inserts the bus at the origin of the route
@@ -1008,6 +1026,29 @@ vector <Busstop*> Bustrip::get_downstream_stops()
 		remaining_stops.push_back((*stop)->first);
 	}
 	return remaining_stops;
+}
+
+vector<Busstop*> Bustrip::get_downstream_stops_from_stop(Busstop * first_stop)
+{
+	vector<Busstop*>::iterator start_stop;
+	int first_stop_id = first_stop->get_id();
+	start_stop = find_if(line->stops.begin(), line->stops.end(), compare <Busstop>(first_stop_id)); //find first stop on this trips route (Note: assuming that trip plans to visit all stops on its line)
+	vector<Busstop*> ds_stops;
+	for (vector<Busstop*>::iterator stop = start_stop; stop < line->stops.end(); stop++)
+	{
+		ds_stops.push_back((*stop));
+	}
+	return ds_stops;
+}
+
+vector<Busstop*> Bustrip::get_upstream_stops()
+{
+	vector<Busstop*> us_stops;
+	for (vector<Visit_stop*>::iterator stop = stops.begin(); stop < next_stop; stop++)
+	{
+		us_stops.push_back((*stop)->first);
+	}
+	return us_stops;
 }
 
 vector <Visit_stop*> Bustrip::get_downstream_stops_till_horizon(Visit_stop *target_stop)
@@ -1401,6 +1442,23 @@ int Busstop::alight_passengers(Eventlist* eventlist, Bustrip* st_trip, double ti
 	} //demand format == 3
 
 	return npass_alighted;
+}
+
+double Busstop::find_trip_arrival_time(Bustrip * trip)
+{
+	double arrival_time = 0; //arrival time of trip to this stop (if it exists) 
+	map<double, Bustrip*> arrivals = arrivals_per_line[trip->get_line()];
+
+	for (map<double, Bustrip*>::iterator arrival = arrivals.begin(); arrival != arrivals.end(); arrival++)
+	{
+		if (arrival->second->get_id() == trip->get_id())
+		{
+			arrival_time = arrival->first;
+			break;
+		}
+	}
+
+	return arrival_time;
 }
 
 void Busstop::short_turn_force_alighting(Eventlist* eventlist, Bustrip* st_trip, double time)
@@ -2260,6 +2318,66 @@ double Bustrip::calc_scheduled_travel_time_between_stops(Busstop * stop1, Bussto
 		scheduled_tt = -scheduled_tt;
 	assert(scheduled_tt > 0);
 	return scheduled_tt;
+}
+
+bool Bustrip::check_forward_short_turn(double arrival_time)
+{
+	assert(theParameters->short_turn_control);
+	assert(entering_stop); //should only be called when entering a stop and before next_stop is updated
+
+	bool short_turned = false;
+	Busstop* last_visited; //last stop visited by this trip
+
+	last_visited = (*next_stop)->first; //if trip is currently entering a stop then last_stop_visited has not been updated yet
+	assert(this->get_line()->is_st_startstop(last_visited)); //this method should only be called for a short-turning start-stop
+
+	map<double, Bustrip*> last_stop_arrivals = last_visited->get_arrivals_per_line()[line];
+
+	map<double, Bustrip*>::iterator it_closest_arrival = last_stop_arrivals.lower_bound(arrival_time); //find the latest arrival to last stop visited before this one
+	if (it_closest_arrival == last_stop_arrivals.begin())//no trip has arrived to this stop before this one (or arrival map is empty)
+		return short_turned;
+
+	--it_closest_arrival;
+	if (it_closest_arrival->second->get_short_turned())
+	{
+		short_turned = true;
+	}
+
+	return short_turned;
+}
+
+Bustrip* Bustrip::find_closest_preceding_arrival(double arrival_time)
+{
+	Busstop* last_visited; //last stop visited by this trip
+	Bustrip* prec_trip = nullptr; //trip preceding this one Note: Regardless if this trip was short-turned!!
+	if (entering_stop)
+		last_visited = (*next_stop)->first; //if trip is currently entering a stop then last_stop_visited has not been updated yet
+	else
+		last_visited = last_stop_visited;
+
+	map<double, Bustrip*> last_stop_arrivals = last_visited->get_arrivals_per_line()[line];
+
+	map<double, Bustrip*>::iterator it_closest_arrival = last_stop_arrivals.lower_bound(arrival_time); //find the latest arrival to last stop visited before this one
+	if (it_closest_arrival == last_stop_arrivals.begin())//no trip has arrived to this stop before this one (or arrival map is empty)
+		return prec_trip;
+
+	--it_closest_arrival;
+	if (it_closest_arrival->second->get_id() == this->get_id())
+	{
+		if (it_closest_arrival != last_stop_arrivals.begin())
+		{
+			--it_closest_arrival;
+			prec_trip = it_closest_arrival->second;
+		}
+		else
+			return prec_trip;
+	}
+	else
+	{
+		prec_trip = it_closest_arrival->second;
+	}
+
+	return prec_trip;
 }
 
 double Bustrip::calc_forward_arrival_headway(double arrival_time)

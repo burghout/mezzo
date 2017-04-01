@@ -373,9 +373,12 @@ public:
 
 	//short-turning
 	double calc_scheduled_travel_time_between_stops(Busstop* stop1, Busstop* stop2); //!< calculates the scheduled travel time between stop1 and stop2 according to schedule of trip
+	bool check_forward_short_turn(double time); //!< returns true if the closest trip in front of this one (based at the current arrival time to a short-turning start-stop) was short-turned
+	Bustrip * find_closest_preceding_arrival(double arrival_time); //!< find the closest arrival to the one given (that is not this trip) at the last stop visited by this trip
 	double calc_forward_arrival_headway(double arrival_time); //!< forward headway of this trip based on arrival time of last stop visited by this trip, takes arrival time at last stop visited by this trip as input, returns 0 if no forward trip is found
 	double calc_backward_arrival_headway(double arrival_time); //!< backward headway of this trip based on arrival time of last stop visited by this trip, , takes arrival time at last stop visited by this trip as input, returns 0 if no forward trip is found
 	bool check_last_in_tripchain(); //!< checks if this trip is the last in chain assigned to vehicle (i.e. last in Bustrip driving roster)
+	Bustrip * find_previous_in_tripchain(); //finds the trip before this trip in trip chain, otherwise returns nullptr
 	void set_next_stop(vector<Visit_stop*>::iterator next_stop_) { next_stop = next_stop_; } //!<for changing next stop to end stop of short-turn
 	bool get_short_turned() { return short_turned; }
 	void set_short_turned(bool short_turned_) { short_turned = short_turned_; }
@@ -399,6 +402,7 @@ public:
 	static double find_crowding_coeff (bool sits, double load_factor);					//!< returns the crowding coefficeint based on lod factor and pass. seating/standing
 	pair<double, double> crowding_dt_factor (double nr_boarding, double nr_alighting);
 	vector <Busstop*> get_downstream_stops(); //!< return the remaining stops to be visited starting from 'next_stop', returns empty Busstop vector if there are none
+	vector <Busstop*> get_downstream_stops_from_stop(Busstop* first_stop); //!< return all downstream stops for this trip starting from first_stop, returns empty Busstop vector if there are none or if stop does not exist on this trips route
 	vector<Busstop*> get_upstream_stops(); //!< return the stops upstream of 'next_stop' for this trip, returns empty Busstop vector if there are none
 	vector <Visit_stop*> get_downstream_stops_till_horizon(Visit_stop* target_stop); //!< return the remaining stops to be visited starting from 'next_stop'
 
@@ -688,6 +692,7 @@ public:
 	void add_to_expected_bus_arrivals(pair<Bustrip*, double> bus_arrival_time_) { expected_bus_arrivals.push_back(bus_arrival_time_); } //!< used to teleport short-turned bus from the beginning of its next trip to the end stop of the short-turn
 	void short_turn_force_alighting(Eventlist * eventlist, Bustrip * st_trip, double time); //!< force passengers on-board a bus that is scheduled to short-turn to alight
 	int alight_passengers(Eventlist * eventlist, Bustrip * st_trip, double time, passengers& alighting_passengers); //!< alights passengers at this stop, records alighting output, passengers make connection decision or stay, returns size of alighting_passengers
+	double find_trip_arrival_time(Bustrip* trip);//!< finds the arrival time of trip to this stop. Returns 0 if no arrival time has been found
 
 //	Action for visits to stop
 	bool execute(Eventlist* eventlist, double time);									  //!< is executed by the eventlist and means a bus needs to be processed
