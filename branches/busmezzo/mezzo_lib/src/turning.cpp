@@ -84,7 +84,16 @@ bool Turning::process_veh(double time)
 			//}
 			if (inlink->exit_ok())
 			{
-			delay=server->get_delay(); // get new delay, may be stochastic (2007-10-26)
+				delay = server->get_delay(); // get new delay, may be stochastic (2007-10-26)
+				if (theParameters->short_turn_control && veh->get_type() == 4)
+				{
+					Bus* bus = static_cast<Bus*> (veh);
+					if (bus->get_short_turning()) //the bus is in the middle of a short turn and should ignore 'layover' delay
+					{
+						//DEBUG_MSG("Turning::process_veh is setting server delay = 0 for a bus that is in the middle of a short-turn");
+						delay = 0;
+					}
+				}
 				ok=outlink->enter_veh(veh, time+delay);	
 			   if (ok)
 				 return true;
