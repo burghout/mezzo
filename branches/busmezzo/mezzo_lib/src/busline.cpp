@@ -720,7 +720,7 @@ bool Bustrip::advance_next_stop (double time, Eventlist* eventlist)
 	// TODO - vec.end is post last 
 	if (busv->get_short_turning() && busv->get_on_trip() == true) //if bus is short-turning and has not been teleported to the last stop on its line yet 
 	{
-		DEBUG_MSG( "Bustrip::advance_next_stop is setting next_stop to final stop of trip " << this->get_id() );
+		//DEBUG_MSG( "Bustrip::advance_next_stop is setting next_stop to final stop of trip " << this->get_id() );
 		next_stop = stops.end(); //short-turned bus has teleported to exit last stop for this trip
 		return true;
 	}
@@ -1165,7 +1165,7 @@ void Busstop::book_bus_arrival(Eventlist* eventlist, double time, Bustrip* trip)
 		for (endstop_iter = trip->stops.begin(); endstop_iter < trip->stops.end(); endstop_iter++) //find end stop 
 		{
 			if ((*endstop_iter)->first->get_id() == trip->get_busv()->get_end_stop_id()) {
-				DEBUG_MSG("Busstop::book_bus_arrival booking arrival to end stop " << (*endstop_iter)->first->get_id() << " for bus " << trip->get_busv()->get_bus_id() << " at time " << time);
+				//DEBUG_MSG("Busstop::book_bus_arrival booking arrival to end stop " << (*endstop_iter)->first->get_id() << " for bus " << trip->get_busv()->get_bus_id() << " at time " << time);
 				trip->set_next_stop(endstop_iter);
 				end_stop = (*endstop_iter)->first;
 				break;
@@ -1738,6 +1738,8 @@ bool Busstop::execute(Eventlist* eventlist, double time) // is executed by the e
 		}
 		else // there are no more stops on this route
 		{
+			//if (exiting_trip->get_busv()->get_short_turning())
+			//	DEBUG_MSG("Bus " << exiting_trip->get_busv()->get_bus_id() << " has teleported to end of route at time " << time);
 			exiting_trip->get_line()->update_total_travel_time (exiting_trip, time);
 			relative_length = (veh->get_curr_link()->get_length()-position)/ veh->get_curr_link()->get_length(); // calculated for the remaining part of the link 
 			double exit_time = time + link_total_travel_time * relative_length;
@@ -2160,6 +2162,8 @@ void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, d
 				bool last_waiting_pass = false; 
 				while (check_pass < pass_waiting_od.end())
 				{
+					/*if ((*check_pass)->get_forced_alighting())
+						DEBUG_MSG("Passenger that was forced to alight is making a boarding decision at stop " << this->get_id());*/
 					// progress each waiting passenger  
 					ODstops* this_od = this->get_stop_od_as_origin_per_stop((*check_pass)->get_OD_stop()->get_destination());
 					(*check_pass)->set_ODstop(this_od);
@@ -2494,7 +2498,7 @@ bool Bustrip::check_forward_short_turn(double arrival_time)
 Bustrip* Bustrip::find_closest_preceding_arrival(double arrival_time)
 {
 	Busstop* last_visited; //last stop visited by this trip
-	Bustrip* prec_trip = nullptr; //trip preceding this one Note: Regardless if this trip was short-turned!!
+	Bustrip* prec_trip = nullptr; //trip preceding this one Note: Regardless if this trip was short-turned or has overtaken!!
 	if (entering_stop)
 		last_visited = (*next_stop)->first; //if trip is currently entering a stop then last_stop_visited has not been updated yet
 	else
