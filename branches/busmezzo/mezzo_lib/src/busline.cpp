@@ -1016,12 +1016,12 @@ pair<double, double> Bustrip::crowding_dt_factor (double nr_boarding, double nr_
 
 vector <Busstop*> Bustrip::get_downstream_stops()
 {
-	vector <Busstop*> remaining_stops;
+	vector <Busstop*> ds_stops;
 	for(vector <Visit_stop*> :: iterator stop = next_stop; stop < stops.end(); stop++)
 	{
-		remaining_stops.push_back((*stop)->first);
+		ds_stops.push_back((*stop)->first);
 	}
-	return remaining_stops;
+	return ds_stops;
 }
 
 vector<Busstop*> Bustrip::get_downstream_stops_from_stop(Busstop * first_stop)
@@ -2616,6 +2616,19 @@ double Bustrip::calc_backward_arrival_headway(double arrival_time)
 		}
 	}
 	if (stop_it == us_stops.rend()) //no other trips have arrived to any stops upstream that have not already overtaken this trip
+bool Bustrip::is_behind(Bustrip* trip)
+{
+	assert(this->get_line()->get_id() == trip->get_line()->get_id());
+	assert(this->get_id() != trip->get_id());
+
+	int nr_downstream = this->get_downstream_stops().size();
+	int nr_downstream2 = trip->get_downstream_stops().size();
+
+	if (nr_downstream > nr_downstream2)
+		return true; //this trip is behind the trip given as argument (i.e., has more stops downstream to visit)
+	else
+		return false;
+}
 		return 0;
 
 	scheduled_tt = calc_scheduled_travel_time_between_stops(last_visited, (*stop_it));

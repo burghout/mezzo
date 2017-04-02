@@ -377,6 +377,7 @@ public:
 	Bustrip * find_closest_preceding_arrival(double arrival_time); //!< find the closest arrival to the one given (that is not this trip) at the last stop visited by this trip
 	double calc_forward_arrival_headway(double arrival_time); //!< forward headway of this trip based on arrival time of last stop visited by this trip, takes arrival time at last stop visited by this trip as input, returns 0 if no forward trip is found
 	double calc_backward_arrival_headway(double arrival_time); //!< backward headway of this trip based on arrival time of last stop visited by this trip, , takes arrival time at last stop visited by this trip as input, returns 0 if no forward trip is found
+	bool is_behind(Bustrip* trip); //!< true if this trip is behind input trip, false otherwise NOTE: this assumsed that the trips are from the same line
 	bool check_last_in_tripchain(); //!< checks if this trip is the last in chain assigned to vehicle (i.e. last in Bustrip driving roster)
 	Bustrip * find_previous_in_tripchain(); //finds the trip before this trip in trip chain, otherwise returns nullptr
 	void set_next_stop(vector<Visit_stop*>::iterator next_stop_) { next_stop = next_stop_; } //!<for changing next stop to end stop of short-turn
