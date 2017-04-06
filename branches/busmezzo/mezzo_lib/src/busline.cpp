@@ -305,6 +305,53 @@ bool Busline::is_st_startstop(Busstop * stop)
 	}
 	return false;
 }
+
+vector<Busstop*> Busline::get_downstream_stops_line(Busstop* stop)
+{
+	vector <Busstop*> ds_stops;
+	//find position of stop in vector
+	vector<Busstop*>::iterator stop_pos;
+	for (stop_pos = stops.begin(); stop_pos != stops.end(); stop_pos++)
+	{
+		if ((*stop_pos)->get_id() == stop->get_id())
+			break;
+	}
+
+	if (stop_pos == stops.end()) //stop does not exist on this line
+	{
+		DEBUG_MSG("Busline::get_downstream_stops_line warning: Stop " << stop->get_id() << " does not exist on line " << this->get_id());
+		return ds_stops; 
+	}
+
+	for (vector<Busstop*>::iterator ds_stop = stop_pos; ds_stop < stops.end(); ds_stop++)
+	{
+		ds_stops.push_back((*ds_stop));
+	}
+	return ds_stops;
+}
+
+vector<Busstop*> Busline::get_upstream_stops_line(Busstop* stop)
+{
+	vector<Busstop*> us_stops;
+	//find position of stop in vector
+	vector<Busstop*>::iterator stop_pos;
+	for (stop_pos = stops.begin(); stop_pos != stops.end(); stop_pos++)
+	{
+		if ((*stop_pos)->get_id() == stop->get_id())
+			break;
+	}
+	if (stop_pos == stops.end()) //stop does not exist on this line
+	{
+		DEBUG_MSG("Busline::get_downstream_stops_line warning: Stop " << stop->get_id() << " does not exist on line " << this->get_id());
+		return us_stops;
+	}
+	for (vector<Busstop*>::iterator us_stop = stops.begin(); us_stop < stop_pos; us_stop++)
+	{
+		us_stops.push_back((*us_stop));
+	}
+	return us_stops;
+}
+
 double Busline::calc_curr_line_headway ()
 {
 	if (curr_trip == trips.end()) 

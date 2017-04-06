@@ -213,6 +213,8 @@ public:
 
 	//short-turning methods
 	bool is_st_startstop(Busstop* stop); //!< returns true if stop is a short-turning stop for this busline, otherwise it returns false
+	vector<Busstop*> get_downstream_stops_line(Busstop* stop); //!< returns all stops on this line downstream of the stop given as an argument INCLUDING the stop given as argument
+	vector<Busstop*> get_upstream_stops_line(Busstop * stop); //!< returns all stops on this line downstream of the stop given as an argument NOT INCLUDING the stop given as argument
 	
 	// checks
 	bool check_last_stop (Busstop* stop);
