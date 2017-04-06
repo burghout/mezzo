@@ -375,7 +375,7 @@ public:
 
 	//short-turning
 	double calc_scheduled_travel_time_between_stops(Busstop* stop1, Busstop* stop2); //!< calculates the scheduled travel time between stop1 and stop2 according to schedule of trip
-	bool check_forward_short_turn(double time); //!< returns true if the closest trip in front of this one (based at the current arrival time to a short-turning start-stop) was short-turned
+	bool check_consecutive_short_turn(double time); //!<call when trip is entering a stop. returns true if nearest to arrival before this one was short-turned
 	Bustrip * find_closest_preceding_arrival(double arrival_time); //!< find the closest arrival to the one given (that is not this trip) at the last stop visited by this trip
 	double calc_forward_arrival_headway(double arrival_time); //!< forward headway of this trip based on arrival time of last stop visited by this trip, takes arrival time at last stop visited by this trip as input, returns 0 if no forward trip is found
 	double calc_backward_arrival_headway(double arrival_time); //!< backward headway of this trip based on arrival time of last stop visited by this trip, , takes arrival time at last stop visited by this trip as input, returns 0 if no forward trip is found

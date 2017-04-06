@@ -1343,7 +1343,7 @@ int Busstop::calc_short_turning(Bustrip * trip, double time)
 
 	if (!trip->get_line()->check_first_trip(trip))
 	{
-		if (trip->check_forward_short_turn(time)) //DEBUG testing purposes, do not short-turn consequtive trips
+		if (trip->check_consecutive_short_turn(time)) //DEBUG testing purposes, do not short-turn consequtive trips
 		{
 			DEBUG_MSG(endl << "Trip " << trip->get_id() << " will not short-turn because previous trip " << trip->find_closest_preceding_arrival(time)->get_id() << " was short-turned");
 			return 0;
@@ -2516,7 +2516,7 @@ double Bustrip::calc_scheduled_travel_time_between_stops(Busstop * stop1, Bussto
 	return scheduled_tt;
 }
 
-bool Bustrip::check_forward_short_turn(double arrival_time)
+bool Bustrip::check_consecutive_short_turn(double arrival_time)
 {
 	assert(theParameters->short_turn_control);
 	assert(entering_stop); //should only be called when entering a stop and before next_stop is updated
