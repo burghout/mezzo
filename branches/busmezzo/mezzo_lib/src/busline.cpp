@@ -1307,7 +1307,7 @@ void Busstop::short_turn_exit(Bustrip * st_trip, int target_stop_id, double time
 	//Link* last_link = orig_route->lastlink();
 	st_trip->get_busv()->set_curr_link(last_link);
 
-	//record_busstop_visit(entering_trip, entering_trip->get_enter_time()); // document stop-related info
+	record_busstop_visit(st_trip, st_trip->get_enter_time(), true); // document stop-related info
 																		  // done BEFORE update_last_arrivals in order to calc the headway and BEFORE set_last_stop_exit_time
 	
 	st_trip->get_busv()->record_busvehicle_location(st_trip, this, st_trip->get_enter_time());
@@ -1903,7 +1903,7 @@ bool Busstop::execute(Eventlist* eventlist, double time) // is executed by the e
 		occupy_length (entering_trip->get_busv());
 		buses_currently_at_stop.push_back(exiting_trip);
 		eventlist->add_event (exit_time, this); // book an event for the time it exits the stop
-		record_busstop_visit (entering_trip, entering_trip->get_enter_time()); // document stop-related info
+		record_busstop_visit (entering_trip, entering_trip->get_enter_time(), false); // document stop-related info
 								// done BEFORE update_last_arrivals in order to calc the headway and BEFORE set_last_stop_exit_time
 		entering_trip->get_busv()->record_busvehicle_location (entering_trip, this, entering_trip->get_enter_time());
 		entering_trip->set_last_stop_exit_time(exit_time);
@@ -3130,7 +3130,7 @@ int Busstop::calc_total_nr_waiting ()
 return total_nr_waiting;
 }
 
-void Busstop::record_busstop_visit (Bustrip* trip, double enter_time)  // creates a log-file for stop-related info
+void Busstop::record_busstop_visit (Bustrip* trip, double enter_time, bool short_turn_at_stop)  // creates a log-file for stop-related info
 {
 	double arrival_headway = get_time_since_arrival (trip , enter_time);
 	int occupancy = trip->get_busv()->get_occupancy();
@@ -3163,7 +3163,7 @@ void Busstop::record_busstop_visit (Bustrip* trip, double enter_time)  // create
 	}
 	output_stop_visits.push_back(Busstop_Visit(trip->get_line()->get_id(), trip->get_id() , trip->get_busv()->get_bus_id() , get_id() , enter_time,
 		trip->scheduled_arrival_time (this),dwelltime,(enter_time - trip->scheduled_arrival_time (this)), exit_time, riding_time, riding_time * nr_riders, crowded_pass_riding_time, crowded_pass_dwell_time, crowded_pass_holding_time,
-		arrival_headway, get_time_since_departure (trip , exit_time), nr_alighting , nr_boarding , occupancy, calc_total_nr_waiting(), (arrival_headway * nr_boarding)/2, holdingtime)); 
+		arrival_headway, get_time_since_departure (trip , exit_time), nr_alighting , nr_boarding , occupancy, calc_total_nr_waiting(), (arrival_headway * nr_boarding)/2, holdingtime, short_turn_at_stop));
 }
 
 double Busstop::calc_crowded_travel_time (double travel_time, int nr_riders, int nr_seats) //Returns the sum of the travel time weighted by the crowding factors

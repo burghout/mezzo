@@ -480,11 +480,12 @@ public:
 		int		occupancy_,	
 		int		nr_waiting_, 
 		double	total_waiting_time_, 
-		double	holding_time_
+		double	holding_time_,
+		bool	short_turn_at_stop_
 	): line_id(line_id_),trip_id(trip_id_),vehicle_id(vehicle_id_), stop_id(stop_id_),entering_time(entering_time_),sched_arr_time(sched_arr_time_),dwell_time(dwell_time_),
 	   lateness(lateness_), exit_time (exit_time_),riding_time (riding_time_), riding_pass_time (riding_pass_time_), crowded_pass_riding_time (crowded_pass_riding_time_), 
 	   crowded_pass_dwell_time (crowded_pass_dwell_time_), crowded_pass_holding_time (crowded_pass_holding_time_), time_since_arr(time_since_arr_),time_since_dep(time_since_dep_),
-	   nr_alighting(nr_alighting_),nr_boarding(nr_boarding_),occupancy(occupancy_),nr_waiting(nr_waiting_), total_waiting_time(total_waiting_time_),holding_time(holding_time_) {}
+	   nr_alighting(nr_alighting_),nr_boarding(nr_boarding_),occupancy(occupancy_),nr_waiting(nr_waiting_), total_waiting_time(total_waiting_time_),holding_time(holding_time_), short_turn_at_stop(short_turn_at_stop_){}
 
 	virtual ~Busstop_Visit(); //!< destructor
 	void write (ostream& out) { 
@@ -506,7 +507,8 @@ public:
 			<< occupancy << '\t'
 			<< nr_waiting << '\t'
 			<< total_waiting_time << '\t' 
-			<< holding_time << '\t'	<< endl; 
+			<< holding_time << '\t' 
+			<< short_turn_at_stop << '\t' << endl;
 	}
 	void reset () {
 		line_id = 0; 
@@ -528,6 +530,7 @@ public:
 		nr_waiting = 0; 
 		total_waiting_time = 0; 
 		holding_time = 0; 
+		short_turn_at_stop = 0;
 	}
 	int line_id;
 	int trip_id;
@@ -551,6 +554,7 @@ public:
 	int nr_waiting;
 	double total_waiting_time;
 	double holding_time;
+	bool short_turn_at_stop;
 };
 
 class Output_Summary_Stop_Line // container object holding output data for stop visits
@@ -577,6 +581,7 @@ public:
 			<< total_stop_pass_holding_time << '\t' 
 			<< stop_avg_holding_time << '\t' 
 			<< total_stop_travel_time_crowding << '\t'
+			<< total_st_count << '\t'
 			<< endl; 
 	}
 	void reset () { 
@@ -596,6 +601,7 @@ public:
 		total_stop_pass_holding_time = 0;
 		stop_avg_holding_time = 0;
 		total_stop_travel_time_crowding = 0;
+		total_st_count = 0;
 	}
 	double stop_avg_headway;
 	double stop_avg_DT;
@@ -613,6 +619,7 @@ public:
 	double total_stop_pass_holding_time;
 	double stop_avg_holding_time;
 	double total_stop_travel_time_crowding;
+	int total_st_count;
 };
 
 class Busstop : public Action
@@ -732,7 +739,7 @@ public:
 
 // output-related functions
 	void write_output(ostream & out);
-	void record_busstop_visit (Bustrip* trip, double enter_time); //!< creates a log-file for stop-related info
+	void record_busstop_visit (Bustrip* trip, double enter_time, bool short_turn_at_stop); //!< creates a log-file for stop-related info
 	static double calc_crowded_travel_time (double travel_time, int nr_riders, int nr_seats);
 	
 	void calculate_sum_output_stop_per_line(int line_id); //!< calculates for a single line that visits the stop (identified by line_id)
