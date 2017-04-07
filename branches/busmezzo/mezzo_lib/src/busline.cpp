@@ -1408,7 +1408,8 @@ int Busstop::calc_short_turning(Bustrip * trip, double time)
 		Bustrip* closest_backward_trip = end_stop->find_closest_backward_trip(opposite_line); //closest backwards trip
 		if (closest_backward_trip == nullptr)
 			return 0; //TODO: Add a condition for this
-		opp_backward_headway = closest_backward_trip->calc_scheduled_travel_time_between_stops(end_stop, closest_backward_trip->get_last_stop_visited()); //closest forward is considered to be the end of the line
+		opp_backward_headway = closest_backward_trip->calc_scheduled_travel_time_between_stops(closest_backward_trip->stops.back()->first, closest_backward_trip->get_last_stop_visited()); //closest forward is considered to be the end of the line
+		opp_last_arrival = time; //basically says that m1 has reached the final stop on this line at the arrival time of closest forward_trip (st_opp_backward_headway will thus correspond to time of short-turn + scheduled time to last stop in opposite direction)
 		scheduled_tt = closest_backward_trip->calc_scheduled_travel_time_between_stops(end_stop, closest_backward_trip->stops.back()->first);
 	}
 	else
@@ -2803,7 +2804,10 @@ double Bustrip::calc_backward_arrival_headway()
 	}
 
 	if (!found) //no other trips have arrived to any stops upstream that have not already overtaken this trip
-		return 0;
+	{
+		backward_arr_headway = calc_scheduled_travel_time_between_stops(last_stop_visited, this->stops.front()->first); //backward headway is scheduled travel time between last stop visited by trip and beginning of line
+		return backward_arr_headway;
+	}
 
 	arrival_last_visited = last_stop_visited->find_trip_arrival_time(this);
 	assert(arrival_last_visited != 0); //this trip should guaranteed have an arrival time to its last stop visited
@@ -2851,7 +2855,10 @@ double Bustrip::calc_backward_arrival_headway(double arrival_time)
 			break;
 	}
 	if (!found) //no other trips have arrived to any stops upstream that have not already overtaken this trip
-		return 0;
+	{
+		backward_arr_headway = calc_scheduled_travel_time_between_stops(last_visited, this->stops.front()->first); //backward headway is scheduled travel time between last stop visited by trip and beginning of line
+		return backward_arr_headway;
+	}
 
 	scheduled_tt = calc_scheduled_travel_time_between_stops(last_visited, (*stop_it));
 	expected_arrival = succ_arrival + scheduled_tt;
@@ -3207,6 +3214,7 @@ void Busstop::calculate_sum_output_stop_per_line(int line_id)
 	output_summary[line_id].total_stop_pass_holding_time = 0;
 	output_summary[line_id].stop_avg_holding_time = 0;
 	output_summary[line_id].total_stop_travel_time_crowding = 0;
+	output_summary[line_id].total_st_count = 0;
 
 	for (list <Busstop_Visit>::iterator iter1 = output_stop_visits.begin(); iter1!=output_stop_visits.end();iter1++)
 	{
@@ -3240,6 +3248,7 @@ void Busstop::calculate_sum_output_stop_per_line(int line_id)
 				output_summary[line_id].total_stop_pass_holding_time += (*iter1).holding_time * (*iter1).occupancy;
 				//output_summary[line_id].total_stop_pass_holding_time += (*iter1).holding_time;
 				output_summary[line_id].total_stop_travel_time_crowding += (*iter1).crowded_pass_riding_time + (*iter1).crowded_pass_dwell_time + (*iter1).crowded_pass_holding_time;
+				output_summary[line_id].total_st_count += (*iter1).short_turn_at_stop;
 				if ((*iter1).lateness > 300)
 				{
 					output_summary[line_id].stop_late ++;
