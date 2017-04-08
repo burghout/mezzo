@@ -102,6 +102,13 @@ bool Busline::execute(Eventlist* eventlist, double time)
 		if (curr_trip->first->get_busv()->get_short_turn_counter() == 0) //if bus has short-turned earlier than it is no longer running according to scheduling constraints, if it has not then we wish to adhere to predefined schedule
 			curr_trip->first->activate(time, busroute, odpair, eventlist); // activates the trip, generates bus etc.
 		
+		if (curr_trip->first->get_activated() != true && curr_trip->first->get_busv()->get_short_turn_counter() == 0) //do not activate and already activated trip, if bus has short-turned earlier than it is no longer running according to scheduling constraints, if it has not then we wish to adhere to predefined schedule
+		{
+			bool activate_ok = false;
+			activate_ok = curr_trip->first->activate(time, busroute, odpair, eventlist); // activates the trip, generates bus etc.
+			curr_trip->first->set_activated(activate_ok);
+		}
+
 		curr_trip++; // now points to next trip
 		if (curr_trip < trips.end()) // if there exists a next trip
 		{
@@ -637,6 +644,7 @@ Bustrip::Bustrip ()
 	last_stop_visited = stops.front()->first;
 	holding_at_stop = false;
 	short_turned = false;
+	activated = false;
 	actual_dispatching_time = 0.0;
 	for (vector <Visit_stop*>::iterator visit_stop_iter = stops.begin(); visit_stop_iter < stops.end(); visit_stop_iter++)
 	{
@@ -663,6 +671,7 @@ Bustrip::Bustrip (int id_, double start_time_, Busline* line_): id(id_), startti
 	last_stop_exit_time = 0;
 	holding_at_stop = false;
 	short_turned = false;
+	activated = false;
 	for (vector<Visit_stop*>::iterator visit_stop_iter = stops.begin(); visit_stop_iter < stops.end(); visit_stop_iter++)
 	{
 		assign_segements[(*visit_stop_iter)->first] = 0;
@@ -706,6 +715,7 @@ void Bustrip::reset ()
 	last_stop_visited = stops.front()->first;
 	holding_at_stop = false;
 	short_turned = false;
+	activated = false;
 }
 
 void Bustrip::convert_stops_vector_to_map ()

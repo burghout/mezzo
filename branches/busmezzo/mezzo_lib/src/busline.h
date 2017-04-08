@@ -393,6 +393,9 @@ public:
 	map <Busstop*, bool> visited_stop; //!< true for each stop this trip has visited
 	bool has_visited(Busstop* stop) { if (visited_stop.count(stop) == 0) return false; return visited_stop[stop]; }
 
+	bool get_activated() { return activated; }
+	void set_activated(bool activated_) { activated = activated; }
+
 // other functions:	
 //	bool is_trip_timepoint(Busstop* stop); //!< returns 1 if true, 0 if false, -1 if busstop not found
 	bool activate (double time, Route* route, ODpair* odpair, Eventlist* eventlist_);	//!< activates the trip. Generates the bus and inserts in net.
@@ -447,6 +450,7 @@ protected:
 
 	bool short_turned; //!< true if trip has been short-turned to begin before its scheduled start time (according to trips vector in Busline), false otherwise
 	bool entering_stop; //!< true if trip is currently in the process of entering a stop (e.g. before next_stop is updated)
+	bool activated; //!<true if trip has been activated (to ensure that we only activate a trip once)
 };
 
 typedef pair<Busstop*, double> stop_rate;

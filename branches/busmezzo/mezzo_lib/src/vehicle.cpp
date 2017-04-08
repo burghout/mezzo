@@ -152,6 +152,7 @@ void Bus::advance_curr_trip (double time, Eventlist* eventlist) // progresses tr
 	on_trip = false;  // the bus is avaliable for its next trip
 	if (next_trip != curr_trip->driving_roster.end()) // there are more trips for this bus
 	{
+		bool activate_ok = false;
 		Bus* bus_copy = (*next_trip)->first->get_busv();
 		bus_copy->set_short_turn_counter(this->short_turn_counter); //pass the short_turn counter over from curr_trip to next trip
 		if (this->short_turning) //if bus is short-turning we want to advance to next trip immediately to start skipping stops from origin of opposite line to end stop
@@ -166,18 +167,20 @@ void Bus::advance_curr_trip (double time, Eventlist* eventlist) // progresses tr
 
 			(*next_trip)->first->set_last_stop_visited(curr_trip->get_last_stop_visited()); //pass over last stop visited
 			(*next_trip)->first->set_short_turned(true); //set indicator that this trip start is the result of a short_turn
-			(*next_trip)->first->activate(time, line->get_busroute(), line->get_odpair(), eventlist);
-
+			activate_ok = (*next_trip)->first->activate(time, line->get_busroute(), line->get_odpair(), eventlist);
+			(*next_trip)->first->set_activated(activate_ok);
 		}
 		if ((*next_trip)->first->get_starttime() <= time) // if the bus is already late for the next trip
 		{
 			Busline* line = (*next_trip)->first->get_line();
-			(*next_trip)->first->activate(time, line->get_busroute(), line->get_odpair(), eventlist); //activate next trip
+			activate_ok = (*next_trip)->first->activate(time, line->get_busroute(), line->get_odpair(), eventlist); //activate next trip
+			(*next_trip)->first->set_activated(activate_ok);
 		}
 		if ((*next_trip)->first->get_starttime() > time && bus_copy->get_short_turn_counter() > 0 && this->short_turning == false) //if bus ready earlier for its next scheduled trip due to short-turning we do not care about schedule adherence anymore
 		{
 			Busline* line = (*next_trip)->first->get_line();
-			(*next_trip)->first->activate(time, line->get_busroute(), line->get_odpair(), eventlist); //activate next trip
+			activate_ok = (*next_trip)->first->activate(time, line->get_busroute(), line->get_odpair(), eventlist); //activate next trip
+			(*next_trip)->first->set_activated(activate_ok);
 		}
 		 //if the bus is early for the next trip, then it will be activated at the scheduled time from Busline (unless bus has previously short-turned)
 	}
