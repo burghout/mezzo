@@ -746,7 +746,7 @@ bool Parameters::read_parameters (istream & in )
 }
 
 
-void Parameters::write_parameters(ostream & out)
+void Parameters::write_parameters(ostream& )
 {
 #ifndef _NO_GUI
    out << "#drawing_parameters" << endl;

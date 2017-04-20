@@ -615,7 +615,7 @@ void ODstops::record_waiting_experience(Passenger* pass, Bustrip* trip, double t
 
 void ODstops::record_onboard_experience(Passenger* pass, Bustrip* trip, Busstop* stop, pair<double,double> riding_coeff)
 {
-	double expected_ivt;
+	double expected_ivt = 0.0;
 	double first_stop_time;
 	double second_stop_time;
 	for (vector<Visit_stop*>::iterator stop_v = trip->stops.begin(); stop_v < trip->stops.end(); stop_v++)
@@ -842,7 +842,7 @@ bool ODzone::execute (Eventlist* eventlist, double curr_time)
 		return true;
 	}
 // called only for generting pass.
-	if (active = true) // generate passenger from the second call, as first initialization call just set time to first passenger
+	if (active == true) // generate passenger from the second call, as first initialization call just set time to first passenger
 	{	
 		// for each of the destination zones from this origin zone
 		for (map<ODzone*,double>::iterator dzones_iter = arrival_rates.begin(); dzones_iter != arrival_rates.end(); dzones_iter++)
