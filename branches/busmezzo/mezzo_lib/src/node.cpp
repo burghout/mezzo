@@ -360,7 +360,7 @@ BoundaryOut::~BoundaryOut ()
 
 
 
-bool BoundaryOut::process_veh(Vehicle* veh, double time)
+bool BoundaryOut::process_veh(Vehicle* veh, double)
 {
 	#ifdef _MIME
 		Link* lptr=NULL;

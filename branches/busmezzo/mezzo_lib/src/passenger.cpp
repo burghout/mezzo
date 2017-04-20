@@ -655,7 +655,7 @@ Busstop* Passenger::make_first_stop_decision (double time)
 				for (vector <Pass_path*>::iterator path_iter = path_set.begin(); path_iter < path_set.end(); path_iter++)
 				{
 					vector<vector<Busstop*> > alt_stops = (*path_iter)->get_alt_transfer_stops();
-					vector<vector<Busstop*> >::iterator stops_iter = alt_stops.begin();
+//					vector<vector<Busstop*> >::iterator stops_iter = alt_stops.begin();
 					// taking into account the walking distances from the origin to the origin stop and from the last stop till the final destination
 					candidate_origin_stops_u[(*o_stop_iter).first] += exp(theParameters->walking_time_coefficient * origin_walking_distances[(*o_stop_iter).first]/ theRandomizers[0]->nrandom(theParameters->average_walking_speed, theParameters->average_walking_speed/4) + theParameters->walking_time_coefficient * destination_walking_distances[(*d_stop_iter).first]/ theRandomizers[0]->nrandom(theParameters->average_walking_speed, theParameters->average_walking_speed/4) + possible_od->calc_combined_set_utility_for_connection ((*path_iter)->get_walking_distances().front(), time, this));
 				}
