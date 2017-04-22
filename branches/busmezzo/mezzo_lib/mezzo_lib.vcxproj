@@ -115,6 +115,7 @@ nmake release</NMakeReBuildCommandLine>
   <ItemDefinitionGroup>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\include\dlib\all\source.cpp" />
     <ClCompile Include="src\busline.cpp" />
     <ClCompile Include="src\day2day.cpp" />
     <ClCompile Include="src\eventlist.cpp" />

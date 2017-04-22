@@ -292,7 +292,8 @@ public:
   void find_average_line_stop_schedule();
   hist_set* find_average_line_stop(int index);
   void find_average_demand_stop();
-  hist_demand* find_average_demand(int stop_id);
+  hist_demand* find_average_demand(LineIdStopId line_stop);
+  bool is_first_time_line_stop(LineIdStopId line_stop);
   //void CreateHistMatrices();
   /************************************************************************************/
   void generate_stop_ods(); // generate stop od pairs between all stop combinations
@@ -395,11 +396,14 @@ protected:
 	vector<hist_set*> history_inputs; //hend added 1/11/16 for historical inputs.
     //vector<hist_set*> history_summary; //hend added 1/11/16 for historical inputs.
 	vector<hist_paths*> history_paths; //hend added 7/2/17 for historical inputs- selected path in order to get the transfers
-	map<int, int> source;	// Hend: map for origins for each stop
-	map<int, int> destination;	// Hend: map for destinations for each stop
-	map<int, int> transfer;	// Hend: map for transfers for each stop
-	map<LineIdStopSchedule, hist_set*, CompareLineStopSched> history_summary_map;
-	map<StopSchedule, hist_demand*, CompareStopID> history_demand_map;
+	
+	map<LineIdStopId, hist_set*, CompareLineStop> history_summary_map;
+	map<LineIdStopId, hist_demand*, CompareLineStop> history_demand_map;
+	map<LineIdStopId, LineStationData*, CompareLineStop> hist_dmnd_map;
+	map<LineIdStopId, int> source;	// Hend: map for origins for each stop
+	map<LineIdStopId, int> destination;	// Hend: map for destinations for each stop
+	map<LineIdStopId, int> transfer_board;	// Hend: map for transfer boardings for each stop
+	map<LineIdStopId, int> transfer_alight;	// Hend: map for transfer alightings for each stop
 
 	Day2day* day2day;
 	map<ODSL, Travel_time> wt_rec; //the record of waiting time data

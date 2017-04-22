@@ -1599,7 +1599,7 @@ bool Network::readbusstop (istream& in) // reads a busstop
       cout << "readfile::readsbusstop error at stop " << stop_id << ". Link " << link_id << " does not exist." << endl;
   }
 
-  Busstop* st= new Busstop (stop_id, name, link_id, position, length, has_bay, can_overtake, min_DT, RTI_stop, &history_summary_map, &history_demand_map);
+  Busstop* st= new Busstop (stop_id, name, link_id, position, length, has_bay, can_overtake, min_DT, RTI_stop, &history_summary_map, &history_demand_map, &hist_dmnd_map);
   st->add_distance_between_stops(st,0.0);
     in >> bracket;
     if (bracket != '}')
@@ -2683,14 +2683,37 @@ bool Network::readselectedpath(string name)
 		}
 	}
 	int rounds = (ids_number == 0) ? 1 : history_paths.size() / ids_number;
-	for (pair<int, int> src : source) {
-		src.second /= rounds;
+	for (map<LineIdStopId, LineStationData*, CompareLineStop>::iterator hist_dmnd_iter = hist_dmnd_map.begin(); hist_dmnd_iter != hist_dmnd_map.end(); ++hist_dmnd_iter)
+	{
+		for (list<BoardDemand>::iterator list_brd_iter = hist_dmnd_iter->second->boardings.begin(); list_brd_iter != hist_dmnd_iter->second->boardings.end(); ++list_brd_iter)
+		{
+			list_brd_iter->passengers_number_ /= (rounds * theParameters->running_time * 3600);
+		}
+		for (list<AlightDemand>::iterator list_alight_iter = hist_dmnd_iter->second->alightings.begin(); list_alight_iter != hist_dmnd_iter->second->alightings.end(); ++list_alight_iter)
+		{
+			list_alight_iter->passengers_number_ /= (rounds * theParameters->running_time * 3600);
+		}
+		for (list<BoardDemandTransfer>::iterator list_brd_iter = hist_dmnd_iter->second->boardingTransfers.begin(); list_brd_iter != hist_dmnd_iter->second->boardingTransfers.end(); ++list_brd_iter)
+		{
+			list_brd_iter->passengers_number_ /= (rounds * theParameters->running_time * 3600);
+		}
+		for (list<AlightDemandTransfer>::iterator list_alight_iter = hist_dmnd_iter->second->alightingTransfers.begin(); list_alight_iter != hist_dmnd_iter->second->alightingTransfers.end(); ++list_alight_iter)
+		{
+			list_alight_iter->passengers_number_ /= (rounds * theParameters->running_time * 3600);
+		}
+
 	}
-	for (pair<int, int> src : destination) {
-		src.second /= rounds;
+	for (pair<LineIdStopId, int> src : source) {
+		src.second /= (rounds * theParameters->running_time * 3600);
 	}
-	for (pair<int, int> src : transfer) {
-		src.second /= rounds;
+	for (pair<LineIdStopId, int> dest : destination) {
+		dest.second /= (rounds * theParameters->running_time * 3600);
+	}
+	for (pair<LineIdStopId, int> brd : transfer_board) {
+		brd.second /= (rounds * theParameters->running_time * 3600);
+	}
+	for (pair<LineIdStopId, int> alght : transfer_alight) {
+		alght.second /= (rounds * theParameters->running_time * 3600);
 	}
 	cout << "Read Selected path completed" << endl;
 	return true;
@@ -2707,8 +2730,8 @@ void Network::find_average_line_stop_schedule()
 			//history_summary.push_back(hist);
 			int line_id = history_inputs[i]->line_id;
 			int stop_id = history_inputs[i]->stop_id;
-			LineIdStopSchedule lineId(line_id, stop_id);
-			history_summary_map.insert(std::pair<LineIdStopSchedule, hist_set*>(lineId, hist));
+			LineIdStopId lineId(line_id, stop_id);
+			history_summary_map.insert(std::pair<LineIdStopId, hist_set*>(lineId, hist));
 		}
 	}
 }
@@ -2782,6 +2805,7 @@ bool Network::read_selected_path(istream& in)
 	double start_time, total_walking_time, total_waiting_time, total_waiting_time_denied, total_IVT, total_IVT_crowding, end_time;
 	vector<int> stops;
 	vector<int> trips;
+	vector<int> line_ids;
 
 	in >> passenger_ID >> origin_ID >> destination_ID >> start_time >> total_walking_time >> total_waiting_time >> total_waiting_time_denied >> total_IVT >> total_IVT_crowding >> end_time;
 	in >> bracket;
@@ -2825,70 +2849,175 @@ bool Network::read_selected_path(istream& in)
 		}
 	}
 
-	// Add source stop
-	int sourceStop = stops.front();
-	map<int, int>::iterator  sr = source.find(sourceStop);
-	if (sr != source.end()) {
-		sr->second++;
+	for (int tr_it = 0; tr_it < trips.size(); ++tr_it)
+	{
+		vector<Bustrip*>::iterator btr_it = find_if(bustrips.begin(), bustrips.end(), compare <Bustrip>(trips[tr_it])); // find the trip in the list
+		Bustrip* btr = *btr_it;
+		int line_id = btr->get_line()->get_id();
+		line_ids.push_back(line_id);
 	}
-	else {
-		source.insert(make_pair(sourceStop, 1));
-	}
-	// Add destination stop
-	int destStop = stops.back();
-	sr = destination.find(destStop);
-	if (sr != destination.end()) {
-		sr->second++;
-	}
-	else {
-		destination.insert(make_pair(destStop, 1));
-	}
-	// Add transfer stop
-	list<int> transferStop;
-	int i = 0;
-	for (int stop : stops) {
-		if (i == 0 || i % 2 == 1 || i == stops.size() - 2) {
-			i++;
-			continue;
-		}
-		i++;
-		transferStop.push_back(stop);
-	}
-	for (int stop : transferStop) {
-		map<int, int>::iterator  sr = transfer.find(stop);
-		if (sr != transfer.end()) {
-			sr->second++;
-		}
-		else {
-			transfer.insert(make_pair(stop, 1));
-		}
-	}
+	
+	for (int st_it = 1; st_it < stops.size() - 1; st_it++)
+	{
+		int ln = (st_it + 1) / 2 - 1;
+		LineIdStopId line_stop(line_ids[ln], stops[st_it]);
+		if (is_first_time_line_stop(line_stop))
+		{
+			LineStationData* lndata;
+			if (st_it == 1) //that means that the stop is for first boarding
+			{
+				BoardDemand brd_d(1, stops.back());
+				lndata->boardings.push_back(brd_d);
+				hist_dmnd_map.insert(pair<LineIdStopId, LineStationData*>(line_stop, lndata));
+			}
+			else if (st_it == stops.size() - 1)
+			{
+				AlightDemand alight_d(1, stops.front());
+				lndata->alightings.push_back(alight_d);
+				hist_dmnd_map.insert(pair<LineIdStopId, LineStationData*>(line_stop, lndata));
+			}
+			else if (st_it % 2) //boardings from transfer
+			{
+				BoardDemandTransfer bord_tr(1, line_ids[ln - 1], stops[st_it - 1]);
+				lndata->boardingTransfers.push_back(bord_tr);
+				hist_dmnd_map.insert(pair<LineIdStopId, LineStationData*>(line_stop, lndata));
+			}
+			else
+			{
+				AlightDemandTransfer alight_tr(1, line_ids[ln + 1], stops[st_it + 1]);
+				lndata->alightingTransfers.push_back(alight_tr);
+				hist_dmnd_map.insert(pair<LineIdStopId, LineStationData*>(line_stop, lndata));
+			}
+		}//first_time_line_stop
 
+		else//stop_id and line_id appeared before, then we just update the lists
+		{
+			if (st_it == 1)
+			{
+				for (list<BoardDemand>::iterator list_bd_iter = hist_dmnd_map[line_stop]->boardings.begin(); list_bd_iter != hist_dmnd_map[line_stop]->boardings.end(); ++list_bd_iter)
+				{
+					if (list_bd_iter->destination_ == stops.back()) //if the destination stop was already in the list, then just add 1
+					{
+						list_bd_iter->passengers_number_++;
+						break;
+					}
+					if (list_bd_iter == (--hist_dmnd_map[line_stop]->boardings.end())) // if I got to the end, then this destination isnt in the list yet, then add it
+					{
+						BoardDemand brd_d(1, stops.back());
+						hist_dmnd_map[line_stop]->boardings.push_back(brd_d);
+					}
+				}
+			}
+			else if (st_it == stops.size() - 1)
+			{
+				for (list<AlightDemand>::iterator list_alght_iter = hist_dmnd_map[line_stop]->alightings.begin(); list_alght_iter != hist_dmnd_map[line_stop]->alightings.end(); ++list_alght_iter)
+				{
+					if (list_alght_iter->source_ == stops.front())
+					{
+						list_alght_iter->passengers_number_++;
+						break;
+					}
+					if (list_alght_iter == (--hist_dmnd_map[line_stop]->alightings.end()))
+					{
+						AlightDemand alight_d(1, stops.front());
+						hist_dmnd_map[line_stop]->alightings.push_back(alight_d);
+					}
+				}
+			}
+			else if (st_it % 2) //boardings from transfer
+			{
+				for (list<BoardDemandTransfer>::iterator list_brdT_iter = hist_dmnd_map[line_stop]->boardingTransfers.begin(); list_brdT_iter != hist_dmnd_map[line_stop]->boardingTransfers.end(); ++list_brdT_iter)
+				{
+					if (list_brdT_iter->previous_station_ == stops[st_it - 1] && list_brdT_iter->previous_line_ == line_ids[ln - 1])
+					{
+						list_brdT_iter->passengers_number_++;
+						break;
+					}
+					if (list_brdT_iter == (--hist_dmnd_map[line_stop]->boardingTransfers.end()))
+					{
+						BoardDemandTransfer boardDT(1, line_ids[ln - 1], stops[st_it - 1]);
+						hist_dmnd_map[line_stop]->boardingTransfers.push_back(boardDT);
+					}
+				}
+			}
+			else //alighting from transfer
+			{
+				for (list<AlightDemandTransfer>::iterator list_alghtT_iter = hist_dmnd_map[line_stop]->alightingTransfers.begin(); list_alghtT_iter != hist_dmnd_map[line_stop]->alightingTransfers.end(); ++list_alghtT_iter)
+				{
+					if (list_alghtT_iter->next_station_ == stops[st_it + 1] && list_alghtT_iter->next_line_ == line_ids[ln + 1])
+					{
+						list_alghtT_iter->passengers_number_++;
+						break;
+					}
+					if (list_alghtT_iter == (--hist_dmnd_map[line_stop]->alightingTransfers.end()))
+					{
+						AlightDemandTransfer alightDT(1, line_ids[ln + 1], stops[st_it + 1]);
+						hist_dmnd_map[line_stop]->alightingTransfers.push_back(alightDT);
+					}
+				}
+			}
+		} //else (appeared_before)
+	} //for
+
+	// Sum all the boarding demand for each LineStation
+	for (map<LineIdStopId, LineStationData*, CompareLineStop>::iterator hist_dmnd_iter = hist_dmnd_map.begin(); hist_dmnd_iter != hist_dmnd_map.end(); ++hist_dmnd_iter)
+	{
+		int boardings = 0;
+		for (list<BoardDemand>::iterator list_brd_iter = hist_dmnd_iter->second->boardings.begin(); list_brd_iter != hist_dmnd_iter->second->boardings.end(); ++list_brd_iter)
+		{
+			boardings += list_brd_iter->passengers_number_;
+		}
+		int alightings = 0;
+		for (list<AlightDemand>::iterator list_alght_iter = hist_dmnd_iter->second->alightings.begin(); list_alght_iter != hist_dmnd_iter->second->alightings.end(); ++list_alght_iter)
+		{
+			alightings += list_alght_iter->passengers_number_;
+		}
+		int board_trnsfr = 0;
+		for (list<BoardDemandTransfer>::iterator list_brdtr_iter = hist_dmnd_iter->second->boardingTransfers.begin(); list_brdtr_iter != hist_dmnd_iter->second->boardingTransfers.end(); ++list_brdtr_iter)
+		{
+			board_trnsfr += list_brdtr_iter->passengers_number_;
+		}
+		int alight_trnsfr = 0;
+		for (list<AlightDemandTransfer>::iterator list_alghttr_iter = hist_dmnd_iter->second->alightingTransfers.begin(); list_alghttr_iter != hist_dmnd_iter->second->alightingTransfers.end(); ++list_alghttr_iter)
+		{
+			alight_trnsfr += list_alghttr_iter->passengers_number_;
+		}
+		source.insert(make_pair(hist_dmnd_iter->first, boardings));
+		destination.insert(make_pair(hist_dmnd_iter->first, alightings));
+		transfer_board.insert(make_pair(hist_dmnd_iter->first, board_trnsfr));
+		transfer_alight.insert(make_pair(hist_dmnd_iter->first, alight_trnsfr));
+	}
 	hist_paths* histpaths = new hist_paths(passenger_ID, origin_ID, destination_ID, start_time, total_walking_time, total_waiting_time, total_waiting_time_denied, total_IVT, total_IVT_crowding, end_time, stops, trips);
 	history_paths.push_back(histpaths);
 	return true;
 }
 
-void Network::find_average_demand_stop()
+bool Network::is_first_time_line_stop(LineIdStopId line_stop)
 {
-	for (vector<Busstop*>::iterator iter_stop = busstops.begin(); iter_stop < busstops.end(); iter_stop++)
+	for (map<LineIdStopId, LineStationData*, CompareLineStop>::iterator dmnd_data = hist_dmnd_map.begin(); dmnd_data != hist_dmnd_map.end(); ++dmnd_data)
 	{
-		hist_demand* hist_d = find_average_demand((*iter_stop)->get_id());
-		StopSchedule StopID((*iter_stop)->get_id());
-		history_demand_map.insert(std::pair<StopSchedule, hist_demand*>(StopID, hist_d));
-
-
-		//LineIdStopSchedule lineId(line_id, stop_id); 
-		//history_summary_map.insert(std::pair<LineIdStopSchedule, hist_set*>(lineId, hist));
-
+		if (dmnd_data->first.line_id_ == line_stop.line_id_ && dmnd_data->first.stop_id_ == line_stop.stop_id_)
+			return true;
 	}
+	return false;
 }
 
-hist_demand* Network::find_average_demand(int stop_id) {
-	double origin_d = source[stop_id] / theParameters->running_time * 3600; //get the hourly demand for origin 
-	double dest_d = destination[stop_id] / theParameters->running_time * 3600; //get the hourly demand for destination
-	double trnsfr_d = transfer[stop_id] / theParameters->running_time * 3600; //get the hourly demand for trsnsfer
-	return new hist_demand(stop_id, origin_d, dest_d, trnsfr_d);
+void Network::find_average_demand_stop()
+{
+	for (map<LineIdStopId, LineStationData*, CompareLineStop>::iterator hist_dmnd_iter = hist_dmnd_map.begin(); hist_dmnd_iter != hist_dmnd_map.end(); ++hist_dmnd_iter)
+	{
+		hist_demand* hist_d = find_average_demand(hist_dmnd_iter->first);
+		history_demand_map.insert(pair<LineIdStopId, hist_demand*>(hist_dmnd_iter->first, hist_d));
+	}
+}
+	
+
+hist_demand* Network::find_average_demand(LineIdStopId linestop) {
+	double origin_d = source[linestop];
+	double dest_d = destination[linestop];
+	double trnsfr_board_d = transfer_board[linestop];
+	double trnsfr_alight_d = transfer_alight[linestop];
+	return new hist_demand(linestop.stop_id_,linestop.line_id_, origin_d, dest_d, trnsfr_board_d, trnsfr_alight_d);
 }
 
 
@@ -7446,7 +7575,8 @@ double Network::executemaster()
 	}
 	if(theParameters->Real_time_control_info == 0 && theParameters->transfer_sync == 1)
 	{
-		this->readhistoricaldata (workingdir + "transitlog.dat");
+		this->readselectedpath (workingdir + "selected_paths.dat");
+		find_average_demand_stop();
 	}
 	
 #endif //_BUSES
