@@ -1648,31 +1648,6 @@ void Busstop::book_bus_arrival(Eventlist* eventlist, double time, Bustrip* trip)
 bool Busstop::execute(Eventlist* eventlist, double time) // is executed by the eventlist and means a bus needs to be processed
 {
   	// progress the vehicle when entering or exiting a stop
-	
-	if (theParameters->demand_format == 3)
-	{
-		for (map <Busstop*, ODstops*>::iterator destination_stop = stop_as_origin.begin(); destination_stop != stop_as_origin.end(); destination_stop++)
-		{
-			//if (id != destination_stop->first->get_id())
-			//{
-				passengers pass_waiting_od = (*destination_stop).second->get_waiting_passengers();		
-				passengers::iterator check_pass = pass_waiting_od.begin();
-				//Passenger* next_pass;
-				//bool last_waiting_pass = false;
-				while (check_pass < pass_waiting_od.end())
-				{
-					// progress each waiting passenger   
-					/*
-					if ((*check_pass)->get_OD_stop()->get_origin()->get_id() != this->get_id())
-					{
-						break;
-					}
-					*/
-					check_pass++;
-				}
-			//}
-		}
-	}
 	bool bus_exit = false;
 	Bustrip* exiting_trip;
 	vector<pair<Bustrip*,double> >::iterator iter_departure; 
@@ -1755,65 +1730,7 @@ bool Busstop::execute(Eventlist* eventlist, double time) // is executed by the e
 		buses_currently_at_stop.erase(iter_departure);
 		return true;
 	}
-	/*
-	if (buses_at_stop.count(time) > 0) 
-	// if this is for a bus EXITING the stop:
-	{
-		Bus* bus = buses_at_stop [time]; // identify the relevant bus
-		free_length (bus);
-		buses_at_stop.erase(time);
-		double relative_length;
-		// calculate the updated exit time from the link	
-		double ro =0.0;
-		#ifdef _RUNNING     // if running segment is seperate density is calculated on that part only
-			ro=bus->get_curr_link()->density_running(time);
-		#else
-			#ifdef _RUNNING_ONLY
-				ro = bus->get_curr_link()->density_running_only(time);
-			#else	
-			ro=bus->get_curr_link()->density();
-			#endif	//_RUNNING_ONLY
-		#endif  //_RUNNING
-	
-		double speed = bus->get_curr_link()->get_sdfunc()->speed(ro);	
-		double link_total_travel_time = bus->get_curr_link()->get_length()/speed ;
 
-		#ifdef _USE_EXPECTED_DELAY
-			double exp_delay = 1.44 * (queue->queue(time)) / bus->get_curr_link()->get_nr_lanes();
-			exit_time = exit_time + exp_delay;
-		#endif //_USE_EXPECTED_DELAY
-		if (bus->get_curr_trip()->check_end_trip() == false) // if there are more stops on the bus's route
-		{
-			Visit_stop* next_stop1 = *(bus->get_curr_trip()->get_next_stop());
-			if (bus->get_curr_link()->get_id() == (next_stop1->first->get_link_id())) // the next stop IS on this link
-			{
-				double stop_position = (next_stop1->first)->get_position();
-				relative_length = (stop_position - position)/(bus->get_curr_link()->get_length()); // calculated for the interval between the two sequential stops
-				double time_to_stop = time + link_total_travel_time * relative_length;
-				bus->get_curr_trip()->book_stop_visit (time_to_stop, bus); // book  stop visit
-			}
-			else // the next stop is NOT on this link
-			{
-				//Vehicle* veh =  (Vehicle*)(bus); // so we can do vehicle operations
-				relative_length = (bus->get_curr_link()->get_length()-position)/ bus->get_curr_link()->get_length(); // calculated for the remaining part of the link
-				double exit_time = time + link_total_travel_time * relative_length;
-				bus->set_exit_time(exit_time);
-				bus->get_curr_link()->get_queue()->enter_veh(bus);
-			}
-		}
-		else // there are no more stops on this route
-		{
-			bus->get_curr_trip()->get_line()->update_total_travel_time (bus->get_curr_trip(), time);
-			Vehicle* veh =  (Vehicle*)(bus); // so we can do vehicle operations
-			relative_length = (bus->get_curr_link()->get_length()-position)/ bus->get_curr_link()->get_length(); // calculated for the remaining part of the link 
-			double exit_time = time + link_total_travel_time * relative_length;
-			veh->set_exit_time(exit_time);
-			veh->get_curr_link()->get_queue()->enter_veh(veh);
-			bus->set_on_trip(false); // indicate that there are no more stops on this route
-			bus->get_curr_trip()->advance_next_stop(exit_time, eventlist); 
-		}
-	}
-	*/
 	bool bus_enter = false;
 	Bustrip* entering_trip;
 	vector<pair<Bustrip*,double> >::iterator iter_arrival;
@@ -1848,31 +1765,7 @@ bool Busstop::execute(Eventlist* eventlist, double time) // is executed by the e
 		entering_trip->advance_next_stop(exit_time, eventlist);
 		expected_bus_arrivals.erase(iter_arrival);
 	}
-	/*
-	else if (expected_arrivals.count(time) > 0) 
-	{		
-		Bus* bus = expected_arrivals [time]; // identify the relevant bus
-		bus->get_curr_trip()->set_enter_time (time);
-		exit_time = calc_exiting_time(eventlist, bus->get_curr_trip(), time); // get the expected exit time according to dwell time calculations and time point considerations
-		occupy_length (bus);
-		while (buses_at_stop.find(exit_time) != buses_at_stop.end()) // in case there is another bus listed with exactly the same time
-		{
-			exit_time += 1.0;
-		}
-		buses_at_stop [exit_time] = bus; 
-		eventlist->add_event (exit_time, this); // book an event for the time it exits the stop
-		record_busstop_visit ( bus->get_curr_trip(), bus->get_curr_trip()->get_enter_time()); // document stop-related info
-								// done BEFORE update_last_arrivals in order to calc the headway and BEFORE set_last_stop_exit_time
-		bus->record_busvehicle_location (bus->get_curr_trip(), this, bus->get_curr_trip()->get_enter_time());
-		bus->get_curr_trip()->advance_next_stop(exit_time, eventlist); 
-		bus->get_curr_trip()->set_last_stop_exit_time(exit_time);
-		bus->get_curr_trip()->set_last_stop_visited(this);
-		update_last_arrivals (bus->get_curr_trip(), bus->get_curr_trip()->get_enter_time()); // in order to follow the arrival times (AFTER dwell time is calculated)
-		update_last_departures (bus->get_curr_trip(), exit_time); // in order to follow the departure times (AFTER the dwell time and time point stuff)
-		set_had_been_visited (bus->get_curr_trip()->get_line(), true);
-		expected_arrivals.erase(time);
-	}
-	*/
+	
 	return true;
 }
 
@@ -2048,9 +1941,21 @@ void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, d
 			ODstops* od_stop = (*alighting_passenger)->get_original_origin()->get_stop_od_as_origin_per_stop((*alighting_passenger)->get_OD_stop()->get_destination());
 			od_stop->record_onboard_experience(*alighting_passenger, trip, this, riding_coeff);
 
-			// if this stop is not passenger's final destination then make a connection decision
-			Busstop* next_stop;
+			//set current stop as origin for alighting passenger's OD stop pair
+			Busstop* next_stop = this;
 			bool final_stop = false;
+			ODstops* od;
+			if (check_stop_od_as_origin_per_stop((*alighting_passenger)->get_OD_stop()->get_destination()) == false) //check if OD stop pair exists with this stop as origin to the destination of the passenger
+			{
+				od = new ODstops(next_stop, (*alighting_passenger)->get_OD_stop()->get_destination());
+				add_odstops_as_origin((*alighting_passenger)->get_OD_stop()->get_destination(), od);
+				(*alighting_passenger)->get_OD_stop()->get_destination()->add_odstops_as_destination(next_stop, od);
+			}
+			else
+			{
+				od = stop_as_origin[(*alighting_passenger)->get_OD_stop()->get_destination()];
+			}
+			(*alighting_passenger)->set_ODstop(od); // set this stop as passenger's new origin
 			if (id == (*alighting_passenger)->get_OD_stop()->get_destination()->get_id() || (*alighting_passenger)->get_OD_stop()->check_path_set() == false) // if this stop is passenger's destination
 			{
 				// passenger has no further conection choice
@@ -2797,119 +2702,6 @@ double Busstop::calc_holding_departure_time (Bustrip* trip, double time)
 	}
 	return time + dwelltime;
 }
-/*
-double Busstop::calc_optimal_corridor_holding (Bustrip* trip)
-{
-	double local_holding_time;
-	local_holding_time = (-calc_corridor_holding_D(trip)-calc_corridor_holding_Lambda(trip))/(2*calc_corridor_holding_A(trip));
-	return local_holding_time;
-}
-
-double Busstop::calc_corridor_holding_D (Bustrip* trip)
-{
-	double holding_D;
-	holding_D = calc_corridor_holding_B(trip) + (trip->get_init_occup_per_stop() * trip->get_nr_stops_init_occup())  + calc_corridor_holding_X();
-	return holding_D;
-}
-
-double Busstop::calc_corridor_holding_A (Bustrip* trip)
-{
-	return calc_A_nominator_holding(trip)/calc_A_dominator_holding(trip);
-}
-
-double Busstop::calc_A_nominator_holding (Bustrip* trip)
-{
-	return (calc_pax_b_here_a_down(trip)-calc_pax_b_up_a_here(trip));
-}
-
-double Busstop::calc_A_dominator_holding (Bustrip* trip)
-{
-	double planned_headway = trip->get_line()->get_planned_headway();
-	Dwell_time_function* dt_func = trip->get_bustype()->get_dt_function();
-	double tau_a = dt_func->alighting_cofficient;
-	double tau_b = dt_func->boarding_coefficient;
-	return (planned_headway - tau_a * (calc_pax_b_up_a_here(trip)) + tau_b * (calc_pax_b_here_a_down(trip));
-}
-
-double Busstop::calc_pax_b_up_a_here (Bustrip* trip)
-{
-	double pax_b_up_a_here = 0.0;
-	vector<Busstop*> line_stops = trip->get_line()->stops;
-	vector <Busstop*>::iterator curr_stop_iter;
-	for (vector <Busstop*>::iterator iter_line_stop = line_stops.begin(); iter_line_stop < line_stops.end(); iter_line_stop++)
-	{
-		if ((*iter_line_stop) == this)
-		{
-			curr_stop_iter = iter_line_stop;
-			break;
-		}
-	}
-	// sum over all demand generated upstream and destined to this stop 
-	for (vector <Busstop*>::iterator iter_before_curr_stop = line_stops.begin(); iter_before_curr_stop < curr_stop_iter; iter_before_curr_stop++)
-	{
-			pax_b_up_a_here += (*iter_before_curr_stop)->get_stop_od_as_origin_per_stop(this)->get_arrivalrate();
-	}
-	return (pax_b_up_a_here/trip->get_line()->get_planned_headway()); // pass. demand per average trip
-}
-
-double Busstop::calc_pax_b_here_a_down (Bustrip* trip) 
-{
-	double pax_b_here_a_down = 0.0;
-	vector<Busstop*> line_stops = trip->get_line()->stops;
-	vector <Busstop*>::iterator curr_stop_iter;
-	for (vector <Busstop*>::iterator iter_line_stop = line_stops.begin(); iter_line_stop < line_stops.end(); iter_line_stop++)
-	{
-		if ((*iter_line_stop) == this)
-		{
-			curr_stop_iter = iter_line_stop;
-			break;
-		}
-	}
-	// sum over all demand generated at this stop and destined downstream 
-	for (vector <Busstop*>::iterator iter_beyond_curr_stop = curr_stop_iter+1; iter_beyond_curr_stop < line_stops.end(); iter_beyond_curr_stop++)
-	{
-			pax_b_here_a_down += this->get_stop_od_as_origin_per_stop(*iter_beyond_curr_stop)->get_arrivalrate();
-	}
-	return (pax_b_here_a_down/trip->get_line()->get_planned_headway()); // pass. demand per average trip
-}
-
-double Busstop::calc_corridor_holding_Lambda (Bustrip* trip)
-{
-	double holding_lambda;
-	double delta_planned_offset = calc_delta_planned_offset(trip);
-
-	return holding_lambda;
-}
-
-double Busstop::calc_delta_planned_offset(Bustrip* trip)
-{
-	double predicted_offset;	
-	// predicting arrival time of both lines at the next downstream hub
-
-	XXX
-
-
-	double delta_planned_offset = trip->get_line()->get_desired_offset() - predicted_offset;
-	return delta_planned_offset;
-}
-
-double Busstop::calc_corridor_holding_B (Bustrip* trip)
-{
-	double holding_B;
-	double planned_headway = trip->get_line()->get_planned_headway();
-	holding_B = (planned_headway * calc_pax_b_here_a_down(trip) - (current_headway) * (calc_A_nominator_holding(trip)))/calc_A_dominator_holding(trip);
-	return holding_B;
-}
-
-double Busstop::calc_corridor_holding_X (Bustrip* trip)
-{
-	double holding_X;
-	double planned_headway = trip->get_line()->get_planned_headway();
-	holding_X = (current_headway * (calc_A_nominator_holding(trip)))/(calc_A_dominator_holding(trip));
-	return holding_X;
-}
-
-*/
 
 
 double Busstop::total_passengers_time(vector<Start_trip> trips_to_handle, vector<double> ini_vars) //(const column_vector& m)
