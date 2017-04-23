@@ -400,10 +400,10 @@ protected:
 	map<LineIdStopId, hist_set*, CompareLineStop> history_summary_map;
 	map<LineIdStopId, hist_demand*, CompareLineStop> history_demand_map;
 	map<LineIdStopId, LineStationData*, CompareLineStop> hist_dmnd_map;
-	map<LineIdStopId, int> source;	// Hend: map for origins for each stop
-	map<LineIdStopId, int> destination;	// Hend: map for destinations for each stop
-	map<LineIdStopId, int> transfer_board;	// Hend: map for transfer boardings for each stop
-	map<LineIdStopId, int> transfer_alight;	// Hend: map for transfer alightings for each stop
+	map<LineIdStopId, int, CompareLineStop> source;	// Hend: map for origins for each stop
+	map<LineIdStopId, int, CompareLineStop> destination;	// Hend: map for destinations for each stop
+	map<LineIdStopId, int, CompareLineStop> transfer_board;	// Hend: map for transfer boardings for each stop
+	map<LineIdStopId, int, CompareLineStop> transfer_alight;	// Hend: map for transfer alightings for each stop
 
 	Day2day* day2day;
 	map<ODSL, Travel_time> wt_rec; //the record of waiting time data

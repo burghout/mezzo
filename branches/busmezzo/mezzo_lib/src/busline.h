@@ -201,7 +201,7 @@ public:
 	//transfer gets and sets
 	int	get_tr_line_id() {return tr_line_id;}
 	vector <Busstop*> get_tr_stops() {return tr_stops;}
-	vector<Visit_stop> get_transfer_stops(vector<Visit_stop> visit_transfers);
+	vector<Visit_stop> get_transfer_stops();
 
 	// initialization
 	void add_timepoints (vector <Busstop*> tp) {line_timepoint = tp;}
@@ -383,8 +383,11 @@ public:
 	void convert_downstreamstops_vector_to_map(vector <Visit_stop*> down_stops);													//!< building stops_map
 	vector <Visit_stop*> ::iterator get_target_stop(Bustrip *trip, vector<Visit_stop*> :: iterator& next_stop); //Hend added 190716 get target stop according to the stop horizon
 	vector<Visit_stop*>::iterator  get_previous_stop(Bustrip *trip, vector <Visit_stop*> ::iterator& down_stp); // Hend added 190317 get the previous stop of the trip
+	vector<Start_trip> Bustrip::find_trips_to_handle_same_line(vector<Start_trip> line_trips, Visit_stop *target_stop); //Hend added 23/4/17 to find trips to handle
+	vector<Start_trip> Bustrip::find_trips_to_handle_transfer_lines(vector<Start_trip> trips_to_handle); //Hend added 23/4/17 to find trips to handle in the transfer lines
 	vector <Visit_stop*> ::iterator get_transfer_target_stop(Bustrip *trip, vector<Visit_stop*> :: iterator& trnsfr_stop); //Hend added 171016 get target stop for transfer lines
 	vector<Start_trip> calc_hist_prdct_arrivals(Start_trip trip, Visit_stop *target_stop, vector<Start_trip> trips_to_handle); ////Hend added 29/3/17: calc the predictions of the arrival times of trips
+	
 	vector<Start_trip> get_transfer_trips(Bustrip *trip, vector<Visit_stop*> transfer_in_downstream, vector<Start_trip> trips_to_handle);
 	vector<Start_trip> calc_predict_times(Start_trip trip, Visit_stop *target_stop, vector<Start_trip> trips_to_handle); ////Hend added 130716: calc the predictions of the arrival times of trips
 	vector<double> get_first_and_last_trips(vector<Start_trip> trips_to_handle,Visit_stop* transfer_stop);//Hend added 130716: get the first and last trip to enter transfer stop

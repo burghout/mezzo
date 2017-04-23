@@ -197,8 +197,9 @@ bool Busline::check_last_trip (Bustrip* trip)
 return false;
 }
 
-vector<Visit_stop> Busline::get_transfer_stops(vector<Visit_stop> visit_transfers)
+vector<Visit_stop> Busline::get_transfer_stops()
 {
+	vector<Visit_stop> visit_transfers;
 	for(size_t i=0; i<tr_stops.size(); ++i)
 	{
 		visit_transfers.push_back(make_pair(tr_stops[i],0.0));
@@ -877,6 +878,91 @@ vector<Visit_stop*>::iterator Bustrip::get_previous_stop(Bustrip *trip, vector <
 	return stop_before;
 }
 
+vector<Start_trip> Bustrip:: find_trips_to_handle_same_line(vector<Start_trip> line_trips, Visit_stop *target_stop)
+{
+	vector<Start_trip> trips_to_handle;
+	int k = 0;
+	//For preceeding trips:
+	while (line_trips[k].first != this)
+	{
+		if (line_trips[k].first->is_stop_in_downstream(target_stop))//if the trip didn't pass the target stop
+		{
+			trips_to_handle = line_trips[k].first->calc_hist_prdct_arrivals(line_trips[k], target_stop, trips_to_handle);//return the prediction arrival times of trips to handle accrding to historical data
+
+																														  //trips_to_handle = line_trips[k].first->calc_predict_times(line_trips[k], *target_stop, trips_to_handle);//predict times returns the arrival time to each stop
+			if (theParameters->Real_time_control_info == 1) {
+				//line_trips[k].first->trip_occupancy.push_back(make_pair(line_trips[k].first, line_trips[k].first->get_busv()->get_occupancy()));
+				//TODO: Need to build function that calculate the riding time in case of real_time_control_info
+			}
+			else {
+				//here we have to put function that get the occupancy of the trip at this stop
+				/*
+				LineIdStopId lineIdStopIdSched(line_trips[k].first->get_line()->get_id(), this->get_id());
+				line_trips[k].first->trip_occupancy.push_back(make_pair(line_trips[k].first, (*history_summary_map_)[lineIdStopIdSched]->occupancy));
+				line_trips[k].first->trip_riding_time.push_back(make_pair(line_trips[k].first, (*history_summary_map_)[lineIdStopIdSched]->riding_time));
+				line_trips[k].first->trip_nr_boardings.push_back(make_pair(line_trips[k].first, (*history_summary_map_)[lineIdStopIdSched]->nr_boarding));
+				line_trips[k].first->trip_nr_alightings.push_back(make_pair(line_trips[k].first, (*history_summary_map_)[lineIdStopIdSched]->nr_alighting));
+				line_trips[k].first->trip_nr_denied.push_back(make_pair(line_trips[k].first, (*history_summary_map_)[lineIdStopIdSched]->nr_waiting));
+				*/
+			}
+
+		}
+		k++;
+	}
+	//For proceeding trips:
+	int j = 0;
+	while (j < theParameters->Bus_horizon && !line_trips[k].first->get_line()->check_last_trip(line_trips[k].first))
+	{
+		if (line_trips[k].first->is_stop_in_downstream(target_stop))//if the trip didn't pass the target stop
+		{
+			trips_to_handle = line_trips[k].first->calc_hist_prdct_arrivals(line_trips[k], target_stop, trips_to_handle);//return the prediction arrival times of trips to handle accrding to historical data
+																														  //trips_to_handle = line_trips[k].first->calc_predict_times(line_trips[k], *target_stop, trips_to_handle);//check if it returns the updated line_trips_to_handle????
+			if (theParameters->Real_time_control_info == 1) {
+				//line_trips[k].first->trip_occupancy.push_back(make_pair(line_trips[k].first, line_trips[k].first->get_busv()->get_occupancy()));
+			}
+			else {
+				//here we have to put function that get the occupancy of the trip at this stop
+			}
+		}
+		k++, j++;
+	}
+	return trips_to_handle;
+}
+
+vector<Start_trip> Bustrip::find_trips_to_handle_transfer_lines(vector<Start_trip> trips_to_handle)
+{
+	vector<Start_trip> transfer_trips;
+	vector<Visit_stop*> transfer_in_downstream;
+	vector <Visit_stop> visit_transfers = this->get_line()->get_transfer_stops();//get the transfer stops for the line
+	//transfer_in_downstream = trip->get_transfers_in_downstream(trip, transfer_in_downstream, visit_transfers);//get the transfer stops in the horizon need to correct****
+	if (trips_to_handle.size())
+	{
+		size_t max_stops = trips_to_handle.size();
+		for (size_t down_stp_i = 0; down_stp_i < trips_to_handle[max_stops - 1].first->down_stops.size(); ++down_stp_i) //assume that the last trip has the maximum number of stops.
+		{
+			for (size_t trns_stp_j = 0; trns_stp_j < visit_transfers.size(); ++trns_stp_j)
+			{
+				if (trips_to_handle[max_stops - 1].first->down_stops[down_stp_i]->first == visit_transfers[trns_stp_j].first)
+				{
+					transfer_in_downstream.push_back(&visit_transfers[trns_stp_j]);
+				}
+			}
+		}
+	}
+	////till now the function get_transfers_in_downstream doesnt work well, need to check it **********
+	if (transfer_in_downstream.size()) //if there are transfer stops downstream
+	{
+		transfer_trips = this->get_transfer_trips(this, transfer_in_downstream, trips_to_handle);
+		if (transfer_trips.size())
+		{
+			for (vector<Start_trip>::iterator tr_it = transfer_trips.begin(); tr_it < transfer_trips.end(); ++tr_it)
+			{
+				trips_to_handle.push_back((*tr_it)); //At the end trips_to_handle contain all the trips to the optimization
+			}
+		}
+	}//if there is transfer stops downstream
+	return trips_to_handle;
+}
 
 vector<Visit_stop*>::iterator Bustrip:: get_transfer_target_stop(Bustrip *trip, vector <Visit_stop*> :: iterator& trnsfr_stop)
 {
@@ -971,7 +1057,7 @@ vector<Start_trip> Bustrip::calc_hist_prdct_arrivals(Start_trip trip, Visit_stop
 	return trips_to_handle;
 }
 
-vector<Start_trip> get_transfer_trips(Bustrip *trip, vector<Visit_stop*> transfer_in_downstream, vector<Start_trip> trips_to_handle)
+vector<Start_trip> Bustrip::get_transfer_trips(Bustrip *trip, vector<Visit_stop*> transfer_in_downstream, vector<Start_trip> trips_to_handle)
 {
 	vector<Start_trip> trips_in_transfer;
 	vector<Start_trip> transfer_trips;
@@ -1016,6 +1102,7 @@ vector<Start_trip> get_transfer_trips(Bustrip *trip, vector<Visit_stop*> transfe
 	}//for transfer stops
 	return trips_in_transfer;
 }
+
 
 vector<Start_trip> Bustrip::calc_predict_times(Start_trip trip, Visit_stop *target_stop, vector<Start_trip> trips_to_handle)
 {				
@@ -2577,6 +2664,80 @@ double Busstop::calc_holding_departure_time (Bustrip* trip, double time)
 				{
 					vector <Visit_stop*>::iterator target_stop = trip->get_target_stop(trip, trip->get_next_stop());
 					vector<Start_trip> line_trips = trip->get_line()->get_trips();  //return the trips for the line
+					//build a vector of trips to handle on the same line, these trips are all the trips that already
+					//visited my stop and did not pass the target stop and trips behind me according to the bus_horizon
+					vector<Start_trip> trips_to_handle = trip->find_trips_to_handle_same_line(line_trips, *target_stop);
+					
+					//deal with synchronizing transfer stops:
+					if (theParameters->transfer_sync == 1) {// if we are synchronizing transfers
+						vector<Start_trip> trips_to_handle = trip->find_trips_to_handle_transfer_lines(trips_to_handle);
+					}
+					/*	
+					vector<Start_trip> transfer_trips;
+						
+						vector<Visit_stop*> transfer_in_downstream;
+						vector <Visit_stop> visit_transfers = trip->get_line()->get_transfer_stops();//get the transfer stops for the line
+						//transfer_in_downstream = trip->get_transfers_in_downstream(trip, transfer_in_downstream, visit_transfers);//get the transfer stops in the horizon need to correct****
+						if (trips_to_handle.size())
+						{
+							size_t max_stops = trips_to_handle.size();
+							for (size_t down_stp_i = 0; down_stp_i < trips_to_handle[max_stops - 1].first->down_stops.size(); ++down_stp_i) //assume that the last trip has the maximum number of stops.
+							{
+								for (size_t trns_stp_j = 0; trns_stp_j < visit_transfers.size(); ++trns_stp_j)
+								{
+									if (trips_to_handle[max_stops - 1].first->down_stops[down_stp_i]->first == visit_transfers[trns_stp_j].first)
+									{
+										transfer_in_downstream.push_back(&visit_transfers[trns_stp_j]);
+									}
+								}
+							}
+						}
+						////till now the function get_transfers_in_downstream doesnt work well, need to check it **********
+						if (transfer_in_downstream.size()) //if there are transfer stops downstream
+						{
+							transfer_trips = trip->get_transfer_trips(trip, transfer_in_downstream, trips_to_handle);
+							if (transfer_trips.size())
+							{
+								for (vector<Start_trip>::iterator tr_it = transfer_trips.begin(); tr_it < transfer_trips.end(); ++tr_it)
+								{
+									trips_to_handle.push_back((*tr_it)); //At the end trips_to_handle contain all the trips to the optimization
+								}
+							}
+						}//if there is transfer stops downstream
+					} //if transfer_sync == 1
+
+
+					/*
+					int k = 0;
+					//For preceeding trips:
+					while (line_trips[k].first != trip)
+					{
+						if (line_trips[k].first->is_stop_in_downstream(*target_stop))//if the trip didn't pass the target stop
+						{
+							trips_to_handle = line_trips[k].first->calc_hist_prdct_arrivals(line_trips[k], *target_stop, trips_to_handle);//return the prediction arrival times of trips to handle accrding to historical data
+
+																																		  //trips_to_handle = line_trips[k].first->calc_predict_times(line_trips[k], *target_stop, trips_to_handle);//predict times returns the arrival time to each stop
+							if (theParameters->Real_time_control_info == 1) {
+								//line_trips[k].first->trip_occupancy.push_back(make_pair(line_trips[k].first, line_trips[k].first->get_busv()->get_occupancy()));
+								//TODO: Need to build function that calculate the riding time in case of real_time_control_info
+							}
+							else {
+								//here we have to put function that get the occupancy of the trip at this stop
+
+								LineIdStopId lineIdStopIdSched(line_trips[k].first->get_line()->get_id(), this->get_id());
+								line_trips[k].first->trip_occupancy.push_back(make_pair(line_trips[k].first, (*history_summary_map_)[lineIdStopIdSched]->occupancy));
+								line_trips[k].first->trip_riding_time.push_back(make_pair(line_trips[k].first, (*history_summary_map_)[lineIdStopIdSched]->riding_time));
+								line_trips[k].first->trip_nr_boardings.push_back(make_pair(line_trips[k].first, (*history_summary_map_)[lineIdStopIdSched]->nr_boarding));
+								line_trips[k].first->trip_nr_alightings.push_back(make_pair(line_trips[k].first, (*history_summary_map_)[lineIdStopIdSched]->nr_alighting));
+								line_trips[k].first->trip_nr_denied.push_back(make_pair(line_trips[k].first, (*history_summary_map_)[lineIdStopIdSched]->nr_waiting));
+
+							}
+
+						}
+						k++;
+					}
+					/*
+					
 
 					//build a vector of trips to handle on the same line, these trips are all the trips that already
 					//visited my stop and did not pass the target stop and trips behind me according to the bus_horizon
@@ -2596,14 +2757,14 @@ double Busstop::calc_holding_departure_time (Bustrip* trip, double time)
 							}
 							else {
 								//here we have to put function that get the occupancy of the trip at this stop
-								/*
+
 								LineIdStopId lineIdStopIdSched(line_trips[k].first->get_line()->get_id(), this->get_id());
 								line_trips[k].first->trip_occupancy.push_back(make_pair(line_trips[k].first, (*history_summary_map_)[lineIdStopIdSched]->occupancy));
 								line_trips[k].first->trip_riding_time.push_back(make_pair(line_trips[k].first, (*history_summary_map_)[lineIdStopIdSched]->riding_time));
 								line_trips[k].first->trip_nr_boardings.push_back(make_pair(line_trips[k].first, (*history_summary_map_)[lineIdStopIdSched]->nr_boarding));
 								line_trips[k].first->trip_nr_alightings.push_back(make_pair(line_trips[k].first, (*history_summary_map_)[lineIdStopIdSched]->nr_alighting));
 								line_trips[k].first->trip_nr_denied.push_back(make_pair(line_trips[k].first, (*history_summary_map_)[lineIdStopIdSched]->nr_waiting));
-								*/
+
 							}
 
 						}
@@ -2665,38 +2826,39 @@ double Busstop::calc_holding_departure_time (Bustrip* trip, double time)
 						}//if there is transfer stops downstream
 					} //if transfer_sync == 1
 
-					  //return the initial value of the TT and H times for trips in the trips_to_handle 
+					  //return the initial value of the TT and H times for trips in the trips_to_handle
 					//The TT is form the historical data and the initila holding time is zero.
 					vector<double> opt_var = get_ini_val_vars(trips_to_handle);
 					vector<double> left_constrains = get_left_constraints(trips_to_handle);
 					vector<double> right_constrains = get_right_constraints(trips_to_handle);
 					double Z = total_passengers_time(trips_to_handle, opt_var);
-				
+
 					return time + dwelltime;  //till now, because I didnt finish the implementation of case 10
-				}//if time point or transfer stop 
-					
+				}//if time point or transfer stop
 
 
-				// calc_nr_intermediate_stops ();	
 
-				// predicting which of the parallel line trips is expected to arrive directly afterwards 
+				// calc_nr_intermediate_stops ();
+
+				// predicting which of the parallel line trips is expected to arrive directly afterwards
 				// double holding_departure_time = calc_optimal_corridor_holding (trip); // based on Giorgos thesis
 
 				// gives as output the holding time at this stop only
-				
+
 				// account for passengers that board while the bus is holded at the time point
 				// double holding_time = last_departures[trip->get_line()].second - time - dwelltime;
 				// int additional_boarding = random -> poisson ((get_arrival_rates (trip)) * holding_time / 3600.0 );
 				// nr_boarding += additional_boarding;
-				// int curr_occupancy = trip->get_busv()->get_occupancy();  
+				// int curr_occupancy = trip->get_busv()->get_occupancy();
 				// trip->get_busv()->set_occupancy(curr_occupancy + additional_boarding); // Updating the occupancy
 				// return max(ready_to_depart, holding_departure_time);
-				
-				
 
 
 				// return holding_departure_time;
+				*/
+				}
 				break;
+				
 		default:
 			return time + dwelltime;
 	}
@@ -2715,6 +2877,9 @@ double Busstop::total_passengers_time(vector<Start_trip> trips_to_handle, vector
 			hist_set* tmp = (*trips_to_handle[tr_it].first->down_stops[st_it]->first->history_summary_map_)[lineIdStopIdSched];
 			double dwt = tmp->dwell_time;
 			
+			hist_demand* hst_dmnd = (*trips_to_handle[tr_it].first->down_stops[st_it]->first->hist_demand_map_)[lineIdStopIdSched];
+			double tmp_boading = hst_dmnd->origin_d;
+
 			//if the stop is the first stop in the line then the arrival time is schedule_arrival_time 
 			if (trips_to_handle[tr_it].first->get_line()->check_first_stop(trips_to_handle[tr_it].first->down_stops[st_it]->first))
 			{
@@ -3051,6 +3216,9 @@ hist_set:: hist_set (int line_id_, int trip_id_, int vehicle_id_, int stop_id_, 
 	total_waiting_time = total_waiting_time_;
 	holding_time = holding_time_;
 }
+hist_set::~hist_set()
+{
+}
 hist_paths::hist_paths()
 {
 }
@@ -3073,6 +3241,10 @@ hist_paths::hist_paths(int passenger_ID_, int origin_ID_, int destination_ID_, d
 	trips = trips_;
 }
 
+hist_paths::~hist_paths()
+{
+}
+
 hist_demand::hist_demand()
 {
 }
@@ -3085,4 +3257,8 @@ hist_demand::hist_demand(int stop_id_, int line_id_, double origin_d_, double de
 	destination_d = destination_d_;
 	transfer_board_d = transfer_board_d_;
 	transfer_alight_d = transfer_alight_d_;
+}
+
+hist_demand::~hist_demand()
+{
 }
