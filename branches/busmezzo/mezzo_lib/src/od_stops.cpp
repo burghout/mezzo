@@ -12,7 +12,10 @@ origin_stop(origin_stop_), destination_stop(destination_stop_)
 {
 	min_transfers = 100;
 	arrival_rate = 0.0;
+    origin_stop = origin_stop_;
+    destination_stop = destination_stop_;
 	active = false;
+    non_random_arrivals = origin_stop->get_non_random_passenger_flag();
 	random = new (Random);
 	path_set.clear();
 	if (randseed != 0)
@@ -155,17 +158,71 @@ bool ODstops::execute (Eventlist* eventlist, double curr_time) // generate passe
 {
 	if (check_path_set() == true && active == false)
 	{
-		active = true;
-		curr_time = theParameters->start_pass_generation + theRandomizers[0]->erandom(arrival_rate / 3600.0); // passenger arrival is assumed to be a poission process (exp headways)
-		while (curr_time < theParameters->stop_pass_generation)
-		{
-			Passenger* pass = new Passenger(pid, curr_time, this);
-			passengers_during_simulation.push_back(pass);
-			pid++; 
-			pass->init();
-			eventlist->add_event(curr_time, pass);
-			curr_time += theRandomizers[0]->erandom(arrival_rate / 3600.0);
-		}
+        active = true;
+        
+        //origin node with random passenger arrival/generation pattern
+        if ( non_random_arrivals == false) {
+            curr_time = theParameters->start_pass_generation + theRandomizers[0]->erandom(arrival_rate / 3600.0); // passenger arrival is assumed to be a poission process (exp headways)
+            
+            while (curr_time < theParameters->stop_pass_generation)
+            {
+                Passenger* pass = new Passenger(pid, curr_time, this);
+                passengers_during_simulation.push_back(pass);
+                pid++;
+                pass->init();
+                eventlist->add_event(curr_time, pass);
+                curr_time += theRandomizers[0]->erandom(arrival_rate / 3600.0);
+            }
+        }
+        
+        //origin node with non-random/scheduled passenger generation pattern (e.g. platform with inter-regional train service)
+        else {
+            
+            //cout << "generating non-randomly distributed pedestrians " << endl;
+            
+            curr_time = theParameters->start_pass_generation;
+            
+            //cout << "generating passengers between " << theParameters->start_pass_generation << " and " << theParameters->stop_pass_generation << endl;
+            
+            double time_next_train_arrival = origin_stop->get_next_exogenous_train_arrival(curr_time);
+            int num_train_arrivals_current_hour = origin_stop->get_num_arrivals_within_hour(curr_time);
+            
+            //cout << "next arrival at: " << time_next_train_arrival << ", in total " << num_train_arrivals_current_hour << " trains in same 60-min interval\n";
+            
+            double num_OD_alightings;
+            
+            if ( time_next_train_arrival < 0) {
+                cout << "No train arrivals on this platform." << endl;
+            }
+            
+            while ( time_next_train_arrival >= 0 )
+            {
+                curr_time = time_next_train_arrival;
+                
+                //all trains assumed to have same alighting volume and same OD shares
+                num_OD_alightings = arrival_rate / num_train_arrivals_current_hour;
+                
+                //generate individual passengers
+                while (num_OD_alightings > theRandomizers[0]->urandom()) {
+                    
+                    Passenger* pass = new Passenger(pid, curr_time, this);
+                    passengers_during_simulation.push_back(pass);
+                    pid++;
+                    pass->init();
+                    eventlist->add_event(curr_time, pass);
+                    
+                    num_OD_alightings--;
+                    
+                    //cout << "generating passenger at " << curr_time << " (" << num_OD_alightings << " remaining)\n";
+                }
+                
+                //update parameters of next train arrival
+                time_next_train_arrival = origin_stop->get_next_exogenous_train_arrival(curr_time);
+                num_train_arrivals_current_hour = origin_stop->get_num_arrivals_within_hour(curr_time);
+            }
+        }
+        
+
 	}
 	else
 	{
@@ -615,7 +672,7 @@ void ODstops::record_waiting_experience(Passenger* pass, Bustrip* trip, double t
 
 void ODstops::record_onboard_experience(Passenger* pass, Bustrip* trip, Busstop* stop, pair<double,double> riding_coeff)
 {
-	double expected_ivt;
+	double expected_ivt = 0.0;
 	double first_stop_time;
 	double second_stop_time;
 	for (vector<Visit_stop*>::iterator stop_v = trip->stops.begin(); stop_v < trip->stops.end(); stop_v++)
@@ -675,7 +732,7 @@ void ODstops::write_connection_output(ostream & out, Passenger* pass)
 void ODstops::write_od_summary(ostream & out)
 {
 	calc_pass_measures();
-	int nr_paths = paths_tt.size();
+	int nr_paths = (int) paths_tt.size();
 	out << origin_stop->get_id() << '\t' 
 		<< destination_stop->get_id() << '\t' 
 		<< nr_pass_completed << '\t' 
@@ -842,7 +899,7 @@ bool ODzone::execute (Eventlist* eventlist, double curr_time)
 		return true;
 	}
 // called only for generting pass.
-	if (active = true) // generate passenger from the second call, as first initialization call just set time to first passenger
+	if (active == true) // generate passenger from the second call, as first initialization call just set time to first passenger
 	{	
 		// for each of the destination zones from this origin zone
 		for (map<ODzone*,double>::iterator dzones_iter = arrival_rates.begin(); dzones_iter != arrival_rates.end(); dzones_iter++)

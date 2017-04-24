@@ -313,8 +313,8 @@ void Passenger::start (Eventlist* eventlist)
 				OD_stop->get_destination()->add_odstops_as_destination(connection_stop, od_stop);
 			}
 			set_ODstop(connection_stop->get_stop_od_as_origin_per_stop(OD_stop->get_destination())); // set this stop as his new origin (new OD)
-			map<Busstop*,double> walk_dis = OD_stop->get_origin()->get_walking_distances();
-			double arrival_time_to_connected_stop = start_time + walk_dis[connection_stop] / theRandomizers[0]->nrandom (theParameters->average_walking_speed, theParameters->average_walking_speed/4);
+			
+			double arrival_time_to_connected_stop = start_time + get_walking_time(connection_stop);
 			eventlist->add_event(arrival_time_to_connected_stop, this);
 			//execute(eventlist, arrival_time_to_connected_stop);
 			pair<Busstop*,double> stop_time;
@@ -1151,3 +1151,10 @@ PassengerRecycler::	~PassengerRecycler()
 	}
 }
 
+
+double Passenger::get_walking_time(Busstop* busstop_dest_ptr)
+{
+    //TODO FLURIN: Should use walking time distribution, not distance
+    map<Busstop*,double> walk_dis = OD_stop->get_origin()->get_walking_distances();
+    return walk_dis[busstop_dest_ptr] / theRandomizers[0]->nrandom (theParameters->average_walking_speed, theParameters->average_walking_speed/4);
+}

@@ -1,7 +1,7 @@
 #include "od.h"
 #include "network.h"
 #include <math.h>
-#include "Mmath.h"
+#include "MMath.h"
 /*
   TO BE ADDED:
   Change the server in ODaction to specific OD server that is created with proper params
@@ -326,7 +326,7 @@ ODpair::ODpair(Origin* origin_, Destination* destination_, double rate_, Vtypes*
 }
 
 ODpair::ODpair(): /*id (-1),*/ odaction (NULL), origin (NULL), destination (NULL),
-                  rate (-1), random (NULL), start_rate(-1), grid(NULL), oldgrid(NULL)
+                  rate (-1), start_rate(-1), random (NULL), grid(NULL), oldgrid(NULL)
 {
 
 }

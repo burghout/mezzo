@@ -109,7 +109,11 @@ public:
 	double calc_IVT_crowding();
 	double calc_total_waiting_time_due_to_denied_boarding();
 	bool line_is_rejected(int id); //If the passenger has rejected line with id the function returns true
-
+    
+    
+    //walking time
+    double get_walking_time(Busstop*);
+    
 protected:
 	int passenger_id;
 	double start_time;

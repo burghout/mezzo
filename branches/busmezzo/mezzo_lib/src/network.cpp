@@ -685,7 +685,7 @@ bool Network::readsdfunc(istream& in)
         cout << "readfile::readsdfuncs scanner jammed at " << bracket;
         return false;
     }
-    Sdfunc* sdptr;
+    Sdfunc* sdptr = nullptr;
     if (type==0)
     {
         sdptr = new Sdfunc(sdid,vmax,vmin,romax, romin);
@@ -1426,7 +1426,7 @@ bool Network::readtransitnetwork(string name) //!< reads the stops, distances be
     in >> nr;
     int i=0;
     int limit;
-    for (i; i<nr;i++)
+    for (; i<nr;i++)
     {
         if (!readbusstop(in))
         {
@@ -1454,7 +1454,7 @@ bool Network::readtransitnetwork(string name) //!< reads the stops, distances be
             return false;
         }
         in >> format; // Give an indication for time-table format
-        for (i; i<limit;i++)
+        for (; i<limit;i++)
         {
             if (format == 1 )
             {
@@ -1476,6 +1476,31 @@ bool Network::readtransitnetwork(string name) //!< reads the stops, distances be
             }
             // set distnaces between busstops to stops
         }
+        
+        in >> keyword;
+        if (keyword!="stops_walking_times:")
+        {
+            cout << " readbuslines: no << stops_walking_times: >> keyword " << endl;
+            in.close();
+            return false;
+        }
+        in >> nr;
+        limit = i + nr;
+        
+        for (; i<limit;i++)
+        {
+            
+            //read walking time distributions
+            if (!readwalkingtimedistribution(in))
+            {
+                cout << " readbuslines: readwalkingtimedistribution returned false for line nr " << (i+1) << endl;
+                in.close();
+                return false;
+            }
+            
+        }
+
+        
     }
 
     // Second read the buslines
@@ -1491,7 +1516,7 @@ bool Network::readtransitnetwork(string name) //!< reads the stops, distances be
     }
     in >> nr;
     limit = i + nr;
-    for (i; i<limit;i++)
+    for (; i<limit;i++)
     {
         if (!readbusline(in))
         {
@@ -1526,7 +1551,7 @@ in >> keyword;
         return false;
     }
     in >> format; // Give an indication for time-table format
-    for (i; i<limit;i++)
+    for (; i<limit;i++)
     {
         if (format == 1 )
         {
@@ -1566,7 +1591,7 @@ in >> keyword;
     }
     in >> nr;
     limit = i + nr;
-    for (i; i<limit;i++)
+    for (; i<limit;i++)
     {
         if (!read_travel_time_disruptions(in))
         {
@@ -1584,7 +1609,7 @@ bool Network::readbusstop (istream& in) // reads a busstop
   int stop_id, link_id, RTI_stop;
   double position, length, min_DT;
   string name;
-    bool has_bay, can_overtake;
+    bool has_bay, can_overtake, non_Ramdon_Pass_Generation;
     bool ok= true;
     in >> bracket;
     if (bracket != '{')
@@ -1592,14 +1617,14 @@ bool Network::readbusstop (istream& in) // reads a busstop
         cout << "readfile::readsbusstop scanner jammed at " << bracket;
         return false;
     }
-  in >> stop_id >> name >> link_id >> position >> length >> has_bay >> can_overtake >> min_DT >> RTI_stop;
+  in >> stop_id >> name >> link_id >> position >> length >> has_bay >> can_overtake >> min_DT >> RTI_stop >> non_Ramdon_Pass_Generation;
 
   if (linkmap.find(link_id) == linkmap.end())
   {
       cout << "readfile::readsbusstop error at stop " << stop_id << ". Link " << link_id << " does not exist." << endl;
   }
 
-  Busstop* st= new Busstop (stop_id, name, link_id, position, length, has_bay, can_overtake, min_DT, RTI_stop);
+  Busstop* st= new Busstop (stop_id, name, link_id, position, length, has_bay, can_overtake, min_DT, RTI_stop, non_Ramdon_Pass_Generation);
   st->add_distance_between_stops(st,0.0);
     in >> bracket;
     if (bracket != '}')
@@ -1608,12 +1633,35 @@ bool Network::readbusstop (istream& in) // reads a busstop
         return false;
     }
     busstops.push_back (st);
+    add_busstop_to_name_map(name, st);
 
 #ifdef _DEBUG_NETWORK
     cout << " read busstop"<< stop_id <<endl;
 #endif //_DEBUG_NETWORK
     return ok;
 }
+
+
+void Network::add_busstop_to_name_map(string bus_stop_name,Busstop* bus_stop_ptr){
+    //cout << "adding bus stop " << bus_stop_name << " to the map.\n";
+    busstop_name_map.insert(pair<string,Busstop*> (bus_stop_name,bus_stop_ptr) );
+}
+
+Busstop* Network::get_busstop_from_name(string bus_stop_name) {
+    
+    if ( busstop_name_map.find(bus_stop_name) == busstop_name_map.end()) {
+        //key not found
+        cout << "Unknown stop name " << bus_stop_name << endl;
+        return nullptr;
+    }
+    
+    else {
+        return busstop_name_map.at(bus_stop_name);
+    }
+    
+}
+
+
 
 bool Network::readbusline(istream& in) // reads a busline
 {
@@ -1993,7 +2041,7 @@ in >> keyword;
         generate_stop_ods();
     }
     */
-    for (i; i<limit;i++)
+    for (; i<limit;i++)
     {
         if (format == 1)
         {
@@ -2242,7 +2290,7 @@ bool Network::read_passenger_rates_format2 (istream& in) // reads the passenger 
     }
     Busline* bl = *bl_it;
 
-    for (int i=0; i < bl->stops.size()-1; i++)
+    for (unsigned long i=0; i < bl->stops.size()-1; i++)
     {
         stop_rate stop_rate_d;
         stops_rate stops_rate_d;
@@ -3147,7 +3195,7 @@ void Network:: find_recursive_connection_with_walking (Busstop* origin, Busstop*
 
                     cons_stops = get_cons_stops(collect_im_stops.back());
                     // applying dominancy rules of transfers and max transfers constraint
-                    if (collect_im_stops.front()->get_stop_od_as_origin_per_stop(destination)->get_min_transfers() + theParameters->max_nr_extra_transfers >= ((collect_im_stops.size()-2)/2))
+                    if (collect_im_stops.front()->get_stop_od_as_origin_per_stop(destination)->get_min_transfers() + theParameters->max_nr_extra_transfers >= (int)((collect_im_stops.size()-2)/2))
                     {
                         for (vector<Busstop*>::iterator iter = cons_stops.begin(); iter != cons_stops.end(); iter++)
                         {
@@ -3483,7 +3531,7 @@ void Network::merge_paths_by_common_lines (Busstop* origin_stop, Busstop* destin
                                 }
                             }
                             // if ALL these stops are shared and the two lines have the same route between the stops - merge
-                            if ((counter_shared_current == (*transfer_stops1).size() && counter_shared_current == (*transfer_stops2).size() && coutner_shared_next == (*(transfer_stops1+1)).size() && coutner_shared_next == (*(transfer_stops2+1)).size()) && // there are two consecutive identical sets of transfer stops
+                            if ((counter_shared_current == (int) (*transfer_stops1).size() && counter_shared_current == (int) (*transfer_stops2).size() && coutner_shared_next == (int) (*(transfer_stops1+1)).size() && coutner_shared_next == (int) (*(transfer_stops2+1)).size()) && // there are two consecutive identical sets of transfer stops
                                 ((*(transfer_lines1)).front()->get_id() == (*(transfer_lines2)).front()->get_id() || compare_common_partial_routes((*(transfer_lines1)).front(), (*(transfer_lines2)).front(), (*transfer_stops1).front(), (*(transfer_stops1 + 1)).front()) == true ))
                             {
                                 for (vector<Busline*>::iterator transfer_line2 = (*(transfer_lines2)).begin(); transfer_line2 < (*(transfer_lines2)).end(); transfer_line2++)
@@ -4085,7 +4133,7 @@ bool Network::compare_common_partial_routes (Busline* line1, Busline* line2, Bus
     }
     else
     {
-        for (iter_stop1; (*iter_stop1)->get_id() != end_section->get_id(); iter_stop1++)
+        for (; (*iter_stop1)->get_id() != end_section->get_id(); iter_stop1++)
         {
             if ((*iter_stop1)->get_id() != (*iter_stop2)->get_id())
             {
@@ -4158,7 +4206,7 @@ bool Network::check_path_no_repeating_lines (vector<vector<Busline*> > lines, ve
                         counter_sim++;
                     }
                 }
-                if (counter_sim == ((*lines_iter2).size()))
+                if (counter_sim == (int) ((*lines_iter2).size()))
                 {
                     return false;
                 }
@@ -4423,7 +4471,7 @@ bool Network::read_transit_path_sets(string name)
     int nr= 0;
     in >> nr;
     int i=0;
-    for (i; i<nr;i++)
+    for (; i<nr;i++)
     {
         if (!read_transit_path(in))
         {
@@ -4612,7 +4660,7 @@ bool Network::read_transitday2day(string name)
     int nr= 0;
     in >> nr;
     int i=0;
-    for (i; i<nr;i++)
+    for (; i<nr;i++)
     {
         if (!read_OD_day2day(in))
         {
@@ -4662,7 +4710,7 @@ bool Network::read_IVTT_day2day(string name)
     int nr= 0;
     in >> nr;
     int i=0;
-    for (i; i<nr;i++)
+    for (; i<nr;i++)
     {
         if (!read_OD_IVTT(in))
         {
@@ -4870,7 +4918,7 @@ in >> keyword;
     }
     in >> nr;
     limit = i + nr;
-    for (i; i<limit;i++)
+    for (; i<limit;i++)
     {
         if (!read_dwell_time_function(in))
         {
@@ -4886,7 +4934,7 @@ in >> keyword;
     }
     in >> nr;
     limit = i + nr;
-    for (i; i<limit;i++)
+    for (; i<limit;i++)
     {
         if (!read_bustype(in))
         {
@@ -4905,7 +4953,7 @@ in >> keyword;
     }
     in >> nr;
     limit = i + nr;
-    for (i; i<limit;i++)
+    for (; i<limit;i++)
     {
         if (!read_busvehicle(in))
         {
@@ -5390,7 +5438,7 @@ bool Network::add_od_routes()
     vector <Route*>::iterator del=deleted_routes.begin();
     multimap<odval,Route*>::iterator route_m, route_l, route_u;
     vector <Route*>::iterator route;
-    for (del; del < deleted_routes.end(); del++)
+    for (; del < deleted_routes.end(); del++)
     {
         odval val=(*del)->get_oid_did();
         route_l  = routemap.lower_bound(val);
@@ -5607,6 +5655,98 @@ bool Network::readserverrate(istream& in)
     return true;
 }
 
+
+bool Network::readwalkingtimedistribution(istream& in) // reads a walking time distribution
+{
+    
+    char bracket;
+    
+    string orig_name, dest_name;
+    
+    Busstop *orig_stop_ptr, *dest_stop_ptr;
+    
+    double interval_start, interval_end;
+    
+    unsigned int num_quantiles;
+    
+    
+    in >> bracket;
+    if (bracket != '{')
+    {
+        cout << "readfile::readwalkingtimedistribution scanner jammed at " << bracket << ", expected {" << endl;
+        return false;
+    }
+    bracket = ' '; //reset bracket
+    
+    //read origin name, destination name, interval start and end second as well as number of quantiles
+    in >> orig_name >> dest_name >> interval_start >> interval_end >> num_quantiles;
+    
+    //get pointer to origin and destination stop
+    orig_stop_ptr = get_busstop_from_name(orig_name);
+    dest_stop_ptr = get_busstop_from_name(dest_name);
+    
+    //containers for quantile position and quantile values
+    double quantiles[num_quantiles];
+    double quantile_values[num_quantiles];
+    
+    //get quantile positions
+    in >> bracket;
+    if (bracket != '{')
+    {
+        cout << "readfile::readwalkingtimedistribution scanner jammed at " << bracket << ", expected {" << endl;
+        return false;
+    }
+    bracket = ' '; //reset bracket
+    
+    for (unsigned int quant = 0; quant < num_quantiles; quant++) {
+        in >> quantiles[quant];
+    }
+    
+    in >> bracket;
+    if (bracket != '}')
+    {
+        cout << "readfile::readwalkingtimedistribution scanner jammed at " << bracket << ", expected }" << endl;
+        return false;
+    }
+    bracket = ' '; //reset bracket
+    
+    //get quantile values
+    in >> bracket;
+    if (bracket != '{')
+    {
+        cout << "readfile::readwalkingtimedistribution scanner jammed at " << bracket << ", expected {" << endl;
+        return false;
+    }
+    bracket = ' '; //reset bracket
+    
+    for (unsigned int quant = 0; quant < num_quantiles; quant++) {
+        in >> quantile_values[quant];
+    }
+    
+    in >> bracket;
+    if (bracket != '}')
+    {
+        cout << "readfile::readwalkingtimedistribution scanner jammed at " << bracket << ", expected }" << endl;
+        return false;
+    }
+    bracket = ' '; //reset bracket
+    
+    in >> bracket;
+    if (bracket != '}')
+    {
+        cout << "readfile::readwalkingtimedistribution scanner jammed at " << bracket << ", expected }" << endl;
+        return false;
+    }
+    bracket = ' '; //reset bracket
+    
+    
+    //store walking time distribution
+    orig_stop_ptr->add_walking_time_quantiles(dest_stop_ptr, quantiles, quantile_values, num_quantiles, interval_start, interval_end);
+    
+    return true;
+}
+
+
 bool Network::readdemandfile(string name)
 {
 
@@ -5711,7 +5851,7 @@ bool Network::writeoutput(string name)
     bool ok=true;
     vector<ODpair*>::iterator iter=odpairs.begin();
     (*iter)->writefieldnames(out);
-    for (iter;iter<odpairs.end();iter++)
+    for (;iter<odpairs.end();iter++)
     {
         ok=ok && (*iter)->write(out);
     }
@@ -5957,7 +6097,7 @@ bool Network::readtimes(istream& in)
         cout << " creating linktimes from freeflow times " << endl;
         cout << " linkmap.size() " << linkmap.size() << endl;
         cout << " virtuallinks.size() " << virtuallinks.size() << endl;
-#endif _DEBUG_NETWORK
+#endif //_DEBUG_NETWORK
         for (map<int,Link*>::iterator iter=linkmap.begin();iter!=linkmap.end();iter++)
         {
             double linktime= (*iter).second->get_freeflow_time();
@@ -6024,7 +6164,7 @@ bool Network::copy_linktimes_out_in()
 {
     bool ok=true;
     map<int,Link*>::iterator l_iter=linkmap.begin();
-    for (l_iter;l_iter!=linkmap.end();l_iter++)
+    for (;l_iter!=linkmap.end();l_iter++)
     {
         ok = ok  && ((*l_iter).second->copy_linktimes_out_in());
     }
@@ -6484,7 +6624,7 @@ bool Network::find_alternatives_all (int lid, double penalty, Incident* incident
     // unsigned int nr_affected_routes = i_routemap.size();
     multimap <int, Route*>::iterator rmiter=i_routemap.begin();
     // get all affected (links,destinations) from each route, and store the origins as well
-    for (rmiter;rmiter != i_routemap.end(); rmiter++)
+    for (;rmiter != i_routemap.end(); rmiter++)
     {
         Route* r = (*rmiter).second;
         int dest =(*rmiter).first;
@@ -6503,12 +6643,12 @@ bool Network::find_alternatives_all (int lid, double penalty, Incident* incident
     }
     // per destination, for all affected links, find out if they have an alternative that does not go through incident link
     map<int, map <int,Link*> >::iterator lm_iter=affected_links_per_dest.begin();
-    for (lm_iter; lm_iter!=affected_links_per_dest.end(); lm_iter++)
+    for (; lm_iter!=affected_links_per_dest.end(); lm_iter++)
     {
         int dest = (*lm_iter).first;
         map <int,Link*> thelinks = (*lm_iter).second;
         map <int,Link*>::iterator linkiter=thelinks.begin();
-        for (linkiter; linkiter != thelinks.end(); linkiter++)
+        for (; linkiter != thelinks.end(); linkiter++)
         {
             Link* link = linkiter->second;
             link->set_selected(true); // set the affected link icon to 'selected colour'
@@ -6551,7 +6691,7 @@ bool Network::find_alternatives_all (int lid, double penalty, Incident* incident
         if (initok)
         {
             map <int, set <int > >::iterator mi = links_without_alternative.begin();
-            for (mi; mi != links_without_alternative.end();mi++)
+            for (; mi != links_without_alternative.end();mi++)
          {
              // get shortest path and add.
              double cost=(graph->linkCost (lid)) + penalty;
@@ -7723,7 +7863,7 @@ void Network::set_output_moe_thickness ( unsigned int val ) // sets the output m
     double maxval = 0.0, minval=999999.0;
     pair <double,double> minmax;
     map <int,Link*>::iterator iter = linkmap.begin();
-    for (iter;iter != linkmap.end(); iter++)
+    for (;iter != linkmap.end(); iter++)
     {
         minmax = (*iter).second->set_output_moe_thickness(val);
         minval = min (minval, minmax.first);
@@ -7739,7 +7879,7 @@ void Network::set_output_moe_colour ( unsigned int val ) // sets the output moe 
     double maxval = 0.0, minval=999999.0;
     pair <double,double> minmax;
     map <int,Link*>::iterator iter = linkmap.begin();
-    for (iter;iter != linkmap.end(); iter++)
+    for (;iter != linkmap.end(); iter++)
     {
         minmax = (*iter).second->set_output_moe_colour(val);
         minval = min (minval, minmax.first);
@@ -7825,7 +7965,7 @@ void Incident::broadcast_incident_start(int lid)
 {
     // for all links
     map <int, Link*>::iterator linkiter = affected_links.begin();
-    for (linkiter; linkiter != affected_links.end(); linkiter++)
+    for (; linkiter != affected_links.end(); linkiter++)
     {
         (*linkiter).second->broadcast_incident_start (lid,incident_parameters);
     }

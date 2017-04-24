@@ -31,6 +31,7 @@ class ODstops;
 class Change_arrival_rate;
 class Bustrip_assign;
 class Dwell_time_function;
+class Walking_time_dist;
 
 typedef pair<Bustrip*,double> Start_trip;
 typedef vector <Passenger*> passengers;
@@ -587,7 +588,8 @@ public:
 		bool	has_bay_, 
 		bool	can_overtake_, 
 		double	min_DT_, 
-		int		rti_
+		int		rti_,
+        bool    non_random_pass_generation_
 	);
 
 	void reset (); 
@@ -624,7 +626,8 @@ public:
 	void save_previous_arrival_rates () {previous_arrival_rates.swap(arrival_rates);}
 	void save_previous_alighting_fractions () {previous_alighting_fractions.swap(alighting_fractions);}
 	bool check_walkable_stop ( Busstop* const & stop);
-	bool check_destination_stop (Busstop* stop); 
+	bool check_destination_stop (Busstop* stop);
+    bool get_non_random_passenger_flag () {return non_random_pass_generation;};
 
 	//transfer related checks
 	bool is_awaiting_transfers(Bustrip* trip); //David added 2016-05-30: returns true if trip is currently awaiting transfers at stop
@@ -653,6 +656,8 @@ public:
 	void passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, double time);	  //!< progress passengers at stop: waiting, boarding and alighting
 	void book_bus_arrival(Eventlist* eventlist, double time, Bustrip* trip);			  //!< add to expected arrivals
 	double calc_exiting_time (Eventlist* eventlist, Bustrip* trip, double time);		  //!< To be implemented when time-points will work
+    
+    double get_walking_time(Busstop*,double);
 	
 // dwell-time calculation related functions	
 	double calc_dwelltime (Bustrip* trip);								//!< calculates the dwelltime of each bus serving this stop. currently includes: passenger service times ,out of stop, bay/lane		
@@ -678,6 +683,16 @@ public:
 	multi_rates multi_arrival_rates; //!< parameter lambda that defines the poission proccess of passengers arriving at the stop for each sequential stop
 
     //id(id_), name(name_), link_id(link_id_), position (position_), length(length_), has_bay(has_bay_), can_overtake(can_overtake_), min_DT(min_DT_), rti (rti_)
+    
+    // methods related to non-random passenger generation
+    double get_next_exogenous_train_arrival(double curr_time); //returns arrival time of next exogenous train given current time
+    int get_num_arrivals_within_hour(double curr_time); //returns number of train arrivals within interval +/- 30min around curr_time to allocate OD demand rate to specific trains assuming uniform distribution
+    void add_exogenous_train_arrival(double arr_time);
+    
+    //methods related to exogenous walking times
+    void add_walking_time_quantiles(Busstop*, double*, double*, int, double, double);
+    double estimate_walking_time_from_quantiles(Busstop*, double);
+
 
 protected:
 	int id;						//!< stop id
@@ -689,13 +704,18 @@ protected:
 	bool can_overtake;			//!< 0 - can't overtake, 1 - can overtake freely; TRUE if it is possible for a bus to overtake another bus that stops in front of it (if FALSE - dwell time is subject to the exit time of a blocking bus)
     double min_DT;
     int rti;					//!< indicates the level of real-time information at this stop: 0 - none; 1 - for all lines stoping at each stop; 2 - for all lines stoping at all connected stop; 3 - for the entire network.
+    
+    bool non_random_pass_generation; //!< 0 - passengers to be generated randomly at stop, 1-passenger generation subject to arrival timetable of exogenous transport services (typically interregional trains at stops representing train platform)
 
 	double avaliable_length;	//!< length of the busstop minus occupied length
 	double exit_time;
 	double dwelltime;			//!< standard dwell time
 
 	int nr_boarding;			//!< pass. boarding
-	int nr_alighting;			//!< pass alighting 
+	int nr_alighting;			//!< pass alighting
+    
+    list<double> exogenous_arrivals; //!< unordered list of arrival times of exogenous trains
+    
 	Random* random;
 	
 	vector <Busline*> lines;
@@ -731,6 +751,10 @@ protected:
 
 	// walking distances between stops (relevant only for demand format 3 and 4)
 	map<Busstop*,double> distances;			//!< contains the distances [meters] from other bus stops
+    
+    // walking times between steps
+    map<Busstop*, vector<Walking_time_dist*>> walking_time_distribution_map; //!< contains set of distributions for a given destination node
+
 
 	// transfer synchronization
 	vector<pair<Bustrip*, int> > trips_awaiting_transfers;	//!< David added 2016-05-30: contains trips that are currently waiting to synchronize transfers with a connecting trip, paired with the line ID of the connecting trip
@@ -760,6 +784,27 @@ protected:
 	TD_demand alighting_fractions_TD;	//!< parameter that defines the poission process of the alighting passengers 
 
 };
+
+class Walking_time_dist {
+public:
+    Walking_time_dist (Busstop* dest_stop_, double* quantiles_, double* quantile_values_, int num_quantiles_, double time_start_, double time_end_): dest_stop(dest_stop_), quantiles(quantiles_), quantile_values(quantile_values_), num_quantiles(num_quantiles_), time_start(time_start_), time_end(time_end_) {}
+    
+    virtual ~Walking_time_dist(){};
+    
+    bool time_is_in_range(double);
+    int get_num_quantiles() {return num_quantiles;};
+    double* get_quantiles() {return quantiles;};
+    double* get_quantile_values() {return quantile_values;};
+    
+protected:
+    Busstop* dest_stop;
+    double* quantiles;
+    double* quantile_values;
+    int num_quantiles;
+    double time_start;
+    double time_end;
+};
+
 
 class Dwell_time_function // container that holds the total travel time experienced by line's trips
 {

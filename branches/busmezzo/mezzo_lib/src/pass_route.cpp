@@ -458,4 +458,4 @@ map<Busline*, bool> Pass_path::check_maybe_worthwhile_to_wait (vector<Busline*> 
 		}
 	}
 	return worth_to_wait;
-}
+}
