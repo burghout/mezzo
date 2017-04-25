@@ -1618,7 +1618,7 @@ bool Network::readbusstop (istream& in) // reads a busstop
         return false;
     }
   in >> stop_id >> name >> link_id >> position >> length >> has_bay >> can_overtake >> min_DT >> RTI_stop >> non_Ramdon_Pass_Generation;
-
+    
   if (linkmap.find(link_id) == linkmap.end())
   {
       cout << "readfile::readsbusstop error at stop " << stop_id << ". Link " << link_id << " does not exist." << endl;

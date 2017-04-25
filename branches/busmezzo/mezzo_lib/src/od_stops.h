@@ -374,7 +374,7 @@ protected:
 	double arrival_rate; 
 	passengers waiting_passengers; // a list of passengers with this OD that wait at the origin
 	int min_transfers; // the minimum number of trnasfers possible for getting from O to D
-	bool non_random_arrivals; // 1 - passengers are generated according to timetable, 0 - passengers generated according to Poisson process
+	
     
 	vector <Pass_path*> path_set;
 	double boarding_utility;

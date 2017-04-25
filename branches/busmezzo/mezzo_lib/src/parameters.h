@@ -188,6 +188,7 @@ public:
    double start_pass_generation; 
    double stop_pass_generation;
    bool od_pairs_for_generation;
+    double gate_generation_time_diff; // passengers are generated slightly before service leaves to account for boarding time
 
 // transit control parameters
    double riding_time_weight;

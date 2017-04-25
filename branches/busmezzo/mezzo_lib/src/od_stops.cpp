@@ -15,7 +15,7 @@ origin_stop(origin_stop_), destination_stop(destination_stop_)
     origin_stop = origin_stop_;
     destination_stop = destination_stop_;
 	active = false;
-    non_random_arrivals = origin_stop->get_non_random_passenger_flag();
+    
 	random = new (Random);
 	path_set.clear();
 	if (randseed != 0)
@@ -160,6 +160,8 @@ bool ODstops::execute (Eventlist* eventlist, double curr_time) // generate passe
 	{
         active = true;
         
+        bool non_random_arrivals = origin_stop->get_gate_flag(); // 1 - passengers are generated according to timetable, 0 - passengers generated according to Poisson process
+        
         //origin node with random passenger arrival/generation pattern
         if ( non_random_arrivals == false) {
             curr_time = theParameters->start_pass_generation + theRandomizers[0]->erandom(arrival_rate / 3600.0); // passenger arrival is assumed to be a poission process (exp headways)
@@ -175,50 +177,40 @@ bool ODstops::execute (Eventlist* eventlist, double curr_time) // generate passe
             }
         }
         
-        //origin node with non-random/scheduled passenger generation pattern (e.g. platform with inter-regional train service)
+        //origin node with non-random/scheduled passenger generation pattern (gate nodes)
         else {
+            //get gate line (by definition, gate nodes serve exactly one line)
+            Busline* servedLine = origin_stop->get_lines().front();
             
-            //cout << "generating non-randomly distributed pedestrians " << endl;
-            
-            curr_time = theParameters->start_pass_generation;
-            
-            //cout << "generating passengers between " << theParameters->start_pass_generation << " and " << theParameters->stop_pass_generation << endl;
-            
-            double time_next_train_arrival = origin_stop->get_next_exogenous_train_arrival(curr_time);
-            int num_train_arrivals_current_hour = origin_stop->get_num_arrivals_within_hour(curr_time);
-            
-            //cout << "next arrival at: " << time_next_train_arrival << ", in total " << num_train_arrivals_current_hour << " trains in same 60-min interval\n";
+            //get time to next arrival
+            double time_to_next_service = servedLine->find_time_till_next_scheduled_trip_at_stop(origin_stop, curr_time);
             
             double num_OD_alightings;
+            double generation_time_gap = theParameters->gate_generation_time_diff;
             
-            if ( time_next_train_arrival < 0) {
-                cout << "No train arrivals on this platform." << endl;
-            }
+            curr_time = theParameters->start_pass_generation + time_to_next_service;
             
-            while ( time_next_train_arrival >= 0 )
+            while ( curr_time < theParameters->stop_pass_generation )
             {
-                curr_time = time_next_train_arrival;
-                
-                //all trains assumed to have same alighting volume and same OD shares
-                num_OD_alightings = arrival_rate / num_train_arrivals_current_hour;
+                //alighting volume assumed proportional to current headway
+                num_OD_alightings = arrival_rate * time_to_next_service / 3600.0;
                 
                 //generate individual passengers
                 while (num_OD_alightings > theRandomizers[0]->urandom()) {
                     
-                    Passenger* pass = new Passenger(pid, curr_time, this);
+                    Passenger* pass = new Passenger(pid, curr_time - generation_time_gap, this);
                     passengers_during_simulation.push_back(pass);
                     pid++;
                     pass->init();
-                    eventlist->add_event(curr_time, pass);
+                    eventlist->add_event(curr_time - generation_time_gap, pass);
                     
                     num_OD_alightings--;
-                    
-                    //cout << "generating passenger at " << curr_time << " (" << num_OD_alightings << " remaining)\n";
                 }
                 
                 //update parameters of next train arrival
-                time_next_train_arrival = origin_stop->get_next_exogenous_train_arrival(curr_time);
-                num_train_arrivals_current_hour = origin_stop->get_num_arrivals_within_hour(curr_time);
+                time_to_next_service = servedLine->find_time_till_next_scheduled_trip_at_stop(origin_stop, curr_time);
+                curr_time += time_to_next_service;
+                
             }
         }
         

@@ -1002,8 +1002,8 @@ Busstop::Busstop()
 	rti = 0;
 }
 
-Busstop::Busstop (int id_, string name_, int link_id_, double position_, double length_, bool has_bay_, bool can_overtake_, double min_DT_, int rti_, bool non_random_pass_generation_):
-id(id_), name(name_), link_id(link_id_), position (position_), length(length_), has_bay(has_bay_), can_overtake(can_overtake_), min_DT(min_DT_), rti (rti_), non_random_pass_generation (non_random_pass_generation_)
+Busstop::Busstop (int id_, string name_, int link_id_, double position_, double length_, bool has_bay_, bool can_overtake_, double min_DT_, int rti_, bool gate_flag_):
+id(id_), name(name_), link_id(link_id_), position (position_), length(length_), has_bay(has_bay_), can_overtake(can_overtake_), min_DT(min_DT_), rti (rti_), gate_flag (gate_flag_)
 {
 	avaliable_length = length;
 	nr_boarding = 0;
@@ -1072,12 +1072,6 @@ void Busstop::book_bus_arrival(Eventlist* eventlist, double time, Bustrip* trip)
 	eventlist->add_event(time,this);
 }
 
-void Busstop::add_exogenous_train_arrival(double arr_time)
-{
-    exogenous_arrivals.push_back(arr_time);
-    
-    exogenous_arrivals.sort();
-}
 
 void Busstop::add_walking_time_quantiles(Busstop* dest_stop_ptr, double* quantiles, double* quantile_values, int num_quantiles, double interval_start, double interval_end){
     
@@ -2355,52 +2349,6 @@ bool Busstop::is_awaiting_transfers(Bustrip* trip)
 		}
 	}
 	return false;
-}
-
-double Busstop::get_next_exogenous_train_arrival(double curr_time){
-    
-    double curr_arr_time;
-    list<double>::iterator it;
-    
-    //cout << "curr_time: " << curr_time << endl;
-    //cout << "mylist contains:";
-    //for (it=exogenous_arrivals.begin(); it!=exogenous_arrivals.end(); ++it){
-    //    curr_arr_time = *it;
-    //    cout << ' ' << curr_arr_time;
-    //}
-    //std::cout << '\n';
-    
-    for (it=exogenous_arrivals.begin(); it!=exogenous_arrivals.end(); ++it){
-        curr_arr_time = *it;
-        
-        if (curr_arr_time > curr_time) {
-            return curr_arr_time;
-        }
-    }
-    
-    
-    return -1;
-}
-
-int Busstop::get_num_arrivals_within_hour(double curr_time){
-    
-    double min_time = curr_time - 1800;
-    double max_time = curr_time + 1800;
-    
-    int num_trains = 0;
-    
-    double curr_arr_time;
-    list<double>::iterator it;
-    
-    for (it=exogenous_arrivals.begin(); it!=exogenous_arrivals.end(); ++it){
-        curr_arr_time = *it;
-        
-        if ((min_time <= curr_arr_time) && (curr_arr_time < max_time)) {
-            num_trains++;
-        }
-    }
-    
-    return num_trains;
 }
 
 

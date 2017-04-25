@@ -627,7 +627,7 @@ public:
 	void save_previous_alighting_fractions () {previous_alighting_fractions.swap(alighting_fractions);}
 	bool check_walkable_stop ( Busstop* const & stop);
 	bool check_destination_stop (Busstop* stop);
-    bool get_non_random_passenger_flag () {return non_random_pass_generation;};
+    bool get_gate_flag () {return gate_flag;};
 
 	//transfer related checks
 	bool is_awaiting_transfers(Bustrip* trip); //David added 2016-05-30: returns true if trip is currently awaiting transfers at stop
@@ -684,11 +684,6 @@ public:
 
     //id(id_), name(name_), link_id(link_id_), position (position_), length(length_), has_bay(has_bay_), can_overtake(can_overtake_), min_DT(min_DT_), rti (rti_)
     
-    // methods related to non-random passenger generation
-    double get_next_exogenous_train_arrival(double curr_time); //returns arrival time of next exogenous train given current time
-    int get_num_arrivals_within_hour(double curr_time); //returns number of train arrivals within interval +/- 30min around curr_time to allocate OD demand rate to specific trains assuming uniform distribution
-    void add_exogenous_train_arrival(double arr_time);
-    
     //methods related to exogenous walking times
     void add_walking_time_quantiles(Busstop*, double*, double*, int, double, double);
     double estimate_walking_time_from_quantiles(Busstop*, double);
@@ -705,7 +700,7 @@ protected:
     double min_DT;
     int rti;					//!< indicates the level of real-time information at this stop: 0 - none; 1 - for all lines stoping at each stop; 2 - for all lines stoping at all connected stop; 3 - for the entire network.
     
-    bool non_random_pass_generation; //!< 0 - passengers to be generated randomly at stop, 1-passenger generation subject to arrival timetable of exogenous transport services (typically interregional trains at stops representing train platform)
+    bool gate_flag; //!< gate flag. If set true, passenger generation subject to timetable of transport services
 
 	double avaliable_length;	//!< length of the busstop minus occupied length
 	double exit_time;

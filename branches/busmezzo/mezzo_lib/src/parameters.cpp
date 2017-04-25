@@ -679,6 +679,15 @@ bool Parameters::read_parameters (istream & in )
 			return false;
 		}
 		in >> od_pairs_for_generation;
+        
+        in >> keyword;
+        if (keyword!= "gate_generation_time_diff=")
+        {
+            cout << "ERROR reading Parameters file, expecting: gate_generation_time_diff=, read: " << keyword << endl;
+            return false;
+        }
+        in >> gate_generation_time_diff;
+        
 	}
 	in >> keyword;
 	if (keyword!= "#transit_control_parameters")
@@ -799,4 +808,4 @@ void Parameters::write_parameters(ostream & out)
 #endif
 
 
-}
+}
