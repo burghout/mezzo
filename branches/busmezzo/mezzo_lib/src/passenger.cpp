@@ -314,17 +314,17 @@ void Passenger::start (Eventlist* eventlist)
 			}
 			set_ODstop(connection_stop->get_stop_od_as_origin_per_stop(OD_stop->get_destination())); // set this stop as his new origin (new OD)
 			
-			double arrival_time_to_connected_stop = start_time + get_walking_time(connection_stop);
+			double arrival_time_to_connected_stop = start_time + get_walking_time(connection_stop,start_time);
 			eventlist->add_event(arrival_time_to_connected_stop, this);
-			//execute(eventlist, arrival_time_to_connected_stop);
-			pair<Busstop*,double> stop_time;
+
+            pair<Busstop*,double> stop_time;
 			stop_time.first = connection_stop;
 			stop_time.second = arrival_time_to_connected_stop;
 			add_to_selected_path_stop(stop_time);
 		}
 		else // if the pass. stays at the same stop
 		{
-			OD_stop->add_pass_waiting(this); // storage the new passenger at the list of waiting passengers with this OD
+			OD_stop->add_pass_waiting(this); // store the new passenger at the list of waiting passengers with this OD
 			set_arrival_time_at_stop(start_time);
 			add_to_selected_path_stop(stop_time);
 			if (get_pass_RTI_network_level() == true || OD_stop->get_origin()->get_rti() > 0)
@@ -1152,9 +1152,9 @@ PassengerRecycler::	~PassengerRecycler()
 }
 
 
-double Passenger::get_walking_time(Busstop* busstop_dest_ptr)
+double Passenger::get_walking_time(Busstop* busstop_dest_ptr, double curr_time)
 {
-    //TODO FLURIN: Should use walking time distribution, not distance
-    map<Busstop*,double> walk_dis = OD_stop->get_origin()->get_walking_distances();
-    return walk_dis[busstop_dest_ptr] / theRandomizers[0]->nrandom (theParameters->average_walking_speed, theParameters->average_walking_speed/4);
+    Busstop* busstop_orig_ptr = OD_stop->get_origin();
+
+    return busstop_orig_ptr->get_walking_time(busstop_dest_ptr, curr_time);
 }

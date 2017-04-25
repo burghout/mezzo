@@ -1083,7 +1083,6 @@ void Busstop::add_walking_time_quantiles(Busstop* dest_stop_ptr, double* quantil
     
     Walking_time_dist* time_dist = new Walking_time_dist(dest_stop_ptr, quantiles, quantile_values, num_quantiles, interval_start, interval_end);
     
-    
     if ( walking_time_distribution_map.find(dest_stop_ptr) == walking_time_distribution_map.end() ) {
         //not found
         vector<Walking_time_dist*> dist_vector = {time_dist};
@@ -1092,9 +1091,7 @@ void Busstop::add_walking_time_quantiles(Busstop* dest_stop_ptr, double* quantil
     }
     else {
         // found
-        vector<Walking_time_dist*> curr_dist_vec = walking_time_distribution_map.at(dest_stop_ptr);
-        
-        curr_dist_vec.push_back(time_dist);
+        walking_time_distribution_map.at(dest_stop_ptr).push_back(time_dist);
         
     }
     
@@ -1102,16 +1099,16 @@ void Busstop::add_walking_time_quantiles(Busstop* dest_stop_ptr, double* quantil
 
 
 double Busstop::estimate_walking_time_from_quantiles(Busstop* dest_stop_ptr, double curr_time){
-    
-    cout << "estimating wakling time" << endl;
-    
+
     if ( walking_time_distribution_map.find(dest_stop_ptr) == walking_time_distribution_map.end() ) {
         //not found
         
     } else {
         // found
         
+        
         for(auto const& time_dist: walking_time_distribution_map.at(dest_stop_ptr) ) {
+            
             if (time_dist->time_is_in_range(curr_time)){
                 
                 //found the right distribution: need to draw from distribution and return obtained walking time
@@ -1143,6 +1140,8 @@ double Busstop::estimate_walking_time_from_quantiles(Busstop* dest_stop_ptr, dou
                     
                 }
                 
+                
+                
                 for (int i=num_quantiles-1;i>=0;i--){
                     curr_quantile = quantiles[i];
                     curr_quantile_value = quantile_values[i];
@@ -1155,7 +1154,7 @@ double Busstop::estimate_walking_time_from_quantiles(Busstop* dest_stop_ptr, dou
                     }
                     
                 }
-                
+
                 //linear interpolation between current quantiles:
                 double frac = (random_draw-lower_quantile)/(upper_quantile-lower_quantile);
                 
@@ -1540,6 +1539,7 @@ void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, d
 					else  // pass walks to another stop
 					{
 						// booking an event to the arrival time at the new stop
+                    
 						double arrival_time_connected_stop = time + get_walking_time(next_stop,time);
 						//(*alighting_passenger)->execute(eventlist,arrival_time_connected_stop);
 						eventlist->add_event(arrival_time_connected_stop, *alighting_passenger);
@@ -1711,8 +1711,6 @@ void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, d
 }
 
 double Busstop::get_walking_time(Busstop* next_stop, double curr_time){
-    
-    cout << "executing Busstop::get_walking_time" << endl;
     
     double walking_time;
     
@@ -2437,6 +2435,27 @@ bool Change_arrival_rate::execute(Eventlist* eventlist, double time)
 		}
 	}
 	return true;
+}
+
+Walking_time_dist::Walking_time_dist(Busstop* dest_stop_, double* quantiles_, double* quantile_values_, int num_quantiles_, double time_start_, double time_end_){
+    
+    dest_stop = dest_stop_;
+    num_quantiles = num_quantiles_;
+    time_start = time_start_;
+    time_end = time_end_;
+    
+    quantiles = new double[num_quantiles];
+    quantile_values = new double[num_quantiles];
+    
+    for (int i=0; i<num_quantiles; i++){
+        quantiles[i] = quantiles_[i];
+        quantile_values[i] = quantile_values_[i];
+    }
+    
+}
+
+double* Walking_time_dist::get_quantiles() {
+    return quantiles;
 }
 
 bool Walking_time_dist::time_is_in_range(double curr_time) {

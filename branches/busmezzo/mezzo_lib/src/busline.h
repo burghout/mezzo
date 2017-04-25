@@ -787,13 +787,13 @@ protected:
 
 class Walking_time_dist {
 public:
-    Walking_time_dist (Busstop* dest_stop_, double* quantiles_, double* quantile_values_, int num_quantiles_, double time_start_, double time_end_): dest_stop(dest_stop_), quantiles(quantiles_), quantile_values(quantile_values_), num_quantiles(num_quantiles_), time_start(time_start_), time_end(time_end_) {}
+    Walking_time_dist (Busstop* dest_stop_, double* quantiles_, double* quantile_values_, int num_quantiles_, double time_start_, double time_end_);
     
     virtual ~Walking_time_dist(){};
     
     bool time_is_in_range(double);
     int get_num_quantiles() {return num_quantiles;};
-    double* get_quantiles() {return quantiles;};
+    double* get_quantiles();
     double* get_quantile_values() {return quantile_values;};
     
 protected:

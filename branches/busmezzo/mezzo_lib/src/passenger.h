@@ -112,7 +112,7 @@ public:
     
     
     //walking time
-    double get_walking_time(Busstop*);
+    double get_walking_time(Busstop*,double);
     
 protected:
 	int passenger_id;
