@@ -34,7 +34,6 @@ class Bustrip_assign;
 class Dwell_time_function;
 class hist_set;
 class hist_paths;
-class hist_demand;
 
 typedef pair<Bustrip*,double> Start_trip;
 typedef vector <Passenger*> passengers;
@@ -383,14 +382,18 @@ public:
 	bool check_end_trip ();																//!< returns 1 if true, 0 if false
 	double calc_departure_time (double time);											//!< calculates departure time from origin according to arrival time and schedule (including layover effect)
 	void convert_stops_vector_to_map();													//!< building stops_map
-	void convert_downstreamstops_vector_to_map(vector <Visit_stop*> down_stops);													//!< building stops_map
+	void convert_downstreamstops_vector_to_map(vector <Visit_stop*> down_stops);        //!< building stops_map
 	vector <Visit_stop*> ::iterator get_target_stop(Bustrip *trip, vector<Visit_stop*> :: iterator& next_stop); //Hend added 190716 get target stop according to the stop horizon
-	vector<Visit_stop*>::iterator  get_previous_stop(Bustrip *trip, vector <Visit_stop*> ::iterator& down_stp); // Hend added 190317 get the previous stop of the trip
+	Busstop* get_previous_stop(Busstop* stop); // Hend added 190317 get the previous stop of the trip
+	Busstop* get_stop_for_previous_trip(Busstop* stop); //Hend: get the specific stop for the previous trip
+	Busstop* get_next_stop_specific_stop(Busstop* stop); //Hend: get the next stop for specific stop
+	vector<Busstop*> Bustrip::get_downstream_stops_from_spc_stop(Busstop* stop);
 	vector<Start_trip> Bustrip::find_trips_to_handle_same_line(vector<Start_trip> line_trips, Visit_stop *target_stop); //Hend added 23/4/17 to find trips to handle
 	vector<Start_trip> Bustrip::find_trips_to_handle_transfer_lines(vector<Start_trip> trips_to_handle); //Hend added 23/4/17 to find trips to handle in the transfer lines
 	vector <Visit_stop*> ::iterator get_transfer_target_stop(Bustrip *trip, vector<Visit_stop*> :: iterator& trnsfr_stop); //Hend added 171016 get target stop for transfer lines
 	vector<Start_trip> calc_hist_prdct_arrivals(Start_trip trip, Visit_stop *target_stop, vector<Start_trip> trips_to_handle); ////Hend added 29/3/17: calc the predictions of the arrival times of trips
-	
+	pair<Bustrip*, Busstop*> get_specific_trip(vector<Start_trip> trips_to_handle, int trip_id, int stop_id);
+
 	vector<Start_trip> get_transfer_trips(Bustrip *trip, vector<Visit_stop*> transfer_in_downstream, vector<Start_trip> trips_to_handle);
 	vector<Start_trip> calc_predict_times(Start_trip trip, Visit_stop *target_stop, vector<Start_trip> trips_to_handle); ////Hend added 130716: calc the predictions of the arrival times of trips
 	vector<double> get_first_and_last_trips(vector<Start_trip> trips_to_handle,Visit_stop* transfer_stop);//Hend added 130716: get the first and last trip to enter transfer stop
@@ -405,7 +408,9 @@ public:
 	vector <Busstop*> get_downstream_stops(); //!< return the remaining stops to be visited starting from 'next_stop', returns empty Busstop vector if there are none
 	vector <Visit_stop*> get_downstream_stops_till_horizon(Bustrip *trip, Visit_stop* target_stop); //!< return the remaining stops to be visited starting from 'next_stop'
 	bool is_stop_in_downstream(Visit_stop *target_stop);  //!< return true if the trip didnt get yet to the target stop
-	bool check_first_trip_in_handled(vector<Visit_stop *> down_stops, Busstop* stop); //Hend added 24/4/17 to check if this stop is first in handled trip
+	vector<Link*> Bustrip::get_links_for_stop(Busstop* stop);//return links from specific stop to the next stop
+	double get_trnsfr_expected_departure(vector<Start_trip> trips_to_handle, Busstop* handle_stop); //get the departure time of the transfer stop
+
 // output-related functions
 	void write_assign_segments_output(ostream & out);
 	void record_passenger_loads (vector <Visit_stop*>::iterator start_stop); //!< creates a log-file for passenegr load assignment info
@@ -419,6 +424,7 @@ public:
 	map <Busstop*, int> nr_expected_alighting;		//!< number of passengers expected to alight at the busline's stops (format 2)
 	map <Busstop*, int> assign_segements;			//!< contains the number of pass. travelling between trip segments
 	vector <Visit_stop*> down_stops;
+	vector<pair<Busstop*, double>> transfer_stops;//return the transfer stops downstream for specific trip
 	
 protected:
 	int id;										  //!< course nr
@@ -591,48 +597,47 @@ class BoardDemand {
 public:
 	int passengers_number_;
 	int destination_;
-	BoardDemand(int passengers_number, int destination) :
+	BoardDemand(double passengers_number, int destination) :
 		passengers_number_(passengers_number), destination_(destination) {}
 
 };
-class AlightDemand {
-public:
-	int passengers_number_;
-	int source_;
-	AlightDemand(int passengers_number, int source) :
-		passengers_number_(passengers_number), source_(source) {}
 
-};
 class BoardDemandTransfer {
 public:
-	int passengers_number_;
+	double passengers_number_;
 	int previous_line_;
-	int previous_station_;
+	int alight_stop_;
+	int board_stop_;
+	int destination_stop_;
 
-	BoardDemandTransfer(int passengers_number, int previous_line, int previous_station) :
+	BoardDemandTransfer(double passengers_number, int previous_line, int alight_stop, int board_stop, int destination_stop) :
 		passengers_number_(passengers_number), 
 		previous_line_(previous_line),
-		previous_station_(previous_station){}
+		alight_stop_(alight_stop),
+		board_stop_(board_stop),
+		destination_stop_(destination_stop){}
 
 };
-class AlightDemandTransfer {
+class TransferFirstBoard {
 public:
-	int passengers_number_;
-	int next_line_;
-	int next_station_;
+	double passengers_number_;
+	int alight_stop_;
+	int board_stop_;
+	int destination_stop_;
 
-	AlightDemandTransfer(int passengers_number, int next_line, int next_station) :
+	TransferFirstBoard(double passengers_number, int alight_stop, int board_stop, int destination_stop) :
 		passengers_number_(passengers_number),
-		next_line_(next_line),
-		next_station_(next_station) {}
-
+		alight_stop_(alight_stop),
+		board_stop_(board_stop),
+		destination_stop_(destination_stop) {}
 };
+
+
 class LineStationData {
 public:
 	list<BoardDemand> boardings;
-	list<AlightDemand> alightings;
 	list<BoardDemandTransfer> boardingTransfers;
-	list<AlightDemandTransfer> alightingTransfers;
+	list<TransferFirstBoard> firstBoardingTransfers;
 };
 
 
@@ -728,7 +733,6 @@ public:
 		double	min_DT_, 
 		int		rti_,
 		map<LineIdStopId, hist_set*, CompareLineStop>* history_summary_map_,
-		map<LineIdStopId, hist_demand*, CompareLineStop>* hist_demand_map_,
 		map<LineIdStopId, LineStationData*, CompareLineStop>* hist_dmnd_map_
 	);
 
@@ -771,13 +775,22 @@ public:
 	//Hend added 29/3/17 to calculate the total passengers time for the optimal strategy 
 	double total_passengers_time(vector<Start_trip> trips_to_handle, vector<double> ini_vars); // (const column_vector& m);
 	void calc_expected_arrival_departue(vector<Start_trip> trips_to_handle, vector<double> ini_vars);
-	void calc_direct_demand(vector<Start_trip> trips_to_handle, vector<double> ini_vars);
-	void calc_transfer_demand(vector<Start_trip> trips_to_handle, vector<double> ini_vars);
-	list<pair<int, double>> get_expctd_arrival_for_tranfers(Bustrip* trip, Busstop* stop, vector<Start_trip> trips_to_handle);
+	void calc_boarding_demand(vector<Start_trip> trips_to_handle, Bustrip* hndle_trip, Busstop* hndle_stop);
+	void calc_alighting_demand(Bustrip* hndle_trip, Busstop* hndle_stop);
+	//void calc_alight_transfer_demand(Bustrip* hndle_trip, Busstop* hndle_stop);
+	void calc_board_transfer_demand(vector<Start_trip> trips_to_handle, Bustrip* hndle_trip, Busstop* hndle_stop);
+	//void calc_alight_transfer_as_destination(Bustrip* hndle_trip, Busstop* hndle_stop);
+	vector<pair<Bustrip*, double>> get_expctd_arrival_transfers(Bustrip* trip, Busstop* stop, vector<Start_trip> trips_to_handle);
 	list<pair<int, double>> get_departures_of_myLine(Bustrip* trip, Busstop* stop, vector<Start_trip> trips_to_handle);
-	void calc_transfer_to_myLine(list<pair<int, double>>trip_departure, list<pair<int, double>>trip_arrival, Busstop* hndle_stop, LineStationData* linestatdata);
-	list<pair<int, double>> get_expctd_departure_for_tranfers(Bustrip* trip, Busstop* stop, vector<Start_trip> trips_to_handle, LineStationData* linestatdata);
-	list<pair<int, double>> find_transfer_departure_of_otherLines(vector<Start_trip> trips_to_handle, Busstop* hndle_stop, int line_id);//return list of trip_id and dep. time of transfer lines of each line
+	void calc_transfer_to_myLine(vector<Start_trip> trips_to_handle, list<pair<int, double>>trip_departure, vector<pair<Bustrip*, double>>trip_arrival, Busstop* hndle_stop, Bustrip* hndle_trip);
+	void calc_occupancy_for_next_stop(Bustrip* handle_trip, Busstop* handle_stop); // to check if all demand can achieved
+	void calc_passengers_according_to_capacity(Bustrip* handle_trip, Busstop* handle_stop);//board passengers that can board becuase of capacity of vehicle
+	void calc_denied_boarding_passengers(Bustrip* handle_trip, Busstop* handle_stop);//calc num of passengers couldnt board because of limited capacity
+	
+	double calc_total_pass_times(vector<Start_trip> trips_to_handle, Bustrip* handle_trip, Busstop* handle_stop, vector<double> ini_vars);
+	double calc_transfer_time(Busstop* handle_stop); //return the delay of transfers to handle line
+	//list<pair<int, double>> get_expctd_departure_for_tranfers(Bustrip* trip, Busstop* stop, vector<Start_trip> trips_to_handle, LineStationData* linestatdata);
+	//list<pair<int, double>> find_transfer_departure_of_otherLines(vector<Start_trip> trips_to_handle, Busstop* hndle_stop, int line_id);//return list of trip_id and dep. time of transfer lines of each line
 
 	//transfer related checks
 	bool is_awaiting_transfers(Bustrip* trip); //David added 2016-05-30: returns true if trip is currently awaiting transfers at stop
@@ -810,6 +823,7 @@ public:
 // dwell-time calculation related functions	
 	double calc_dwelltime (Bustrip* trip);								//!< calculates the dwelltime of each bus serving this stop. currently includes: passenger service times ,out of stop, bay/lane		
 	double calc_holding_departure_time(Bustrip* trip, double time);		// David added 2016-04-01 calculates departure time from stop when holding is used, returns dwelltime + time if no holding is used
+	pair<double, double> calc_holding_departure_travel_time(Bustrip* trip, double time);  //Hend added12/5/17 calculate travel time and holding time for strategy 10 
 	bool check_out_of_stop (Bus* bus);									//!< returns TRUE if there is NO avaliable space for the bus at the stop (meaning the bus is out of the stop)
 	void occupy_length (Bus* bus);										//!< update avaliable length when bus arrives
 	void free_length (Bus* bus);										//!< update avaliable length when bus leaves
@@ -833,10 +847,13 @@ public:
 	vector<double> get_right_constraints(vector<Start_trip> trips_to_handle); // Hend added 30/3/17 to get the right constraints for the opt variables
 	map<LineIdStopId, hist_set*, CompareLineStop>* history_summary_map_;//Hend added 30/10/16 to save historical data
 	map<LineIdStopId, hist_set*, CompareLineStop>* stops_map_handle;    //Hend added 20/3/17 to save data that enters the optimization
-	map<LineIdStopId, hist_demand*, CompareLineStop>* hist_demand_map_; //Hend added 30/10/16 to save historical data
 	map<LineIdStopId, LineStationData*, CompareLineStop>* hist_dmnd_map_; //Hend added 14/4/17 to save historical demand per stop and line.
-	map<LineIdStopId, list<pair<int,double>>, CompareLineStop>* transfer_to_my_line_; //Hend added 25/4/17 to know if transfer from any line to my line is 1
+	map<LineIdStopId, list<pair<int, double>>, CompareLineStop>* transfer_to_my_line_; //Hend added 25/4/17 to know if transfer from any line to my line is 1
 	map<LineIdStopId, list<pair<int, double>>, CompareLineStop>* transfer_from_my_line_; //Hend added 25/4/17 to know if transfer from my line to any line is 1
+	
+	//map<LineIdStopId, list<pair<int, double>>, CompareLineStop>* num_temp_boardings;
+	//map<LineIdStopId, list<pair<int, double>>, CompareLineStop>* num_boardings;
+	//map<LineIdStopId, double, CompareLineStop>* num_alightings;
 	//map<LineStation, double>* get_line_station_demand(map<LineStation, LineStationData*, CompareLineStation>* hist_dmnd_map_); //Hend added 14/4/17 to get sum of the demands per stop and line
 
 // relevant only for demand format 2
@@ -847,16 +864,52 @@ public:
 	pair<Busstop*, double> dwell_time;      //Hend added 2401716: occupancy of buses on each trip on the horizon
 	pair<Busstop*, double> trip_occupancy;      //Hend added 2401716: occupancy of buses on each trip on the horizon
 	pair<Busstop*, double> riding_time;    //Hend added 05/02/17: riding time of buses on each trip on the horizon
-	pair<Busstop*, double> trip_tmp_boardings;   //Hend added 05/02/17: number of boardings of buses on each trip on the horizon without considering capacity
-	map<LineIdStopId, LineStationData*, CompareLineStop>* temp_boardings_to_dests; //boardings to each destination without taking into account capacity
-	map<LineIdStopId, LineStationData*, CompareLineStop>* boardings_to_dests; //boardings to each destination with taking into account limited capacity
-	pair<Busstop*, double> trip_tmp_trnsfr_boardings;
-	pair<Busstop*, double> trip_nr_boardings;   //Hend added 05/02/17: number of boardings of buses on each trip on the horizon
-	pair<Busstop*, double> trip_nr_alightings;  //Hend added 05/02/17: number of alightings of buses on each trip on the horizon
-	pair<Busstop*, double> trip_nr_denied;	  //Hend added 05/02/17: number of denied boardings of buses on each trip on the horizon
+	
+	map<LineIdStopId, LineStationData*, CompareLineStop>* temp_boardings_to_trnsfr; //boardings to each destination without taking into account capacity
+	map<LineIdStopId, LineStationData*, CompareLineStop>* boardings_to_trnsfr; //boardings to each destination with taking into account limited capacity
+
+	
 	pair<Busstop*, double> holding_time;	  //Hend added 30/03/17: number of denied boardings of buses on each trip on the horizon
 	pair<Busstop*, double> expected_arrival_time;  //Hend added 30/03/17: expected arrival time
 	pair<Busstop*, double> expected_departure_time;  //Hend added 11/04/17: expected departure time
+	
+	pair<Busstop*, double> tmp_boardings;   //Hend added 05/02/17: number of boardings of buses on each trip on the horizon without considering capacity
+	pair<Busstop*, double> nr_boardings; //Hend added 5/5/17:number of boardings taking capacity
+	pair<Busstop*, double> tmp_board_orgn_trnsfr; //number of boarding at the origin to trnasfer at the transfer stop
+	pair<Busstop*, double> nr_board_orgn_trnsfr; //number boarding first transfer taking into account l.c.
+	pair<Busstop*, double> tmp_trnsfr_boardings;//number of boardings from transfer
+	pair<Busstop*, double> nr_trnsfr_boardings;//number boarding transfer taking into account l.c.
+	
+	pair<Busstop*, double> dnb_direct; //passengers denied boarding from direct demand
+	pair<Busstop*, double> dnb_frst_trnsfr; //passengers denied boarding for first transfer from transfer demand
+	pair<Busstop*, double> dnb_trnsfr; //passengers denied boarding for first transfer from transfer demand
+	pair<Busstop*, double> nr_board_dnb_direct; // passngers board that denied before
+	pair<Busstop*, double> nr_board_dnb_frst_trnsfr; // passngers board that denied before
+	pair<Busstop*, double> nr_board_dnb_trnsfr; // passngers board that denied before
+
+	pair<Busstop*, double> tmp_occupancy_bus;//occupancy according to the demand
+	pair<Busstop*, double> occupancy_bus;// occupancy according to demand, taking into account limited capacity
+
+	map<int,double>  num_tmp_boardings;//number of boarding for each destination, without taking into account capacity
+	map<int, double> num_boardings;//number of boarding for each destination, taking into account capacity
+	map<int, double> num_tmp_trnsfr_frst_boardings;
+	map<int, double> num_trnsfr_frst_boardings;
+	list<pair<int, pair<double,double>>> num_tmp_trnsfr_boardings;//trnasfer boardings with the number of them and the arrival time 
+	list<pair<int, pair<double, double>>> num_trnsfr_boardings;
+	
+	
+	map<int, double> num_ndb_boardings;//number of boardings that deied board before because limited capacity, taking into account capacity
+	map<int, double> num_ndb_frst_trnsfr_boardings;
+	map<int, double> num_ndb_trnfr_boardings;//number of transfer boardings that deied board before because limited capacity, taking into account capacity
+	map<int, double> num_board_ndb_boardings; //number board from denied boardings
+	map<int, double> num_board_ndb_frst_transfer; //number board from frst transfer denied boardings
+	map<int, double> num_board_ndb_transfer; //number board from transfer denied boardings
+
+	pair<Busstop*, double> nr_alightings;  //Hend added 05/02/17: number of alightings of buses on each trip on the horizon
+	pair<Busstop*, double> nr_trnsfr_alightings;  //Hend added 05/02/17: number of transfer alightings of buses at the transfer stop
+	pair<Busstop*, double> nr_dnb_alightings; // Hend 4/5/17: number of alightings from boarding that denied to board before
+	pair<Busstop*, double> nr_trnfr_dnb_alightings; // Hend 4/5/17: number of alightings from transfer demand boarding that denied to board before 
+	
 
 protected:
 	int id;						//!< stop id
@@ -1069,22 +1122,6 @@ public:
 	double end_time;
 	vector<int> stops;
 	vector<int> trips;
-};
-
-class hist_demand
-{
-public:
-	hist_demand();
-
-	hist_demand(int stop_id_, int line_id_, double origin_d_, double destination_d_, double transfer_board_d_, double transfer_alight_d_);
-	~hist_demand();
-
-	int stop_id;
-	int line_id;
-	double origin_d;
-	double destination_d;
-	double transfer_board_d;
-	double transfer_alight_d;
 };
 
 #endif //_BUSLINE

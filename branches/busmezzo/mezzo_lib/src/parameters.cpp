@@ -749,6 +749,22 @@ bool Parameters::read_parameters (istream & in )
 		return false;
 	}
 	in >> Real_time_control_info;
+	
+	in >> keyword; //speed acceleration- Hend added 11/5/17
+	if (keyword != "speed_acceleration=")
+	{
+		cout << "ERROR reading Parameters file, expecting: speed_acceleration=, read: " << keyword << endl;
+		return false;
+	}
+	in >> speed_acceleration;
+
+	in >> keyword; //speed deceleration- Hend added 11/5/17
+	if (keyword != "speed_deceleration=")
+	{
+		cout << "ERROR reading Parameters file, expecting: speed_deceleration=, read: " << keyword << endl;
+		return false;
+	}
+	in >> speed_deceleration;
 
 	in >> keyword;
 	if (keyword!= "#day2day_assignment")
