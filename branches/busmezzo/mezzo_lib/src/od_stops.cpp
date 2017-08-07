@@ -12,7 +12,10 @@ origin_stop(origin_stop_), destination_stop(destination_stop_)
 {
 	min_transfers = 100;
 	arrival_rate = 0.0;
+    origin_stop = origin_stop_;
+    destination_stop = destination_stop_;
 	active = false;
+    
 	random = new (Random);
 	path_set.clear();
 	if (randseed != 0)
@@ -155,17 +158,63 @@ bool ODstops::execute (Eventlist* eventlist, double curr_time) // generate passe
 {
 	if (check_path_set() == true && active == false)
 	{
-		active = true;
-		curr_time = theParameters->start_pass_generation + theRandomizers[0]->erandom(arrival_rate / 3600.0); // passenger arrival is assumed to be a poission process (exp headways)
-		while (curr_time < theParameters->stop_pass_generation)
-		{
-			Passenger* pass = new Passenger(pid, curr_time, this);
-			passengers_during_simulation.push_back(pass);
-			pid++; 
-			pass->init();
-			eventlist->add_event(curr_time, pass);
-			curr_time += theRandomizers[0]->erandom(arrival_rate / 3600.0);
-		}
+        active = true;
+        
+        bool non_random_arrivals = origin_stop->get_gate_flag(); // 1 - passengers are generated according to timetable, 0 - passengers generated according to Poisson process
+        
+        //origin node with random passenger arrival/generation pattern
+        if ( non_random_arrivals == false) {
+            curr_time = theParameters->start_pass_generation + theRandomizers[0]->erandom(arrival_rate / 3600.0); // passenger arrival is assumed to be a poission process (exp headways)
+            
+            while (curr_time < theParameters->stop_pass_generation)
+            {
+                Passenger* pass = new Passenger(pid, curr_time, this);
+                passengers_during_simulation.push_back(pass);
+                pid++;
+                pass->init();
+                eventlist->add_event(curr_time, pass);
+                curr_time += theRandomizers[0]->erandom(arrival_rate / 3600.0);
+            }
+        }
+        
+        //origin node with non-random/scheduled passenger generation pattern (gate nodes)
+        else {
+            //get gate line (by definition, gate nodes serve exactly one line)
+            Busline* servedLine = origin_stop->get_lines().front();
+            
+            //get time to next arrival
+            double time_to_next_service = servedLine->find_time_till_next_scheduled_trip_at_stop(origin_stop, curr_time);
+            
+            double num_OD_alightings;
+            double generation_time_gap = theParameters->gate_generation_time_diff;
+            
+            curr_time = theParameters->start_pass_generation + time_to_next_service;
+            
+            while ( curr_time < theParameters->stop_pass_generation )
+            {
+                //alighting volume assumed proportional to current headway
+                num_OD_alightings = arrival_rate * time_to_next_service / 3600.0;
+                
+                //generate individual passengers
+                while (num_OD_alightings > theRandomizers[0]->urandom()) {
+                    
+                    Passenger* pass = new Passenger(pid, curr_time - generation_time_gap, this);
+                    passengers_during_simulation.push_back(pass);
+                    pid++;
+                    pass->init();
+                    eventlist->add_event(curr_time - generation_time_gap, pass);
+                    
+                    num_OD_alightings--;
+                }
+                
+                //update parameters of next train arrival
+                time_to_next_service = servedLine->find_time_till_next_scheduled_trip_at_stop(origin_stop, curr_time);
+                curr_time += time_to_next_service;
+                
+            }
+        }
+        
+
 	}
 	else
 	{
@@ -615,7 +664,7 @@ void ODstops::record_waiting_experience(Passenger* pass, Bustrip* trip, double t
 
 void ODstops::record_onboard_experience(Passenger* pass, Bustrip* trip, Busstop* stop, pair<double,double> riding_coeff)
 {
-	double expected_ivt;
+	double expected_ivt = 0.0;
 	double first_stop_time;
 	double second_stop_time;
 	for (vector<Visit_stop*>::iterator stop_v = trip->stops.begin(); stop_v < trip->stops.end(); stop_v++)
@@ -675,7 +724,7 @@ void ODstops::write_connection_output(ostream & out, Passenger* pass)
 void ODstops::write_od_summary(ostream & out)
 {
 	calc_pass_measures();
-	int nr_paths = paths_tt.size();
+	int nr_paths = (int) paths_tt.size();
 	out << origin_stop->get_id() << '\t' 
 		<< destination_stop->get_id() << '\t' 
 		<< nr_pass_completed << '\t' 
@@ -842,7 +891,7 @@ bool ODzone::execute (Eventlist* eventlist, double curr_time)
 		return true;
 	}
 // called only for generting pass.
-	if (active = true) // generate passenger from the second call, as first initialization call just set time to first passenger
+	if (active == true) // generate passenger from the second call, as first initialization call just set time to first passenger
 	{	
 		// for each of the destination zones from this origin zone
 		for (map<ODzone*,double>::iterator dzones_iter = arrival_rates.begin(); dzones_iter != arrival_rates.end(); dzones_iter++)

@@ -126,7 +126,7 @@ bool Turning::check_controlling(double time)
 	bool can_pass = true;
 	// Check all controlling turnings if vehicle can pass
 	vector <Turning*>::iterator gv = controlling_turnings.begin();
-	for (gv ; gv != controlling_turnings.end(); gv++)
+	for (; gv != controlling_turnings.end(); gv++)
 	{
 		can_pass = can_pass && (*gv)->giveway_can_pass(time);
 	}

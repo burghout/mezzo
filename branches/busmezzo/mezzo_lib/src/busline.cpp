@@ -57,7 +57,7 @@ Busline_travel_times::~Busline_travel_times ()
 {}
 
 Busline::Busline (int id_, int opposite_id_, string name_, Busroute* busroute_, vector<Busstop*> stops_, Vtype* vtype_, ODpair* odpair_, int holding_strategy_, float max_headway_holding_, double init_occup_per_stop_, int nr_stops_init_occup_):
-	id(id_), opposite_id(opposite_id_), name(name_), busroute(busroute_), stops(stops_), vtype(vtype_), odpair(odpair_), holding_strategy(holding_strategy_), max_headway_holding(max_headway_holding_), init_occup_per_stop(init_occup_per_stop_), nr_stops_init_occup(nr_stops_init_occup_)
+	stops(stops_), id(id_), opposite_id(opposite_id_), name(name_), busroute(busroute_), odpair(odpair_), vtype(vtype_), max_headway_holding(max_headway_holding_), holding_strategy(holding_strategy_), init_occup_per_stop(init_occup_per_stop_), nr_stops_init_occup(nr_stops_init_occup_)
 {
 	active=false;
 }
@@ -594,7 +594,7 @@ Bustrip::Bustrip ()
 	}
 }
 
-Bustrip::Bustrip (int id_, double start_time_, Busline* line_): id(id_), starttime(start_time_), line(line_)
+Bustrip::Bustrip (int id_, double start_time_, Busline* line_): id(id_), line(line_), starttime(start_time_)
 {
 	init_occup_per_stop = line->get_init_occup_per_stop();
 	nr_stops_init_occup = line->get_nr_stops_init_occup();
@@ -1002,8 +1002,8 @@ Busstop::Busstop()
 	rti = 0;
 }
 
-Busstop::Busstop (int id_, string name_, int link_id_, double position_, double length_, bool has_bay_, bool can_overtake_, double min_DT_, int rti_):
-	id(id_), name(name_), link_id(link_id_), position (position_), length(length_), has_bay(has_bay_), can_overtake(can_overtake_), min_DT(min_DT_), rti (rti_)
+Busstop::Busstop (int id_, string name_, int link_id_, double position_, double length_, bool has_bay_, bool can_overtake_, double min_DT_, int rti_, bool gate_flag_):
+id(id_), name(name_), link_id(link_id_), position (position_), length(length_), has_bay(has_bay_), can_overtake(can_overtake_), min_DT(min_DT_), rti (rti_), gate_flag (gate_flag_)
 {
 	avaliable_length = length;
 	nr_boarding = 0;
@@ -1070,7 +1070,99 @@ void Busstop::book_bus_arrival(Eventlist* eventlist, double time, Bustrip* trip)
 	bus_arrival_time.second = time;
 	expected_bus_arrivals.push_back(bus_arrival_time);
 	eventlist->add_event(time,this);
-} 
+}
+
+
+void Busstop::add_walking_time_quantiles(Busstop* dest_stop_ptr, double* quantiles, double* quantile_values, int num_quantiles, double interval_start, double interval_end){
+    
+    Walking_time_dist* time_dist = new Walking_time_dist(dest_stop_ptr, quantiles, quantile_values, num_quantiles, interval_start, interval_end);
+    
+    if ( walking_time_distribution_map.find(dest_stop_ptr) == walking_time_distribution_map.end() ) {
+        //not found
+        vector<Walking_time_dist*> dist_vector = {time_dist};
+        walking_time_distribution_map[dest_stop_ptr] = dist_vector;
+        
+    }
+    else {
+        // found
+        walking_time_distribution_map.at(dest_stop_ptr).push_back(time_dist);
+        
+    }
+    
+}
+
+
+double Busstop::estimate_walking_time_from_quantiles(Busstop* dest_stop_ptr, double curr_time){
+
+    if ( walking_time_distribution_map.find(dest_stop_ptr) == walking_time_distribution_map.end() ) {
+        //not found
+        
+    } else {
+        // found
+        
+        
+        for(auto const& time_dist: walking_time_distribution_map.at(dest_stop_ptr) ) {
+            
+            if (time_dist->time_is_in_range(curr_time)){
+                
+                //found the right distribution: need to draw from distribution and return obtained walking time
+                
+                int num_quantiles = time_dist->get_num_quantiles();
+                
+                double random_draw = random->urandom(0.0, 100);
+                
+                double* quantiles = time_dist->get_quantiles();
+                double* quantile_values = time_dist->get_quantile_values();
+                
+                double lower_quantile = 0.0;
+                double upper_quantile = 100;
+                
+                double lower_quantile_value, upper_quantile_value;
+                
+                double curr_quantile, curr_quantile_value;
+                
+                for (int i=0;i<num_quantiles;i++){
+                    curr_quantile = quantiles[i];
+                    curr_quantile_value = quantile_values[i];
+                    
+                    if (curr_quantile <= random_draw){
+                        lower_quantile = curr_quantile;
+                        lower_quantile_value = curr_quantile_value;
+                    } else {
+                        break;
+                    }
+                    
+                }
+                
+                
+                
+                for (int i=num_quantiles-1;i>=0;i--){
+                    curr_quantile = quantiles[i];
+                    curr_quantile_value = quantile_values[i];
+                    
+                    if (curr_quantile >= random_draw){
+                        upper_quantile = curr_quantile;
+                        upper_quantile_value = curr_quantile_value;
+                    } else {
+                        break;
+                    }
+                    
+                }
+
+                //linear interpolation between current quantiles:
+                double frac = (random_draw-lower_quantile)/(upper_quantile-lower_quantile);
+                
+                double walking_time = (1-frac)*lower_quantile_value + frac*upper_quantile_value;
+                
+                return walking_time;
+            }
+        }
+        
+        
+    }
+    return -1;
+}
+
 
 bool Busstop::execute(Eventlist* eventlist, double time) // is executed by the eventlist and means a bus needs to be processed
 {
@@ -1441,7 +1533,8 @@ void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, d
 					else  // pass walks to another stop
 					{
 						// booking an event to the arrival time at the new stop
-						double arrival_time_connected_stop = time + distances[next_stop] * 60 / random->nrandom(theParameters->average_walking_speed, theParameters->average_walking_speed/4);
+                    
+						double arrival_time_connected_stop = time + get_walking_time(next_stop,time);
 						//(*alighting_passenger)->execute(eventlist,arrival_time_connected_stop);
 						eventlist->add_event(arrival_time_connected_stop, *alighting_passenger);
 						pair<Busstop*,double> stop_time;
@@ -1610,6 +1703,22 @@ void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, d
 		trip->record_passenger_loads(trip->get_next_stop());
 	}
 }
+
+double Busstop::get_walking_time(Busstop* next_stop, double curr_time){
+    
+    double walking_time;
+    
+    //get walking time from exogenous distribution, returns negative value if not available
+    walking_time = estimate_walking_time_from_quantiles(next_stop,curr_time);
+    
+    //otherwise, infer walking time from walking distance
+    if (walking_time < 0){
+        walking_time = distances[next_stop] * 60 / random->nrandom(theParameters->average_walking_speed, theParameters->average_walking_speed/4);
+    }
+    
+    return walking_time;
+}
+
 
 double Busstop::calc_dwelltime (Bustrip* trip)  //!< calculates the dwelltime of each bus serving this stop. currently includes: passenger service times ,out of stop, bay/lane		
 {
@@ -2242,6 +2351,7 @@ bool Busstop::is_awaiting_transfers(Bustrip* trip)
 	return false;
 }
 
+
 Change_arrival_rate::Change_arrival_rate(double time)
 {
 	loadtime = time;	
@@ -2252,7 +2362,7 @@ void Change_arrival_rate::book_update_arrival_rates (Eventlist* eventlist, doubl
 	eventlist->add_event(time,this);
 }
 
-bool Change_arrival_rate::execute(Eventlist* eventlist, double time)
+bool Change_arrival_rate::execute(Eventlist* eventlist, double time) //variables are not used, but kept for auto-completion 
 {		
 	for (TD_demand::iterator stop_iter = arrival_rates_TD.begin(); stop_iter != arrival_rates_TD.end(); stop_iter++)
 	{
@@ -2274,3 +2384,36 @@ bool Change_arrival_rate::execute(Eventlist* eventlist, double time)
 	}
 	return true;
 }
+
+Walking_time_dist::Walking_time_dist(Busstop* dest_stop_, double* quantiles_, double* quantile_values_, int num_quantiles_, double time_start_, double time_end_){
+    
+    dest_stop = dest_stop_;
+    num_quantiles = num_quantiles_;
+    time_start = time_start_;
+    time_end = time_end_;
+    
+    quantiles = new double[num_quantiles];
+    quantile_values = new double[num_quantiles];
+    
+    for (int i=0; i<num_quantiles; i++){
+        quantiles[i] = quantiles_[i];
+        quantile_values[i] = quantile_values_[i];
+    }
+    
+}
+
+double* Walking_time_dist::get_quantiles() {
+    return quantiles;
+}
+
+bool Walking_time_dist::time_is_in_range(double curr_time) {
+    
+    if ((time_start <= curr_time) && (curr_time < time_end)){
+        return true;
+    }
+    else {
+        return false;
+    }
+    
+}
+

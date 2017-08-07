@@ -375,6 +375,7 @@ protected:
 	passengers waiting_passengers; // a list of passengers with this OD that wait at the origin
 	int min_transfers; // the minimum number of trnasfers possible for getting from O to D
 	
+    
 	vector <Pass_path*> path_set;
 	double boarding_utility;
 	double staying_utility;

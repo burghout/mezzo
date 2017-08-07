@@ -68,7 +68,7 @@
 #endif // _NO_GUI
 
 //thread support
-#include <QThread.h>
+#include <qthread.h>
 
 //include the PVM communicator
 #ifdef _PVM
@@ -264,6 +264,7 @@ public:
 	bool readbusroute(istream& in); //!< reads a transit route
 	bool readbusstop (istream& in); //!< reads a busstop
 	bool readbusline(istream& in); //!< reads a busline
+    bool readwalkingtimedistribution(istream& in); //!< reads a walking time distribution between two nodes that are within walking distance that can be generated using a dedicated walking model.
 	bool readbustrip_format1(istream& in); //!< reads trips based on detailed time-table
 	bool readbustrip_format2(istream& in); //!< reads trips based on dispatching time-table (time-independent intervals between stops)
   	bool readbustrip_format3(istream& in); //!< reads trips based on headway (time-independent intervals between stops)
@@ -314,6 +315,9 @@ public:
   const vector<Busline*> & get_direct_lines (ODstops* odstops) {return od_direct_lines[odstops];}
   double calc_total_in_vechile_time (vector<vector<Busline*> > lines, vector<vector<Busstop*> > stops); // according to scheduled time
   bool read_od_pairs_for_generation (string name);
+  void add_busstop_to_name_map(string,Busstop*);
+  Busstop* get_busstop_from_name(string);
+
 
 #ifndef _NO_GUI
 	double get_width_x() {return width_x;} //!< returns image width in original coordinate system
@@ -369,6 +373,7 @@ protected:
     vector <Bus*> busvehicles; // a list of the bus vehicles
 	vector <ODstops*> odstops;
 	map <Busstop*,vector<ODstops*> > odstops_map;
+    map <string,Busstop*> busstop_name_map; //!< mapping PT node names to their object
 	vector <ODzone*> odzones; 
 	vector <ODstops*> odstops_demand; // contains only ODs with a non-zero demand
 	vector<pair<Busstop*,Busstop*> > od_pairs_for_generation;
