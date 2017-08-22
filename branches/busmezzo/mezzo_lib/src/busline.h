@@ -685,7 +685,7 @@ public:
     //id(id_), name(name_), link_id(link_id_), position (position_), length(length_), has_bay(has_bay_), can_overtake(can_overtake_), min_DT(min_DT_), rti (rti_)
     
     //methods related to exogenous walking times
-    void add_walking_time_quantiles(Busstop*, double*, double*, int, double, double);
+    void add_walking_time_quantiles(Busstop*, vector<double>, vector<double>, int, double, double);
     double estimate_walking_time_from_quantiles(Busstop*, double);
 
 
@@ -748,7 +748,7 @@ protected:
 	map<Busstop*,double> distances;			//!< contains the distances [meters] from other bus stops
     
     // walking times between steps
-    map<Busstop*, vector<Walking_time_dist*>> walking_time_distribution_map; //!< contains set of distributions for a given destination node
+    map<Busstop*, vector<Walking_time_dist*> > walking_time_distribution_map; //!< contains set of distributions for a given destination node
 
 
 	// transfer synchronization
@@ -782,7 +782,7 @@ protected:
 
 class Walking_time_dist {
 public:
-    Walking_time_dist (Busstop* dest_stop_, double* quantiles_, double* quantile_values_, int num_quantiles_, double time_start_, double time_end_);
+    Walking_time_dist (Busstop* dest_stop_, vector<double> quantiles_, vector<double> quantile_values_, int num_quantiles_, double time_start_, double time_end_);
     
     virtual ~Walking_time_dist(){};
     

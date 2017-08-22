@@ -5686,8 +5686,8 @@ bool Network::readwalkingtimedistribution(istream& in) // reads a walking time d
     dest_stop_ptr = get_busstop_from_name(dest_name);
     
     //containers for quantile position and quantile values
-    double quantiles[num_quantiles];
-    double quantile_values[num_quantiles];
+    vector<double> quantiles(num_quantiles);
+    vector<double> quantile_values(num_quantiles);
     
     //get quantile positions
     in >> bracket;

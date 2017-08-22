@@ -1073,7 +1073,7 @@ void Busstop::book_bus_arrival(Eventlist* eventlist, double time, Bustrip* trip)
 }
 
 
-void Busstop::add_walking_time_quantiles(Busstop* dest_stop_ptr, double* quantiles, double* quantile_values, int num_quantiles, double interval_start, double interval_end){
+void Busstop::add_walking_time_quantiles(Busstop* dest_stop_ptr, vector<double> quantiles, vector<double> quantile_values, int num_quantiles, double interval_start, double interval_end){
     
     Walking_time_dist* time_dist = new Walking_time_dist(dest_stop_ptr, quantiles, quantile_values, num_quantiles, interval_start, interval_end);
     
@@ -2385,7 +2385,7 @@ bool Change_arrival_rate::execute(Eventlist* eventlist, double time) //variables
 	return true;
 }
 
-Walking_time_dist::Walking_time_dist(Busstop* dest_stop_, double* quantiles_, double* quantile_values_, int num_quantiles_, double time_start_, double time_end_){
+Walking_time_dist::Walking_time_dist(Busstop* dest_stop_, vector<double> quantiles_, vector<double> quantile_values_, int num_quantiles_, double time_start_, double time_end_){
     
     dest_stop = dest_stop_;
     num_quantiles = num_quantiles_;
