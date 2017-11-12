@@ -80,6 +80,7 @@ class Q
   void switchroute(Vehicle* veh, Route* curr_route, Route* alt_route, vector <double> parameters);
   double calc_space(double time);
   double calc_total_space();
+  list  <Veh_in_Q> get_vehicles_in_queue() {return vehicles; }
 private:
   double maxcap;
   double freeflowtime;

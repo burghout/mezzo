@@ -67,6 +67,8 @@ class Vehicle
 	void set_meters(int meters_) {meters=meters_;}
 	int get_meters () {return meters;}
 	void report(double time);
+	double controlled_speed;
+
   protected:
 	int id;
 	Route* route;

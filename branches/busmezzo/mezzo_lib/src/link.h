@@ -218,6 +218,7 @@ public:
 	long pathid;
 	long lastlink;
 #endif //_VISSIMCOM
+	double lastEntryTime;
 
 
 protected:
@@ -266,6 +267,7 @@ protected:
 	multimap <int, Route*> routemap; // map storing routes by Destination_id
 	bool use_ass_matrix; // boolean set to true if this link collects assignment matrix data
 	bool selected; //true if link is 'selected'
+	
 };
 
 

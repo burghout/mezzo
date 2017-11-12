@@ -199,6 +199,7 @@ public:
    int Stop_horizon;
    bool transfer_sync; //!< true if transfer synchronization is being used. Will effect the way the line definition in transit_network.dat is read.
    int Real_time_control_info; //!<  real time control information. if =0 then use historical data
+   int trips_overtake;// if trips can overtake in the trip itself (not in the stop)
    double speed_acceleration;//speed acceleration  11/5/17
    double speed_deceleration;//speed deceleration  11/5/17
 

@@ -2676,26 +2676,28 @@ bool Network::readselectedpath(string name)
 		{
 			first_id = history_paths.front()->passenger_ID;
 		}
-		else {
-			if (history_paths.back()->passenger_ID == first_id && ids_number == 0) {
-				ids_number = i;
-			}
+		
+		if (history_paths.back()->passenger_ID == first_id) //means that start another simulation
+		{
+			ids_number += 1;
 		}
+		
 	}
-	int rounds = (ids_number == 0) ? 1 : history_paths.size() / ids_number;
-	for (map<LineIdStopId, LineStationData*, CompareLineStop>::iterator hist_dmnd_iter = hist_dmnd_map.begin(); hist_dmnd_iter != hist_dmnd_map.end(); ++hist_dmnd_iter)
+	double  rounds = ids_number;
+	rounds = ceil(rounds);
+	for (map<LineIdStopId, LineStationData*, CompareLineStop>::iterator hist_dmnd_iter = hist_dmnd_map.begin(); hist_dmnd_iter != hist_dmnd_map.end(); hist_dmnd_iter++)
 	{
-		for (list<BoardDemand>::iterator list_brd_iter = hist_dmnd_iter->second->boardings.begin(); list_brd_iter != hist_dmnd_iter->second->boardings.end(); ++list_brd_iter)
+		for (list<BoardDemand>::iterator list_brd_iter = hist_dmnd_iter->second->boardings.begin(); list_brd_iter != hist_dmnd_iter->second->boardings.end(); list_brd_iter++)
 		{
-			list_brd_iter->passengers_number_ /= (rounds * theParameters->running_time / 3600);
+			list_brd_iter->passengers_number_ /= (rounds * (theParameters->stop_pass_generation-theParameters->start_pass_generation) / 3600);
 		}
-		for (list<BoardDemandTransfer>::iterator list_brd_iter = hist_dmnd_iter->second->boardingTransfers.begin(); list_brd_iter != hist_dmnd_iter->second->boardingTransfers.end(); ++list_brd_iter)
+		for (list<BoardDemandTransfer>::iterator list_brd_iter = hist_dmnd_iter->second->boardingTransfers.begin(); list_brd_iter != hist_dmnd_iter->second->boardingTransfers.end(); list_brd_iter++)
 		{
-			list_brd_iter->passengers_number_ /= (rounds * theParameters->running_time / 3600);
+			list_brd_iter->passengers_number_ /= (rounds * (theParameters->stop_pass_generation - theParameters->start_pass_generation) / 3600);
 		}
 		for (list<TransferFirstBoard>::iterator list_brd_iter = hist_dmnd_iter->second->firstBoardingTransfers.begin(); list_brd_iter != hist_dmnd_iter->second->firstBoardingTransfers.end(); list_brd_iter++)
 		{
-			list_brd_iter->passengers_number_ /= (rounds * theParameters->running_time / 3600);
+			list_brd_iter->passengers_number_ /= (rounds * (theParameters->stop_pass_generation - theParameters->start_pass_generation) / 3600);
 		}
 
 	}
@@ -2834,7 +2836,7 @@ bool Network::read_selected_path(istream& in)
 		}
 	}
 
-	for (int tr_it = 0; tr_it < trips.size(); ++tr_it)
+	for (int tr_it = 0; tr_it < trips.size(); tr_it++)
 	{
 		vector<Bustrip*>::iterator btr_it = find_if(bustrips.begin(), bustrips.end(), compare <Bustrip>(trips[tr_it])); // find the trip in the list
 		Bustrip* btr = *btr_it;
@@ -2862,7 +2864,7 @@ bool Network::read_selected_path(istream& in)
 				hist_dmnd_map[line_stop]->boardings.push_back(brd_d);
 			}
 			else {
-				for (list<BoardDemand>::iterator list_bd_iter = hist_dmnd_map[line_stop]->boardings.begin(); list_bd_iter != hist_dmnd_map[line_stop]->boardings.end(); ++list_bd_iter)
+				for (list<BoardDemand>::iterator list_bd_iter = hist_dmnd_map[line_stop]->boardings.begin(); list_bd_iter != hist_dmnd_map[line_stop]->boardings.end(); list_bd_iter++)
 				{
 					if (list_bd_iter->destination_ == stops.back()) //if the destination stop was already in the list, then just add 1
 					{
@@ -2992,7 +2994,7 @@ bool Network::read_selected_path(istream& in)
 
 bool Network::is_first_time_line_stop(LineIdStopId line_stop)
 {
-	for (map<LineIdStopId, LineStationData*, CompareLineStop>::iterator dmnd_data = hist_dmnd_map.begin(); dmnd_data != hist_dmnd_map.end(); ++dmnd_data)
+	for (map<LineIdStopId, LineStationData*, CompareLineStop>::iterator dmnd_data = hist_dmnd_map.begin(); dmnd_data != hist_dmnd_map.end(); dmnd_data++)
 	{
 		if (dmnd_data->first.line_id_ == line_stop.line_id_ && dmnd_data->first.stop_id_ == line_stop.stop_id_)
 			return false;
@@ -6286,6 +6288,8 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
     // writing the crude data and summary outputs for each bus stop
     for (vector<Busstop*>::iterator iter = busstops.begin();iter != busstops.end();iter++)
     {
+		if ((*iter)->get_id() == 90)
+			int i = (*iter)->get_id();
         (*iter)->write_output(out1);
         vector<Busline*> stop_lines = (*iter)->get_lines();
         for (vector <Busline*>::iterator lines = stop_lines.begin(); lines != stop_lines.end(); lines++)

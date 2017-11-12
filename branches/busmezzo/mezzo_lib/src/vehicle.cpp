@@ -13,6 +13,7 @@ Vehicle::Vehicle()
  entered=false;
  switched=0;
  meters=0;
+ controlled_speed = 0;
 }
 
 Vehicle::~Vehicle()

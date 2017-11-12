@@ -46,6 +46,7 @@ Link::Link(int id_, Node* in_, Node* out_, int length_, int nr_lanes_, Sdfunc* s
   queue=new Q(maxcap, freeflowtime);    
   use_ass_matrix = false;
   selected = false;
+  lastEntryTime = 0;
 }
 
 
@@ -60,7 +61,9 @@ Link::Link()
 	nr_exits_blocked=0; // set by the turning movements if they are blocked
 	freeflowtime=1.0;	
 	selected = false;
-}		
+	lastEntryTime = 0;
+
+}
 
 Link::~Link()
 {
@@ -425,12 +428,18 @@ bool Link::enter_veh(Vehicle* veh, double time)
 		ro=density();
 	#endif	//_RUNNING_ONLY
 #endif  //_RUNNING
-	double speed=sdfunc->speed(ro);	
+		/*double speed = 0;
+		if (veh->controlled_speed != 0)
+			speed = veh->controlled_speed;
+		else*/
+		double speed=sdfunc->speed(ro);	
 	//moe_speed->report_value(speed,time);
 	moe_density->report_value(density(),time);
 	moe_queue->report_value((queue->queue(time)),time);
 	moe_inflow->report_value(time);
 	double exit_time=(time+(length/speed)) ;
+
+	
   #ifdef _USE_EXPECTED_DELAY
     double exp_delay=0.0;
     exp_delay=1.44*(queue->queue(time)) / nr_lanes;
@@ -441,6 +450,22 @@ bool Link::enter_veh(Vehicle* veh, double time)
     exit_time=exit_time+exp_delay;
     cout << "link_enter:: exp_delay = " << exp_delay << endl;
     #endif //_USE_EXPECTED_DELAY
+	//hend added 29/5/2017 to deal with overtaking=0 in the link
+	if (theParameters->trips_overtake == 0)
+	{
+		if (!(this->empty()))//if the link is not empty, so we want to know what is the last exit time
+		{
+			Q* link_queue = this->get_queue();
+
+			list <Veh_in_Q> vehicles = link_queue->get_vehicles_in_queue();
+			list <Veh_in_Q>::iterator v_it = vehicles.begin();
+			for (; v_it != vehicles.end(); v_it++)
+			{
+				if (v_it->first > exit_time)
+					exit_time = v_it->first + 0.1;
+			}
+		}
+		}
    veh->set_exit_time(exit_time);
    veh->set_curr_link(this);
    veh->set_entry_time(time);

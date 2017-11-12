@@ -48,6 +48,24 @@ bool Turning::process_veh(double time)
   ok=true;
   out_full=outlink->full(time);
   nexttime=time;
+  //
+  delay = server->get_delay(); // get new delay, may be stochastic (2007-10-26)
+  //Hend added 31/5/17 trips cannot overtake 
+  if (theParameters->trips_overtake == 0)
+  {
+	  if (outlink->lastEntryTime >= time + delay)
+	  {
+		  if (!blocked) // block if not blocked
+		  {
+			  blocked = true;
+			  inlink->add_blocked_exit(); // tell the link
+		  }
+		  nexttime = time + 1.0; // next time the turning should try to put something in. Maybe this can be optimized.
+		  return false;
+	  }
+  }
+  //
+
   if (out_full) // if the outlink is full
   {
     if (!blocked) // block if not blocked
@@ -82,12 +100,14 @@ bool Turning::process_veh(double time)
 			//	cout << "Turning " << id << " dropped a vehicle." << endl;
 			//	return true;
 			//}
+			
 			if (inlink->exit_ok())
 			{
-			delay=server->get_delay(); // get new delay, may be stochastic (2007-10-26)
 				ok=outlink->enter_veh(veh, time+delay);	
-			   if (ok)
-				 return true;
+				if (ok) {
+					outlink->lastEntryTime = time + delay;
+					return true;
+				}
 			   else
 			   {
 				 cout << " turning " << id << " dropped a vehicle, because outlink couldnt enter vehicle" << endl;

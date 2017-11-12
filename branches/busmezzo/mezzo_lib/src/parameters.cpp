@@ -749,6 +749,14 @@ bool Parameters::read_parameters (istream & in )
 		return false;
 	}
 	in >> Real_time_control_info;
+
+	in >> keyword; //Real-time control info- Hend added 2016-10-17
+	if (keyword != "trips_overtake=")
+	{
+		cout << "ERROR reading Parameters file, expecting: trips_overtake=, read: " << keyword << endl;
+		return false;
+	}
+	in >> trips_overtake;
 	
 	in >> keyword; //speed acceleration- Hend added 11/5/17
 	if (keyword != "speed_acceleration=")
