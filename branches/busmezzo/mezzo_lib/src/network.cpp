@@ -5890,7 +5890,7 @@ bool Network::writeheadways(string name)
 
 }
 
-bool Network::write_busstop_output(string name1, string name2, string name3, string name4, string name5, string name6, string name7, string name8, string name9, string name10, string name11, string name12, string name13, string name14, string name15)
+bool Network::write_busstop_output(string name1, string name2, string name3, string name4, string name5, string name6, string name7, string name8, string name9, string name10, string name11, string name12, string name13, string name14, string name15, string name16)
 {
     ofstream out1(name1.c_str(),ios_base::app);
     ofstream out2(name2.c_str(),ios_base::app);
@@ -5907,6 +5907,7 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
     ofstream out13(name13.c_str(),ios_base::app);
     ofstream out14(name14.c_str(),ios_base::app);
     ofstream out15(name15.c_str(),ios_base::app);
+	ofstream out16(name16.c_str(), ios_base::app);
     /*
     assert(out1);
     assert(out2);
@@ -5971,6 +5972,7 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
             for (vector<Passenger*>::iterator pass_iter = pass_vec.begin(); pass_iter < pass_vec.end(); pass_iter++)
             {
                 (*pass_iter)->write_selected_path(out8);
+				(*pass_iter)->write_passenger_trajectory(out16);
             }
         }
         for (vector<Busstop*>::iterator stop_iter = busstops.begin(); stop_iter < busstops.end(); stop_iter++)
@@ -7257,7 +7259,8 @@ bool Network::writeall(unsigned int repl)
         workingdir + "o_od_stop_summary_without_paths.dat",
         workingdir + "o_passenger_waiting_experience.dat",
         workingdir + "o_passenger_onboard_experience.dat",
-        workingdir + "o_passenger_connection.dat"
+        workingdir + "o_passenger_connection.dat",
+		workingdir + "o_passenger_trajectory.dat"
         );
 
     return true;

@@ -139,7 +139,7 @@ void Passenger::set_AWT_first_leg_boarding(Busstop* stop, Busline* line)
 	// consider with and without RTI
 	// need to calc projected RTI and PK
 	
-	//AWT_first_leg_boarding = alpha_exp[stopline] * get_anticipated_waiting_time(stop,line) + alpha_RTI[stopline] * wt_rti + (1-alpha_RTI[stopline]-alpha_exp[stopline])*wt_pk; 	
+	// AWT_first_leg_boarding = alpha_exp[stopline] * get_anticipated_waiting_time(stop,line) + alpha_RTI[stopline] * wt_rti + (1-alpha_RTI[stopline]-alpha_exp[stopline])*wt_pk; 	
 }
 
 double Passenger::get_memory_projected_RTI (Busstop* stop, Busline* line)
@@ -1084,7 +1084,6 @@ bool Passenger::line_is_rejected(int id)
 	return it != rejected_lines.end();
 }
 
-
 void Passenger::write_selected_path(ostream& out)
 {
 	// claculate passenger travel time components
@@ -1120,6 +1119,43 @@ void Passenger::write_selected_path(ostream& out)
 		{
 			out << (*trip_iter).first->get_id() << '\t';
 		}	
+		out << '}' << endl;
+	}
+}
+
+void Passenger::write_passenger_trajectory(ostream& out)
+{
+	// claculate passenger travel time components
+	if (end_time > 0)
+	{
+		out << passenger_id << '\t'
+			<< '{' << '\t';
+		vector <Busstop*> stop_stamps;
+		vector <pair<Bustrip*, double> >::iterator trip_iter = selected_path_trips.begin();
+		vector <pair<Busstop*, double> >::iterator stop_iter = selected_path_stops.begin();
+		
+		while (trip_iter < selected_path_trips.end() && stop_iter < selected_path_stops.end())
+		{
+			stop_stamps.push_back((*stop_iter).first);
+			out << (*stop_iter).second << '\t'; // pass. arrival time at stop
+			stop_iter++; // forward to pairing transit stop
+			stop_stamps.push_back((*stop_iter).first);
+			out << (*stop_iter).second << '\t'; // pass. arrival time at stop
+			stop_stamps.push_back((*stop_iter).first);
+			out << (*trip_iter).second << '\t'; // pass. boarding time at stop
+			trip_iter++;
+			stop_iter++;
+		}
+		stop_stamps.push_back((*stop_iter).first);
+		out << (*stop_iter).second << '\t'; // pass. arrival time at last stop
+		stop_iter++; // forward to pairing transit stop
+		stop_stamps.push_back((*stop_iter).first);
+		out << (*stop_iter).second << '\t' // pass. arrival time at destination
+			<< '}' << '\t' << '{';
+		for (vector <Busstop*>::iterator stop_iter = stop_stamps.begin(); stop_iter < stop_stamps.end(); stop_iter++)
+		{
+			out << (*stop_iter)->get_id() << '\t';
+		}
 		out << '}' << endl;
 	}
 }

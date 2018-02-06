@@ -77,6 +77,7 @@ public:
 	
 	// output-related 
 	void write_selected_path(ostream& out);
+	void write_passenger_trajectory(ostream& out);
 	void add_to_selected_path_trips (pair<Bustrip*,double> trip_time) {selected_path_trips.push_back(trip_time);}
 	void add_to_selected_path_stop (pair<Busstop*,double> stop_time) {selected_path_stops.push_back(stop_time);}
 	void add_to_experienced_crowding_levels(pair<double,double> riding_coeff) {experienced_crowding_levels.push_back(riding_coeff);};

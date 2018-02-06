@@ -1704,8 +1704,9 @@ void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, d
 	}
 }
 
-double Busstop::get_walking_time(Busstop* next_stop, double curr_time){
-    
+double Busstop::get_walking_time(Busstop* next_stop, double curr_time)
+{
+   
     double walking_time;
     
     //get walking time from exogenous distribution, returns negative value if not available

@@ -215,6 +215,7 @@ public:
 		projected_WT_RTI = 0; 
 		experienced_WT = 0; 
 		AWT = 0;
+		nr_missed = 0;
 	}
 	
 	int pass_id;
