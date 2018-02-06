@@ -37,3 +37,5 @@ branches/busmezzo/mezzo.VC.VC.opendb
 trunk/gui/debug_log.txt
 trunk/gui/link_log.txt
 *.stash
+branches/busmezzo/gui/ControlStrategy10.txt
+*.txt

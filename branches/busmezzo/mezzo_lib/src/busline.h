@@ -472,6 +472,7 @@ public:
 	map<Busstop*,map<int, double>> num_board_ndb_frst_transfer; //number board from frst transfer denied boardings
 	map<Busstop*,map<int, double>> num_board_ndb_transfer; //number board from transfer denied boardings
 
+
 protected:
 	int id;										  //!< course nr
 	Bus* busv;									  //!< pointer to the bus vehicle
@@ -830,11 +831,15 @@ public:
 	void calc_occupancy_for_next_stop(Bustrip* handle_trip, Busstop* handle_stop); // to check if all demand can achieved
 	void calc_passengers_according_to_capacity(Bustrip* handle_trip, Busstop* handle_stop);//board passengers that can board becuase of capacity of vehicle
 	void calc_denied_boarding_passengers(Bustrip* handle_trip, Busstop* handle_stop);//calc num of passengers couldnt board because of limited capacity
-	
 	double calc_total_pass_times(vector<Bustrip*> trips_to_handle, Bustrip* handle_trip, Busstop* handle_stop, const column_vector& ini_vars);
-	
-	//list<pair<int, double>> get_expctd_departure_for_tranfers(Bustrip* trip, Busstop* stop, vector<Start_trip> trips_to_handle, LineStationData* linestatdata);
-	//list<pair<int, double>> find_transfer_departure_of_otherLines(vector<Start_trip> trips_to_handle, Busstop* hndle_stop, int line_id);//return list of trip_id and dep. time of transfer lines of each line
+
+	//Hend added 7/12/17 to calculate boarding passengers from historical data (without specification of transfers)
+	void calc_boarding_demand_no_trnsfr(Bustrip* hndle_trip, Busstop* hndle_stop, double delta_time);
+	void calc_alight_demand_no_trnsfr(Bustrip* hndle_trip, Busstop* hndle_stop);
+	void calc_occupancy_for_next_stop_notrnsfr(Bustrip* hndle_trip, Busstop* hndle_stop);
+	void calc_passengers_according_to_capacity_notrnsfr(Bustrip* hndle_trip, Busstop* hndle_stop);
+	void calc_denied_boarding_passengers_notrnsfr(Bustrip* hndle_trip, Busstop* hndle_stop);
+	void update_predictions_notrnsfr(Bustrip* hndle_trip, Busstop* hndle_stop, double time);//update predictions according to departure time
 
 	//transfer related checks
 	bool is_awaiting_transfers(Bustrip* trip); //David added 2016-05-30: returns true if trip is currently awaiting transfers at stop

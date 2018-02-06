@@ -2636,8 +2636,6 @@ bool Network::read_history(istream& in)
 	
 	in >> line_id >> trip_id>> vehicle_id >> stop_id >> entering_time >> sched_arr_time >> dwell_time >> lateness >> exit_time >> riding_time >> riding_pass_time >> time_since_arr >> time_since_dep >> nr_alighting >> nr_boarding >> occupancy >> nr_waiting >> total_waiting_time >> holding_time;
 
-//	Busstop* bs_stp = (*(find_if(busstops.begin(), busstops.end(), compare <Busstop> (stop_id))));	
-//	Busline* bl = (*(find_if(buslines.begin(), buslines.end(), compare <Busline> (line_id) )));
 	
 	hist_set* hist = new hist_set(line_id, trip_id, vehicle_id, stop_id, entering_time, sched_arr_time, dwell_time, lateness, exit_time, riding_time, riding_pass_time, time_since_arr, time_since_dep, nr_alighting, nr_boarding, occupancy, nr_waiting, total_waiting_time, holding_time); 
 	history_inputs.push_back(hist);
@@ -7455,7 +7453,7 @@ double Network::executemaster(QPixmap * pm_,QMatrix * wm_)
 	{
 		this->read_IVTT_day2day (workingdir +"transit_day2day_onboard.dat");
 	}
-	if(theParameters->Real_time_control_info == 0 && theParameters->transfer_sync == 1)
+	if(theParameters->Real_time_control_info == 0)
 	{
 		this->readhistoricaldata (workingdir + "transitlog.dat");
 		find_average_line_stop_schedule();
