@@ -464,7 +464,7 @@ public:
 			<< occupancy << '\t'
 			<< nr_waiting << '\t'
 			<< total_waiting_time << '\t' 
-			<< holding_time << '\t'	<< endl; 
+			<< holding_time << '\t'	<< endl; //transitlog_out_comp
 	}
 	void reset () {
 		line_id = 0; 
@@ -601,6 +601,7 @@ public:
 	double get_alighting_fractions (Bustrip* trip) {return alighting_fractions[trip->get_line()];}
 	const ODs_for_stop & get_stop_as_origin () {return stop_as_origin;}
 	ODstops* get_stop_od_as_origin_per_stop (Busstop* stop) {return stop_as_origin[stop];}
+	ODstops* get_stop_od_as_destination_per_stop(Busstop* stop) { return stop_as_destination[stop]; }
 	bool check_stop_od_as_origin_per_stop (Busstop* stop) {if (stop_as_origin.count(stop)==0) return false; else return true;}
 	double get_length () {return length;}
 	double get_avaliable_length () {return avaliable_length;}
@@ -625,6 +626,12 @@ public:
 	void save_previous_alighting_fractions () {previous_alighting_fractions.swap(alighting_fractions);}
 	bool check_walkable_stop ( Busstop* const & stop);
 	bool check_destination_stop (Busstop* stop); 
+	vector<pair<Bustrip*, double> > get_expected_trip_arrivals() { return ext_expected_bus_arrivals; }
+	vector<pair<Bustrip*, double> > get_expected_trip_arrivals_by_control_strategy( int ctl );
+	bool is_stop_origin() { return is_origin; }
+	bool is_stop_destination() { return is_destination; }
+	list <Busstop_Visit> get_output_stop_visits() { return output_stop_visits; }		
+
 
 	//transfer related checks
 	bool is_awaiting_transfers(Bustrip* trip); //David added 2016-05-30: returns true if trip is currently awaiting transfers at stop
@@ -701,6 +708,7 @@ protected:
 	vector <Busline*> lines;
 	map <double,Bus*> expected_arrivals;					//!< booked arrivals of buses on the link on their way to the stop
 	vector<pair<Bustrip*,double> > expected_bus_arrivals;	//!< booked arrivals of buses on the link on their way to the stop
+	vector<pair<Bustrip*, double> > ext_expected_bus_arrivals; // same as above, but only ever stacks information without being emtpied by event manager
 	map <double,Bus*> buses_at_stop;						//!< buses currently visiting stop
 	vector<pair<Bustrip*,double> > buses_currently_at_stop;	//!< buses currently visiting stop
 	map <Busline*, pair<Bustrip*, double> > last_arrivals;	//!< contains the arrival time of the last bus from each line that stops at the stop (can result headways)

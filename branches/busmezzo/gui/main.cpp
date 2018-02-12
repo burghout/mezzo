@@ -15,5 +15,6 @@ int main(int argc, char *argv[])
 		window->set_filename(QString (argv[1]));
 	}
 	window->show();
+
 	return app.exec();
 }
