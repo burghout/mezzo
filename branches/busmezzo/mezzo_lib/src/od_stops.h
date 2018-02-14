@@ -375,7 +375,9 @@ protected:
 	double arrival_rate; 
 	passengers waiting_passengers; // a list of passengers with this OD that wait at the origin
 	int min_transfers; // the minimum number of trnasfers possible for getting from O to D
-	
+	int nr_pass_completed;
+	double avg_tt;
+	double avg_nr_boardings;
     
 	vector <Pass_path*> path_set;
 	double boarding_utility;
@@ -388,9 +390,7 @@ protected:
     map <Passenger*,list<Pass_waiting_experience> > output_pass_waiting_experience;
     map <Passenger*,list<Pass_onboard_experience> > output_pass_onboard_experience;
 	vector <Passenger*> passengers_during_simulation;
-	int nr_pass_completed;
-	double avg_tt;
-	double avg_nr_boardings;
+	
     vector <pair<vector<Busstop*>, pair <int,double> > > paths_tt;
 
 	Random* random;

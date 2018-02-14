@@ -1087,77 +1087,77 @@ bool Passenger::line_is_rejected(int id)
 void Passenger::write_selected_path(ostream& out)
 {
 	// claculate passenger travel time components
-	if (end_time > 0)
+	double total_waiting_time = calc_total_waiting_time();
+	double total_IVT = calc_total_IVT();
+	double total_IVT_crowding = calc_IVT_crowding();
+	double total_walking_time = calc_total_walking_time();
+	double total_waiting_time_due_to_denied_boarding = calc_total_waiting_time_due_to_denied_boarding();
+	int nr_transfers = (selected_path_stops.size() - 4) / 2; // given path definition (direct connection - 4 elements, 1 transfers - 6 elements, 2 transfers - 8 elements, etc.
+
+	this->set_GTC(theParameters->walking_time_coefficient * total_walking_time + theParameters->waiting_time_coefficient * total_waiting_time + theParameters->waiting_time_coefficient * 3.5 *total_waiting_time_due_to_denied_boarding + theParameters->in_vehicle_time_coefficient * total_IVT_crowding + theParameters->transfer_coefficient * nr_transfers);
+
+	out << passenger_id << '\t'
+		<< original_origin->get_id() << '\t'
+		<< original_origin->get_name() << '\t'
+		<< OD_stop->get_destination()->get_id() << '\t'
+		<< OD_stop->get_destination()->get_name() << '\t'
+		<< start_time << '\t'
+		<< nr_transfers << '\t'
+		<< total_walking_time << '\t'
+		<< total_waiting_time << '\t'
+		<< total_waiting_time_due_to_denied_boarding << '\t'
+		<< total_IVT << '\t'
+		<< total_IVT_crowding << '\t'
+		<< end_time << '\t'
+		<< '{';
+
+	for (vector <pair<Busstop*,double> >::iterator stop_iter = selected_path_stops.begin(); stop_iter < selected_path_stops.end(); stop_iter++)
 	{
-		double total_waiting_time = calc_total_waiting_time();
-		double total_IVT = calc_total_IVT();
-		double total_IVT_crowding = calc_IVT_crowding();
-		double total_walking_time = calc_total_walking_time();
-		double total_waiting_time_due_to_denied_boarding = calc_total_waiting_time_due_to_denied_boarding();
-
-		out << passenger_id << '\t'
-			<< original_origin->get_id() << '\t'
-			<< OD_stop->get_destination()->get_id() << '\t'
-			<< start_time << '\t'
-			<< total_walking_time << '\t'
-			<< total_waiting_time << '\t'
-			<< total_waiting_time_due_to_denied_boarding << '\t'
-			<< total_IVT << '\t'
-			<< total_IVT_crowding << '\t'
-			<< end_time << '\t'
-			
-			<< '{';
-		for (vector <pair<Busstop*,double> >::iterator stop_iter = selected_path_stops.begin(); stop_iter < selected_path_stops.end(); stop_iter++)
-		{
-			out << (*stop_iter).first->get_id() << '\t';
-		}
-
-		out << '}' << '\t' 
-			
-			<< '{' << '\t';
-		for (vector <pair<Bustrip*,double> >::iterator trip_iter = selected_path_trips.begin(); trip_iter < selected_path_trips.end(); trip_iter++)
-		{
-			out << (*trip_iter).first->get_id() << '\t';
-		}	
-		out << '}' << endl;
+		out << (*stop_iter).first->get_id() << '\t';
 	}
+
+	out << '}' << '\t' 
+			
+		<< '{' << '\t';
+	for (vector <pair<Bustrip*,double> >::iterator trip_iter = selected_path_trips.begin(); trip_iter < selected_path_trips.end(); trip_iter++)
+	{
+		out << (*trip_iter).first->get_id() << '\t';
+	}	
+	out << '}' << endl;
 }
 
 void Passenger::write_passenger_trajectory(ostream& out)
 {
-	// claculate passenger travel time components
-	if (end_time > 0)
+	// find passenger time-location stamps
+	out << passenger_id << '\t'
+		<< '{' << '\t';
+	vector <Busstop*> stop_stamps;
+	vector <pair<Bustrip*, double> >::iterator trip_iter = selected_path_trips.begin();
+	vector <pair<Busstop*, double> >::iterator stop_iter = selected_path_stops.begin();
+	
+	while (trip_iter < selected_path_trips.end() && stop_iter < selected_path_stops.end())
 	{
-		out << passenger_id << '\t'
-			<< '{' << '\t';
-		vector <Busstop*> stop_stamps;
-		vector <pair<Bustrip*, double> >::iterator trip_iter = selected_path_trips.begin();
-		vector <pair<Busstop*, double> >::iterator stop_iter = selected_path_stops.begin();
-		
-		while (trip_iter < selected_path_trips.end() && stop_iter < selected_path_stops.end())
-		{
-			stop_stamps.push_back((*stop_iter).first);
-			out << (*stop_iter).second << '\t'; // pass. arrival time at stop
-			stop_iter++; // forward to pairing transit stop
-			stop_stamps.push_back((*stop_iter).first);
-			out << (*stop_iter).second << '\t'; // pass. arrival time at stop
-			stop_stamps.push_back((*stop_iter).first);
-			out << (*trip_iter).second << '\t'; // pass. boarding time at stop
-			trip_iter++;
-			stop_iter++;
-		}
 		stop_stamps.push_back((*stop_iter).first);
-		out << (*stop_iter).second << '\t'; // pass. arrival time at last stop
+		out << (*stop_iter).second << '\t'; // pass. arrival time at stop
 		stop_iter++; // forward to pairing transit stop
 		stop_stamps.push_back((*stop_iter).first);
-		out << (*stop_iter).second << '\t' // pass. arrival time at destination
-			<< '}' << '\t' << '{';
-		for (vector <Busstop*>::iterator stop_iter = stop_stamps.begin(); stop_iter < stop_stamps.end(); stop_iter++)
-		{
-			out << (*stop_iter)->get_id() << '\t';
-		}
-		out << '}' << endl;
+		out << (*stop_iter).second << '\t'; // pass. arrival time at stop
+		stop_stamps.push_back((*stop_iter).first);
+		out << (*trip_iter).second << '\t'; // pass. boarding time at stop
+		trip_iter++;
+		stop_iter++;
 	}
+	stop_stamps.push_back((*stop_iter).first);
+	out << (*stop_iter).second << '\t'; // pass. arrival time at last stop
+	stop_iter++; // forward to pairing transit stop
+	stop_stamps.push_back((*stop_iter).first);
+	out << (*stop_iter).second << '\t' // pass. arrival time at destination
+		<< '}' << '\t' << '{';
+	for (vector <Busstop*>::iterator stop_iter = stop_stamps.begin(); stop_iter < stop_stamps.end(); stop_iter++)
+	{
+		out << (*stop_iter)->get_id() << '\t';
+	}
+	out << '}' << endl;
 }
 
 int Passenger::get_selected_path_last_line_id ()

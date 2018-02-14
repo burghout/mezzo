@@ -543,7 +543,7 @@ void Busline::calc_line_assignment()
 void Busline::add_record_passenger_loads_line (Busstop* stop1, Busstop* stop2, int pass_assign)
 {
 
-	output_line_assign [stop1] = Busline_assign(id, stop1->get_id() , stop2->get_id()  ,output_line_assign[stop1].passenger_load + pass_assign); // accumulate pass. load on this segment
+	output_line_assign[stop1] = Busline_assign(id, stop1->get_id(), stop1->get_name(), stop2->get_id(), stop2->get_name(), output_line_assign[stop1].passenger_load + pass_assign); // accumulate pass. load on this segment
 }
 
 void Busline::write_assign_output(ostream & out)
@@ -830,7 +830,7 @@ double Bustrip::scheduled_arrival_time (Busstop* stop) // finds the scheduled ar
 }
 
 void Bustrip::write_assign_segments_output(ostream & out)
-{
+{	
 	for (list <Bustrip_assign>::iterator iter = output_passenger_load.begin(); iter != output_passenger_load.end(); iter++)
 	{
 		(*iter).write(out);
@@ -841,14 +841,14 @@ void Bustrip::record_passenger_loads (vector <Visit_stop*>::iterator start_stop)
 {	
 	if(!holding_at_stop) 
 	{
-		output_passenger_load.push_back(Bustrip_assign(line->get_id(), id, busv->get_id(), (*start_stop)->first->get_id() , (*(start_stop+1))->first->get_id()  ,assign_segements[(*start_stop)->first]));
+		output_passenger_load.push_back(Bustrip_assign(line->get_id(), id, busv->get_id(), (*start_stop)->first->get_id(), (*start_stop)->first->get_name(), (*(start_stop + 1))->first->get_id(), (*(start_stop + 1))->first->get_name(), assign_segements[(*start_stop)->first]));
 		this->get_line()->add_record_passenger_loads_line((*start_stop)->first, (*(start_stop+1))->first,assign_segements[(*start_stop)->first]);
 	}
 	else //David added 2016-05-26: overwrite previous record_passenger_loads if this is the second call to pass_activity_at_stop
 	{
 		--start_stop; //decrement start stop since we have already advanced 'next_stop'
 		output_passenger_load.pop_back();
-		output_passenger_load.push_back(Bustrip_assign(line->get_id(), id, busv->get_id(), (*start_stop)->first->get_id() , (*(start_stop+1))->first->get_id()  ,assign_segements[(*start_stop)->first]));
+		output_passenger_load.push_back(Bustrip_assign(line->get_id(), id, busv->get_id(), (*start_stop)->first->get_id() , (*start_stop)->first->get_name(), (*(start_stop+1))->first->get_id(), (*(start_stop + 1))->first->get_name(), assign_segements[(*start_stop)->first]));
 		this->get_line()->add_record_passenger_loads_line((*start_stop)->first, (*(start_stop+1))->first,assign_segements[(*start_stop)->first]);
 	}
 }
@@ -2167,7 +2167,7 @@ void Busstop::record_busstop_visit (Bustrip* trip, double enter_time)  // create
 	{
 		arrival_headway = 0;
 	}
-	output_stop_visits.push_back(Busstop_Visit(trip->get_line()->get_id(), trip->get_id() , trip->get_busv()->get_bus_id() , get_id() , enter_time,
+	output_stop_visits.push_back(Busstop_Visit(trip->get_line()->get_id(), trip->get_id() , trip->get_busv()->get_bus_id() , get_id() , get_name(), enter_time,
 		trip->scheduled_arrival_time (this),dwelltime,(enter_time - trip->scheduled_arrival_time (this)), exit_time, riding_time, riding_time * nr_riders, crowded_pass_riding_time, crowded_pass_dwell_time, crowded_pass_holding_time,
 		arrival_headway, get_time_since_departure (trip , exit_time), nr_alighting , nr_boarding , occupancy, calc_total_nr_waiting(), (arrival_headway * nr_boarding)/2, holdingtime)); 
 }
@@ -2199,7 +2199,7 @@ void Busstop::write_output(ostream & out)
 }
 
 void Busstop::calculate_sum_output_stop_per_line(int line_id)
-{
+{	
 	int counter = 0;
 	// initialize all output measures
 	Busline* bl=(*(find_if(lines.begin(), lines.end(), compare <Busline> (line_id) )));

@@ -242,10 +242,20 @@ public:
 
 	// Public transport
 	
-	bool write_busstop_output(string name1, string name2, string name3, string name4, string name5, string name6, string name7, string name8, string name9, string name10, string name11, string name12, string name13, string name14, string name15, string name16); //<! writes all the bus-related output 
+	bool write_busstop_output(string name1, string name2, string name3, string name4, string name5, string name6, string name7, string name8, string name9, string name10, string name11, string name12, string name13, string name14, string name15, string name16, string name17); //<! writes all the bus-related output 
+	void write_passenger_welfare_summary(ostream& out, double total_gtc, int total_pass);
 	bool write_path_set (string name1); //!< writes the path-set generated at the initialization process (aimed to be used as an input file for other runs with the same network)
 	bool write_path_set_per_stop (string name1, Busstop* stop);
 	bool write_path_set_per_od (string name1, Busstop* origin_stop, Busstop* detination_stop);
+	void write_transitlogout_header(ostream& out);
+	void write_transitstopsum_header(ostream& out);
+	void write_transitlinesum_header(ostream& out);
+	void write_transit_trajectory_header(ostream& out);
+	void write_selected_path_header(ostream& out);
+	void write_od_summary_header(ostream& out);
+	void write_triptotaltraveltime_header(ostream& out);
+	void write_transitlineloads_header(ostream& out);
+	void write_transittriploads_header(ostream& out);
 
 	bool readtransitroutes(string name); //!< reads the transit routes, similar to readroutes
 	bool readtransitnetwork(string name); //!< reads the stops, distances between stops, lines, trips and travel disruptions
@@ -317,7 +327,6 @@ public:
   bool read_od_pairs_for_generation (string name);
   void add_busstop_to_name_map(string,Busstop*);
   Busstop* get_busstop_from_name(string);
-
 
 #ifndef _NO_GUI
 	double get_width_x() {return width_x;} //!< returns image width in original coordinate system
