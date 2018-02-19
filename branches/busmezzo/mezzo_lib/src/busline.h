@@ -105,9 +105,11 @@ public:
 	Busline_assign (
 		int line_id_, 
 		int start_stop_id_, 
+		string start_stop_name_,
 		int end_stop_id_,	
+		string end_stop_name_,
 		int passenger_load_
-		): line_id(line_id_), start_stop_id(start_stop_id_), end_stop_id(end_stop_id_), passenger_load(passenger_load_) {}
+		): line_id(line_id_), start_stop_id(start_stop_id_), start_stop_name(start_stop_name_),end_stop_id(end_stop_id_), end_stop_name(end_stop_name_),passenger_load(passenger_load_) {}
 
 	Busline_assign();			//!< simple constructor
 	virtual ~Busline_assign();  //!< destructor
@@ -115,7 +117,9 @@ public:
 	void write(ostream& out){
 		out << line_id << '\t'
 			<< start_stop_id << '\t'
+			<< start_stop_name << '\t'
 			<< end_stop_id << '\t'
+			<< end_stop_name << '\t'
 			<< passenger_load << '\t' 
 			<< endl; 
 	}
@@ -128,7 +132,9 @@ public:
 
 	int line_id;
 	int start_stop_id;
+	string start_stop_name;
 	int end_stop_id;
+	string end_stop_name;
 	int passenger_load;
 };
 
@@ -285,10 +291,12 @@ public:
 		int line_id_,
 		int trip_id_,	
 		int vehicle_id_, 
-		int start_stop_id_, 
+		int start_stop_id_,
+		string start_stop_name_,
 		int end_stop_id_,	
+		string end_stop_name_,
 		int passenger_load_
-	): line_id(line_id_),trip_id(trip_id_),vehicle_id(vehicle_id_), start_stop_id(start_stop_id_),end_stop_id(end_stop_id_),passenger_load(passenger_load_) {}
+	): line_id(line_id_),trip_id(trip_id_),vehicle_id(vehicle_id_), start_stop_id(start_stop_id_), start_stop_name(start_stop_name_), end_stop_id(end_stop_id_),end_stop_name(end_stop_name_),passenger_load(passenger_load_) {}
 
 	virtual ~Bustrip_assign(); //!< destructor
 	
@@ -297,7 +305,9 @@ public:
 			<< trip_id << '\t'
 			<< vehicle_id << '\t'
 			<< start_stop_id << '\t'
+			<< start_stop_name << '\t'
 			<< end_stop_id << '\t'
+			<< end_stop_name << '\t'
 			<< passenger_load << '\t' 
 			<< endl;
 	}
@@ -315,7 +325,9 @@ public:
 	int trip_id;
 	int vehicle_id;
 	int start_stop_id;
+	string start_stop_name;
 	int end_stop_id;
+	string end_stop_name;
 	int passenger_load;
 };
 
@@ -417,11 +429,12 @@ typedef map <Busstop*, ODstops*> ODs_for_stop;
 class Busstop_Visit // container object holding output data for stop visits
 {
 public:
-	Busstop_Visit (
-		int		line_id_, 
-		int		trip_id_,	
-		int		vehicle_id_,	 
-		int		stop_id_, 
+	Busstop_Visit(
+		int		line_id_,
+		int		trip_id_,
+		int		vehicle_id_,
+		int		stop_id_,
+		string	stop_name_,
 		double	entering_time_,	
 		double	sched_arr_time_,	
 		double	dwell_time_,	
@@ -440,7 +453,7 @@ public:
 		int		nr_waiting_, 
 		double	total_waiting_time_, 
 		double	holding_time_
-	): line_id(line_id_),trip_id(trip_id_),vehicle_id(vehicle_id_), stop_id(stop_id_),entering_time(entering_time_),sched_arr_time(sched_arr_time_),dwell_time(dwell_time_),
+	): line_id(line_id_),trip_id(trip_id_),vehicle_id(vehicle_id_), stop_id(stop_id_), stop_name(stop_name_), entering_time(entering_time_),sched_arr_time(sched_arr_time_),dwell_time(dwell_time_),
 	   lateness(lateness_), exit_time (exit_time_),riding_time (riding_time_), riding_pass_time (riding_pass_time_), crowded_pass_riding_time (crowded_pass_riding_time_), 
 	   crowded_pass_dwell_time (crowded_pass_dwell_time_), crowded_pass_holding_time (crowded_pass_holding_time_), time_since_arr(time_since_arr_),time_since_dep(time_since_dep_),
 	   nr_alighting(nr_alighting_),nr_boarding(nr_boarding_),occupancy(occupancy_),nr_waiting(nr_waiting_), total_waiting_time(total_waiting_time_),holding_time(holding_time_) {}
@@ -450,7 +463,8 @@ public:
 		out << line_id << '\t'
 			<< trip_id << '\t'
 			<< vehicle_id << '\t'
-			<< stop_id<< '\t'
+			<< stop_id << '\t'
+			<< stop_name << '\t'
 			<< entering_time << '\t'
 			<< sched_arr_time << '\t'
 			<< dwell_time << '\t'
@@ -492,6 +506,7 @@ public:
 	int trip_id;
 	int vehicle_id;
 	int stop_id;
+	string stop_name;
 	double entering_time;
 	double sched_arr_time;
 	double dwell_time;

@@ -77,6 +77,7 @@ public:
 	
 	// output-related 
 	void write_selected_path(ostream& out);
+	void write_passenger_trajectory(ostream& out);
 	void add_to_selected_path_trips (pair<Bustrip*,double> trip_time) {selected_path_trips.push_back(trip_time);}
 	void add_to_selected_path_stop (pair<Busstop*,double> stop_time) {selected_path_stops.push_back(stop_time);}
 	void add_to_experienced_crowding_levels(pair<double,double> riding_coeff) {experienced_crowding_levels.push_back(riding_coeff);};
@@ -84,6 +85,8 @@ public:
 	bool check_selected_path_trips_empty () {return selected_path_trips.empty();}
 	int get_selected_path_last_line_id ();
 	int get_last_denied_boarding_stop_id ();
+	double get_GTC() { return total_GTC; }
+	void set_GTC (double pass_GTC) { total_GTC = pass_GTC; }
 	bool empty_denied_boarding ();
 	void remove_last_trip_selected_path_trips () {selected_path_trips.pop_back();}
 	void record_waiting_experience(Bustrip* arriving_bus, double time);
@@ -122,6 +125,7 @@ protected:
 	double toal_IVT;
 	double total_IVT_crowding;
 	double total_walking_time;
+	double total_GTC;
 	Busstop* original_origin;
 	ODstops* OD_stop;
 	bool boarding_decision;

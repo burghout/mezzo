@@ -2,6 +2,7 @@
 #include "od_stops.h"
 #include <math.h>
 #include "MMath.h"
+#include "Network.h"
 
 ODstops::ODstops ()
 {
@@ -15,7 +16,6 @@ origin_stop(origin_stop_), destination_stop(destination_stop_)
     origin_stop = origin_stop_;
     destination_stop = destination_stop_;
 	active = false;
-    
 	random = new (Random);
 	path_set.clear();
 	if (randseed != 0)
@@ -109,6 +109,7 @@ void ODstops::set_ivtt_alpha_exp (Busstop* stop, Busline* line, Busstop* leg, do
 void ODstops::reset()
 {
 	min_transfers = 100;
+
 	//active = false;
 	/*
 	for (vector <Passenger*>::iterator iter_pass = waiting_passengers.begin(); iter_pass < waiting_passengers.end();)
@@ -725,13 +726,14 @@ void ODstops::write_od_summary(ostream & out)
 {
 	calc_pass_measures();
 	int nr_paths = (int) paths_tt.size();
-	out << origin_stop->get_id() << '\t' 
-		<< destination_stop->get_id() << '\t' 
-		<< nr_pass_completed << '\t' 
-		<< avg_tt << '\t' 
+	out << origin_stop->get_id() << '\t'
+		<< destination_stop->get_id() << '\t'
+		<< nr_pass_completed << '\t'
+		<< avg_tt << '\t'
 		<< avg_nr_boardings << '\t'
 		<< nr_paths << '\t'
-		<< endl;
+		<< endl
+		<< "{" << '\t';
 
 	for (vector <pair<vector<Busstop*>, pair <int,double> > >::iterator path_iter = paths_tt.begin(); path_iter < paths_tt.end(); path_iter++)
 	{
@@ -739,14 +741,17 @@ void ODstops::write_od_summary(ostream & out)
 		{
 			out << (*stop_iter)->get_id() << '\t';
 		}
-		out << (*path_iter).second.first << '\t' << (*path_iter).second.second << endl;
+		out << "}" << '\t'
+			<< (*path_iter).second.first << '\t' << (*path_iter).second.second << endl;
 	}
 }
 
 void ODstops::write_od_summary_without_paths(ostream & out)
 {
 	out << origin_stop->get_id() << '\t' 
+		<< origin_stop->get_name() << '\t'
 		<< destination_stop->get_id() << '\t' 
+		<< destination_stop->get_name() << '\t'
 		<< nr_pass_completed << '\t' 
 		<< avg_tt << '\t' 
 		<< avg_nr_boardings << '\t' 

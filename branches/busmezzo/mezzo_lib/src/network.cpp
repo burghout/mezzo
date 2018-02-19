@@ -5890,40 +5890,33 @@ bool Network::writeheadways(string name)
 
 }
 
-bool Network::write_busstop_output(string name1, string name2, string name3, string name4, string name5, string name6, string name7, string name8, string name9, string name10, string name11, string name12, string name13, string name14, string name15)
+bool Network::write_busstop_output(string name1, string name2, string name3, string name4, string name5, string name6, string name7, string name8, string name9, string name10, string name11, string name12, string name13, string name14, string name15, string name16, string name17)
 {
     ofstream out1(name1.c_str(),ios_base::app);
     ofstream out2(name2.c_str(),ios_base::app);
     ofstream out3(name3.c_str(),ios_base::app);
     ofstream out4(name4.c_str(),ios_base::app);
-    ofstream out5(name5.c_str(),ios_base::app);
-    ofstream out6(name6.c_str(),ios_base::app);
     ofstream out7(name7.c_str(),ios_base::app);
     ofstream out8(name8.c_str(),ios_base::app);
     ofstream out9(name9.c_str(),ios_base::app);
     ofstream out10(name10.c_str(),ios_base::app);
     ofstream out11(name11.c_str(),ios_base::app);
     ofstream out12(name12.c_str(),ios_base::app);
-    ofstream out13(name13.c_str(),ios_base::app);
-    ofstream out14(name14.c_str(),ios_base::app);
-    ofstream out15(name15.c_str(),ios_base::app);
-    /*
-    assert(out1);
-    assert(out2);
-    assert(out3);
-    assert(out4);
-    assert(out5);
-    assert(out6);
-    assert(out7);
-    assert(out8);
-    assert(out9);
-    assert(out10);
-    assert(out11);
-    assert(out12);
-    assert(out13);
-    */
+	ofstream out16(name16.c_str(), ios_base::app);
+	ofstream out17(name17.c_str(), ios_base::app);
+	
+	/* passenger decision related, deactivated
+	ofstream out5(name5.c_str(),ios_base::app);
+    ofstream out6(name6.c_str(),ios_base::app);
+	ofstream out13(name13.c_str(),ios_base::app);
+	ofstream out14(name14.c_str(),ios_base::app);
+	ofstream out15(name15.c_str(),ios_base::app);
+	*/
+
     // writing the crude data and summary outputs for each bus stop
-    for (vector<Busstop*>::iterator iter = busstops.begin();iter != busstops.end();iter++)
+	write_transitlogout_header(out1);
+	write_transitstopsum_header(out2);
+	for (vector<Busstop*>::iterator iter = busstops.begin();iter != busstops.end();iter++)
     {
         (*iter)->write_output(out1);
         vector<Busline*> stop_lines = (*iter)->get_lines();
@@ -5935,16 +5928,21 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
         }
     }
     // writing the assignment results in terms of each segment on individual trips
-    for (vector<Bustrip*>::iterator iter = bustrips.begin(); iter!= bustrips.end(); iter++)
+	write_transittriploads_header(out7);
+	for (vector<Bustrip*>::iterator iter = bustrips.begin(); iter!= bustrips.end(); iter++)
     {
         (*iter)->write_assign_segments_output(out7);
     }
     // writing the trajectory output for each bus vehicle (by stops)
-    for (vector<Bus*>::iterator iter = busvehicles.begin(); iter!= busvehicles.end(); iter++)
+	write_transit_trajectory_header(out4);
+	for (vector<Bus*>::iterator iter = busvehicles.begin(); iter!= busvehicles.end(); iter++)
     {
         (*iter)->write_output(out4);
     }
     // writing the aggregate summary output for each bus line
+	write_transitlinesum_header(out3);
+	write_transitlineloads_header(out9);
+	write_triptotaltraveltime_header(out11);
     for (vector<Busline*>::iterator iter = buslines.begin();iter!= buslines.end(); iter++)
     {
         (*iter)->calculate_sum_output_line();
@@ -5959,20 +5957,31 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
     // writing the decisions of passenger and summary per OD pair
     if (theParameters->demand_format == 3)
     {
-        for (vector<ODstops*>::iterator od_iter = odstops_demand.begin(); od_iter < odstops_demand.end(); od_iter++)
+		double total_pass_GTC = 0.0;
+		int pass_counter = 0;
+		write_selected_path_header(out8);
+		write_od_summary_header(out12);
+		for (vector<ODstops*>::iterator od_iter = odstops_demand.begin(); od_iter < odstops_demand.end(); od_iter++)
         {
             if ((*od_iter)->get_passengers_during_simulation().size() > 0)
             {
                 (*od_iter)->write_od_summary(out10);
                 (*od_iter)->write_od_summary_without_paths(out12);
             }
-
             vector<Passenger*> pass_vec = (*od_iter)->get_passengers_during_simulation();
             for (vector<Passenger*>::iterator pass_iter = pass_vec.begin(); pass_iter < pass_vec.end(); pass_iter++)
             {
-                (*pass_iter)->write_selected_path(out8);
+				if ((*pass_iter)->get_end_time() > 0)
+				{
+					(*pass_iter)->write_selected_path(out8);
+					(*pass_iter)->write_passenger_trajectory(out16);
+					total_pass_GTC += (*pass_iter)->get_GTC();
+					pass_counter++;
+				}
             }
         }
+		write_passenger_welfare_summary(out17, total_pass_GTC, pass_counter);
+		/* deactivated - unneccessary files in most cases
         for (vector<Busstop*>::iterator stop_iter = busstops.begin(); stop_iter < busstops.end(); stop_iter++)
         {
             map <Busstop*, ODstops*> stop_as_origin = (*stop_iter)->get_stop_as_origin();
@@ -6010,11 +6019,151 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
                 }
             }
         }
+		*/
     }
-
     return true;
 }
 
+void Network::write_transitlineloads_header(ostream& out)
+{
+	out << "Line_ID" << '\t'
+		<< "Upstream_stop_ID" << '\t'
+		<< "Upstream_stop_name" << '\t'
+		<< "Downstream_stop_ID" << '\t'
+		<< "Downstream_stop_name" << '\t'
+		<< "Passenger_load" << '\t' << endl;
+}
+
+void Network::write_transittriploads_header(ostream& out)
+{
+	out << "Line_ID" << '\t'
+		<< "Trip_ID" << '\t'
+		<< "Vehicle_ID" << '\t'
+		<< "Start_stop_ID" << '\t'
+		<< "Start_stop_name" << '\t'
+		<< "End_stop_id" << '\t'
+		<< "End_stop_name" << '\t'
+		<< "Passenger_load" << '\t' << endl;
+}
+
+void Network::write_transitlogout_header(ostream& out)
+{
+	out << "Line_ID" << '\t'
+		<< "Trip_ID" << '\t'
+		<< "Vehicle_ID" << '\t'
+		<< "Stop_ID" << '\t'
+		<< "Stop_name" << '\t'
+		<< "Entering_time" << '\t'
+		<< "Scheduled_arrival_time" << '\t'
+		<< "Dwell_time" << '\t'
+		<< "Lateness" << '\t'
+		<< "Exit_time" << '\t'
+		<< "Riding_time" << '\t'
+		<< "Riding_pass_time" << '\t'
+		<< "Time_since_arrival" << '\t'
+		<< "Time_since_departure" << '\t'
+		<< "Nr_alighting_pass" << '\t'
+		<< "Nr_boarding_pass" << '\t'
+		<< "On-board_occupancy" << '\t'
+		<< "Nr_waiting" << '\t'
+		<< "Total_waiting_time" << '\t'
+		<< "Holding_time" << '\t' << endl;
+}
+
+void Network::write_triptotaltraveltime_header(ostream& out)
+{
+	out << "Trip_ID" << '\t'
+		<< "Total_travel_time" << '\t' << endl;
+}
+
+void Network::write_transitstopsum_header(ostream& out)
+{
+	out << "Stop_ID" << '\t'
+		<< "Stop_name" << '\t'
+		<< "Line_ID" << '\t'
+		<< "Average_headway" << '\t'
+		<< "Average_dwell_time" << '\t'
+		<< "Average_abs_schedule_deviation" << '\t'
+		<< "Average_waiting_time_per_stop" << '\t'
+		<< "Total_pass_boarding" << '\t'
+		<< "Standard_deviation_headway" << '\t'
+		<< "Standard_deviation_dwell_time" << '\t'
+		<< "Share_on_time" << '\t'
+		<< "Share_early" << '\t'
+		<< "Share_late" << '\t'
+		<< "Total_pass_riding_time" << '\t'
+		<< "Total_pass_dwell_time" << '\t'
+		<< "Total_pass_waiting_time" << '\t'
+		<< "Total_pass_holding_time" << '\t'
+		<< "Total_pass_weighted_in_vehicle_time" << '\t' << endl;
+}
+
+void Network::write_transitlinesum_header(ostream& out)
+{
+	out << "Line_ID" << '\t'
+		<< "Average_headway" << '\t'
+		<< "Average_dwell_time" << '\t'
+		<< "Average_abs_schedule_deviation" << '\t'
+		<< "Average_waiting_time_per_stop" << '\t'
+		<< "Total_pass_boarding" << '\t'
+		<< "Standard_deviation_headway(averaged_over_stops)" << '\t'
+		<< "Standard_deviation_dwell_time(averaged_over_stops)" << '\t'
+		<< "Share_on_time" << '\t'
+		<< "Share_early" << '\t'
+		<< "Share_late" << '\t'
+		<< "Total_pass_riding_time" << '\t'
+		<< "Total_pass_dwell_time" << '\t'
+		<< "Total_pass_waiting_time" << '\t'
+		<< "Total_pass_holding_time" << '\t'
+		<< "Control_objective_functon_value" << '\t'
+		<< "Total_pass_weighted_in_vehicle_time" << '\t' << endl;
+}
+
+void Network::write_selected_path_header(ostream& out)
+{
+	out << "Passenger_ID" << '\t'
+		<< "Origin_stop_ID" << '\t'
+		<< "Origin_stop_name" << '\t'
+		<< "Destination_stop_ID" << '\t'
+		<< "Destination_stop_name" << '\t'
+		<< "Start_time" << '\t'
+		<< "Number_transfers" << '\t'
+		<< "Total_walking_time" << '\t'
+		<< "Total_waiting_time" << '\t'
+		<< "Total_waiting_time_due_to_denied_boarding" << '\t'
+		<< "Total_in_vehicle_time" << '\t'
+		<< "Total_weighted_in_vehicle_time" << '\t'
+		<< "End_time" << '\t' << endl;
+}
+
+void Network::write_transit_trajectory_header(ostream& out)
+{
+	out << "Line_ID" << '\t'
+		<< "Trip_ID" << '\t'
+		<< "Stop_ID" << '\t'
+		<< "Vehicle_ID" << '\t'
+		<< "Link_ID" << '\t'
+		<< "Entering?" << '\t'
+		<< "Arrival/Departure_time" << '\t' << endl;
+}
+
+void Network::write_od_summary_header(ostream& out)
+{
+	out << "Origin_stop_ID" << '\t'
+		<< "Origin_stop_name" << '\t'
+		<< "Destination_stop_ID" << '\t'
+		<< "Destination_stop_name" << '\t'
+		<< "Nr_pass_completed" << '\t'
+		<< "Average_travel_time" << '\t'
+		<< "Average_number_boardings" << '\t' << endl;
+}
+
+void Network::write_passenger_welfare_summary(ostream& out, double total_gtc, int total_pass)
+{
+	out << "Total generalized travel cost:" << '\t' << total_gtc << endl
+		<< "Average generalized travel cost per passenger:" << '\t' << total_gtc / total_pass << endl
+		<< "Number of completed passenger journeys:" << '\t' << total_pass << endl;
+}
 
 bool Network::set_freeflow_linktimes()
 {
@@ -7257,7 +7406,9 @@ bool Network::writeall(unsigned int repl)
         workingdir + "o_od_stop_summary_without_paths.dat",
         workingdir + "o_passenger_waiting_experience.dat",
         workingdir + "o_passenger_onboard_experience.dat",
-        workingdir + "o_passenger_connection.dat"
+        workingdir + "o_passenger_connection.dat",
+		workingdir + "o_passenger_trajectory.dat",
+		workingdir + "o_passenger_welfare_summary.dat"
         );
 
     return true;
