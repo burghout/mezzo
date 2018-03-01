@@ -17,7 +17,7 @@
 */
 
 #include "network.h"
-#include "parameters.h"
+//#include "parameters.h"
 #include "day2day.h"
 //#include <windows.h>
 
