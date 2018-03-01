@@ -1,4 +1,5 @@
 
+
 #include "gettime.h"
 #include <assert.h>
 #include <string>
@@ -5798,7 +5799,7 @@ bool Network::readvtype (istream & in)
     }
     in  >> id >> label >> prob >> length;
 
-    assert ( (prob >= 0.0) && (prob<=1.0) && (length>0.0) ); // 0.0 means unused in the vehicle míx
+    assert ( (prob >= 0.0) && (prob<=1.0) && (length>0.0) ); // 0.0 means unused in the vehicle mx
     in >> bracket;
     if (bracket != '}')
     {
