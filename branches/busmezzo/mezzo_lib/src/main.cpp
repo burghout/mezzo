@@ -18,7 +18,7 @@
 
 #include "network.h"
 //#include "parameters.h"
-#include "day2day.h"
+//#include "day2day.h"
 //#include <windows.h>
 
 int main ( int argc, char **argv)
