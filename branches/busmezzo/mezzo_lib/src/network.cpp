@@ -1,4 +1,5 @@
 
+
 #include "gettime.h"
 #include <assert.h>
 #include <string>
@@ -6,8 +7,7 @@
 #include <sstream>
 #include <set>
 #include <math.h>
-//#include <windows.h> // Make Clang compatible. Why is this header used in the first place?
-//#include <strstream> // OLD include for gcc2
+
 
 
 #include "network.h"
@@ -111,6 +111,9 @@ string To_String(T val)
     stream << val;
     return stream.str();
 }
+
+
+// End of helper functions
 
 Network::Network()
 {
@@ -5798,7 +5801,7 @@ bool Network::readvtype (istream & in)
     }
     in  >> id >> label >> prob >> length;
 
-    assert ( (prob >= 0.0) && (prob<=1.0) && (length>0.0) ); // 0.0 means unused in the vehicle míx
+    assert ( (prob >= 0.0) && (prob<=1.0) && (length>0.0) ); // 0.0 means unused in the vehicle mx
     in >> bracket;
     if (bracket != '}')
     {
@@ -6580,7 +6583,8 @@ bool Network::init_shortest_path()
 #ifndef _USE_VAR_TIMES
     graph=new Graph<double, GraphNoInfo<double> > (nodemap.size() /* 50000*/, linkmap.size(), 9999999.0);
 #else
-    graph=new Graph<double, LinkTimeInfo > (/*nodemap.size()*/ 50000, linkmap.size()*10, 9999999.0);
+    //graph=new Graph<double, LinkTimeInfo > (/*nodemap.size()*/ 50000, linkmap.size()*10, 9999999.0);
+    graph=new Graph<double, LinkTimeInfo > (nodemap.rbegin()->first+1, linkmap.rbegin()->first+1, 9999999.0); // Wilco 2018-03-01 - creates a graph with maxId(nodes) vertices and maxId(links) edges
 #endif
     // ADD THE LINKS AND NODES
 
