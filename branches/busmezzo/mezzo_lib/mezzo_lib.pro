@@ -41,7 +41,8 @@ HEADERS += src/busline.h \
            src/vtypes.h \
            src/passenger.h \
            src/od_stops.h \
-           src/pass_route.h
+           src/pass_route.h \
+		   src/controlcenter.h
   #         src/Graph.cpp
 SOURCES += src/busline.cpp \
 		   src/day2day.cpp \
@@ -69,4 +70,5 @@ SOURCES += src/busline.cpp \
            src/vtypes.cpp \
            src/passenger.cpp \
            src/od_stops.cpp \
-           src/pass_route.cpp
+           src/pass_route.cpp \
+		   src/controlcenter.cpp
