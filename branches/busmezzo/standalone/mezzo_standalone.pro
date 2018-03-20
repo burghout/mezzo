@@ -41,7 +41,8 @@ HEADERS += ../mezzo_lib/src/busline.h \
            ../mezzo_lib/src/vtypes.h \
            ../mezzo_lib/src/passenger.h \
            ../mezzo_lib/src/od_stops.h \
-           ../mezzo_lib/src/pass_route.h
+           ../mezzo_lib/src/pass_route.h \
+		   ../mezzo_lib/src/controlcenter.h
 SOURCES += ../mezzo_lib/src/busline.cpp \
 		   ../mezzo_lib/src/day2day.cpp \
            ../mezzo_lib/src/eventlist.cpp \
@@ -69,4 +70,5 @@ SOURCES += ../mezzo_lib/src/busline.cpp \
            ../mezzo_lib/src/passenger.cpp \
            ../mezzo_lib/src/od_stops.cpp \
            ../mezzo_lib/src/pass_route.cpp \
+		   ../mezzo_lib/src/controlcenter.cpp \
 		    ../mezzo_lib/src/main.cpp
