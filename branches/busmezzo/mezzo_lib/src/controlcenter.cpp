@@ -1,35 +1,53 @@
 #include "controlcenter.h"
 
-//TripGenerator::TripGenerator()
-//{
-//	cout << "Contructing TG" << endl;
-//}
-//
-//TripGenerator::~TripGenerator()
-//{
-//	cout << "Destroying TG" << endl;
-//}
-//
-//void TripGenerator::generate_trip(string requestQueue, double time)
-//{
-//	cout << "Generating " << requestQueue << " at time " << time << endl;
-//	
-//	//TripQueue.push_back(make_pair(id, trip));
-//	//TripQueue.push_back(time);
-//}
+//RequestHandler
+RequestHandler::RequestHandler()
+{
+	cout << "Constructing RH" << endl;
+}
+RequestHandler::~RequestHandler(){}
 
-//ControlCenter::ControlCenter(TripGenerator* tg_) : tg(tg_)
+void RequestHandler::generate_request(const string passengerData, const double time)
+{
+	cout << "Generating request " << passengerData << " at time " << time << endl;
+}
+
+//TripGenerator
+TripGenerator::TripGenerator()
+{
+	cout << "Constructing TG" << endl;
+}
+TripGenerator::~TripGenerator(){}
+
+void TripGenerator::generate_trip(const string requestQueue, const double time)
+{
+	cout << "Generating trip " << requestQueue << " at time " << time << endl;
+	
+	//TripQueue.push_back(make_pair(id, trip));
+	tripQueue.push_back(time);
+}
+
+//TripMatcher
+TripMatcher::TripMatcher()
+{
+	cout << "Constructing TM" << endl;
+}
+TripMatcher::~TripMatcher(){}
+
+//ControlCenter
+//ControlCenter::ControlCenter(TripGenerator* tg) : tg_(tg)
 //{
-//
+//	assert(tg);
 //	cout << "Constructing CC" << endl;
 //}
 
 ControlCenter::ControlCenter()
 {
-	cout << "Constructing CC without TG" << endl;
+	cout << "Constructing CC" << endl;
 }
 
 ControlCenter::~ControlCenter()
 {
 	cout << "Destroying CC" << endl;
 }
+
