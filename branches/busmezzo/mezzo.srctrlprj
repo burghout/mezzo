@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<config>
+    <source_groups>
+        <source_group_d0716547-98fb-499a-8abe-1d5460f355dc>
+            <build_file_path>
+                <compilation_db_path>mezzo.json</compilation_db_path>
+            </build_file_path>
+            <header_search_paths>
+                <header_search_path>C:/Qt/Qt5.8.0/5.8/msvc2015_64/include/QtWidgets</header_search_path>
+            </header_search_paths>
+            <name>C/C++ from Compilation Database</name>
+            <source_paths>
+                <source_path>gui</source_path>
+                <source_path>mezzoAnalyzer/src</source_path>
+                <source_path>mezzo_lib/src</source_path>
+                <source_path>mezzoAnalyzer</source_path>
+            </source_paths>
+            <status>enabled</status>
+            <type>C/C++ from Compilation Database</type>
+        </source_group_d0716547-98fb-499a-8abe-1d5460f355dc>
+    </source_groups>
+    <version>4</version>
+</config>

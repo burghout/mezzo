@@ -1,0 +1,231 @@
+[
+  {
+    "directory": "C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo",
+    "command": "clang-tool -fms-extensions -fms-compatibility -fms-compatibility-version=19  -isystem \"C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo/mezzo_lib/src\"  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include/QtCore\"  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include/QtGui\"  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include\"  -isystem \"C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/include\"  -isystem \"C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/atlmfc/include\"  -isystem \"C:/Program Files (x86)/Windows Kits/10/Include/10.0.10240.0/ucrt\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/um\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/shared\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/winrt\"  -D WIN32  -D _DEBUG -std=c++14  \"C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo/mezzo_lib/src/vtypes.cpp\"",
+    "file": "C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo/mezzo_lib/src/vtypes.cpp"
+  },
+
+  {
+    "directory": "C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo",
+    "command": "clang-tool -fms-extensions -fms-compatibility -fms-compatibility-version=19  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include/QtCore\"  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include/QtGui\"  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include\"  -isystem \"C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/include\"  -isystem \"C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/atlmfc/include\"  -isystem \"C:/Program Files (x86)/Windows Kits/10/Include/10.0.10240.0/ucrt\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/um\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/shared\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/winrt\"  -D WIN32  -D _DEBUG -std=c++14  \"C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo/mezzo_lib/src/busline.cpp\"",
+    "file": "C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo/mezzo_lib/src/busline.cpp"
+  },
+
+  {
+    "directory": "C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo",
+    "command": "clang-tool -fms-extensions -fms-compatibility -fms-compatibility-version=19  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include/QtCore\"  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include/QtGui\"  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include\"  -isystem \"C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/include\"  -isystem \"C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/atlmfc/include\"  -isystem \"C:/Program Files (x86)/Windows Kits/10/Include/10.0.10240.0/ucrt\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/um\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/shared\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/winrt\"  -D WIN32  -D _DEBUG -std=c++14  \"C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo/mezzo_lib/src/day2day.cpp\"",
+    "file": "C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo/mezzo_lib/src/day2day.cpp"
+  },
+
+  {
+    "directory": "C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo",
+    "command": "clang-tool -fms-extensions -fms-compatibility -fms-compatibility-version=19  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include/QtCore\"  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include/QtGui\"  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include\"  -isystem \"C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/include\"  -isystem \"C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/atlmfc/include\"  -isystem \"C:/Program Files (x86)/Windows Kits/10/Include/10.0.10240.0/ucrt\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/um\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/shared\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/winrt\"  -D WIN32  -D _DEBUG -std=c++14  \"C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo/mezzo_lib/src/eventlist.cpp\"",
+    "file": "C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo/mezzo_lib/src/eventlist.cpp"
+  },
+
+  {
+    "directory": "C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo",
+    "command": "clang-tool -fms-extensions -fms-compatibility -fms-compatibility-version=19  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include/QtCore\"  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include/QtGui\"  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include\"  -isystem \"C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/include\"  -isystem \"C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/atlmfc/include\"  -isystem \"C:/Program Files (x86)/Windows Kits/10/Include/10.0.10240.0/ucrt\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/um\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/shared\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/winrt\"  -D WIN32  -D _DEBUG -std=c++14  \"C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo/mezzo_lib/src/Graph.cpp\"",
+    "file": "C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo/mezzo_lib/src/Graph.cpp"
+  },
+
+  {
+    "directory": "C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo",
+    "command": "clang-tool -fms-extensions -fms-compatibility -fms-compatibility-version=19  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include/QtCore\"  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include/QtGui\"  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include\"  -isystem \"C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/include\"  -isystem \"C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/atlmfc/include\"  -isystem \"C:/Program Files (x86)/Windows Kits/10/Include/10.0.10240.0/ucrt\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/um\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/shared\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/winrt\"  -D WIN32  -D _DEBUG -std=c++14  \"C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo/mezzo_lib/src/grid.cpp\"",
+    "file": "C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo/mezzo_lib/src/grid.cpp"
+  },
+
+  {
+    "directory": "C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo",
+    "command": "clang-tool -fms-extensions -fms-compatibility -fms-compatibility-version=19  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include/QtCore\"  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include/QtGui\"  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include\"  -isystem \"C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/include\"  -isystem \"C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/atlmfc/include\"  -isystem \"C:/Program Files (x86)/Windows Kits/10/Include/10.0.10240.0/ucrt\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/um\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/shared\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/winrt\"  -D WIN32  -D _DEBUG -std=c++14  \"C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo/mezzo_lib/src/icons.cpp\"",
+    "file": "C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo/mezzo_lib/src/icons.cpp"
+  },
+
+  {
+    "directory": "C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo",
+    "command": "clang-tool -fms-extensions -fms-compatibility -fms-compatibility-version=19  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include/QtCore\"  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include/QtGui\"  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include\"  -isystem \"C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/include\"  -isystem \"C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/atlmfc/include\"  -isystem \"C:/Program Files (x86)/Windows Kits/10/Include/10.0.10240.0/ucrt\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/um\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/shared\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/winrt\"  -D WIN32  -D _DEBUG -std=c++14  \"C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo/mezzo_lib/src/link.cpp\"",
+    "file": "C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo/mezzo_lib/src/link.cpp"
+  },
+
+  {
+    "directory": "C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo",
+    "command": "clang-tool -fms-extensions -fms-compatibility -fms-compatibility-version=19  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include/QtCore\"  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include/QtGui\"  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include\"  -isystem \"C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/include\"  -isystem \"C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/atlmfc/include\"  -isystem \"C:/Program Files (x86)/Windows Kits/10/Include/10.0.10240.0/ucrt\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/um\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/shared\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/winrt\"  -D WIN32  -D _DEBUG -std=c++14  \"C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo/mezzo_lib/src/linktimes.cpp\"",
+    "file": "C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo/mezzo_lib/src/linktimes.cpp"
+  },
+
+  {
+    "directory": "C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo",
+    "command": "clang-tool -fms-extensions -fms-compatibility -fms-compatibility-version=19  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include/QtCore\"  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include/QtGui\"  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include\"  -isystem \"C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/include\"  -isystem \"C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/atlmfc/include\"  -isystem \"C:/Program Files (x86)/Windows Kits/10/Include/10.0.10240.0/ucrt\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/um\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/shared\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/winrt\"  -D WIN32  -D _DEBUG -std=c++14  \"C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo/mezzo_lib/src/main.cpp\"",
+    "file": "C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo/mezzo_lib/src/main.cpp"
+  },
+
+  {
+    "directory": "C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo",
+    "command": "clang-tool -fms-extensions -fms-compatibility -fms-compatibility-version=19  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include/QtCore\"  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include/QtGui\"  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include\"  -isystem \"C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/include\"  -isystem \"C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/atlmfc/include\"  -isystem \"C:/Program Files (x86)/Windows Kits/10/Include/10.0.10240.0/ucrt\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/um\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/shared\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/winrt\"  -D WIN32  -D _DEBUG -std=c++14  \"C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo/mezzo_lib/src/network.cpp\"",
+    "file": "C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo/mezzo_lib/src/network.cpp"
+  },
+
+  {
+    "directory": "C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo",
+    "command": "clang-tool -fms-extensions -fms-compatibility -fms-compatibility-version=19  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include/QtCore\"  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include/QtGui\"  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include\"  -isystem \"C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/include\"  -isystem \"C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/atlmfc/include\"  -isystem \"C:/Program Files (x86)/Windows Kits/10/Include/10.0.10240.0/ucrt\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/um\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/shared\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/winrt\"  -D WIN32  -D _DEBUG -std=c++14  \"C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo/mezzo_lib/src/node.cpp\"",
+    "file": "C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo/mezzo_lib/src/node.cpp"
+  },
+
+  {
+    "directory": "C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo",
+    "command": "clang-tool -fms-extensions -fms-compatibility -fms-compatibility-version=19  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include/QtCore\"  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include/QtGui\"  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include\"  -isystem \"C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/include\"  -isystem \"C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/atlmfc/include\"  -isystem \"C:/Program Files (x86)/Windows Kits/10/Include/10.0.10240.0/ucrt\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/um\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/shared\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/winrt\"  -D WIN32  -D _DEBUG -std=c++14  \"C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo/mezzo_lib/src/od.cpp\"",
+    "file": "C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo/mezzo_lib/src/od.cpp"
+  },
+
+  {
+    "directory": "C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo",
+    "command": "clang-tool -fms-extensions -fms-compatibility -fms-compatibility-version=19  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include/QtCore\"  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include/QtGui\"  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include\"  -isystem \"C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/include\"  -isystem \"C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/atlmfc/include\"  -isystem \"C:/Program Files (x86)/Windows Kits/10/Include/10.0.10240.0/ucrt\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/um\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/shared\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/winrt\"  -D WIN32  -D _DEBUG -std=c++14  \"C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo/mezzo_lib/src/od_stops.cpp\"",
+    "file": "C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo/mezzo_lib/src/od_stops.cpp"
+  },
+
+  {
+    "directory": "C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo",
+    "command": "clang-tool -fms-extensions -fms-compatibility -fms-compatibility-version=19  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include/QtCore\"  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include/QtGui\"  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include\"  -isystem \"C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/include\"  -isystem \"C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/atlmfc/include\"  -isystem \"C:/Program Files (x86)/Windows Kits/10/Include/10.0.10240.0/ucrt\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/um\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/shared\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/winrt\"  -D WIN32  -D _DEBUG -std=c++14  \"C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo/mezzo_lib/src/parameters.cpp\"",
+    "file": "C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo/mezzo_lib/src/parameters.cpp"
+  },
+
+  {
+    "directory": "C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo",
+    "command": "clang-tool -fms-extensions -fms-compatibility -fms-compatibility-version=19  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include/QtCore\"  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include/QtGui\"  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include\"  -isystem \"C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/include\"  -isystem \"C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/atlmfc/include\"  -isystem \"C:/Program Files (x86)/Windows Kits/10/Include/10.0.10240.0/ucrt\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/um\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/shared\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/winrt\"  -D WIN32  -D _DEBUG -std=c++14  \"C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo/mezzo_lib/src/pass_route.cpp\"",
+    "file": "C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo/mezzo_lib/src/pass_route.cpp"
+  },
+
+  {
+    "directory": "C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo",
+    "command": "clang-tool -fms-extensions -fms-compatibility -fms-compatibility-version=19  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include/QtCore\"  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include/QtGui\"  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include\"  -isystem \"C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/include\"  -isystem \"C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/atlmfc/include\"  -isystem \"C:/Program Files (x86)/Windows Kits/10/Include/10.0.10240.0/ucrt\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/um\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/shared\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/winrt\"  -D WIN32  -D _DEBUG -std=c++14  \"C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo/mezzo_lib/src/passenger.cpp\"",
+    "file": "C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo/mezzo_lib/src/passenger.cpp"
+  },
+
+  {
+    "directory": "C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo",
+    "command": "clang-tool -fms-extensions -fms-compatibility -fms-compatibility-version=19  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include/QtCore\"  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include/QtGui\"  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include\"  -isystem \"C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/include\"  -isystem \"C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/atlmfc/include\"  -isystem \"C:/Program Files (x86)/Windows Kits/10/Include/10.0.10240.0/ucrt\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/um\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/shared\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/winrt\"  -D WIN32  -D _DEBUG -std=c++14  \"C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo/mezzo_lib/src/pvm.cpp\"",
+    "file": "C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo/mezzo_lib/src/pvm.cpp"
+  },
+
+  {
+    "directory": "C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo",
+    "command": "clang-tool -fms-extensions -fms-compatibility -fms-compatibility-version=19  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include/QtCore\"  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include/QtGui\"  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include\"  -isystem \"C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/include\"  -isystem \"C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/atlmfc/include\"  -isystem \"C:/Program Files (x86)/Windows Kits/10/Include/10.0.10240.0/ucrt\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/um\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/shared\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/winrt\"  -D WIN32  -D _DEBUG -std=c++14  \"C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo/mezzo_lib/src/q.cpp\"",
+    "file": "C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo/mezzo_lib/src/q.cpp"
+  },
+
+  {
+    "directory": "C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo",
+    "command": "clang-tool -fms-extensions -fms-compatibility -fms-compatibility-version=19  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include/QtCore\"  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include/QtGui\"  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include\"  -isystem \"C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/include\"  -isystem \"C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/atlmfc/include\"  -isystem \"C:/Program Files (x86)/Windows Kits/10/Include/10.0.10240.0/ucrt\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/um\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/shared\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/winrt\"  -D WIN32  -D _DEBUG -std=c++14  \"C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo/mezzo_lib/src/Random.cpp\"",
+    "file": "C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo/mezzo_lib/src/Random.cpp"
+  },
+
+  {
+    "directory": "C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo",
+    "command": "clang-tool -fms-extensions -fms-compatibility -fms-compatibility-version=19  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include/QtCore\"  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include/QtGui\"  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include\"  -isystem \"C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/include\"  -isystem \"C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/atlmfc/include\"  -isystem \"C:/Program Files (x86)/Windows Kits/10/Include/10.0.10240.0/ucrt\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/um\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/shared\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/winrt\"  -D WIN32  -D _DEBUG -std=c++14  \"C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo/mezzo_lib/src/route.cpp\"",
+    "file": "C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo/mezzo_lib/src/route.cpp"
+  },
+
+  {
+    "directory": "C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo",
+    "command": "clang-tool -fms-extensions -fms-compatibility -fms-compatibility-version=19  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include/QtCore\"  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include/QtGui\"  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include\"  -isystem \"C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/include\"  -isystem \"C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/atlmfc/include\"  -isystem \"C:/Program Files (x86)/Windows Kits/10/Include/10.0.10240.0/ucrt\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/um\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/shared\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/winrt\"  -D WIN32  -D _DEBUG -std=c++14  \"C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo/mezzo_lib/src/sdfunc.cpp\"",
+    "file": "C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo/mezzo_lib/src/sdfunc.cpp"
+  },
+
+  {
+    "directory": "C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo",
+    "command": "clang-tool -fms-extensions -fms-compatibility -fms-compatibility-version=19  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include/QtCore\"  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include/QtGui\"  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include\"  -isystem \"C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/include\"  -isystem \"C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/atlmfc/include\"  -isystem \"C:/Program Files (x86)/Windows Kits/10/Include/10.0.10240.0/ucrt\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/um\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/shared\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/winrt\"  -D WIN32  -D _DEBUG -std=c++14  \"C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo/mezzo_lib/src/server.cpp\"",
+    "file": "C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo/mezzo_lib/src/server.cpp"
+  },
+
+  {
+    "directory": "C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo",
+    "command": "clang-tool -fms-extensions -fms-compatibility -fms-compatibility-version=19  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include/QtCore\"  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include/QtGui\"  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include\"  -isystem \"C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/include\"  -isystem \"C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/atlmfc/include\"  -isystem \"C:/Program Files (x86)/Windows Kits/10/Include/10.0.10240.0/ucrt\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/um\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/shared\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/winrt\"  -D WIN32  -D _DEBUG -std=c++14  \"C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo/mezzo_lib/src/signature.cpp\"",
+    "file": "C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo/mezzo_lib/src/signature.cpp"
+  },
+
+  {
+    "directory": "C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo",
+    "command": "clang-tool -fms-extensions -fms-compatibility -fms-compatibility-version=19  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include/QtCore\"  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include/QtGui\"  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include\"  -isystem \"C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/include\"  -isystem \"C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/atlmfc/include\"  -isystem \"C:/Program Files (x86)/Windows Kits/10/Include/10.0.10240.0/ucrt\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/um\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/shared\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/winrt\"  -D WIN32  -D _DEBUG -std=c++14  \"C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo/mezzo_lib/src/trafficsignal.cpp\"",
+    "file": "C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo/mezzo_lib/src/trafficsignal.cpp"
+  },
+
+  {
+    "directory": "C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo",
+    "command": "clang-tool -fms-extensions -fms-compatibility -fms-compatibility-version=19  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include/QtCore\"  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include/QtGui\"  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include\"  -isystem \"C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/include\"  -isystem \"C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/atlmfc/include\"  -isystem \"C:/Program Files (x86)/Windows Kits/10/Include/10.0.10240.0/ucrt\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/um\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/shared\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/winrt\"  -D WIN32  -D _DEBUG -std=c++14  \"C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo/mezzo_lib/src/turning.cpp\"",
+    "file": "C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo/mezzo_lib/src/turning.cpp"
+  },
+
+  {
+    "directory": "C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo",
+    "command": "clang-tool -fms-extensions -fms-compatibility -fms-compatibility-version=19  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include/QtCore\"  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include/QtGui\"  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include\"  -isystem \"C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/include\"  -isystem \"C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/atlmfc/include\"  -isystem \"C:/Program Files (x86)/Windows Kits/10/Include/10.0.10240.0/ucrt\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/um\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/shared\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/winrt\"  -D WIN32  -D _DEBUG -std=c++14  \"C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo/mezzo_lib/src/vehicle.cpp\"",
+    "file": "C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo/mezzo_lib/src/vehicle.cpp"
+  },
+
+  {
+    "directory": "C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo",
+    "command": "clang-tool -fms-extensions -fms-compatibility -fms-compatibility-version=19  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include/QtCore\"  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include/QtGui\"  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include\"  -isystem \"C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/include\"  -isystem \"C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/atlmfc/include\"  -isystem \"C:/Program Files (x86)/Windows Kits/10/Include/10.0.10240.0/ucrt\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/um\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/shared\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/winrt\"  -D WIN32  -D _DEBUG -std=c++14  \"C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo/mezzo_lib/src/vissimcom.cpp\"",
+    "file": "C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo/mezzo_lib/src/vissimcom.cpp"
+  },
+
+  {
+    "directory": "C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo",
+    "command": "clang-tool -fms-extensions -fms-compatibility -fms-compatibility-version=19  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include/QtCore\"  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include/QtGui\"  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include\"  -isystem \"C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/include\"  -isystem \"C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/atlmfc/include\"  -isystem \"C:/Program Files (x86)/Windows Kits/10/Include/10.0.10240.0/ucrt\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/um\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/shared\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/winrt\"  -D WIN32  -D _DEBUG -std=c++14  \"C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo/mezzoAnalyzer/src/odcheckerdlg.cpp\"",
+    "file": "C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo/mezzoAnalyzer/src/odcheckerdlg.cpp"
+  },
+
+  {
+    "directory": "C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo",
+    "command": "clang-tool -fms-extensions -fms-compatibility -fms-compatibility-version=19  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include/QtCore\"  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include/QtGui\"  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include\"  -isystem \"C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/include\"  -isystem \"C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/atlmfc/include\"  -isystem \"C:/Program Files (x86)/Windows Kits/10/Include/10.0.10240.0/ucrt\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/um\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/shared\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/winrt\"  -D WIN32  -D _DEBUG -std=c++14  \"C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo/mezzoAnalyzer/src/odtabledelegate.cpp\"",
+    "file": "C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo/mezzoAnalyzer/src/odtabledelegate.cpp"
+  },
+
+  {
+    "directory": "C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo",
+    "command": "clang-tool -fms-extensions -fms-compatibility -fms-compatibility-version=19  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include/QtCore\"  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include/QtGui\"  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include\"  -isystem \"C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/include\"  -isystem \"C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/atlmfc/include\"  -isystem \"C:/Program Files (x86)/Windows Kits/10/Include/10.0.10240.0/ucrt\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/um\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/shared\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/winrt\"  -D WIN32  -D _DEBUG -std=c++14  \"C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo/mezzoAnalyzer/src/odtablemodel.cpp\"",
+    "file": "C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo/mezzoAnalyzer/src/odtablemodel.cpp"
+  },
+
+  {
+    "directory": "C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo",
+    "command": "clang-tool -fms-extensions -fms-compatibility -fms-compatibility-version=19  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include/QtGui\"  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include/QtCore\"  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include\"  -isystem \"C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/include\"  -isystem \"C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/atlmfc/include\"  -isystem \"C:/Program Files (x86)/Windows Kits/10/Include/10.0.10240.0/ucrt\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/um\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/shared\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/winrt\"  -D WIN32  -D _DEBUG -std=c++14  \"C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo/gui/src/batchrundlg.cpp\"",
+    "file": "C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo/gui/src/batchrundlg.cpp"
+  },
+
+  {
+    "directory": "C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo",
+    "command": "clang-tool -fms-extensions -fms-compatibility -fms-compatibility-version=19  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include/QtGui\"  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include/QtCore\"  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include\"  -isystem \"C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/include\"  -isystem \"C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/atlmfc/include\"  -isystem \"C:/Program Files (x86)/Windows Kits/10/Include/10.0.10240.0/ucrt\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/um\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/shared\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/winrt\"  -D WIN32  -D _DEBUG -std=c++14  \"C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo/gui/canvas_qt4.cpp\"",
+    "file": "C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo/gui/canvas_qt4.cpp"
+  },
+
+  {
+    "directory": "C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo",
+    "command": "clang-tool -fms-extensions -fms-compatibility -fms-compatibility-version=19  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include/QtGui\"  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include/QtCore\"  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include\"  -isystem \"C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/include\"  -isystem \"C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/atlmfc/include\"  -isystem \"C:/Program Files (x86)/Windows Kits/10/Include/10.0.10240.0/ucrt\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/um\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/shared\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/winrt\"  -D WIN32  -D _DEBUG -std=c++14  \"C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo/gui/main.cpp\"",
+    "file": "C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo/gui/main.cpp"
+  },
+
+  {
+    "directory": "C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo",
+    "command": "clang-tool -fms-extensions -fms-compatibility -fms-compatibility-version=19  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include/QtGui\"  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include/QtCore\"  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include\"  -isystem \"C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/include\"  -isystem \"C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/atlmfc/include\"  -isystem \"C:/Program Files (x86)/Windows Kits/10/Include/10.0.10240.0/ucrt\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/um\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/shared\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/winrt\"  -D WIN32  -D _DEBUG -std=c++14  \"C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo/gui/src/nodedlg.cpp\"",
+    "file": "C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo/gui/src/nodedlg.cpp"
+  },
+
+  {
+    "directory": "C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo",
+    "command": "clang-tool -fms-extensions -fms-compatibility -fms-compatibility-version=19  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include/QtGui\"  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include/QtCore\"  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include\"  -isystem \"C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/include\"  -isystem \"C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/atlmfc/include\"  -isystem \"C:/Program Files (x86)/Windows Kits/10/Include/10.0.10240.0/ucrt\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/um\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/shared\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/winrt\"  -D WIN32  -D _DEBUG -std=c++14  \"C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo/gui/src/outputview.cpp\"",
+    "file": "C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo/gui/src/outputview.cpp"
+  },
+
+  {
+    "directory": "C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo",
+    "command": "clang-tool -fms-extensions -fms-compatibility -fms-compatibility-version=19  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include/QtGui\"  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include/QtCore\"  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include\"  -isystem \"C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/include\"  -isystem \"C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/atlmfc/include\"  -isystem \"C:/Program Files (x86)/Windows Kits/10/Include/10.0.10240.0/ucrt\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/um\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/shared\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/winrt\"  -D WIN32  -D _DEBUG -std=c++14  \"C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo/gui/parametersdialog_qt4.cpp\"",
+    "file": "C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo/gui/parametersdialog_qt4.cpp"
+  },
+
+  {
+    "directory": "C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo",
+    "command": "clang-tool -fms-extensions -fms-compatibility -fms-compatibility-version=19  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include/QtGui\"  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include/QtCore\"  -isystem \"C:/Qt/Qt5.8.0/5.8/msvc2015_64/include\"  -isystem \"C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/include\"  -isystem \"C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/atlmfc/include\"  -isystem \"C:/Program Files (x86)/Windows Kits/10/Include/10.0.10240.0/ucrt\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/um\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/shared\"  -isystem \"C:/Program Files (x86)/Windows Kits/8.1/Include/winrt\"  -D WIN32  -D _DEBUG -std=c++14  \"C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo/gui/src/positionbackground.cpp\"",
+    "file": "C:/Users/jonas/Box Sync/PhD/07_Projects/BusMezzo/Source_Code/mezzo/branches/busmezzo/gui/src/positionbackground.cpp"
+  }
+
+
+]
