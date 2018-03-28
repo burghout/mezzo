@@ -5905,13 +5905,13 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
 	ofstream out16(name16.c_str(), ios_base::app);
 	ofstream out17(name17.c_str(), ios_base::app);
 	
-	/* passenger decision related, deactivated
+	//passenger decision related, deactivated
 	ofstream out5(name5.c_str(),ios_base::app);
     ofstream out6(name6.c_str(),ios_base::app);
 	ofstream out13(name13.c_str(),ios_base::app);
 	ofstream out14(name14.c_str(),ios_base::app);
 	ofstream out15(name15.c_str(),ios_base::app);
-	*/
+	
 
     // writing the crude data and summary outputs for each bus stop
 	write_transitlogout_header(out1);
@@ -5981,7 +5981,7 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
             }
         }
 		write_passenger_welfare_summary(out17, total_pass_GTC, pass_counter);
-		/* deactivated - unneccessary files in most cases
+		// deactivated - unneccessary files in most cases
         for (vector<Busstop*>::iterator stop_iter = busstops.begin(); stop_iter < busstops.end(); stop_iter++)
         {
             map <Busstop*, ODstops*> stop_as_origin = (*stop_iter)->get_stop_as_origin();
@@ -6019,7 +6019,7 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
                 }
             }
         }
-		*/
+		
     }
     return true;
 }
