@@ -22,9 +22,8 @@ DEPENDPATH += $$MEZZO_ROOT_RPATH
 
 HEADERS += 
 
-#RESOURCES += \
-#    Add resources here (such as test networks)
-
+RESOURCES += \
+    $$PWD/testdata.qrc # put testdata in here
 LIBS += 
 
 MOC_DIR =
