@@ -4,40 +4,6 @@
 **/ui_h
 #ignore all these extensions (intermediate files, vs2012 database etc)
 *.obj
-<<<<<<< HEAD
-branches/busmezzo/gui/debug/mezzo.res
-branches/busmezzo/gui/Makefile.Release
-*.pdb
-branches/busmezzo/mezzo.v11.suo
-*.sdf
-branches/busmezzo/mezzo_lib/Makefile
-*.Release
-branches/busmezzo/standalone/Makefile.Debug
-*.opensdf
-branches/busmezzo/mezzoAnalyzer/debug/mezzoAnalyzer.lib
-branches/busmezzo/gui/debug/moc_canvas_qt4.cpp
-branches/busmezzo/gui/debug/moc_outputview.cpp
-branches/busmezzo/gui/debug/qrc_canvas_qt4.cpp
-*.Debug
-branches/busmezzo/gui/Makefile
-branches/busmezzo/gui/ui_nodedlg.h
-branches/busmezzo/gui/ui_positionbackground.h
-branches/busmezzo/gui/ui_batchrundlg.h
-branches/busmezzo/gui/debug/moc_batchrundlg.cpp
-*.exe
-branches/busmezzo/gui/debug/mezzo_gui.exe.manifest
-*.ilk
-branches/busmezzo/gui/debug/moc_nodedlg.cpp
-branches/busmezzo/gui/ui_canvas_qt4.h
-branches/busmezzo/standalone/Makefile
-*.manifest
-branches/busmezzo/standalone/x64/Debug/mezzo_standalone.log
-*.orig
-branches/busmezzo/mezzoAnalyzer/ui_odcheckdlg.h
-*.lib
-branches/busmezzo/gui/ui_outputview.h
-branches/busmezzo/mezzoAnalyzer/debug/moc_odtabledelegate.cpp
-=======
 *.res
 *.Debug
 *.Release
@@ -47,33 +13,18 @@ branches/busmezzo/mezzoAnalyzer/debug/moc_odtabledelegate.cpp
 *.pdb
 Makefile*.*
 Makefile
->>>>>>> refs/remotes/origin/master
-*.dat
-branches/busmezzo/gui/ui_parametersdialog_qt4.h
-<<<<<<< HEAD
-=======
+ui_parametersdialog_qt4.h
 
 *.user
->>>>>>> origin/busmezzo_test
-
 *.DS_Store
 *.o
 *.a
 *.tmp
-branches/busmezzo/standalone/mezzo_s.xcodeproj
-branches/busmezzo/mezzo_lib/mezzo_lib.xcodeproj
-
-trunk/gui/gui.pro.user.c969961
-
-trunk/mezzoAnalyzer/mezzoAnalyzer.pro.user.c969961
-
-*.c969961
+*.xcodeproj
 *.db
-branches/busmezzo/mezzo.VC.VC.opendb
 *.opendb
-trunk/gui/debug_log.txt
-trunk/gui/link_log.txt
+debug_log.txt
+link_log.txt
 *.stash
-branches/busmezzo/tests/integrationtest/moc_predefs.h
-branches/busmezzo/tests/integrationtest/target_wrapper.sh
-branches/busmezzo/tests/integrationtest/test_integration.moc
+target_wrapper.sh
+test_integration.moc
