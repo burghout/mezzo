@@ -570,6 +570,11 @@ public:
 	  {
 			delete theNetwork;
 	  }
+
+    Network* getNetwork()
+    {
+        return theNetwork;
+    }
 private:
 
     string masterfile_;
