@@ -18,18 +18,15 @@ Offers interface to connected vehicles as well as connected passengers
 
 */
 
-//#include "busline.h"
 #include <iostream>
 #include <string>
 #include <vector>
-#include <assert.h>
+#include <qobject.h> //for signals and slots
+#include "passenger.h"
 
 using namespace std;
 
-//struct RequestQueue
-//struct TripQueue
-
-//structure that corresponds to a request from a passenger for a vehicle to travel between an origin stop and a destination stop
+/*structure that corresponds to a request from a passenger for a vehicle to travel between an origin stop and a destination stop*/
 struct Request
 {
 	int pass_id;		//id of passenger that created request
@@ -59,8 +56,7 @@ struct Request
 			return time < rhs.time;
 	}
 };
-
-//compare in the order of smallest time, smallest load, smallest origin stop id, smallest destination stop id and finally smallest passenger id
+/*less-than comparison of Requests in the order of smallest time, smallest load, smallest origin stop id, smallest destination stop id and finally smallest passenger id*/
 struct compareRequestByTime
 {
 	inline bool operator() (const Request& req1, const Request& req2)
@@ -78,36 +74,33 @@ struct compareRequestByTime
 	}
 };
 
-/*Responsible for generating requests and adding these to RequestQueue*/
+/*Responsible for adding Requests to requestSet as well as sorting and distributing the requestSet*/
 class RequestHandler
 {
 public:
 	RequestHandler();
 	~RequestHandler();
 
-	void generate_request(const string passengerData, const double time);
+	bool addRequest(Request vehRequest);
 
 private:
-	vector<double> requestQueue;
+	vector<Request> requestSet;
 };
 
 
-/*Responsible generating trips and adding these to TripQueue*/
+/*Responsible generating trips and adding these to TripSet*/
 class TripGenerator
 {
 public:
 	TripGenerator();
 	~TripGenerator();
 
-	void generate_trip(const string requestQueue, const  double time);
-
 private:
-	vector<double> tripQueue;
+	vector<double> tripSet;
 };
 
 /*Responsible for assigning trips in TripQueue to transit Vehicles and adding these to matchedTripQueue*/
 class IMatchingStrategy;
-
 class TripMatcher
 {
 public:
@@ -151,22 +144,22 @@ public:
 
 
 /*Groups togethers processes that control or modify transit Vehicles and provides an interface to Passenger*/
-class ControlCenter
+class Passenger;
+class ControlCenter : public QObject
 {
+	Q_OBJECT
+
 public:
 	ControlCenter();
 	~ControlCenter();
 
-	void generate_trip(const string requestQueue, const double time)
-	{
-		tg_.generate_trip(requestQueue, time);
-	}
-	void generate_request(const string passengerData, const double time)
-	{
-		rh_.generate_request(passengerData, time);
-	}
+	void connectPassenger(const Passenger* pass) const; //connects Passenger signals to RequestHandler slot
 
-	//process_request()
+signals:
+	void requestAccepted();
+
+private slots:
+	void recieveRequest(Request req);
 
 private:
 	RequestHandler rh_;

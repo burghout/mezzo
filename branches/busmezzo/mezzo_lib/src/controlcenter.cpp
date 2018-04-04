@@ -1,4 +1,5 @@
 #include "controlcenter.h"
+#include <algorithm> //for std::find
 
 //RequestHandler
 RequestHandler::RequestHandler()
@@ -7,9 +8,14 @@ RequestHandler::RequestHandler()
 }
 RequestHandler::~RequestHandler(){}
 
-void RequestHandler::generate_request(const string passengerData, const double time)
+bool RequestHandler::addRequest(Request vehRequest)
 {
-	cout << "Generating request " << passengerData << " at time " << time << endl;
+	if (find(requestSet.begin(), requestSet.end(), vehRequest) != requestSet.end())
+	{
+		requestSet.push_back(vehRequest);
+		return true;
+	}
+	return false;
 }
 
 //TripGenerator
@@ -18,14 +24,6 @@ TripGenerator::TripGenerator()
 	cout << "Constructing TG" << endl;
 }
 TripGenerator::~TripGenerator(){}
-
-void TripGenerator::generate_trip(const string requestQueue, const double time)
-{
-	cout << "Generating trip " << requestQueue << " at time " << time << endl;
-	
-	//TripQueue.push_back(make_pair(id, trip));
-	tripQueue.push_back(time);
-}
 
 //TripMatcher
 TripMatcher::TripMatcher()
@@ -45,9 +43,19 @@ ControlCenter::ControlCenter()
 {
 	cout << "Constructing CC" << endl;
 }
-
 ControlCenter::~ControlCenter()
 {
 	cout << "Destroying CC" << endl;
+}
+
+void ControlCenter::connectPassenger(const Passenger* pass) const
+{
+	QObject::connect(pass, SIGNAL(tappedInAtStop(Request)), this, SLOT(recieveRequest(Request)));
+}
+
+void ControlCenter::recieveRequest(Request req)
+{
+	if (rh_.addRequest(req))
+		emit requestAccepted();
 }
 
