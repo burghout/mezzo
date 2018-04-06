@@ -198,6 +198,8 @@ public:
    double compliance_rate; //!< Share [0,1] of bus trips that comply with the control strategy (assigned per trip)
    bool transfer_sync; //!< true if transfer synchronization is being used. Will effect the way the line definition in transit_network.dat is read.
 
+   bool drt; //!< flag for DRT vehicles with associated control center, when true will look for additional input in transit_fleet and transit_network
+
 // day2day assignment
    double default_alpha_RTI; //!< Initial value of the real-time information credibility coefficient set for all travellers
 

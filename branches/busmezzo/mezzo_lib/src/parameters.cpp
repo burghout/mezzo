@@ -109,6 +109,9 @@ Parameters::Parameters ()
    compliance_rate = 1.0;
    transfer_sync = false;
 
+//drt w. control center
+   drt = false;
+
 // day2day assignment
    default_alpha_RTI = 0.5;
 }
@@ -737,6 +740,12 @@ bool Parameters::read_parameters (istream & in )
 		return false;
 	}
 	in >> transfer_sync;
+	in >> keyword; //drt w. control center parameter
+	if (keyword != "drt=")
+	{
+		cout << "ERROR reading Parameters file, expecting: drt=, read: " << keyword << endl;
+	}
+	in >> drt;
 	in >> keyword;
 	if (keyword!= "#day2day_assignment")
 	{
