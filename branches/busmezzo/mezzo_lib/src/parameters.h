@@ -41,11 +41,17 @@
 #define _UNSAFE // faster reading, but less checking of input data
 #define _BUSES
 
-#define _DRTDEBUG //debug messaging and asserts for DRT implementation
+#define _DRTDEBUG //debug messaging and verbose debug messaging macros for drt implementation
 #ifdef _DRTDEBUG
 #define DEBUG_MSG(str) do { std::cout << str << std::endl; } while (false)
+#define DEBUG_MSG_V(str) do { \
+	std:: cout  << str \
+				<< " Source: " << __FILE__ \
+				<< ", line " << __LINE__  \
+				<< std::endl; } while (false)
 #else
 #define DEBUG_MSG(str) do {} while (false)
+#define VDEBUG_MSG(str) do {} while (false)
 #endif
 
 // GLOBAL VARIABLES
