@@ -41,6 +41,13 @@
 #define _UNSAFE // faster reading, but less checking of input data
 #define _BUSES
 
+#define _DRTDEBUG //debug messaging and asserts for DRT implementation
+#ifdef _DRTDEBUG
+#define DEBUG_MSG(str) do { std::cout << str << std::endl; } while (false)
+#else
+#define DEBUG_MSG(str) do {} while (false)
+#endif
+
 // GLOBAL VARIABLES
 extern long int randseed; // random seed
 extern int vid;     // global vehicle id nr.
