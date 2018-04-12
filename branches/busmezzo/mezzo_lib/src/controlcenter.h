@@ -19,12 +19,10 @@ Offers interface to connected vehicles as well as connected passengers
 */
 
 #include <iostream>
-#include <string>
 #include <vector>
-#include <qobject.h> //for signals and slots
+#include <map>
+#include <qobject.h>
 #include "passenger.h"
-
-using namespace std;
 
 /*structure that corresponds to a request from a passenger for a vehicle to travel between an origin stop and a destination stop*/
 struct Request
@@ -35,7 +33,11 @@ struct Request
 	int load;			//number of passengers in request
 	double time;		//time request was generated
 
-	Request(int pid, int oid, int did, int l, double t) : pass_id(pid), ostop_id(oid), dstop_id(did), load(l), time(t) {}
+	Request() {}
+	Request(int pid, int oid, int did, int l, double t) : pass_id(pid), ostop_id(oid), dstop_id(did), load(l), time(t)
+	{
+		qRegisterMetaType<Request>(); //register Request as a metatype for QT signal arguments
+	}
 
 	bool operator == (const Request& rhs) const
 	{
@@ -56,6 +58,8 @@ struct Request
 			return time < rhs.time;
 	}
 };
+Q_DECLARE_METATYPE(Request);
+
 /*less-than comparison of Requests in the order of smallest time, smallest load, smallest origin stop id, smallest destination stop id and finally smallest passenger id*/
 struct compareRequestByTime
 {
@@ -81,6 +85,8 @@ public:
 	RequestHandler();
 	~RequestHandler();
 
+	void reset();
+
 	bool addRequest(Request vehRequest);
 
 private:
@@ -95,6 +101,8 @@ public:
 	TripGenerator();
 	~TripGenerator();
 
+	void reset();
+
 private:
 	vector<double> tripSet;
 };
@@ -104,7 +112,7 @@ class IMatchingStrategy;
 class TripMatcher
 {
 public:
-	TripMatcher();
+	explicit TripMatcher(IMatchingStrategy* matchingstrategy = nullptr);
 	~TripMatcher();
 
 	void match_trip()
@@ -112,10 +120,16 @@ public:
 		//matchingStrategy_->find_tripvehicle_match(TripQueue)
 	}
 
-	void setMatchingStrategy(IMatchingStrategy* ms) 
+	void setMatchingStrategy(IMatchingStrategy* matchingstrategy) 
 	{
-		cout << "Changing matching strategy" << endl;
-		matchingStrategy_ = ms;
+		if (!matchingstrategy)
+		{
+			DEBUG_MSG_V("setMatchingStrategy failed!");
+			abort();
+		}
+
+		DEBUG_MSG("Changing matching strategy");
+		matchingStrategy_ = matchingstrategy;
 	}
 
 private:
@@ -138,7 +152,7 @@ class NaiveMatching : public IMatchingStrategy
 public:
 	virtual void find_tripvehicle_match() 
 	{
-		cout << "Matching Naively!" << endl;
+		DEBUG_MSG("Matching Naively!");
 	}
 };
 
@@ -150,22 +164,34 @@ class ControlCenter : public QObject
 	Q_OBJECT
 
 public:
-	ControlCenter();
+	explicit ControlCenter(int id = 0, QObject* parent = nullptr);
 	~ControlCenter();
 
-	void connectPassenger(const Passenger* pass) const; //connects Passenger signals to RequestHandler slot
+	void reset();
+
+	void connectPassenger(Passenger* pass); //connects Passenger signals to RequestHandler slot
+	void disconnectPassenger(Passenger* pass); //disconnects Passenger signals to RequestHandler slot
+	//void connectVehicle(); //connects Vehicle to CC
 
 signals:
 	void requestAccepted();
+	void requestRejected();
 
 private slots:
 	void recieveRequest(Request req);
 
+	void on_requestAccepted();
+	void on_requestRejected();
+
 private:
+	//OBS! remember to add all mutable members to reset method
+	int id_;
+	
+	//maps for bookkeeping connected passengers and vehicles
+	map<int, Passenger*> connectedPass_; //passengers currently connected to ControlCenter 
+	map<int, Vehicle*> connectedVeh_; //vehicles currently connected to ControlCenter
 	RequestHandler rh_;
 	TripGenerator tg_;
 	TripMatcher tm_;
 };
-
-
 #endif
