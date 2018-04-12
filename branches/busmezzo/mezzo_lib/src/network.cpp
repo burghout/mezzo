@@ -304,6 +304,11 @@ Network::~Network()
     }
     turnpenalties.clear();
 
+	for (auto& controlcenter : ccmap)
+	{
+		delete controlcenter.second;
+	}
+	ccmap.clear();
     // TODO: check if Stage SignalPlan and SignalControl need to be cleaned up now (in Trunk they are cleaned up here)
 }
 
@@ -405,6 +410,12 @@ int Network::reset()
     {
         (*bus_iter)->reset();
     }
+
+	//controlcenters
+	for (auto& controlcenter : ccmap)
+	{
+		controlcenter.second->reset();
+	}
 
     //TO DO
 
@@ -1414,6 +1425,10 @@ bool Network::readtransitnetwork(string name) //!< reads the stops, distances be
     assert (in);
     string keyword;
     int format;
+
+	ControlCenter* cc = new ControlCenter(1);
+	ccmap[1] = cc;
+
     // First read the busstops
     in >> keyword;
 #ifdef _DEBUG_NETWORK
@@ -1603,6 +1618,7 @@ in >> keyword;
             return false;
         }
     }
+
 return true;
 }
 
@@ -1627,7 +1643,7 @@ bool Network::readbusstop (istream& in) // reads a busstop
       cout << "readfile::readsbusstop error at stop " << stop_id << ". Link " << link_id << " does not exist." << endl;
   }
 
-  Busstop* st= new Busstop (stop_id, name, link_id, position, length, has_bay, can_overtake, min_DT, RTI_stop, non_Ramdon_Pass_Generation);
+  Busstop* st= new Busstop (stop_id, name, link_id, position, length, has_bay, can_overtake, min_DT, RTI_stop, non_Ramdon_Pass_Generation, ccmap[1]);
   st->add_distance_between_stops(st,0.0);
     in >> bracket;
     if (bracket != '}')

@@ -19,7 +19,6 @@
 #include "od_stops.h"
 #include <stddef.h>
 
-
 class Busroute;
 class Busstop;
 class Bustrip;
@@ -32,6 +31,7 @@ class Change_arrival_rate;
 class Bustrip_assign;
 class Dwell_time_function;
 class Walking_time_dist;
+class ControlCenter;
 
 typedef pair<Bustrip*,double> Start_trip;
 typedef vector <Passenger*> passengers;
@@ -169,7 +169,8 @@ public:
 		string					name_,						//!< a descriptive name
 		Busroute*				busroute_,					//!< bus route
 		vector <Busstop*>		stops_,						//!< stops on line
-		Vtype* vtype_, ODpair*	odpair_,					//!< OD pair
+		Vtype*					vtype_, 
+		ODpair*					odpair_,					//!< OD pair
 		int						holding_strategy_,			//!< indicates the type of holding strategy used for line
 		float					max_headway_holding_,		//!< threshold parameter relevant in case holding strategies 1 or 3 are chosen or max holding time in [sec] in case of holding strategy 6
 		double					init_occup_per_stop_,		//!< average number of passengers that are on-board per prior upstream stops (scale of a Gamma distribution)
@@ -604,7 +605,8 @@ public:
 		bool	can_overtake_, 
 		double	min_DT_, 
 		int		rti_,
-        bool    non_random_pass_generation_
+        bool    non_random_pass_generation_,
+		ControlCenter* CC_ = nullptr
 	);
 
 	void reset (); 
@@ -694,6 +696,9 @@ public:
 	void calculate_sum_output_stop_per_line(int line_id); //!< calculates for a single line that visits the stop (identified by line_id)
 	int calc_total_nr_waiting ();
 
+//control center related functions
+	ControlCenter* get_CC() { return CC; }
+
 // relevant only for demand format 2
 	multi_rates multi_arrival_rates; //!< parameter lambda that defines the poission proccess of passengers arriving at the stop for each sequential stop
 
@@ -702,7 +707,6 @@ public:
     //methods related to exogenous walking times
     void add_walking_time_quantiles(Busstop*, vector<double>, vector<double>, int, double, double);
     double estimate_walking_time_from_quantiles(Busstop*, double);
-
 
 protected:
 	int id;						//!< stop id
@@ -765,6 +769,8 @@ protected:
     // walking times between steps
     map<Busstop*, vector<Walking_time_dist*> > walking_time_distribution_map; //!< contains set of distributions for a given destination node
 
+	//control center
+	ControlCenter* CC;
 
 	// transfer synchronization
 	vector<pair<Bustrip*, int> > trips_awaiting_transfers;	//!< David added 2016-05-30: contains trips that are currently waiting to synchronize transfers with a connecting trip, paired with the line ID of the connecting trip

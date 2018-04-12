@@ -59,6 +59,8 @@
 #include "od_stops.h"
 #include "pass_route.h"
 #include "day2day.h"
+#include "controlcenter.h"
+
 
 // inclusions for the GUI
 #ifndef _NO_GUI
@@ -134,6 +136,7 @@ private:
  * last change: 2008-01-11
   
  */
+
 
 class Network
 {
@@ -396,6 +399,9 @@ protected:
 	map<ODSL, Travel_time> wt_rec; //the record of waiting time data
 	map<ODSLL, Travel_time> ivt_rec; //the record of in-vehicle time data
 	int day;
+
+	//Control Center
+	map<int, ControlCenter*> ccmap;
 
 	//Shortest path graph
 #ifndef _USE_VAR_TIMES
