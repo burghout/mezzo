@@ -15,7 +15,6 @@ void RequestHandler::reset()
 {
 	requestSet.clear();
 }
-RequestHandler::~RequestHandler(){}
 
 bool RequestHandler::addRequest(Request vehRequest)
 {

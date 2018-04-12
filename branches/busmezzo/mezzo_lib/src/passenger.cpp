@@ -1,5 +1,6 @@
 ///! passenger.cpp: implementation of the passenger class.
 #include "passenger.h"
+
 Passenger::Passenger ()
 {
 	boarding_decision = false;
@@ -20,7 +21,7 @@ Passenger::Passenger ()
 	arrival_time_at_stop = 0;
 }
 
-Passenger::Passenger (int pass_id, double start_time_, ODstops* OD_stop_)
+Passenger::Passenger (int pass_id, double start_time_, ODstops* OD_stop_, QObject* parent) : QObject(parent)
 {
 	passenger_id = pass_id;
 	start_time = start_time_;
@@ -43,6 +44,24 @@ Passenger::Passenger (int pass_id, double start_time_, ODstops* OD_stop_)
 	memory_projected_RTI.clear();
 	arrival_time_at_stop = 0;
 	this_is_the_last_stop = false;
+
+	if (theParameters->drt) //connect passenger to control center of origin stop in the case of drt
+	{
+		ControlCenter* CC = OD_stop->get_origin()->get_CC();
+		if (!CC)
+		{
+			DEBUG_MSG_V(Q_FUNC_INFO << "CC not initialized");
+			abort();
+		}
+		if (theParameters->demand_format != 3) //connections between CC and passenger are currently only possible for demand format 3
+		{
+			DEBUG_MSG_V(Q_FUNC_INFO << "drt = true but demand_format != 3");
+			abort();
+		}
+
+		assert(this->receivers(SIGNAL(sendRequest(Request))) == 0); //passenger should have no recievers when constructed
+		CC->connectPassenger(this);
+	}
 }
 
 Passenger::~Passenger()
@@ -72,6 +91,8 @@ void Passenger::reset ()
 	selected_path_trips.clear();
 	experienced_crowding_levels.clear();
 	waiting_time_due_denied_boarding.clear();
+
+	disconnect(this, 0, 0, 0); //disconnect all signals of passenger
 }
 
 void Passenger::init ()
@@ -340,6 +361,11 @@ void Passenger::start (Eventlist* eventlist)
 				}
 			}
 		}
+}
+
+Request Passenger::createRequest(int load, double time)
+{
+	return Request(this->get_id(), OD_stop->get_origin()->get_id(), OD_stop->get_destination()->get_id(), load, time);
 }
 
 bool Passenger:: make_boarding_decision (Bustrip* arriving_bus, double time) 
@@ -1178,3 +1204,5 @@ double Passenger::get_walking_time(Busstop* busstop_dest_ptr, double curr_time)
 
     return busstop_orig_ptr->get_walking_time(busstop_dest_ptr, curr_time);
 }
+
+

@@ -5,6 +5,8 @@
 #include "busline.h"
 #include "od_stops.h"
 #include "Random.h"
+#include <qobject.h> //for signals and slots in passenger/control center connection
+#include "controlcenter.h"
 
 class Bustrip;
 class Busline;
@@ -12,14 +14,18 @@ class Busstop;
 class ODstops;
 class ODzone;
 struct SLL;
+struct Request;
 
-class Passenger : public Action
+class Passenger : public QObject, public Action
 {
+	Q_OBJECT
+
 public:
 	Passenger (
 		int		   pass_id,
 		double	   start_time_,
-		ODstops*   OD_stop_
+		ODstops*   OD_stop_,
+		QObject*   parent = nullptr
 	);
 	Passenger ();
     virtual ~Passenger ();
@@ -113,10 +119,16 @@ public:
 	double calc_total_waiting_time_due_to_denied_boarding();
 	bool line_is_rejected(int id); //If the passenger has rejected line with id the function returns true
     
-    
     //walking time
     double get_walking_time(Busstop*,double);
-    
+
+	//ControlCenter
+private:
+	Request createRequest(int load = 1, double time = -1); //creates a request for this passenger with a given load and a given time (Note: uses protected members of Passenger)
+public:
+signals:
+	void sendRequest(Request req); //signal to send Request to ControlCenter
+
 protected:
 	int passenger_id;
 	double start_time;
