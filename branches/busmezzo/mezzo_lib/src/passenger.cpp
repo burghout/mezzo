@@ -349,50 +349,34 @@ bool Passenger:: make_boarding_decision (Bustrip* arriving_bus, double time)
 	Busstop* curr_stop = OD_stop->get_origin(); //2014-04-14 Jens West changed this, because otherwise the passengers would board lines and then not know what to do
 	ODstops* od = OD_stop;
 	double boarding_prob;
-	switch (theParameters->demand_format)
+
+	// use the od based on last stop on record (in case of connections)
+	boarding_prob = od->calc_boarding_probability(arriving_bus->get_line(), time, this);
+	boarding_decision = theRandomizers[0]->brandom(boarding_prob);
+	OD_stop->record_passenger_boarding_decision(this, arriving_bus, time, boarding_prob, boarding_decision);
+	if (boarding_decision == 1)
 	{
-		case 3:
-			// use the od based on last stop on record (in case of connections)
-			boarding_prob = od->calc_boarding_probability(arriving_bus->get_line(), time, this);
-			boarding_decision = theRandomizers[0]->brandom(boarding_prob);
-			OD_stop->record_passenger_boarding_decision (this, arriving_bus, time, boarding_prob, boarding_decision);
-			if (boarding_decision == 1)
-			{
-				rejected_lines.clear();
-				//int level_of_rti_upon_decision = curr_stop->get_rti(); //Everything moved to other places by Jens
-				//if (RTI_network_level == 1)
-				//{
-				//	level_of_rti_upon_decision = 3;
-				//}
-				////ODstops* passenger_od = original_origin->get_stop_od_as_origin_per_stop(OD_stop->get_destination()); //Jens changed this 2014-06-24, this enables remembering waiting time not only for the first stop of trip
-				////passenger_od->record_waiting_experience(this, arriving_bus, time, level_of_rti_upon_decision,this->get_memory_projected_RTI(curr_stop,arriving_bus->get_line()),AWT_first_leg_boarding);
-				////OD_stop->record_waiting_experience(this, arriving_bus, time, level_of_rti_upon_decision,this->get_memory_projected_RTI(curr_stop,arriving_bus->get_line()),AWT_first_leg_boarding);
-			}
-			else
-			{
-				rejected_lines.push_back(arriving_bus->get_line()->get_id());
-			}
-			break;
-		case 4:
-			boarding_prob = calc_boarding_probability_zone(arriving_bus->get_line(), curr_stop, time);
-			boarding_decision = theRandomizers[0] ->brandom(boarding_prob);
-			o_zone->record_passenger_boarding_decision_zone(this, arriving_bus, time, boarding_prob, boarding_decision);
+		rejected_lines.clear();
+		//int level_of_rti_upon_decision = curr_stop->get_rti(); //Everything moved to other places by Jens
+		//if (RTI_network_level == 1)
+		//{
+		//	level_of_rti_upon_decision = 3;
+		//}
+		////ODstops* passenger_od = original_origin->get_stop_od_as_origin_per_stop(OD_stop->get_destination()); //Jens changed this 2014-06-24, this enables remembering waiting time not only for the first stop of trip
+		////passenger_od->record_waiting_experience(this, arriving_bus, time, level_of_rti_upon_decision,this->get_memory_projected_RTI(curr_stop,arriving_bus->get_line()),AWT_first_leg_boarding);
+		////OD_stop->record_waiting_experience(this, arriving_bus, time, level_of_rti_upon_decision,this->get_memory_projected_RTI(curr_stop,arriving_bus->get_line()),AWT_first_leg_boarding);
 	}
+	else
+	{
+		rejected_lines.push_back(arriving_bus->get_line()->get_id());
+	}
+
 	if (boarding_decision == true)
 	{
 		nr_boardings++;
 	}
 	return boarding_decision;
 }
-
-//void Passenger::set_left_behind(double time)
-//{
-//	if (!left_behind_before) //If this is the first time the passenger was left behind
-//	{
-//		first_bus_arrival_time = time;
-//		left_behind_before = true;
-//	}
-//}
 
 void Passenger::record_waiting_experience(Bustrip* arriving_bus, double time)
 {
