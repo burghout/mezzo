@@ -18,7 +18,6 @@ Offers interface to connected vehicles as well as connected passengers
 
 */
 
-#include <iostream>
 #include <vector>
 #include <map>
 #include <qobject.h>
@@ -33,7 +32,6 @@ struct Request
 	int load;			//number of passengers in request
 	double time;		//time request was generated
 
-	Request() {}
 	Request(int pid, int oid, int did, int l, double t) : pass_id(pid), ostop_id(oid), dstop_id(did), load(l), time(t)
 	{
 		qRegisterMetaType<Request>(); //register Request as a metatype for QT signal arguments
@@ -141,6 +139,7 @@ class IMatchingStrategy
 {
 public:
 	virtual void find_tripvehicle_match() = 0;
+    //static IMatchingStrategy* make_strategy
 
 protected:
 	//Reference to the TripQueue
@@ -185,7 +184,7 @@ private slots:
 
 private:
 	//OBS! remember to add all mutable members to reset method
-	int id_;
+	const int id_;
 	
 	//maps for bookkeeping connected passengers and vehicles
 	map<int, Passenger*> connectedPass_; //passengers currently connected to ControlCenter 

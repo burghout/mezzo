@@ -1,5 +1,6 @@
 #include "controlcenter.h"
 #include <algorithm>
+#include <assert.h>
 
 //RequestHandler
 RequestHandler::RequestHandler()
@@ -55,7 +56,7 @@ TripMatcher::~TripMatcher()
 ControlCenter::ControlCenter(int id, QObject* parent) : QObject(parent), id_(id)
 {
 	QString qname = QString::fromStdString(to_string(id));
-	this->setObjectName(qname);
+	this->setObjectName(qname); //name of control center does not really matter but useful for debugging purposes
 	DEBUG_MSG("Constructing CC" << id_);
 
 	//connect internal signal slots
@@ -89,9 +90,9 @@ void ControlCenter::connectPassenger(Passenger* pass)
 {
 	//DEBUG_MSG("Testing unique connection");
 	//ok = QObject::connect(pass, &Passenger::sendRequest, this, &ControlCenter::recieveRequest, static_cast<Qt::ConnectionType>(Qt::DirectConnection | Qt::UniqueConnection));
-	int id = pass->get_id();
-	assert(connectedPass_.count(id) == 0); //passenger should only be added once
-	connectedPass_[id] = pass;
+	int pid = pass->get_id();
+	assert(connectedPass_.count(pid) == 0); //passenger should only be added once
+	connectedPass_[pid] = pass;
 
 	if (!QObject::connect(pass, &Passenger::sendRequest, this, &ControlCenter::recieveRequest, Qt::DirectConnection))
 	{
@@ -110,7 +111,7 @@ void ControlCenter::disconnectPassenger(Passenger * pass)
 void ControlCenter::recieveRequest(Request req)
 {
 	DEBUG_MSG(Q_FUNC_INFO);
-	assert(req.time >= 0 && req.load >= 0); //assert that request is valid
+	assert(req.time >= 0 && req.load > 0); //assert that request is valid
 	rh_.addRequest(req) ? emit requestAccepted() : emit requestRejected();
 }
 

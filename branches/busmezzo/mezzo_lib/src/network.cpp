@@ -410,6 +410,15 @@ int Network::reset()
     {
         (*bus_iter)->reset();
     }
+	
+	//drt vehicles
+	for (auto& drtvehicle : drtvehicles)
+	{
+		drtvehicle->reset(); 
+		/*Note: drtvehicle is still a Bus vehicle, 
+		separate vector for separate handling output. 
+		Might just include these in busvehicle in the future however */
+	}
 
 	//controlcenters
 	for (auto& controlcenter : ccmap)
@@ -4981,6 +4990,24 @@ in >> keyword;
             return false;
         }
     }
+	if (theParameters->drt)
+	{
+		in >> keyword;
+		if (keyword != "unassigned_vehicles:")
+		{
+			DEBUG_MSG("readtransitfleet: no << drt_vehicles: >> keyword ");
+			return false;
+		}
+		in >> nr;
+		limit = i + nr;
+		for (; i < limit; i++)
+		{
+			if (!read_unassignedvehicle(in))
+			{
+				DEBUG_MSG("readtransitfleet: read_drtvehicle returned false for line nr" << (i+1));
+			}
+		}
+	}
     return true;
 }
 
@@ -5149,6 +5176,51 @@ bool Network::read_busvehicle(istream& in) // reads a bus vehicle
   cout << " read busvehicle"<< bv_id <<endl;
 #endif //_DEBUG_NETWORK
 return ok;
+}
+
+bool Network::read_unassignedvehicle(istream& in) //reads a bus vehicles that are initialized without a trip assigned to them
+{
+	char bracket;
+	int bv_id; //id of bus vehicle
+	int type_id; //id of bus vehicle type
+	int init_stop_id; //id of stop that bus is initialized at (generated in an idle state)
+	Busstop* init_stop;
+	double init_time; //time at which bus is generated
+
+	in >> bracket;
+	if (bracket != '{')
+	{
+		DEBUG_MSG_V("readfile::read_unassignedvehicle scanner jammed at " << bracket);
+		return false;
+	}
+	in >> bv_id >> type_id >> init_stop_id >> init_time;
+
+	// find bus type and create bus vehicle
+	Bustype* bty = (*(find_if(bustypes.begin(), bustypes.end(), compare <Bustype>(type_id))));
+	// generate a new bus vehicle
+	vid++;
+	in >> bracket;
+	if (bracket != '}')
+	{
+		DEBUG_MSG_V("readfile::read_unassignedvehicle scanner jammed at " << bracket);
+		return false;
+	}
+
+	//Construct idle bus
+	Bus* bus = recycler.newBus(); // get a bus vehicle
+	bus->set_bus_id(bv_id);
+	bus->set_bustype_attributes(bty);
+	bus->set_curr_trip(nullptr); // bus has no trip assigned to it, on_trip should = false
+	
+	//find the stop for which the bus is initialized at
+	init_stop = (*(find_if(busstops.begin(), busstops.end(), compare <Busstop>(init_stop_id))));
+
+	//create an event for its entry at this stop (should add it to an idle vehicle vector there?)
+
+
+	drtvehicles.push_back(bus);
+
+	return true;
 }
 
 // read traffic control

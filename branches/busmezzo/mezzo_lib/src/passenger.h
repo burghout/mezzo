@@ -25,6 +25,7 @@ public:
 		int		   pass_id,
 		double	   start_time_,
 		ODstops*   OD_stop_,
+		ControlCenter* CC = nullptr,
 		QObject*   parent = nullptr
 	);
 	Passenger ();

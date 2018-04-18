@@ -746,6 +746,12 @@ bool Parameters::read_parameters (istream & in )
 		cout << "ERROR reading Parameters file, expecting: drt=, read: " << keyword << endl;
 	}
 	in >> drt;
+    if (drt && theParameters->demand_format != 3) //connections between CC and passenger are currently only possible for demand format 3
+    {
+        cout << "ERROR reading Parameters file, drt= true, but demand_format!= 3 " << endl;
+        DEBUG_MSG_V("drt == true but demand_format != 3");
+        abort();
+    }
 	in >> keyword;
 	if (keyword!= "#day2day_assignment")
 	{

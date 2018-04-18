@@ -169,7 +169,7 @@ bool ODstops::execute (Eventlist* eventlist, double curr_time) // generate passe
             
             while (curr_time < theParameters->stop_pass_generation)
             {
-                Passenger* pass = new Passenger(pid, curr_time, this);
+                Passenger* pass = new Passenger(pid, curr_time, this, this->get_origin()->get_CC());
                 passengers_during_simulation.push_back(pass);
                 pid++;
                 pass->init();
