@@ -32,6 +32,7 @@ struct Request
 	int load;			//number of passengers in request
 	double time;		//time request was generated
 
+	Request() {};
 	Request(int pid, int oid, int did, int l, double t) : pass_id(pid), ostop_id(oid), dstop_id(did), load(l), time(t)
 	{
 		qRegisterMetaType<Request>(); //register Request as a metatype for QT signal arguments
@@ -144,6 +145,7 @@ public:
 protected:
 	//Reference to the TripQueue
 	//Reference to Fleet attached to CC
+	//Forecaster class?
 };
 
 class NaiveMatching : public IMatchingStrategy
