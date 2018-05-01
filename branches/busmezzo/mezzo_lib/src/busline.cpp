@@ -249,8 +249,15 @@ double Busline::time_till_next_arrival_at_stop_after_time (Busstop* stop, double
 	if (stops.front()->get_had_been_visited(this) == false) 
 	// in case no trip started yet - according to time table of the first trip
 	{
-		time_till_next_visit = trips.front().first->stops_map[stop] - time;
-		return time_till_next_visit;
+		if (trips.empty()) //in case no trip has started yet and no trip is scheduled
+		{
+			return theParameters->running_time; //return scenario stop time TODO: see how this effects passenger RTI calculations
+		}
+		else
+		{
+			time_till_next_visit = trips.front().first->stops_map[stop] - time;
+			return time_till_next_visit;
+		}
 	}
 	// find the iterator for this pass stop
 	vector<Busstop*>::iterator this_stop;
