@@ -1836,6 +1836,14 @@ bool Network::readbusline(istream& in) // reads a busline
       cout << "readfile::readbusline scanner jammed at " << bracket << ", expected }";
         return false;
     }
+
+  if (flex_line) //if flexible vehicle scheduling is allowed for this line then add it to a controlcenter
+  {
+	  assert(theParameters->drt);
+	  ccmap[1]->addCandidateLine(bl);
+  }
+	
+
     // add to buslines vector
     buslines.push_back (bl);
 #ifdef _DEBUG_NETWORK
