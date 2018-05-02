@@ -1710,6 +1710,9 @@ bool Network::readbusline(istream& in) // reads a busline
   vector <Busstop*> tr_stops;
   Busstop* tr_stop;
 
+  //DRT related variables
+  bool flex_line = false; //true if trips can be dynamically created for this line via a control center
+
     bool ok= true;
     in >> bracket;
     if (bracket != '{')
@@ -1723,6 +1726,10 @@ bool Network::readbusline(istream& in) // reads a busline
     {
         in >> tr_line_id;
     }
+	if (theParameters->drt)
+	{
+		in >> flex_line;
+	}
     in >> nr_stops;
     in >> bracket;
     if (bracket != '{')
@@ -1749,7 +1756,7 @@ bool Network::readbusline(istream& in) // reads a busline
     ODpair* odptr=(*(find_if (odpairs.begin(),odpairs.end(), compareod (odid) )));
     Busroute* br=(*(find_if(busroutes.begin(), busroutes.end(), compare <Route> (route_id) )));
     Vtype* vt= (*(find_if(vehtypes.vtypes.begin(), vehtypes.vtypes.end(), compare <Vtype> (vehtype) )));
-    Busline* bl= new Busline (busline_id, opposite_busline_id, name, br, stops, vt, odptr, holding_strategy, max_headway_holding, init_occup_per_stop, nr_stops_init_occup);
+    Busline* bl= new Busline (busline_id, opposite_busline_id, name, br, stops, vt, odptr, holding_strategy, max_headway_holding, init_occup_per_stop, nr_stops_init_occup, flex_line);
 
     for (vector<Busstop*>::iterator stop_iter = bl->stops.begin(); stop_iter < bl->stops.end(); stop_iter++)
     {

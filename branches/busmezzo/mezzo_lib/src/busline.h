@@ -174,7 +174,8 @@ public:
 		int						holding_strategy_,			//!< indicates the type of holding strategy used for line
 		float					max_headway_holding_,		//!< threshold parameter relevant in case holding strategies 1 or 3 are chosen or max holding time in [sec] in case of holding strategy 6
 		double					init_occup_per_stop_,		//!< average number of passengers that are on-board per prior upstream stops (scale of a Gamma distribution)
-		int						nr_stops_init_occup			//!< number of prior upstream stops resulting with initial occupancy (shape of a Gamma distribution)
+		int						nr_stops_init_occup_,		//!< number of prior upstream stops resulting with initial occupancy (shape of a Gamma distribution)
+		bool					flex_line_					//!< true if this line allows for dynamically scheduled trips
 	); //!< Initialising constructor
 
 	Busline ();			//!< simple constructor
@@ -271,6 +272,9 @@ protected:
 	//transfer attributes
 	int	tr_line_id; //!< id of line 'this' line synchronizes transfers with, should be 0 if 'this' line is not synchronizing transfers
 	vector <Busstop*> tr_stops;	//!< contains all transfer stops for line
+
+	//drt related attributes
+	bool flex_line;
 
     map <Busstop*,pair<Busstop*,pair<double,double> > > disruption_times; //!< contains the expected travel times between a pair of stops in case of disruption (does not affect actual travel time, only passenger information provision). Strat and end times
 	map <Busstop*, double> disruption_cap_reduction;
