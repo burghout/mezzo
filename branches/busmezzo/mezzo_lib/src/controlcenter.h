@@ -21,7 +21,11 @@ Offers interface to connected vehicles as well as connected passengers
 #include <vector>
 #include <map>
 #include <qobject.h>
+
+//includes for bookkeeping maps in controlcenter (may remove in the future)
 #include "passenger.h"
+#include "vehicle.h"
+#include "busline.h"
 
 /*structure that corresponds to a request from a passenger for a vehicle to travel between an origin stop and a destination stop*/
 struct Request
@@ -160,6 +164,8 @@ public:
 
 /*Groups togethers processes that control or modify transit Vehicles and provides an interface to Passenger*/
 class Passenger;
+class Bus;
+class Busline;
 class ControlCenter : public QObject
 {
 	Q_OBJECT
@@ -170,9 +176,18 @@ public:
 
 	void reset();
 
-	void connectPassenger(Passenger* pass); //connects Passenger signals to RequestHandler slot
-	void disconnectPassenger(Passenger* pass); //disconnects Passenger signals to RequestHandler slot
-	//void connectVehicle(); //connects Vehicle to CC
+
+	//methods for connecting passengers, vehicles and lines
+	void connectPassenger(Passenger* pass); //connects Passenger signals to recieveRequest slot
+	void disconnectPassenger(Passenger* pass); //disconnects Passenger signals to recieveRequest slot
+	
+	void connectVehicle(Bus* transitveh); //connects Vehicle to CC
+	void disconnectVehicle(Bus* transitveh); //disconnect Vehicle from CC
+
+	void addCandidateLine(Busline* line); //add line to CC map of possible lines to create trips for
+
+	//supporting methods for member process classes
+	vector<Busline*> get_lines_between_stops(const vector<Busline*>& lines, int ostop_id, int dstop_id) const; //returns buslines among existing lines given as input that run from the given originstop to the given destination stop (Note: assumes lines are uni-directional and that busline stops are ordered, which they currently are in BusMezzo)
 
 signals:
 	void requestAccepted();
@@ -185,12 +200,16 @@ private slots:
 	void on_requestRejected();
 
 private:
-	//OBS! remember to add all mutable members to reset method
+	//OBS! remember to add all mutable members to reset method, including reset functions of process classes
 	const int id_;
 	
 	//maps for bookkeeping connected passengers and vehicles
 	map<int, Passenger*> connectedPass_; //passengers currently connected to ControlCenter 
-	map<int, Vehicle*> connectedVeh_; //vehicles currently connected to ControlCenter
+	map<int, Bus*> connectedVeh_; //transit vehicles currently connected to ControlCenter
+	
+	//maps initialized once with possible routes between stops that this ControlCenter can create trips for
+	vector<Busline*> candidateLines_; //lines (i.e. routes and stops to visit along the route) that this ControlCenter can create trips for
+
 	RequestHandler rh_;
 	TripGenerator tg_;
 	TripMatcher tm_;

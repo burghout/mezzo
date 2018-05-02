@@ -2,6 +2,19 @@
 #include <algorithm>
 #include <assert.h>
 
+template<class T>
+struct compare
+{
+	compare(int id_) :id(id_) {}
+	bool operator () (T* thing)
+
+	{
+		return (thing->get_id() == id);
+	}
+
+	int id;
+};
+
 //RequestHandler
 RequestHandler::RequestHandler()
 {
@@ -103,9 +116,57 @@ void ControlCenter::connectPassenger(Passenger* pass)
 
 void ControlCenter::disconnectPassenger(Passenger * pass)
 {
+	assert(connectedPass_.count(pass->get_id() != 0));
 	connectedPass_.erase(connectedPass_.find(pass->get_id()));
 	bool ok = QObject::disconnect(pass, &Passenger::sendRequest, this, &ControlCenter::recieveRequest);
 	assert(ok);
+}
+
+
+void ControlCenter::connectVehicle(Bus* transitveh)
+{
+	int bvid = transitveh->get_bus_id();
+	assert(connectedVeh_.count(bvid) == 0); //vehicle should only be added once
+	connectedVeh_[bvid] = transitveh;
+}
+
+void ControlCenter::disconnectVehicle(Bus* transitveh)
+{
+	assert(connectedVeh_.count(transitveh->get_bus_id() != 0));
+	connectedVeh_.erase(connectedVeh_.find(transitveh->get_bus_id()));
+}
+
+void ControlCenter::addCandidateLine(Busline* line)
+{
+	candidateLines_.push_back(line);
+}
+
+vector<Busline*> ControlCenter::get_lines_between_stops(const vector<Busline*>& lines, int ostop_id, int dstop_id) const
+{
+	vector<Busline*> lineConnections; // lines between stops given as input
+	if (!lines.empty())
+	{
+		for(auto& line : lines)
+		{
+			if (!line->stops.empty())
+			{
+				vector<Busstop*>::iterator ostop_it; //iterator pointing to origin busstop if it exists for this line
+				ostop_it = find_if(line->stops.begin(), line->stops.end(), compare<Busstop>(ostop_id));
+
+				if (ostop_it != line->stops.end()) //if origin busstop does exist on line see if destination stop is downstream from this stop
+				{
+					vector<Busstop*>::iterator dstop_it; //iterator pointing to destination busstop if it exists downstream of origin busstop for this line
+					dstop_it = find_if(ostop_it, line->stops.end(), compare<Busstop>(dstop_id));
+
+					if (dstop_it != line->stops.end()) //if destination stop exists 
+						lineConnections.push_back(line); //add line as a possible transit connection between these stops
+				}
+			}
+		}
+		
+	}
+
+	return lineConnections;
 }
 
 void ControlCenter::recieveRequest(Request req)
