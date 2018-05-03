@@ -109,6 +109,62 @@ VehicleRecycler::	~VehicleRecycler()
 
 }
 
+Bus::Bus() :Vehicle()
+{
+	occupancy = 0;
+	on_trip = false;
+	number_seats = 45;
+	capacity = 70;
+	type = 4;
+	random = new (Random);
+	if (randseed != 0)
+	{
+		random->seed(randseed);
+	}
+	else
+	{
+		random->randomize();
+	}
+
+}
+Bus::Bus(int id_, int type_, double length_, Route* route_, ODpair* odpair_, double time_) :
+	Vehicle(id_, type_, length_, route_, odpair_, time_)
+{
+	occupancy = 0;
+	on_trip = false;
+	number_seats = 50;
+	capacity = 70;
+	type = 4;
+	random = new (Random);
+	if (randseed != 0)
+	{
+		random->seed(randseed);
+	}
+	else
+	{
+		random->randomize();
+	}
+};
+Bus::Bus(int bv_id_, Bustype* bty)
+{
+	bus_id = bv_id_;
+	type = 4;
+	occupancy = 0;
+	on_trip = false;
+	length = bty->get_length();
+	number_seats = bty->get_number_seats();
+	capacity = bty->get_capacity();
+	random = new (Random);
+	if (randseed != 0)
+	{
+		random->seed(randseed);
+	}
+	else
+	{
+		random->randomize();
+	}
+};
+
 // ***** Special Bus Functions *****
 void Bus::reset ()
 {

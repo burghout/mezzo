@@ -39,35 +39,37 @@ class Dwell_time_function;
 
 class Vehicle
 {
-  public:
-   Vehicle();
-   virtual ~Vehicle(); //!< destructor
-   Vehicle(int id_, int type_, double length_,Route* route_, ODpair* odpair_, double time_);
-   void init (int id_, int type_, double length_, Route* route_, ODpair* odpair_, double time_);
-   double get_length(){return length;}
-   void set_length (double length_) {length = length_;}
-   double get_exit_time(){return exit_time;}
-   double get_start_time(){return start_time;}
-   const odval get_odids () ;
-   void set_exit_time(double time){exit_time=time;}
-   void set_entry_time(double time){entry_time=time;}
-   void set_route (Route* route_) {route=route_; switched=1;}
-   void set_switched(int i) {switched=i;}
-   double get_entry_time() {return entry_time;}
-   void set_curr_link(Link* curr_link_);
-   Link* get_curr_link();
-   Route* get_route() {return route;}
-   Link* nextlink();
-   int get_id() {return id;}
-   int get_type() {return type;}
-   int get_oid();
-   int get_did();
-	void set_entered() {entered=true;}
-	void add_meters(int meters_) {meters+=meters_;}
-	void set_meters(int meters_) {meters=meters_;}
-	int get_meters () {return meters;}
+public:
+	Vehicle();
+	virtual ~Vehicle(); //!< destructor
+	Vehicle(int id_, int type_, double length_, Route* route_, ODpair* odpair_, double time_);
+	void init(int id_, int type_, double length_, Route* route_, ODpair* odpair_, double time_);
+
+	double get_length() { return length; }
+	void set_length(double length_) { length = length_; }
+	double get_exit_time() { return exit_time; }
+	double get_start_time() { return start_time; }
+	const odval get_odids();
+	void set_exit_time(double time) { exit_time = time; }
+	void set_entry_time(double time) { entry_time = time; }
+	void set_route(Route* route_) { route = route_; switched = 1; }
+	void set_switched(int i) { switched = i; }
+	double get_entry_time() { return entry_time; }
+	void set_curr_link(Link* curr_link_);
+	Link* get_curr_link();
+	Route* get_route() { return route; }
+	Link* nextlink();
+	int get_id() { return id; }
+	int get_type() { return type; }
+	int get_oid();
+	int get_did();
+	void set_entered() { entered = true; }
+	void add_meters(int meters_) { meters += meters_; }
+	void set_meters(int meters_) { meters = meters_; }
+	int get_meters() { return meters; }
 	void report(double time);
-  protected:
+  
+protected:
 	int id;
 	Route* route;
 	ODpair * odpair;
@@ -108,59 +110,23 @@ protected:
 
 class Bus : public Vehicle
 {
+
 public:
-	Bus():Vehicle() 
-	{
-		occupancy = 0;
-		on_trip = false;
-		number_seats = 45;
-		capacity = 70;
-		type = 4;
-		random = new (Random);
-		if (randseed != 0)
-		{
-				random->seed(randseed);
-		}
-		else
-		{
-				random->randomize();
-		}		
-	}
-	Bus(int id_, int type_, double length_,Route* route_, ODpair* odpair_, double time_) :
-	Vehicle(id_, type_,length_,route_,odpair_,time_)
-	{	occupancy = 0;
-		on_trip = false;
-		number_seats = 50;
-		capacity = 70;
-		type = 4;
-		random = new (Random);
-		if (randseed != 0)
-		{
-				random->seed(randseed);
-		}
-		else
-		{
-				random->randomize();
-		}		
-	};	
-	Bus (int bv_id_, Bustype* bty) 
-	{	bus_id = bv_id_;
-		type = 4;
-		occupancy = 0;
-		on_trip = false;
-		length = bty->get_length();
-		number_seats = bty->get_number_seats();
-		capacity = bty->get_capacity();
-		random = new (Random);
-		if (randseed != 0)
-		{
-				random->seed(randseed);
-		}
-		else
-		{
-				random->randomize();
-		}		
-	};
+	Bus();
+	Bus(
+		int id_, 
+		int type_, 
+		double length_, 
+		Route* route_, 
+		ODpair* odpair_, 
+		double time_
+	);
+	
+	Bus(
+		int bv_id_, 
+		Bustype* bty
+	);
+
 	virtual ~Bus(); //!< destructor
 	void reset ();
 // GETS and SETS
