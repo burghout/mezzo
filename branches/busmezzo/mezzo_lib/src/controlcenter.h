@@ -187,17 +187,22 @@ public:
 	void addCandidateLine(Busline* line); //add line to CC map of possible lines to create trips for
 
 	//supporting methods for member process classes
-	vector<Busline*> get_lines_between_stops(const vector<Busline*>& lines, int ostop_id, int dstop_id) const; //returns buslines among existing lines given as input that run from the given originstop to the given destination stop (Note: assumes lines are uni-directional and that busline stops are ordered, which they currently are in BusMezzo)
+	vector<Busline*> get_lines_between_stops(const vector<Busline*>& candidateLines, const int ostop_id, const int dstop_id) const; //returns buslines among candidate lines given as input that run from a given originstop to a given destination stop (Note: assumes lines are uni-directional and that busline stops are ordered, which they currently are in BusMezzo)
 
 signals:
 	void requestAccepted();
 	void requestRejected();
 
 private slots:
+	
+	//request related
 	void recieveRequest(Request req);
 
 	void on_requestAccepted();
 	void on_requestRejected();
+
+	//vehicle related
+	void updateFleetState();
 
 private:
 	//OBS! remember to add all mutable members to reset method, including reset functions of process classes
@@ -206,9 +211,9 @@ private:
 	//maps for bookkeeping connected passengers and vehicles
 	map<int, Passenger*> connectedPass_; //passengers currently connected to ControlCenter 
 	map<int, Bus*> connectedVeh_; //transit vehicles currently connected to ControlCenter
+	//map<BusState, vector<Bus*>> fleetState; //among transit vehicles connected to ControlCenter keeps track of which are in each possible bus vehicle (i.e. transit vehicle) state 
 	
-	//maps initialized once with possible routes between stops that this ControlCenter can create trips for
-	vector<Busline*> candidateLines_; //lines (i.e. routes and stops to visit along the route) that this ControlCenter can create trips for
+	vector<Busline*> candidateLines_; //lines (i.e. routes and stops to visit along the route) that this ControlCenter can create trips for (TODO: add this to tripgenerator later, other process classes do not need to know about this?)
 
 	RequestHandler rh_;
 	TripGenerator tg_;

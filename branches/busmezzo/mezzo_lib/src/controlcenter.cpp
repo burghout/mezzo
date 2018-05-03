@@ -93,6 +93,8 @@ void ControlCenter::reset()
 	//Clear all members of process classes
 	rh_.reset();
 	tg_.reset();
+	//tm_.reset();
+	//fs_.reset();
 
 	//Clear all members of ControlCenter
 	connectedPass_.clear();
@@ -109,12 +111,12 @@ void ControlCenter::connectPassenger(Passenger* pass)
 
 	if (!QObject::connect(pass, &Passenger::sendRequest, this, &ControlCenter::recieveRequest, Qt::DirectConnection))
 	{
-		DEBUG_MSG_V(Q_FUNC_INFO << " connection failed!");
+		DEBUG_MSG_V(Q_FUNC_INFO << " connectPassenger failed!");
 		abort();
 	}
 }
 
-void ControlCenter::disconnectPassenger(Passenger * pass)
+void ControlCenter::disconnectPassenger(Passenger* pass)
 {
 	assert(connectedPass_.count(pass->get_id() != 0));
 	connectedPass_.erase(connectedPass_.find(pass->get_id()));
@@ -128,6 +130,12 @@ void ControlCenter::connectVehicle(Bus* transitveh)
 	int bvid = transitveh->get_bus_id();
 	assert(connectedVeh_.count(bvid) == 0); //vehicle should only be added once
 	connectedVeh_[bvid] = transitveh;
+
+	if (!QObject::connect(transitveh, &Bus::stateChanged, this, &ControlCenter::updateFleetState, Qt::DirectConnection))
+	{
+		DEBUG_MSG_V(Q_FUNC_INFO << " connectVehicle failed!");
+		abort();
+	}
 }
 
 void ControlCenter::disconnectVehicle(Bus* transitveh)
@@ -141,12 +149,12 @@ void ControlCenter::addCandidateLine(Busline* line)
 	candidateLines_.push_back(line);
 }
 
-vector<Busline*> ControlCenter::get_lines_between_stops(const vector<Busline*>& lines, int ostop_id, int dstop_id) const
+vector<Busline*> ControlCenter::get_lines_between_stops(const vector<Busline*>& candidateLines, const int ostop_id, const int dstop_id) const
 {
 	vector<Busline*> lineConnections; // lines between stops given as input
-	if (!lines.empty())
+	if (!candidateLines.empty())
 	{
-		for(auto& line : lines)
+		for(auto& line : candidateLines)
 		{
 			if (!line->stops.empty())
 			{
@@ -169,6 +177,7 @@ vector<Busline*> ControlCenter::get_lines_between_stops(const vector<Busline*>& 
 	return lineConnections;
 }
 
+//Slot implementations
 void ControlCenter::recieveRequest(Request req)
 {
 	DEBUG_MSG(Q_FUNC_INFO);
@@ -184,4 +193,9 @@ void ControlCenter::on_requestAccepted()
 void ControlCenter::on_requestRejected()
 {
 	DEBUG_MSG(Q_FUNC_INFO << ": Request Rejected!");
+}
+
+void ControlCenter::updateFleetState()
+{
+	DEBUG_MSG("ControlCenter " << id_ << " - Updating fleet state");
 }
