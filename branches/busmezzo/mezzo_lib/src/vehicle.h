@@ -27,6 +27,8 @@
 #include "busline.h"
 #include "Random.h"
 
+#include <qobject.h>
+
 class ODpair;
 class Route;
 class Link;
@@ -108,23 +110,27 @@ protected:
 	Dwell_time_function* dwell_time_function;
 };
 
-class Bus : public Vehicle
+enum BusState { IdleEmpty, IdlePartiallyFull, IdleFull, DrivingEmpty, DrivingPartiallyFull, DrivingFull, Null }; //used by controlcenter to keep track of fleet state
+class Bus : public QObject, public Vehicle
 {
+	Q_OBJECT
 
 public:
-	Bus();
+	Bus(QObject* parent = nullptr);
 	Bus(
 		int id_, 
 		int type_, 
 		double length_, 
 		Route* route_, 
 		ODpair* odpair_, 
-		double time_
+		double time_,
+		QObject* parent = nullptr
 	);
 	
 	Bus(
 		int bv_id_, 
-		Bustype* bty
+		Bustype* bty,
+		QObject* parent = nullptr
 	);
 
 	virtual ~Bus(); //!< destructor
@@ -150,6 +156,16 @@ public:
 	void record_busvehicle_location (Bustrip* trip,  Busstop* stop, double time);
 	void write_output(ostream & out);
 
+//Control Center
+	BusState get_state() const { return state_; }
+	BusState calc_state(const bool bus_exiting_stop, const int occupancy) const; //returns the BusState of bus depending whether a bus has just entered or exited a stop, and the occupancy of the bus
+	void set_state(const BusState newstate); //sets state_ to newstate and emits stateChanged
+
+	void print_state(); //prints current BusState for debugging purposes (TODO: remove later)
+
+signals:
+	void stateChanged(BusState state); // Signal informing a change of BusState
+
 protected:
 	int	bus_id;
 	Bustype* bus_type;
@@ -160,6 +176,10 @@ protected:
 	Bustrip* curr_trip;
 	bool on_trip; // is true when bus is on a trip and false when waiting for the next trip
 	list <Busvehicle_location> output_vehicle; //!< list of output data for buses visiting stops
+
+private:
+	BusState state_; //state of the vehicle used for DRT service with controlcenter
+
 };
 
 class Busvehicle_location // container object holding output data for stop visits

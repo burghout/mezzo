@@ -109,7 +109,7 @@ VehicleRecycler::	~VehicleRecycler()
 
 }
 
-Bus::Bus() :Vehicle()
+Bus::Bus(QObject* parent) : QObject(parent), Vehicle()
 {
 	occupancy = 0;
 	on_trip = false;
@@ -126,8 +126,9 @@ Bus::Bus() :Vehicle()
 		random->randomize();
 	}
 
+	state_ = Null;
 }
-Bus::Bus(int id_, int type_, double length_, Route* route_, ODpair* odpair_, double time_) :
+Bus::Bus(int id_, int type_, double length_, Route* route_, ODpair* odpair_, double time_, QObject* parent) : QObject(parent),
 	Vehicle(id_, type_, length_, route_, odpair_, time_)
 {
 	occupancy = 0;
@@ -144,8 +145,10 @@ Bus::Bus(int id_, int type_, double length_, Route* route_, ODpair* odpair_, dou
 	{
 		random->randomize();
 	}
+
+	state_ = Null;
 };
-Bus::Bus(int bv_id_, Bustype* bty)
+Bus::Bus(int bv_id_, Bustype* bty, QObject* parent) : QObject(parent)
 {
 	bus_id = bv_id_;
 	type = 4;
@@ -163,6 +166,8 @@ Bus::Bus(int bv_id_, Bustype* bty)
 	{
 		random->randomize();
 	}
+
+	state_ = Null;
 };
 
 // ***** Special Bus Functions *****
@@ -172,6 +177,11 @@ void Bus::reset ()
 	on_trip = true;
 	type = 4;
 	output_vehicle.clear();
+
+	//ControlCenter
+	//disconnect(this, 0, 0, 0); TODO: right now Buses are connected to a controlcenter as they are read, see read_unassignedvehicles. 
+	//Only connected once upon generation, and not reconnected, so no need to reset but maybe in the future
+	state_ = Null;
 }
 
 Bus::~Bus()
@@ -227,6 +237,76 @@ void Bus::write_output(ostream & out)
 	{
 		iter->write(out);
 	}
+}
+
+BusState Bus::calc_state(const bool bus_exiting_stop, const int occupancy) const
+{
+	assert(occupancy <= capacity && occupancy >= 0); //occupancy should be a valid load for this vehicle
+
+	if (!bus_exiting_stop) //if the vehicle is idle/waiting at a stop
+	{
+		if (occupancy == 0) //bus is empty
+			return IdleEmpty;
+		if (occupancy > 0 && occupancy < capacity) //bus is partially full
+			return IdlePartiallyFull;
+		if (occupancy == capacity) //bus is full
+			return IdleFull;
+	}
+	else //if the vehicle is driving
+	{
+		if (occupancy == 0) 
+			return DrivingEmpty;
+		if (occupancy > 0 && occupancy < capacity)
+			return DrivingPartiallyFull;
+		if (occupancy == capacity) 
+			return DrivingFull;
+	}
+
+	DEBUG_MSG_V("Null BusState returned by Bus::calc_state");
+	return Null;
+}
+
+void Bus::set_state(const BusState newstate)
+{
+	if (state_ != newstate)
+	{
+		state_ = newstate;
+		print_state();
+		emit stateChanged(state_);
+	}
+}
+
+void Bus::print_state()
+{
+	cout << "Bus " << bus_id << " is ";
+	switch (state_)
+	{
+	case IdleEmpty:
+		cout << "IdleEmpty";
+		break;
+	case IdlePartiallyFull:
+		cout << "IdlePartiallyFull";
+		break;
+	case IdleFull:
+		cout << "IdleFull";
+		break;
+	case DrivingEmpty:
+		cout << "DrivingEmpty";
+		break;
+	case DrivingPartiallyFull:
+		cout << "DrivingPartiallyFull";
+		break;
+	case DrivingFull:
+		cout << "DrivingFull";
+		break;
+	case Null:
+		cout << "Null";
+		break;
+	default:
+		DEBUG_MSG_V("Something went very wrong");
+		abort();
+	}
+	cout << endl;
 }
 
 // ***** Bus-types functions *****
