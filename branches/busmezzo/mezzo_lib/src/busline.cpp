@@ -34,6 +34,29 @@ struct compare_pair
  int id;
 };
 
+//comparator for Start_trip pairs first by smallest scheduled starttime and then by smallest trip id
+struct compareStartTripByLessTime
+{
+	inline bool operator()(const Start_trip& st1, const Start_trip& st2)
+	{
+		if (st1.second != st2.second) //if start time is not equal
+			return st1.second < st2.second;
+		else
+			return true; //if times are equal than st1 is considered smaller
+	}
+};
+
+struct compareStartTripByGreaterTime
+{
+	inline bool operator()(const Start_trip& st1, const Start_trip& st2)
+	{
+		if (st1.second != st2.second) //if start time is not equal
+			return st1.second > st2.second;
+		else
+			return true; //if times are equal than st1 is considered greater
+	}
+};
+
 // ***** Busline functions *****
 
 Busline::Busline ()
@@ -73,6 +96,8 @@ void Busline::reset ()
 	output_summary.reset();
 	output_line_assign.clear();
 	output_travel_times.clear();
+
+	flex_trips.clear(); //clear all dynamically generated trips that have not completed yet
 }
 
 void Busline::reset_curr_trip ()
@@ -567,6 +592,13 @@ void Busline::write_ttt_output(ostream & out)
 	{
 		(*iter).write(out);
 	}
+}
+
+void Busline::add_flex_trip(Bustrip * trip, double starttime)
+{
+	flex_trips.push_back(Start_trip(trip, starttime));
+	//sort(flex_trips.begin(), flex_trips.end(), compareStartTripByLessTime());//sort trips by starttime
+	sort(flex_trips.begin(), flex_trips.end(), compareStartTripByGreaterTime());//sort trips by starttime
 }
 
 void Busline::update_total_travel_time (Bustrip* trip, double time)

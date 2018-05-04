@@ -248,6 +248,11 @@ public:
 
 	vector <Busstop*>  stops; //!< contains all the stops on this line
 
+	//DRT implementation
+	bool get_flex_line() const { return flex_line; }
+	void add_flex_trip(Bustrip* trip, double starttime); //adds trip with corresponding scheduled start time to flex_trip vector and keeps this vector sorted by start time
+
+
 protected:
 	int id;						//!< line ID
 	int opposite_id;			//!< the line ID of the opposite direction
@@ -274,7 +279,8 @@ protected:
 	vector <Busstop*> tr_stops;	//!< contains all transfer stops for line
 
 	//drt related attributes
-	bool flex_line;
+	bool flex_line;	//!< true if trips can be created dynamically for this line
+	vector<Start_trip> flex_trips; //!< scheduled trips that were created dynamically for this line via a controlcenter
 
     map <Busstop*,pair<Busstop*,pair<double,double> > > disruption_times; //!< contains the expected travel times between a pair of stops in case of disruption (does not affect actual travel time, only passenger information provision). Strat and end times
 	map <Busstop*, double> disruption_cap_reduction;
