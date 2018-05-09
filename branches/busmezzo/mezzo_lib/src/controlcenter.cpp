@@ -65,8 +65,18 @@ TripMatcher::~TripMatcher()
 	DEBUG_MSG("Destroying TM");
 }
 
+//FleetDispatcher
+FleetDispatcher::FleetDispatcher()
+{
+	DEBUG_MSG("Constructing FD");
+}
+FleetDispatcher::~FleetDispatcher()
+{
+	DEBUG_MSG("Destroying FD");
+}
+
 //ControlCenter
-ControlCenter::ControlCenter(int id, QObject* parent) : QObject(parent), id_(id)
+ControlCenter::ControlCenter(int id, Eventlist* eventlist, QObject* parent) : QObject(parent), id_(id), eventlist_(eventlist)
 {
 	QString qname = QString::fromStdString(to_string(id));
 	this->setObjectName(qname); //name of control center does not really matter but useful for debugging purposes
@@ -76,7 +86,6 @@ ControlCenter::ControlCenter(int id, QObject* parent) : QObject(parent), id_(id)
 	QObject::connect(this, &ControlCenter::requestRejected, this, &ControlCenter::on_requestRejected, Qt::DirectConnection);
 	QObject::connect(this, &ControlCenter::requestAccepted, this, &ControlCenter::on_requestAccepted, Qt::DirectConnection);
 }
-
 ControlCenter::~ControlCenter()
 {
 	DEBUG_MSG("Destroying CC" << id_);
@@ -115,7 +124,6 @@ void ControlCenter::connectPassenger(Passenger* pass)
 		abort();
 	}
 }
-
 void ControlCenter::disconnectPassenger(Passenger* pass)
 {
 	assert(connectedPass_.count(pass->get_id() != 0));
@@ -123,7 +131,6 @@ void ControlCenter::disconnectPassenger(Passenger* pass)
 	bool ok = QObject::disconnect(pass, &Passenger::sendRequest, this, &ControlCenter::recieveRequest);
 	assert(ok);
 }
-
 
 void ControlCenter::connectVehicle(Bus* transitveh)
 {
@@ -137,15 +144,17 @@ void ControlCenter::connectVehicle(Bus* transitveh)
 		abort();
 	}
 }
-
 void ControlCenter::disconnectVehicle(Bus* transitveh)
 {
 	assert(connectedVeh_.count(transitveh->get_bus_id() != 0));
 	connectedVeh_.erase(connectedVeh_.find(transitveh->get_bus_id()));
+	bool ok = QObject::disconnect(transitveh, &Bus::stateChanged, this, &ControlCenter::updateFleetState);
+	assert(ok);
 }
 
 void ControlCenter::addCandidateLine(Busline* line)
 {
+	assert(line->get_flex_line()); //only flex lines should be added to control center for now
 	candidateLines_.push_back(line);
 }
 
@@ -184,12 +193,11 @@ void ControlCenter::recieveRequest(Request req)
 	assert(req.time >= 0 && req.load > 0); //assert that request is valid
 	rh_.addRequest(req) ? emit requestAccepted() : emit requestRejected();
 }
-
 void ControlCenter::on_requestAccepted()
 {
 	DEBUG_MSG(Q_FUNC_INFO << ": Request Accepted!");
+	//tg_.generate_trip(eventlist_);
 }
-
 void ControlCenter::on_requestRejected()
 {
 	DEBUG_MSG(Q_FUNC_INFO << ": Request Rejected!");
@@ -199,3 +207,5 @@ void ControlCenter::updateFleetState()
 {
 	DEBUG_MSG("ControlCenter " << id_ << " - Updating fleet state");
 }
+
+

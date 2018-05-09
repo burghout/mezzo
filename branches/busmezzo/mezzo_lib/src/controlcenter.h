@@ -11,7 +11,7 @@ General Notes:
 - RequestHandler
 - TripGenerator
 - TripMatcher
-- FleetScheduler
+- FleetDispatcher
 
 Registers (unregisters) service vehicles
 Offers interface to connected vehicles as well as connected passengers
@@ -64,7 +64,7 @@ struct Request
 Q_DECLARE_METATYPE(Request);
 
 /*less-than comparison of Requests in the order of smallest time, smallest load, smallest origin stop id, smallest destination stop id and finally smallest passenger id*/
-struct compareRequestByTime
+struct compareRequestByLessTime
 {
 	inline bool operator() (const Request& req1, const Request& req2)
 	{
@@ -97,7 +97,8 @@ private:
 };
 
 
-/*Responsible generating trips and adding these to TripSet*/
+/*Responsible generating trips without vehicles and adding these to TripSet as well as trips for corresponding Busline*/
+class Bustrip;
 class TripGenerator
 {
 public:
@@ -105,6 +106,7 @@ public:
 	~TripGenerator();
 
 	void reset();
+	// 1. add trip to busline, now busline::execute will activate busline for its first Bustrip::activate call. if several trips are generated in a chain
 
 private:
 	vector<double> tripSet;
@@ -117,6 +119,8 @@ class TripMatcher
 public:
 	explicit TripMatcher(IMatchingStrategy* matchingstrategy = nullptr);
 	~TripMatcher();
+
+	//find_candidate_vehicles
 
 	void match_trip()
 	{
@@ -161,6 +165,19 @@ public:
 	}
 };
 
+/*In charge of dispatching transit vehicle - trip pairs*/
+class FleetDispatcher
+{
+public:
+	FleetDispatcher();
+	~FleetDispatcher();
+
+	//call Bustrip::activate somehow or Busline::execute
+	//void reset()
+
+private:
+
+};
 
 /*Groups togethers processes that control or modify transit Vehicles and provides an interface to Passenger*/
 class Passenger;
@@ -171,7 +188,7 @@ class ControlCenter : public QObject
 	Q_OBJECT
 
 public:
-	explicit ControlCenter(int id = 0, QObject* parent = nullptr);
+	explicit ControlCenter(int id = 0, Eventlist* eventlist = nullptr, QObject* parent = nullptr);
 	~ControlCenter();
 
 	void reset();
@@ -207,6 +224,7 @@ private slots:
 private:
 	//OBS! remember to add all mutable members to reset method, including reset functions of process classes
 	const int id_;
+	const Eventlist* eventlist_; //reference to the eventlist to be passed to TripGenerator or possibly FleetScheduler
 	
 	//maps for bookkeeping connected passengers and vehicles
 	map<int, Passenger*> connectedPass_; //passengers currently connected to ControlCenter 
@@ -218,5 +236,6 @@ private:
 	RequestHandler rh_;
 	TripGenerator tg_;
 	TripMatcher tm_;
+	FleetDispatcher fd_;
 };
 #endif
