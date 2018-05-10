@@ -5231,9 +5231,6 @@ bool Network::read_unassignedvehicle(istream& in) //reads a bus vehicles that ar
 	
 	//bus->init(bus->get_id(), 4, bus->get_length(), route, odpair, time); // initialize this vehicle as a type of bus (vehicle progression functions e.g. Link::enter_veh depend on this) 
 																		//with a route and odpair so that this vehicle can find it way to its first stop
-	//connect vehicle to a control center
-	ccmap[1]->connectVehicle(bus);
-
 	//find the stop for which the bus is initialized at
 	init_stop = (*(find_if(busstops.begin(), busstops.end(), compare <Busstop>(init_stop_id))));
 
@@ -7778,6 +7775,7 @@ bool Network::init()
 			Bus* bus = get<0>(drt_init);
 			double init_time = get<2>(drt_init);
 
+			ccmap[1]->connectVehicle(bus); //connect vehicle to a control center
 			stop->add_unassigned_bus(bus, init_time); //should be in a Null state until their init_time
 			eventlist->add_event(init_time, stop);	//add a Busstop event scheduled for the init_time of vehicle  to switch state of bus to IdleEmpty from Null
 		}

@@ -179,8 +179,7 @@ void Bus::reset ()
 	output_vehicle.clear();
 
 	//ControlCenter
-	//disconnect(this, 0, 0, 0); TODO: right now Buses are connected to a controlcenter as they are read, see read_unassignedvehicles. 
-	//Only connected once upon generation, and not reconnected, so no need to reset but maybe in the future
+	disconnect(this, 0, 0, 0); //disconnect all signal slots (will reconnect to control center in Network::init)
 	state_ = Null;
 }
 
