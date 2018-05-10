@@ -164,7 +164,7 @@ public:
 	void print_state(); //prints current BusState for debugging purposes (TODO: remove later)
 
 signals:
-	void stateChanged(BusState state); // Signal informing a change of BusState
+	void stateChanged(int bus_id, BusState state); // Signal informing a change of BusState
 
 protected:
 	int	bus_id;

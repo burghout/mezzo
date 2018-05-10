@@ -203,9 +203,10 @@ void ControlCenter::on_requestRejected()
 	DEBUG_MSG(Q_FUNC_INFO << ": Request Rejected!");
 }
 
-void ControlCenter::updateFleetState()
+void ControlCenter::updateFleetState(int bus_id, BusState newstate)
 {
 	DEBUG_MSG("ControlCenter " << id_ << " - Updating fleet state");
+	DEBUG_MSG("Bus " << bus_id << " - " << newstate );
 }
 
 

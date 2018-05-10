@@ -183,6 +183,7 @@ private:
 class Passenger;
 class Bus;
 class Busline;
+enum BusState;
 class ControlCenter : public QObject
 {
 	Q_OBJECT
@@ -219,7 +220,7 @@ private slots:
 	void on_requestRejected();
 
 	//vehicle related
-	void updateFleetState();
+	void updateFleetState(int bus_id, BusState newstate);
 
 private:
 	//OBS! remember to add all mutable members to reset method, including reset functions of process classes

@@ -252,7 +252,7 @@ BusState Bus::calc_state(const bool bus_exiting_stop, const int occupancy) const
 		if (occupancy == capacity) //bus is full
 			return IdleFull;
 	}
-	else //if the vehicle is driving
+	else //if the vehicle has begun to drive
 	{
 		if (occupancy == 0) 
 			return DrivingEmpty;
@@ -272,7 +272,7 @@ void Bus::set_state(const BusState newstate)
 	{
 		state_ = newstate;
 		print_state();
-		emit stateChanged(state_);
+		emit stateChanged(bus_id, state_);
 	}
 }
 
