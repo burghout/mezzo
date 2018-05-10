@@ -169,7 +169,7 @@ public:
 		string					name_,						//!< a descriptive name
 		Busroute*				busroute_,					//!< bus route
 		vector <Busstop*>		stops_,						//!< stops on line
-		Vtype*					vtype_, 
+		Vtype*					vtype_,
 		ODpair*					odpair_,					//!< OD pair
 		int						holding_strategy_,			//!< indicates the type of holding strategy used for line
 		float					max_headway_holding_,		//!< threshold parameter relevant in case holding strategies 1 or 3 are chosen or max holding time in [sec] in case of holding strategy 6
@@ -708,6 +708,7 @@ public:
 
 //control center related functions
 	ControlCenter* get_CC() { return CC; }
+	void add_unassigned_bus(Bus* bus, double arrival_time); //add bus to vector of unassigned (i.e. no trip and no busline) bus vehicles at this stop, sorted by arrival time. If connected to a control center, the vehicle may also broadcast its change of state
 
 // relevant only for demand format 2
 	multi_rates multi_arrival_rates; //!< parameter lambda that defines the poission proccess of passengers arriving at the stop for each sequential stop
@@ -779,8 +780,9 @@ protected:
     // walking times between steps
     map<Busstop*, vector<Walking_time_dist*> > walking_time_distribution_map; //!< contains set of distributions for a given destination node
 
-	//control center
-	ControlCenter* CC;
+	//drt implementation
+	ControlCenter* CC; //control center that this stop is associated with
+	vector<pair<Bus*,double>> unassigned_buses_at_stop; //transit vehicles currently at stop that are not assigned to any trip along with their time of arrival to this stop
 
 	// transfer synchronization
 	vector<pair<Bustrip*, int> > trips_awaiting_transfers;	//!< David added 2016-05-30: contains trips that are currently waiting to synchronize transfers with a connecting trip, paired with the line ID of the connecting trip

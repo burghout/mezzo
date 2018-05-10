@@ -598,7 +598,7 @@ void Busline::add_flex_trip(Bustrip * trip, double starttime)
 {
 	flex_trips.push_back(Start_trip(trip, starttime));
 	//sort(flex_trips.begin(), flex_trips.end(), compareStartTripByLessTime());//sort trips by starttime
-	sort(flex_trips.begin(), flex_trips.end(), compareStartTripByGreaterTime());//sort trips by starttime
+	sort(flex_trips.begin(), flex_trips.end(), compareStartTripByGreaterTime());//sort trips by starttime starting with the largest starttime at the front of the vector to the smallest at the back
 }
 
 void Busline::update_total_travel_time (Bustrip* trip, double time)
@@ -1080,6 +1080,7 @@ void Busstop::reset()
 	expected_arrivals.clear();
 	expected_bus_arrivals.clear();
 	buses_at_stop.clear();
+	unassigned_buses_at_stop.clear();
 	last_arrivals.clear();
 	last_departures.clear();
 	had_been_visited.clear();
@@ -2173,6 +2174,19 @@ int Busstop::calc_total_nr_waiting ()
 		}
 	}
 return total_nr_waiting;
+}
+
+void Busstop::add_unassigned_bus(Bus* bus, double arrival_time)
+{
+	DEBUG_MSG("Adding bus " << bus->get_bus_id() << " to unassigned buses at stop " << name);
+	unassigned_buses_at_stop.push_back(make_pair(bus, arrival_time));
+	sort(unassigned_buses_at_stop.begin(), unassigned_buses_at_stop.end(), 
+		[](auto const& left, auto const& right) 
+		{
+			return left.second > right.second;
+		}
+	); //keep vector sorted by arrival time (smallest at the back of the vector)
+	bus->set_state(IdleEmpty); //update state of bus to IdleEmpty and broadcast state change to control center if connected to one
 }
 
 void Busstop::record_busstop_visit (Bustrip* trip, double enter_time)  // creates a log-file for stop-related info
