@@ -414,9 +414,9 @@ int Network::reset()
 	//drt vehicles
 	for (auto& drtvehicle : drtvehicles)
 	{
-		drtvehicle->reset(); 
+		get<0>(drtvehicle)->reset(); 
 		/*Note: drtvehicle is still a Bus vehicle, 
-		separate vector for separate handling output. 
+		separate vector with tuples for separate handling output as well as initial stop and time. 
 		Might just include these in busvehicle in the future however */
 	}
 
@@ -1436,7 +1436,7 @@ bool Network::readtransitnetwork(string name) //!< reads the stops, distances be
     int format;
 
 	//Create ControlCenters here or somewhere else. OBS: currently a pointer to this CC is given to Busstop via its constructor
-	ControlCenter* cc = new ControlCenter(1);
+	ControlCenter* cc = new ControlCenter(1, eventlist);
 	ccmap[1] = cc;
 
     // First read the busstops
@@ -5201,6 +5201,8 @@ bool Network::read_unassignedvehicle(istream& in) //reads a bus vehicles that ar
 	int init_stop_id; //id of stop that bus is initialized at (generated in an idle state)
 	Busstop* init_stop;
 	double init_time; //time at which bus is generated
+	Busline* init_line; //initial line (containing a route and odpair for which bus is generated (init_stop is the first stop on this line))
+	DrtVehicleInit unassignedvehicle; //tuple with vehicle, init stop and init time
 
 	in >> bracket;
 	if (bracket != '{')
@@ -5227,13 +5229,16 @@ bool Network::read_unassignedvehicle(istream& in) //reads a bus vehicles that ar
 	bus->set_bustype_attributes(bty);
 	bus->set_curr_trip(nullptr); // bus has no trip assigned to it, on_trip should = false
 	
+	//bus->init(bus->get_id(), 4, bus->get_length(), route, odpair, time); // initialize this vehicle as a type of bus (vehicle progression functions e.g. Link::enter_veh depend on this) 
+																		//with a route and odpair so that this vehicle can find it way to its first stop
+	//connect vehicle to a control center
+	ccmap[1]->connectVehicle(bus);
+
 	//find the stop for which the bus is initialized at
 	init_stop = (*(find_if(busstops.begin(), busstops.end(), compare <Busstop>(init_stop_id))));
 
-	//create an event for its entry at this stop (should add it to an idle vehicle vector there?)
-
-
-	drtvehicles.push_back(bus);
+	unassignedvehicle = make_tuple(bus, init_stop, init_time);
+	drtvehicles.push_back(unassignedvehicle);
 
 	return true;
 }
@@ -7762,6 +7767,21 @@ bool Network::init()
             }
         }
     }
+	//Initialize the DRT vehicles to their starting stop at their starting time
+	if (theParameters->drt && !drtvehicles.empty())
+	{
+		DEBUG_MSG_V("Initializing drt trips!!!"); //Note: all drtvehicles are connected to a controlcenter when reading unassigned vehicles
+		//Add buses to vector of unassigned vehicles and initial Busstop
+		for (auto const & drt_init : drtvehicles)
+		{
+			Busstop* stop = get<1>(drt_init);
+			Bus* bus = get<0>(drt_init);
+			double init_time = get<2>(drt_init);
+
+			stop->add_unassigned_bus(bus, init_time); //should be in a Null state until their init_time
+			eventlist->add_event(init_time, stop);	//add a Busstop event scheduled for the init_time of vehicle  to switch state of bus to IdleEmpty from Null
+		}
+	}
 #endif //_BUSES
 #ifdef _DEBUG_NETWORK
     cout << "turnings initialised" << endl;

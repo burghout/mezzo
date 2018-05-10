@@ -384,7 +384,6 @@ protected:
 	vector <Dwell_time_function*> dt_functions;
     vector <Bustype*> bustypes; // types of bus vehicles
     vector <Bus*> busvehicles; // a list of the bus vehicles
-	vector <Bus*> drtvehicles; // all unassigned vehicles that are not fixed schedule fixed line on input
 	vector <ODstops*> odstops;
 	map <Busstop*,vector<ODstops*> > odstops_map;
     map <string,Busstop*> busstop_name_map; //!< mapping PT node names to their object
@@ -402,8 +401,11 @@ protected:
 	map<ODSLL, Travel_time> ivt_rec; //the record of in-vehicle time data
 	int day;
 
-	//Control Center
-	map<int, ControlCenter*> ccmap;
+	//DRT implementation
+#include <tuple>
+	typedef std::tuple<Bus*, Busstop*, double> DrtVehicleInit; //un-scheduled vehicle, initial busstop, and initial time
+	map<int, ControlCenter*> ccmap; //all control centers with id as key
+	vector <DrtVehicleInit> drtvehicles; // all unassigned vehicles that are not fixed schedule fixed line on input
 
 	//Shortest path graph
 #ifndef _USE_VAR_TIMES
