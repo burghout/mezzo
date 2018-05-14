@@ -27,17 +27,22 @@ RequestHandler::~RequestHandler()
 
 void RequestHandler::reset()
 {
-	requestSet.clear();
+	requestSet_.clear();
 }
 
-bool RequestHandler::addRequest(Request vehRequest)
+bool RequestHandler::addRequest(const Request vehRequest)
 {
-	if (find(requestSet.begin(), requestSet.end(), vehRequest) == requestSet.end())
+	if (find(requestSet_.begin(), requestSet_.end(), vehRequest) == requestSet_.end()) //if request does not already exist in set (which it shouldnt)
 	{
-		requestSet.push_back(vehRequest);
+		requestSet_.insert(vehRequest);
 		return true;
 	}
 	return false;
+}
+
+void RequestHandler::removeRequest(const Request vehRequest)
+{
+	requestSet_.erase(vehRequest);
 }
 
 //TripGenerator
@@ -138,6 +143,7 @@ void ControlCenter::connectVehicle(Bus* transitveh)
 	assert(connectedVeh_.count(bvid) == 0); //vehicle should only be added once
 	connectedVeh_[bvid] = transitveh;
 
+	//connect bus state changes to control center
 	if (!QObject::connect(transitveh, &Bus::stateChanged, this, &ControlCenter::updateFleetState, Qt::DirectConnection))
 	{
 		DEBUG_MSG_V(Q_FUNC_INFO << " connectVehicle failed!");
@@ -193,6 +199,13 @@ void ControlCenter::recieveRequest(Request req)
 	assert(req.time >= 0 && req.load > 0); //assert that request is valid
 	rh_.addRequest(req) ? emit requestAccepted() : emit requestRejected();
 }
+
+void ControlCenter::cancelRequest(Request req)
+{
+	DEBUG_MSG(Q_FUNC_INFO);
+	rh_.removeRequest(req);
+}
+
 void ControlCenter::on_requestAccepted()
 {
 	DEBUG_MSG(Q_FUNC_INFO << ": Request Accepted!");

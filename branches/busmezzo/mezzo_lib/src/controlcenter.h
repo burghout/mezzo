@@ -20,6 +20,7 @@ Offers interface to connected vehicles as well as connected passengers
 
 #include <vector>
 #include <map>
+#include <set>
 #include <qobject.h>
 
 //includes for bookkeeping maps in controlcenter (may remove in the future)
@@ -90,10 +91,11 @@ public:
 
 	void reset();
 
-	bool addRequest(Request vehRequest);
+	bool addRequest(const Request vehRequest); //adds request vehRequest to the requestSet
+	void removeRequest(const Request vehRequest); //removes request vehRequest from the requestSet if it exists
 
 private:
-	vector<Request> requestSet;
+	set<Request, compareRequestByLessTime> requestSet_; //set of recieved requests sorted by time
 };
 
 
@@ -117,7 +119,7 @@ class IMatchingStrategy;
 class TripMatcher
 {
 public:
-	explicit TripMatcher(IMatchingStrategy* matchingstrategy = nullptr);
+	explicit TripMatcher(IMatchingStrategy* matchingStrategy = nullptr);
 	~TripMatcher();
 
 	//find_candidate_vehicles
@@ -127,20 +129,20 @@ public:
 		//matchingStrategy_->find_tripvehicle_match(TripQueue)
 	}
 
-	void setMatchingStrategy(IMatchingStrategy* matchingstrategy) 
+	void setMatchingStrategy(IMatchingStrategy* matchingStrategy) 
 	{
-		if (!matchingstrategy)
+		if (!matchingStrategy)
 		{
 			DEBUG_MSG_V("setMatchingStrategy failed!");
 			abort();
 		}
 
 		DEBUG_MSG("Changing matching strategy");
-		matchingStrategy_ = matchingstrategy;
+		matchingStrategy_ = matchingStrategy;
 	}
 
 private:
-	vector<double> matchedTripQueue;
+	vector<double> matchedTripQueue_;
 	IMatchingStrategy* matchingStrategy_;
 };
 
@@ -215,11 +217,12 @@ private slots:
 	
 	//request related
 	void recieveRequest(Request req);
+	void cancelRequest(Request req);
 
 	void on_requestAccepted();
 	void on_requestRejected();
 
-	//vehicle related
+	//fleet related
 	void updateFleetState(int bus_id, BusState newstate);
 
 private:
