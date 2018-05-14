@@ -37,7 +37,7 @@ struct compare_pair
 //comparator for Start_trip pairs first by smallest scheduled starttime and then by smallest trip id
 struct compareStartTripByLessTime
 {
-	inline bool operator()(const Start_trip& st1, const Start_trip& st2)
+	inline bool operator()(const Start_trip& st1, const Start_trip& st2) const
 	{
 		if (st1.second != st2.second) //if start time is not equal
 			return st1.second < st2.second;
@@ -48,7 +48,7 @@ struct compareStartTripByLessTime
 
 struct compareStartTripByGreaterTime
 {
-	inline bool operator()(const Start_trip& st1, const Start_trip& st2)
+	inline bool operator()(const Start_trip& st1, const Start_trip& st2) const
 	{
 		if (st1.second != st2.second) //if start time is not equal
 			return st1.second > st2.second;

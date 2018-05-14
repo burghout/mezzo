@@ -66,7 +66,7 @@ Q_DECLARE_METATYPE(Request);
 /*less-than comparison of Requests in the order of smallest time, smallest load, smallest origin stop id, smallest destination stop id and finally smallest passenger id*/
 struct compareRequestByLessTime
 {
-	inline bool operator() (const Request& req1, const Request& req2)
+	inline bool operator() (const Request& req1, const Request& req2) const
 	{
 		if (req1.time != req2.time)
 			return req1.time < req2.time;
