@@ -52,7 +52,7 @@ Passenger::Passenger (int pass_id, double start_time_, ODstops* OD_stop_, Contro
 			DEBUG_MSG_V(Q_FUNC_INFO << "CC not initialized");
 			abort();
 		}
-		assert(this->receivers(SIGNAL(sendRequest(Request))) == 0); //passenger should have no recievers when constructed
+		
 		CC->connectPassenger(this);
 	}
 }
@@ -265,7 +265,7 @@ bool Passenger::execute(Eventlist *eventlist, double time)
 	if (already_walked == false) // just book the event of arriving at the next stop (origin)
 	{
 		already_walked = true;
-		start(eventlist);
+		start(eventlist, time);
 		//eventlist->add_event(time, this);
 	}
 	else

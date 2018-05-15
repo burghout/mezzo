@@ -67,7 +67,7 @@ public:
 
 	bool execute(Eventlist* eventlist, double time); //!< called every time passengers choose to walk to another stop (origin/transfer), puts the passenger at the waiting list at the right timing
 	void walk(double time);
-	void start(Eventlist* eventlist);
+	void start(Eventlist* eventlist, double time);
 
 	// Passenger decision processes
 	bool	 make_boarding_decision (Bustrip* arriving_bus, double time);	//!< boarding decision making 
@@ -128,7 +128,7 @@ private:
 	Request createRequest(int load = 1, double time = -1); //creates a request for this passenger with a given load and a given time (Note: uses protected members of Passenger)
 public:
 signals:
-	void sendRequest(Request req); //signal to send Request to ControlCenter
+	void sendRequest(Request req, double time); //signal to send Request to ControlCenter along with time in which signal is sent
 
 protected:
 	int passenger_id;
