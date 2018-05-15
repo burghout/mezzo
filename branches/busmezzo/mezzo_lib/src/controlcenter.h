@@ -169,6 +169,7 @@ class Passenger;
 class Bus;
 class Busline;
 enum BusState;
+enum class BusState;
 class ControlCenter : public QObject
 {
 	Q_OBJECT

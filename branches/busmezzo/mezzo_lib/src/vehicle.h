@@ -110,7 +110,16 @@ protected:
 	Dwell_time_function* dwell_time_function;
 };
 
-enum BusState { IdleEmpty, IdlePartiallyFull, IdleFull, DrivingEmpty, DrivingPartiallyFull, DrivingFull, Null }; //used by controlcenter to keep track of fleet state
+enum class BusState //used by controlcenter to keep track of fleet state
+{ 
+	Null = 0, 
+	IdleEmpty, 
+	IdlePartiallyFull, 
+	IdleFull, 
+	DrivingEmpty, 
+	DrivingPartiallyFull, 
+	DrivingFull 
+}; 
 class Bus : public QObject, public Vehicle
 {
 	Q_OBJECT

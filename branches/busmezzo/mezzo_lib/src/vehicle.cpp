@@ -126,7 +126,7 @@ Bus::Bus(QObject* parent) : QObject(parent), Vehicle()
 		random->randomize();
 	}
 
-	state_ = Null;
+	state_ = BusState::Null;
 }
 Bus::Bus(int id_, int type_, double length_, Route* route_, ODpair* odpair_, double time_, QObject* parent) : QObject(parent),
 	Vehicle(id_, type_, length_, route_, odpair_, time_)
@@ -146,7 +146,7 @@ Bus::Bus(int id_, int type_, double length_, Route* route_, ODpair* odpair_, dou
 		random->randomize();
 	}
 
-	state_ = Null;
+	state_ = BusState::Null;
 };
 Bus::Bus(int bv_id_, Bustype* bty, QObject* parent) : QObject(parent)
 {
@@ -167,7 +167,7 @@ Bus::Bus(int bv_id_, Bustype* bty, QObject* parent) : QObject(parent)
 		random->randomize();
 	}
 
-	state_ = Null;
+	state_ = BusState::Null;
 };
 
 // ***** Special Bus Functions *****
@@ -180,7 +180,7 @@ void Bus::reset ()
 
 	//ControlCenter
 	disconnect(this, 0, 0, 0); //disconnect all signal slots (will reconnect to control center in Network::init)
-	state_ = Null;
+	state_ = BusState::Null;
 }
 
 Bus::~Bus()
@@ -245,24 +245,24 @@ BusState Bus::calc_state(const bool bus_exiting_stop, const int occupancy) const
 	if (!bus_exiting_stop) //if the vehicle is idle/waiting at a stop
 	{
 		if (occupancy == 0) //bus is empty
-			return IdleEmpty;
+			return BusState::IdleEmpty;
 		if (occupancy > 0 && occupancy < capacity) //bus is partially full
-			return IdlePartiallyFull;
+			return BusState::IdlePartiallyFull;
 		if (occupancy == capacity) //bus is full
-			return IdleFull;
+			return BusState::IdleFull;
 	}
 	else //if the vehicle has begun to drive
 	{
 		if (occupancy == 0) 
-			return DrivingEmpty;
+			return BusState::DrivingEmpty;
 		if (occupancy > 0 && occupancy < capacity)
-			return DrivingPartiallyFull;
+			return BusState::DrivingPartiallyFull;
 		if (occupancy == capacity) 
-			return DrivingFull;
+			return BusState::DrivingFull;
 	}
 
 	DEBUG_MSG_V("Null BusState returned by Bus::calc_state");
-	return Null;
+	return BusState::Null;
 }
 
 void Bus::set_state(const BusState newstate, const double time)
@@ -280,26 +280,26 @@ void Bus::print_state()
 	cout << "Bus " << bus_id << " is ";
 	switch (state_)
 	{
-	case IdleEmpty:
+	case BusState::IdleEmpty:
 		cout << "IdleEmpty";
 		break;
-	case IdlePartiallyFull:
+	case BusState::IdlePartiallyFull:
 		cout << "IdlePartiallyFull";
 		break;
-	case IdleFull:
+	case BusState::IdleFull:
 		cout << "IdleFull";
 		break;
-	case DrivingEmpty:
+	case BusState::DrivingEmpty:
 		cout << "DrivingEmpty";
 		break;
-	case DrivingPartiallyFull:
+	case BusState::DrivingPartiallyFull:
 		cout << "DrivingPartiallyFull";
 		break;
-	case DrivingFull:
+	case BusState::DrivingFull:
 		cout << "DrivingFull";
 		break;
-	case Null:
-		cout << "Null";
+	case BusState::Null:
+		cout << "NullBusState";
 		break;
 	default:
 		DEBUG_MSG_V("Something went very wrong");

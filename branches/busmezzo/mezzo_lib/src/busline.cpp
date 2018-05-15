@@ -1331,7 +1331,7 @@ bool Busstop::execute(Eventlist* eventlist, double time) // is executed by the e
 		if (ua_bus.second == time)
 		{
 			DEBUG_MSG("Activating unassigned bus " << ua_bus.first->get_bus_id() << " at time " << time << " at stop " << name);
-			ua_bus.first->set_state(IdleEmpty, time); //vehicle is now available and signals its availability to control center
+			ua_bus.first->set_state(BusState::IdleEmpty, time); //vehicle is now available and signals its availability to control center
 		} 
 	}
 
