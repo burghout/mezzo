@@ -30,19 +30,30 @@ void RequestHandler::reset()
 	requestSet_.clear();
 }
 
-bool RequestHandler::addRequest(const Request vehRequest)
+bool RequestHandler::addRequest(const Request req)
 {
-	if (find(requestSet_.begin(), requestSet_.end(), vehRequest) == requestSet_.end()) //if request does not already exist in set (which it shouldnt)
+	if (find(requestSet_.begin(), requestSet_.end(), req) == requestSet_.end()) //if request does not already exist in set (which it shouldnt)
 	{
-		requestSet_.insert(vehRequest);
+		requestSet_.insert(req);
 		return true;
 	}
 	return false;
 }
 
-void RequestHandler::removeRequest(const Request vehRequest)
+void RequestHandler::removeRequest(const int pass_id)
 {
-	requestSet_.erase(vehRequest);
+	set<Request>::iterator it;
+	it = find_if(requestSet_.begin(), requestSet_.end(),
+			[pass_id](const Request& req) -> bool
+			{
+				return req.pass_id == pass_id;
+			}
+		);
+
+	if (it != requestSet_.end())
+		requestSet_.erase(it);
+	else
+		DEBUG_MSG_V("Request for pass id " << pass_id << " not found.");
 }
 
 //TripGenerator
@@ -87,9 +98,7 @@ ControlCenter::ControlCenter(int id, Eventlist* eventlist, QObject* parent) : QO
 	this->setObjectName(qname); //name of control center does not really matter but useful for debugging purposes
 	DEBUG_MSG("Constructing CC" << id_);
 
-	//connect internal signal slots
-	QObject::connect(this, &ControlCenter::requestRejected, this, &ControlCenter::on_requestRejected, Qt::DirectConnection);
-	QObject::connect(this, &ControlCenter::requestAccepted, this, &ControlCenter::on_requestAccepted, Qt::DirectConnection);
+	connectInternal(); //connect internal signal slots
 }
 ControlCenter::~ControlCenter()
 {
@@ -100,9 +109,7 @@ void ControlCenter::reset()
 {
 	disconnect(this, 0, 0, 0); //Disconnect all signals of controlcenter
 
-	//reconnect internal signal slots
-	QObject::connect(this, &ControlCenter::requestRejected, this, &ControlCenter::on_requestRejected, Qt::DirectConnection);
-	QObject::connect(this, &ControlCenter::requestAccepted, this, &ControlCenter::on_requestAccepted, Qt::DirectConnection);
+	connectInternal(); //reconnect internal signal slots
 
 	//Clear all members of process classes
 	rh_.reset();
@@ -115,6 +122,21 @@ void ControlCenter::reset()
 	connectedVeh_.clear();
 }
 
+void ControlCenter::connectInternal()
+{
+	bool ok;
+	ok = QObject::connect(this, &ControlCenter::requestRejected, this, &ControlCenter::on_requestRejected, Qt::DirectConnection);
+	assert(ok);
+	ok = QObject::connect(this, &ControlCenter::requestAccepted, this, &ControlCenter::on_requestAccepted, Qt::DirectConnection);
+	assert(ok);
+
+	//Triggers to generate trips via TripGenerator
+	ok = QObject::connect(this, &ControlCenter::requestAccepted, this, &ControlCenter::generateTrip, Qt::DirectConnection); 
+	assert(ok);
+	ok = QObject::connect(this, &ControlCenter::fleetStateChanged, this, &ControlCenter::generateTrip, Qt::DirectConnection);
+	assert(ok);
+}
+
 void ControlCenter::connectPassenger(Passenger* pass)
 {
 	//DEBUG_MSG("Testing unique connection");
@@ -125,7 +147,12 @@ void ControlCenter::connectPassenger(Passenger* pass)
 
 	if (!QObject::connect(pass, &Passenger::sendRequest, this, &ControlCenter::recieveRequest, Qt::DirectConnection))
 	{
-		DEBUG_MSG_V(Q_FUNC_INFO << " connectPassenger failed!");
+		DEBUG_MSG_V(Q_FUNC_INFO << " connecting Passenger::sendRequest to ControlCenter::recieveRequest failed!");
+		abort();
+	}
+	if (!QObject::connect(pass, &Passenger::boardedBus, this, &ControlCenter::removeRequest, Qt::DirectConnection))
+	{
+		DEBUG_MSG_V(Q_FUNC_INFO << " connecting Passenger::boardedBus to ControlCenter::removeRequest failed!");
 		abort();
 	}
 }
@@ -134,6 +161,8 @@ void ControlCenter::disconnectPassenger(Passenger* pass)
 	assert(connectedPass_.count(pass->get_id() != 0));
 	connectedPass_.erase(connectedPass_.find(pass->get_id()));
 	bool ok = QObject::disconnect(pass, &Passenger::sendRequest, this, &ControlCenter::recieveRequest);
+	assert(ok);
+	ok = QObject::disconnect(pass, &Passenger::boardedBus, this, &ControlCenter::removeRequest);
 	assert(ok);
 }
 
@@ -193,27 +222,26 @@ vector<Busline*> ControlCenter::get_lines_between_stops(const vector<Busline*>& 
 }
 
 //Slot implementations
-void ControlCenter::recieveRequest(Request req)
+void ControlCenter::recieveRequest(Request req, double time)
 {
 	DEBUG_MSG(Q_FUNC_INFO);
 	assert(req.time >= 0 && req.load > 0); //assert that request is valid
-	rh_.addRequest(req) ? emit requestAccepted() : emit requestRejected();
+	rh_.addRequest(req) ? emit requestAccepted(time) : emit requestRejected(time);
 }
 
-void ControlCenter::cancelRequest(Request req)
+void ControlCenter::removeRequest(int pass_id)
 {
 	DEBUG_MSG(Q_FUNC_INFO);
-	rh_.removeRequest(req);
+	rh_.removeRequest(pass_id);
 }
 
-void ControlCenter::on_requestAccepted()
+void ControlCenter::on_requestAccepted(double time)
 {
-	DEBUG_MSG(Q_FUNC_INFO << ": Request Accepted!");
-	//tg_.generate_trip(eventlist_);
+	DEBUG_MSG(Q_FUNC_INFO << ": Request Accepted at time " << time);
 }
-void ControlCenter::on_requestRejected()
+void ControlCenter::on_requestRejected(double time)
 {
-	DEBUG_MSG(Q_FUNC_INFO << ": Request Rejected!");
+	DEBUG_MSG(Q_FUNC_INFO << ": Request Rejected at time " << time);
 }
 
 void ControlCenter::updateFleetState(int bus_id, BusState newstate)
@@ -222,4 +250,8 @@ void ControlCenter::updateFleetState(int bus_id, BusState newstate)
 	DEBUG_MSG("Bus " << bus_id << " - " << newstate );
 }
 
-
+void ControlCenter::generateTrip(double time)
+{
+	if (tg_.generateTrip(rh_, time))
+		DEBUG_MSG("Trip generated");
+}

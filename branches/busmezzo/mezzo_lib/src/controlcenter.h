@@ -48,39 +48,22 @@ struct Request
 		return (pass_id == rhs.pass_id && ostop_id == rhs.ostop_id && dstop_id == rhs.dstop_id && load == rhs.load && time == rhs.time);
 	}
 
-	bool operator < (const Request& rhs) const  //default comparator sorts by order of attributes
+	bool operator < (const Request& rhs) const // default less-than comparison of Requests in the order of smallest time, smallest load, smallest origin stop id, smallest destination stop id and finally smallest passenger id
 	{
-		if (pass_id != rhs.pass_id)
-			return pass_id < rhs.pass_id;
+		if (time != rhs.time)
+			return time < rhs.time;
+		else if (load != rhs.load)
+			return load < rhs.load;
 		else if (ostop_id != rhs.ostop_id)
 			return ostop_id < rhs.ostop_id;
 		else if (dstop_id != rhs.dstop_id)
 			return dstop_id < rhs.dstop_id;
-		else if (load != rhs.load)
-			return load < rhs.load;
 		else
-			return time < rhs.time;
+			return pass_id < rhs.pass_id;
 	}
 };
 Q_DECLARE_METATYPE(Request);
 
-/*less-than comparison of Requests in the order of smallest time, smallest load, smallest origin stop id, smallest destination stop id and finally smallest passenger id*/
-struct compareRequestByLessTime
-{
-	inline bool operator() (const Request& req1, const Request& req2) const
-	{
-		if (req1.time != req2.time)
-			return req1.time < req2.time;
-		else if (req1.load != req2.load)
-			return req1.load < req2.load;
-		else if (req1.ostop_id != req2.ostop_id)
-			return req1.ostop_id < req2.ostop_id;
-		else if (req1.dstop_id != req2.dstop_id)
-			return req1.dstop_id < req2.dstop_id;
-		else
-			return req1.pass_id < req2.pass_id;
-	}
-};
 
 /*Responsible for adding Requests to requestSet as well as sorting and distributing the requestSet*/
 class RequestHandler
@@ -91,11 +74,11 @@ public:
 
 	void reset();
 
-	bool addRequest(const Request vehRequest); //adds request vehRequest to the requestSet
-	void removeRequest(const Request vehRequest); //removes request vehRequest from the requestSet if it exists
+	bool addRequest(const Request req); //adds request vehRequest to the requestSet
+	void removeRequest(const int pass_id); //removes requests with pass_id from the requestSet if it exists
 
 private:
-	set<Request, compareRequestByLessTime> requestSet_; //set of recieved requests sorted by time
+	set<Request> requestSet_; //set of recieved requests sorted by time
 };
 
 
@@ -196,7 +179,10 @@ public:
 
 	void reset();
 
+private:
+	void connectInternal(); //connects internal signal slots (e.g. requestAccepted with on_requestAccepted) that should always be connected for each controlcenter and between resets
 
+public:
 	//methods for connecting passengers, vehicles and lines
 	void connectPassenger(Passenger* pass); //connects Passenger signals to recieveRequest slot
 	void disconnectPassenger(Passenger* pass); //disconnects Passenger signals to recieveRequest slot
@@ -210,20 +196,24 @@ public:
 	vector<Busline*> get_lines_between_stops(const vector<Busline*>& candidateLines, const int ostop_id, const int dstop_id) const; //returns buslines among candidate lines given as input that run from a given originstop to a given destination stop (Note: assumes lines are uni-directional and that busline stops are ordered, which they currently are in BusMezzo)
 
 signals:
-	void requestAccepted();
-	void requestRejected();
+	void requestAccepted(double time);
+	void requestRejected(double time);
+
+	void fleetStateChanged(double time);
 
 private slots:
 	
 	//request related
-	void recieveRequest(Request req);
-	void cancelRequest(Request req);
+	void recieveRequest(Request req, double time); //time refers to when the request was recieved, may or may not be the same as the request time
+	void removeRequest(int pass_id); //remove request with pass_id from requestSet in RequestHandler
 
-	void on_requestAccepted();
-	void on_requestRejected();
+	void on_requestAccepted(double time);
+	void on_requestRejected(double time);
 
 	//fleet related
-	void updateFleetState(int bus_id, BusState newstate);
+	void updateFleetState(int bus_id, BusState newstate, double time);
+
+	void generateTrip(double time); //delegates to TripGenerator to generate a trip depending on whatever strategy it currently uses and the state of the RequestHandler
 
 private:
 	//OBS! remember to add all mutable members to reset method, including reset functions of process classes
