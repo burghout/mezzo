@@ -72,6 +72,8 @@ public:
 	RequestHandler();
 	~RequestHandler();
 
+	friend class TripGenerator; //TripGenerator recieves access to the requestSet as input to trip generation decisions
+
 	void reset();
 
 	bool addRequest(const Request req); //adds request vehRequest to the requestSet
@@ -82,19 +84,57 @@ private:
 };
 
 
+
 /*Responsible generating trips without vehicles and adding these to TripSet as well as trips for corresponding Busline*/
 class Bustrip;
+class Busline;
+class ITripGenerationStrategy;
 class TripGenerator
 {
 public:
-	TripGenerator();
+	enum tgStrategyType { Null = 0, Naive }; //ids of trip generation strategies known to TripGenerator
+	TripGenerator(ITripGenerationStrategy* generationStrategy = nullptr);
 	~TripGenerator();
 
-	void reset();
+	bool generateTrip(const RequestHandler& rh, double time);
+	void setTripGenerationStrategy(int type);
+
+	void reset(int tg_strategy_type);
+	void addCandidateline(Busline* line);
 	// 1. add trip to busline, now busline::execute will activate busline for its first Bustrip::activate call. if several trips are generated in a chain
 
 private:
-	vector<double> tripSet;
+	set<Bustrip*> tripSet_;
+	vector<Busline*> candidateLines_; //lines (i.e. routes and stops to visit along the route) that this TripGenerator can create trips for (TODO: do other process classes do not need to know about this?)
+
+	ITripGenerationStrategy* generationStrategy_;
+};
+
+
+
+/*Algorithms for making trip generation decisions*/
+class ITripGenerationStrategy
+{
+public:
+	virtual bool calc_trip_generation(const set<Request>& requestSet, const vector<Busline*>& candidatelines, const double time) const = 0; //returns true if a trip should be generated according to some strategy and false otherwise
+
+protected:
+	//supporting methods for generating trips with whatever ITripGenerationStrategy
+	vector<Busline*> get_lines_between_stops(const vector<Busline*>& lines, const int ostop_id, const int dstop_id) const; //returns buslines among lines given as input that run from a given originstop to a given destination stop (Note: assumes lines are uni-directional and that busline stops are ordered, which they currently are in BusMezzo)
+};
+
+/*Null strategy that always returns false*/
+class NullTripGeneration : public ITripGenerationStrategy
+{
+public:
+	virtual bool calc_trip_generation(const set<Request>& requestSet, const vector<Busline*>& candidatelines, const double time) const { return false; }
+};
+
+/*Matches trip according to oldest unassigned request & first line found to serve this request*/
+class NaiveTripGeneration : public ITripGenerationStrategy
+{
+public:
+	virtual bool calc_trip_generation(const set<Request>& requestSet, const vector<Busline*>& candidatelines, const double time) const;
 };
 
 /*Responsible for assigning trips in TripQueue to transit Vehicles and adding these to matchedTripQueue*/
@@ -167,15 +207,18 @@ private:
 /*Groups togethers processes that control or modify transit Vehicles and provides an interface to Passenger*/
 class Passenger;
 class Bus;
-class Busline;
-enum BusState;
 enum class BusState;
 class ControlCenter : public QObject
 {
 	Q_OBJECT
 
 public:
-	explicit ControlCenter(int id = 0, Eventlist* eventlist = nullptr, QObject* parent = nullptr);
+	explicit ControlCenter(
+		int id = 0, 
+		int tg_strategy = 0, 
+		Eventlist* eventlist = nullptr, 
+		QObject* parent = nullptr
+	);
 	~ControlCenter();
 
 	void reset();
@@ -191,10 +234,7 @@ public:
 	void connectVehicle(Bus* transitveh); //connects Vehicle to CC
 	void disconnectVehicle(Bus* transitveh); //disconnect Vehicle from CC
 
-	void addCandidateLine(Busline* line); //add line to CC map of possible lines to create trips for
-
-	//supporting methods for member process classes
-	vector<Busline*> get_lines_between_stops(const vector<Busline*>& candidateLines, const int ostop_id, const int dstop_id) const; //returns buslines among candidate lines given as input that run from a given originstop to a given destination stop (Note: assumes lines are uni-directional and that busline stops are ordered, which they currently are in BusMezzo)
+	void addCandidateLine(Busline* line); //add line to TripGenerator map of possible lines to create trips for
 
 signals:
 	void requestAccepted(double time);
@@ -218,16 +258,15 @@ private slots:
 
 private:
 	//OBS! remember to add all mutable members to reset method, including reset functions of process classes
-	const int id_;
-	const Eventlist* eventlist_; //reference to the eventlist to be passed to TripGenerator or possibly FleetScheduler
+	const int id_;	//id of control center
+	const int tg_strategy_;	//initial trip generation strategy
+	const Eventlist* eventlist_; //pointer to the eventlist to be passed to TripGenerator or possibly FleetScheduler
 	
 	//maps for bookkeeping connected passengers and vehicles
 	map<int, Passenger*> connectedPass_; //passengers currently connected to ControlCenter 
 	map<int, Bus*> connectedVeh_; //transit vehicles currently connected to ControlCenter
 	//map<BusState, vector<Bus*>> fleetState; //among transit vehicles connected to ControlCenter keeps track of which are in each possible bus vehicle (i.e. transit vehicle) state 
 	
-	vector<Busline*> candidateLines_; //lines (i.e. routes and stops to visit along the route) that this ControlCenter can create trips for (TODO: add this to tripgenerator later, other process classes do not need to know about this?)
-
 	RequestHandler rh_;
 	TripGenerator tg_;
 	TripMatcher tm_;

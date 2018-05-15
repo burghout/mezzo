@@ -57,7 +57,7 @@ void RequestHandler::removeRequest(const int pass_id)
 }
 
 //TripGenerator
-TripGenerator::TripGenerator()
+TripGenerator::TripGenerator(ITripGenerationStrategy* generationStrategy) : generationStrategy_(generationStrategy)
 {
 	DEBUG_MSG("Constructing TG");
 }
@@ -66,13 +66,90 @@ TripGenerator::~TripGenerator()
 	DEBUG_MSG("Destroying TG");
 }
 
-void TripGenerator::reset()
+void TripGenerator::reset(int tg_strategy_type)
 {
-	tripSet.clear();
+	tripSet_.clear();
+	setTripGenerationStrategy(tg_strategy_type);
+}
+
+void TripGenerator::addCandidateline(Busline * line)
+{
+	candidateLines_.push_back(line);
+}
+
+bool TripGenerator::generateTrip(const RequestHandler& rh, double time)
+{
+	DEBUG_MSG("TripGenerator is generating a trip at time " << time);
+	if (generationStrategy_)
+	{
+		return generationStrategy_->calc_trip_generation(rh.requestSet_, candidateLines_, time); //returns true if trip has been generated
+	}
+	return false;
+}
+
+void TripGenerator::setTripGenerationStrategy(int type)
+{
+	if (generationStrategy_)
+		delete generationStrategy_;
+
+	DEBUG_MSG("Changing trip generation strategy to " << type);
+	if (type == Null)
+		generationStrategy_ = new NullTripGeneration();
+	else if (type == Naive)
+		generationStrategy_ = new NaiveTripGeneration();
+	else
+		generationStrategy_ = nullptr;
+}
+
+vector<Busline*> ITripGenerationStrategy::get_lines_between_stops(const vector<Busline*>& lines, const int ostop_id, const int dstop_id) const
+{
+	vector<Busline*> lines_between_stops; // lines between stops given as input
+	if (!lines.empty())
+	{
+		for (auto& line : lines)
+		{
+			if (!line->stops.empty())
+			{
+				vector<Busstop*>::iterator ostop_it; //iterator pointing to origin busstop if it exists for this line
+				ostop_it = find_if(line->stops.begin(), line->stops.end(), compare<Busstop>(ostop_id));
+
+				if (ostop_it != line->stops.end()) //if origin busstop does exist on line see if destination stop is downstream from this stop
+				{
+					vector<Busstop*>::iterator dstop_it; //iterator pointing to destination busstop if it exists downstream of origin busstop for this line
+					dstop_it = find_if(ostop_it, line->stops.end(), compare<Busstop>(dstop_id));
+
+					if (dstop_it != line->stops.end()) //if destination stop exists 
+						lines_between_stops.push_back(line); //add line as a possible transit connection between these stops
+				}
+			}
+		}
+	}
+
+	return lines_between_stops;
+}
+
+bool NaiveTripGeneration::calc_trip_generation(const set<Request>& requestSet, const vector<Busline*>& candidateLines, const double time) const
+{
+
+	if (!requestSet.empty() && !candidateLines.empty())
+	{
+		int ostop_id = (*requestSet.begin()).ostop_id;//find the OD pair for the first request in the request set
+		int dstop_id = (*requestSet.begin()).dstop_id;
+		vector<Busline*> lines_between_stops;
+
+		lines_between_stops = get_lines_between_stops(candidateLines, ostop_id, dstop_id); //check if any candidate line connects the OD pair
+		if (!lines_between_stops.empty())//if a connection exists then generate a trip for this line
+		{
+
+			return true;
+		}
+	}
+	
+	return false;
 }
 
 //TripMatcher
-TripMatcher::TripMatcher(IMatchingStrategy* ms): matchingStrategy_(ms)
+TripMatcher::TripMatcher(IMatchingStrategy* matchingStrategy): matchingStrategy_(matchingStrategy)
 {
 	DEBUG_MSG("Constructing TM");
 }
@@ -92,12 +169,13 @@ FleetDispatcher::~FleetDispatcher()
 }
 
 //ControlCenter
-ControlCenter::ControlCenter(int id, Eventlist* eventlist, QObject* parent) : QObject(parent), id_(id), eventlist_(eventlist)
+ControlCenter::ControlCenter(int id, int tg_strategy, Eventlist* eventlist, QObject* parent) : QObject(parent), id_(id), tg_strategy_(tg_strategy), eventlist_(eventlist)
 {
 	QString qname = QString::fromStdString(to_string(id));
 	this->setObjectName(qname); //name of control center does not really matter but useful for debugging purposes
 	DEBUG_MSG("Constructing CC" << id_);
 
+	tg_.setTripGenerationStrategy(tg_strategy); //set the initial tg_strategy of TripGenerator
 	connectInternal(); //connect internal signal slots
 }
 ControlCenter::~ControlCenter()
@@ -111,9 +189,9 @@ void ControlCenter::reset()
 
 	connectInternal(); //reconnect internal signal slots
 
-	//Clear all members of process classes
+	//Reset all process classes
 	rh_.reset();
-	tg_.reset();
+	tg_.reset(tg_strategy_); 
 	//tm_.reset();
 	//fs_.reset();
 
@@ -190,35 +268,7 @@ void ControlCenter::disconnectVehicle(Bus* transitveh)
 void ControlCenter::addCandidateLine(Busline* line)
 {
 	assert(line->get_flex_line()); //only flex lines should be added to control center for now
-	candidateLines_.push_back(line);
-}
-
-vector<Busline*> ControlCenter::get_lines_between_stops(const vector<Busline*>& candidateLines, const int ostop_id, const int dstop_id) const
-{
-	vector<Busline*> lineConnections; // lines between stops given as input
-	if (!candidateLines.empty())
-	{
-		for(auto& line : candidateLines)
-		{
-			if (!line->stops.empty())
-			{
-				vector<Busstop*>::iterator ostop_it; //iterator pointing to origin busstop if it exists for this line
-				ostop_it = find_if(line->stops.begin(), line->stops.end(), compare<Busstop>(ostop_id));
-
-				if (ostop_it != line->stops.end()) //if origin busstop does exist on line see if destination stop is downstream from this stop
-				{
-					vector<Busstop*>::iterator dstop_it; //iterator pointing to destination busstop if it exists downstream of origin busstop for this line
-					dstop_it = find_if(ostop_it, line->stops.end(), compare<Busstop>(dstop_id));
-
-					if (dstop_it != line->stops.end()) //if destination stop exists 
-						lineConnections.push_back(line); //add line as a possible transit connection between these stops
-				}
-			}
-		}
-		
-	}
-
-	return lineConnections;
+	tg_.addCandidateline(line);
 }
 
 //Slot implementations
@@ -244,10 +294,12 @@ void ControlCenter::on_requestRejected(double time)
 	DEBUG_MSG(Q_FUNC_INFO << ": Request Rejected at time " << time);
 }
 
-void ControlCenter::updateFleetState(int bus_id, BusState newstate)
+void ControlCenter::updateFleetState(int bus_id, BusState newstate, double time)
 {
-	DEBUG_MSG("ControlCenter " << id_ << " - Updating fleet state");
-	DEBUG_MSG("Bus " << bus_id << " - " << newstate );
+	int state = static_cast<int>(newstate);
+	DEBUG_MSG("ControlCenter " << id_ << " - Updating fleet state at time " << time);
+	DEBUG_MSG("Bus " << bus_id << " - " << state );
+	emit fleetStateChanged(time);
 }
 
 void ControlCenter::generateTrip(double time)
