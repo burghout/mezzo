@@ -309,7 +309,7 @@ void Passenger::walk (double time)
 	}
 }
 
-void Passenger::start (Eventlist* eventlist)
+void Passenger::start (Eventlist* eventlist, double time)
 {
 		//maybe add the SendRequest->TripGeneration->TripMatching process here. 
 		//Let FleetScheduler trigger AFTER all of this, i.e. initialize the Busline::execute & Bustrip::activate processes after passenger-activity at stop?
