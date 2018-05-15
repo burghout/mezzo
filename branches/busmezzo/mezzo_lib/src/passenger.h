@@ -129,6 +129,7 @@ private:
 public:
 signals:
 	void sendRequest(Request req, double time); //signal to send Request to ControlCenter along with time in which signal is sent
+	void boardedBus(int pass_id); //to signal that a passenger with pass_id has just boarded a bus
 
 protected:
 	int passenger_id;

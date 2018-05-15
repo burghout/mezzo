@@ -1690,6 +1690,8 @@ void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, d
 								trip->passengers_on_board[(*check_pass)->make_alighting_decision(trip, time)].push_back((*check_pass)); 
 							}
 							trip->get_busv()->set_occupancy(trip->get_busv()->get_occupancy()+1);
+							emit(*check_pass)->boardedBus((*check_pass)->get_id()); //boarding passenger signals control center that they have just boarded
+							
 							if (check_pass < pass_waiting_od.end()-1)
 							{
 								check_pass++;
