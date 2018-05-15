@@ -159,12 +159,12 @@ public:
 //Control Center
 	BusState get_state() const { return state_; }
 	BusState calc_state(const bool bus_exiting_stop, const int occupancy) const; //returns the BusState of bus depending whether a bus has just entered or exited a stop, and the occupancy of the bus
-	void set_state(const BusState newstate); //sets state_ to newstate and emits stateChanged
+	void set_state(const BusState newstate, const double time); //sets state_ to newstate and emits stateChanged
 
 	void print_state(); //prints current BusState for debugging purposes (TODO: remove later)
 
 signals:
-	void stateChanged(int bus_id, BusState state); // Signal informing a change of BusState
+	void stateChanged(int bus_id, BusState state, double time); // Signal informing a change of BusState
 
 protected:
 	int	bus_id;

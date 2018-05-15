@@ -265,13 +265,13 @@ BusState Bus::calc_state(const bool bus_exiting_stop, const int occupancy) const
 	return Null;
 }
 
-void Bus::set_state(const BusState newstate)
+void Bus::set_state(const BusState newstate, const double time)
 {
 	if (state_ != newstate)
 	{
 		state_ = newstate;
 		print_state();
-		emit stateChanged(bus_id, state_);
+		emit stateChanged(bus_id, state_, time);
 	}
 }
 
