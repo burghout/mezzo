@@ -9,9 +9,9 @@ General Notes:
 
 /*! ControlCenter groups together objects that control or modify transit objects
 - RequestHandler
-- TripGenerator
-- TripMatcher
-- FleetDispatcher
+- BustripGenerator
+- BustripVehicleMatcher
+- VehicleDispatcher
 
 Registers (unregisters) service vehicles
 Offers interface to connected vehicles as well as connected passengers
@@ -72,7 +72,7 @@ public:
 	RequestHandler();
 	~RequestHandler();
 
-	friend class TripGenerator; //TripGenerator recieves access to the requestSet as input to trip generation decisions
+	friend class BustripGenerator; //BustripGenerator recieves access to the requestSet as input to trip generation decisions
 
 	void reset();
 
@@ -89,12 +89,12 @@ private:
 class Bustrip;
 class Busline;
 class ITripGenerationStrategy;
-class TripGenerator
+class BustripGenerator
 {
 public:
-	enum tgStrategyType { Null = 0, Naive }; //ids of trip generation strategies known to TripGenerator
-	TripGenerator(ITripGenerationStrategy* generationStrategy = nullptr);
-	~TripGenerator();
+	enum tgStrategyType { Null = 0, Naive }; //ids of trip generation strategies known to BustripGenerator
+	BustripGenerator(ITripGenerationStrategy* generationStrategy = nullptr);
+	~BustripGenerator();
 
 	bool generateTrip(const RequestHandler& rh, double time);
 	void setTripGenerationStrategy(int type);
@@ -105,14 +105,14 @@ public:
 
 private:
 	set<Bustrip*> tripSet_;
-	vector<Busline*> candidateLines_; //lines (i.e. routes and stops to visit along the route) that this TripGenerator can create trips for (TODO: do other process classes do not need to know about this?)
+	vector<Busline*> candidateLines_; //lines (i.e. routes and stops to visit along the route) that this BustripGenerator can create trips for (TODO: do other process classes do not need to know about this?)
 
 	ITripGenerationStrategy* generationStrategy_;
 };
 
 
 
-/*Algorithms for making trip generation decisions*/
+/*Algorithms for making Bustrip generation decisions*/
 class ITripGenerationStrategy
 {
 public:
@@ -122,14 +122,12 @@ protected:
 	//supporting methods for generating trips with whatever ITripGenerationStrategy
 	vector<Busline*> get_lines_between_stops(const vector<Busline*>& lines, const int ostop_id, const int dstop_id) const; //returns buslines among lines given as input that run from a given originstop to a given destination stop (Note: assumes lines are uni-directional and that busline stops are ordered, which they currently are in BusMezzo)
 };
-
 /*Null strategy that always returns false*/
 class NullTripGeneration : public ITripGenerationStrategy
 {
 public:
 	virtual bool calc_trip_generation(const set<Request>& requestSet, const vector<Busline*>& candidatelines, const double time) const { return false; }
 };
-
 /*Matches trip according to oldest unassigned request & first line found to serve this request*/
 class NaiveTripGeneration : public ITripGenerationStrategy
 {
@@ -139,11 +137,11 @@ public:
 
 /*Responsible for assigning trips in TripQueue to transit Vehicles and adding these to matchedTripQueue*/
 class IMatchingStrategy;
-class TripMatcher
+class BustripVehicleMatcher
 {
 public:
-	explicit TripMatcher(IMatchingStrategy* matchingStrategy = nullptr);
-	~TripMatcher();
+	explicit BustripVehicleMatcher(IMatchingStrategy* matchingStrategy = nullptr);
+	~BustripVehicleMatcher();
 
 	//find_candidate_vehicles
 
@@ -191,11 +189,11 @@ public:
 };
 
 /*In charge of dispatching transit vehicle - trip pairs*/
-class FleetDispatcher
+class VehicleDispatcher
 {
 public:
-	FleetDispatcher();
-	~FleetDispatcher();
+	VehicleDispatcher();
+	~VehicleDispatcher();
 
 	//call Bustrip::activate somehow or Busline::execute
 	//void reset()
@@ -234,7 +232,7 @@ public:
 	void connectVehicle(Bus* transitveh); //connects Vehicle to CC
 	void disconnectVehicle(Bus* transitveh); //disconnect Vehicle from CC
 
-	void addCandidateLine(Busline* line); //add line to TripGenerator map of possible lines to create trips for
+	void addCandidateLine(Busline* line); //add line to BustripGenerator map of possible lines to create trips for
 
 signals:
 	void requestAccepted(double time);
@@ -254,13 +252,13 @@ private slots:
 	//fleet related
 	void updateFleetState(int bus_id, BusState newstate, double time);
 
-	void generateTrip(double time); //delegates to TripGenerator to generate a trip depending on whatever strategy it currently uses and the state of the RequestHandler
+	void generateTrip(double time); //delegates to BustripGenerator to generate a trip depending on whatever strategy it currently uses and the state of the RequestHandler
 
 private:
 	//OBS! remember to add all mutable members to reset method, including reset functions of process classes
 	const int id_;	//id of control center
 	const int tg_strategy_;	//initial trip generation strategy
-	const Eventlist* eventlist_; //pointer to the eventlist to be passed to TripGenerator or possibly FleetScheduler
+	const Eventlist* eventlist_; //pointer to the eventlist to be passed to BustripGenerator or possibly FleetScheduler
 	
 	//maps for bookkeeping connected passengers and vehicles
 	map<int, Passenger*> connectedPass_; //passengers currently connected to ControlCenter 
@@ -268,8 +266,8 @@ private:
 	//map<BusState, vector<Bus*>> fleetState; //among transit vehicles connected to ControlCenter keeps track of which are in each possible bus vehicle (i.e. transit vehicle) state 
 	
 	RequestHandler rh_;
-	TripGenerator tg_;
-	TripMatcher tm_;
-	FleetDispatcher fd_;
+	BustripGenerator tg_;
+	BustripVehicleMatcher tvm_;
+	VehicleDispatcher vd_;
 };
 #endif

@@ -56,30 +56,30 @@ void RequestHandler::removeRequest(const int pass_id)
 		DEBUG_MSG_V("Request for pass id " << pass_id << " not found.");
 }
 
-//TripGenerator
-TripGenerator::TripGenerator(ITripGenerationStrategy* generationStrategy) : generationStrategy_(generationStrategy)
+//BustripGenerator
+BustripGenerator::BustripGenerator(ITripGenerationStrategy* generationStrategy) : generationStrategy_(generationStrategy)
 {
 	DEBUG_MSG("Constructing TG");
 }
-TripGenerator::~TripGenerator()
+BustripGenerator::~BustripGenerator()
 {
 	DEBUG_MSG("Destroying TG");
 }
 
-void TripGenerator::reset(int tg_strategy_type)
+void BustripGenerator::reset(int tg_strategy_type)
 {
 	tripSet_.clear();
 	setTripGenerationStrategy(tg_strategy_type);
 }
 
-void TripGenerator::addCandidateline(Busline * line)
+void BustripGenerator::addCandidateline(Busline * line)
 {
 	candidateLines_.push_back(line);
 }
 
-bool TripGenerator::generateTrip(const RequestHandler& rh, double time)
+bool BustripGenerator::generateTrip(const RequestHandler& rh, double time)
 {
-	DEBUG_MSG("TripGenerator is generating a trip at time " << time);
+	DEBUG_MSG("BustripGenerator is generating a trip at time " << time);
 	if (generationStrategy_)
 	{
 		return generationStrategy_->calc_trip_generation(rh.requestSet_, candidateLines_, time); //returns true if trip has been generated
@@ -87,7 +87,7 @@ bool TripGenerator::generateTrip(const RequestHandler& rh, double time)
 	return false;
 }
 
-void TripGenerator::setTripGenerationStrategy(int type)
+void BustripGenerator::setTripGenerationStrategy(int type)
 {
 	if (generationStrategy_)
 		delete generationStrategy_;
@@ -130,7 +130,6 @@ vector<Busline*> ITripGenerationStrategy::get_lines_between_stops(const vector<B
 
 bool NaiveTripGeneration::calc_trip_generation(const set<Request>& requestSet, const vector<Busline*>& candidateLines, const double time) const
 {
-
 	if (!requestSet.empty() && !candidateLines.empty())
 	{
 		int ostop_id = (*requestSet.begin()).ostop_id;//find the OD pair for the first request in the request set
@@ -138,8 +137,12 @@ bool NaiveTripGeneration::calc_trip_generation(const set<Request>& requestSet, c
 		vector<Busline*> lines_between_stops;
 
 		lines_between_stops = get_lines_between_stops(candidateLines, ostop_id, dstop_id); //check if any candidate line connects the OD pair
-		if (!lines_between_stops.empty())//if a connection exists then generate a trip for this line
+		if (!lines_between_stops.empty())//if a connection exists then generate a trip for this line for dynamically generated trips
 		{
+			Busline* line = lines_between_stops.front(); //choose first feasible line found
+			//create a new trip for this line
+
+			//add it to the flex_trips for this line
 
 			return true;
 		}
@@ -148,22 +151,22 @@ bool NaiveTripGeneration::calc_trip_generation(const set<Request>& requestSet, c
 	return false;
 }
 
-//TripMatcher
-TripMatcher::TripMatcher(IMatchingStrategy* matchingStrategy): matchingStrategy_(matchingStrategy)
+//BustripVehicleMatcher
+BustripVehicleMatcher::BustripVehicleMatcher(IMatchingStrategy* matchingStrategy): matchingStrategy_(matchingStrategy)
 {
 	DEBUG_MSG("Constructing TM");
 }
-TripMatcher::~TripMatcher()
+BustripVehicleMatcher::~BustripVehicleMatcher()
 {
 	DEBUG_MSG("Destroying TM");
 }
 
-//FleetDispatcher
-FleetDispatcher::FleetDispatcher()
+//VehicleDispatcher
+VehicleDispatcher::VehicleDispatcher()
 {
 	DEBUG_MSG("Constructing FD");
 }
-FleetDispatcher::~FleetDispatcher()
+VehicleDispatcher::~VehicleDispatcher()
 {
 	DEBUG_MSG("Destroying FD");
 }
@@ -175,7 +178,7 @@ ControlCenter::ControlCenter(int id, int tg_strategy, Eventlist* eventlist, QObj
 	this->setObjectName(qname); //name of control center does not really matter but useful for debugging purposes
 	DEBUG_MSG("Constructing CC" << id_);
 
-	tg_.setTripGenerationStrategy(tg_strategy); //set the initial tg_strategy of TripGenerator
+	tg_.setTripGenerationStrategy(tg_strategy); //set the initial tg_strategy of BustripGenerator
 	connectInternal(); //connect internal signal slots
 }
 ControlCenter::~ControlCenter()
@@ -208,7 +211,7 @@ void ControlCenter::connectInternal()
 	ok = QObject::connect(this, &ControlCenter::requestAccepted, this, &ControlCenter::on_requestAccepted, Qt::DirectConnection);
 	assert(ok);
 
-	//Triggers to generate trips via TripGenerator
+	//Triggers to generate trips via BustripGenerator
 	ok = QObject::connect(this, &ControlCenter::requestAccepted, this, &ControlCenter::generateTrip, Qt::DirectConnection); 
 	assert(ok);
 	ok = QObject::connect(this, &ControlCenter::fleetStateChanged, this, &ControlCenter::generateTrip, Qt::DirectConnection);
