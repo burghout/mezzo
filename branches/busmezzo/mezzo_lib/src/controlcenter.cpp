@@ -64,6 +64,7 @@ BustripGenerator::BustripGenerator(ITripGenerationStrategy* generationStrategy) 
 BustripGenerator::~BustripGenerator()
 {
 	DEBUG_MSG("Destroying TG");
+	delete generationStrategy_;
 }
 
 void BustripGenerator::reset(int tg_strategy_type)
@@ -77,9 +78,9 @@ void BustripGenerator::addCandidateline(Busline * line)
 	candidateLines_.push_back(line);
 }
 
-bool BustripGenerator::generateTrip(const RequestHandler& rh, double time)
+bool BustripGenerator::requestTrip(const RequestHandler& rh, double time)
 {
-	DEBUG_MSG("BustripGenerator is generating a trip at time " << time);
+	DEBUG_MSG("BustripGenerator is requesting a trip at time " << time);
 	if (generationStrategy_)
 	{
 		return generationStrategy_->calc_trip_generation(rh.requestSet_, candidateLines_, time); //returns true if trip has been generated
@@ -127,6 +128,21 @@ vector<Busline*> ITripGenerationStrategy::get_lines_between_stops(const vector<B
 
 	return lines_between_stops;
 }
+vector<Visit_stop*> ITripGenerationStrategy::create_schedule(double init_dispatch_time, const vector<pair<Busstop*, double>>& time_between_stops) const
+{
+	assert(init_dispatch_time >= 0);
+	vector<Visit_stop*> schedule;
+	double arrival_time_at_stop = init_dispatch_time;
+
+	//add init_dispatch_time to all stop deltas for schedule
+	for (const pair<Busstop*, double>& stop_delta : time_between_stops)
+	{
+		Visit_stop* vs = new Visit_stop((stop_delta.first), stop_delta.second + arrival_time_at_stop);
+		schedule.push_back(vs);
+	}
+
+	return schedule;
+}
 
 bool NaiveTripGeneration::calc_trip_generation(const set<Request>& requestSet, const vector<Busline*>& candidateLines, const double time) const
 {
@@ -140,7 +156,8 @@ bool NaiveTripGeneration::calc_trip_generation(const set<Request>& requestSet, c
 		if (!lines_between_stops.empty())//if a connection exists then generate a trip for this line for dynamically generated trips
 		{
 			Busline* line = lines_between_stops.front(); //choose first feasible line found
-			//create a new trip for this line
+			vector<Visit_stop*> schedule = create_schedule(time,line->get_delta_at_stops()); //build the schedule of stop visits for this trip (we visit all stops along the candidate line)
+
 
 			//add it to the flex_trips for this line
 
@@ -212,9 +229,9 @@ void ControlCenter::connectInternal()
 	assert(ok);
 
 	//Triggers to generate trips via BustripGenerator
-	ok = QObject::connect(this, &ControlCenter::requestAccepted, this, &ControlCenter::generateTrip, Qt::DirectConnection); 
+	ok = QObject::connect(this, &ControlCenter::requestAccepted, this, &ControlCenter::requestTrip, Qt::DirectConnection); 
 	assert(ok);
-	ok = QObject::connect(this, &ControlCenter::fleetStateChanged, this, &ControlCenter::generateTrip, Qt::DirectConnection);
+	ok = QObject::connect(this, &ControlCenter::fleetStateChanged, this, &ControlCenter::requestTrip, Qt::DirectConnection);
 	assert(ok);
 }
 
@@ -305,8 +322,8 @@ void ControlCenter::updateFleetState(int bus_id, BusState newstate, double time)
 	emit fleetStateChanged(time);
 }
 
-void ControlCenter::generateTrip(double time)
+void ControlCenter::requestTrip(double time)
 {
-	if (tg_.generateTrip(rh_, time))
+	if (tg_.requestTrip(rh_, time))
 		DEBUG_MSG("Trip generated");
 }

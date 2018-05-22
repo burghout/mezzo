@@ -664,7 +664,12 @@ Bustrip::Bustrip (int id_, double start_time_, Busline* line_): id(id_), line(li
 }
 
 Bustrip::~Bustrip ()
-{}
+{
+	for (Visit_stop* stop_visit : stops)
+	{
+		delete stop_visit;
+	}
+}
 
 Bustrip_assign::~Bustrip_assign()
 {}

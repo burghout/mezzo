@@ -93,10 +93,10 @@ class BustripGenerator
 {
 public:
 	enum tgStrategyType { Null = 0, Naive }; //ids of trip generation strategies known to BustripGenerator
-	BustripGenerator(ITripGenerationStrategy* generationStrategy = nullptr);
+	explicit BustripGenerator(ITripGenerationStrategy* generationStrategy = nullptr);
 	~BustripGenerator();
 
-	bool generateTrip(const RequestHandler& rh, double time);
+	bool requestTrip(const RequestHandler& rh, double time); //evaluates whether a Bustrip should be generated to serve requests or not
 	void setTripGenerationStrategy(int type);
 
 	void reset(int tg_strategy_type);
@@ -104,7 +104,7 @@ public:
 	// 1. add trip to busline, now busline::execute will activate busline for its first Bustrip::activate call. if several trips are generated in a chain
 
 private:
-	set<Bustrip*> tripSet_;
+	set<Bustrip*> tripSet_; //set of trips to be performed that have not been matched to vehicles yet
 	vector<Busline*> candidateLines_; //lines (i.e. routes and stops to visit along the route) that this BustripGenerator can create trips for (TODO: do other process classes do not need to know about this?)
 
 	ITripGenerationStrategy* generationStrategy_;
@@ -113,6 +113,8 @@ private:
 
 
 /*Algorithms for making Bustrip generation decisions*/
+class Busstop;
+typedef pair<Busstop*, double> Visit_stop; 
 class ITripGenerationStrategy
 {
 public:
@@ -121,6 +123,7 @@ public:
 protected:
 	//supporting methods for generating trips with whatever ITripGenerationStrategy
 	vector<Busline*> get_lines_between_stops(const vector<Busline*>& lines, const int ostop_id, const int dstop_id) const; //returns buslines among lines given as input that run from a given originstop to a given destination stop (Note: assumes lines are uni-directional and that busline stops are ordered, which they currently are in BusMezzo)
+	vector<Visit_stop*> create_schedule(double init_dispatch_time, const vector<pair<Busstop*, double>>& time_between_stops) const; //creates a vector of scheduled visits to stops starting from the dispatch time (given by simulation time)
 };
 /*Null strategy that always returns false*/
 class NullTripGeneration : public ITripGenerationStrategy
@@ -252,7 +255,7 @@ private slots:
 	//fleet related
 	void updateFleetState(int bus_id, BusState newstate, double time);
 
-	void generateTrip(double time); //delegates to BustripGenerator to generate a trip depending on whatever strategy it currently uses and the state of the RequestHandler
+	void requestTrip(double time); //delegates to BustripGenerator to generate a trip depending on whatever strategy it currently uses and the state of the RequestHandler and add this to its list of trips
 
 private:
 	//OBS! remember to add all mutable members to reset method, including reset functions of process classes
