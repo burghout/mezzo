@@ -83,6 +83,7 @@ Busline::Busline (int id_, int opposite_id_, string name_, Busroute* busroute_, 
 	stops(stops_), id(id_), opposite_id(opposite_id_), name(name_), busroute(busroute_), odpair(odpair_), vtype(vtype_), max_headway_holding(max_headway_holding_), holding_strategy(holding_strategy_), init_occup_per_stop(init_occup_per_stop_), nr_stops_init_occup(nr_stops_init_occup_), flex_line(flex_line_)
 {
 	active=false;
+	trip_count = 0;
 }
 
 Busline::~Busline()
@@ -98,6 +99,7 @@ void Busline::reset ()
 	output_travel_times.clear();
 
 	flex_trips.clear(); //clear all dynamically generated trips that have not completed yet
+	trip_count = static_cast<int>(trips.size()); //reset trip_id_counter to the number of trips that were generated from input files
 }
 
 void Busline::reset_curr_trip ()
