@@ -995,7 +995,7 @@ bool Network::readserver(istream& in)
     // type 4=stochastic delay server: LogLogistic(alpha/scale=mu, beta/shape=sd)
     // type -1 (internal) = OD server
     // type -2 (internal)= Destination server
-    Server* sptr;
+    Server* sptr = nullptr;
     if (stype==0)
         sptr = new ConstServer(sid,stype,mu,sd,delay);
     if (stype==1)
@@ -1856,6 +1856,11 @@ bool Network::readbusline(istream& in) // reads a busline
 
 bool Network::readbustrip_format1(istream& in) // reads a trip
 {
+	if (theParameters->drt){
+		DEBUG_MSG_V("DRT currently not available with trip format 1. Aborting...");
+		abort();
+	}
+
     char bracket;
     int trip_id, busline_id, nr_stops, stop_id;
     double start_time, pass_time;
@@ -1940,6 +1945,7 @@ bool Network::readbustrip_format2(istream& in) // reads a trip
         // find the stop in the list
         Visit_stop* vs = new Visit_stop ((*stops_iter), arrival_time_at_stop);
         delta_at_stops.push_back(vs);
+		bl->add_stop_delta((*stops_iter), arrival_time_at_stop); //add expected travel times between stops in the order of the stops visited for this line
         stops_iter++;
     }
     in >> bracket;
@@ -2017,8 +2023,10 @@ bool Network::readbustrip_format3(istream& in) // reads a trip
         // find the stop in the list
         Visit_stop* vs = new Visit_stop ((*stops_iter), arrival_time_at_stop);
         delta_at_stops.push_back(vs);
+		bl->add_stop_delta((*stops_iter), arrival_time_at_stop); //add expected travel times between stops in the order of the stops visited for this line
         stops_iter++;
     }
+
     in >> bracket;
     if (bracket != '}')
     {
@@ -7771,7 +7779,7 @@ bool Network::init()
 	{
 		DEBUG_MSG_V("Initializing drt trips!!!"); //Note: all drtvehicles are connected to a controlcenter when reading unassigned vehicles
 		//Add buses to vector of unassigned vehicles and initial Busstop
-		for (auto const & drt_init : drtvehicles)
+		for (const DrtVehicleInit& drt_init : drtvehicles)
 		{
 			Busstop* stop = get<1>(drt_init);
 			Bus* bus = get<0>(drt_init);

@@ -251,7 +251,8 @@ public:
 	//DRT implementation
 	bool get_flex_line() const { return flex_line; }
 	void add_flex_trip(Bustrip* trip, double starttime); //adds trip with corresponding scheduled start time to flex_trip vector and keeps this vector sorted by start time
-
+	void add_stop_delta(Busstop* stop, double delta_from_preceding_stop) { delta_at_stops.push_back(make_pair(stop, delta_from_preceding_stop)); } //set the scheduled/expected travel times between stops on this line (starting from 0 for the first stop)
+	vector<pair<Busstop*,double>> get_delta_at_stops() { return delta_at_stops; }
 
 protected:
 	int id;						//!< line ID
@@ -281,6 +282,7 @@ protected:
 	//drt related attributes
 	bool flex_line;	//!< true if trips can be created dynamically for this line
 	vector<Start_trip> flex_trips; //!< scheduled trips that were created dynamically for this line via a controlcenter
+	vector<pair<Busstop*,double>> delta_at_stops; //expected time between departures for all stops on this line (defined on input when reading bustrips for this line)
 
     map <Busstop*,pair<Busstop*,pair<double,double> > > disruption_times; //!< contains the expected travel times between a pair of stops in case of disruption (does not affect actual travel time, only passenger information provision). Strat and end times
 	map <Busstop*, double> disruption_cap_reduction;
