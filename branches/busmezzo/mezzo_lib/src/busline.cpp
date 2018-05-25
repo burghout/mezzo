@@ -98,8 +98,11 @@ void Busline::reset ()
 	output_line_assign.clear();
 	output_travel_times.clear();
 
-	flex_trips.clear(); //clear all dynamically generated trips that have not completed yet
-	trip_count = static_cast<int>(trips.size()); //reset trip_id_counter to the number of trips that were generated from input files
+	if (flex_line)
+	{
+		flex_trips.clear(); //clear all dynamically generated trips that have not completed yet
+		trip_count = static_cast<int>(trips.size()); //reset trip counter to the original number of trips that were generated from input files
+	}
 }
 
 void Busline::reset_curr_trip ()
@@ -596,11 +599,43 @@ void Busline::write_ttt_output(ostream & out)
 	}
 }
 
-void Busline::add_flex_trip(Bustrip * trip, double starttime)
+void Busline::add_flex_trip(Bustrip* trip, double starttime)
 {
+	assert(is_unique_tripid(trip->get_id()));
 	flex_trips.push_back(Start_trip(trip, starttime));
-	//sort(flex_trips.begin(), flex_trips.end(), compareStartTripByLessTime());//sort trips by starttime
-	sort(flex_trips.begin(), flex_trips.end(), compareStartTripByGreaterTime());//sort trips by starttime starting with the largest starttime at the front of the vector to the smallest at the back
+	sort(flex_trips.begin(), flex_trips.end(), compareStartTripByLessTime());//sort trips by starttime
+	//sort(flex_trips.begin(), flex_trips.end(), compareStartTripByGreaterTime());//sort trips by starttime starting with the largest starttime at the front of the vector to the smallest at the back
+}
+
+bool Busline::is_unique_tripid(int trip_id)
+{
+	vector<Start_trip>::iterator it;
+	
+	//check if id exists among initial trips for this line
+	it = find_if(trips.begin(), trips.end(),
+			[trip_id](const Start_trip& st) -> bool
+			{
+				return st.first->get_id() == trip_id;
+			}
+		);
+	if (it != trips.end())
+		return false;
+
+	if (flex_line)
+	{
+		//check if id exists among dynamically generated trips for this line
+		it = find_if(flex_trips.begin(), flex_trips.end(),
+			[trip_id](const Start_trip& st) -> bool
+		{
+			return st.first->get_id() == trip_id;
+		}
+		);
+
+		if (it != flex_trips.end())
+			return false;
+	}
+
+	return true;
 }
 
 void Busline::update_total_travel_time (Bustrip* trip, double time)

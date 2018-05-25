@@ -1967,20 +1967,22 @@ bool Network::readbustrip_format2(istream& in) // reads a trip
         in >> dispatching_time;
         vector <Visit_stop*> curr_trip;
         double acc_time_table = dispatching_time;
-        for (vector <Visit_stop*>::iterator iter = delta_at_stops.begin(); iter < delta_at_stops.end(); iter++)
+		int tripid;
+
+		for (vector <Visit_stop*>::iterator iter = delta_at_stops.begin(); iter < delta_at_stops.end(); iter++)
         {
             acc_time_table += (*iter)->second;
             Visit_stop* vs_ct = new Visit_stop ((*iter)->first, acc_time_table);
             curr_trip.push_back(vs_ct);
         }
-        Bustrip* trip= new Bustrip (busline_id*100 + i, dispatching_time, bl); // e.g. line 2, 3rd trip: trip_id = 23
+		tripid = bl->generate_new_trip_id(); //get a new trip_id for this line and increment trip counter
+        Bustrip* trip= new Bustrip (tripid, dispatching_time, bl); // e.g. line 2, 3rd trip: trip_id = 203
         trip->add_stops(curr_trip);
         bl->add_trip(trip,dispatching_time);
         bl->reset_curr_trip();
         trip->convert_stops_vector_to_map();
         bustrips.push_back (trip); // add to bustrips vector
     }
-	bl->set_trip_count(bl->get_trips().size()); //keep track of the number of trips generated for this line
     in >> bracket;
     if (bracket != '}')
     {
@@ -2039,13 +2041,15 @@ bool Network::readbustrip_format3(istream& in) // reads a trip
     {
         double trip_acc_time = initial_dispatching_time;
         vector <Visit_stop*> curr_trip;
+		int tripid;
         for (vector <Visit_stop*>::iterator iter = delta_at_stops.begin(); iter < delta_at_stops.end(); iter++)
         {
             trip_acc_time = trip_acc_time + (*iter)->second;
             Visit_stop* vs_ct = new Visit_stop ((*iter)->first, trip_acc_time);
             curr_trip.push_back(vs_ct);
         }
-        Bustrip* trip= new Bustrip (busline_id*100 + i, initial_dispatching_time,bl); // e.g. line 2, 3rd trip: trip_id = 23
+		tripid = bl->generate_new_trip_id(); //get a new trip_id for this line and increment trip counter
+        Bustrip* trip= new Bustrip (tripid, initial_dispatching_time,bl); // e.g. line 2, 3rd trip: trip_id = 203
         trip->add_stops(curr_trip);
         bl->add_trip(trip,curr_trip.front()->second);
         bl->reset_curr_trip();
@@ -2054,7 +2058,6 @@ bool Network::readbustrip_format3(istream& in) // reads a trip
         bustrips.push_back (trip); // add to bustrips vector
         initial_dispatching_time = initial_dispatching_time + headway;
     }
-	bl->set_trip_count(bl->get_trips().size()); //keep track of the number of trips generated for this line
     in >> bracket;
     if (bracket != '}')
     {

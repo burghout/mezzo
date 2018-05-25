@@ -175,7 +175,7 @@ public:
 		float					max_headway_holding_,		//!< threshold parameter relevant in case holding strategies 1 or 3 are chosen or max holding time in [sec] in case of holding strategy 6
 		double					init_occup_per_stop_,		//!< average number of passengers that are on-board per prior upstream stops (scale of a Gamma distribution)
 		int						nr_stops_init_occup_,		//!< number of prior upstream stops resulting with initial occupancy (shape of a Gamma distribution)
-		bool					flex_line_					//!< true if this line allows for dynamically scheduled trips
+		bool					flex_line_ = false			//!< true if this line allows for dynamically scheduled trips
 	); //!< Initialising constructor
 
 	Busline ();			//!< simple constructor
@@ -253,8 +253,8 @@ public:
 	void add_flex_trip(Bustrip* trip, double starttime); //adds trip with corresponding scheduled start time to flex_trip vector and keeps this vector sorted by start time
 	void add_stop_delta(Busstop* stop, double delta_from_preceding_stop) { delta_at_stops.push_back(make_pair(stop, delta_from_preceding_stop)); } //set the scheduled/expected travel times between stops on this line (starting from 0 for the first stop)
 	vector<pair<Busstop*,double>> get_delta_at_stops() { return delta_at_stops; }
-	int get_new_tripid() { trip_count++; return id*100 + trip_count; } //generates a new tripid for this line
-	void set_trip_count(int trip_count_) { trip_count = trip_count_; }
+	int generate_new_trip_id() { trip_count++; return id*100 + trip_count; } //generates a new tripid for this line and increments the trip counter for this line
+	bool is_unique_tripid(int tripid); //returns true if no trip in flex trips or trips for this line has this tripid
 
 protected:
 	int id;						//!< line ID
