@@ -67,14 +67,14 @@ BustripGenerator::~BustripGenerator()
 	delete generationStrategy_;
 }
 
-void BustripGenerator::reset(int tg_strategy_type)
+void BustripGenerator::reset(int generation_strategy_type)
 {
 	for (Bustrip* trip : plannedTrips_)
 	{
 		delete trip;
 	}
 	plannedTrips_.clear();
-	setTripGenerationStrategy(tg_strategy_type);
+	setTripGenerationStrategy(generation_strategy_type);
 }
 
 void BustripGenerator::addCandidateline(Busline * line)

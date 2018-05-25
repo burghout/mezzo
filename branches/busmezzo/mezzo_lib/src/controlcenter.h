@@ -92,15 +92,17 @@ class ITripGenerationStrategy;
 class BustripGenerator
 {
 public:
-	enum tgStrategyType { Null = 0, Naive }; //ids of trip generation strategies known to BustripGenerator
+	enum generationStrategyType { Null = 0, Naive }; //ids of trip generation strategies known to BustripGenerator
+
 	explicit BustripGenerator(ITripGenerationStrategy* generationStrategy = nullptr);
 	~BustripGenerator();
 
-	bool requestTrip(const RequestHandler& rh, double time); //evaluates whether a Bustrip should be generated to serve requests or not
+	friend class BustripVehicleMatcher; //give matcher class access to plannedTrips_ etc.
+
 	bool requestTrip(const RequestHandler& rh, double time); //returns true if an unassigned trip has been generated and added to plannedTrips_ and false otherwise
 	void setTripGenerationStrategy(int type);
 
-	void reset(int tg_strategy_type);
+	void reset(int generation_strategy_type);
 	void addCandidateline(Busline* line);
 	void removeTrip(const int trip_id); //remove trip that corresponds to given id from plannedTrips_
 	// 1. add trip to busline, now busline::execute will activate busline for its first Bustrip::activate call. if several trips are generated in a chain
