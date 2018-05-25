@@ -139,56 +139,54 @@ public:
 	virtual bool calc_trip_generation(const set<Request>& requestSet, const vector<Busline*>& candidateLines, const double time, set<Bustrip*>& tripSet) const;
 };
 
-/*Responsible for assigning trips in TripQueue to transit Vehicles and adding these to matchedTripQueue*/
-class IMatchingStrategy;
+
+
+/*Responsible for assigning trips to transit vehicles and adding these to matchedTripSet as well as the trip's associated Busline*/
+class IMatchingStrategy; //e.g. hungarian, k-opt, insertion
 class BustripVehicleMatcher
 {
 public:
+	enum matchingStrategyType { Null = 0, Naive };
 	explicit BustripVehicleMatcher(IMatchingStrategy* matchingStrategy = nullptr);
 	~BustripVehicleMatcher();
 
 	//find_candidate_vehicles
 
-	void match_trip()
-	{
-		//matchingStrategy_->find_tripvehicle_match(TripQueue)
-	}
+	bool matchTrip(const BustripGenerator& tg, double time);
+	void setMatchingStrategy(int type);
 
-	void setMatchingStrategy(IMatchingStrategy* matchingStrategy) 
-	{
-		if (!matchingStrategy)
-		{
-			DEBUG_MSG_V("setMatchingStrategy failed!");
-			abort();
-		}
-
-		DEBUG_MSG("Changing matching strategy");
-		matchingStrategy_ = matchingStrategy;
-	}
+	void reset(int matching_strategy_type); 
 
 private:
-	vector<double> matchedTripQueue_;
+	vector<Bustrip*> matchedTrips_;
 	IMatchingStrategy* matchingStrategy_;
 };
 
+/*Algorithms for assigning a transit vehicle to a Bustrip*/
 class IMatchingStrategy
 {
 public:
-	virtual void find_tripvehicle_match() = 0;
+	virtual bool find_tripvehicle_match() = 0;
     //static IMatchingStrategy* make_strategy
 
 protected:
-	//Reference to the TripQueue
 	//Reference to Fleet attached to CC
 	//Forecaster class?
+};
+/*Null matching strategy that always returns false*/
+class NullMatching : public IMatchingStrategy
+{
+public:
+	virtual bool find_tripvehicle_match() { return false; }
 };
 
 class NaiveMatching : public IMatchingStrategy
 {
 public:
-	virtual void find_tripvehicle_match() 
+	virtual bool find_tripvehicle_match() 
 	{
 		DEBUG_MSG("Matching Naively!");
+		return false;
 	}
 };
 
@@ -216,8 +214,9 @@ class ControlCenter : public QObject
 
 public:
 	explicit ControlCenter(
-		int id = 0, 
-		int tg_strategy = 0, 
+		int id = 0,
+		int tg_strategy = 0,
+		int tvm_strategy = 0,
 		Eventlist* eventlist = nullptr, 
 		QObject* parent = nullptr
 	);
@@ -244,6 +243,8 @@ signals:
 
 	void fleetStateChanged(double time);
 
+	void tripGenerated(double time);
+
 private slots:
 	
 	//request related
@@ -253,15 +254,19 @@ private slots:
 	void on_requestAccepted(double time);
 	void on_requestRejected(double time);
 
+	void on_tripGenerated(double time);
+
 	//fleet related
 	void updateFleetState(int bus_id, BusState newstate, double time);
-
 	void requestTrip(double time); //delegates to BustripGenerator to generate a trip depending on whatever strategy it currently uses and the state of the RequestHandler and add this to its list of trips
+
+	void matchVehicle(double time);
 
 private:
 	//OBS! remember to add all mutable members to reset method, including reset functions of process classes
 	const int id_;	//id of control center
 	const int tg_strategy_;	//initial trip generation strategy
+	const int tvm_strategy_; //initial trip - vehicle matching strategy
 	const Eventlist* eventlist_; //pointer to the eventlist to be passed to BustripGenerator or possibly FleetScheduler
 	
 	//maps for bookkeeping connected passengers and vehicles

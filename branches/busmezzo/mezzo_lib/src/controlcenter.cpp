@@ -208,11 +208,39 @@ bool NaiveTripGeneration::calc_trip_generation(const set<Request>& requestSet, c
 //BustripVehicleMatcher
 BustripVehicleMatcher::BustripVehicleMatcher(IMatchingStrategy* matchingStrategy): matchingStrategy_(matchingStrategy)
 {
-	DEBUG_MSG("Constructing TM");
+	DEBUG_MSG("Constructing TVM");
 }
 BustripVehicleMatcher::~BustripVehicleMatcher()
 {
-	DEBUG_MSG("Destroying TM");
+	DEBUG_MSG("Destroying TVM");
+}
+
+bool BustripVehicleMatcher::matchTrip(const BustripGenerator& tg, double time)
+{
+	//matchingStrategy_->find_tripvehicle_match(tg.plannedTrips_, double time);
+	matchingStrategy_->find_tripvehicle_match();
+
+	return false;
+}
+
+void BustripVehicleMatcher::setMatchingStrategy(int type)
+{
+	if (matchingStrategy_)
+		delete matchingStrategy_;
+
+	DEBUG_MSG("Changing trip - vehicle matching strategy to " << type);
+	if (type == Null)
+		matchingStrategy_ = new NullMatching();
+	else if (type == Naive)
+		matchingStrategy_ = new NaiveMatching();
+	else
+		matchingStrategy_ = nullptr;
+}
+
+void BustripVehicleMatcher::reset(int matching_strategy_type)
+{
+	matchedTrips_.clear();
+	setMatchingStrategy(matching_strategy_type);
 }
 
 //VehicleDispatcher
@@ -226,13 +254,15 @@ VehicleDispatcher::~VehicleDispatcher()
 }
 
 //ControlCenter
-ControlCenter::ControlCenter(int id, int tg_strategy, Eventlist* eventlist, QObject* parent) : QObject(parent), id_(id), tg_strategy_(tg_strategy), eventlist_(eventlist)
+ControlCenter::ControlCenter(int id, int tg_strategy, int tvm_strategy, Eventlist* eventlist, QObject* parent) 
+	: QObject(parent), id_(id), tg_strategy_(tg_strategy), tvm_strategy_(tvm_strategy), eventlist_(eventlist)
 {
 	QString qname = QString::fromStdString(to_string(id));
 	this->setObjectName(qname); //name of control center does not really matter but useful for debugging purposes
 	DEBUG_MSG("Constructing CC" << id_);
 
-	tg_.setTripGenerationStrategy(tg_strategy); //set the initial tg_strategy of BustripGenerator
+	tg_.setTripGenerationStrategy(tg_strategy); //set the initial generation strategy of BustripGenerator
+	tvm_.setMatchingStrategy(tvm_strategy);	//set initial matching strategy of BustripVehicleMatcher
 	connectInternal(); //connect internal signal slots
 }
 ControlCenter::~ControlCenter()
@@ -249,7 +279,7 @@ void ControlCenter::reset()
 	//Reset all process classes
 	rh_.reset();
 	tg_.reset(tg_strategy_); 
-	//tm_.reset();
+	tvm_.reset(tvm_strategy_);
 	//fs_.reset();
 
 	//Clear all members of ControlCenter
@@ -270,6 +300,12 @@ void ControlCenter::connectInternal()
 	assert(ok);
 	ok = QObject::connect(this, &ControlCenter::fleetStateChanged, this, &ControlCenter::requestTrip, Qt::DirectConnection);
 	assert(ok);
+
+	//Triggers to match vehicles in trips via BustripVehicleMatcher
+	ok = QObject::connect(this, &ControlCenter::tripGenerated, this, &ControlCenter::on_tripGenerated, Qt::DirectConnection);
+	assert(ok);
+	ok = QObject::connect(this, &ControlCenter::tripGenerated, this, &ControlCenter::matchVehicle, Qt::DirectConnection);
+	assert(ok);	
 }
 
 void ControlCenter::connectPassenger(Passenger* pass)
@@ -351,6 +387,11 @@ void ControlCenter::on_requestRejected(double time)
 	DEBUG_MSG(Q_FUNC_INFO << ": Request Rejected at time " << time);
 }
 
+void ControlCenter::on_tripGenerated(double time)
+{
+	DEBUG_MSG(Q_FUNC_INFO << ": Trip Generated at time " << time);
+}
+
 void ControlCenter::updateFleetState(int bus_id, BusState newstate, double time)
 {
 	int state = static_cast<int>(newstate);
@@ -362,5 +403,12 @@ void ControlCenter::updateFleetState(int bus_id, BusState newstate, double time)
 void ControlCenter::requestTrip(double time)
 {
 	if (tg_.requestTrip(rh_, time))
-		DEBUG_MSG("Trip generated");
+		emit tripGenerated(time);
 }
+
+void ControlCenter::matchVehicle(double time)
+{
+	tvm_.matchTrip(tg_, time);
+}
+
+
