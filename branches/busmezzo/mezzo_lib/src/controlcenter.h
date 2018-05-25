@@ -85,7 +85,7 @@ private:
 
 
 
-/*Responsible generating trips without vehicles and adding these to TripSet as well as trips for corresponding Busline*/
+/*Responsible for generating planned trips without vehicles and adding these to a set of planned trips*/
 class Bustrip;
 class Busline;
 class ITripGenerationStrategy;
@@ -97,45 +97,46 @@ public:
 	~BustripGenerator();
 
 	bool requestTrip(const RequestHandler& rh, double time); //evaluates whether a Bustrip should be generated to serve requests or not
+	bool requestTrip(const RequestHandler& rh, double time); //returns true if an unassigned trip has been generated and added to plannedTrips_ and false otherwise
 	void setTripGenerationStrategy(int type);
 
 	void reset(int tg_strategy_type);
 	void addCandidateline(Busline* line);
+	void removeTrip(const int trip_id); //remove trip that corresponds to given id from plannedTrips_
 	// 1. add trip to busline, now busline::execute will activate busline for its first Bustrip::activate call. if several trips are generated in a chain
 
 private:
-	set<Bustrip*> tripSet_; //set of trips to be performed that have not been matched to vehicles yet
+	set<Bustrip*> plannedTrips_; //set of trips to be performed that have not been matched to vehicles yet
 	vector<Busline*> candidateLines_; //lines (i.e. routes and stops to visit along the route) that this BustripGenerator can create trips for (TODO: do other process classes do not need to know about this?)
 
 	ITripGenerationStrategy* generationStrategy_;
 };
 
-
-
-/*Algorithms for making Bustrip generation decisions*/
+/*Algorithms for generating a Bustrip (unassigned to a vehicle)*/
 class Busstop;
 typedef pair<Busstop*, double> Visit_stop; 
 class ITripGenerationStrategy
 {
 public:
-	virtual bool calc_trip_generation(const set<Request>& requestSet, const vector<Busline*>& candidatelines, const double time) const = 0; //returns true if a trip should be generated according to some strategy and false otherwise
+	virtual bool calc_trip_generation(const set<Request>& requestSet, const vector<Busline*>& candidatelines, const double time, set<Bustrip*>& tripSet) const = 0; //returns true if a trip was generated and added to tripSet container according to some strategy and false otherwise
 
 protected:
 	//supporting methods for generating trips with whatever ITripGenerationStrategy
 	vector<Busline*> get_lines_between_stops(const vector<Busline*>& lines, const int ostop_id, const int dstop_id) const; //returns buslines among lines given as input that run from a given originstop to a given destination stop (Note: assumes lines are uni-directional and that busline stops are ordered, which they currently are in BusMezzo)
 	vector<Visit_stop*> create_schedule(double init_dispatch_time, const vector<pair<Busstop*, double>>& time_between_stops) const; //creates a vector of scheduled visits to stops starting from the dispatch time (given by simulation time)
+	Bustrip* create_unassigned_trip(Busline* line, double desired_dispatch_time, const vector<Visit_stop*>& schedule) const; //creates a Bustrip for a given line with a desired start time and a scheduled arrival to stops along this line (subject to the availablility of a vehicle to serve this trip)
 };
 /*Null strategy that always returns false*/
 class NullTripGeneration : public ITripGenerationStrategy
 {
 public:
-	virtual bool calc_trip_generation(const set<Request>& requestSet, const vector<Busline*>& candidatelines, const double time) const { return false; }
+	virtual bool calc_trip_generation(const set<Request>& requestSet, const vector<Busline*>& candidatelines, const double time, set<Bustrip*>& tripSet) const { return false; }
 };
 /*Matches trip according to oldest unassigned request & first line found to serve this request*/
 class NaiveTripGeneration : public ITripGenerationStrategy
 {
 public:
-	virtual bool calc_trip_generation(const set<Request>& requestSet, const vector<Busline*>& candidatelines, const double time) const;
+	virtual bool calc_trip_generation(const set<Request>& requestSet, const vector<Busline*>& candidateLines, const double time, set<Bustrip*>& tripSet) const;
 };
 
 /*Responsible for assigning trips in TripQueue to transit Vehicles and adding these to matchedTripQueue*/

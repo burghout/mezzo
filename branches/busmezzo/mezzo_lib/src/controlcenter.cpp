@@ -69,7 +69,11 @@ BustripGenerator::~BustripGenerator()
 
 void BustripGenerator::reset(int tg_strategy_type)
 {
-	tripSet_.clear();
+	for (Bustrip* trip : plannedTrips_)
+	{
+		delete trip;
+	}
+	plannedTrips_.clear();
 	setTripGenerationStrategy(tg_strategy_type);
 }
 
@@ -78,12 +82,23 @@ void BustripGenerator::addCandidateline(Busline * line)
 	candidateLines_.push_back(line);
 }
 
+void BustripGenerator::removeTrip(const int trip_id)
+{
+	set<Bustrip*>::iterator it;
+	it = find_if(plannedTrips_.begin(), plannedTrips_.end(), compare<Bustrip>(trip_id));
+	if (it != plannedTrips_.end())
+	{
+		delete (*it);
+		plannedTrips_.erase(it);
+	}
+}
+
 bool BustripGenerator::requestTrip(const RequestHandler& rh, double time)
 {
 	DEBUG_MSG("BustripGenerator is requesting a trip at time " << time);
 	if (generationStrategy_)
 	{
-		return generationStrategy_->calc_trip_generation(rh.requestSet_, candidateLines_, time); //returns true if trip has been generated
+		return generationStrategy_->calc_trip_generation(rh.requestSet_, candidateLines_, time, plannedTrips_); //returns true if trip has been generated and added to the plannedTrips_
 	}
 	return false;
 }
@@ -128,6 +143,25 @@ vector<Busline*> ITripGenerationStrategy::get_lines_between_stops(const vector<B
 
 	return lines_between_stops;
 }
+Bustrip* ITripGenerationStrategy::create_unassigned_trip(Busline* line, double desired_dispatch_time, const vector<Visit_stop*>& desired_schedule) const
+{
+	int trip_id; 
+	Bustrip* trip = nullptr;
+
+	trip_id = line->generate_new_trip_id(); //get new trip id for this line
+	assert(line->is_unique_tripid(trip_id));
+
+	trip = new Bustrip(trip_id, desired_dispatch_time, line); //create trip
+
+	//initialize trip
+	trip->add_stops(desired_schedule); //add scheduled stop visits to trip
+	trip->convert_stops_vector_to_map(); //TODO: not sure why this is necessary but is done for other trips so
+	trip->set_last_stop_visited(trip->stops.front()->first);  //same here unsure why this is necessary (instead of in constructor or activate method) but done in network readers
+
+	return trip;
+
+}
+
 vector<Visit_stop*> ITripGenerationStrategy::create_schedule(double init_dispatch_time, const vector<pair<Busstop*, double>>& time_between_stops) const
 {
 	assert(init_dispatch_time >= 0);
@@ -144,24 +178,27 @@ vector<Visit_stop*> ITripGenerationStrategy::create_schedule(double init_dispatc
 	return schedule;
 }
 
-bool NaiveTripGeneration::calc_trip_generation(const set<Request>& requestSet, const vector<Busline*>& candidateLines, const double time) const
+bool NaiveTripGeneration::calc_trip_generation(const set<Request>& requestSet, const vector<Busline*>& candidateLines, const double time, set<Bustrip*>& tripSet) const
 {
 	if (!requestSet.empty() && !candidateLines.empty())
 	{
-		int ostop_id = (*requestSet.begin()).ostop_id;//find the OD pair for the first request in the request set
-		int dstop_id = (*requestSet.begin()).dstop_id;
-		vector<Busline*> lines_between_stops;
-
-		lines_between_stops = get_lines_between_stops(candidateLines, ostop_id, dstop_id); //check if any candidate line connects the OD pair
-		if (!lines_between_stops.empty())//if a connection exists then generate a trip for this line for dynamically generated trips
+		if (requestSet.size() >= 10) //generate a trip if there are at least ten requests in the requestSet
 		{
-			Busline* line = lines_between_stops.front(); //choose first feasible line found
-			vector<Visit_stop*> schedule = create_schedule(time,line->get_delta_at_stops()); //build the schedule of stop visits for this trip (we visit all stops along the candidate line)
+			int ostop_id = (*requestSet.begin()).ostop_id;//find the OD pair for the first request in the request set
+			int dstop_id = (*requestSet.begin()).dstop_id;
+			vector<Busline*> lines_between_stops;
 
+			lines_between_stops = get_lines_between_stops(candidateLines, ostop_id, dstop_id); //check if any candidate line connects the OD pair
+			if (!lines_between_stops.empty())//if a connection exists then generate a trip for this line for dynamically generated trips
+			{
+				Busline* line = lines_between_stops.front(); //choose first feasible line found
+				vector<Visit_stop*> schedule = create_schedule(time, line->get_delta_at_stops()); //build the schedule of stop visits for this trip (we visit all stops along the candidate line)
 
-			//add it to the flex_trips for this line
+				Bustrip* newtrip = create_unassigned_trip(line, time, schedule); //create a new trip for this line using now as the dispatch time
+				tripSet.insert(newtrip);//add this trip to the tripSet
 
-			return true;
+				return true;
+			}
 		}
 	}
 	
