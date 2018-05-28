@@ -308,6 +308,32 @@ void Bus::print_state()
 	cout << endl;
 }
 
+bool Bus::is_idle()
+{
+	switch (state_)
+	{
+	case BusState::IdleEmpty: 
+	case BusState::IdleFull: 
+	case BusState::IdlePartiallyFull:
+		return true;
+	default:
+		return false;
+	}
+}
+
+bool Bus::is_driving()
+{
+	switch (state_)
+	{
+	case BusState::DrivingEmpty:
+	case BusState::DrivingFull:
+	case BusState::DrivingPartiallyFull:
+		return true;
+	default:
+		return false;
+	}
+}
+
 // ***** Bus-types functions *****
 Bustype::Bustype ()
 {
