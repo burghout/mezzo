@@ -103,13 +103,14 @@ public:
 	void setTripGenerationStrategy(int type);
 
 	void reset(int generation_strategy_type);
-	void addCandidateline(Busline* line);
+	void addServiceRoute(Busline* line);
+	
 	void removeTrip(const int trip_id); //remove trip that corresponds to given id from plannedTrips_
 	// 1. add trip to busline, now busline::execute will activate busline for its first Bustrip::activate call. if several trips are generated in a chain
 
 private:
 	set<Bustrip*> plannedTrips_; //set of trips to be performed that have not been matched to vehicles yet
-	vector<Busline*> candidateLines_; //lines (i.e. routes and stops to visit along the route) that this BustripGenerator can create trips for (TODO: do other process classes do not need to know about this?)
+	vector<Busline*> serviceRoutes_; //lines (i.e. routes and stops to visit along the route) that this BustripGenerator can create trips for (TODO: do other process classes do not need to know about this?)
 
 	ITripGenerationStrategy* generationStrategy_;
 };
@@ -144,6 +145,7 @@ public:
 
 
 /*Responsible for assigning trips to transit vehicles and adding these to matchedTripSet as well as the trip's associated Busline*/
+class Bus;
 class IMatchingStrategy; //e.g. hungarian, k-opt, insertion
 class BustripVehicleMatcher
 {
@@ -153,6 +155,7 @@ public:
 	~BustripVehicleMatcher();
 
 	//find_candidate_vehicles
+	void addVehicleToServiceRoute(int line_id, Bus* transitveh); //add vehicle vector of vehicles assigned to serve the given line
 
 	bool matchTrip(const BustripGenerator& tg, double time);
 	void setMatchingStrategy(int type);
@@ -160,7 +163,9 @@ public:
 	void reset(int matching_strategy_type); 
 
 private:
-	vector<Bustrip*> matchedTrips_;
+	set<Bustrip*> matchedTrips_; //set of trips that have been matched with a transit vehicle
+	map<int, vector<Bus*>> candidateVehicles_per_SRoute_; //maps lineIDs among service routes for this control center to vector of candidate transit vehicles
+
 	IMatchingStrategy* matchingStrategy_;
 };
 
@@ -208,7 +213,6 @@ private:
 
 /*Groups togethers processes that control or modify transit Vehicles and provides an interface to Passenger*/
 class Passenger;
-class Bus;
 enum class BusState;
 class ControlCenter : public QObject
 {
@@ -237,7 +241,8 @@ public:
 	void connectVehicle(Bus* transitveh); //connects Vehicle to CC
 	void disconnectVehicle(Bus* transitveh); //disconnect Vehicle from CC
 
-	void addCandidateLine(Busline* line); //add line to BustripGenerator map of possible lines to create trips for
+	void addServiceRoute(Busline* line); //add line to BustripGenerator map of possible lines to create trips for
+	void addVehicleToServiceRoute(int line_id, Bus* transitveh); //add bus to vector of candidate vehicles that may be assigned trips for this line
 
 signals:
 	void requestAccepted(double time);

@@ -1840,10 +1840,10 @@ bool Network::readbusline(istream& in) // reads a busline
         return false;
     }
 
-  if (flex_line) //if flexible vehicle scheduling is allowed for this line then add it to a controlcenter
+  if (flex_line) //if flexible vehicle scheduling is allowed for this line then add it to a controlcenter as a potential service route
   {
 	  assert(theParameters->drt);
-	  ccmap[1]->addCandidateLine(bl);
+	  ccmap[1]->addServiceRoute(bl);
   }
 	
 
@@ -5217,6 +5217,9 @@ bool Network::read_unassignedvehicle(istream& in) //reads a bus vehicles that ar
 	int init_stop_id; //id of stop that bus is initialized at (generated in an idle state)
 	Busstop* init_stop;
 	double init_time; //time at which bus is generated
+	int nr_sroutes; //nr of lines (service routes) that the bus is assigned to serve
+	int sroute_id; //id of a line (service route) that the bus is assigned to serve
+	vector<int> sroute_ids;
 	Busline* init_line; //initial line (containing a route and odpair for which bus is generated (init_stop is the first stop on this line))
 	DrtVehicleInit unassignedvehicle; //tuple with vehicle, init stop and init time
 
@@ -5227,11 +5230,36 @@ bool Network::read_unassignedvehicle(istream& in) //reads a bus vehicles that ar
 		return false;
 	}
 	in >> bv_id >> type_id >> init_stop_id >> init_time;
+	in >> nr_sroutes;
+	bracket = ' ';
+	in >> bracket;
+	if (bracket != '{'){
+		DEBUG_MSG_V("readfile::read_unassignedvehicle scanner jammed at " << bracket);
+		return false;
+	}
+	//add the bus as a candidate transit vehicle for each service route it is assigned to
+	for (int i = 0; i < nr_sroutes; ++i)
+	{
+		in >> sroute_id;
+		vector<Busline*>::iterator line_it = find_if(buslines.begin(), buslines.end(), compare<Busline>(sroute_id) );
+		if (line_it != buslines.end() && (*line_it)->is_flex_line()) //service route exists and we can dynamically generate trips for this line
+		{
+			sroute_ids.push_back(sroute_id);
+		}
+		else
+		{
+			DEBUG_MSG_V("readfile::read_unassignedvehicle scanner jammed at " << sroute_id << endl
+						<< "flexible service route with this id does not exist! Aborting...");
+			abort();
+		}
 
-	// find bus type and create bus vehicle
-	Bustype* bty = (*(find_if(bustypes.begin(), bustypes.end(), compare <Bustype>(type_id))));
-	// generate a new bus vehicle
-	vid++;
+	}
+	in >> bracket;
+	if (bracket != '}')
+	{
+		DEBUG_MSG_V("readfile::read_unassignedvehicle scanner jammed at " << bracket);
+	}
+	bracket = ' ';
 	in >> bracket;
 	if (bracket != '}')
 	{
@@ -5239,18 +5267,18 @@ bool Network::read_unassignedvehicle(istream& in) //reads a bus vehicles that ar
 		return false;
 	}
 
-	//Construct idle bus
+	// find bus type and create bus vehicle
+	Bustype* bty = (*(find_if(bustypes.begin(), bustypes.end(), compare <Bustype>(type_id))));
+	// generate a new bus vehicle
+	vid++;
 	Bus* bus = recycler.newBus(); // get a bus vehicle
 	bus->set_bus_id(bv_id);
 	bus->set_bustype_attributes(bty);
 	bus->set_curr_trip(nullptr); // bus has no trip assigned to it, on_trip should = false
-	
-	//bus->init(bus->get_id(), 4, bus->get_length(), route, odpair, time); // initialize this vehicle as a type of bus (vehicle progression functions e.g. Link::enter_veh depend on this) 
-																		//with a route and odpair so that this vehicle can find it way to its first stop
-	//find the stop for which the bus is initialized at
+
 	init_stop = (*(find_if(busstops.begin(), busstops.end(), compare <Busstop>(init_stop_id))));
 
-	unassignedvehicle = make_tuple(bus, init_stop, init_time);
+	unassignedvehicle = make_tuple(bus, init_stop, init_time, sroute_ids);
 	drtvehicles.push_back(unassignedvehicle);
 
 	return true;
@@ -7790,10 +7818,15 @@ bool Network::init()
 			Busstop* stop = get<1>(drt_init);
 			Bus* bus = get<0>(drt_init);
 			double init_time = get<2>(drt_init);
+			vector<int> sroute_ids = get<3>(drt_init);
 
 			ccmap[1]->connectVehicle(bus); //connect vehicle to a control center
 			stop->add_unassigned_bus(bus, init_time); //should be in a Null state until their init_time
 			eventlist->add_event(init_time, stop);	//add a Busstop event scheduled for the init_time of vehicle  to switch state of bus to IdleEmpty from Null
+			for (const int& sroute_id : sroute_ids)
+			{
+				ccmap[1]->addVehicleToServiceRoute(sroute_id, bus);//add vehicle as a candidate service vehicle for service routes
+			}
 		}
 	}
 #endif //_BUSES

@@ -249,7 +249,7 @@ public:
 	vector <Busstop*>  stops; //!< contains all the stops on this line
 
 	//DRT implementation
-	bool get_flex_line() const { return flex_line; }
+	bool is_flex_line() const { return flex_line; }
 	void add_flex_trip(Bustrip* trip, double starttime); //adds trip with corresponding scheduled start time to flex_trip vector and keeps this vector sorted by start time
 	void add_stop_delta(Busstop* stop, double delta_from_preceding_stop) { delta_at_stops.push_back(make_pair(stop, delta_from_preceding_stop)); } //set the scheduled/expected travel times between stops on this line (starting from 0 for the first stop)
 	vector<pair<Busstop*,double>> get_delta_at_stops() { return delta_at_stops; }

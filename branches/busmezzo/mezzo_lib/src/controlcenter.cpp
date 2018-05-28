@@ -77,9 +77,9 @@ void BustripGenerator::reset(int generation_strategy_type)
 	setTripGenerationStrategy(generation_strategy_type);
 }
 
-void BustripGenerator::addCandidateline(Busline * line)
+void BustripGenerator::addServiceRoute(Busline * line)
 {
-	candidateLines_.push_back(line);
+	serviceRoutes_.push_back(line);
 }
 
 void BustripGenerator::removeTrip(const int trip_id)
@@ -98,7 +98,7 @@ bool BustripGenerator::requestTrip(const RequestHandler& rh, double time)
 	DEBUG_MSG("BustripGenerator is requesting a trip at time " << time);
 	if (generationStrategy_)
 	{
-		return generationStrategy_->calc_trip_generation(rh.requestSet_, candidateLines_, time, plannedTrips_); //returns true if trip has been generated and added to the plannedTrips_
+		return generationStrategy_->calc_trip_generation(rh.requestSet_, serviceRoutes_, time, plannedTrips_); //returns true if trip has been generated and added to the plannedTrips_
 	}
 	return false;
 }
@@ -215,6 +215,11 @@ BustripVehicleMatcher::~BustripVehicleMatcher()
 	DEBUG_MSG("Destroying TVM");
 }
 
+void BustripVehicleMatcher::addVehicleToServiceRoute(int line_id, Bus* transitveh)
+{
+	candidateVehicles_per_SRoute_[line_id].push_back(transitveh);
+}
+
 bool BustripVehicleMatcher::matchTrip(const BustripGenerator& tg, double time)
 {
 	//matchingStrategy_->find_tripvehicle_match(tg.plannedTrips_, double time);
@@ -240,6 +245,7 @@ void BustripVehicleMatcher::setMatchingStrategy(int type)
 void BustripVehicleMatcher::reset(int matching_strategy_type)
 {
 	matchedTrips_.clear();
+	candidateVehicles_per_SRoute_.clear();
 	setMatchingStrategy(matching_strategy_type);
 }
 
@@ -358,10 +364,15 @@ void ControlCenter::disconnectVehicle(Bus* transitveh)
 	assert(ok);
 }
 
-void ControlCenter::addCandidateLine(Busline* line)
+void ControlCenter::addServiceRoute(Busline* line)
 {
-	assert(line->get_flex_line()); //only flex lines should be added to control center for now
-	tg_.addCandidateline(line);
+	assert(line->is_flex_line()); //only flex lines should be added to control center for now
+	tg_.addServiceRoute(line);
+}
+
+void ControlCenter::addVehicleToServiceRoute(int line_id, Bus* transitveh)
+{
+	tvm_.addVehicleToServiceRoute(line_id, transitveh);
 }
 
 //Slot implementations
