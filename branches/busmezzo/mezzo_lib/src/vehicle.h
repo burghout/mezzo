@@ -171,8 +171,11 @@ public:
 	void set_state(const BusState newstate, const double time); //sets state_ to newstate and emits stateChanged
 	void print_state(); //prints current BusState for debugging purposes (TODO: remove later)
 
-	bool is_idle();
-	bool is_driving();
+	bool is_idle();	//returns true if bus is idle/waiting at a stop
+	bool is_driving(); //returns true if bus is driving between stops
+
+	Busstop* get_last_stop_visited() { return last_stop_visited_; }
+	void set_last_stop_visited(Busstop* last_stop_visited) { last_stop_visited_ = last_stop_visited; } 
 
 signals:
 	void stateChanged(int bus_id, BusState state, double time); // Signal informing a change of BusState
@@ -185,10 +188,11 @@ protected:
 	int capacity; // In the future will be determined according to the bus type
 	int occupancy;
 	Bustrip* curr_trip;
+
 	bool on_trip; // is true when bus is on a trip and false when waiting for the next trip
 	list <Busvehicle_location> output_vehicle; //!< list of output data for buses visiting stops
-
-private:
+	
+	Busstop* last_stop_visited_; //The last busstop (if no stop has been visited then initialized to nullptr) that this transit vehicle has entered
 	BusState state_; //state of the vehicle used for DRT service with controlcenter
 
 };

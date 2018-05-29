@@ -126,6 +126,7 @@ Bus::Bus(QObject* parent) : QObject(parent), Vehicle()
 		random->randomize();
 	}
 
+	last_stop_visited_ = nullptr;
 	state_ = BusState::Null;
 }
 Bus::Bus(int id_, int type_, double length_, Route* route_, ODpair* odpair_, double time_, QObject* parent) : QObject(parent),
@@ -146,6 +147,7 @@ Bus::Bus(int id_, int type_, double length_, Route* route_, ODpair* odpair_, dou
 		random->randomize();
 	}
 
+	last_stop_visited_ = nullptr;
 	state_ = BusState::Null;
 };
 Bus::Bus(int bv_id_, Bustype* bty, QObject* parent) : QObject(parent)
@@ -167,6 +169,7 @@ Bus::Bus(int bv_id_, Bustype* bty, QObject* parent) : QObject(parent)
 		random->randomize();
 	}
 
+	last_stop_visited_ = nullptr;
 	state_ = BusState::Null;
 };
 
@@ -180,6 +183,7 @@ void Bus::reset ()
 
 	//ControlCenter
 	disconnect(this, 0, 0, 0); //disconnect all signal slots (will reconnect to control center in Network::init)
+	last_stop_visited_ = nullptr;
 	state_ = BusState::Null;
 }
 
@@ -306,6 +310,7 @@ void Bus::print_state()
 		abort();
 	}
 	cout << endl;
+	cout << "\t" << "- last stop visited: " << last_stop_visited_->get_id() << endl;
 }
 
 bool Bus::is_idle()

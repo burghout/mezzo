@@ -1329,6 +1329,13 @@ bool Busstop::execute(Eventlist* eventlist, double time) // is executed by the e
 			exiting_trip->advance_next_stop(exit_time, eventlist); 
 		}
 		buses_currently_at_stop.erase(iter_departure);
+
+		// update vehicle state
+		Bus* busv = exiting_trip->get_busv();
+		BusState state = busv->calc_state(bus_exit, busv->get_occupancy());
+		busv->set_last_stop_visited(this); //update this here before setting state
+		busv->set_state(state, time); //emits a signal to control center
+
 		return true;
 	}
 
@@ -1365,6 +1372,14 @@ bool Busstop::execute(Eventlist* eventlist, double time) // is executed by the e
 		set_had_been_visited (entering_trip->get_line(), true);
 		entering_trip->advance_next_stop(exit_time, eventlist);
 		expected_bus_arrivals.erase(iter_arrival);
+
+		//update vehicle state
+		Bus* busv = entering_trip->get_busv();
+		BusState state = busv->calc_state(bus_exit, busv->get_occupancy());
+		busv->set_last_stop_visited(this); //update this here before setting state
+		busv->set_state(state, time); //emits a signal to control center
+
+		return true;
 	}
 	
 	//check if busstop event is the availability of an unassigned vehicle
@@ -1373,6 +1388,7 @@ bool Busstop::execute(Eventlist* eventlist, double time) // is executed by the e
 		if (ua_bus.second == time)
 		{
 			DEBUG_MSG("Activating unassigned bus " << ua_bus.first->get_bus_id() << " at time " << time << " at stop " << name);
+			ua_bus.first->set_last_stop_visited(this); //update this here before setting state
 			ua_bus.first->set_state(BusState::IdleEmpty, time); //vehicle is now available and signals its availability to control center
 		} 
 	}
