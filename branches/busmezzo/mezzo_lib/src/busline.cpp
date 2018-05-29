@@ -1122,6 +1122,7 @@ void Busstop::reset()
 	expected_arrivals.clear();
 	expected_bus_arrivals.clear();
 	buses_at_stop.clear();
+	unassigned_bus_arrivals.clear();
 	unassigned_buses_at_stop.clear();
 	last_arrivals.clear();
 	last_departures.clear();
@@ -1383,17 +1384,21 @@ bool Busstop::execute(Eventlist* eventlist, double time) // is executed by the e
 	}
 	
 	//check if busstop event is the availability of an unassigned vehicle
-	for (auto& ua_bus : unassigned_buses_at_stop)
+	for (vector<pair<Bus*, double>>::iterator ua_bus_it = unassigned_bus_arrivals.begin(); ua_bus_it != unassigned_bus_arrivals.end(); ++ua_bus_it )
 	{
-		if (ua_bus.second == time)
+		if ((*ua_bus_it).second == time)
 		{
-			DEBUG_MSG("Activating unassigned bus " << ua_bus.first->get_bus_id() << " at time " << time << " at stop " << name);
-			ua_bus.first->set_last_stop_visited(this); //update this here before setting state
-			ua_bus.first->set_state(BusState::IdleEmpty, time); //vehicle is now available and signals its availability to control center
+			Bus* ua_bus = (*ua_bus_it).first;
+			DEBUG_MSG("Activating unassigned bus " << ua_bus->get_bus_id() << " at time " << time << " at stop " << name);
+			ua_bus->set_last_stop_visited(this); //update this here before setting state
+			add_unassigned_bus(ua_bus, time); //add vehicle to vector of unassigned buses at this stop
+			ua_bus->set_state(BusState::IdleEmpty, time); //vehicle is now available and signals its availability to control center
+			unassigned_bus_arrivals.erase(ua_bus_it); 
+			return true;
 		} 
 	}
 
-	return true;
+	return false;
 }
 
 void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, double time) //!< progress passengers at stop: waiting, boarding and alighting
@@ -2246,17 +2251,30 @@ int Busstop::calc_total_nr_waiting ()
 return total_nr_waiting;
 }
 
-void Busstop::add_unassigned_bus(Bus* bus, double arrival_time)
+void Busstop::add_unassigned_bus_arrival(Bus* bus, double expected_arrival_time)
 {
 	DEBUG_MSG("Adding bus " << bus->get_bus_id() << " to unassigned buses at stop " << name);
 	assert(bus->get_occupancy() == 0); //unassigned buses should be empty
+	assert(expected_arrival_time >= 0);
+	unassigned_bus_arrivals.push_back(make_pair(bus, expected_arrival_time));
+	sort(unassigned_bus_arrivals.begin(), unassigned_bus_arrivals.end(),
+		[](const pair<Bus*,double>& left, const pair<Bus*, double>& right) -> bool
+		{
+			return left.second < right.second;	//keep vector sorted by arrival time (smallest at the back of the vector)
+		}
+	); 
+}
+
+void Busstop::add_unassigned_bus(Bus* bus, double arrival_time)
+{
+	assert(arrival_time >= 0);
 	unassigned_buses_at_stop.push_back(make_pair(bus, arrival_time));
 	sort(unassigned_buses_at_stop.begin(), unassigned_buses_at_stop.end(), 
-		[](auto const& left, auto const& right) 
+		[](const pair<Bus*, double>& left, const pair<Bus*, double>& right) -> bool
 		{
-			return left.second < right.second;
+			return left.second < right.second; //keep vector sorted by arrival time (smallest at the back of the vector)
 		}
-	); //keep vector sorted by arrival time (smallest at the back of the vector)
+	);
 }
 
 void Busstop::record_busstop_visit (Bustrip* trip, double enter_time)  // creates a log-file for stop-related info
