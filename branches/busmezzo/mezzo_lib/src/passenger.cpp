@@ -365,6 +365,8 @@ void Passenger::start (Eventlist* eventlist, double time)
 
 Request Passenger::createRequest(int load, double time)
 {
+	assert(load > 0);
+	assert(time >= 0);
 	return Request(this->get_id(), OD_stop->get_origin()->get_id(), OD_stop->get_destination()->get_id(), load, time);
 }
 

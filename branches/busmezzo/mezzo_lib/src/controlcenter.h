@@ -121,7 +121,7 @@ typedef pair<Busstop*, double> Visit_stop;
 class ITripGenerationStrategy
 {
 public:
-	virtual bool calc_trip_generation(const set<Request>& requestSet, const vector<Busline*>& candidatelines, const double time, set<Bustrip*>& tripSet) const = 0; //returns true if a trip was generated and added to tripSet container according to some strategy and false otherwise
+	virtual bool calc_trip_generation(const set<Request>& requestSet, const vector<Busline*>& candidateServiceRoutes, const double time, set<Bustrip*>& tripSet) const = 0; //returns true if a trip was generated and added to tripSet container according to some strategy and false otherwise
 
 protected:
 	//supporting methods for generating trips with whatever ITripGenerationStrategy
@@ -133,13 +133,13 @@ protected:
 class NullTripGeneration : public ITripGenerationStrategy
 {
 public:
-	virtual bool calc_trip_generation(const set<Request>& requestSet, const vector<Busline*>& candidatelines, const double time, set<Bustrip*>& tripSet) const { return false; }
+	virtual bool calc_trip_generation(const set<Request>& requestSet, const vector<Busline*>& candidateServiceRoutes, const double time, set<Bustrip*>& tripSet) const { return false; }
 };
 /*Matches trip according to oldest unassigned request & first line found to serve this request*/
 class NaiveTripGeneration : public ITripGenerationStrategy
 {
 public:
-	virtual bool calc_trip_generation(const set<Request>& requestSet, const vector<Busline*>& candidateLines, const double time, set<Bustrip*>& tripSet) const;
+	virtual bool calc_trip_generation(const set<Request>& requestSet, const vector<Busline*>& candidateServiceRoutes, const double time, set<Bustrip*>& tripSet) const;
 };
 
 
@@ -267,7 +267,7 @@ private slots:
 	void updateFleetState(int bus_id, BusState newstate, double time);
 	void requestTrip(double time); //delegates to BustripGenerator to generate a trip depending on whatever strategy it currently uses and the state of the RequestHandler and add this to its list of trips
 
-	void matchVehicle(double time);
+	void matchVehiclesToTrips(double time);
 
 private:
 	//OBS! remember to add all mutable members to reset method, including reset functions of process classes

@@ -117,6 +117,7 @@ void BustripGenerator::setTripGenerationStrategy(int type)
 		generationStrategy_ = nullptr;
 }
 
+//ITripGenerationStrategy
 vector<Busline*> ITripGenerationStrategy::get_lines_between_stops(const vector<Busline*>& lines, const int ostop_id, const int dstop_id) const
 {
 	vector<Busline*> lines_between_stops; // lines between stops given as input
@@ -156,7 +157,7 @@ Bustrip* ITripGenerationStrategy::create_unassigned_trip(Busline* line, double d
 	//initialize trip
 	trip->add_stops(desired_schedule); //add scheduled stop visits to trip
 	trip->convert_stops_vector_to_map(); //TODO: not sure why this is necessary but is done for other trips so
-	trip->set_last_stop_visited(trip->stops.front()->first);  //same here unsure why this is necessary (instead of in constructor or activate method) but done in network readers
+	trip->set_last_stop_visited(trip->stops.front()->first);  //sets last stop visited to the origin stop of the trip
 
 	return trip;
 
@@ -178,9 +179,9 @@ vector<Visit_stop*> ITripGenerationStrategy::create_schedule(double init_dispatc
 	return schedule;
 }
 
-bool NaiveTripGeneration::calc_trip_generation(const set<Request>& requestSet, const vector<Busline*>& candidateLines, const double time, set<Bustrip*>& tripSet) const
+bool NaiveTripGeneration::calc_trip_generation(const set<Request>& requestSet, const vector<Busline*>& candidateServiceRoutes, const double time, set<Bustrip*>& tripSet) const
 {
-	if (!requestSet.empty() && !candidateLines.empty())
+	if (!requestSet.empty() && !candidateServiceRoutes.empty())
 	{
 		if (requestSet.size() >= 10) //generate a trip if there are at least ten requests in the requestSet
 		{
@@ -188,7 +189,7 @@ bool NaiveTripGeneration::calc_trip_generation(const set<Request>& requestSet, c
 			int dstop_id = (*requestSet.begin()).dstop_id;
 			vector<Busline*> lines_between_stops;
 
-			lines_between_stops = get_lines_between_stops(candidateLines, ostop_id, dstop_id); //check if any candidate line connects the OD pair
+			lines_between_stops = get_lines_between_stops(candidateServiceRoutes, ostop_id, dstop_id); //check if any candidate service route connects the OD pair
 			if (!lines_between_stops.empty())//if a connection exists then generate a trip for this line for dynamically generated trips
 			{
 				Busline* line = lines_between_stops.front(); //choose first feasible line found
@@ -310,7 +311,7 @@ void ControlCenter::connectInternal()
 	//Triggers to match vehicles in trips via BustripVehicleMatcher
 	ok = QObject::connect(this, &ControlCenter::tripGenerated, this, &ControlCenter::on_tripGenerated, Qt::DirectConnection);
 	assert(ok);
-	ok = QObject::connect(this, &ControlCenter::tripGenerated, this, &ControlCenter::matchVehicle, Qt::DirectConnection);
+	ok = QObject::connect(this, &ControlCenter::tripGenerated, this, &ControlCenter::matchVehiclesToTrips, Qt::DirectConnection);
 	assert(ok);	
 }
 
@@ -378,7 +379,6 @@ void ControlCenter::addVehicleToServiceRoute(int line_id, Bus* transitveh)
 //Slot implementations
 void ControlCenter::recieveRequest(Request req, double time)
 {
-	DEBUG_MSG(Q_FUNC_INFO);
 	assert(req.time >= 0 && req.load > 0); //assert that request is valid
 	rh_.addRequest(req) ? emit requestAccepted(time) : emit requestRejected(time);
 }
@@ -417,7 +417,7 @@ void ControlCenter::requestTrip(double time)
 		emit tripGenerated(time);
 }
 
-void ControlCenter::matchVehicle(double time)
+void ControlCenter::matchVehiclesToTrips(double time)
 {
 	tvm_.matchTrip(tg_, time);
 }
