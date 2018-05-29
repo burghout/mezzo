@@ -7821,7 +7821,7 @@ bool Network::init()
 			vector<int> sroute_ids = get<3>(drt_init);
 
 			ccmap[1]->connectVehicle(bus); //connect vehicle to a control center
-			stop->add_unassigned_bus(bus, init_time); //should be in a Null state until their init_time
+			stop->add_unassigned_bus_arrival(bus, init_time); //should be in a Null state until their init_time
 			eventlist->add_event(init_time, stop);	//add a Busstop event scheduled for the init_time of vehicle  to switch state of bus to IdleEmpty from Null
 			for (const int& sroute_id : sroute_ids)
 			{
