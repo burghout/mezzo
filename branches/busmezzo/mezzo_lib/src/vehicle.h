@@ -145,7 +145,7 @@ public:
 	virtual ~Bus(); //!< destructor
 	void reset ();
 // GETS and SETS
-	int get_bus_id () {return bus_id;}
+	int get_bus_id () const {return bus_id;}
 	void set_bus_id (int bus_id_) {bus_id = bus_id_;}
 	int get_occupancy() {return occupancy;}
 	void set_occupancy (const int occup) {occupancy=occup;}
@@ -171,10 +171,10 @@ public:
 	void set_state(const BusState newstate, const double time); //sets state_ to newstate and emits stateChanged
 	void print_state(); //prints current BusState for debugging purposes (TODO: remove later)
 
-	bool is_idle();	//returns true if bus is idle/waiting at a stop
-	bool is_driving(); //returns true if bus is driving between stops
+	bool is_idle() const;	//returns true if bus is idle/waiting at a stop
+	bool is_driving() const; //returns true if bus is driving between stops
 
-	Busstop* get_last_stop_visited() { return last_stop_visited_; }
+	Busstop* get_last_stop_visited() const { return last_stop_visited_; }
 	void set_last_stop_visited(Busstop* last_stop_visited) { last_stop_visited_ = last_stop_visited; } 
 
 signals:

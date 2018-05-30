@@ -126,6 +126,7 @@ Bus::Bus(QObject* parent) : QObject(parent), Vehicle()
 		random->randomize();
 	}
 
+	curr_trip = nullptr;
 	last_stop_visited_ = nullptr;
 	state_ = BusState::Null;
 }
@@ -147,6 +148,7 @@ Bus::Bus(int id_, int type_, double length_, Route* route_, ODpair* odpair_, dou
 		random->randomize();
 	}
 
+	curr_trip = nullptr;
 	last_stop_visited_ = nullptr;
 	state_ = BusState::Null;
 };
@@ -169,6 +171,7 @@ Bus::Bus(int bv_id_, Bustype* bty, QObject* parent) : QObject(parent)
 		random->randomize();
 	}
 
+	curr_trip = nullptr;
 	last_stop_visited_ = nullptr;
 	state_ = BusState::Null;
 };
@@ -313,7 +316,7 @@ void Bus::print_state()
 	cout << "\t" << "- last stop visited: " << last_stop_visited_->get_id() << endl;
 }
 
-bool Bus::is_idle()
+bool Bus::is_idle() const
 {
 	switch (state_)
 	{
@@ -326,7 +329,7 @@ bool Bus::is_idle()
 	}
 }
 
-bool Bus::is_driving()
+bool Bus::is_driving() const
 {
 	switch (state_)
 	{
