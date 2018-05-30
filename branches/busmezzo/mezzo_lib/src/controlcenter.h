@@ -97,7 +97,7 @@ public:
 	explicit BustripGenerator(ITripGenerationStrategy* generationStrategy = nullptr);
 	~BustripGenerator();
 
-	friend class BustripVehicleMatcher; //give matcher class access to plannedTrips_ etc.
+	friend class BustripVehicleMatcher; //give matcher class access to plannedTrips_. May remove trip from this set without destroying it if it has been matched
 
 	bool requestTrip(const RequestHandler& rh, double time); //returns true if an unassigned trip has been generated and added to plannedTrips_ and false otherwise
 	void setTripGenerationStrategy(int type);
@@ -105,8 +105,8 @@ public:
 	void reset(int generation_strategy_type);
 	void addServiceRoute(Busline* line);
 	
-	void removeTrip(const int trip_id); //remove trip that corresponds to given id from plannedTrips_
-	// 1. add trip to busline, now busline::execute will activate busline for its first Bustrip::activate call. if several trips are generated in a chain
+	void cancelPlannedTrip(Bustrip* trip); //destroy and remove trip from set of plannedTrips_
+	
 
 private:
 	set<Bustrip*> plannedTrips_; //set of trips to be performed that have not been matched to vehicles yet

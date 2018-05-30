@@ -82,15 +82,14 @@ void BustripGenerator::addServiceRoute(Busline * line)
 	serviceRoutes_.push_back(line);
 }
 
-void BustripGenerator::removeTrip(const int trip_id)
+void BustripGenerator::cancelPlannedTrip(Bustrip* trip)
 {
-	set<Bustrip*>::iterator it;
-	it = find_if(plannedTrips_.begin(), plannedTrips_.end(), compare<Bustrip>(trip_id));
-	if (it != plannedTrips_.end())
+	assert(trip->driving_roster.empty());
+	if (plannedTrips_.count(trip) != 0)
 	{
-		delete (*it);
-		plannedTrips_.erase(it);
-	}
+		delete trip;
+		plannedTrips_.erase(trip);
+	} 
 }
 
 bool BustripGenerator::requestTrip(const RequestHandler& rh, double time)
@@ -147,7 +146,7 @@ vector<Busline*> ITripGenerationStrategy::get_lines_between_stops(const vector<B
 Bustrip* ITripGenerationStrategy::create_unassigned_trip(Busline* line, double desired_dispatch_time, const vector<Visit_stop*>& desired_schedule) const
 {
 	int trip_id; 
-	Bustrip* trip = nullptr;
+	Bustrip* trip;
 
 	trip_id = line->generate_new_trip_id(); //get new trip id for this line
 	assert(line->is_unique_tripid(trip_id));
