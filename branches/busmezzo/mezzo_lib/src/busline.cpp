@@ -2277,6 +2277,27 @@ void Busstop::add_unassigned_bus(Bus* bus, double arrival_time)
 	);
 }
 
+bool Busstop::remove_unassigned_bus(const Bus* bus)
+{
+	vector<pair<Bus*, double>>::iterator it;
+	it = find_if(unassigned_buses_at_stop.begin(), unassigned_buses_at_stop.end(),
+			[bus](const pair<Bus*, double>& ua_bus) -> bool {
+				return ua_bus.first->get_bus_id() == bus->get_bus_id();
+			}
+		);
+
+	if (it != unassigned_buses_at_stop.end())
+	{
+		unassigned_buses_at_stop.erase(it);
+		return true;
+	}
+
+	return false;
+}
+
+
+
+
 void Busstop::record_busstop_visit (Bustrip* trip, double enter_time)  // creates a log-file for stop-related info
 {
 	double arrival_headway = get_time_since_arrival (trip , enter_time);

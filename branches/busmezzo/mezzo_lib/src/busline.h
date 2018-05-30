@@ -414,6 +414,9 @@ public:
 	map <Busstop*, int> nr_expected_alighting;		//!< number of passengers expected to alight at the busline's stops (format 2)
 	map <Busstop*, int> assign_segements;			//!< contains the number of pass. travelling between trip segments
 
+//Control Center
+	void set_starttime(double starttime_) { starttime = starttime_; }
+
 protected:
 	int id;										  //!< course nr
 	Bus* busv;									  //!< pointer to the bus vehicle
@@ -715,6 +718,8 @@ public:
 	ControlCenter* get_CC() { return CC; }
 	void add_unassigned_bus_arrival(Bus* bus, double expected_arrival_time); //add bus to vector of unassigned (i.e. no trip and no busline) bus vehicles arrivals, sorted by expected arrival time
 	void add_unassigned_bus(Bus* bus, double arrival_time); //add bus to vector of unassigned buses at this stop sorted by actual arrival time
+	bool remove_unassigned_bus(const Bus* bus); //remove bus from vector of unassigned buses at stop, returns false if bus does not exist
+	vector<pair<Bus*, double>> get_unassigned_buses_at_stop() { return unassigned_buses_at_stop; }
 
 // relevant only for demand format 2
 	multi_rates multi_arrival_rates; //!< parameter lambda that defines the poission proccess of passengers arriving at the stop for each sequential stop
