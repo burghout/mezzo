@@ -215,17 +215,16 @@ BustripVehicleMatcher::~BustripVehicleMatcher()
 	DEBUG_MSG("Destroying TVM");
 }
 
+void BustripVehicleMatcher::reset(int matching_strategy_type)
+{
+	matchedTrips_.clear();
+	candidateVehicles_per_SRoute_.clear();
+	setMatchingStrategy(matching_strategy_type);
+}
+
 void BustripVehicleMatcher::addVehicleToServiceRoute(int line_id, Bus* transitveh)
 {
 	candidateVehicles_per_SRoute_[line_id].push_back(transitveh);
-}
-
-bool BustripVehicleMatcher::matchTrip(const BustripGenerator& tg, double time)
-{
-	//matchingStrategy_->find_tripvehicle_match(tg.plannedTrips_, double time);
-	matchingStrategy_->find_tripvehicle_match();
-
-	return false;
 }
 
 void BustripVehicleMatcher::setMatchingStrategy(int type)
@@ -242,11 +241,89 @@ void BustripVehicleMatcher::setMatchingStrategy(int type)
 		matchingStrategy_ = nullptr;
 }
 
-void BustripVehicleMatcher::reset(int matching_strategy_type)
+bool BustripVehicleMatcher::matchVehiclesToTrips(BustripGenerator& tg, double time)
 {
-	matchedTrips_.clear();
-	candidateVehicles_per_SRoute_.clear();
-	setMatchingStrategy(matching_strategy_type);
+	DEBUG_MSG("BustripVehicleMatcher is matching trips to vehicles at time " << time);
+	if (matchingStrategy_)
+	{
+		return matchingStrategy_->find_tripvehicle_match(tg.plannedTrips_, candidateVehicles_per_SRoute_, time, matchedTrips_);
+	}
+	return false;
+}
+
+//IMatchingStrategy
+void IMatchingStrategy::assign_idlevehicle_to_trip(Bus* veh, Bustrip* trip, double starttime)
+{
+	assert(!veh->get_curr_trip()); //this particular bus instance (remember there may be copies of it if there is a trip chain, should not have a trip)
+	assert(veh->is_idle());
+
+	DEBUG_MSG("---Assigning vehicle " << veh->get_bus_id() << " to trip " << trip->get_id() << "---");
+
+	trip->set_busv(veh); //assign bus to the trip
+	veh->set_curr_trip(trip); //assign trip to the bus
+	trip->set_bustype(veh->get_bus_type());//set the bustype of the trip (so trip has access to this bustypes dwell time function)
+	trip->get_busv()->set_on_trip(true); //flag the bus as busy for all trips except the first on its chain (it shouldnt) TODO: maybe move this to dispatcher
+	
+	vector<Start_trip*> driving_roster; //contains all other trips in this trips chain (if there are any) (TODO might move to dispatcher
+	Start_trip* st = new Start_trip(trip, starttime);
+
+	driving_roster.push_back(st);
+	trip->add_trips(driving_roster); //save the driving roster at the trip level to conform to interfaces of Busline::execute, Bustrip::activate etc. 
+	double delay = trip->get_starttime() - starttime;
+	trip->set_starttime(starttime); //reset scheduled dispatch from origin to given starttime
+	
+	DEBUG_MSG("Delay in start time for trip " << trip->get_id() << ": " << delay);
+
+	Busstop* stop = veh->get_last_stop_visited();
+	
+	if (!stop->remove_unassigned_bus(veh)) //bus is no longer unassigned and is removed from vector of unassigned buses at whatever stop the vehicle is waiting idle at
+											//trip associated with this bus will be added later to expected_bus_arrivals via
+											//Busline::execute -> Bustrip::activate -> Origin::insert_veh -> Link::enter_veh -> Bustrip::book_stop_visit -> Busstop::book_bus_arrival
+	{
+		DEBUG_MSG_V("Busstop::remove_unassigned_bus failed for bus " << veh->get_bus_id() << " and stop " << stop->get_id());
+	}
+
+}
+
+bool NaiveMatching::find_tripvehicle_match(set<Bustrip*>& plannedTrips, map<int, vector<Bus*>>& veh_per_sroute, const double time, set<Bustrip*>& matchedTrips)
+{
+	DEBUG_MSG("------------Matching Naively!-------------");
+	//attempt to match the first trip among plannedTrips with first idle vehicle found at the origin stop of the trip
+	if(!plannedTrips.empty() && !veh_per_sroute.empty())
+	{
+		Bustrip* trip = (*plannedTrips.begin()); //choose the first trip among planned trips
+		Bus* veh = nullptr; //the transit veh that we wish to match to a trip
+		Busline* sroute = trip->get_line(); //get the line/service route of this trip
+		vector<Bus*> candidate_buses = veh_per_sroute[sroute->get_id()]; //get all transit vehicles that have this route in their service area
+
+		if (!candidate_buses.empty()) //there is at least one bus serving the route of this trip
+		{
+			Busstop* origin_stop = trip->get_last_stop_visited(); //get the initial stop of the trip
+			vector<pair<Bus*, double>> ua_buses_at_stop = origin_stop->get_unassigned_buses_at_stop(); 
+
+			//check if one of the unassigned transit vehicles at the origin stop is currently serving the route of the trip
+			for (const pair<Bus*, double>& ua_bus : ua_buses_at_stop)
+			{
+				vector<Bus*>::iterator c_bus_it;
+				c_bus_it = find_if(candidate_buses.begin(), candidate_buses.end(), 
+					[ua_bus](const Bus* c_bus)->bool { 
+						return c_bus->get_bus_id() == ua_bus.first->get_bus_id();  //first bus in list should be the bus that arrived to the stop earliest
+					}
+				);
+				if (c_bus_it != candidate_buses.end()) //a bus match has been found
+				{
+					DEBUG_MSG("Trip - vehicle match found!");
+					veh = (*c_bus_it);
+					assign_idlevehicle_to_trip(veh, trip, time); //schedule the vehicle to perform the trip at this time
+					plannedTrips.erase(trip); //planned trip is now a matched trip so remove from plannedTrips set
+					matchedTrips.insert(trip); //and insert it into the match trips set
+					return true;
+				}
+			}
+		}
+	}
+
+	return false;
 }
 
 //VehicleDispatcher
@@ -418,7 +495,5 @@ void ControlCenter::requestTrip(double time)
 
 void ControlCenter::matchVehiclesToTrips(double time)
 {
-	tvm_.matchTrip(tg_, time);
+	tvm_.matchVehiclesToTrips(tg_, time);
 }
-
-

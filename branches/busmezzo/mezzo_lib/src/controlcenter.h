@@ -154,13 +154,13 @@ public:
 	explicit BustripVehicleMatcher(IMatchingStrategy* matchingStrategy = nullptr);
 	~BustripVehicleMatcher();
 
+	void reset(int matching_strategy_type);
+
 	//find_candidate_vehicles
 	void addVehicleToServiceRoute(int line_id, Bus* transitveh); //add vehicle vector of vehicles assigned to serve the given line
-
-	bool matchTrip(const BustripGenerator& tg, double time);
 	void setMatchingStrategy(int type);
 
-	void reset(int matching_strategy_type); 
+	bool matchVehiclesToTrips(BustripGenerator& tg, double time);
 
 private:
 	set<Bustrip*> matchedTrips_; //set of trips that have been matched with a transit vehicle
@@ -173,28 +173,28 @@ private:
 class IMatchingStrategy
 {
 public:
-	virtual bool find_tripvehicle_match() = 0;
-    //static IMatchingStrategy* make_strategy
+	virtual bool find_tripvehicle_match(
+		set<Bustrip*>&					plannedTrips, 
+		map<int, vector<Bus*>>&			candidateVehicles_per_SRoute, 
+		const double					time, 
+		set<Bustrip*>&					matchedTrips
+	) = 0; //returns true if a trip from plannedTrips has been matched with a vehicle from candidateVehicles_per_SRoute and added to matchedTrips. The trip is in this case also removed from plannedTrips
 
 protected:
-	//Reference to Fleet attached to CC
-	//Forecaster class?
+	void assign_idlevehicle_to_trip(Bus* idletransitveh, Bustrip* trip, double starttime); //performs all operations (similar to Network::read_busvehicle) required in assigning a trip to an idle vehicle (TODO: assigning driving vehicles)
+
 };
 /*Null matching strategy that always returns false*/
 class NullMatching : public IMatchingStrategy
 {
 public:
-	virtual bool find_tripvehicle_match() { return false; }
+	virtual bool find_tripvehicle_match(set<Bustrip*>& plannedTrips, map<int, vector<Bus*>>& veh_per_sroute, const double time, set<Bustrip*>& matchedTrips) { return false; }
 };
 
 class NaiveMatching : public IMatchingStrategy
 {
 public:
-	virtual bool find_tripvehicle_match() 
-	{
-		DEBUG_MSG("Matching Naively!");
-		return false;
-	}
+	virtual bool find_tripvehicle_match(set<Bustrip*>& plannedTrips, map<int, vector<Bus*>>& veh_per_sroute, const double time, set<Bustrip*>& matchedTrips);
 };
 
 /*In charge of dispatching transit vehicle - trip pairs*/
