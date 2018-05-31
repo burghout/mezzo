@@ -113,7 +113,10 @@ void BustripGenerator::setTripGenerationStrategy(int type)
 	else if (type == Naive)
 		generationStrategy_ = new NaiveTripGeneration();
 	else
+	{
+		DEBUG_MSG("This generation strategy is not recognized!");
 		generationStrategy_ = nullptr;
+	}
 }
 
 //ITripGenerationStrategy
@@ -213,6 +216,7 @@ BustripVehicleMatcher::BustripVehicleMatcher(IMatchingStrategy* matchingStrategy
 BustripVehicleMatcher::~BustripVehicleMatcher()
 {
 	DEBUG_MSG("Destroying TVM");
+	delete matchingStrategy_;
 }
 
 void BustripVehicleMatcher::reset(int matching_strategy_type)
@@ -238,7 +242,10 @@ void BustripVehicleMatcher::setMatchingStrategy(int type)
 	else if (type == Naive)
 		matchingStrategy_ = new NaiveMatching();
 	else
+	{
+		DEBUG_MSG("This matching strategy is not recognized!");
 		matchingStrategy_ = nullptr;
+	}
 }
 
 bool BustripVehicleMatcher::matchVehiclesToTrips(BustripGenerator& tg, double time)
@@ -381,8 +388,8 @@ void ControlCenter::connectInternal()
 	//Triggers to generate trips via BustripGenerator
 	ok = QObject::connect(this, &ControlCenter::requestAccepted, this, &ControlCenter::requestTrip, Qt::DirectConnection); 
 	assert(ok);
-	ok = QObject::connect(this, &ControlCenter::fleetStateChanged, this, &ControlCenter::requestTrip, Qt::DirectConnection);
-	assert(ok);
+	//ok = QObject::connect(this, &ControlCenter::fleetStateChanged, this, &ControlCenter::requestTrip, Qt::DirectConnection);
+	//assert(ok);
 
 	//Triggers to match vehicles in trips via BustripVehicleMatcher
 	ok = QObject::connect(this, &ControlCenter::tripGenerated, this, &ControlCenter::on_tripGenerated, Qt::DirectConnection);
