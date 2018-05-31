@@ -334,18 +334,44 @@ bool NaiveMatching::find_tripvehicle_match(set<Bustrip*>& plannedTrips, map<int,
 }
 
 //VehicleDispatcher
-VehicleDispatcher::VehicleDispatcher()
+VehicleDispatcher::VehicleDispatcher(IDispatchingStrategy* dispatchingStrategy) : dispatchingStrategy_(dispatchingStrategy)
 {
 	DEBUG_MSG("Constructing FD");
 }
 VehicleDispatcher::~VehicleDispatcher()
 {
 	DEBUG_MSG("Destroying FD");
+	delete dispatchingStrategy_;
 }
 
+void VehicleDispatcher::setDispatchingStrategy(int d_strategy_type)
+{
+	if (dispatchingStrategy_)
+		delete dispatchingStrategy_;
+
+	DEBUG_MSG("Changing dispatching strategy to " << d_strategy_type);
+	if (d_strategy_type == Null)
+		dispatchingStrategy_ = new NullDispatching();
+	else if (d_strategy_type == Naive)
+		dispatchingStrategy_ = new NaiveDispatching();
+	else
+	{
+		DEBUG_MSG("This dispatching strategy is not recognized!");
+		dispatchingStrategy_ = nullptr;
+	}
+}
+
+//IDispatchingStrategy
+bool NaiveDispatching::calc_dispatch_time(set<Bustrip*>& unscheduledTrips, double time)
+{
+
+	return false;
+}
+
+
 //ControlCenter
-ControlCenter::ControlCenter(int id, int tg_strategy, int tvm_strategy, Eventlist* eventlist, QObject* parent) 
-	: QObject(parent), id_(id), tg_strategy_(tg_strategy), tvm_strategy_(tvm_strategy), eventlist_(eventlist)
+ControlCenter::ControlCenter(int id, int tg_strategy, int tvm_strategy, int vd_strategy, Eventlist* eventlist, QObject* parent) 
+	: QObject(parent), id_(id), tg_strategy_(tg_strategy), tvm_strategy_(tvm_strategy), vd_strategy_(vd_strategy), eventlist_(eventlist)
 {
 	QString qname = QString::fromStdString(to_string(id));
 	this->setObjectName(qname); //name of control center does not really matter but useful for debugging purposes
@@ -353,6 +379,7 @@ ControlCenter::ControlCenter(int id, int tg_strategy, int tvm_strategy, Eventlis
 
 	tg_.setTripGenerationStrategy(tg_strategy); //set the initial generation strategy of BustripGenerator
 	tvm_.setMatchingStrategy(tvm_strategy);	//set initial matching strategy of BustripVehicleMatcher
+	vd_.setDispatchingStrategy(vd_strategy); //set initial dispatching strategy of VehicleDispatcher
 	connectInternal(); //connect internal signal slots
 }
 ControlCenter::~ControlCenter()

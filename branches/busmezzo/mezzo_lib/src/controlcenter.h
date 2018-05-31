@@ -198,17 +198,42 @@ public:
 };
 
 /*In charge of dispatching transit vehicle - trip pairs*/
+class IDispatchingStrategy;
 class VehicleDispatcher
 {
 public:
-	VehicleDispatcher();
+	enum dispatchStrategyType {Null = 0, Naive = 1};
+	explicit VehicleDispatcher(IDispatchingStrategy* dispatchingStrategy = nullptr);
 	~VehicleDispatcher();
 
+	bool scheduleMatchedTrips(BustripVehicleMatcher& tvm, double time);
+	void setDispatchingStrategy(int d_strategy_type);
 	//call Bustrip::activate somehow or Busline::execute
 	//void reset()
 
 private:
+	IDispatchingStrategy* dispatchingStrategy_;
+};
 
+/*Algorithms for deciding the start time of a trip that has been matched with a vehicle*/
+class IDispatchingStrategy
+{
+public:
+	virtual bool calc_dispatch_time(set<Bustrip*>& unscheduledTrips, double time) = 0;
+private:
+	void dispatch_trip(Bustrip* trip);
+};
+
+class NullDispatching : public IDispatchingStrategy
+{
+public:
+	virtual bool calc_dispatch_time(set<Bustrip*>& unscheduledTrips, double time) {return false};
+};
+
+class NaiveDispatching : public IDispatchingStrategy
+{
+public:
+	virtual bool calc_dispatch_time(set<Bustrip*>& unscheduledTrips, double time);
 };
 
 /*Groups togethers processes that control or modify transit Vehicles and provides an interface to Passenger*/
@@ -223,6 +248,7 @@ public:
 		int id = 0,
 		int tg_strategy = 0,
 		int tvm_strategy = 0,
+		int vd_strategy = 0,
 		Eventlist* eventlist = nullptr, 
 		QObject* parent = nullptr
 	);
@@ -274,6 +300,7 @@ private:
 	const int id_;	//id of control center
 	const int tg_strategy_;	//initial trip generation strategy
 	const int tvm_strategy_; //initial trip - vehicle matching strategy
+	const int vd_strategy_; //initial vehicle dispatching strategy
 	const Eventlist* eventlist_; //pointer to the eventlist to be passed to BustripGenerator or possibly FleetScheduler
 	
 	//maps for bookkeeping connected passengers and vehicles

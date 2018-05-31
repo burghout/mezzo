@@ -1439,7 +1439,8 @@ bool Network::readtransitnetwork(string name) //!< reads the stops, distances be
 	int id = 1;
 	int tg_strategy = 1;
 	int tvm_strategy = 1;
-	ControlCenter* cc = new ControlCenter(id, tg_strategy, tvm_strategy, eventlist); //for testing purposes, TODO: move to a controlcenter reader
+	int vd_strategy = 1;
+	ControlCenter* cc = new ControlCenter(id, tg_strategy, tvm_strategy, vd_strategy, eventlist); //for testing purposes, TODO: move to a controlcenter reader
 	ccmap[id] = cc;
 
     // First read the busstops
