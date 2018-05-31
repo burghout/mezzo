@@ -344,6 +344,10 @@ VehicleDispatcher::~VehicleDispatcher()
 	delete dispatchingStrategy_;
 }
 
+void VehicleDispatcher::reset(int dispatching_strategy_type)
+{
+	setDispatchingStrategy(dispatching_strategy_type);
+}
 void VehicleDispatcher::setDispatchingStrategy(int d_strategy_type)
 {
 	if (dispatchingStrategy_)
@@ -397,7 +401,7 @@ void ControlCenter::reset()
 	rh_.reset();
 	tg_.reset(tg_strategy_); 
 	tvm_.reset(tvm_strategy_);
-	//fs_.reset();
+	vd_.reset(vd_strategy_);
 
 	//Clear all members of ControlCenter
 	connectedPass_.clear();

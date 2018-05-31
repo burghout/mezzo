@@ -203,13 +203,15 @@ class VehicleDispatcher
 {
 public:
 	enum dispatchStrategyType {Null = 0, Naive = 1};
+	
 	explicit VehicleDispatcher(IDispatchingStrategy* dispatchingStrategy = nullptr);
 	~VehicleDispatcher();
 
+	void reset(int dispatching_strategy_type);
+
 	bool scheduleMatchedTrips(BustripVehicleMatcher& tvm, double time);
-	void setDispatchingStrategy(int d_strategy_type);
+	void setDispatchingStrategy(int type);
 	//call Bustrip::activate somehow or Busline::execute
-	//void reset()
 
 private:
 	IDispatchingStrategy* dispatchingStrategy_;
@@ -220,14 +222,15 @@ class IDispatchingStrategy
 {
 public:
 	virtual bool calc_dispatch_time(set<Bustrip*>& unscheduledTrips, double time) = 0;
-private:
+
+protected:
 	void dispatch_trip(Bustrip* trip);
 };
 
 class NullDispatching : public IDispatchingStrategy
 {
 public:
-	virtual bool calc_dispatch_time(set<Bustrip*>& unscheduledTrips, double time) {return false};
+	virtual bool calc_dispatch_time(set<Bustrip*>& unscheduledTrips, double time) { return false; }
 };
 
 class NaiveDispatching : public IDispatchingStrategy
