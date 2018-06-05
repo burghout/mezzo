@@ -1,7 +1,13 @@
 #include <QString>
 #include <QtTest/QtTest>
 #include "network.h"
-#include <unistd.h>
+#ifdef Q_OS_WIN
+    #include <direct.h>
+    #define chdir _chdir
+#else
+    #include <unistd.h>
+#endif
+//#include <unistd.h>
 #include <QFileInfo>
 
 //! Integration Tests BusMezzo
