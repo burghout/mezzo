@@ -69,10 +69,10 @@ Q_DECLARE_METATYPE(Request);
 class RequestHandler
 {
 public:
+	friend class BustripGenerator; //BustripGenerator recieves access to the requestSet as input to trip generation decisions
+
 	RequestHandler();
 	~RequestHandler();
-
-	friend class BustripGenerator; //BustripGenerator recieves access to the requestSet as input to trip generation decisions
 
 	void reset();
 
@@ -93,16 +93,16 @@ class BustripGenerator
 {
 public:
 	enum generationStrategyType { Null = 0, Naive }; //ids of trip generation strategies known to BustripGenerator
+	friend class BustripVehicleMatcher; //give matcher class access to plannedTrips_. May remove trip from this set without destroying it if it has been matched
 
 	explicit BustripGenerator(ITripGenerationStrategy* generationStrategy = nullptr);
 	~BustripGenerator();
 
-	friend class BustripVehicleMatcher; //give matcher class access to plannedTrips_. May remove trip from this set without destroying it if it has been matched
+	void reset(int generation_strategy_type);
 
 	bool requestTrip(const RequestHandler& rh, double time); //returns true if an unassigned trip has been generated and added to plannedTrips_ and false otherwise
 	void setTripGenerationStrategy(int type);
 
-	void reset(int generation_strategy_type);
 	void addServiceRoute(Busline* line);
 	
 	void cancelPlannedTrip(Bustrip* trip); //destroy and remove trip from set of plannedTrips_
@@ -151,6 +151,8 @@ class BustripVehicleMatcher
 {
 public:
 	enum matchingStrategyType { Null = 0, Naive };
+	friend class VehicleDispatcher; //give vehicle dispatcher access to matchedTrips
+
 	explicit BustripVehicleMatcher(IMatchingStrategy* matchingStrategy = nullptr);
 	~BustripVehicleMatcher();
 
@@ -173,12 +175,7 @@ private:
 class IMatchingStrategy
 {
 public:
-	virtual bool find_tripvehicle_match(
-		set<Bustrip*>&					plannedTrips, 
-		map<int, vector<Bus*>>&			candidateVehicles_per_SRoute, 
-		const double					time, 
-		set<Bustrip*>&					matchedTrips
-	) = 0; //returns true if a trip from plannedTrips has been matched with a vehicle from candidateVehicles_per_SRoute and added to matchedTrips. The trip is in this case also removed from plannedTrips
+	virtual bool find_tripvehicle_match(set<Bustrip*>& plannedTrips, map<int, vector<Bus*>>& candidateVehicles_per_SRoute, const double time, set<Bustrip*>& matchedTrips) = 0; //returns true if a trip from plannedTrips has been matched with a vehicle from candidateVehicles_per_SRoute and added to matchedTrips. The trip is in this case also removed from plannedTrips
 
 protected:
 	void assign_idlevehicle_to_trip(Bus* idletransitveh, Bustrip* trip, double starttime); //performs all operations (similar to Network::read_busvehicle) required in assigning a trip to an idle vehicle (TODO: assigning driving vehicles)
@@ -191,6 +188,7 @@ public:
 	virtual bool find_tripvehicle_match(set<Bustrip*>& plannedTrips, map<int, vector<Bus*>>& veh_per_sroute, const double time, set<Bustrip*>& matchedTrips) { return false; }
 };
 
+/*Naive matching strategy always matches the first trip in plannedTrips to the first candidate transit veh found (if any) at the origin stop of the trip.*/
 class NaiveMatching : public IMatchingStrategy
 {
 public:
@@ -204,17 +202,19 @@ class VehicleDispatcher
 public:
 	enum dispatchStrategyType {Null = 0, Naive = 1};
 	
-	explicit VehicleDispatcher(IDispatchingStrategy* dispatchingStrategy = nullptr);
+	explicit VehicleDispatcher(Eventlist* eventlist, IDispatchingStrategy* dispatchingStrategy = nullptr);
 	~VehicleDispatcher();
 
 	void reset(int dispatching_strategy_type);
 
 	bool scheduleMatchedTrips(BustripVehicleMatcher& tvm, double time);
 	void setDispatchingStrategy(int type);
-	//call Bustrip::activate somehow or Busline::execute
 
 private:
-	IDispatchingStrategy* dispatchingStrategy_;
+	set<Bustrip*> scheduledTrips_;
+	Eventlist* eventlist_; //currently the dispatching strategy books a busline event (vehicle - trip dispatching event)
+
+	IDispatchingStrategy* dispatchingStrategy_; //strategy that is used to determine the start time (for dispatch) of flexible transit vehicle trips
 };
 
 /*Algorithms for deciding the start time of a trip that has been matched with a vehicle*/
@@ -227,12 +227,14 @@ protected:
 	void dispatch_trip(Bustrip* trip);
 };
 
+/*Null dispatching rule that always returns false*/
 class NullDispatching : public IDispatchingStrategy
 {
 public:
 	virtual bool calc_dispatch_time(set<Bustrip*>& unscheduledTrips, double time) { return false; }
 };
 
+/*Dispatches the first trip found in unscheduledTrips at the earliest possible time*/
 class NaiveDispatching : public IDispatchingStrategy
 {
 public:
@@ -252,7 +254,7 @@ public:
 		int tg_strategy = 0,
 		int tvm_strategy = 0,
 		int vd_strategy = 0,
-		Eventlist* eventlist = nullptr, 
+		Eventlist* eventlist, //currently the dispatcher needs the eventlist to book Busline (vehicle - trip dispatching) events
 		QObject* parent = nullptr
 	);
 	~ControlCenter();
@@ -304,7 +306,6 @@ private:
 	const int tg_strategy_;	//initial trip generation strategy
 	const int tvm_strategy_; //initial trip - vehicle matching strategy
 	const int vd_strategy_; //initial vehicle dispatching strategy
-	const Eventlist* eventlist_; //pointer to the eventlist to be passed to BustripGenerator or possibly FleetScheduler
 	
 	//maps for bookkeeping connected passengers and vehicles
 	map<int, Passenger*> connectedPass_; //passengers currently connected to ControlCenter 

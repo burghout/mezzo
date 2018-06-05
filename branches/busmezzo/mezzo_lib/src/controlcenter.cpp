@@ -334,7 +334,7 @@ bool NaiveMatching::find_tripvehicle_match(set<Bustrip*>& plannedTrips, map<int,
 }
 
 //VehicleDispatcher
-VehicleDispatcher::VehicleDispatcher(IDispatchingStrategy* dispatchingStrategy) : dispatchingStrategy_(dispatchingStrategy)
+VehicleDispatcher::VehicleDispatcher(Eventlist* eventlist, IDispatchingStrategy* dispatchingStrategy) : eventlist_(eventlist), dispatchingStrategy_(dispatchingStrategy)
 {
 	DEBUG_MSG("Constructing FD");
 }
@@ -374,8 +374,8 @@ bool NaiveDispatching::calc_dispatch_time(set<Bustrip*>& unscheduledTrips, doubl
 
 
 //ControlCenter
-ControlCenter::ControlCenter(int id, int tg_strategy, int tvm_strategy, int vd_strategy, Eventlist* eventlist, QObject* parent) 
-	: QObject(parent), id_(id), tg_strategy_(tg_strategy), tvm_strategy_(tvm_strategy), vd_strategy_(vd_strategy), eventlist_(eventlist)
+ControlCenter::ControlCenter(Eventlist* eventlist, int id, int tg_strategy, int tvm_strategy, int vd_strategy, QObject* parent)
+	: QObject(parent), vd_(eventlist), id_(id), tg_strategy_(tg_strategy), tvm_strategy_(tvm_strategy), vd_strategy_(vd_strategy)
 {
 	QString qname = QString::fromStdString(to_string(id));
 	this->setObjectName(qname); //name of control center does not really matter but useful for debugging purposes
