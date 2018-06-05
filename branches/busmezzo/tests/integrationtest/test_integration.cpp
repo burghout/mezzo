@@ -87,7 +87,7 @@ void TestIntegration::testRunNetwork()
     QVERIFY2 (net->get_currenttime() == 5400.1, "Failure current time should be 5400.1 after running the simulation");
 
     // Example: way to check typical value for e.g. number of last departures from stop A:
-    qDebug() << net->get_busstop_from_name("A")->get_last_departures().size();
+   // qDebug() << net->get_busstop_from_name("A")->get_last_departures().size();
     // and here you turn it into a test
     QVERIFY2 ( net->get_busstop_from_name("A")->get_last_departures().size() == 2, "Failure, get_last_departures().size() for stop A should be 2");
 
@@ -96,9 +96,23 @@ void TestIntegration::testRunNetwork()
 
 void TestIntegration::testSaveResults()
 {
+    // remove old files:
+     qDebug() << QFile::remove("o_passenger_trajectory.dat");
+
+    // save results:
     nt->saveresults();
      // test here the properties that should be true after saving the results
-    QVERIFY2(true, "Failure ");
+
+    // testing if the output file o_passenger_trajectory.dat matches the expected output
+    QFile testfile1 ("://networks/SFnetwork/ExpectedOutputs/o_passenger_trajectory.dat");
+    QVERIFY2(testfile1.open(QIODevice::ReadOnly | QIODevice::Text), "Failure, cannot open ExpectedOutputs/o_passenger_trajectory.dat");
+    QFile file1 ("o_passenger_trajectory.dat");
+    QVERIFY2(file1.open(QIODevice::ReadOnly | QIODevice::Text), "Failure, cannot open o_passenger_trajectory.dat");
+
+    QVERIFY2(file1.readAll()==testfile1.readAll(), "Failure, o_passenger_trajectory.dat differs from ExpectedOutputs/o_passenger_trajectory.dat");
+
+    file1.close();
+    testfile1.close();
 }
 
 void TestIntegration::testDelete()
