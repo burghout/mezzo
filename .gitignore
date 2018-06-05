@@ -16,6 +16,7 @@ Makefile
 ui_parametersdialog_qt4.h
 
 *.user
+
 *.DS_Store
 *.o
 *.a
@@ -28,6 +29,7 @@ link_log.txt
 *.stash
 target_wrapper.sh
 test_integration.moc
-branches/busmezzo/tests/networks/SFnetwork/allmoes.dat
-branches/busmezzo/tests/networks/SFnetwork/assign.dat
-branches/busmezzo/tests/networks/SFnetwork/v_queues.dat
+*/SFnetwork/allmoes.dat
+*/SFnetwork/assign.dat
+*/SFnetwork/v_queues.dat
+
