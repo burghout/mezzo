@@ -39,7 +39,7 @@
 #define _DETERMINISTIC_VTYPES
 //#define _MULTINOMIAL_LOGIT
 #define _UNSAFE // faster reading, but less checking of input data
-//#define _BUSES
+#define _BUSES
 
 // GLOBAL VARIABLES
 extern long int randseed; // random seed
@@ -183,20 +183,23 @@ public:
    double max_waiting_time;
    double dominancy_perception_threshold;
    int choice_model; // !< RUM used at passengers' route choice decisions: 1 - MNL; 2 - PSL with legs defining overlapping.
-   int real_time_info; //!< real-time information at the network: 0 - none; 1 - for all lines stoping at each stop; 2 - for all lines stoping at all connected stop; 3 - for the entire network.
+   int real_time_info; //!< real-time information at the network: 0 - none; 1 - for all lines stoping at each stop; 2 - for all lines stopping at all connected stop; 3 - for the entire network; 4 - based on the stop-specific values
    double share_RTI_network; // indicates the share of the population of travellers that has access to RTI at the network-level (smart phone penetration rate), takes 0 to 1 values
    double start_pass_generation; 
    double stop_pass_generation;
    bool od_pairs_for_generation;
+    double gate_generation_time_diff; // passengers are generated slightly before service leaves to account for boarding time
 
 // transit control parameters
    double riding_time_weight;
    double dwell_time_weight;
    double waiting_time_weight;
    double holding_time_weight;
+   double compliance_rate; //!< Share [0,1] of bus trips that comply with the control strategy (assigned per trip)
+   bool transfer_sync; //!< true if transfer synchronization is being used. Will effect the way the line definition in transit_network.dat is read.
 
 // day2day assignment
-   double default_alpha_RTI;
+   double default_alpha_RTI; //!< Initial value of the real-time information credibility coefficient set for all travellers
 
 // TODO: Implement the use of the following paramaters
    double vissim_step; //!< time step for the VISSIM micro model

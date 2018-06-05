@@ -59,14 +59,14 @@ class Q
   void reset(); // resets the queue for re-start of simulation
  // Accessors -> made inline so they are faster....
 //  inline const bool full() {return (calc_total_space() >= maxcap);}           // for some reason this doesnt work. check later...
-  inline const bool full() {return (vehicles.size() >= maxcap);}
-  inline const bool empty(){return vehicles.empty();}
-  inline const bool exit_ok() {return ok;}
-  inline const int size() {return vehicles.size();}
-  inline const int queue(double time) {return (size()-nr_running(time));}
-  inline const int nr_running(double time) 	{list <Veh_in_Q> :: iterator iter=(find_if (vehicles.begin(),vehicles.end(), compare_time (time) ) ); 	
+  inline bool full() {return (vehicles.size() >= maxcap);}
+  inline bool empty(){return vehicles.empty();}
+  inline bool exit_ok() {return ok;}
+  int size() {return static_cast<int>(vehicles.size());}
+  inline int queue(double time) {return (size()-nr_running(time));}
+  inline int nr_running(double time) 	{list <Veh_in_Q> :: iterator iter=(find_if (vehicles.begin(),vehicles.end(), compare_time (time) ) );
   																	return distance(iter,vehicles.end());}
-  inline const double next () {return next_action;}
+  inline double next () {return next_action;}
   inline void add_alternative(int dest, vector<Link*> route) {alternatives.insert(alternatives.begin(),alternativetype(dest,route));}
   inline void add_alternative_route (Route* route_) {routes.insert(routes.begin(),route_);}
   // entering and exiting vehicles, maybe they should be inline as well...

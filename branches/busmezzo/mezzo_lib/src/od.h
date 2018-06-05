@@ -78,11 +78,11 @@ public:
 	void reset();
 // GETS
 	odval  odids();
-	const long get_nr_routes() {return routes.size();}
+	int get_nr_routes() {return static_cast<int>(routes.size());}
 	Route* get_route(int id);
 	Origin* get_origin();
 	Destination* get_destination();
-	const double get_rate();
+	double get_rate();
 	vector <rateval> get_route_rates();
 	vector<Route*>& get_allroutes(){return routes;}
 	Vtypes* vehtypes() {return vtypes;}
@@ -112,7 +112,7 @@ public:
 	vector <Route*> delete_spurious_routes(double time=0.0); // deletes spurious routes (with unrealistic costs) and returns ids of routes deleted
 	Route* filteredRoute(int index);
 private:
-	int id;  // for later use
+    //int id;  // for later use
 	ODaction* odaction;
 	Origin* origin;
 	Destination* destination;

@@ -83,7 +83,7 @@ void BatchrunDlg::on_runButton_clicked()
 	}	
 }
 
-const bool BatchrunDlg::checkConvergence(const int i, const double rmsn_ltt_, const double rmsn_odtt_)
+ bool BatchrunDlg::checkConvergence(const int i, const double rmsn_ltt_, const double rmsn_odtt_)
 {
 	// if more than max iterations, return true
 	if (i >= max_iter)
@@ -124,7 +124,7 @@ void BatchrunDlg::run_iterations()
 	update();
 
 // iterations
-	for (i; !checkConvergence(i,rmsn_ltt_,rmsn_odtt_) && !stop_pressed;i++)
+    for ( ; !checkConvergence(i,rmsn_ltt_,rmsn_odtt_) && !stop_pressed;i++)
 	{
 		// update display widgets with correct values
 		cur_iter->setNum(i);
@@ -149,7 +149,7 @@ void BatchrunDlg::run_iterations()
 			qApp->processEvents();
 			repaint();
 		}
-		theNetwork->end_of_simulation(runtime);
+		theNetwork->end_of_simulation();
 		rmsn_ltt_= theNetwork->calc_rmsn_input_output_linktimes();
 		if (i>1)
 			rmsn_odtt_=theNetwork->calc_rmsn_input_output_odtimes();

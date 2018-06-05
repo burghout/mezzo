@@ -139,7 +139,7 @@ void Passenger::set_AWT_first_leg_boarding(Busstop* stop, Busline* line)
 	// consider with and without RTI
 	// need to calc projected RTI and PK
 	
-	//AWT_first_leg_boarding = alpha_exp[stopline] * get_anticipated_waiting_time(stop,line) + alpha_RTI[stopline] * wt_rti + (1-alpha_RTI[stopline]-alpha_exp[stopline])*wt_pk; 	
+	// AWT_first_leg_boarding = alpha_exp[stopline] * get_anticipated_waiting_time(stop,line) + alpha_RTI[stopline] * wt_rti + (1-alpha_RTI[stopline]-alpha_exp[stopline])*wt_pk; 	
 }
 
 double Passenger::get_memory_projected_RTI (Busstop* stop, Busline* line)
@@ -313,18 +313,18 @@ void Passenger::start (Eventlist* eventlist)
 				OD_stop->get_destination()->add_odstops_as_destination(connection_stop, od_stop);
 			}
 			set_ODstop(connection_stop->get_stop_od_as_origin_per_stop(OD_stop->get_destination())); // set this stop as his new origin (new OD)
-			map<Busstop*,double> walk_dis = OD_stop->get_origin()->get_walking_distances();
-			double arrival_time_to_connected_stop = start_time + walk_dis[connection_stop] / theRandomizers[0]->nrandom (theParameters->average_walking_speed, theParameters->average_walking_speed/4);
+			
+			double arrival_time_to_connected_stop = start_time + get_walking_time(connection_stop,start_time);
 			eventlist->add_event(arrival_time_to_connected_stop, this);
-			//execute(eventlist, arrival_time_to_connected_stop);
-			pair<Busstop*,double> stop_time;
+
+            pair<Busstop*,double> stop_time;
 			stop_time.first = connection_stop;
 			stop_time.second = arrival_time_to_connected_stop;
 			add_to_selected_path_stop(stop_time);
 		}
 		else // if the pass. stays at the same stop
 		{
-			OD_stop->add_pass_waiting(this); // storage the new passenger at the list of waiting passengers with this OD
+			OD_stop->add_pass_waiting(this); // store the new passenger at the list of waiting passengers with this OD
 			set_arrival_time_at_stop(start_time);
 			add_to_selected_path_stop(stop_time);
 			if (get_pass_RTI_network_level() == true || OD_stop->get_origin()->get_rti() > 0)
@@ -404,7 +404,7 @@ void Passenger::record_waiting_experience(Bustrip* arriving_bus, double time)
 		if (left_behind_before)
 		{
 			double first_bus_arrival_time = waiting_time_due_denied_boarding.back().second;
-			/*for (vector<pair<Busstop*,double>>::iterator denied_boarding = waiting_time_due_denied_boarding.end(); denied_boarding > waiting_time_due_denied_boarding.begin();)
+			/*for (vector<pair<Busstop*,double> >::iterator denied_boarding = waiting_time_due_denied_boarding.end(); denied_boarding > waiting_time_due_denied_boarding.begin();)
 			{
 				denied_boarding--;
 				if (denied_boarding->first->get_id() != curr_stop->get_id())
@@ -433,26 +433,26 @@ Busstop* Passenger::make_alighting_decision (Bustrip* boarding_bus, double time)
 	vector<Pass_path*> path_set = OD_stop->get_path_set();
 	for (vector <Pass_path*>::iterator path_iter = path_set.begin(); path_iter < path_set.end(); path_iter++)
 	{
-		vector<vector<Busline*>> alt_lines = (*path_iter)->get_alt_lines();
+		vector<vector<Busline*> > alt_lines = (*path_iter)->get_alt_lines();
 		if (alt_lines.empty() == false) // in case it is not a walking-only alternative
 		{
-			vector<vector<Busline*>>::iterator first_leg = alt_lines.begin();
+			vector<vector<Busline*> >::iterator first_leg = alt_lines.begin();
 			for (vector <Busline*>::iterator first_leg_lines = (*first_leg).begin(); first_leg_lines < (*first_leg).end(); first_leg_lines++)
 			{
 				/*
 				// currently alights at the first possible transfer stop
 				if (boarding_bus->get_line()->get_id() == (*first_leg_lines)->get_id())
 				{
-					vector<vector<Busstop*>> alt_stops = (*path_iter)->get_alt_transfer__stops();
-					vector<vector<Busstop*>>::iterator stops_iter = alt_stops.begin();
+					vector<vector<Busstop*> > alt_stops = (*path_iter)->get_alt_transfer__stops();
+					vector<vector<Busstop*> >::iterator stops_iter = alt_stops.begin();
 					stops_iter++;
 					return (*stops_iter).front();
 				}
 				*/
 				if (boarding_bus->get_line()->get_id() == (*first_leg_lines)->get_id())
 				{
-					vector<vector<Busstop*>> alt_stops = (*path_iter)->get_alt_transfer_stops();
-					vector<vector<Busstop*>>::iterator stops_iter = alt_stops.begin() + 2; // pointing to the third place - the first transfer stop
+					vector<vector<Busstop*> > alt_stops = (*path_iter)->get_alt_transfer_stops();
+					vector<vector<Busstop*> >::iterator stops_iter = alt_stops.begin() + 2; // pointing to the third place - the first transfer stop
 					if (path_set.size() == 1 && (*stops_iter).size() == 1)
 					{
 						candidate_transfer_stops_u[(*stops_iter).front()] = 10; // in case it is the only option
@@ -513,7 +513,7 @@ Busstop* Passenger::make_alighting_decision (Bustrip* boarding_bus, double time)
 		if (iter == transfer_stop_position)
 		{
 			// constructing a structure for output
-			map<Busstop*,pair<double,double>> alighting_MNL; // utility followed by probability per stop
+			map<Busstop*,pair<double,double> > alighting_MNL; // utility followed by probability per stop
 			for (map <Busstop*, double>::iterator iter_u = candidate_transfer_stops_u.begin(); iter_u != candidate_transfer_stops_u.end(); iter_u++)
 			{
 				alighting_MNL[(*iter_u).first].first = (*iter_u).second;
@@ -557,8 +557,8 @@ Busstop* Passenger::make_connection_decision (double time)
 	}
 	for (vector <Pass_path*>::iterator path_iter = path_set.begin(); path_iter < path_set.end(); path_iter++)
 	{
-		vector<vector<Busstop*>> alt_stops = (*path_iter)->get_alt_transfer_stops();
-		vector<vector<Busstop*>>::iterator stops_iter = alt_stops.begin()+1;
+		vector<vector<Busstop*> > alt_stops = (*path_iter)->get_alt_transfer_stops();
+		vector<vector<Busstop*> >::iterator stops_iter = alt_stops.begin()+1;
 		for (vector<Busstop*>::iterator connected_stop = (*stops_iter).begin(); connected_stop < (*stops_iter).end(); connected_stop++)
 		// going over all the stops at the second (connected) set
 		{
@@ -616,7 +616,7 @@ Busstop* Passenger::make_connection_decision (double time)
 		if (iter == transfer_stop_position)
 		{
 			// constructing a structure for output
-			map<Busstop*,pair<double,double>> connecting_MNL; // utility followed by probability per stop
+			map<Busstop*,pair<double,double> > connecting_MNL; // utility followed by probability per stop
 			for (map <Busstop*, double>::iterator iter_u = candidate_connection_stops_u.begin(); iter_u != candidate_connection_stops_u.end(); iter_u++)
 			{
 				connecting_MNL[(*iter_u).first].first = (*iter_u).second;
@@ -654,8 +654,8 @@ Busstop* Passenger::make_first_stop_decision (double time)
 				vector<Pass_path*> path_set = possible_od->get_path_set();
 				for (vector <Pass_path*>::iterator path_iter = path_set.begin(); path_iter < path_set.end(); path_iter++)
 				{
-					vector<vector<Busstop*>> alt_stops = (*path_iter)->get_alt_transfer_stops();
-					vector<vector<Busstop*>>::iterator stops_iter = alt_stops.begin();
+					vector<vector<Busstop*> > alt_stops = (*path_iter)->get_alt_transfer_stops();
+					vector<vector<Busstop*> >::iterator stops_iter = alt_stops.begin();
 					// taking into account the walking distances from the origin to the origin stop and from the last stop till the final destination
 					candidate_origin_stops_u[(*o_stop_iter).first] += exp(theParameters->walking_time_coefficient * origin_walking_distances[(*o_stop_iter).first]/ theRandomizers[0]->nrandom(theParameters->average_walking_speed, theParameters->average_walking_speed/4) + theParameters->walking_time_coefficient * destination_walking_distances[(*d_stop_iter).first]/ theRandomizers[0]->nrandom(theParameters->average_walking_speed, theParameters->average_walking_speed/4) + possible_od->calc_combined_set_utility_for_connection ((*path_iter)->get_walking_distances().front(), time, this));
 				}
@@ -688,7 +688,7 @@ Busstop* Passenger::make_first_stop_decision (double time)
 		if (iter == origin_stop_position)
 		{
 			// constructing a structure for output
-			map<Busstop*,pair<double,double>> origin_MNL; // utility followed by probability per stop
+			map<Busstop*,pair<double,double> > origin_MNL; // utility followed by probability per stop
 			for (map <Busstop*, double>::iterator iter_u = candidate_origin_stops_u.begin(); iter_u != candidate_origin_stops_u.end(); iter_u++)
 			{
 				origin_MNL[(*iter_u).first].first = (*iter_u).second;
@@ -707,8 +707,8 @@ Busstop* Passenger::make_first_stop_decision (double time)
 map<Busstop*,double> Passenger::sample_walking_distances (ODzone* zone)
 {
 	map<Busstop*,double> walking_distances;
-	map <Busstop*,pair<double,double>> stop_distances = zone->get_stop_distances();
-	for (map <Busstop*,pair<double,double>>::iterator stop_iter = stop_distances.begin(); stop_iter != stop_distances.end(); stop_iter++)
+	map <Busstop*,pair<double,double> > stop_distances = zone->get_stop_distances();
+	for (map <Busstop*,pair<double,double> >::iterator stop_iter = stop_distances.begin(); stop_iter != stop_distances.end(); stop_iter++)
 	{
 			walking_distances[(*stop_iter).first] = theRandomizers[0]->nrandom((*stop_iter).second.first, (*stop_iter).second.second);
 	}
@@ -724,8 +724,8 @@ double Passenger::calc_boarding_probability_zone (Busline* arriving_bus, Busstop
 	vector<Busline*> first_leg_lines;
 	bool in_alt = false; // indicates if the current arriving bus is included 
 	// checks if the arriving bus is included as an option in a path set of at least ONE of relevant OD pair 
-	map <Busstop*,pair<double,double>> d_stops = d_zone->get_stop_distances();
-	for (map <Busstop*,pair<double,double>>::iterator iter_d_stops = d_stops.begin(); iter_d_stops != d_stops.end(); iter_d_stops++)
+	map <Busstop*,pair<double,double> > d_stops = d_zone->get_stop_distances();
+	for (map <Busstop*,pair<double,double> >::iterator iter_d_stops = d_stops.begin(); iter_d_stops != d_stops.end(); iter_d_stops++)
 	{
 		vector <Pass_path*> path_set = o_stop->get_stop_od_as_origin_per_stop((*iter_d_stops).first)->get_path_set();
 		for (vector <Pass_path*>::iterator path = path_set.begin(); path < path_set.end(); path ++)
@@ -736,7 +736,7 @@ double Passenger::calc_boarding_probability_zone (Busline* arriving_bus, Busstop
 			}
 			if ((*path)->get_alt_lines().empty() == false) // in case it is not a walk-only alternative
 			{
-				vector <vector <Busline*>> alt_lines = (*path)->get_alt_lines();
+				vector <vector <Busline*> > alt_lines = (*path)->get_alt_lines();
 				vector <Busline*> first_lines = alt_lines.front(); // need to check only for the first leg
 				for (vector <Busline*>::iterator line = first_lines.begin(); line < first_lines.end(); line++)
 				{
@@ -753,7 +753,7 @@ double Passenger::calc_boarding_probability_zone (Busline* arriving_bus, Busstop
 	if (in_alt == true)
 	{
 		vector<Pass_path*> arriving_paths;
-		for (map <Busstop*,pair<double,double>>::iterator iter_d_stops = d_stops.begin(); iter_d_stops != d_stops.end(); iter_d_stops++)
+		for (map <Busstop*,pair<double,double> >::iterator iter_d_stops = d_stops.begin(); iter_d_stops != d_stops.end(); iter_d_stops++)
 		{
 			vector <Pass_path*> path_set = o_stop->get_stop_od_as_origin_per_stop((*iter_d_stops).first)->get_path_set();
 			for (vector<Pass_path*>::iterator iter_paths = path_set.begin(); iter_paths < path_set.end(); iter_paths++)
@@ -778,7 +778,7 @@ double Passenger::calc_boarding_probability_zone (Busline* arriving_bus, Busstop
 			}
 		}
 		boarding_utility = log (boarding_utility);
-		for (map <Busstop*,pair<double,double>>::iterator iter_d_stops = d_stops.begin(); iter_d_stops != d_stops.end(); iter_d_stops++)
+		for (map <Busstop*,pair<double,double> >::iterator iter_d_stops = d_stops.begin(); iter_d_stops != d_stops.end(); iter_d_stops++)
 		{
 			vector <Pass_path*> path_set = o_stop->get_stop_od_as_origin_per_stop((*iter_d_stops).first)->get_path_set();
 			for (vector<Pass_path*>::iterator iter_paths = path_set.begin(); iter_paths < path_set.end(); iter_paths++)
@@ -821,22 +821,22 @@ Busstop* Passenger::make_alighting_decision_zone (Bustrip* boarding_bus, double 
 	// assuming that a pass. boards only paths from his path set
 	map <Busstop*, double> candidate_transfer_stops_u; // the double value is the utility associated with the respective stop
 	map <Busstop*, double> candidate_transfer_stops_p; // the double value is the probability associated with the respective stop
-	map <Busstop*,pair<double,double>> d_stops = d_zone->get_stop_distances();
-	for (map <Busstop*,pair<double,double>>::iterator iter_d_stops = d_stops.begin(); iter_d_stops != d_stops.end(); iter_d_stops++)
+	map <Busstop*,pair<double,double> > d_stops = d_zone->get_stop_distances();
+	for (map <Busstop*,pair<double,double> >::iterator iter_d_stops = d_stops.begin(); iter_d_stops != d_stops.end(); iter_d_stops++)
 	{
 		vector<Pass_path*> path_set = OD_stop->get_origin()->get_stop_od_as_origin_per_stop((*iter_d_stops).first)->get_path_set();
 		for (vector <Pass_path*>::iterator path_iter = path_set.begin(); path_iter < path_set.end(); path_iter++)
 		{
-			vector<vector<Busline*>> alt_lines = (*path_iter)->get_alt_lines();
+			vector<vector<Busline*> > alt_lines = (*path_iter)->get_alt_lines();
 			if (alt_lines.empty() == false) // in case it is not a walking-only alternative
 			{
-				vector<vector<Busline*>>::iterator first_leg = alt_lines.begin();
+				vector<vector<Busline*> >::iterator first_leg = alt_lines.begin();
 				for (vector <Busline*>::iterator first_leg_lines = (*first_leg).begin(); first_leg_lines < (*first_leg).end(); first_leg_lines++)
 				{
 					if (boarding_bus->get_line()->get_id() == (*first_leg_lines)->get_id())
 					{
-						vector<vector<Busstop*>> alt_stops = (*path_iter)->get_alt_transfer_stops();
-						vector<vector<Busstop*>>::iterator stops_iter = alt_stops.begin() + 2; // pointing to the third place - the first transfer stop
+						vector<vector<Busstop*> > alt_stops = (*path_iter)->get_alt_transfer_stops();
+						vector<vector<Busstop*> >::iterator stops_iter = alt_stops.begin() + 2; // pointing to the third place - the first transfer stop
 						for (vector<Busstop*>::iterator first_transfer_stops = (*stops_iter).begin(); first_transfer_stops < (*stops_iter).end(); first_transfer_stops++)
 						{
 							ODstops* left_od_stop = (*first_transfer_stops)->get_stop_od_as_origin_per_stop((*iter_d_stops).first);	
@@ -873,7 +873,7 @@ Busstop* Passenger::make_alighting_decision_zone (Bustrip* boarding_bus, double 
 		if (iter == transfer_stop_position)
 		{
 			// constructing a structure for output
-			map<Busstop*,pair<double,double>> alighting_MNL; // utility followed by probability per stop
+			map<Busstop*,pair<double,double> > alighting_MNL; // utility followed by probability per stop
 			for (map <Busstop*, double>::iterator iter_u = candidate_transfer_stops_u.begin(); iter_u != candidate_transfer_stops_u.end(); iter_u++)
 			{
 				alighting_MNL[(*iter_u).first].first = (*iter_u).second;
@@ -902,14 +902,14 @@ Busstop* Passenger::make_connection_decision_zone (double time)
 			u_walk_directly = theParameters->walking_time_coefficient * destination_walking_distances[OD_stop->get_origin()] / theRandomizers[0]->nrandom(theParameters->average_walking_speed, theParameters->average_walking_speed/4);
 		}
 	}
-	map <Busstop*,pair<double,double>> distances = d_zone->get_stop_distances();
-	for (map<Busstop*,pair<double,double>>::iterator iter_d_stops = distances.begin(); iter_d_stops != distances.end(); iter_d_stops++)
+	map <Busstop*,pair<double,double> > distances = d_zone->get_stop_distances();
+	for (map<Busstop*,pair<double,double> >::iterator iter_d_stops = distances.begin(); iter_d_stops != distances.end(); iter_d_stops++)
 	{	
 		vector<Pass_path*> path_set = OD_stop->get_origin()->get_stop_od_as_origin_per_stop((*iter_d_stops).first)->get_path_set();
 		for (vector <Pass_path*>::iterator path_iter = path_set.begin(); path_iter < path_set.end(); path_iter++)
 		{
-			vector<vector<Busstop*>> alt_stops = (*path_iter)->get_alt_transfer_stops();
-			vector<vector<Busstop*>>::iterator stops_iter = alt_stops.begin()+1;
+			vector<vector<Busstop*> > alt_stops = (*path_iter)->get_alt_transfer_stops();
+			vector<vector<Busstop*> >::iterator stops_iter = alt_stops.begin()+1;
 			for (vector<Busstop*>::iterator connected_stop = (*stops_iter).begin(); connected_stop < (*stops_iter).end(); connected_stop++)
 			// going over all the stops at the second (connected) set
 			{
@@ -962,7 +962,7 @@ Busstop* Passenger::make_connection_decision_zone (double time)
 		if (iter == transfer_stop_position)
 		{
 			// constructing a structure for output
-			map<Busstop*,pair<double,double>> alighting_MNL; // utility followed by probability per stop
+			map<Busstop*,pair<double,double> > alighting_MNL; // utility followed by probability per stop
 			for (map <Busstop*, double>::iterator iter_u = candidate_connection_stops_u.begin(); iter_u != candidate_connection_stops_u.end(); iter_u++)
 			{
 				alighting_MNL[(*iter_u).first].first = (*iter_u).second;
@@ -1000,9 +1000,9 @@ bool Passenger::stop_is_in_d_zone (Busstop* stop)
 double Passenger::calc_total_waiting_time()
 {
 	double total_waiting_time = 0.0;
-	vector <pair<Busstop*,double>>::iterator iter_stop=selected_path_stops.begin();
+	vector <pair<Busstop*,double> >::iterator iter_stop=selected_path_stops.begin();
 	iter_stop++;
-	for (vector <pair<Bustrip*,double>>::iterator iter_trip=selected_path_trips.begin(); iter_trip<selected_path_trips.end(); iter_trip++)
+	for (vector <pair<Bustrip*,double> >::iterator iter_trip=selected_path_trips.begin(); iter_trip<selected_path_trips.end(); iter_trip++)
 	{
 		total_waiting_time += (*iter_trip).second - (*iter_stop).second; 
 		iter_stop++;
@@ -1015,7 +1015,7 @@ double Passenger::calc_total_IVT()
 {
 	/*
 	double IVT = 0.0;
-	for (vector <pair<double,double>>::iterator iter = experienced_crowding_levels.begin(); iter < experienced_crowding_levels.end(); iter++)
+	for (vector <pair<double,double> >::iterator iter = experienced_crowding_levels.begin(); iter < experienced_crowding_levels.end(); iter++)
 	{
 		IVT += (*iter).first;
 	}
@@ -1023,10 +1023,10 @@ double Passenger::calc_total_IVT()
 	*/
 	double total_IVT;
 	total_IVT = 0.0;
-	vector <pair<Busstop*,double>>::iterator iter_stop=selected_path_stops.begin();
+	vector <pair<Busstop*,double> >::iterator iter_stop=selected_path_stops.begin();
 	iter_stop++;
 	iter_stop++;
-	for (vector <pair<Bustrip*,double>>::iterator iter_trip=selected_path_trips.begin(); iter_trip<selected_path_trips.end(); iter_trip++)
+	for (vector <pair<Bustrip*,double> >::iterator iter_trip=selected_path_trips.begin(); iter_trip<selected_path_trips.end(); iter_trip++)
 	{
 		total_IVT += (*iter_stop).second - (*iter_trip).second; 
 		iter_stop++;
@@ -1038,7 +1038,7 @@ double Passenger::calc_total_IVT()
 double Passenger::calc_IVT_crowding()
 {
 	double VoT_crowding = 0.0;
-	for (vector <pair<double,double>>::iterator iter = experienced_crowding_levels.begin(); iter < experienced_crowding_levels.end(); iter++)
+	for (vector <pair<double,double> >::iterator iter = experienced_crowding_levels.begin(); iter < experienced_crowding_levels.end(); iter++)
 	{
 		VoT_crowding += (*iter).first * (*iter).second;
 	}
@@ -1048,7 +1048,7 @@ double Passenger::calc_IVT_crowding()
 double Passenger::calc_total_walking_time()
 {
 	double total_walking_time = 0.0;
-	for (vector <pair<Busstop*,double>>::iterator iter_stop=selected_path_stops.begin(); iter_stop<selected_path_stops.end(); iter_stop++)
+	for (vector <pair<Busstop*,double> >::iterator iter_stop=selected_path_stops.begin(); iter_stop<selected_path_stops.end(); iter_stop++)
 	{
 		iter_stop++;
 		total_walking_time += (*iter_stop).second - (*(iter_stop-1)).second; 
@@ -1059,11 +1059,11 @@ double Passenger::calc_total_walking_time()
 double Passenger::calc_total_waiting_time_due_to_denied_boarding()
 {
 	double total_walking_time_due_to_denied_boarding = 0.0;
-	for (vector <pair<Busstop*,double>>::iterator iter_denied=waiting_time_due_denied_boarding.begin(); iter_denied < waiting_time_due_denied_boarding.end(); iter_denied++)
+	for (vector <pair<Busstop*,double> >::iterator iter_denied=waiting_time_due_denied_boarding.begin(); iter_denied < waiting_time_due_denied_boarding.end(); iter_denied++)
 	{
-		vector <pair<Busstop*,double>>::iterator iter_stop=selected_path_stops.begin();
+		vector <pair<Busstop*,double> >::iterator iter_stop=selected_path_stops.begin();
 		iter_stop++;
-		for (vector <pair<Bustrip*,double>>::iterator iter_trip=selected_path_trips.begin(); iter_trip<selected_path_trips.end(); iter_trip++)
+		for (vector <pair<Bustrip*,double> >::iterator iter_trip=selected_path_trips.begin(); iter_trip<selected_path_trips.end(); iter_trip++)
 		{
 			if ((*iter_stop).first->get_id() == (*iter_denied).first->get_id())
 			{
@@ -1084,32 +1084,80 @@ bool Passenger::line_is_rejected(int id)
 	return it != rejected_lines.end();
 }
 
-
 void Passenger::write_selected_path(ostream& out)
 {
 	// claculate passenger travel time components
-	if (end_time > 0)
-	{
-	
 	double total_waiting_time = calc_total_waiting_time();
 	double total_IVT = calc_total_IVT();
 	double total_IVT_crowding = calc_IVT_crowding();
 	double total_walking_time = calc_total_walking_time();
 	double total_waiting_time_due_to_denied_boarding = calc_total_waiting_time_due_to_denied_boarding();
-	
-	out << passenger_id << '\t'<< original_origin->get_id() << '\t' << OD_stop->get_destination()->get_id() << '\t' << start_time << '\t' << total_walking_time << '\t' << total_waiting_time << '\t' << total_waiting_time_due_to_denied_boarding << '\t' << total_IVT << '\t' << total_IVT_crowding << '\t' << end_time << '\t' << '{';
-	for (vector <pair<Busstop*,double>>::iterator stop_iter = selected_path_stops.begin(); stop_iter < selected_path_stops.end(); stop_iter++)
+	int nr_transfers = (selected_path_stops.size() - 4) / 2; // given path definition (direct connection - 4 elements, 1 transfers - 6 elements, 2 transfers - 8 elements, etc.
+
+	this->set_GTC(theParameters->walking_time_coefficient * total_walking_time + theParameters->waiting_time_coefficient * total_waiting_time + theParameters->waiting_time_coefficient * 3.5 *total_waiting_time_due_to_denied_boarding + theParameters->in_vehicle_time_coefficient * total_IVT_crowding + theParameters->transfer_coefficient * nr_transfers);
+
+	out << passenger_id << '\t'
+		<< original_origin->get_id() << '\t'
+		<< original_origin->get_name() << '\t'
+		<< OD_stop->get_destination()->get_id() << '\t'
+		<< OD_stop->get_destination()->get_name() << '\t'
+		<< start_time << '\t'
+		<< nr_transfers << '\t'
+		<< total_walking_time << '\t'
+		<< total_waiting_time << '\t'
+		<< total_waiting_time_due_to_denied_boarding << '\t'
+		<< total_IVT << '\t'
+		<< total_IVT_crowding << '\t'
+		<< end_time << '\t'
+		<< '{';
+
+	for (vector <pair<Busstop*,double> >::iterator stop_iter = selected_path_stops.begin(); stop_iter < selected_path_stops.end(); stop_iter++)
 	{
 		out << (*stop_iter).first->get_id() << '\t';
 	}
-	out << '}' << '\t' << '{' << '\t';
-	for (vector <pair<Bustrip*,double>>::iterator trip_iter = selected_path_trips.begin(); trip_iter < selected_path_trips.end(); trip_iter++)
+
+	out << '}' << '\t' 
+			
+		<< '{' << '\t';
+	for (vector <pair<Bustrip*,double> >::iterator trip_iter = selected_path_trips.begin(); trip_iter < selected_path_trips.end(); trip_iter++)
 	{
 		out << (*trip_iter).first->get_id() << '\t';
 	}	
 	out << '}' << endl;
+}
 
+void Passenger::write_passenger_trajectory(ostream& out)
+{
+	// find passenger time-location stamps
+	out << passenger_id << '\t'
+		<< '{' << '\t';
+	vector <Busstop*> stop_stamps;
+	vector <pair<Bustrip*, double> >::iterator trip_iter = selected_path_trips.begin();
+	vector <pair<Busstop*, double> >::iterator stop_iter = selected_path_stops.begin();
+	
+	while (trip_iter < selected_path_trips.end() && stop_iter < selected_path_stops.end())
+	{
+		stop_stamps.push_back((*stop_iter).first);
+		out << (*stop_iter).second << '\t'; // pass. arrival time at stop
+		stop_iter++; // forward to pairing transit stop
+		stop_stamps.push_back((*stop_iter).first);
+		out << (*stop_iter).second << '\t'; // pass. arrival time at stop
+		stop_stamps.push_back((*stop_iter).first);
+		out << (*trip_iter).second << '\t'; // pass. boarding time at stop
+		trip_iter++;
+		stop_iter++;
 	}
+	stop_stamps.push_back((*stop_iter).first);
+	out << (*stop_iter).second << '\t'; // pass. arrival time at last stop
+	stop_iter++; // forward to pairing transit stop
+	stop_stamps.push_back((*stop_iter).first);
+	out << (*stop_iter).second << '\t' // pass. arrival time at destination
+		<< '}' << '\t' << '{';
+	for (vector <Busstop*>::iterator stop_iter = stop_stamps.begin(); stop_iter < stop_stamps.end(); stop_iter++)
+	{
+		out << (*stop_iter)->get_id() << '\t';
+	}
+	out << '}' << endl;
 }
 
 int Passenger::get_selected_path_last_line_id ()
@@ -1139,3 +1187,10 @@ PassengerRecycler::	~PassengerRecycler()
 	}
 }
 
+
+double Passenger::get_walking_time(Busstop* busstop_dest_ptr, double curr_time)
+{
+    Busstop* busstop_orig_ptr = OD_stop->get_origin();
+
+    return busstop_orig_ptr->get_walking_time(busstop_dest_ptr, curr_time);
+}

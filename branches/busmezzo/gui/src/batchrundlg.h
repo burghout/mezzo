@@ -33,7 +33,7 @@
 
 #include <QDialog>
 // use the generated ui form header  
-#include "../ui_batchrundlg.h"
+#include "ui_batchrundlg.h"
 // network definition
 #include "../mezzo_lib/src/network.h"
 #include "../mezzo_lib/src/linktimes.h"
@@ -61,7 +61,7 @@ public:
 private:
 	
 	void run_iterations();
-	const bool checkConvergence(const int i, const double rmsn_ltt_, const double rmsn_odtt_);
+    bool checkConvergence(const int i, const double rmsn_ltt_, const double rmsn_odtt_);
 
 	int max_iter;
 	double max_rmsn;

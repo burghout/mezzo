@@ -69,12 +69,12 @@ class Icon
 			{selected = false; selected_color = theParameters->selectedcolor;}
 	  virtual ~Icon(){};
 	  virtual void draw(QPixmap * ,QMatrix * ){};
-	  virtual const bool within_boundary(const double x, const double y, const int rad);
+      virtual bool within_boundary(const double x, const double y, int rad);
 	  void settext(const string st) {text=QString(st.c_str());}
-	  const int get_x()  { return startx;}
-	  const int get_y()  { return starty;}
-	  void set_selected (const bool sel) {selected = sel;} // sets if object is selected or not
-	  const bool get_selected () {return selected;} // gets the selected status of object
+      int get_x()  { return startx;}
+      int get_y()  { return starty;}
+      void set_selected (bool sel) {selected = sel;} // sets if object is selected or not
+      bool get_selected () {return selected;} // gets the selected status of object
 	  void set_selected_color (const QColor selcolor) {selected_color = selcolor;}
 	  const QColor get_selected_color () {return selected_color;}
   protected:
@@ -95,7 +95,7 @@ class LinkIcon : public Icon
 	void sethandle(bool handle){handle_on_=handle;}
 	bool gethandle(){return handle_on_;}
 	int getLinkicon_leng(){return linkicon_leng_;}
-	virtual const bool within_boundary(const double x, const double y, const int rad);
+    virtual bool within_boundary(const double x, const double y, int rad);
   	virtual void draw(QPixmap * pm,QMatrix * wm);
 
 	void setMOE_thickness (MOE* moe_) {moe_thickness=moe_;} // sets the output MOE (such as flows, links etc.)	

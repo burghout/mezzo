@@ -12,12 +12,13 @@ macx {
     #    INCLUDEPATH += ../mezzoAnalyzer/Debug
         LIBS +=  -L../../mezzo_lib/Debug -lmezzo_lib -L../../mezzoAnalyzer/Debug -lmezzoAnalyzer
         DEPENDS += ../../mezzo_lib/Debug/mezzo_lib.lib ../../mezzoAnalyzer/Debug/mezzoAnalyzer.lib
+        INCLUDEPATH+= ../mezzoAnalyzer/Debug/ui_h
     } else {
-        INCLUDEPATH += ../mezzoAnalyzer/Release
+        INCLUDEPATH += ../mezzoAnalyzer/Release/ui_h
         LIBS +=  -L../../mezzo_lib/Release -lmezzo_lib -L../../mezzoAnalyzer/Release -lmezzoAnalyzer
     }
 
-            LIBS += -L$(QTDIR)/lib -framework QtCore -framework QtGui -framework QtNetwork
+       #     LIBS += -L$(QTDIR)/lib -framework QtCore -framework QtGui -framework QtNetwork
 
 
 }
@@ -29,13 +30,13 @@ CONFIG(debug, debug|release) {
      LIBS +=  -L../mezzo_lib/Release -lmezzo_lib -L../mezzoAnalyzer/Release -lmezzoAnalyzer 
  }
 
-win32 { LIBS += -L$(QTDIR)/lib -lQtCore -lQtGui -lQtNetwork }
+#win32 { LIBS += -L$(QTDIR)/lib -lQtCore -lQtGui -lQtNetwork }
 
 
 #-lQtDesigner 
 #-lQt3Support
 
-QT+= core gui 
+QT+= core gui widgets
 
 CONFIG += uic4 embed_manifest_exe
 
@@ -46,6 +47,4 @@ SOURCES += canvas_qt4.cpp main.cpp parametersdialog_qt4.cpp src/nodedlg.cpp src/
 RESOURCES += canvas_qt4.qrc 
 RC_FILE = mezzo.rc
 DEPENDPATH += . ./src ../mezzo_lib/src
-win32 {
-     QMAKE_LFLAGS += /LARGEADDRESSAWARE
-	 }
+

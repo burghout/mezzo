@@ -25,7 +25,7 @@ void  SignalControl::reset()
 {
 	active = false;
 	vector<SignalPlan*>::iterator sp_iter=signalplans.begin();
-	for (sp_iter; sp_iter != signalplans.end(); sp_iter++)
+    for ( ; sp_iter != signalplans.end(); sp_iter++)
 	{
 		(*sp_iter)->reset();
 	}
@@ -80,7 +80,7 @@ void SignalPlan::reset()
 {
 	active = false;
 	vector <Stage*>::iterator s_iter=stages.begin();
-	for (s_iter;s_iter != stages.end(); s_iter++)
+    for ( ;s_iter != stages.end(); s_iter++)
 	{
 		(*s_iter)->reset();
 	}

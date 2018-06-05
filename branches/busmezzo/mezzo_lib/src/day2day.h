@@ -74,6 +74,8 @@ struct Travel_time //structure for saving and adding data
 	float tt[5];
 	float alpha[3];
 	float convergence;
+    
+    friend float operator/ (const Travel_time& lhs, const Travel_time& rhs);
 
 	Travel_time &operator += (const Travel_time& rhs)
 	{
@@ -104,8 +106,9 @@ struct Travel_time //structure for saving and adding data
 } ;
 
 template <typename id_type> float insert (map<id_type, Travel_time>& ODSL_reg, map<id_type, Travel_time>& ODSL_data); //Method for inserting data for one day into record
-template float insert (map<ODSL, Travel_time>& ODSL_reg, map<ODSL, Travel_time>& ODSL_data);
-template float insert (map<ODSLL, Travel_time>& ODSL_reg, map<ODSLL, Travel_time>& ODSL_data);
+
+float insert (map<ODSL, Travel_time>& ODSL_reg, map<ODSL, Travel_time>& ODSL_data);
+float insert (map<ODSLL, Travel_time>& ODSL_reg, map<ODSLL, Travel_time>& ODSL_data);
 
 class Day2day
 {

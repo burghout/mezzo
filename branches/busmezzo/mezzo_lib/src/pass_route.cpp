@@ -3,13 +3,13 @@
 Pass_path:: Pass_path ()
 {
 }
-Pass_path:: Pass_path (int path_id, vector<vector<Busline*>> alt_lines_)
+Pass_path:: Pass_path (int path_id, vector<vector<Busline*> > alt_lines_)
 {
 	p_id = path_id;
 	alt_lines = alt_lines_;
 	number_of_transfers = find_number_of_transfers();
 }
-Pass_path:: Pass_path (int path_id, vector<vector<Busline*>> alt_lines_, vector <vector <Busstop*>> alt_transfer_stops_)
+Pass_path:: Pass_path (int path_id, vector<vector<Busline*> > alt_lines_, vector <vector <Busstop*> > alt_transfer_stops_)
 {
 	p_id = path_id;
 	alt_lines = alt_lines_;
@@ -26,7 +26,7 @@ Pass_path:: Pass_path (int path_id, vector<vector<Busline*>> alt_lines_, vector 
 	}
 }
 
-Pass_path::Pass_path (int path_id, vector<vector<Busline*>> alt_lines_, vector <vector <Busstop*>> alt_transfer_stops_, vector<double> walking_distances_)
+Pass_path::Pass_path (int path_id, vector<vector<Busline*> > alt_lines_, vector <vector <Busstop*> > alt_transfer_stops_, vector<double> walking_distances_)
 {
 	p_id = path_id;
 	alt_lines = alt_lines_;
@@ -65,7 +65,7 @@ int Pass_path::find_number_of_transfers ()
 	{
 		return -1;
 	}
-	for (vector<vector<Busline*>>::iterator iter_count = alt_lines.begin(); iter_count < alt_lines.end(); iter_count++)
+	for (vector<vector<Busline*> >::iterator iter_count = alt_lines.begin(); iter_count < alt_lines.end(); iter_count++)
 	{
 		nr_trans++;
 	}	
@@ -76,9 +76,9 @@ double Pass_path::calc_total_scheduled_in_vehicle_time (double time)
 {
 	IVT.clear();
 	double sum_in_vehicle_time = 0.0;
-	vector<vector <Busstop*>>::iterator iter_alt_transfer_stops = alt_transfer_stops.begin();
+	vector<vector <Busstop*> >::iterator iter_alt_transfer_stops = alt_transfer_stops.begin();
 	iter_alt_transfer_stops++; // starting from the second stop
-	for (vector<vector <Busline*>>::iterator iter_alt_lines = alt_lines.begin(); iter_alt_lines < alt_lines.end(); iter_alt_lines++)
+	for (vector<vector <Busline*> >::iterator iter_alt_lines = alt_lines.begin(); iter_alt_lines < alt_lines.end(); iter_alt_lines++)
 	{
 		IVT.push_back((*iter_alt_lines).front()->calc_curr_line_ivt((*iter_alt_transfer_stops).front(),(*(iter_alt_transfer_stops+1)).front(),alt_transfer_stops.front().front()->get_rti(),time));
 		sum_in_vehicle_time += IVT.back();
@@ -92,9 +92,9 @@ double Pass_path::calc_total_in_vehicle_time (double time, Passenger* pass)
 {
 	IVT.clear();
 	double sum_in_vehicle_time = 0.0;
-	vector<vector <Busstop*>>::iterator iter_alt_transfer_stops = alt_transfer_stops.begin();
+	vector<vector <Busstop*> >::iterator iter_alt_transfer_stops = alt_transfer_stops.begin();
 	iter_alt_transfer_stops++; // starting from the second stop
-	for (vector<vector <Busline*>>::iterator iter_alt_lines = alt_lines.begin(); iter_alt_lines < alt_lines.end(); iter_alt_lines++)
+	for (vector<vector <Busline*> >::iterator iter_alt_lines = alt_lines.begin(); iter_alt_lines < alt_lines.end(); iter_alt_lines++)
 	{
 		double ivtt = 0;
 		
@@ -152,10 +152,10 @@ double Pass_path::calc_total_waiting_time (double time, bool without_first_waiti
 {
 	double sum_waiting_time = 0.0;
 	bool first_line = true;
-	vector <vector <Busstop*>>::iterator alt_transfer_stops_iter = alt_transfer_stops.begin() + 1;
+	vector <vector <Busstop*> >::iterator alt_transfer_stops_iter = alt_transfer_stops.begin() + 1;
 	vector<Busstop*> first_stops = alt_transfer_stops.front();
 	vector<Busstop*> second_stops = (*alt_transfer_stops_iter);
-	vector<vector <Busline*>>::iterator iter_alt_lines = alt_lines.begin();
+	vector<vector <Busline*> >::iterator iter_alt_lines = alt_lines.begin();
 	if (without_first_waiting == true) // if it is calculated for an arriving vehicle, don't include waiting time for the first leg in the calculations
 	{
 		alt_transfer_stops_iter++;
@@ -215,7 +215,7 @@ double Pass_path::calc_total_waiting_time (double time, bool without_first_waiti
 					if (second_stops.size() == 1 && first_stops.front() == second_stops.front()) // staying at the same stop
 					{
 						leg_has_RTI = true;
-						wt_rti = calc_curr_leg_waiting_RTI((*iter_alt_lines), alt_transfer_stops_iter, pass_arrival_time_at_next_stop, pass);
+						wt_rti = calc_curr_leg_waiting_RTI((*iter_alt_lines), alt_transfer_stops_iter, pass_arrival_time_at_next_stop);
 					}
 					else // using a connected stop
 					{
@@ -233,7 +233,7 @@ double Pass_path::calc_total_waiting_time (double time, bool without_first_waiti
 				if (first_line == true)
 				{
 					leg_has_RTI = true;
-					wt_rti = calc_curr_leg_waiting_RTI((*iter_alt_lines), alt_transfer_stops_iter, pass_arrival_time_at_next_stop, pass);
+					wt_rti = calc_curr_leg_waiting_RTI((*iter_alt_lines), alt_transfer_stops_iter, pass_arrival_time_at_next_stop);
 					break; 
 				}
 				else
@@ -244,7 +244,7 @@ double Pass_path::calc_total_waiting_time (double time, bool without_first_waiti
 			case 3:
 				// all legs are estimated based on real-time info
 				leg_has_RTI = true;
-				wt_rti = calc_curr_leg_waiting_RTI((*iter_alt_lines), alt_transfer_stops_iter, pass_arrival_time_at_next_stop, pass);
+				wt_rti = calc_curr_leg_waiting_RTI((*iter_alt_lines), alt_transfer_stops_iter, pass_arrival_time_at_next_stop);
 				break;
 		}
 
@@ -293,8 +293,8 @@ double Pass_path::calc_total_waiting_time (double time, bool without_first_waiti
 double Pass_path::calc_total_scheduled_waiting_time (double time, bool without_first_waiting)
 {
 	double sum_waiting_time = 0.0;
-	vector <vector <Busstop*>>::iterator alt_transfer_stops_iter = alt_transfer_stops.begin() + 1;
-	vector<vector <Busline*>>::iterator iter_alt_lines = alt_lines.begin();
+	vector <vector <Busstop*> >::iterator alt_transfer_stops_iter = alt_transfer_stops.begin() + 1;
+	vector<vector <Busline*> >::iterator iter_alt_lines = alt_lines.begin();
 	if (without_first_waiting == true) // if it is calculated for an arriving vehicle, don't include waiting time for the first leg in the calculations
 	{
 		alt_transfer_stops_iter++;
@@ -315,7 +315,7 @@ double Pass_path::calc_total_scheduled_waiting_time (double time, bool without_f
 }
 */
 
-double Pass_path::calc_curr_leg_headway (vector<Busline*> leg_lines, vector <vector <Busstop*>>::iterator stop_iter, double time)
+double Pass_path::calc_curr_leg_headway (vector<Busline*> leg_lines, vector <vector <Busstop*> >::iterator stop_iter, double time)
 {
 	double accumlated_frequency = 0.0;
 	//map<Busline*, bool> worth_to_wait = check_maybe_worthwhile_to_wait(leg_lines, stop_iter, 1);
@@ -337,7 +337,7 @@ double Pass_path::calc_curr_leg_headway (vector<Busline*> leg_lines, vector <vec
 }
 
 /*
-double Pass_path::calc_curr_leg_waiting_schedule (vector<Busline*> leg_lines, vector <vector <Busstop*>>::iterator stop_iter, double arriving_time)
+double Pass_path::calc_curr_leg_waiting_schedule (vector<Busline*> leg_lines, vector <vector <Busstop*> >::iterator stop_iter, double arriving_time)
 {
 	Bustrip* next_trip = leg_lines.front()->find_next_scheduled_trip_at_stop((*stop_iter).front(), arriving_time);
 	double min_waiting_time = next_trip->stops_map[(*stop_iter).front()];
@@ -355,7 +355,7 @@ double Pass_path::calc_curr_leg_waiting_schedule (vector<Busline*> leg_lines, ve
 }
 */
 
-double Pass_path::calc_curr_leg_waiting_RTI (vector<Busline*> leg_lines, vector <vector <Busstop*>>::iterator stop_iter, double arriving_time, Passenger* pass)
+double Pass_path::calc_curr_leg_waiting_RTI (vector<Busline*> leg_lines, vector <vector <Busstop*> >::iterator stop_iter, double arriving_time)
 { 
 	double min_waiting_time;
 	bool first_time = true;
@@ -386,14 +386,14 @@ double Pass_path::calc_arriving_utility (double time, Passenger* pass)
 	return (random->nrandom(theParameters->transfer_coefficient, theParameters->transfer_coefficient / 4) * number_of_transfers + random->nrandom(theParameters->in_vehicle_time_coefficient, theParameters->in_vehicle_time_coefficient / 4 ) * calc_total_in_vehicle_time(time, pass) + random->nrandom(theParameters->waiting_time_coefficient, theParameters->waiting_time_coefficient / 4) * calc_total_waiting_time (time, true, false, avg_walking_speed, pass) + random->nrandom(theParameters->walking_time_coefficient, theParameters->walking_time_coefficient/4) * (calc_total_walking_distance() / avg_walking_speed));
 }
 
-double Pass_path::calc_waiting_utility (vector <vector <Busstop*>>::iterator stop_iter, double time, bool alighting_decision, Passenger* pass)
+double Pass_path::calc_waiting_utility (vector <vector <Busstop*> >::iterator stop_iter, double time, bool alighting_decision, Passenger* pass)
 {	
 	stop_iter++;
 	if (alt_transfer_stops.size() == 2) // in case is is walking-only path
 	{
 		return (random->nrandom(theParameters->walking_time_coefficient, theParameters->walking_time_coefficient/4) * calc_total_walking_distance()/ random->nrandom(theParameters->average_walking_speed, theParameters->average_walking_speed/4));
 	}
-	vector<vector <Busline*>>::iterator iter_alt_lines = alt_lines.begin();
+	vector<vector <Busline*> >::iterator iter_alt_lines = alt_lines.begin();
 	for (vector <Busline*>::iterator iter_lines = (*iter_alt_lines).begin(); iter_lines < (*iter_alt_lines).end(); iter_lines++)
 	{
 		vector<Start_trip>::iterator next_trip_iter = (*iter_lines)->find_next_expected_trip_at_stop((*stop_iter).front());
@@ -420,7 +420,7 @@ double Pass_path::calc_waiting_utility (vector <vector <Busstop*>>::iterator sto
 	return -10.0;
 }
 
-map<Busline*, bool> Pass_path::check_maybe_worthwhile_to_wait (vector<Busline*> leg_lines, vector <vector <Busstop*>>::iterator stop_iter, bool dynamic_indicator)
+map<Busline*, bool> Pass_path::check_maybe_worthwhile_to_wait (vector<Busline*> leg_lines, vector <vector <Busstop*> >::iterator stop_iter, bool dynamic_indicator)
 {
 	// based on the complete headway
 	map <Busline*,bool> worth_to_wait;
@@ -458,4 +458,4 @@ map<Busline*, bool> Pass_path::check_maybe_worthwhile_to_wait (vector<Busline*> 
 		}
 	}
 	return worth_to_wait;
-}
+}

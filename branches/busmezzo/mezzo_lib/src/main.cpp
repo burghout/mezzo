@@ -41,8 +41,7 @@ int main ( int argc, char **argv)
    // However, global vars need to be moved local to run more than one thread at a time to avoid data conflicts.
   NetworkThread* net1 = new NetworkThread(argv[1],1,seed);
   net1->init(); // reads the input files
-  bool steady_state=false;
-  int max_days = 5;
+  //bool steady_state=false;
 
   if (replications <=1)
   {

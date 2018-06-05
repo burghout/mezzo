@@ -106,6 +106,8 @@ Parameters::Parameters ()
    dwell_time_weight = 0.0;
    waiting_time_weight = 0.0;
    holding_time_weight = 0.0;
+   compliance_rate = 1.0;
+   transfer_sync = false;
 
 // day2day assignment
    default_alpha_RTI = 0.5;
@@ -528,7 +530,7 @@ bool Parameters::read_parameters (istream & in )
 		return false;
 	}
 	in >> demand_scale;
-	if (demand_format == 3 || demand_format == 4)
+	if (demand_format == 3)
 	{
 		in >> keyword;
 		if (keyword!= "choice_set_indicator=")
@@ -677,6 +679,15 @@ bool Parameters::read_parameters (istream & in )
 			return false;
 		}
 		in >> od_pairs_for_generation;
+        
+        in >> keyword;
+        if (keyword!= "gate_generation_time_diff=")
+        {
+            cout << "ERROR reading Parameters file, expecting: gate_generation_time_diff=, read: " << keyword << endl;
+            return false;
+        }
+        in >> gate_generation_time_diff;
+        
 	}
 	in >> keyword;
 	if (keyword!= "#transit_control_parameters")
@@ -712,6 +723,20 @@ bool Parameters::read_parameters (istream & in )
 		return false;
 	}
 	in >> holding_time_weight;
+	in >> keyword;
+	if (keyword!= "compliance_rate=")
+	{
+		cout << "ERROR reading Parameters file, expecting: compliance_rate=, read: " << keyword << endl;
+		return false;
+	}
+	in >> compliance_rate;
+	in >> keyword; //transfer_sync parameter, David added 2016-04-18
+	if (keyword!= "transfer_sync=")
+	{
+		cout << "ERROR reading Parameters file, expecting: transfer_sync=, read: " << keyword << endl;
+		return false;
+	}
+	in >> transfer_sync;
 	in >> keyword;
 	if (keyword!= "#day2day_assignment")
 	{

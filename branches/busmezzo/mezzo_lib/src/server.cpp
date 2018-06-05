@@ -1,5 +1,5 @@
 #include "server.h"
-#include "Math.h"
+#include "math.h"
 #include <iostream>
 
 
@@ -45,12 +45,12 @@ double Server::next(const double time)
 }
 
 
-const int Server::get_id() const
+int Server::get_id() const
 {
 	return id;
 }
 
-const double Server::get_mu() const
+double Server::get_mu()
 {                	
 	return mu;
 }
@@ -60,7 +60,7 @@ void Server::set_mu(const double mu_)
 	mu=mu_;
 }
 
-const double Server::get_sd() const
+double Server::get_sd() const
 {
 	return sd;
 }
@@ -128,7 +128,7 @@ double LogNormalDelayServer::next (const double time)
 }
 
 //Method added by Jens 2014-07-03
-const double LogNormalDelayServer::get_delay ()
+double LogNormalDelayServer::get_delay ()
 {
 	return delay + theRandomizers[0]->lnrandom(mu, sd);
 }

@@ -18,7 +18,7 @@ double Sdfunc::speed(double ro)
 	return vmin+(vfree-vmin)*(1-((ro-romin)/(romax-romin)));
 }
 
-const int Sdfunc::get_id()
+ int Sdfunc::get_id()
 {
 	return id;
 }
