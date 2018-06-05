@@ -50,12 +50,7 @@ void TestIntegration::testCreateNetwork()
     chdir(network_path.c_str());
 
     QFileInfo check_file(network_name.c_str());
-    Q_ASSERT (check_file.exists());
-
-//    QFile f (network_name.c_str());
-//    f.open(QIODevice::ReadOnly | QIODevice::Text);
-//    QString temp (f.readAll());
-//   qDebug() << temp;
+    QVERIFY2 (check_file.exists(), "Failure, masterfile cannot be found");
 
     nt = new NetworkThread(network_name,1,seed);
     net = nt->getNetwork();
