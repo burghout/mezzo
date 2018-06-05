@@ -65,10 +65,16 @@ void TestIntegration::testInitNetwork()
 {
     nt->init();
  // Test here various properties that should be true after reading the network
+    // Test if the network is properly read and initialised
     QVERIFY2(net->get_links().size() == 15, "Failure, network should have 15 links ");
     QVERIFY2(net->get_nodes().size() == 13, "Failure, network should have 13 nodes ");
     QVERIFY2(net->get_odpairs().size() == 4, "Failure, network should have 4 nodes ");
+    QVERIFY2 (net->get_busstop_from_name("A")->get_id() == 1, "Failure, bus stop A should be id 1 ");
+    QVERIFY2 (net->get_busstop_from_name("B")->get_id() == 2, "Failure, bus stop B should be id 2 ");
+    QVERIFY2 (net->get_busstop_from_name("C")->get_id() == 3, "Failure, bus stop C should be id 3 ");
+    QVERIFY2 (net->get_busstop_from_name("D")->get_id() == 4, "Failure, bus stop D should be id 4 ");
 
+    QVERIFY2 (net->get_currenttime() == 0, "Failure, currenttime should be 0 at start of simulation");
 }
 
 void TestIntegration::testRunNetwork()
@@ -78,7 +84,12 @@ void TestIntegration::testRunNetwork()
     nt->wait();
 
     // test here the properties that should be true after running the simulation
-    QVERIFY2(true, "Failure ");
+    QVERIFY2 (net->get_currenttime() == 5400.1, "Failure current time should be 5400.1 after running the simulation");
+
+    // Example: way to check typical value for e.g. number of last departures from stop A:
+    qDebug() << net->get_busstop_from_name("A")->get_last_departures().size();
+    // and here you turn it into a test
+    QVERIFY2 ( net->get_busstop_from_name("A")->get_last_departures().size() == 2, "Failure, get_last_departures().size() for stop A should be 2");
 
 
 }
