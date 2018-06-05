@@ -29,7 +29,11 @@ link_log.txt
 *.stash
 target_wrapper.sh
 test_integration.moc
-*/SFnetwork/allmoes.dat
-*/SFnetwork/assign.dat
-*/SFnetwork/v_queues.dat
-
+allmoes.dat
+assign.dat
+v_queues.dat
+o_*.dat
+ui_*
+GeneratedFiles/
+bin/
+*.filters
