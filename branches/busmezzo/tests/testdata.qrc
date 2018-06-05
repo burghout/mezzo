@@ -1,5 +1,5 @@
 <RCC>
     <qresource prefix="/">
-        <file>networks/SFnetwork/masterfile.mezzo</file>
+        <file alias="masterfile.mezzo">networks/SFnetwork/masterfile.mezzo</file>
     </qresource>
 </RCC>

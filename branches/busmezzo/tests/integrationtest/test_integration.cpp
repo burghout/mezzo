@@ -2,13 +2,17 @@
 #include <QtTest/QtTest>
 #include "network.h"
 #include <unistd.h>
+#include <QFileInfo>
 
 //! Integration Tests BusMezzo
 //! The tests contain loading, initialising, running, saving results and deleting network.
+//! NOTE: currently the std::ifstream is used everywhere, precluding the use of qrc resources,
+//! unless we switch to QFile everywhere.
 
 
 const std::string network_path = "../networks/SFnetwork/";
 const std::string network_name = "masterfile.mezzo";
+
 const long int seed = 42;
 
 class TestIntegration : public QObject
@@ -38,6 +42,15 @@ void TestIntegration::testCreateNetwork()
     nt = nullptr;
     net = nullptr;
     chdir(network_path.c_str());
+
+    QFileInfo check_file(network_name.c_str());
+    Q_ASSERT (check_file.exists());
+
+//    QFile f (network_name.c_str());
+//    f.open(QIODevice::ReadOnly | QIODevice::Text);
+//    QString temp (f.readAll());
+//   qDebug() << temp;
+
     nt = new NetworkThread(network_name,1,seed);
     net = nt->getNetwork();
 
