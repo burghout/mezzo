@@ -14,9 +14,7 @@
 Makefile*.*
 Makefile
 ui_parametersdialog_qt4.h
-
 *.user
-
 *.DS_Store
 *.o
 *.a
@@ -33,6 +31,7 @@ allmoes.dat
 assign.dat
 v_queues.dat
 o_*.dat
+!ExpectedOutputs/o_*.dat
 ui_*
 GeneratedFiles/
 bin/
