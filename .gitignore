@@ -26,6 +26,7 @@ debug_log.txt
 link_log.txt
 *.stash
 target_wrapper.sh
+target_wrapper.bat
 test_integration.moc
 allmoes.dat
 assign.dat

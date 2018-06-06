@@ -4,6 +4,8 @@ VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "test_integration", "integrationtest\test_integration.vcxproj", "{070E1ABE-DD1C-399A-B62B-C08E8FA67043}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "test_controlcenter", "controlcenter\test_controlcenter.vcxproj", "{00B81A36-0A3D-3553-A841-05D0DBC54AF2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -14,6 +16,10 @@ Global
 		{070E1ABE-DD1C-399A-B62B-C08E8FA67043}.Debug|x64.Build.0 = Debug|x64
 		{070E1ABE-DD1C-399A-B62B-C08E8FA67043}.Release|x64.ActiveCfg = Release|x64
 		{070E1ABE-DD1C-399A-B62B-C08E8FA67043}.Release|x64.Build.0 = Release|x64
+		{00B81A36-0A3D-3553-A841-05D0DBC54AF2}.Debug|x64.ActiveCfg = Debug|x64
+		{00B81A36-0A3D-3553-A841-05D0DBC54AF2}.Debug|x64.Build.0 = Debug|x64
+		{00B81A36-0A3D-3553-A841-05D0DBC54AF2}.Release|x64.ActiveCfg = Release|x64
+		{00B81A36-0A3D-3553-A841-05D0DBC54AF2}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
