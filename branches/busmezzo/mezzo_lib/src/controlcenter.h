@@ -214,7 +214,7 @@ enum class BusState;
 class ControlCenter : public QObject
 {
 	Q_OBJECT
-
+    friend class TestControlCenter;
 public:
 	explicit ControlCenter(
 		int id = 0,
