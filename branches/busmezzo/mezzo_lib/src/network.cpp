@@ -6932,7 +6932,7 @@ void Network::reset_link_icons() // reset the links to normal color and hide the
 {
 #ifndef _NO_GUI
     map <int,Link*>::iterator link = linkmap.begin();
-    for (link; link!=linkmap.end(); link++)
+    for (; link!=linkmap.end(); link++)
     {
         link->second->set_selected ( false);
 
