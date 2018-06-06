@@ -199,7 +199,7 @@ class VehicleDispatcher
 public:
 	enum dispatchStrategyType {Null = 0, Naive = 1};
 	
-	explicit VehicleDispatcher(Eventlist* eventlist, IDispatchingStrategy* dispatchingStrategy = nullptr);
+	explicit VehicleDispatcher(Eventlist* eventlist = nullptr, IDispatchingStrategy* dispatchingStrategy = nullptr);
 	~VehicleDispatcher();
 
 	void reset(int dispatching_strategy_type);
@@ -247,7 +247,7 @@ class ControlCenter : public QObject
     friend class TestControlCenter;
 public:
 	explicit ControlCenter(
-		Eventlist* eventlist, //currently the dispatcher needs the eventlist to book Busline (vehicle - trip dispatching) events
+		Eventlist* eventlist = nullptr, //currently the dispatcher needs the eventlist to book Busline (vehicle - trip dispatching) events
 		int id = 0,
 		int tg_strategy = 0,
 		int tvm_strategy = 0,
