@@ -250,11 +250,11 @@ class ControlCenter : public QObject
 
 public:
 	explicit ControlCenter(
+		Eventlist* eventlist, //currently the dispatcher needs the eventlist to book Busline (vehicle - trip dispatching) events
 		int id = 0,
 		int tg_strategy = 0,
 		int tvm_strategy = 0,
 		int vd_strategy = 0,
-		Eventlist* eventlist, //currently the dispatcher needs the eventlist to book Busline (vehicle - trip dispatching) events
 		QObject* parent = nullptr
 	);
 	~ControlCenter();
