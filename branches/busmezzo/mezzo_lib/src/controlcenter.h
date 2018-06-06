@@ -38,10 +38,7 @@ struct Request
 	double time;		//time request was generated
 
 	Request() {};
-	Request(int pid, int oid, int did, int l, double t) : pass_id(pid), ostop_id(oid), dstop_id(did), load(l), time(t)
-	{
-		qRegisterMetaType<Request>(); //register Request as a metatype for QT signal arguments
-	}
+    Request(int pid, int oid, int did, int l, double t);
 
 	bool operator == (const Request& rhs) const
 	{
