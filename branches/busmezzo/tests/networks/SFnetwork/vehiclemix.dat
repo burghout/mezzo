@@ -1,0 +1,7 @@
+vtypes:	5
+{	1	NewCars	0.410	6.0	}
+{	2	OldCars	0.400	6.0	}
+{	3	Taxis		0.100	6.0	}
+{	5	Trucks	0.090	16.0	}
+{	4	Buses		0.000	13.0	}
+

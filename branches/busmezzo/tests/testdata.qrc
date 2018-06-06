@@ -1,0 +1,17 @@
+<RCC>
+    <qresource prefix="/">
+        <file alias="masterfile.mezzo">networks/SFnetwork/masterfile.mezzo</file>
+        <file>networks/SFnetwork/ExpectedOutputs/o_passenger_trajectory.dat</file>
+        <file>networks/SFnetwork/ExpectedOutputs/o_selected_paths.dat</file>
+        <file>networks/SFnetwork/ExpectedOutputs/o_od_stop_summary_without_paths.dat</file>
+        <file>networks/SFnetwork/ExpectedOutputs/o_od_stops_summary.dat</file>
+        <file>networks/SFnetwork/ExpectedOutputs/o_trip_total_travel_time.dat</file>
+        <file>networks/SFnetwork/ExpectedOutputs/o_segments_line_loads.dat</file>
+        <file>networks/SFnetwork/ExpectedOutputs/o_transitline_sum.dat</file>
+        <file>networks/SFnetwork/ExpectedOutputs/o_transit_trajectory.dat</file>
+        <file>networks/SFnetwork/ExpectedOutputs/o_segments_trip_loads.dat</file>
+        <file>networks/SFnetwork/ExpectedOutputs/o_transitstop_sum.dat</file>
+        <file>networks/SFnetwork/ExpectedOutputs/o_transitlog_out.dat</file>
+        <file>networks/SFnetwork/ExpectedOutputs/o_path_set_generation.dat</file>
+    </qresource>
+</RCC>

@@ -159,7 +159,9 @@ public:
 	bool init(); //!< creates eventlist and initializes first actions for all turnings at time 0 and starts the Communicator
 	bool init_shortest_path(); //!< builds the shortest path graph
 	vector<Link*> get_path(int destid); //!<gives the links on the shortest path to destid (from current rootlink)
-	bool shortest_paths_all(); //!< calculates shortest paths and generates the routes
+    bool shortest_pathtree_from_origin_link(int lid, double start_time); //!<
+    vector<Link*> shortest_path_to_node(int rootlink, int dest_node, double start_time); //!< returns shortest path Links
+    bool shortest_paths_all(); //!< calculates shortest paths and generates the routes
 	bool find_alternatives_all (int lid, double penalty, Incident* incident); //!< finds the alternative paths 'without' link lid.
 	//void delete_spurious_routes(); //!< deletes all routes that have no OD pair.
 	void renum_routes (); //!< renumerates the routes, to keep a consecutive series after deletions & additions
@@ -578,6 +580,11 @@ public:
 	  {
 			delete theNetwork;
 	  }
+
+    Network* getNetwork()
+    {
+        return theNetwork;
+    }
 private:
 
     string masterfile_;
