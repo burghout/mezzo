@@ -100,6 +100,9 @@ void Busline::reset ()
 
 	if (flex_line)
 	{
+		for (Start_trip st : flex_trips)
+			delete st.first;
+
 		flex_trips.clear(); //clear all dynamically generated trips that have not completed yet
 		trip_count = static_cast<int>(trips.size()); //reset trip counter to the original number of trips that were generated from input files
 	}
@@ -705,6 +708,10 @@ Bustrip::~Bustrip ()
 	for (Visit_stop* stop_visit : stops)
 	{
 		delete stop_visit;
+	}
+	for (Start_trip* trip_start : driving_roster)
+	{
+		delete trip_start;
 	}
 }
 
