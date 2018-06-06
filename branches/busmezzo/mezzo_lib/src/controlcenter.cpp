@@ -15,6 +15,13 @@ struct compare
 	int id;
 };
 
+// Request
+
+Request::Request(int pid, int oid, int did, int l, double t) : pass_id(pid), ostop_id(oid), dstop_id(did), load(l), time(t)
+{
+    qRegisterMetaType<Request>(); //register Request as a metatype for QT signal arguments
+}
+
 //RequestHandler
 RequestHandler::RequestHandler()
 {
