@@ -207,7 +207,7 @@ public:
 
 	void reset(int dispatching_strategy_type);
 
-	bool scheduleMatchedTrips(BustripVehicleMatcher& tvm, double time);
+	bool dispatchMatchedTrips(BustripVehicleMatcher& tvm, double time); //returns true if a trip has successfully been scheduled and added to its line/service route
 	void setDispatchingStrategy(int type);
 
 private:
@@ -221,24 +221,24 @@ private:
 class IDispatchingStrategy
 {
 public:
-	virtual bool calc_dispatch_time(set<Bustrip*>& unscheduledTrips, double time) = 0;
+	virtual bool calc_dispatch_time(Eventlist* eventlist, set<Bustrip*>& unscheduledTrips, double time) = 0; //returns true if an unscheduled trip has been given a dispatch time and added to its line
 
 protected:
-	void dispatch_trip(Bustrip* trip);
+	bool dispatch_trip(Eventlist* eventlist, Bustrip* trip); //add a scheduled trip (i.e., trip has a vehicle, a line, and a start time) to trips vector of its Busline and adds a Busline event to dispatch this trip
 };
 
 /*Null dispatching rule that always returns false*/
 class NullDispatching : public IDispatchingStrategy
 {
 public:
-	virtual bool calc_dispatch_time(set<Bustrip*>& unscheduledTrips, double time) { return false; }
+	virtual bool calc_dispatch_time(Eventlist* eventlist, set<Bustrip*>& unscheduledTrips, double time) { return false; }
 };
 
 /*Dispatches the first trip found in unscheduledTrips at the earliest possible time*/
 class NaiveDispatching : public IDispatchingStrategy
 {
 public:
-	virtual bool calc_dispatch_time(set<Bustrip*>& unscheduledTrips, double time);
+	virtual bool calc_dispatch_time(Eventlist* eventlist, set<Bustrip*>& unscheduledTrips, double time);
 };
 
 /*Groups togethers processes that control or modify transit Vehicles and provides an interface to Passenger*/
@@ -282,6 +282,7 @@ signals:
 	void fleetStateChanged(double time);
 
 	void tripGenerated(double time);
+	void tripVehicleMatchFound(double time);
 
 private slots:
 	
@@ -293,12 +294,14 @@ private slots:
 	void on_requestRejected(double time);
 
 	void on_tripGenerated(double time);
+	void on_tripVehicleMatchFound(double time);
 
 	//fleet related
 	void updateFleetState(int bus_id, BusState newstate, double time);
 	void requestTrip(double time); //delegates to BustripGenerator to generate a trip depending on whatever strategy it currently uses and the state of the RequestHandler and add this to its list of trips
 
 	void matchVehiclesToTrips(double time);
+	void dispatchMatchedTrips(double time);
 
 private:
 	//OBS! remember to add all mutable members to reset method, including reset functions of process classes

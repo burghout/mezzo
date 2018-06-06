@@ -348,6 +348,18 @@ void VehicleDispatcher::reset(int dispatching_strategy_type)
 {
 	setDispatchingStrategy(dispatching_strategy_type);
 }
+
+bool VehicleDispatcher::dispatchMatchedTrips(BustripVehicleMatcher& tvm, double time)
+{
+	DEBUG_MSG("VehicleDispatcher is scheduling matched trips at time " << time);
+	if (dispatchingStrategy_)
+	{
+		return dispatchingStrategy_->calc_dispatch_time(eventlist_, tvm.matchedTrips_, time);
+	}
+
+	return false;
+}
+
 void VehicleDispatcher::setDispatchingStrategy(int d_strategy_type)
 {
 	if (dispatchingStrategy_)
@@ -366,8 +378,39 @@ void VehicleDispatcher::setDispatchingStrategy(int d_strategy_type)
 }
 
 //IDispatchingStrategy
-bool NaiveDispatching::calc_dispatch_time(set<Bustrip*>& unscheduledTrips, double time)
+bool IDispatchingStrategy::dispatch_trip(Eventlist* eventlist, Bustrip* trip)
 {
+	Busline* line = trip->get_line();
+	double starttime = trip->get_starttime();
+	assert(line->is_flex_line());
+	//line->add_flex_trip(trip, starttime);
+	//trip->activate(trip->get_starttime(), line->get_busroute(), line->get_odpair(), eventlist);
+	
+	//line->add_trip(trip, starttime);
+	//eventlist->add_event(starttime, line); //book the dispatch of this trip in the eventlist
+	return false;
+}
+
+bool NaiveDispatching::calc_dispatch_time(Eventlist* eventlist, set<Bustrip*>& unscheduledTrips, double time)
+{
+	if (!unscheduledTrips.empty())
+	{
+		Bustrip* trip = (*unscheduledTrips.begin());
+		Bus* bus = trip->get_busv();
+		//check if the bus associated with this trip is available (TODO: remember that buses are deleted and copied when they finish their trip)
+		if (bus->is_idle() && bus->get_last_stop_visited()->get_id() == trip->get_last_stop_visited()->get_id())
+		{
+			if (!dispatch_trip(eventlist, trip))
+				return false;
+			else
+				return true;
+		}
+		else
+		{
+			DEBUG_MSG_V("Bus is unavailable for matched trip! Figure out why!");
+			abort();
+		}
+	}
 
 	return false;
 }
@@ -426,7 +469,13 @@ void ControlCenter::connectInternal()
 	ok = QObject::connect(this, &ControlCenter::tripGenerated, this, &ControlCenter::on_tripGenerated, Qt::DirectConnection);
 	assert(ok);
 	ok = QObject::connect(this, &ControlCenter::tripGenerated, this, &ControlCenter::matchVehiclesToTrips, Qt::DirectConnection);
-	assert(ok);	
+	assert(ok);
+
+	//Triggers to schedule vehicle - trip pairs via VehicleDispatcher
+	ok = QObject::connect(this, &ControlCenter::tripVehicleMatchFound, this, &ControlCenter::on_tripVehicleMatchFound, Qt::DirectConnection);
+	assert(ok);
+	ok = QObject::connect(this, &ControlCenter::tripVehicleMatchFound, this, &ControlCenter::dispatchMatchedTrips, Qt::DirectConnection);
+	assert(ok);
 }
 
 void ControlCenter::connectPassenger(Passenger* pass)
@@ -517,6 +566,11 @@ void ControlCenter::on_tripGenerated(double time)
 	DEBUG_MSG(Q_FUNC_INFO << ": Trip Generated at time " << time);
 }
 
+void ControlCenter::on_tripVehicleMatchFound(double time)
+{
+	DEBUG_MSG(Q_FUNC_INFO << ": Vehicle - Trip match found at time " << time);
+}
+
 void ControlCenter::updateFleetState(int bus_id, BusState newstate, double time)
 {
 	int state = static_cast<int>(newstate);
@@ -533,5 +587,11 @@ void ControlCenter::requestTrip(double time)
 
 void ControlCenter::matchVehiclesToTrips(double time)
 {
-	tvm_.matchVehiclesToTrips(tg_, time);
+	if(tvm_.matchVehiclesToTrips(tg_, time))
+		emit tripVehicleMatchFound(time);
+}
+
+void ControlCenter::dispatchMatchedTrips(double time)
+{
+	vd_.dispatchMatchedTrips(tvm_, time);
 }
