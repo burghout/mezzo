@@ -3,6 +3,7 @@
 
 NodeDlg::NodeDlg(Node* curnode, QWidget* parent)
 {
+    Q_UNUSED(parent);
 	curnode_=curnode;
 
 }
