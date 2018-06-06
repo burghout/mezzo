@@ -2364,7 +2364,9 @@ void Change_arrival_rate::book_update_arrival_rates (Eventlist* eventlist, doubl
 }
 
 bool Change_arrival_rate::execute(Eventlist* eventlist, double time) //variables are not used, but kept for auto-completion 
-{		
+{
+    Q_UNUSED (eventlist);
+    Q_UNUSED (time);
 	for (TD_demand::iterator stop_iter = arrival_rates_TD.begin(); stop_iter != arrival_rates_TD.end(); stop_iter++)
 	{
 		map<Busline*,double> td_line = (*stop_iter).second;
