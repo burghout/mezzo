@@ -29,10 +29,12 @@ HEADERS += $$MEZZO_ROOT_RPATH/busline.h \
            $$MEZZO_ROOT_RPATH/vtypes.h \
            $$MEZZO_ROOT_RPATH/passenger.h \
            $$MEZZO_ROOT_RPATH/od_stops.h \
-           $$MEZZO_ROOT_RPATH/pass_route.h
+           $$MEZZO_ROOT_RPATH/pass_route.h \
+           $$MEZZO_ROOT_RPATH/controlcenter.h \
+
 
 SOURCES += $$MEZZO_ROOT_RPATH/busline.cpp \
-		   $$MEZZO_ROOT_RPATH/day2day.cpp \
+           $$MEZZO_ROOT_RPATH/day2day.cpp \
            $$MEZZO_ROOT_RPATH/eventlist.cpp \
            $$MEZZO_ROOT_RPATH/Graph.cpp \
            $$MEZZO_ROOT_RPATH/grid.cpp \
@@ -57,4 +59,5 @@ SOURCES += $$MEZZO_ROOT_RPATH/busline.cpp \
            $$MEZZO_ROOT_RPATH/vtypes.cpp \
            $$MEZZO_ROOT_RPATH/passenger.cpp \
            $$MEZZO_ROOT_RPATH/od_stops.cpp \
-           $$MEZZO_ROOT_RPATH/pass_route.cpp
+           $$MEZZO_ROOT_RPATH/pass_route.cpp \
+           $$MEZZO_ROOT_RPATH/controlcenter.cpp \

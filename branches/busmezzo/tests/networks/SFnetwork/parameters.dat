@@ -78,5 +78,6 @@
    holding_time_weight= 1.0
    compliance_rate= 0.8
    transfer_sync= 0
+   drt= 0
 #day2day_assignment
     default_alpha_RTI= 0.7
