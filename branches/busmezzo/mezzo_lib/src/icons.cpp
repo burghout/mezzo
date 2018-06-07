@@ -354,7 +354,7 @@ void LinkIcon::draw(QPixmap * pm,QMatrix * wm)   // draw the stuff on pixmap
 
  bool LinkIcon::within_boundary(const double x, const double y, const int rad)
 {
-
+    Q_UNUSED(rad);
 	int rad2=linkicon_leng_/12;
 	if (x<=handlex+rad2 && x>=handlex-rad2)
 		if(y<=handley+rad2 && y>=handley-rad2)

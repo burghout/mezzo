@@ -119,7 +119,7 @@ odval Route::get_oid_did()
  void Route::set_selected_color(QColor selcolor)
  {
 	vector <Link*>::iterator iter = links.begin();
-	 for (iter;iter < links.end(); iter++)
+     for (;iter < links.end(); iter++)
 	 {
 		 (*iter)->set_selected_color(selcolor);
 	 }

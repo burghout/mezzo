@@ -5895,6 +5895,12 @@ bool Network::writeheadways(string name)
 
 bool Network::write_busstop_output(string name1, string name2, string name3, string name4, string name5, string name6, string name7, string name8, string name9, string name10, string name11, string name12, string name13, string name14, string name15, string name16, string name17)
 {
+    Q_UNUSED(name5);
+    Q_UNUSED(name6);
+    Q_UNUSED(name13);
+    Q_UNUSED(name14);
+    Q_UNUSED(name15);
+
     ofstream out1(name1.c_str(),ios_base::app);
     ofstream out2(name2.c_str(),ios_base::app);
     ofstream out3(name3.c_str(),ios_base::app);
@@ -6776,7 +6782,7 @@ bool Network::shortest_pathtree_from_origin_link(int lid, double start_time)
     }
     else
         return false; // cannot init graph, so no search done
-
+    return false;
 }
 
 vector<Link*> Network::shortest_path_to_node(int rootlink, int dest_node, double start_time) //!< returns shortest path Links
@@ -6926,7 +6932,7 @@ void Network::reset_link_icons() // reset the links to normal color and hide the
 {
 #ifndef _NO_GUI
     map <int,Link*>::iterator link = linkmap.begin();
-    for (link; link!=linkmap.end(); link++)
+    for (; link!=linkmap.end(); link++)
     {
         link->second->set_selected ( false);
 
@@ -7786,6 +7792,7 @@ double Network::step(double timestep)
     double tc; // current time
 #endif //_NO_GUI
     double next_an_update=t0+timestep;   // when to exit
+    Q_UNUSED (next_an_update);
 
     if (theParameters->pass_day_to_day_indicator == 0 && theParameters->in_vehicle_d2d_indicator == 0)
     {
