@@ -437,6 +437,16 @@ bool IDispatchingStrategy::dispatch_trip(Eventlist* eventlist, Bustrip* trip)
 	return false;
 }
 
+bool NullDispatching::calc_dispatch_time(Eventlist* eventlist, set<Bustrip*>& unscheduledTrips, double time)
+{
+    Q_UNUSED(eventlist);
+    Q_UNUSED(unscheduledTrips);
+    Q_UNUSED(time);
+
+    return false;
+}
+
+
 bool NaiveDispatching::calc_dispatch_time(Eventlist* eventlist, set<Bustrip*>& unscheduledTrips, double time)
 {
 	if (!unscheduledTrips.empty())

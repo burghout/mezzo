@@ -224,7 +224,7 @@ protected:
 class NullDispatching : public IDispatchingStrategy
 {
 public:
-	virtual bool calc_dispatch_time(Eventlist* eventlist, set<Bustrip*>& unscheduledTrips, double time) { return false; }
+    virtual bool calc_dispatch_time(Eventlist* eventlist, set<Bustrip*>& unscheduledTrips, double time);
 };
 
 /*Dispatches the first trip found in unscheduledTrips at the earliest possible time*/
