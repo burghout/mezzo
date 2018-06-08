@@ -227,6 +227,7 @@ void Link::set_selected (const bool sel)
 
 pair<double,double> Link::set_output_moe_thickness(unsigned int val)// sets the output MOE for the link icon
 {
+    Q_UNUSED(val);
 
 #ifndef _NO_GUI	
 	int nr_periods;
@@ -272,6 +273,7 @@ pair<double,double> Link::set_output_moe_thickness(unsigned int val)// sets the 
 }
 pair <double,double> Link::set_output_moe_colour(unsigned int val)// sets the output MOE for the link icon
 {
+    Q_UNUSED(val);
 #ifndef _NO_GUI	
 	int nr_periods;
 	//double min, max;

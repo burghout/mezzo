@@ -26,7 +26,7 @@
 #define MAINFORM
 
 //#include <Qt3Support>
-#include <Qfiledialog>
+#include <QFileDialog>
 #include <QMatrix>
 #include "ui_canvas_qt4.h"
 #include "parametersdialog_qt4.h"

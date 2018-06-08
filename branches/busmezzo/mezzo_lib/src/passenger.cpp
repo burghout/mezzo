@@ -571,7 +571,7 @@ Busstop* Passenger::make_connection_decision (double time)
 		for (vector<Busstop*>::iterator connected_stop = (*stops_iter).begin(); connected_stop < (*stops_iter).end(); connected_stop++)
 		// going over all the stops at the second (connected) set
 		{
-			if (candidate_connection_stops_u[(*connected_stop)] == NULL && (*connected_stop)->check_destination_stop(this->get_OD_stop()->get_destination()) == true)
+            if ( (candidate_connection_stops_u.count(*connected_stop) == 0) && ((*connected_stop)->check_destination_stop(this->get_OD_stop()->get_destination()) == true) )
 				// only if it wasn't done already and there exists an OD for the remaining part
 			{
 				ODstops* left_od_stop;
@@ -665,6 +665,7 @@ Busstop* Passenger::make_first_stop_decision (double time)
 				{
 					vector<vector<Busstop*> > alt_stops = (*path_iter)->get_alt_transfer_stops();
 					vector<vector<Busstop*> >::iterator stops_iter = alt_stops.begin();
+                    Q_UNUSED (stops_iter);
 					// taking into account the walking distances from the origin to the origin stop and from the last stop till the final destination
 					candidate_origin_stops_u[(*o_stop_iter).first] += exp(theParameters->walking_time_coefficient * origin_walking_distances[(*o_stop_iter).first]/ theRandomizers[0]->nrandom(theParameters->average_walking_speed, theParameters->average_walking_speed/4) + theParameters->walking_time_coefficient * destination_walking_distances[(*d_stop_iter).first]/ theRandomizers[0]->nrandom(theParameters->average_walking_speed, theParameters->average_walking_speed/4) + possible_od->calc_combined_set_utility_for_connection ((*path_iter)->get_walking_distances().front(), time, this));
 				}
@@ -922,7 +923,7 @@ Busstop* Passenger::make_connection_decision_zone (double time)
 			for (vector<Busstop*>::iterator connected_stop = (*stops_iter).begin(); connected_stop < (*stops_iter).end(); connected_stop++)
 			// going over all the stops at the second (connected) set
 			{
-				if (candidate_connection_stops_u[(*connected_stop)] == NULL && (*connected_stop)->check_destination_stop(this->get_OD_stop()->get_destination()) == true)
+                if ( (candidate_connection_stops_u.count(*connected_stop) == 0) && ((*connected_stop)->check_destination_stop(this->get_OD_stop()->get_destination()) == true))
 				// only if it wasn't done already and there exists an OD for the remaining part
 				{
 					ODstops* left_od_stop = (*connected_stop)->get_stop_od_as_origin_per_stop((*iter_d_stops).first);

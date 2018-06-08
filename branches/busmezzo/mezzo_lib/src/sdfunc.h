@@ -27,6 +27,7 @@ class Sdfunc
 {
   public:
   	 Sdfunc(int id_,double vfree_, double vmin_, double romax_, double romin_);
+     virtual ~Sdfunc() {}
 	 virtual double speed(double ro);     // speed in m/s everywhere...
 	 int get_id();
 	 double get_romax();
@@ -48,7 +49,8 @@ class DynamitSdfunc : public Sdfunc
 {
 	public:
 		DynamitSdfunc (int id_, double vfree_, double vmin_, double romax_, double romin_, double alpha_=0.5, double beta_=1.5);
-		double speed (double ro);
+        virtual ~DynamitSdfunc() {}
+        double speed (double ro);
 	private:
 		double alpha;
 		double beta;
