@@ -41,6 +41,7 @@ class Action
 {	
 	public:
 		virtual bool execute(Eventlist* eventlist, double time);
+    virtual ~Action() {}
 	private:
 };
 

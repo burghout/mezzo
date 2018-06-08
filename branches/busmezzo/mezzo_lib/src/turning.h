@@ -42,11 +42,11 @@ class TurnAction : public Action
 {
  	public:
  		TurnAction(Turning* turning_);
+        virtual ~TurnAction() {}
  		virtual bool execute(Eventlist* eventlist, double time);
  	private:
  		Turning* turning;
 		double new_time;
-
 } ;
 
 

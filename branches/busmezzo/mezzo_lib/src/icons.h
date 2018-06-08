@@ -30,8 +30,8 @@
 #ifndef _NO_GUI
 #include <QPixmap>
 //#include <qpixmap>
-#include <qpen>
-#include <qpainter>
+#include <QPen>
+#include <QPainter>
 #include <list>
 #include "parameters.h"
 #include "grid.h"
