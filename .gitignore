@@ -38,3 +38,4 @@ GeneratedFiles/
 bin/
 *.filters
 moc_*
+*.ipch

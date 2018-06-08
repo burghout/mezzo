@@ -5219,8 +5219,7 @@ bool Network::read_unassignedvehicle(istream& in) //reads a bus vehicles that ar
 	int nr_sroutes; //nr of lines (service routes) that the bus is assigned to serve
 	int sroute_id; //id of a line (service route) that the bus is assigned to serve
 	vector<int> sroute_ids;
-	Busline* init_line; //initial line (containing a route and odpair for which bus is generated (init_stop is the first stop on this line))
-	DrtVehicleInit unassignedvehicle; //tuple with vehicle, init stop and init time
+	DrtVehicleInit unassignedvehicle; //tuple with vehicle, init stop, init time and initial service route ids
 
 	in >> bracket;
 	if (bracket != '{')
