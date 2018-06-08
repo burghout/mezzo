@@ -22,6 +22,25 @@ Request::Request(int pid, int oid, int did, int l, double t) : pass_id(pid), ost
     qRegisterMetaType<Request>(); //register Request as a metatype for QT signal arguments
 }
 
+bool Request::operator==(const Request & rhs) const
+{
+	return (pass_id == rhs.pass_id && ostop_id == rhs.ostop_id && dstop_id == rhs.dstop_id && load == rhs.load && time == rhs.time);
+}
+
+bool Request::operator<(const Request & rhs) const
+{
+	if (time != rhs.time)
+		return time < rhs.time;
+	else if (load != rhs.load)
+		return load < rhs.load;
+	else if (ostop_id != rhs.ostop_id)
+		return ostop_id < rhs.ostop_id;
+	else if (dstop_id != rhs.dstop_id)
+		return dstop_id < rhs.dstop_id;
+	else
+		return pass_id < rhs.pass_id;
+}
+
 //RequestHandler
 RequestHandler::RequestHandler()
 {
@@ -188,6 +207,16 @@ vector<Visit_stop*> ITripGenerationStrategy::create_schedule(double init_dispatc
 	return schedule;
 }
 
+bool NullTripGeneration::calc_trip_generation(const set<Request>& requestSet, const vector<Busline*>& candidateServiceRoutes, const double time, set<Bustrip*>& tripSet) const
+{
+	Q_UNUSED(requestSet);
+	Q_UNUSED(candidateServiceRoutes);
+	Q_UNUSED(time);
+	Q_UNUSED(tripSet);
+
+	return false;
+}
+
 bool NaiveTripGeneration::calc_trip_generation(const set<Request>& requestSet, const vector<Busline*>& candidateServiceRoutes, const double time, set<Bustrip*>& tripSet) const
 {
 	if (!requestSet.empty() && !candidateServiceRoutes.empty())
@@ -297,6 +326,16 @@ void IMatchingStrategy::assign_idlevehicle_to_trip(Bus* veh, Bustrip* trip, doub
 		DEBUG_MSG_V("Busstop::remove_unassigned_bus failed for bus " << veh->get_bus_id() << " and stop " << stop->get_id());
 	}
 
+}
+
+bool NullMatching::find_tripvehicle_match(set<Bustrip*>& plannedTrips, map<int, vector<Bus*>>& veh_per_sroute, const double time, set<Bustrip*>& matchedTrips)
+{
+	Q_UNUSED(plannedTrips);
+	Q_UNUSED(veh_per_sroute);
+	Q_UNUSED(time);
+	Q_UNUSED(matchedTrips);
+
+	return false;
 }
 
 bool NaiveMatching::find_tripvehicle_match(set<Bustrip*>& plannedTrips, map<int, vector<Bus*>>& veh_per_sroute, const double time, set<Bustrip*>& matchedTrips)
@@ -506,8 +545,11 @@ void ControlCenter::connectPassenger(Passenger* pass)
 }
 void ControlCenter::disconnectPassenger(Passenger* pass)
 {
-	assert(connectedPass_.count(pass->get_id() != 0));
-	connectedPass_.erase(connectedPass_.find(pass->get_id()));
+	assert(pass);
+	int pid = pass->get_id();
+	assert(connectedPass_.count(pid) != 0);
+
+	connectedPass_.erase(connectedPass_.find(pid));
 	bool ok = QObject::disconnect(pass, &Passenger::sendRequest, this, &ControlCenter::recieveRequest);
 	assert(ok);
 	ok = QObject::disconnect(pass, &Passenger::boardedBus, this, &ControlCenter::removeRequest);
@@ -516,6 +558,7 @@ void ControlCenter::disconnectPassenger(Passenger* pass)
 
 void ControlCenter::connectVehicle(Bus* transitveh)
 {
+	assert(transitveh);
 	int bvid = transitveh->get_bus_id();
 	assert(connectedVeh_.count(bvid) == 0); //vehicle should only be added once
 	connectedVeh_[bvid] = transitveh;
@@ -529,8 +572,11 @@ void ControlCenter::connectVehicle(Bus* transitveh)
 }
 void ControlCenter::disconnectVehicle(Bus* transitveh)
 {
-	assert(connectedVeh_.count(transitveh->get_bus_id() != 0));
-	connectedVeh_.erase(connectedVeh_.find(transitveh->get_bus_id()));
+	assert(transitveh);
+	int bvid = transitveh->get_bus_id();
+	assert(connectedVeh_.count(bvid) != 0); //only disconnect vehicles that have been added
+
+	connectedVeh_.erase(connectedVeh_.find(bvid));
 	bool ok = QObject::disconnect(transitveh, &Bus::stateChanged, this, &ControlCenter::updateFleetState);
 	assert(ok);
 }

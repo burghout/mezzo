@@ -23,7 +23,6 @@ Offers interface to connected vehicles as well as connected passengers
 #include <set>
 #include <qobject.h>
 
-//includes for bookkeeping maps in controlcenter (may remove in the future)
 #include "passenger.h"
 #include "vehicle.h"
 #include "busline.h"
@@ -40,24 +39,9 @@ struct Request
 	Request() {};
     Request(int pid, int oid, int did, int l, double t);
 
-	bool operator == (const Request& rhs) const
-	{
-		return (pass_id == rhs.pass_id && ostop_id == rhs.ostop_id && dstop_id == rhs.dstop_id && load == rhs.load && time == rhs.time);
-	}
+	bool operator == (const Request& rhs) const;
+	bool operator < (const Request& rhs) const; // default less-than comparison of Requests in the order of smallest time, smallest load, smallest origin stop id, smallest destination stop id and finally smallest passenger id
 
-	bool operator < (const Request& rhs) const // default less-than comparison of Requests in the order of smallest time, smallest load, smallest origin stop id, smallest destination stop id and finally smallest passenger id
-	{
-		if (time != rhs.time)
-			return time < rhs.time;
-		else if (load != rhs.load)
-			return load < rhs.load;
-		else if (ostop_id != rhs.ostop_id)
-			return ostop_id < rhs.ostop_id;
-		else if (dstop_id != rhs.dstop_id)
-			return dstop_id < rhs.dstop_id;
-		else
-			return pass_id < rhs.pass_id;
-	}
 };
 Q_DECLARE_METATYPE(Request);
 
@@ -65,9 +49,9 @@ Q_DECLARE_METATYPE(Request);
 /*Responsible for adding Requests to requestSet as well as sorting and distributing the requestSet*/
 class RequestHandler
 {
-public:
 	friend class BustripGenerator; //BustripGenerator recieves access to the requestSet as input to trip generation decisions
 
+public:
 	RequestHandler();
 	~RequestHandler();
 
@@ -88,18 +72,17 @@ class Busline;
 class ITripGenerationStrategy;
 class BustripGenerator
 {
-public:
 	enum generationStrategyType { Null = 0, Naive }; //ids of trip generation strategies known to BustripGenerator
 	friend class BustripVehicleMatcher; //give matcher class access to plannedTrips_. May remove trip from this set without destroying it if it has been matched
 
+public:
 	explicit BustripGenerator(ITripGenerationStrategy* generationStrategy = nullptr);
 	~BustripGenerator();
-
-	void reset(int generation_strategy_type);
 
 	bool requestTrip(const RequestHandler& rh, double time); //returns true if an unassigned trip has been generated and added to plannedTrips_ and false otherwise
 	void setTripGenerationStrategy(int type);
 
+	void reset(int generation_strategy_type);
 	void addServiceRoute(Busline* line);
 	
 	void cancelPlannedTrip(Bustrip* trip); //destroy and remove trip from set of plannedTrips_
@@ -118,7 +101,13 @@ typedef pair<Busstop*, double> Visit_stop;
 class ITripGenerationStrategy
 {
 public:
-	virtual bool calc_trip_generation(const set<Request>& requestSet, const vector<Busline*>& candidateServiceRoutes, const double time, set<Bustrip*>& tripSet) const = 0; //returns true if a trip was generated and added to tripSet container according to some strategy and false otherwise
+	virtual ~ITripGenerationStrategy() {}
+	virtual bool calc_trip_generation(
+		const set<Request>&		requestSet,				//set of requests that motivate the potential generation of a trip
+		const vector<Busline*>& candidateServiceRoutes, //service routes available to potentially serve the requests
+		const double			time,					//time for which calc_trip_generation is called
+		set<Bustrip*>&			tripSet					//set of trips that have been generated to serve requests that have not been assigned to a vehicle yet
+	) const = 0; //returns true if a trip was generated and added to tripSet container according to some strategy and false otherwise
 
 protected:
 	//supporting methods for generating trips with whatever ITripGenerationStrategy
@@ -130,7 +119,7 @@ protected:
 class NullTripGeneration : public ITripGenerationStrategy
 {
 public:
-	virtual bool calc_trip_generation(const set<Request>& requestSet, const vector<Busline*>& candidateServiceRoutes, const double time, set<Bustrip*>& tripSet) const { return false; }
+	virtual bool calc_trip_generation(const set<Request>& requestSet, const vector<Busline*>& candidateServiceRoutes, const double time, set<Bustrip*>& tripSet) const;
 };
 /*Matches trip according to oldest unassigned request & first line found to serve this request*/
 class NaiveTripGeneration : public ITripGenerationStrategy
@@ -146,10 +135,10 @@ class Bus;
 class IMatchingStrategy; //e.g. hungarian, k-opt, insertion
 class BustripVehicleMatcher
 {
-public:
-	enum matchingStrategyType { Null = 0, Naive };
+	enum matchingStrategyType { Null = 0, Naive }; //ids of trip vehicle matching strategies known to BustripVehicleMatcher
 	friend class VehicleDispatcher; //give vehicle dispatcher access to matchedTrips
 
+public:
 	explicit BustripVehicleMatcher(IMatchingStrategy* matchingStrategy = nullptr);
 	~BustripVehicleMatcher();
 
@@ -172,7 +161,13 @@ private:
 class IMatchingStrategy
 {
 public:
-	virtual bool find_tripvehicle_match(set<Bustrip*>& plannedTrips, map<int, vector<Bus*>>& candidateVehicles_per_SRoute, const double time, set<Bustrip*>& matchedTrips) = 0; //returns true if a trip from plannedTrips has been matched with a vehicle from candidateVehicles_per_SRoute and added to matchedTrips. The trip is in this case also removed from plannedTrips
+	virtual ~IMatchingStrategy() {}
+	virtual bool find_tripvehicle_match(
+		set<Bustrip*>&					plannedTrips,					//set of trips that are currently not assigned to any vehicle
+		map<int, vector<Bus*>>&			candidateVehicles_per_SRoute,	//set of candidate vehicles assigned with different service routes
+		const double					time,							//time for which find_tripvehicle_match is called
+		set<Bustrip*>&					matchedTrips					//set of trips that each have a vehicle assigned to them
+	) = 0; //returns true if a trip from plannedTrips has been matched with a vehicle from candidateVehicles_per_SRoute and added to matchedTrips. The trip is in this case also removed from plannedTrips
 
 protected:
 	void assign_idlevehicle_to_trip(Bus* idletransitveh, Bustrip* trip, double starttime); //performs all operations (similar to Network::read_busvehicle) required in assigning a trip to an idle vehicle (TODO: assigning driving vehicles)
@@ -182,7 +177,7 @@ protected:
 class NullMatching : public IMatchingStrategy
 {
 public:
-	virtual bool find_tripvehicle_match(set<Bustrip*>& plannedTrips, map<int, vector<Bus*>>& veh_per_sroute, const double time, set<Bustrip*>& matchedTrips) { return false; }
+	virtual bool find_tripvehicle_match(set<Bustrip*>& plannedTrips, map<int, vector<Bus*>>& veh_per_sroute, const double time, set<Bustrip*>& matchedTrips);
 };
 
 /*Naive matching strategy always matches the first trip in plannedTrips to the first candidate transit veh found (if any) at the origin stop of the trip.*/
@@ -196,9 +191,9 @@ public:
 class IDispatchingStrategy;
 class VehicleDispatcher
 {
-public:
 	enum dispatchStrategyType {Null = 0, Naive = 1};
-	
+
+public:
 	explicit VehicleDispatcher(Eventlist* eventlist = nullptr, IDispatchingStrategy* dispatchingStrategy = nullptr);
 	~VehicleDispatcher();
 
@@ -218,6 +213,7 @@ private:
 class IDispatchingStrategy
 {
 public:
+	virtual ~IDispatchingStrategy(){}
 	virtual bool calc_dispatch_time(Eventlist* eventlist, set<Bustrip*>& unscheduledTrips, double time) = 0; //returns true if an unscheduled trip has been given a dispatch time and added to its line
 
 protected:
