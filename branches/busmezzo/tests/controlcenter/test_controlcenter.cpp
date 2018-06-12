@@ -10,8 +10,8 @@
 //#include <unistd.h>
 #include <QFileInfo>
 
-//! @brief ControlCenter Tests BusMezzo
-//! Unit testing of ControlCenter features
+//! @brief Controlcenter Tests BusMezzo
+//! Unit testing of Controlcenter features
 
 
 //const std::string network_path = "../networks/SFnetwork/";
@@ -19,12 +19,12 @@
 
 //const long int seed = 42;
 
-class TestControlCenter : public QObject
+class TestControlcenter : public QObject
 {
     Q_OBJECT
 
 public:
-    TestControlCenter(){}
+    TestControlcenter(){}
 
 
 private Q_SLOTS:
@@ -38,18 +38,18 @@ private:
 
 };
 
-void TestControlCenter::testConstruction()
+void TestControlcenter::testConstruction()
 {   
-    ControlCenter * ccPtr = new ControlCenter ();
+    Controlcenter * ccPtr = new Controlcenter ();
 
-    QVERIFY2(ccPtr, "Failing to create a ControlCenter");
+    QVERIFY2(ccPtr, "Failing to create a Controlcenter");
     delete ccPtr;
 
 }
 
-void TestControlCenter::testConnectPassenger()
+void TestControlcenter::testConnectPassenger()
 {
-    ControlCenter * ccPtr = new ControlCenter ();
+    Controlcenter * ccPtr = new Controlcenter ();
     Busstop* origin = new Busstop();
     Busstop* destination = new Busstop();
     ODstops* OD_stop= new ODstops(origin,destination);
@@ -69,7 +69,7 @@ void TestControlCenter::testConnectPassenger()
 
 
 
-QTEST_APPLESS_MAIN(TestControlCenter)
+QTEST_APPLESS_MAIN(TestControlcenter)
 
 #include "test_controlcenter.moc"
 

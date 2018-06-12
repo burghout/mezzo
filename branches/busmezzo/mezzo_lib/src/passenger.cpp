@@ -21,7 +21,7 @@ Passenger::Passenger ()
 	arrival_time_at_stop = 0;
 }
 
-Passenger::Passenger (int pass_id, double start_time_, ODstops* OD_stop_, ControlCenter* CC, QObject* parent) : QObject(parent)
+Passenger::Passenger (int pass_id, double start_time_, ODstops* OD_stop_, Controlcenter* CC, QObject* parent) : QObject(parent)
 {
 	passenger_id = pass_id;
 	start_time = start_time_;

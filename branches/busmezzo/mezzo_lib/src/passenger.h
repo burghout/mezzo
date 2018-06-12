@@ -25,7 +25,7 @@ public:
 		int		   pass_id,
 		double	   start_time_,
 		ODstops*   OD_stop_,
-		ControlCenter* CC = nullptr,
+		Controlcenter* CC = nullptr,
 		QObject*   parent = nullptr
 	);
 	Passenger ();
@@ -123,12 +123,12 @@ public:
     //walking time
     double get_walking_time(Busstop*,double);
 
-	//ControlCenter
+	//Controlcenter
 private:
 	Request createRequest(int load = 1, double time = -1); //creates a request for this passenger with a given load and a given time (Note: uses protected members of Passenger)
 public:
 signals:
-	void sendRequest(Request req, double time); //signal to send Request to ControlCenter along with time in which signal is sent
+	void sendRequest(Request req, double time); //signal to send Request to Controlcenter along with time in which signal is sent
 	void boardedBus(int pass_id); //to signal that a passenger with pass_id has just boarded a bus
 
 protected:

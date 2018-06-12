@@ -184,7 +184,7 @@ void Bus::reset ()
 	type = 4;
 	output_vehicle.clear();
 
-	//ControlCenter
+	//Controlcenter
 	disconnect(this, 0, 0, 0); //disconnect all signal slots (will reconnect to control center in Network::init)
 	last_stop_visited_ = nullptr;
 	state_ = BusState::Null;

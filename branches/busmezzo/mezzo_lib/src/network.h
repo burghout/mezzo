@@ -406,7 +406,7 @@ protected:
 	//DRT implementation
 #include <tuple>
 	typedef std::tuple<Bus*, Busstop*, double, vector<int>> DrtVehicleInit; //un-scheduled vehicle, initial busstop, initial time, and initial service route ids
-	map<int, ControlCenter*> ccmap; //all control centers with id as key
+	map<int, Controlcenter*> ccmap; //all control centers with id as key
 	vector <DrtVehicleInit> drtvehicles; // all unassigned vehicles that are not fixed schedule fixed line on input
 
 	//Shortest path graph

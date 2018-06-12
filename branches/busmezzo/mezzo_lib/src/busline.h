@@ -31,7 +31,7 @@ class Change_arrival_rate;
 class Bustrip_assign;
 class Dwell_time_function;
 class Walking_time_dist;
-class ControlCenter;
+class Controlcenter;
 
 typedef pair<Bustrip*,double> Start_trip;
 typedef vector <Passenger*> passengers;
@@ -624,7 +624,7 @@ public:
 		double	min_DT_, 
 		int		rti_,
         bool    non_random_pass_generation_,
-		ControlCenter* CC_ = nullptr
+		Controlcenter* CC_ = nullptr
 	);
 
 	void reset (); 
@@ -715,7 +715,7 @@ public:
 	int calc_total_nr_waiting ();
 
 //control center related functions
-	ControlCenter* get_CC() { return CC; }
+	Controlcenter* get_CC() { return CC; }
 	void add_unassigned_bus_arrival(Bus* bus, double expected_arrival_time); //add bus to vector of unassigned (i.e. no trip and no busline) bus vehicles arrivals, sorted by expected arrival time
 	void add_unassigned_bus(Bus* bus, double arrival_time); //add bus to vector of unassigned buses at this stop sorted by actual arrival time
 	bool remove_unassigned_bus(const Bus* bus); //remove bus from vector of unassigned buses at stop, returns false if bus does not exist
@@ -792,7 +792,7 @@ protected:
     map<Busstop*, vector<Walking_time_dist*> > walking_time_distribution_map; //!< contains set of distributions for a given destination node
 
 	//drt implementation
-	ControlCenter* CC; //control center that this stop is associated with
+	Controlcenter* CC; //control center that this stop is associated with
 	vector<pair<Bus*,double>> unassigned_bus_arrivals; //expected arrivals of transit vehicles to stop that are not assigned to any trip
 	vector<pair<Bus*, double>> unassigned_buses_at_stop; //unassigned buses currently at stop along with the time they arrived/were initialized to this stop
 

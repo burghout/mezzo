@@ -1090,7 +1090,7 @@ Busstop::Busstop()
 	rti = 0;
 }
 
-Busstop::Busstop (int id_, string name_, int link_id_, double position_, double length_, bool has_bay_, bool can_overtake_, double min_DT_, int rti_, bool gate_flag_, ControlCenter* CC_):
+Busstop::Busstop (int id_, string name_, int link_id_, double position_, double length_, bool has_bay_, bool can_overtake_, double min_DT_, int rti_, bool gate_flag_, Controlcenter* CC_):
 id(id_), name(name_), link_id(link_id_), position (position_), length(length_), has_bay(has_bay_), can_overtake(can_overtake_), min_DT(min_DT_), rti (rti_), gate_flag (gate_flag_), CC (CC_)
 {
 	avaliable_length = length;
