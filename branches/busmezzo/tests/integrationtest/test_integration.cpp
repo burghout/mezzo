@@ -26,7 +26,7 @@ const vector<QString> output_filenames =
 	"o_od_stop_summary_without_paths.dat",
 	"o_od_stops_summary.dat",
 	"o_passenger_trajectory.dat",
-	//"o_passenger_welfare_summary.dat", //TODO: Why do all other files work but not this?!?!
+	"o_passenger_welfare_summary.dat",
 	"o_segments_line_loads.dat",
 	"o_segments_trip_loads.dat",
 	"o_selected_paths.dat",
