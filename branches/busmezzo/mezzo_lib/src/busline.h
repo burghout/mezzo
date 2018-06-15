@@ -10,6 +10,7 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#include <set>
 #include "link.h"
 #include "sdfunc.h"
 #include "q.h"
@@ -18,6 +19,8 @@
 #include <cmath>
 #include "od_stops.h"
 #include <stddef.h>
+#include <iterator>
+#include <list>
 
 class Busroute;
 class Busstop;
@@ -193,12 +196,12 @@ public:
 	double	get_init_occup_per_stop() {return init_occup_per_stop;}
 	int		get_nr_stops_init_occup () {return nr_stops_init_occup;}
 	int		get_opposite_id () {return opposite_id;}
-	void	set_curr_trip(vector <Start_trip>::iterator curr_trip_) {curr_trip = curr_trip_;}
+	void	set_curr_trip(list <Start_trip>::iterator curr_trip_) {curr_trip = curr_trip_;}
 	//void set_opposite_line (Busline* line) {opposite_line = line;}
 	//Busline* get_opposite_line () {return opposite_line;}
 	Output_Summary_Line get_output_summary () {return output_summary;}
-	vector <Start_trip>::iterator get_curr_trip() {return curr_trip;} 
-	vector <Start_trip> get_trips () {return trips;}
+	list <Start_trip>::iterator get_curr_trip() {return curr_trip;} 
+	list <Start_trip> get_trips () {return trips;}
 
 	//transfer gets and sets
 	int	get_tr_line_id() {return tr_line_id;}
@@ -206,7 +209,7 @@ public:
 
 	// initialization
 	void add_timepoints (vector <Busstop*> tp) {line_timepoint = tp;}
-	void add_trip(Bustrip* trip, double starttime){trips.push_back(Start_trip(trip,starttime));}
+	void add_trip(Bustrip* trip, double starttime); 
 	void add_disruptions (Busstop* from_stop, Busstop* to_stop, double disruption_start_time, double disruption_end_time, double cap_reduction);
 
 	//transfer initilization
@@ -221,7 +224,7 @@ public:
 	bool check_last_trip (Bustrip* trip);											//!< returns true if the trip is the last trip on the bus line, otherwise it returns false  
 //	double calc_next_scheduled_arrival_at_stop (Busstop* stop, double time);		//!< returns the remaining time till the next trip on this line is scheduled to arrive at a stop (according to schedule only) 
 	double find_time_till_next_scheduled_trip_at_stop (Busstop* stop, double time); //!< returns the time till the next trip which is scheduled to arrive next at stop
-	vector<Start_trip>::iterator find_next_expected_trip_at_stop (Busstop* stop);	//!< returns the next trip which is scheduled to arrive next at stop
+	Bustrip* find_next_expected_trip_at_stop (Busstop* stop);	//!< returns the next trip which is scheduled to arrive next at stop
 	double time_till_next_arrival_at_stop_after_time (Busstop* stop, double time);	//!< returns the time left till next trip is expected to arrive at the stop (real-time calculation)
 	Bustrip* get_next_trip (Bustrip* reference_trip);								//!< returns the trip after the reference trip on the trips vector	
 	Bustrip* get_previous_trip (Bustrip* reference_trip);							//!< returns the trip before the reference trip on the trips vector
@@ -250,11 +253,13 @@ public:
 
 	//DRT implementation
 	bool is_flex_line() const { return flex_line; }
-	void add_flex_trip(Bustrip* trip, double starttime); //adds trip with corresponding scheduled start time to flex_trip vector and keeps this vector sorted by start time
+	void add_flex_trip(Bustrip* trip); //adds trip to flex_trip set
 	void add_stop_delta(Busstop* stop, double delta_from_preceding_stop) { delta_at_stops.push_back(make_pair(stop, delta_from_preceding_stop)); } //set the scheduled/expected travel times between stops on this line (starting from 0 for the first stop)
 	vector<pair<Busstop*,double>> get_delta_at_stops() { return delta_at_stops; }
 	int generate_new_trip_id() { trip_count++; return id*100 + trip_count; } //generates a new tripid for this line and increments the trip counter for this line
 	bool is_unique_tripid(int tripid); //returns true if no trip in flex trips or trips for this line has this tripid
+
+	void set_static_trips(const list <Start_trip>& static_trips_) { static_trips = static_trips_; } //ugly solution, sole purpose is to save the initial trips vector between resets
 
 protected:
 	int id;						//!< line ID
@@ -266,7 +271,7 @@ protected:
 
     ODpair* odpair;
 	vector <Busstop*> line_timepoint;
-	vector <Start_trip> trips;				//!< the trips that are to be made
+	list <Start_trip> trips;				//!< the trips that are to be made
 
 	Vtype* vtype;							//!< the type of vehicle for the buses to be generated.
 
@@ -283,15 +288,16 @@ protected:
 
 	//drt related attributes
 	bool flex_line;	//!< true if trips can be created dynamically for this line
-	vector<Start_trip> flex_trips; //!< scheduled trips that were created dynamically for this line via a controlcenter
-	vector<pair<Busstop*,double>> delta_at_stops; //expected time between departures for all stops on this line (defined on input when reading bustrips for this line)
-	int trip_count; //the number of trips created for this line
+	set<Bustrip*> flex_trips; //!< trips that were created dynamically for this line via a controlcenter
+	vector<pair<Busstop*,double>> delta_at_stops; //!<expected time between departures for all stops on this line (defined on input when reading bustrips for this line)
+	int trip_count; //!<the number of trips created for this line
+	list <Start_trip> static_trips; //!< trips that were created from input files (i.e. were not created dynamically for this line), to be saved between resets
 
     map <Busstop*,pair<Busstop*,pair<double,double> > > disruption_times; //!< contains the expected travel times between a pair of stops in case of disruption (does not affect actual travel time, only passenger information provision). Strat and end times
 	map <Busstop*, double> disruption_cap_reduction;
 
 	bool active;														//!< is true when the busline has started generating trips
-	vector <Start_trip>::iterator curr_trip;							//!< indicates the next trip
+	list <Start_trip>::iterator curr_trip;							//!< indicates the next trip
 	Output_Summary_Line output_summary;
 	map <Busstop*, int> stop_pass;
 	map <Busstop*, Busline_assign> output_line_assign;
@@ -360,7 +366,7 @@ public:
 	void reset ();
 
 // GETS & SETS
-	int get_id () {return id;}											  //!< returns id, used in the compare <..> functions for find and find_if algorithms
+	int get_id () const {return id;}											  //!< returns id, used in the compare <..> functions for find and find_if algorithms
 	Bus* get_busv () {return busv;}
 	void set_busv (Bus* busv_) {busv = busv_;}
 	void set_bustype (Bustype* btype_) {btype = btype_;}

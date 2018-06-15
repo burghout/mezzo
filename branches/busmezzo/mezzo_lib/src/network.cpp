@@ -1984,6 +1984,7 @@ bool Network::readbustrip_format2(istream& in) // reads a trip
         trip->convert_stops_vector_to_map();
         bustrips.push_back (trip); // add to bustrips vector
     }
+	bl->set_static_trips(bl->get_trips()); //save trips to static_trips for resets
     in >> bracket;
     if (bracket != '}')
     {
@@ -2059,6 +2060,9 @@ bool Network::readbustrip_format3(istream& in) // reads a trip
         bustrips.push_back (trip); // add to bustrips vector
         initial_dispatching_time = initial_dispatching_time + headway;
     }
+
+	bl->set_static_trips(bl->get_trips()); //save trips to static_trips for resets
+	
     in >> bracket;
     if (bracket != '}')
     {

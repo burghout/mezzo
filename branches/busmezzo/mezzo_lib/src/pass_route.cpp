@@ -396,14 +396,14 @@ double Pass_path::calc_waiting_utility (vector <vector <Busstop*> >::iterator st
 	vector<vector <Busline*> >::iterator iter_alt_lines = alt_lines.begin();
 	for (vector <Busline*>::iterator iter_lines = (*iter_alt_lines).begin(); iter_lines < (*iter_alt_lines).end(); iter_lines++)
 	{
-		vector<Start_trip>::iterator next_trip_iter = (*iter_lines)->find_next_expected_trip_at_stop((*stop_iter).front());
+		Bustrip* next_trip = (*iter_lines)->find_next_expected_trip_at_stop((*stop_iter).front());
 		if (pass->line_is_rejected((*iter_lines)->get_id())) // in case the line was already rejected once before, added by Jens 2014-10-16
 		{
 			return -10.0;
 		}
 		
 		//if ((*next_trip_iter).first != NULL && (*next_trip_iter).first->stops_map[(*stop_iter).front()] - time < theParameters->max_waiting_time)
-		if ((*next_trip_iter).first != NULL) //Changed by Jens 2015-03-23 to avoid weird effects when the schedule is too pessimistic
+		if (next_trip) //Changed by Jens 2015-03-23 to avoid weird effects when the schedule is too pessimistic
 		// a dynamic filtering rule - if there is at least one line in the first leg which is available - then this waiting alternative is relevant
 		{
 			double ivt = calc_total_in_vehicle_time(time, pass);
