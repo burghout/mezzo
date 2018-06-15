@@ -2,6 +2,7 @@
     <qresource prefix="/">
         <file alias="masterfile.mezzo">networks/SFnetwork/masterfile.mezzo</file>
         <file>networks/SFnetwork/ExpectedOutputs/o_passenger_trajectory.dat</file>
+		<file>networks/SFnetwork/ExpectedOutputs/o_passenger_welfare_summary.dat</file>
         <file>networks/SFnetwork/ExpectedOutputs/o_selected_paths.dat</file>
         <file>networks/SFnetwork/ExpectedOutputs/o_od_stop_summary_without_paths.dat</file>
         <file>networks/SFnetwork/ExpectedOutputs/o_od_stops_summary.dat</file>
