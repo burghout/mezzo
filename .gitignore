@@ -39,3 +39,5 @@ bin/
 *.filters
 moc_*
 *.ipch
+*.db-shm
+*.db-wal

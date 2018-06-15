@@ -885,7 +885,7 @@ bool Bustrip::activate (double time, Route* route, ODpair* odpair, Eventlist* ev
 	double dispatch_time = calc_departure_time(first_dispatch_time);
 	if (dispatch_time < time)
 		cout << "Warning, dispatch time is before current time for bus trip " << id << endl;
-	busv->init(busv->get_id(),4,busv->get_length(),route,odpair,time); // initialize with the trip specific details
+	busv->init(busv->get_bus_id(),4,busv->get_length(),route,odpair,time); // initialize with the trip specific details
 	busv->set_occupancy(random->inverse_gamma(nr_stops_init_occup,init_occup_per_stop));
 	if ( (odpair->get_origin())->insert_veh(busv, dispatch_time)) // insert the bus at the origin at the possible departure time
 	{

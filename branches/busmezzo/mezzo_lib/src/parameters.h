@@ -52,7 +52,7 @@
 				<< std::endl; } while (false)
 #else
 #define DEBUG_MSG(str) do {} while (false)
-#define VDEBUG_MSG(str) do {} while (false)
+#define DEBUG_MSG_V(str) do {} while (false)
 #endif
 
 // GLOBAL VARIABLES

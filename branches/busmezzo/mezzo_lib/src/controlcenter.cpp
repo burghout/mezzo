@@ -16,7 +16,6 @@ struct compare
 };
 
 // Request
-
 Request::Request(int pid, int oid, int did, int l, double t) : pass_id(pid), ostop_id(oid), dstop_id(did), load(l), time(t)
 {
     qRegisterMetaType<Request>(); //register Request as a metatype for QT signal arguments
@@ -95,7 +94,7 @@ BustripGenerator::~BustripGenerator()
 
 void BustripGenerator::reset(int generation_strategy_type)
 {
-	for (Bustrip* trip : plannedTrips_)
+	for (Bustrip* trip : plannedTrips_) //clean up planned trips that were never matched. Note: currently network reset is called even after the last simulation replication
 	{
 		delete trip;
 	}
@@ -257,6 +256,10 @@ BustripVehicleMatcher::~BustripVehicleMatcher()
 
 void BustripVehicleMatcher::reset(int matching_strategy_type)
 {
+	for (Bustrip* trip : matchedTrips_) //clean up matched trips that were not dispatched. Note: currently network reset is called even after the last simulation replication
+	{
+		delete trip;
+	}
 	matchedTrips_.clear();
 	candidateVehicles_per_SRoute_.clear();
 	setMatchingStrategy(matching_strategy_type);
