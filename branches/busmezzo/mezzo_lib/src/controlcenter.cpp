@@ -267,7 +267,16 @@ void BustripVehicleMatcher::reset(int matching_strategy_type)
 
 void BustripVehicleMatcher::addVehicleToServiceRoute(int line_id, Bus* transitveh)
 {
-	candidateVehicles_per_SRoute_[line_id].push_back(transitveh);
+	assert(transitveh);
+	candidateVehicles_per_SRoute_[line_id].insert(transitveh);
+}
+
+void BustripVehicleMatcher::removeVehicleFromServiceRoute(int line_id, Bus * transitveh)
+{
+	assert(transitveh);
+	set<Bus*> candidateVehicles = candidateVehicles_per_SRoute_[line_id];
+	if (candidateVehicles.count(transitveh) != 0)
+		candidateVehicles_per_SRoute_[line_id].erase(transitveh);
 }
 
 void BustripVehicleMatcher::setMatchingStrategy(int type)
@@ -331,7 +340,7 @@ void MatchingStrategy::assign_idlevehicle_to_trip(Bus* veh, Bustrip* trip, doubl
 
 }
 
-bool NullMatching::find_tripvehicle_match(set<Bustrip*>& plannedTrips, map<int, vector<Bus*>>& veh_per_sroute, const double time, set<Bustrip*>& matchedTrips)
+bool NullMatching::find_tripvehicle_match(set<Bustrip*>& plannedTrips, map<int, set<Bus*>>& veh_per_sroute, const double time, set<Bustrip*>& matchedTrips)
 {
 	Q_UNUSED(plannedTrips);
 	Q_UNUSED(veh_per_sroute);
@@ -341,7 +350,7 @@ bool NullMatching::find_tripvehicle_match(set<Bustrip*>& plannedTrips, map<int, 
 	return false;
 }
 
-bool NaiveMatching::find_tripvehicle_match(set<Bustrip*>& plannedTrips, map<int, vector<Bus*>>& veh_per_sroute, const double time, set<Bustrip*>& matchedTrips)
+bool NaiveMatching::find_tripvehicle_match(set<Bustrip*>& plannedTrips, map<int, set<Bus*>>& veh_per_sroute, const double time, set<Bustrip*>& matchedTrips)
 {
 	DEBUG_MSG("------------Matching Naively!-------------");
 	//attempt to match the first trip among plannedTrips with first idle vehicle found at the origin stop of the trip
@@ -350,7 +359,7 @@ bool NaiveMatching::find_tripvehicle_match(set<Bustrip*>& plannedTrips, map<int,
 		Bustrip* trip = (*plannedTrips.begin()); //choose the first trip among planned trips
 		Bus* veh = nullptr; //the transit veh that we wish to match to a trip
 		Busline* sroute = trip->get_line(); //get the line/service route of this trip
-		vector<Bus*> candidate_buses = veh_per_sroute[sroute->get_id()]; //get all transit vehicles that have this route in their service area
+		set<Bus*> candidate_buses = veh_per_sroute[sroute->get_id()]; //get all transit vehicles that have this route in their service area
 
 		if (!candidate_buses.empty()) //there is at least one bus serving the route of this trip
 		{
@@ -360,12 +369,9 @@ bool NaiveMatching::find_tripvehicle_match(set<Bustrip*>& plannedTrips, map<int,
 			//check if one of the unassigned transit vehicles at the origin stop is currently serving the route of the trip
 			for (const pair<Bus*, double>& ua_bus : ua_buses_at_stop)
 			{
-				vector<Bus*>::iterator c_bus_it;
-				c_bus_it = find_if(candidate_buses.begin(), candidate_buses.end(), 
-					[ua_bus](const Bus* c_bus)->bool { 
-						return c_bus->get_bus_id() == ua_bus.first->get_bus_id();  //first bus in list should be the bus that arrived to the stop earliest
-					}
-				);
+				set<Bus*>::iterator c_bus_it;
+				c_bus_it = candidate_buses.find(ua_bus.first); //first bus in list should be the bus that arrived to the stop earliest
+
 				if (c_bus_it != candidate_buses.end()) //a bus match has been found
 				{
 					DEBUG_MSG("Trip - vehicle match found!");
@@ -508,6 +514,17 @@ void Controlcenter::reset()
 	//Clear all members of Controlcenter
 	connectedPass_.clear();
 	connectedVeh_.clear();
+
+	for (pair<Bus*, Bustrip*> vehtrip : completedVehicleTrips_)
+	{
+		//TODO: add to vehicle recycler instead of deleting, maybe add a trips recycler as well
+		if (initialVehicles_.count(vehtrip.first) == 0) //do not delete the initial buses
+		{
+			delete vehtrip.first;
+		}
+		delete vehtrip.second;
+	}
+	completedVehicleTrips_.clear();
 }
 
 void Controlcenter::connectInternal()
@@ -602,7 +619,31 @@ void Controlcenter::addServiceRoute(Busline* line)
 
 void Controlcenter::addVehicleToServiceRoute(int line_id, Bus* transitveh)
 {
+	assert(transitveh);
 	tvm_.addVehicleToServiceRoute(line_id, transitveh);
+}
+
+void Controlcenter::removeVehicleFromServiceRoute(int line_id, Bus* transitveh)
+{
+	assert(transitveh);
+	tvm_.removeVehicleFromServiceRoute(line_id, transitveh);
+
+}
+
+void Controlcenter::addInitialVehicle(Bus * transitveh)
+{
+	assert(transitveh);
+	if (initialVehicles_.count(transitveh) == 0)
+	{
+		initialVehicles_.insert(transitveh);
+	}
+}
+
+void Controlcenter::addCompletedVehicleTrip(Bus * transitveh, Bustrip * trip)
+{
+	assert(transitveh);
+	assert(trip);
+	completedVehicleTrips_.push_back(make_pair(transitveh, trip));
 }
 
 //Slot implementations

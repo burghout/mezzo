@@ -147,14 +147,15 @@ public:
 	void reset(int matching_strategy_type);
 
 	//find_candidate_vehicles
-	void addVehicleToServiceRoute(int line_id, Bus* transitveh); //add vehicle vector of vehicles assigned to serve the given line
+	void addVehicleToServiceRoute(int line_id, Bus* transitveh); //add vehicle to vector of vehicles assigned to serve the given line
+	void removeVehicleFromServiceRoute(int line_id, Bus* transitveh); //remove vehicle from vector of vehicles assigned to serve the given line
 	void setMatchingStrategy(int type);
 
 	bool matchVehiclesToTrips(BustripGenerator& tg, double time);
 
 private:
 	set<Bustrip*> matchedTrips_; //set of trips that have been matched with a transit vehicle
-	map<int, vector<Bus*>> candidateVehicles_per_SRoute_; //maps lineIDs among service routes for this control center to vector of candidate transit vehicles
+	map<int, set<Bus*>> candidateVehicles_per_SRoute_; //maps lineIDs among service routes for this control center to vector of candidate transit vehicles
 
 	MatchingStrategy* matchingStrategy_;
 };
@@ -166,7 +167,7 @@ public:
 	virtual ~MatchingStrategy() {}
 	virtual bool find_tripvehicle_match(
 		set<Bustrip*>&					plannedTrips,					//set of trips that are currently not assigned to any vehicle
-		map<int, vector<Bus*>>&			candidateVehicles_per_SRoute,	//set of candidate vehicles assigned with different service routes
+		map<int, set<Bus*>>&			candidateVehicles_per_SRoute,	//set of candidate vehicles assigned with different service routes
 		const double					time,							//time for which find_tripvehicle_match is called
 		set<Bustrip*>&					matchedTrips					//set of trips that each have a vehicle assigned to them
 	) = 0; //returns true if a trip from plannedTrips has been matched with a vehicle from candidateVehicles_per_SRoute and added to matchedTrips. The trip is in this case also removed from plannedTrips
@@ -180,7 +181,7 @@ class NullMatching : public MatchingStrategy
 {
 public:
 	~NullMatching() override {}
-	bool find_tripvehicle_match(set<Bustrip*>& plannedTrips, map<int, vector<Bus*>>& veh_per_sroute, const double time, set<Bustrip*>& matchedTrips) override;
+	bool find_tripvehicle_match(set<Bustrip*>& plannedTrips, map<int, set<Bus*>>& veh_per_sroute, const double time, set<Bustrip*>& matchedTrips) override;
 };
 
 /*Naive matching strategy always matches the first trip in plannedTrips to the first candidate transit veh found (if any) at the origin stop of the trip.*/
@@ -188,7 +189,7 @@ class NaiveMatching : public MatchingStrategy
 {
 public:
 	~NaiveMatching() override {}
-	bool find_tripvehicle_match(set<Bustrip*>& plannedTrips, map<int, vector<Bus*>>& veh_per_sroute, const double time, set<Bustrip*>& matchedTrips) override;
+	bool find_tripvehicle_match(set<Bustrip*>& plannedTrips, map<int, set<Bus*>>& veh_per_sroute, const double time, set<Bustrip*>& matchedTrips) override;
 };
 
 /*In charge of dispatching transit vehicle - trip pairs*/
@@ -273,6 +274,10 @@ public:
 
 	void addServiceRoute(Busline* line); //add line to BustripGenerator map of possible lines to create trips for
 	void addVehicleToServiceRoute(int line_id, Bus* transitveh); //add bus to vector of candidate vehicles that may be assigned trips for this line
+	void removeVehicleFromServiceRoute(int lind_id, Bus* transitveh); //remove bus from vector of candidate vehicles that may be assigned trips for this line
+
+	void addInitialVehicle(Bus* transitveh); 
+	void addCompletedVehicleTrip(Bus* transitveh, Bustrip* trip);
 
 signals:
 	void requestAccepted(double time);
@@ -318,5 +323,8 @@ private:
 	BustripGenerator tg_;
 	BustripVehicleMatcher tvm_;
 	VehicleDispatcher vd_;
+
+	set<Bus*> initialVehicles_; //vehicles assigned to this controlcenter on input (should be preserved between resets)
+	vector<pair<Bus*, Bustrip*>> completedVehicleTrips_; //used for bookeeping heap allocated buses and bustrips (similar to busvehicles and bustrips in network) for writing output and deleting between resets
 };
 #endif
