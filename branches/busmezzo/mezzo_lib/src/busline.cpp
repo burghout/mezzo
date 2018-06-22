@@ -1103,6 +1103,9 @@ Busstop::Busstop()
 	can_overtake = true;
 	dwelltime = 0;
 	rti = 0;
+	turning_begin = false;
+	turning_end = false;
+	opposing_stop = nullptr;
 }
 
 Busstop::Busstop (int id_, string name_, int link_id_, double position_, double length_, bool has_bay_, bool can_overtake_, double min_DT_, int rti_, bool gate_flag_, Controlcenter* CC_):
@@ -1125,6 +1128,9 @@ id(id_), name(name_), link_id(link_id_), position (position_), length(length_), 
 	{
 		random->randomize();
 	}
+	turning_begin = false;
+	turning_end = false;
+	opposing_stop = nullptr;
 }
 
 Busstop::~Busstop ()

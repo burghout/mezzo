@@ -727,6 +727,13 @@ public:
 	bool remove_unassigned_bus(const Bus* bus); //remove bus from vector of unassigned buses at stop, returns false if bus does not exist
 	vector<pair<Bus*, double>> get_unassigned_buses_at_stop() { return unassigned_buses_at_stop; }
 
+	bool is_turning_begin() const { return turning_begin; }
+	bool is_turning_end() const { return turning_end; }
+	void set_turning_begin(const bool turning_begin_) { turning_begin = turning_begin_; }
+	void set_turning_end(const bool turning_end_) { turning_end = turning_end_; }
+	void set_opposing_stop(Busstop* opposing_stop_) { opposing_stop = opposing_stop_; }
+	Busstop* get_opposing_stop() const { return opposing_stop; }
+
 // relevant only for demand format 2
 	multi_rates multi_arrival_rates; //!< parameter lambda that defines the poission proccess of passengers arriving at the stop for each sequential stop
 
@@ -798,9 +805,12 @@ protected:
     map<Busstop*, vector<Walking_time_dist*> > walking_time_distribution_map; //!< contains set of distributions for a given destination node
 
 	//drt implementation
-	Controlcenter* CC; //control center that this stop is associated with
-	vector<pair<Bus*,double>> unassigned_bus_arrivals; //expected arrivals of transit vehicles to stop that are not assigned to any trip
-	vector<pair<Bus*, double>> unassigned_buses_at_stop; //unassigned buses currently at stop along with the time they arrived/were initialized to this stop
+	Controlcenter* CC; //!< control center that this stop is associated with
+	vector<pair<Bus*,double>> unassigned_bus_arrivals; //!< expected arrivals of transit vehicles to stop that are not assigned to any trip
+	vector<pair<Bus*, double>> unassigned_buses_at_stop; //!< unassigned buses currently at stop along with the time they arrived/were initialized to this stop
+	bool turning_begin; //!< true if this stop is at the end of a route/line, and the beginning of turning point towards its opposite stop 
+	bool turning_end; //!< true if this stop is at the beginning of a route/line, and the end of a turning point from an opposite stop
+	Busstop* opposing_stop; //!< opposite stop to this one if this busstop corresponds to a location with a turning point. Initialized to nullptr if no opposite stop exists
 
 	// transfer synchronization
 	vector<pair<Bustrip*, int> > trips_awaiting_transfers;	//!< David added 2016-05-30: contains trips that are currently waiting to synchronize transfers with a connecting trip, paired with the line ID of the connecting trip
