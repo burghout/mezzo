@@ -1436,12 +1436,15 @@ bool Network::readtransitnetwork(string name) //!< reads the stops, distances be
     int format;
 
 	//Create Controlcenters here or somewhere else. OBS: currently a pointer to this CC is given to Busstop via its constructor
-	int id = 1;
-	int tg_strategy = 1;
-	int tvm_strategy = 1;
-	int vd_strategy = 1;
-	Controlcenter* cc = new Controlcenter(eventlist, id, tg_strategy, tvm_strategy, vd_strategy); //for testing purposes, TODO: move to a controlcenter reader
-	ccmap[id] = cc;
+	if (theParameters->drt)
+	{
+		int id = 1;
+		int tg_strategy = 1;
+		int tvm_strategy = 1;
+		int vd_strategy = 1;
+		Controlcenter* cc = new Controlcenter(eventlist, id, tg_strategy, tvm_strategy, vd_strategy); //for testing purposes, TODO: move to a controlcenter reader
+		ccmap[id] = cc;
+	}
 
     // First read the busstops
     in >> keyword;

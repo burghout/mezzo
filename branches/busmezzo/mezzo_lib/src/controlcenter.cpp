@@ -62,6 +62,7 @@ bool RequestHandler::addRequest(const Request req)
 		requestSet_.insert(req);
 		return true;
 	}
+	DEBUG_MSG("Passenger request " << req.pass_id << " at time " << req.time << " already exists in request set!");
 	return false;
 }
 
@@ -78,7 +79,7 @@ void RequestHandler::removeRequest(const int pass_id)
 	if (it != requestSet_.end())
 		requestSet_.erase(it);
 	else
-		DEBUG_MSG_V("Request for pass id " << pass_id << " not found.");
+		DEBUG_MSG_V("removeRequest for pass id " << pass_id << " failed. Passenger not found in requestSet.");
 }
 
 //BustripGenerator
@@ -458,6 +459,7 @@ bool NullDispatching::calc_dispatch_time(Eventlist* eventlist, set<Bustrip*>& un
 
 bool NaiveDispatching::calc_dispatch_time(Eventlist* eventlist, set<Bustrip*>& unscheduledTrips, double time)
 {
+	Q_UNUSED(time);
 	if (!unscheduledTrips.empty())
 	{
 		Bustrip* trip = (*unscheduledTrips.begin());

@@ -349,10 +349,10 @@ double Busline::extra_disruption_on_segment (Busstop* next_stop, double time)
 double Busline::calc_curr_line_headway ()
 {
 	//TODO: add condition for when trips vector is empty!
-	if (trips.empty())
+	if (trips.empty() || static_cast<int> (trips.size()) == 1)
 	{
-		DEBUG_MSG_V("Busline::calc_curr_line_headway returning headway for empty trips vector");
-		return 10000;
+		DEBUG_MSG_V("Busline::calc_curr_line_headway returning headway 0.0 for empty/single trips list");
+		return 0.0;
 	}
 
 	list<Start_trip>::iterator succ_trip;
@@ -360,7 +360,7 @@ double Busline::calc_curr_line_headway ()
 	if (curr_trip == trips.end()) //if no there are no future trips scheduled return headway of last two trips
 	{
 		succ_trip = prev(curr_trip);
-		prec_trip = prev(prec_trip);
+		prec_trip = prev(succ_trip);
 		return ((*(succ_trip)).second - (*(prec_trip)).second);
 	}
 	if (curr_trip == trips.begin()) //if no trips have been performed yet return headway of first and second trip
@@ -378,10 +378,10 @@ double Busline::calc_curr_line_headway ()
 double Busline::calc_curr_line_headway_forward ()
 {
 	//TODO: add condition for when trips vector is empty!
-	if (trips.empty())
+	if (trips.empty() || static_cast<int>(trips.size()) == 1)
 	{
-		DEBUG_MSG_V("Busline::calc_curr_line_headway returning headway for empty trips vector");
-		return 10000;
+		DEBUG_MSG_V("Busline::calc_curr_line_headway returning headway 0.0 for empty/single trips list");
+		return 0.0;
 	}
 
 	list<Start_trip>::iterator succ_trip;
@@ -389,7 +389,7 @@ double Busline::calc_curr_line_headway_forward ()
 	if (curr_trip == trips.end()) //if no there are no future trips scheduled return headway of last two trips
 	{
 		succ_trip = prev(curr_trip);
-		prec_trip = prev(prec_trip);
+		prec_trip = prev(succ_trip);
 		return ((*(succ_trip)).second - (*(prec_trip)).second);
 	}
 	if (curr_trip == trips.begin()) //if no trips have been performed yet return headway of first and second trip
@@ -416,6 +416,8 @@ double Busline:: calc_max_headway ()
 	{
 		max_headway = max (max_headway, (*(next(start_trip_iter))).second - (*(start_trip_iter)).second);
 	}
+	if (max_headway == 0.0)
+		DEBUG_MSG_V("Busline::calc_max_headway returning 0.0 for empty/single trips list");
 	return max_headway;
 }
 
