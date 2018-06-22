@@ -23,6 +23,7 @@
 //#include "PVM.h"
 #include "signature.h"
 #include <list>
+#include <set>
 #include "vtypes.h"
 #include "busline.h"
 #include "Random.h"
@@ -127,18 +128,20 @@ class Bus : public QObject, public Vehicle
 public:
 	Bus(QObject* parent = nullptr);
 	Bus(
-		int id_, 
-		int type_, 
-		double length_, 
-		Route* route_, 
-		ODpair* odpair_, 
+		int id_,
+		int type_,
+		double length_,
+		Route* route_,
+		ODpair* odpair_,
 		double time_,
+		bool flex_vehicle = false,
 		QObject* parent = nullptr
 	);
 	
 	Bus(
 		int bv_id_, 
 		Bustype* bty,
+		bool flex_vehicle = false,
 		QObject* parent = nullptr
 	);
 
@@ -177,6 +180,10 @@ public:
 	Busstop* get_last_stop_visited() const { return last_stop_visited_; }
 	void set_last_stop_visited(Busstop* last_stop_visited) { last_stop_visited_ = last_stop_visited; } 
 
+	void set_flex_vehicle(bool flex_vehicle) { flex_vehicle_ = flex_vehicle; }
+	void add_sroute_id(int sroute_id) { sroute_ids_.insert(sroute_id); }
+	void remove_sroute_id(int sroute_id) { if (sroute_ids_.count(sroute_id) != 0) { sroute_ids_.erase(sroute_id); } }
+
 signals:
 	void stateChanged(int bus_id, BusState state, double time); // Signal informing a change of BusState
 
@@ -194,7 +201,8 @@ protected:
 	
 	Busstop* last_stop_visited_; //The last busstop (if no stop has been visited then initialized to nullptr) that this transit vehicle has entered
 	BusState state_; //state of the vehicle used for DRT service with controlcenter
-
+	bool flex_vehicle_; //true if vehicle can be assigned trips dynamically, false otherwise
+	set<int> sroute_ids_; //ids of service routes (buslines) that this bus can be assigned dynamically generated trips for
 };
 
 class Busvehicle_location // container object holding output data for stop visits

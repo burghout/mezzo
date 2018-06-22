@@ -405,22 +405,13 @@ int Network::reset()
         (*odstops_iter)->reset();
     }
 
-    // busvechiles
+    // busvehicles
     for (vector<Bus*>::iterator bus_iter = busvehicles.begin(); bus_iter < busvehicles.end(); bus_iter++)
     {
         (*bus_iter)->reset();
     }
-	
-	//drt vehicles
-	for (auto& drtvehicle : drtvehicles)
-	{
-		get<0>(drtvehicle)->reset(); 
-		/*Note: drtvehicle is still a Bus vehicle, 
-		separate vector with tuples for separate handling output as well as initial stop and time. 
-		Might just include these in busvehicle in the future however */
-	}
 
-	//controlcenters
+	//controlcenters (and all their initial drt vehicles)
 	for (auto& controlcenter : ccmap)
 	{
 		controlcenter.second->reset();
@@ -5290,6 +5281,7 @@ bool Network::read_busvehicle(istream& in) // reads a bus vehicle
 
         //Moved here by Jens 2014-09-05
         Bus* bus=recycler.newBus(); // get a bus vehicle
+		bus->set_flex_vehicle(false); //vehicle can only run pre-planned fixed line, fixed schedule trips
         bus->set_bus_id(bv_id);
         bus->set_bustype_attributes(bty);
         btr->set_busv(bus);
@@ -5388,14 +5380,21 @@ bool Network::read_unassignedvehicle(istream& in) //reads a bus vehicles that ar
 	// generate a new bus vehicle
 	vid++;
 	Bus* bus = recycler.newBus(); // get a bus vehicle
+	bus->set_flex_vehicle(true); //vehicle can be assigned dynamically generated trips
 	bus->set_bus_id(bv_id);
 	bus->set_bustype_attributes(bty);
 	bus->set_curr_trip(nullptr); // bus has no trip assigned to it, on_trip should = false
-
+	
 	init_stop = (*(find_if(busstops.begin(), busstops.end(), compare <Busstop>(init_stop_id))));
+
+	for (int id : sroute_ids)
+	{
+		bus->add_sroute_id(id); //bus has knowledge of its service area
+	}
 
 	unassignedvehicle = make_tuple(bus, init_stop, init_time, sroute_ids);
 	drtvehicles.push_back(unassignedvehicle);
+	//busvehicles.push_back(bus); //add drt bus to busvehicles vector for resets and writing output
 
 	return true;
 }
@@ -7956,7 +7955,6 @@ bool Network::init()
 	//Initialize the DRT vehicles to their starting stop at their starting time
 	if (theParameters->drt && !drtvehicles.empty())
 	{
-		DEBUG_MSG_V("Initializing drt trips!!!"); //Note: all drtvehicles are connected to a controlcenter when reading unassigned vehicles
 		//Add buses to vector of unassigned vehicles and initial Busstop
 		for (const DrtVehicleInit& drt_init : drtvehicles)
 		{
@@ -7967,8 +7965,8 @@ bool Network::init()
 
 			bus->set_curr_trip(nullptr); //unlike non-dynamically generated bus/trips this bus should not have a trip between resets as well
 			ccmap[1]->connectVehicle(bus); //connect vehicle to a control center
-			stop->add_unassigned_bus_arrival(bus, init_time); //should be in a Null state until their init_time
-			eventlist->add_event(init_time, stop);	//add a Busstop event scheduled for the init_time of vehicle  to switch state of bus to IdleEmpty from Null
+			ccmap[1]->addInitialVehicle(bus);
+			stop->add_unassigned_bus_arrival(eventlist, bus, init_time); //should be in a Null state until their init_time (also adds a Busstop event scheduled for the init_time of vehicle  to switch state of bus to IdleEmpty from Null)
 			for (const int& sroute_id : sroute_ids)
 			{
 				ccmap[1]->addVehicleToServiceRoute(sroute_id, bus);//add vehicle as a candidate service vehicle for service routes

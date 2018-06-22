@@ -196,7 +196,7 @@ public:
 	double	get_init_occup_per_stop() {return init_occup_per_stop;}
 	int		get_nr_stops_init_occup () {return nr_stops_init_occup;}
 	int		get_opposite_id () {return opposite_id;}
-	void	set_curr_trip(list <Start_trip>::iterator curr_trip_) {curr_trip = curr_trip_;}
+	bool	set_curr_trip(const Bustrip* trip); //!< sets curr_trip to location of trip in trips list. Returns false if trip does not exist in trips list
 	//void set_opposite_line (Busline* line) {opposite_line = line;}
 	//Busline* get_opposite_line () {return opposite_line;}
 	Output_Summary_Line get_output_summary () {return output_summary;}
@@ -254,13 +254,14 @@ public:
 	//DRT implementation
 	bool is_flex_line() const { return flex_line; }
 	void add_flex_trip(Bustrip* trip); //adds trip to flex_trip set
+	void remove_flex_trip(Bustrip* trip); //remove trip from flex_trip set once it has been completed
 	void add_stop_delta(Busstop* stop, double delta_from_preceding_stop) { delta_at_stops.push_back(make_pair(stop, delta_from_preceding_stop)); } //set the scheduled/expected travel times between stops on this line (starting from 0 for the first stop)
 	vector<pair<Busstop*,double>> get_delta_at_stops() { return delta_at_stops; }
 	int generate_new_trip_id() { trip_count++; return id*100 + trip_count; } //generates a new tripid for this line and increments the trip counter for this line
 	bool is_unique_tripid(int tripid); //returns true if no trip in flex trips or trips for this line has this tripid
 
 	void set_static_trips(const list <Start_trip>& static_trips_) { static_trips = static_trips_; } //ugly solution, sole purpose is to save the initial trips vector between resets
-
+	
 protected:
 	int id;						//!< line ID
 	int opposite_id;			//!< the line ID of the opposite direction
@@ -298,6 +299,7 @@ protected:
 
 	bool active;														//!< is true when the busline has started generating trips
 	list <Start_trip>::iterator curr_trip;							//!< indicates the next trip
+	list <Start_trip>::iterator next_trip; //!< indicates the next trip
 	Output_Summary_Line output_summary;
 	map <Busstop*, int> stop_pass;
 	map <Busstop*, Busline_assign> output_line_assign;
@@ -422,6 +424,10 @@ public:
 
 //Control Center
 	void set_starttime(double starttime_) { starttime = starttime_; }
+	void set_scheduled_for_dispatch(bool scheduled_for_dispatch_) { scheduled_for_dispatch = scheduled_for_dispatch_; }
+	bool is_scheduled_for_dispatch() const { return scheduled_for_dispatch; }
+	void set_flex_trip(bool flex_trip_) { flex_trip = flex_trip_; }
+	bool is_flex_trip() const { return flex_trip; }
 
 protected:
 	int id;										  //!< course nr
@@ -443,6 +449,10 @@ protected:
 	bool holding_at_stop;						 //!< David added 2016-05-26: true if the trip is currently holding at a stop, false otherwise (used for progressing passengers in case of holding for demand format 3, should always be false for other formats)
 	//	map <Busstop*,bool> trips_timepoint;	 //!< will be relevant only when time points are trip-specific. binary map with time point indicatons for stops on route only (according to the schedule input file)  
 	Eventlist* eventlist;						 //!< for use by busstops etc to book themselves.
+	
+	//DRT
+	bool scheduled_for_dispatch; //!< true if this trip has been scheduled for dispatch for its respective line, false otherwise
+	bool flex_trip; //!< true if this trip was generated dynamically
 };
 
 typedef pair<Busstop*, double> stop_rate;
@@ -722,7 +732,7 @@ public:
 
 //control center related functions
 	Controlcenter* get_CC() { return CC; }
-	void add_unassigned_bus_arrival(Bus* bus, double expected_arrival_time); //add bus to vector of unassigned (i.e. no trip and no busline) bus vehicles arrivals, sorted by expected arrival time
+	void add_unassigned_bus_arrival(Eventlist* eventlist, Bus* bus, double expected_arrival_time); //add bus to vector of unassigned (i.e. no trip and no busline) bus vehicles arrivals, sorted by expected arrival time and add a Busstop event scheduled for the init_time of vehicle  to switch state of bus to IdleEmpty from Null
 	void add_unassigned_bus(Bus* bus, double arrival_time); //add bus to vector of unassigned buses at this stop sorted by actual arrival time
 	bool remove_unassigned_bus(const Bus* bus); //remove bus from vector of unassigned buses at stop, returns false if bus does not exist
 	vector<pair<Bus*, double>> get_unassigned_buses_at_stop() { return unassigned_buses_at_stop; }

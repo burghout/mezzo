@@ -104,19 +104,28 @@ bool Busline::execute(Eventlist* eventlist, double time)
 			curr_trip = trips.begin();
 			double next_time = curr_trip->second;
 			eventlist->add_event(next_time, this); // add itself to the eventlist, with the time the next trip is starting
+			curr_trip->first->set_scheduled_for_dispatch(true); //trip now has a dispatch event scheduled for it in the eventlist
 			active = true; // now the Busline is active, there is a trip that will be activated at t=next_time
 			return true;
 		}		
 	}
 	else // if the Busline is active
 	{
+		int busid = curr_trip->first->get_busv()->get_bus_id();
+		if(curr_trip->first->is_flex_trip())
+			DEBUG_MSG("Busline " << id << " activating trip " << curr_trip->first->get_id() << " for bus " << busid);
+
 		curr_trip->first->activate(time, busroute, odpair, eventlist); // activates the trip, generates bus etc.
 		curr_trip++; // now points to next trip
 		if (curr_trip != trips.end()) // if there exists a next trip
 		{
-			double next_time = curr_trip->second;
-			eventlist->add_event(next_time, this); // add itself to the eventlist, with the time the next trip is starting
-			return true;
+			if (!curr_trip->first->is_scheduled_for_dispatch()) //if trip has not already been scheduled for dispatch
+			{
+				double next_time = curr_trip->second;
+				eventlist->add_event(next_time, this); // add itself to the eventlist, with the time the next trip is starting
+				curr_trip->first->set_scheduled_for_dispatch(true); //trip now has a dispatch event scheduled for it in the eventlist
+				return true;
+			}
 		}
 	}
 	return true;
@@ -134,13 +143,10 @@ vector<Busstop*>::iterator Busline::get_stop_iter (Busstop* stop)
 	return stops.end();
 }
 
-void Busline::add_trip(Bustrip * trip, double starttime)
+void Busline::add_trip(Bustrip* trip, double starttime)
 {
-	//if (starttime < curr_trip_starttime) //strictly less than because of sort functor tie-breaker condition (if starttimes are equal return the first start trip)
-	//{
-	//	
-	//}
-
+	assert(trip);
+	assert(starttime >= 0);
 
 	trips.push_back(Start_trip(trip, starttime));
 	trips.sort([](const Start_trip& st1, const Start_trip& st2) -> bool 
@@ -150,8 +156,40 @@ void Busline::add_trip(Bustrip * trip, double starttime)
 		else
 			return true; //if starttimes are equal the first start trip in the list is considered smaller
 	}
-	); //keep earliest trips at the beginning of the vector
+	); //keep earliest trips at the beginning of the list
+
+	if (trips.size() == 1)
+	{
+		curr_trip = trips.begin();
+	}
+	if (curr_trip == trips.end())
+	{
+		set_curr_trip(trip);
+	}
+	else if (starttime < curr_trip->first->get_starttime() && trips.size() != 0) //strictly less than because of sort functor tie-breaker condition (if starttimes are equal return the first start trip)
+	{
+		set_curr_trip(trip);
+	}
 }
+
+bool Busline::set_curr_trip(const Bustrip* trip)
+{
+	if (trip != nullptr)
+	{
+		list <Start_trip>::iterator it; //location in list of the trip that has just been added
+		int tripid = trip->get_id();
+		it = find_if(trips.begin(), trips.end(), [tripid](const Start_trip& st)-> bool { return st.first->get_id() == tripid; });
+
+		if (it != trips.end())
+		{
+			curr_trip = it;
+			return true;
+		}
+	}
+	DEBUG_MSG_V("Busline::set_curr_trip returning false for nullptr trip");
+	return false;
+}
+
 
 void Busline::add_disruptions (Busstop* from_stop, Busstop* to_stop, double disruption_start_time, double disruption_end_time, double cap_reduction)
 {
@@ -627,8 +665,13 @@ void Busline::write_ttt_output(ostream & out)
 void Busline::add_flex_trip(Bustrip* trip)
 {
 	assert(flex_trips.count(trip) == 0); //trips are only added once
-	//TODO: reserve capacity for flex trips vector or change to set
 	flex_trips.insert(trip);
+}
+
+void Busline::remove_flex_trip(Bustrip * trip)
+{
+	assert(flex_trips.count(trip) == 1);
+	flex_trips.erase(trip);
 }
 
 bool Busline::is_unique_tripid(int trip_id)
@@ -700,6 +743,8 @@ Bustrip::Bustrip (int id_, double start_time_, Busline* line_): id(id_), line(li
 	last_stop_enter_time = 0;
 	last_stop_exit_time = 0;
 	holding_at_stop = false;
+	scheduled_for_dispatch = false;
+	flex_trip = false;
 	for (vector<Visit_stop*>::iterator visit_stop_iter = stops.begin(); visit_stop_iter < stops.end(); visit_stop_iter++)
 	{
 		assign_segements[(*visit_stop_iter)->first] = 0;
@@ -751,6 +796,7 @@ void Bustrip::reset ()
 	output_passenger_load.clear();
 	last_stop_visited = stops.front()->first;
 	holding_at_stop = false;
+	scheduled_for_dispatch = false;
 }
 
 void Bustrip::convert_stops_vector_to_map ()
@@ -810,7 +856,7 @@ bool Bustrip::advance_next_stop (double time, Eventlist* eventlist)
 	}
 	if (busv->get_on_trip()== false && next_stop == stops.end()) // if it was the last stop for this trip
 	{	
-		vector <Start_trip*>::iterator curr_trip, next_trip; // find the pointer to the current and next trip
+		vector <Start_trip*>::iterator curr_trip; // find the pointer to the current trip
 		for (vector <Start_trip*>::iterator trip = driving_roster.begin(); trip < driving_roster.end(); trip++)
 		{
 			if ((*trip)->first == this)
@@ -820,7 +866,7 @@ bool Bustrip::advance_next_stop (double time, Eventlist* eventlist)
 			}
 				
 		}
-		next_trip = curr_trip +1;
+		
 		vector <Start_trip*>::iterator last_trip = driving_roster.end()-1;
 		if (busv->get_curr_trip() != (*last_trip)->first) // if there are more trips for this vehicle
 		{
@@ -2281,8 +2327,9 @@ int Busstop::calc_total_nr_waiting ()
 return total_nr_waiting;
 }
 
-void Busstop::add_unassigned_bus_arrival(Bus* bus, double expected_arrival_time)
+void Busstop::add_unassigned_bus_arrival(Eventlist* eventlist, Bus* bus, double expected_arrival_time)
 {
+	assert(bus);
 	DEBUG_MSG("Adding bus " << bus->get_bus_id() << " to unassigned buses at stop " << name);
 	assert(bus->get_occupancy() == 0); //unassigned buses should be empty
 	assert(expected_arrival_time >= 0);
@@ -2293,6 +2340,7 @@ void Busstop::add_unassigned_bus_arrival(Bus* bus, double expected_arrival_time)
 			return left.second < right.second;	//keep vector sorted by arrival time (smallest at the back of the vector)
 		}
 	); 
+	eventlist->add_event(expected_arrival_time, this);	//add a Busstop event scheduled for the arrival time of vehicle to switch state of bus to IdleEmpty from Null and add to unassigned_buses_at_stop
 }
 
 void Busstop::add_unassigned_bus(Bus* bus, double arrival_time)

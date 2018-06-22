@@ -186,7 +186,7 @@ Bustrip* TripGenerationStrategy::create_unassigned_trip(Busline* line, double de
 	trip->add_stops(desired_schedule); //add scheduled stop visits to trip
 	trip->convert_stops_vector_to_map(); //TODO: not sure why this is necessary but is done for other trips so
 	trip->set_last_stop_visited(trip->stops.front()->first);  //sets last stop visited to the origin stop of the trip
-
+	trip->set_flex_trip(true);
 	return trip;
 
 }
@@ -325,7 +325,7 @@ void MatchingStrategy::assign_idlevehicle_to_trip(Bus* veh, Bustrip* trip, doubl
 
 	driving_roster.push_back(st);
 	trip->add_trips(driving_roster); //save the driving roster at the trip level to conform to interfaces of Busline::execute, Bustrip::activate etc. 
-	double delay = trip->get_starttime() - starttime;
+	double delay = starttime - trip->get_starttime();
 	trip->set_starttime(starttime); //reset scheduled dispatch from origin to given starttime
 	
 	DEBUG_MSG("Delay in start time for trip " << trip->get_id() << ": " << delay);
@@ -439,12 +439,11 @@ bool DispatchingStrategy::dispatch_trip(Eventlist* eventlist, Bustrip* trip)
 	Busline* line = trip->get_line();
 	double starttime = trip->get_starttime();
 	assert(line->is_flex_line());
-	//line->add_flex_trip(trip, starttime);
-	//trip->activate(trip->get_starttime(), line->get_busroute(), line->get_odpair(), eventlist);
 	
-	//line->add_trip(trip, starttime);
-	//eventlist->add_event(starttime, line); //book the dispatch of this trip in the eventlist
-	return false;
+	line->add_flex_trip(trip); //add trip as a flex trip of line for bookkeeping
+	line->add_trip(trip, starttime); //insert trip into the main trips list of the line
+	eventlist->add_event(starttime, line); //book the activation of this trip in the eventlist
+	return true;
 }
 
 bool NullDispatching::calc_dispatch_time(Eventlist* eventlist, set<Bustrip*>& unscheduledTrips, double time)
@@ -470,7 +469,10 @@ bool NaiveDispatching::calc_dispatch_time(Eventlist* eventlist, set<Bustrip*>& u
 			if (!dispatch_trip(eventlist, trip))
 				return false;
 			else
+			{
+				unscheduledTrips.erase(trip); //trip is now scheduled for dispatch
 				return true;
+			}
 		}
 		else
 		{
@@ -514,9 +516,6 @@ void Controlcenter::reset()
 	vd_.reset(vd_strategy_);
 
 	//Clear all members of Controlcenter
-	connectedPass_.clear();
-	connectedVeh_.clear();
-
 	for (pair<Bus*, Bustrip*> vehtrip : completedVehicleTrips_)
 	{
 		//TODO: add to vehicle recycler instead of deleting, maybe add a trips recycler as well
@@ -527,6 +526,17 @@ void Controlcenter::reset()
 		delete vehtrip.second;
 	}
 	completedVehicleTrips_.clear();
+	
+	for (pair<int, Bus*> veh : connectedVeh_)
+	{
+		if (initialVehicles_.count(veh.second) == 0) //do not delete the initial buses
+		{
+			delete veh.second;
+		}
+	}
+	connectedVeh_.clear();
+	connectedPass_.clear();
+
 }
 
 void Controlcenter::connectInternal()
