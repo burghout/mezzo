@@ -278,6 +278,7 @@ public:
 	bool read_pass_IVTT (pair<const ODSLL, Travel_time>& wt_row);
 	bool readbusroute(istream& in); //!< reads a transit route
 	bool readbusstop (istream& in); //!< reads a busstop
+	bool readstopturningpoint(istream& in); //!< read an 'opposing stop' relation between two different stops
 	bool readbusline(istream& in); //!< reads a busline
     bool readwalkingtimedistribution(istream& in); //!< reads a walking time distribution between two nodes that are within walking distance that can be generated using a dedicated walking model.
 	bool readbustrip_format1(istream& in); //!< reads trips based on detailed time-table
@@ -406,7 +407,7 @@ protected:
 	//DRT implementation
 #include <tuple>
 	typedef std::tuple<Bus*, Busstop*, double, vector<int>> DrtVehicleInit; //un-scheduled vehicle, initial busstop, initial time, and initial service route ids
-	map<int, ControlCenter*> ccmap; //all control centers with id as key
+	map<int, Controlcenter*> ccmap; //all control centers with id as key
 	vector <DrtVehicleInit> drtvehicles; // all unassigned vehicles that are not fixed schedule fixed line on input
 
 	//Shortest path graph

@@ -21,7 +21,7 @@ Passenger::Passenger ()
 	arrival_time_at_stop = 0;
 }
 
-Passenger::Passenger (int pass_id, double start_time_, ODstops* OD_stop_, ControlCenter* CC, QObject* parent) : QObject(parent)
+Passenger::Passenger (int pass_id, double start_time_, ODstops* OD_stop_, QObject* parent) : QObject(parent)
 {
 	passenger_id = pass_id;
 	start_time = start_time_;
@@ -44,17 +44,6 @@ Passenger::Passenger (int pass_id, double start_time_, ODstops* OD_stop_, Contro
 	memory_projected_RTI.clear();
 	arrival_time_at_stop = 0;
 	this_is_the_last_stop = false;
-
-	if (theParameters->drt) //connect passenger to control center of origin stop in the case of drt
-	{
-		if (!CC)
-		{
-			DEBUG_MSG_V(Q_FUNC_INFO << "CC not initialized");
-			abort();
-		}
-		
-		CC->connectPassenger(this);
-	}
 }
 
 Passenger::~Passenger()
@@ -85,7 +74,10 @@ void Passenger::reset ()
 	experienced_crowding_levels.clear();
 	waiting_time_due_denied_boarding.clear();
 
-	disconnect(this, 0, 0, 0); //disconnect all signals of passenger
+	if (theParameters->drt)
+	{
+		disconnect(this, 0, 0, 0); //disconnect all signals of passenger
+	}
 }
 
 void Passenger::init ()
@@ -311,9 +303,6 @@ void Passenger::walk (double time)
 
 void Passenger::start (Eventlist* eventlist, double time)
 {
-		//maybe add the SendRequest->TripGeneration->TripMatching process here. 
-		//Let FleetScheduler trigger AFTER all of this, i.e. initialize the Busline::execute & Bustrip::activate processes after passenger-activity at stop?
-
 		pair<Busstop*,double> stop_time;
 		stop_time.first = OD_stop->get_origin();
 		stop_time.second = start_time;
@@ -341,11 +330,10 @@ void Passenger::start (Eventlist* eventlist, double time)
 		}
 		else // if the pass. stays at the same stop
 		{
-			
+			OD_stop->add_pass_waiting(this); // store the new passenger at the list of waiting passengers with this OD
 			Request req = createRequest(1, start_time); //create request with load 1 at current time 
 			emit sendRequest(req, time); //send request to any controlcenter that is connected
 
-			OD_stop->add_pass_waiting(this); // store the new passenger at the list of waiting passengers with this OD
 			set_arrival_time_at_stop(start_time);
 			add_to_selected_path_stop(stop_time);
 			if (get_pass_RTI_network_level() == true || OD_stop->get_origin()->get_rti() > 0)

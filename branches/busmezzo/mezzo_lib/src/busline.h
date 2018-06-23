@@ -10,6 +10,7 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#include <set>
 #include "link.h"
 #include "sdfunc.h"
 #include "q.h"
@@ -18,6 +19,8 @@
 #include <cmath>
 #include "od_stops.h"
 #include <stddef.h>
+#include <iterator>
+#include <list>
 
 class Busroute;
 class Busstop;
@@ -31,7 +34,7 @@ class Change_arrival_rate;
 class Bustrip_assign;
 class Dwell_time_function;
 class Walking_time_dist;
-class ControlCenter;
+class Controlcenter;
 
 typedef pair<Bustrip*,double> Start_trip;
 typedef vector <Passenger*> passengers;
@@ -193,12 +196,12 @@ public:
 	double	get_init_occup_per_stop() {return init_occup_per_stop;}
 	int		get_nr_stops_init_occup () {return nr_stops_init_occup;}
 	int		get_opposite_id () {return opposite_id;}
-	void	set_curr_trip(vector <Start_trip>::iterator curr_trip_) {curr_trip = curr_trip_;}
+	bool	set_curr_trip(const Bustrip* trip); //!< sets curr_trip to location of trip in trips list. Returns false if trip does not exist in trips list
 	//void set_opposite_line (Busline* line) {opposite_line = line;}
 	//Busline* get_opposite_line () {return opposite_line;}
 	Output_Summary_Line get_output_summary () {return output_summary;}
-	vector <Start_trip>::iterator get_curr_trip() {return curr_trip;} 
-	vector <Start_trip> get_trips () {return trips;}
+	list <Start_trip>::iterator get_curr_trip() {return curr_trip;} 
+	list <Start_trip> get_trips () {return trips;}
 
 	//transfer gets and sets
 	int	get_tr_line_id() {return tr_line_id;}
@@ -206,7 +209,7 @@ public:
 
 	// initialization
 	void add_timepoints (vector <Busstop*> tp) {line_timepoint = tp;}
-	void add_trip(Bustrip* trip, double starttime){trips.push_back(Start_trip(trip,starttime));}
+	void add_trip(Bustrip* trip, double starttime); 
 	void add_disruptions (Busstop* from_stop, Busstop* to_stop, double disruption_start_time, double disruption_end_time, double cap_reduction);
 
 	//transfer initilization
@@ -221,7 +224,7 @@ public:
 	bool check_last_trip (Bustrip* trip);											//!< returns true if the trip is the last trip on the bus line, otherwise it returns false  
 //	double calc_next_scheduled_arrival_at_stop (Busstop* stop, double time);		//!< returns the remaining time till the next trip on this line is scheduled to arrive at a stop (according to schedule only) 
 	double find_time_till_next_scheduled_trip_at_stop (Busstop* stop, double time); //!< returns the time till the next trip which is scheduled to arrive next at stop
-	vector<Start_trip>::iterator find_next_expected_trip_at_stop (Busstop* stop);	//!< returns the next trip which is scheduled to arrive next at stop
+	Bustrip* find_next_expected_trip_at_stop (Busstop* stop);	//!< returns the next trip which is scheduled to arrive next at stop
 	double time_till_next_arrival_at_stop_after_time (Busstop* stop, double time);	//!< returns the time left till next trip is expected to arrive at the stop (real-time calculation)
 	Bustrip* get_next_trip (Bustrip* reference_trip);								//!< returns the trip after the reference trip on the trips vector	
 	Bustrip* get_previous_trip (Bustrip* reference_trip);							//!< returns the trip before the reference trip on the trips vector
@@ -250,12 +253,15 @@ public:
 
 	//DRT implementation
 	bool is_flex_line() const { return flex_line; }
-	void add_flex_trip(Bustrip* trip, double starttime); //adds trip with corresponding scheduled start time to flex_trip vector and keeps this vector sorted by start time
+	void add_flex_trip(Bustrip* trip); //adds trip to flex_trip set
+	void remove_flex_trip(Bustrip* trip); //remove trip from flex_trip set once it has been completed
 	void add_stop_delta(Busstop* stop, double delta_from_preceding_stop) { delta_at_stops.push_back(make_pair(stop, delta_from_preceding_stop)); } //set the scheduled/expected travel times between stops on this line (starting from 0 for the first stop)
 	vector<pair<Busstop*,double>> get_delta_at_stops() { return delta_at_stops; }
 	int generate_new_trip_id() { trip_count++; return id*100 + trip_count; } //generates a new tripid for this line and increments the trip counter for this line
 	bool is_unique_tripid(int tripid); //returns true if no trip in flex trips or trips for this line has this tripid
 
+	void set_static_trips(const list <Start_trip>& static_trips_) { static_trips = static_trips_; } //ugly solution, sole purpose is to save the initial trips vector between resets
+	
 protected:
 	int id;						//!< line ID
 	int opposite_id;			//!< the line ID of the opposite direction
@@ -266,7 +272,7 @@ protected:
 
     ODpair* odpair;
 	vector <Busstop*> line_timepoint;
-	vector <Start_trip> trips;				//!< the trips that are to be made
+	list <Start_trip> trips;				//!< the trips that are to be made
 
 	Vtype* vtype;							//!< the type of vehicle for the buses to be generated.
 
@@ -283,15 +289,17 @@ protected:
 
 	//drt related attributes
 	bool flex_line;	//!< true if trips can be created dynamically for this line
-	vector<Start_trip> flex_trips; //!< scheduled trips that were created dynamically for this line via a controlcenter
-	vector<pair<Busstop*,double>> delta_at_stops; //expected time between departures for all stops on this line (defined on input when reading bustrips for this line)
-	int trip_count; //the number of trips created for this line
+	set<Bustrip*> flex_trips; //!< trips that were created dynamically for this line via a controlcenter
+	vector<pair<Busstop*,double>> delta_at_stops; //!<expected time between departures for all stops on this line (defined on input when reading bustrips for this line)
+	int trip_count; //!<the number of trips created for this line
+	list <Start_trip> static_trips; //!< trips that were created from input files (i.e. were not created dynamically for this line), to be saved between resets
 
     map <Busstop*,pair<Busstop*,pair<double,double> > > disruption_times; //!< contains the expected travel times between a pair of stops in case of disruption (does not affect actual travel time, only passenger information provision). Strat and end times
 	map <Busstop*, double> disruption_cap_reduction;
 
 	bool active;														//!< is true when the busline has started generating trips
-	vector <Start_trip>::iterator curr_trip;							//!< indicates the next trip
+	list <Start_trip>::iterator curr_trip;							//!< indicates the next trip
+	list <Start_trip>::iterator next_trip; //!< indicates the next trip
 	Output_Summary_Line output_summary;
 	map <Busstop*, int> stop_pass;
 	map <Busstop*, Busline_assign> output_line_assign;
@@ -360,7 +368,7 @@ public:
 	void reset ();
 
 // GETS & SETS
-	int get_id () {return id;}											  //!< returns id, used in the compare <..> functions for find and find_if algorithms
+	int get_id () const {return id;}											  //!< returns id, used in the compare <..> functions for find and find_if algorithms
 	Bus* get_busv () {return busv;}
 	void set_busv (Bus* busv_) {busv = busv_;}
 	void set_bustype (Bustype* btype_) {btype = btype_;}
@@ -416,6 +424,10 @@ public:
 
 //Control Center
 	void set_starttime(double starttime_) { starttime = starttime_; }
+	void set_scheduled_for_dispatch(bool scheduled_for_dispatch_) { scheduled_for_dispatch = scheduled_for_dispatch_; }
+	bool is_scheduled_for_dispatch() const { return scheduled_for_dispatch; }
+	void set_flex_trip(bool flex_trip_) { flex_trip = flex_trip_; }
+	bool is_flex_trip() const { return flex_trip; }
 
 protected:
 	int id;										  //!< course nr
@@ -437,6 +449,10 @@ protected:
 	bool holding_at_stop;						 //!< David added 2016-05-26: true if the trip is currently holding at a stop, false otherwise (used for progressing passengers in case of holding for demand format 3, should always be false for other formats)
 	//	map <Busstop*,bool> trips_timepoint;	 //!< will be relevant only when time points are trip-specific. binary map with time point indicatons for stops on route only (according to the schedule input file)  
 	Eventlist* eventlist;						 //!< for use by busstops etc to book themselves.
+	
+	//DRT
+	bool scheduled_for_dispatch; //!< true if this trip has been scheduled for dispatch for its respective line, false otherwise
+	bool flex_trip; //!< true if this trip was generated dynamically
 };
 
 typedef pair<Busstop*, double> stop_rate;
@@ -624,7 +640,7 @@ public:
 		double	min_DT_, 
 		int		rti_,
         bool    non_random_pass_generation_,
-		ControlCenter* CC_ = nullptr
+		Controlcenter* CC_ = nullptr
 	);
 
 	void reset (); 
@@ -715,11 +731,18 @@ public:
 	int calc_total_nr_waiting ();
 
 //control center related functions
-	ControlCenter* get_CC() { return CC; }
-	void add_unassigned_bus_arrival(Bus* bus, double expected_arrival_time); //add bus to vector of unassigned (i.e. no trip and no busline) bus vehicles arrivals, sorted by expected arrival time
+	Controlcenter* get_CC() { return CC; }
+	void add_unassigned_bus_arrival(Eventlist* eventlist, Bus* bus, double expected_arrival_time); //add bus to vector of unassigned (i.e. no trip and no busline) bus vehicles arrivals, sorted by expected arrival time and add a Busstop event scheduled for the init_time of vehicle  to switch state of bus to IdleEmpty from Null
 	void add_unassigned_bus(Bus* bus, double arrival_time); //add bus to vector of unassigned buses at this stop sorted by actual arrival time
 	bool remove_unassigned_bus(const Bus* bus); //remove bus from vector of unassigned buses at stop, returns false if bus does not exist
 	vector<pair<Bus*, double>> get_unassigned_buses_at_stop() { return unassigned_buses_at_stop; }
+
+	bool is_turning_begin() const { return turning_begin; }
+	bool is_turning_end() const { return turning_end; }
+	void set_turning_begin(const bool turning_begin_) { turning_begin = turning_begin_; }
+	void set_turning_end(const bool turning_end_) { turning_end = turning_end_; }
+	void set_opposing_stop(Busstop* opposing_stop_) { opposing_stop = opposing_stop_; }
+	Busstop* get_opposing_stop() const { return opposing_stop; }
 
 // relevant only for demand format 2
 	multi_rates multi_arrival_rates; //!< parameter lambda that defines the poission proccess of passengers arriving at the stop for each sequential stop
@@ -792,9 +815,12 @@ protected:
     map<Busstop*, vector<Walking_time_dist*> > walking_time_distribution_map; //!< contains set of distributions for a given destination node
 
 	//drt implementation
-	ControlCenter* CC; //control center that this stop is associated with
-	vector<pair<Bus*,double>> unassigned_bus_arrivals; //expected arrivals of transit vehicles to stop that are not assigned to any trip
-	vector<pair<Bus*, double>> unassigned_buses_at_stop; //unassigned buses currently at stop along with the time they arrived/were initialized to this stop
+	Controlcenter* CC; //!< control center that this stop is associated with
+	vector<pair<Bus*,double>> unassigned_bus_arrivals; //!< expected arrivals of transit vehicles to stop that are not assigned to any trip
+	vector<pair<Bus*, double>> unassigned_buses_at_stop; //!< unassigned buses currently at stop along with the time they arrived/were initialized to this stop
+	bool turning_begin; //!< true if this stop is at the end of a route/line, and the beginning of turning point towards its opposite stop 
+	bool turning_end; //!< true if this stop is at the beginning of a route/line, and the end of a turning point from an opposite stop
+	Busstop* opposing_stop; //!< opposite stop to this one if this busstop corresponds to a location with a turning point. Initialized to nullptr if no opposite stop exists
 
 	// transfer synchronization
 	vector<pair<Bustrip*, int> > trips_awaiting_transfers;	//!< David added 2016-05-30: contains trips that are currently waiting to synchronize transfers with a connecting trip, paired with the line ID of the connecting trip

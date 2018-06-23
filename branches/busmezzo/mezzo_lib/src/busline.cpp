@@ -34,29 +34,6 @@ struct compare_pair
  int id;
 };
 
-//comparator for Start_trip pairs first by smallest scheduled starttime and then by smallest trip id
-struct compareStartTripByLessTime
-{
-	inline bool operator()(const Start_trip& st1, const Start_trip& st2) const
-	{
-		if (st1.second != st2.second) //if start time is not equal
-			return st1.second < st2.second;
-		else
-			return true; //if times are equal than st1 is considered smaller
-	}
-};
-
-struct compareStartTripByGreaterTime
-{
-	inline bool operator()(const Start_trip& st1, const Start_trip& st2) const
-	{
-		if (st1.second != st2.second) //if start time is not equal
-			return st1.second > st2.second;
-		else
-			return true; //if times are equal than st1 is considered greater
-	}
-};
-
 // ***** Busline functions *****
 
 Busline::Busline ()
@@ -91,18 +68,22 @@ Busline::~Busline()
 
 void Busline::reset ()
 {
+	if (flex_line)
+	{
+		for (Bustrip* trip : flex_trips) //clean up flex_trips that did not complete yet
+			delete trip;
+
+		flex_trips.clear(); //clear all dynamically generated trips that have not completed yet
+		trip_count = static_cast<int>(static_trips.size()); //reset trip counter to the original number of trips that were generated from input files
+		trips = static_trips; //reset trips vector to initial trips
+	}
+
 	active = false;
 	curr_trip = trips.begin();
 	stop_pass.clear();
 	output_summary.reset();
 	output_line_assign.clear();
 	output_travel_times.clear();
-
-	if (flex_line)
-	{
-		flex_trips.clear(); //clear all dynamically generated trips that have not completed yet
-		trip_count = static_cast<int>(trips.size()); //reset trip counter to the original number of trips that were generated from input files
-	}
 }
 
 void Busline::reset_curr_trip ()
@@ -123,19 +104,28 @@ bool Busline::execute(Eventlist* eventlist, double time)
 			curr_trip = trips.begin();
 			double next_time = curr_trip->second;
 			eventlist->add_event(next_time, this); // add itself to the eventlist, with the time the next trip is starting
+			curr_trip->first->set_scheduled_for_dispatch(true); //trip now has a dispatch event scheduled for it in the eventlist
 			active = true; // now the Busline is active, there is a trip that will be activated at t=next_time
 			return true;
 		}		
 	}
 	else // if the Busline is active
 	{
+		int busid = curr_trip->first->get_busv()->get_bus_id();
+		if(curr_trip->first->is_flex_trip())
+			DEBUG_MSG("Busline " << id << " activating trip " << curr_trip->first->get_id() << " for bus " << busid);
+
 		curr_trip->first->activate(time, busroute, odpair, eventlist); // activates the trip, generates bus etc.
 		curr_trip++; // now points to next trip
-		if (curr_trip < trips.end()) // if there exists a next trip
+		if (curr_trip != trips.end()) // if there exists a next trip
 		{
-			double next_time = curr_trip->second;
-			eventlist->add_event(next_time, this); // add itself to the eventlist, with the time the next trip is starting
-			return true;
+			if (!curr_trip->first->is_scheduled_for_dispatch()) //if trip has not already been scheduled for dispatch
+			{
+				double next_time = curr_trip->second;
+				eventlist->add_event(next_time, this); // add itself to the eventlist, with the time the next trip is starting
+				curr_trip->first->set_scheduled_for_dispatch(true); //trip now has a dispatch event scheduled for it in the eventlist
+				return true;
+			}
 		}
 	}
 	return true;
@@ -152,6 +142,54 @@ vector<Busstop*>::iterator Busline::get_stop_iter (Busstop* stop)
 	}
 	return stops.end();
 }
+
+void Busline::add_trip(Bustrip* trip, double starttime)
+{
+	assert(trip);
+	assert(starttime >= 0);
+
+	trips.push_back(Start_trip(trip, starttime));
+	trips.sort([](const Start_trip& st1, const Start_trip& st2) -> bool 
+	{
+		if (st1.second != st2.second)
+			return st1.second < st2.second;
+		else
+			return true; //if starttimes are equal the first start trip in the list is considered smaller
+	}
+	); //keep earliest trips at the beginning of the list
+
+	if (trips.size() == 1)
+	{
+		curr_trip = trips.begin();
+	}
+	if (curr_trip == trips.end())
+	{
+		set_curr_trip(trip);
+	}
+	else if (starttime < curr_trip->first->get_starttime() && trips.size() != 0) //strictly less than because of sort functor tie-breaker condition (if starttimes are equal return the first start trip)
+	{
+		set_curr_trip(trip);
+	}
+}
+
+bool Busline::set_curr_trip(const Bustrip* trip)
+{
+	if (trip != nullptr)
+	{
+		list <Start_trip>::iterator it; //location in list of the trip that has just been added
+		int tripid = trip->get_id();
+		it = find_if(trips.begin(), trips.end(), [tripid](const Start_trip& st)-> bool { return st.first->get_id() == tripid; });
+
+		if (it != trips.end())
+		{
+			curr_trip = it;
+			return true;
+		}
+	}
+	DEBUG_MSG_V("Busline::set_curr_trip returning false for nullptr trip");
+	return false;
+}
+
 
 void Busline::add_disruptions (Busstop* from_stop, Busstop* to_stop, double disruption_start_time, double disruption_end_time, double cap_reduction)
 {
@@ -204,9 +242,12 @@ return false;
 
 bool Busline::check_last_trip (Bustrip* trip)
 {
-	if (trip == (trips.end()-1)->first)
+	if (!trips.empty())
 	{
-		return true;
+		if (trip == trips.back().first)
+		{
+			return true;
+		}
 	}
 return false;
 }
@@ -239,7 +280,7 @@ double Busline::calc_next_scheduled_arrival_at_stop (Busstop* stop, double time)
 
 double Busline::find_time_till_next_scheduled_trip_at_stop (Busstop* stop, double time)
 {
-	for (vector <Start_trip>::iterator trip_iter = trips.begin(); trip_iter < trips.end(); trip_iter++)
+	for (list <Start_trip>::iterator trip_iter = trips.begin(); trip_iter != trips.end(); trip_iter++)
 	{
 		map <Busstop*, double> stop_time = (*trip_iter).first->stops_map;
 		if (stop_time[stop] > time)
@@ -252,25 +293,36 @@ double Busline::find_time_till_next_scheduled_trip_at_stop (Busstop* stop, doubl
 	return theParameters->running_time - time;
 }
 
-vector<Start_trip>::iterator Busline::find_next_expected_trip_at_stop (Busstop* stop)
+Bustrip* Busline::find_next_expected_trip_at_stop (Busstop* stop)
 {
+	Bustrip* next_expected_trip = nullptr;
+	if (trips.empty()) //there are no expected trips from this line for this stop
+	{
+		DEBUG_MSG_V("Find expected trip at stop returning nullptr for busline " << id);
+		return next_expected_trip;
+	}
 	if (stop->get_had_been_visited(this) == false)
 	{
-		return trips.begin(); // if no trip had visited the stop yet then the first trip is the expected next arrival
+		next_expected_trip = trips.front().first; // if no trip had visited the stop yet then the first trip is the expected next arrival
+		return next_expected_trip;
 	}
 	Bustrip* next_trip = stop->get_last_trip_departure(this);
-	if (next_trip->get_id() == trips.back().first->get_id())
+	if (next_trip->get_id() == trips.back().first->get_id()) //if the last trip to visit the stop from this line is the last trip scheduled to visit this stop return the last trip 
 	{
-		return trips.end()-1;
+		next_expected_trip = trips.back().first;
+		return next_expected_trip;
 	}
-	for (vector <Start_trip>::iterator trip_iter = trips.begin(); trip_iter < trips.end(); trip_iter++)
+	for (list <Start_trip>::iterator trip_iter = trips.begin(); trip_iter != trips.end(); trip_iter++)
 	{
 		if ((*trip_iter).first->get_id() == next_trip->get_id())
 		{
-			return (trip_iter+1); // the trip following the most recent arrival is expected to arrive next
+			trip_iter++; // the trip following the most recent arrival is expected to arrive next
+			next_expected_trip = (*trip_iter).first;
+			return next_expected_trip;
 		}
 	}
-	return trips.end()-1;
+	
+	return trips.back().first; //default is to return the last trip to visit the stop if no other trip from this line is scheduled to visit the stop
 }
 
 double Busline::time_till_next_arrival_at_stop_after_time (Busstop* stop, double time)
@@ -299,16 +351,16 @@ double Busline::time_till_next_arrival_at_stop_after_time (Busstop* stop, double
 			break;
 		}
 	}
-	vector <Start_trip>::iterator last_trip = find_next_expected_trip_at_stop(stop);
-	Busstop* last_stop_visited = (*last_trip).first->get_last_stop_visited();
-	double time_last_stop_visited = (*last_trip).first->get_last_stop_exit_time();
+	Bustrip* last_trip = find_next_expected_trip_at_stop(stop);
+	Busstop* last_stop_visited = last_trip->get_last_stop_visited();
+	double time_last_stop_visited = last_trip->get_last_stop_exit_time();
 	if (check_first_stop(last_stop_visited) == true && time_last_stop_visited == 0) // next trip has not started yet
 	{
 		time_till_next_visit = find_time_till_next_scheduled_trip_at_stop(stop,time); // time till starting time plus time to stop
 	}
 	else
 	{
-		time_till_next_visit = (*last_trip).first->stops_map[stop] - (*last_trip).first->stops_map[last_stop_visited]; // additional scheduled time
+		time_till_next_visit = last_trip->stops_map[stop] - last_trip->stops_map[last_stop_visited]; // additional scheduled time
 	}
 	int min_display = Round((time_till_next_visit + check_subline_disruption(last_stop_visited, stop, time))/60);
 	return  max(min_display*60,0);
@@ -334,57 +386,86 @@ double Busline::extra_disruption_on_segment (Busstop* next_stop, double time)
 }
 double Busline::calc_curr_line_headway ()
 {
-	if (curr_trip == trips.end()) 
+	//TODO: add condition for when trips vector is empty!
+	if (trips.empty() || static_cast<int> (trips.size()) == 1)
 	{
-		return ((*(curr_trip-1)).second - (*(curr_trip-2)).second);
+		DEBUG_MSG_V("Busline::calc_curr_line_headway returning headway 0.0 for empty/single trips list");
+		return 0.0;
 	}
-	if (curr_trip == trips.begin())
+
+	list<Start_trip>::iterator succ_trip;
+	list<Start_trip>::iterator prec_trip;
+	if (curr_trip == trips.end()) //if no there are no future trips scheduled return headway of last two trips
 	{
-		return ((*(curr_trip+1)).second - (*curr_trip).second);
+		succ_trip = prev(curr_trip);
+		prec_trip = prev(succ_trip);
+		return ((*(succ_trip)).second - (*(prec_trip)).second);
+	}
+	if (curr_trip == trips.begin()) //if no trips have been performed yet return headway of first and second trip
+	{
+		succ_trip = next(curr_trip);
+		return ((*(succ_trip)).second - (*curr_trip).second);
 	}
 	else
 	{
-		return ((*curr_trip).second - (*(curr_trip-1)).second);
+		prec_trip = prev(curr_trip);
+		return ((*curr_trip).second - (*(prec_trip)).second); //otherwise return headway between current trip and preceding trip
 	}
 }
 
 double Busline::calc_curr_line_headway_forward ()
 {
-	if (curr_trip == trips.end()) 
+	//TODO: add condition for when trips vector is empty!
+	if (trips.empty() || static_cast<int>(trips.size()) == 1)
 	{
-		return ((*(curr_trip-1)).second - (*(curr_trip-2)).second);
+		DEBUG_MSG_V("Busline::calc_curr_line_headway returning headway 0.0 for empty/single trips list");
+		return 0.0;
 	}
-	if (curr_trip == trips.begin())
+
+	list<Start_trip>::iterator succ_trip;
+	list<Start_trip>::iterator prec_trip;
+	if (curr_trip == trips.end()) //if no there are no future trips scheduled return headway of last two trips
 	{
-		return ((*(curr_trip+1)).second - (*curr_trip).second);
+		succ_trip = prev(curr_trip);
+		prec_trip = prev(succ_trip);
+		return ((*(succ_trip)).second - (*(prec_trip)).second);
 	}
-	if (curr_trip == trips.end()-1) 
+	if (curr_trip == trips.begin()) //if no trips have been performed yet return headway of first and second trip
 	{
-		return ((*curr_trip).second - (*(curr_trip-1)).second);
+		succ_trip = next(curr_trip);
+		return ((*(succ_trip)).second - (*curr_trip).second);
 	}
-	else
+	if (curr_trip == prev(trips.end())) //if the next scheduled trip is the last trip then return the headway to the preceding trip
 	{
-		return ((*(curr_trip+1)).second - (*curr_trip).second);
+		prec_trip = prev(curr_trip);
+		return ((*curr_trip).second - (*(prec_trip)).second);
+	}
+	else 
+	{
+		succ_trip = next(curr_trip);
+		return ((*(succ_trip)).second - (*curr_trip).second);
 	}
 }
 
 double Busline:: calc_max_headway ()
 {
 	double max_headway = 0.0;
-	for (vector <Start_trip>::iterator start_trip_iter = trips.begin(); start_trip_iter < trips.end()-1; start_trip_iter++)
+	for (list <Start_trip>::iterator start_trip_iter = trips.begin(); start_trip_iter != prev(trips.end()); start_trip_iter++)
 	{
-		max_headway = max (max_headway, (*(start_trip_iter+1)).second - (*(start_trip_iter)).second);
+		max_headway = max (max_headway, (*(next(start_trip_iter))).second - (*(start_trip_iter)).second);
 	}
+	if (max_headway == 0.0)
+		DEBUG_MSG_V("Busline::calc_max_headway returning 0.0 for empty/single trips list");
 	return max_headway;
 }
 
 Bustrip* Busline::get_next_trip (Bustrip* reference_trip) //!< returns the trip after the reference trip on the trips vector
 {
-	for (vector <Start_trip>::iterator trips_iter = trips.begin(); trips_iter < trips.end(); trips_iter++)
+	for (list <Start_trip>::iterator trips_iter = trips.begin(); trips_iter != trips.end(); trips_iter++)
 	{
 		if ((*trips_iter).first->get_id() == reference_trip->get_id())
 		{
-			return ((*(trips_iter+1)).first);
+			return ((*(next(trips_iter))).first);
 		}
 	}
 	return trips.back().first;
@@ -392,11 +473,11 @@ Bustrip* Busline::get_next_trip (Bustrip* reference_trip) //!< returns the trip 
 
 Bustrip* Busline::get_previous_trip (Bustrip* reference_trip) //!< returns the trip before the reference trip on the trips vector
 {
-	for (vector <Start_trip>::iterator trips_iter = trips.begin(); trips_iter < trips.end(); trips_iter++)
+	for (list <Start_trip>::iterator trips_iter = trips.begin(); trips_iter != trips.end(); trips_iter++)
 	{
 		if ((*trips_iter).first->get_id() == reference_trip->get_id())
 		{
-			return ((*(trips_iter-1)).first);
+			return ((*(prev(trips_iter))).first);
 		}
 	}
 	return trips.front().first;
@@ -413,17 +494,19 @@ double Busline::calc_curr_line_ivt (Busstop* start_stop, Busstop* end_stop, int 
 	vector<Visit_stop*>::iterator alight_stop;
 	bool found_board = false;
 	bool found_alight = false;
-	vector <Start_trip>::iterator check_trip;
-	if	(curr_trip == trips.end())
+	if (!trips.empty())
 	{
-		check_trip = curr_trip-1;
-	}
-	else
-	{
-		check_trip = curr_trip;
-	}
- 	for (vector<Visit_stop*>::iterator stop = (*check_trip).first->stops.begin(); stop <(*check_trip).first->stops.end(); stop++)
-	{
+		list <Start_trip>::iterator check_trip;
+		if (curr_trip == trips.end())
+		{
+			check_trip = prev(curr_trip);
+		}
+		else
+		{
+			check_trip = curr_trip;
+		}
+		for (vector<Visit_stop*>::iterator stop = (*check_trip).first->stops.begin(); stop != (*check_trip).first->stops.end(); stop++)
+		{
 			if ((*stop)->first->get_id() == start_stop->get_id() || (*stop)->first->get_name() == start_stop->get_name())
 			{
 				board_stop = stop;
@@ -435,12 +518,16 @@ double Busline::calc_curr_line_ivt (Busstop* start_stop, Busstop* end_stop, int 
 				found_alight = true;
 				break;
 			}
+		}
+		if (found_board == false || found_alight == false)
+		{
+			return 10000; // default in case no matching
+		}
+
+		return ((*alight_stop)->second - (*board_stop)->second) + extra_travel_time; // in seconds
 	}
-	if (found_board == false || found_alight == false)
-	{
-		return 10000; // default in case no matching
-	}
-	return ((*alight_stop)->second - (*board_stop)->second) + extra_travel_time; // in seconds
+	DEBUG_MSG_V("Path generation returning IVT 10 for line without trips");
+	return 10;
 }
 
 double Busline::check_subline_disruption (Busstop* last_visited_stop, Busstop* pass_stop, double time)
@@ -553,30 +640,6 @@ void Busline::calculate_sum_output_line()
 	output_summary.control_objective_function += theParameters->riding_time_weight * output_summary.total_pass_riding_time + theParameters->dwell_time_weight * output_summary.total_pass_dwell_time + theParameters->waiting_time_weight * output_summary.total_pass_waiting_time + theParameters->holding_time_weight * output_summary.total_pass_holding_time;
 }
 
-/*
-void Busline::calc_line_assignment()
-{
-	for (vector <Busstop*>::iterator stop_nr = stops.begin(); stop_nr < stops.end() - 1; stop_nr++) // initialize
-	{
-		stop_pass [(*stop_nr)] = 0;
-	}
-	for (vector <Start_trip>::iterator trip_iter = trips.begin(); trip_iter < trips.end(); trip_iter++) // calculating
-	{
-		vector <Busstop*>::iterator line_stop = stops.begin();
-		list <Bustrip_assign> list_ass = (*trip_iter).first->get_output_passenger_load();
-		for (list <Bustrip_assign>::iterator stop_iter = list_ass.begin(); stop_iter != list_ass.end(); stop_iter++)
-		{
-			stop_pass [(*line_stop)] += (*stop_iter).passenger_load;
-			line_stop++;
-		}
-	}
-	for (vector <Busstop*>::iterator stop_nr = stops.begin(); stop_nr < stops.end() - 1; stop_nr++) // recording
-	{
-		add_record_passenger_loads_line((*stop_nr),(*stop_nr)+1, stop_pass[(*stop_nr)]);
-	}
-}
-*/
-
 void Busline::add_record_passenger_loads_line (Busstop* stop1, Busstop* stop2, int pass_assign)
 {
 
@@ -599,17 +662,21 @@ void Busline::write_ttt_output(ostream & out)
 	}
 }
 
-void Busline::add_flex_trip(Bustrip* trip, double starttime)
+void Busline::add_flex_trip(Bustrip* trip)
 {
-	assert(is_unique_tripid(trip->get_id()));
-	flex_trips.push_back(Start_trip(trip, starttime));
-	sort(flex_trips.begin(), flex_trips.end(), compareStartTripByLessTime());//sort trips by starttime
-	//sort(flex_trips.begin(), flex_trips.end(), compareStartTripByGreaterTime());//sort trips by starttime starting with the largest starttime at the front of the vector to the smallest at the back
+	assert(flex_trips.count(trip) == 0); //trips are only added once
+	flex_trips.insert(trip);
+}
+
+void Busline::remove_flex_trip(Bustrip * trip)
+{
+	assert(flex_trips.count(trip) == 1);
+	flex_trips.erase(trip);
 }
 
 bool Busline::is_unique_tripid(int trip_id)
 {
-	vector<Start_trip>::iterator it;
+	list <Start_trip>::iterator it;
 	
 	//check if id exists among initial trips for this line
 	it = find_if(trips.begin(), trips.end(),
@@ -624,15 +691,11 @@ bool Busline::is_unique_tripid(int trip_id)
 	if (flex_line)
 	{
 		//check if id exists among dynamically generated trips for this line
-		it = find_if(flex_trips.begin(), flex_trips.end(),
-			[trip_id](const Start_trip& st) -> bool
+		for (const Bustrip* trip : flex_trips)
 		{
-			return st.first->get_id() == trip_id;
+			if (trip->get_id() == trip_id)
+				return false;
 		}
-		);
-
-		if (it != flex_trips.end())
-			return false;
 	}
 
 	return true;
@@ -680,6 +743,8 @@ Bustrip::Bustrip (int id_, double start_time_, Busline* line_): id(id_), line(li
 	last_stop_enter_time = 0;
 	last_stop_exit_time = 0;
 	holding_at_stop = false;
+	scheduled_for_dispatch = false;
+	flex_trip = false;
 	for (vector<Visit_stop*>::iterator visit_stop_iter = stops.begin(); visit_stop_iter < stops.end(); visit_stop_iter++)
 	{
 		assign_segements[(*visit_stop_iter)->first] = 0;
@@ -706,6 +771,10 @@ Bustrip::~Bustrip ()
 	{
 		delete stop_visit;
 	}
+	for (Start_trip* trip_start : driving_roster)
+	{
+		delete trip_start;
+	}
 }
 
 Bustrip_assign::~Bustrip_assign()
@@ -727,6 +796,7 @@ void Bustrip::reset ()
 	output_passenger_load.clear();
 	last_stop_visited = stops.front()->first;
 	holding_at_stop = false;
+	scheduled_for_dispatch = false;
 }
 
 void Bustrip::convert_stops_vector_to_map ()
@@ -786,7 +856,7 @@ bool Bustrip::advance_next_stop (double time, Eventlist* eventlist)
 	}
 	if (busv->get_on_trip()== false && next_stop == stops.end()) // if it was the last stop for this trip
 	{	
-		vector <Start_trip*>::iterator curr_trip, next_trip; // find the pointer to the current and next trip
+		vector <Start_trip*>::iterator curr_trip; // find the pointer to the current trip
 		for (vector <Start_trip*>::iterator trip = driving_roster.begin(); trip < driving_roster.end(); trip++)
 		{
 			if ((*trip)->first == this)
@@ -796,7 +866,7 @@ bool Bustrip::advance_next_stop (double time, Eventlist* eventlist)
 			}
 				
 		}
-		next_trip = curr_trip +1;
+		
 		vector <Start_trip*>::iterator last_trip = driving_roster.end()-1;
 		if (busv->get_curr_trip() != (*last_trip)->first) // if there are more trips for this vehicle
 		{
@@ -863,7 +933,7 @@ bool Bustrip::activate (double time, Route* route, ODpair* odpair, Eventlist* ev
 	double dispatch_time = calc_departure_time(first_dispatch_time);
 	if (dispatch_time < time)
 		cout << "Warning, dispatch time is before current time for bus trip " << id << endl;
-	busv->init(busv->get_id(),4,busv->get_length(),route,odpair,time); // initialize with the trip specific details
+	busv->init(busv->get_bus_id(),4,busv->get_length(),route,odpair,time); // initialize with the trip specific details
 	busv->set_occupancy(random->inverse_gamma(nr_stops_init_occup,init_occup_per_stop));
 	if ( (odpair->get_origin())->insert_veh(busv, dispatch_time)) // insert the bus at the origin at the possible departure time
 	{
@@ -1081,9 +1151,12 @@ Busstop::Busstop()
 	can_overtake = true;
 	dwelltime = 0;
 	rti = 0;
+	turning_begin = false;
+	turning_end = false;
+	opposing_stop = nullptr;
 }
 
-Busstop::Busstop (int id_, string name_, int link_id_, double position_, double length_, bool has_bay_, bool can_overtake_, double min_DT_, int rti_, bool gate_flag_, ControlCenter* CC_):
+Busstop::Busstop (int id_, string name_, int link_id_, double position_, double length_, bool has_bay_, bool can_overtake_, double min_DT_, int rti_, bool gate_flag_, Controlcenter* CC_):
 id(id_), name(name_), link_id(link_id_), position (position_), length(length_), has_bay(has_bay_), can_overtake(can_overtake_), min_DT(min_DT_), rti (rti_), gate_flag (gate_flag_), CC (CC_)
 {
 	avaliable_length = length;
@@ -1103,6 +1176,9 @@ id(id_), name(name_), link_id(link_id_), position (position_), length(length_), 
 	{
 		random->randomize();
 	}
+	turning_begin = false;
+	turning_end = false;
+	opposing_stop = nullptr;
 }
 
 Busstop::~Busstop ()
@@ -1622,9 +1698,8 @@ void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, d
 				{
 					if (next_stop->get_id() == this->get_id())  // pass stays at the same stop
 					{
-						passengers wait_pass = odstop->get_waiting_passengers(); // add passanger's to the waiting queue on the new OD
-						wait_pass.push_back (*alighting_passenger);
-						odstop->set_waiting_passengers(wait_pass);
+						odstop->add_pass_waiting((*alighting_passenger));
+
 						(*alighting_passenger)->set_arrival_time_at_stop(time);
 						pair<Busstop*,double> stop_time;
 						stop_time.first = this;
@@ -1642,6 +1717,9 @@ void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, d
 								//(*alighting_passenger)->set_AWT_first_leg_boarding();
 							}
 						}
+						
+						Request req = (*alighting_passenger)->createRequest(1, time); //create a request with load of 1 to be picked up as soon as possible
+						emit (*alighting_passenger)->sendRequest(req, time); //send this request to the control center of this stop
 					}
 					else  // pass walks to another stop
 					{
@@ -1658,9 +1736,7 @@ void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, d
 				}
 				else
 				{
-					passengers wait_pass;
-					wait_pass.push_back(*alighting_passenger);
-					odstop->set_waiting_passengers(wait_pass);
+					odstop->add_pass_waiting(*alighting_passenger);
 					(*alighting_passenger)->add_to_selected_path_stop(stop_time);
 				}
 			}
@@ -1753,8 +1829,13 @@ void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, d
 								trip->passengers_on_board[(*check_pass)->make_alighting_decision(trip, time)].push_back((*check_pass)); 
 							}
 							trip->get_busv()->set_occupancy(trip->get_busv()->get_occupancy()+1);
-							emit(*check_pass)->boardedBus((*check_pass)->get_id()); //boarding passenger signals control center that they have just boarded
 							
+							if (theParameters->drt && CC != nullptr)
+							{
+								emit(*check_pass)->boardedBus((*check_pass)->get_id()); //boarding passenger signals control center that they have just boarded
+								CC->disconnectPassenger((*check_pass)); //now disconnect this passenger from the control center of this stop
+							}
+
 							if (check_pass < pass_waiting_od.end()-1)
 							{
 								check_pass++;
@@ -2251,8 +2332,9 @@ int Busstop::calc_total_nr_waiting ()
 return total_nr_waiting;
 }
 
-void Busstop::add_unassigned_bus_arrival(Bus* bus, double expected_arrival_time)
+void Busstop::add_unassigned_bus_arrival(Eventlist* eventlist, Bus* bus, double expected_arrival_time)
 {
+	assert(bus);
 	DEBUG_MSG("Adding bus " << bus->get_bus_id() << " to unassigned buses at stop " << name);
 	assert(bus->get_occupancy() == 0); //unassigned buses should be empty
 	assert(expected_arrival_time >= 0);
@@ -2263,6 +2345,7 @@ void Busstop::add_unassigned_bus_arrival(Bus* bus, double expected_arrival_time)
 			return left.second < right.second;	//keep vector sorted by arrival time (smallest at the back of the vector)
 		}
 	); 
+	eventlist->add_event(expected_arrival_time, this);	//add a Busstop event scheduled for the arrival time of vehicle to switch state of bus to IdleEmpty from Null and add to unassigned_buses_at_stop
 }
 
 void Busstop::add_unassigned_bus(Bus* bus, double arrival_time)
@@ -2365,7 +2448,7 @@ void Busstop::calculate_sum_output_stop_per_line(int line_id)
 	int counter = 0;
 	// initialize all output measures
 	Busline* bl=(*(find_if(lines.begin(), lines.end(), compare <Busline> (line_id) )));
-	vector<Start_trip> trips = bl->get_trips();
+	list <Start_trip> trips = bl->get_trips();
 	output_summary[line_id].stop_avg_headway = 0;
 	output_summary[line_id].stop_avg_DT = 0;
 	output_summary[line_id].stop_avg_abs_deviation = 0;
@@ -2391,7 +2474,7 @@ void Busstop::calculate_sum_output_stop_per_line(int line_id)
 				counter++; // should equal the total number of trips for this bus line passing at this bus stop
 				if (trips.size()>2)
 				{
-					vector<Start_trip>::iterator iter = trips.begin();
+					list <Start_trip>::iterator iter = trips.begin();
 					if ((*iter1).trip_id != (*iter).first->get_id())
 					{
 						iter++;
@@ -2452,7 +2535,7 @@ void Busstop::calculate_sum_output_stop_per_line(int line_id)
 	{
 		if ((*iter1).line_id == line_id)
 		{
-			vector<Start_trip>::iterator iter = trips.begin();
+			list <Start_trip>::iterator iter = trips.begin();
 			if (trips.size()>2)
 			{
 				if ((*iter1).trip_id != (*iter).first->get_id())

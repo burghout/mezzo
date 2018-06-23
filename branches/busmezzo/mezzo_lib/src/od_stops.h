@@ -322,7 +322,8 @@ public:
     map <Passenger*,list<Pass_waiting_experience> > get_waiting_output () {return output_pass_waiting_experience;}
     map <Passenger*,list<Pass_onboard_experience> > get_onboard_output () {return output_pass_onboard_experience;}
 	vector <Passenger*> get_passengers_during_simulation () {return passengers_during_simulation;}
-	void add_pass_waiting (Passenger* add_pass) {waiting_passengers.push_back(add_pass);}
+	
+	void add_pass_waiting(Passenger* add_pass);
 	
 	// Passengers processes
 	void book_next_passenger (double curr_time);

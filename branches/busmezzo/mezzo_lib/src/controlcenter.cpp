@@ -16,7 +16,6 @@ struct compare
 };
 
 // Request
-
 Request::Request(int pid, int oid, int did, int l, double t) : pass_id(pid), ostop_id(oid), dstop_id(did), load(l), time(t)
 {
     qRegisterMetaType<Request>(); //register Request as a metatype for QT signal arguments
@@ -63,6 +62,7 @@ bool RequestHandler::addRequest(const Request req)
 		requestSet_.insert(req);
 		return true;
 	}
+	DEBUG_MSG("Passenger request " << req.pass_id << " at time " << req.time << " already exists in request set!");
 	return false;
 }
 
@@ -79,11 +79,11 @@ void RequestHandler::removeRequest(const int pass_id)
 	if (it != requestSet_.end())
 		requestSet_.erase(it);
 	else
-		DEBUG_MSG_V("Request for pass id " << pass_id << " not found.");
+		DEBUG_MSG_V("removeRequest for pass id " << pass_id << " failed. Passenger not found in requestSet.");
 }
 
 //BustripGenerator
-BustripGenerator::BustripGenerator(ITripGenerationStrategy* generationStrategy) : generationStrategy_(generationStrategy)
+BustripGenerator::BustripGenerator(TripGenerationStrategy* generationStrategy) : generationStrategy_(generationStrategy)
 {
 	DEBUG_MSG("Constructing TG");
 }
@@ -95,7 +95,7 @@ BustripGenerator::~BustripGenerator()
 
 void BustripGenerator::reset(int generation_strategy_type)
 {
-	for (Bustrip* trip : plannedTrips_)
+	for (Bustrip* trip : plannedTrips_) //clean up planned trips that were never matched. Note: currently network reset is called even after the last simulation replication
 	{
 		delete trip;
 	}
@@ -145,8 +145,8 @@ void BustripGenerator::setTripGenerationStrategy(int type)
 	}
 }
 
-//ITripGenerationStrategy
-vector<Busline*> ITripGenerationStrategy::get_lines_between_stops(const vector<Busline*>& lines, const int ostop_id, const int dstop_id) const
+//TripGenerationStrategy
+vector<Busline*> TripGenerationStrategy::get_lines_between_stops(const vector<Busline*>& lines, const int ostop_id, const int dstop_id) const
 {
 	vector<Busline*> lines_between_stops; // lines between stops given as input
 	if (!lines.empty())
@@ -172,7 +172,7 @@ vector<Busline*> ITripGenerationStrategy::get_lines_between_stops(const vector<B
 
 	return lines_between_stops;
 }
-Bustrip* ITripGenerationStrategy::create_unassigned_trip(Busline* line, double desired_dispatch_time, const vector<Visit_stop*>& desired_schedule) const
+Bustrip* TripGenerationStrategy::create_unassigned_trip(Busline* line, double desired_dispatch_time, const vector<Visit_stop*>& desired_schedule) const
 {
 	int trip_id; 
 	Bustrip* trip;
@@ -186,12 +186,12 @@ Bustrip* ITripGenerationStrategy::create_unassigned_trip(Busline* line, double d
 	trip->add_stops(desired_schedule); //add scheduled stop visits to trip
 	trip->convert_stops_vector_to_map(); //TODO: not sure why this is necessary but is done for other trips so
 	trip->set_last_stop_visited(trip->stops.front()->first);  //sets last stop visited to the origin stop of the trip
-
+	trip->set_flex_trip(true);
 	return trip;
 
 }
 
-vector<Visit_stop*> ITripGenerationStrategy::create_schedule(double init_dispatch_time, const vector<pair<Busstop*, double>>& time_between_stops) const
+vector<Visit_stop*> TripGenerationStrategy::create_schedule(double init_dispatch_time, const vector<pair<Busstop*, double>>& time_between_stops) const
 {
 	assert(init_dispatch_time >= 0);
 	vector<Visit_stop*> schedule;
@@ -245,7 +245,7 @@ bool NaiveTripGeneration::calc_trip_generation(const set<Request>& requestSet, c
 }
 
 //BustripVehicleMatcher
-BustripVehicleMatcher::BustripVehicleMatcher(IMatchingStrategy* matchingStrategy): matchingStrategy_(matchingStrategy)
+BustripVehicleMatcher::BustripVehicleMatcher(MatchingStrategy* matchingStrategy): matchingStrategy_(matchingStrategy)
 {
 	DEBUG_MSG("Constructing TVM");
 }
@@ -257,6 +257,10 @@ BustripVehicleMatcher::~BustripVehicleMatcher()
 
 void BustripVehicleMatcher::reset(int matching_strategy_type)
 {
+	for (Bustrip* trip : matchedTrips_) //clean up matched trips that were not dispatched. Note: currently network reset is called even after the last simulation replication
+	{
+		delete trip;
+	}
 	matchedTrips_.clear();
 	candidateVehicles_per_SRoute_.clear();
 	setMatchingStrategy(matching_strategy_type);
@@ -264,7 +268,16 @@ void BustripVehicleMatcher::reset(int matching_strategy_type)
 
 void BustripVehicleMatcher::addVehicleToServiceRoute(int line_id, Bus* transitveh)
 {
-	candidateVehicles_per_SRoute_[line_id].push_back(transitveh);
+	assert(transitveh);
+	candidateVehicles_per_SRoute_[line_id].insert(transitveh);
+}
+
+void BustripVehicleMatcher::removeVehicleFromServiceRoute(int line_id, Bus * transitveh)
+{
+	assert(transitveh);
+	set<Bus*> candidateVehicles = candidateVehicles_per_SRoute_[line_id];
+	if (candidateVehicles.count(transitveh) != 0)
+		candidateVehicles_per_SRoute_[line_id].erase(transitveh);
 }
 
 void BustripVehicleMatcher::setMatchingStrategy(int type)
@@ -294,8 +307,8 @@ bool BustripVehicleMatcher::matchVehiclesToTrips(BustripGenerator& tg, double ti
 	return false;
 }
 
-//IMatchingStrategy
-void IMatchingStrategy::assign_idlevehicle_to_trip(Bus* veh, Bustrip* trip, double starttime)
+//MatchingStrategy
+void MatchingStrategy::assign_idlevehicle_to_trip(Bus* veh, Bustrip* trip, double starttime)
 {
 	assert(!veh->get_curr_trip()); //this particular bus instance (remember there may be copies of it if there is a trip chain, should not have a trip)
 	assert(veh->is_idle());
@@ -312,7 +325,7 @@ void IMatchingStrategy::assign_idlevehicle_to_trip(Bus* veh, Bustrip* trip, doub
 
 	driving_roster.push_back(st);
 	trip->add_trips(driving_roster); //save the driving roster at the trip level to conform to interfaces of Busline::execute, Bustrip::activate etc. 
-	double delay = trip->get_starttime() - starttime;
+	double delay = starttime - trip->get_starttime();
 	trip->set_starttime(starttime); //reset scheduled dispatch from origin to given starttime
 	
 	DEBUG_MSG("Delay in start time for trip " << trip->get_id() << ": " << delay);
@@ -328,7 +341,7 @@ void IMatchingStrategy::assign_idlevehicle_to_trip(Bus* veh, Bustrip* trip, doub
 
 }
 
-bool NullMatching::find_tripvehicle_match(set<Bustrip*>& plannedTrips, map<int, vector<Bus*>>& veh_per_sroute, const double time, set<Bustrip*>& matchedTrips)
+bool NullMatching::find_tripvehicle_match(set<Bustrip*>& plannedTrips, map<int, set<Bus*>>& veh_per_sroute, const double time, set<Bustrip*>& matchedTrips)
 {
 	Q_UNUSED(plannedTrips);
 	Q_UNUSED(veh_per_sroute);
@@ -338,7 +351,7 @@ bool NullMatching::find_tripvehicle_match(set<Bustrip*>& plannedTrips, map<int, 
 	return false;
 }
 
-bool NaiveMatching::find_tripvehicle_match(set<Bustrip*>& plannedTrips, map<int, vector<Bus*>>& veh_per_sroute, const double time, set<Bustrip*>& matchedTrips)
+bool NaiveMatching::find_tripvehicle_match(set<Bustrip*>& plannedTrips, map<int, set<Bus*>>& veh_per_sroute, const double time, set<Bustrip*>& matchedTrips)
 {
 	DEBUG_MSG("------------Matching Naively!-------------");
 	//attempt to match the first trip among plannedTrips with first idle vehicle found at the origin stop of the trip
@@ -347,7 +360,7 @@ bool NaiveMatching::find_tripvehicle_match(set<Bustrip*>& plannedTrips, map<int,
 		Bustrip* trip = (*plannedTrips.begin()); //choose the first trip among planned trips
 		Bus* veh = nullptr; //the transit veh that we wish to match to a trip
 		Busline* sroute = trip->get_line(); //get the line/service route of this trip
-		vector<Bus*> candidate_buses = veh_per_sroute[sroute->get_id()]; //get all transit vehicles that have this route in their service area
+		set<Bus*> candidate_buses = veh_per_sroute[sroute->get_id()]; //get all transit vehicles that have this route in their service area
 
 		if (!candidate_buses.empty()) //there is at least one bus serving the route of this trip
 		{
@@ -357,12 +370,9 @@ bool NaiveMatching::find_tripvehicle_match(set<Bustrip*>& plannedTrips, map<int,
 			//check if one of the unassigned transit vehicles at the origin stop is currently serving the route of the trip
 			for (const pair<Bus*, double>& ua_bus : ua_buses_at_stop)
 			{
-				vector<Bus*>::iterator c_bus_it;
-				c_bus_it = find_if(candidate_buses.begin(), candidate_buses.end(), 
-					[ua_bus](const Bus* c_bus)->bool { 
-						return c_bus->get_bus_id() == ua_bus.first->get_bus_id();  //first bus in list should be the bus that arrived to the stop earliest
-					}
-				);
+				set<Bus*>::iterator c_bus_it;
+				c_bus_it = candidate_buses.find(ua_bus.first); //first bus in list should be the bus that arrived to the stop earliest
+
 				if (c_bus_it != candidate_buses.end()) //a bus match has been found
 				{
 					DEBUG_MSG("Trip - vehicle match found!");
@@ -380,18 +390,104 @@ bool NaiveMatching::find_tripvehicle_match(set<Bustrip*>& plannedTrips, map<int,
 }
 
 //VehicleDispatcher
-VehicleDispatcher::VehicleDispatcher()
+VehicleDispatcher::VehicleDispatcher(Eventlist* eventlist, DispatchingStrategy* dispatchingStrategy) : eventlist_(eventlist), dispatchingStrategy_(dispatchingStrategy)
 {
 	DEBUG_MSG("Constructing FD");
 }
 VehicleDispatcher::~VehicleDispatcher()
 {
 	DEBUG_MSG("Destroying FD");
+	delete dispatchingStrategy_;
 }
 
-//ControlCenter
-ControlCenter::ControlCenter(int id, int tg_strategy, int tvm_strategy, Eventlist* eventlist, QObject* parent) 
-	: QObject(parent), id_(id), tg_strategy_(tg_strategy), tvm_strategy_(tvm_strategy), eventlist_(eventlist)
+void VehicleDispatcher::reset(int dispatching_strategy_type)
+{
+	setDispatchingStrategy(dispatching_strategy_type);
+}
+
+bool VehicleDispatcher::dispatchMatchedTrips(BustripVehicleMatcher& tvm, double time)
+{
+	DEBUG_MSG("VehicleDispatcher is scheduling matched trips at time " << time);
+	if (dispatchingStrategy_)
+	{
+		return dispatchingStrategy_->calc_dispatch_time(eventlist_, tvm.matchedTrips_, time);
+	}
+
+	return false;
+}
+
+void VehicleDispatcher::setDispatchingStrategy(int d_strategy_type)
+{
+	if (dispatchingStrategy_)
+		delete dispatchingStrategy_;
+
+	DEBUG_MSG("Changing dispatching strategy to " << d_strategy_type);
+	if (d_strategy_type == Null)
+		dispatchingStrategy_ = new NullDispatching();
+	else if (d_strategy_type == Naive)
+		dispatchingStrategy_ = new NaiveDispatching();
+	else
+	{
+		DEBUG_MSG("This dispatching strategy is not recognized!");
+		dispatchingStrategy_ = nullptr;
+	}
+}
+
+//DispatchingStrategy
+bool DispatchingStrategy::dispatch_trip(Eventlist* eventlist, Bustrip* trip)
+{
+	Busline* line = trip->get_line();
+	double starttime = trip->get_starttime();
+	assert(line->is_flex_line());
+	
+	line->add_flex_trip(trip); //add trip as a flex trip of line for bookkeeping
+	line->add_trip(trip, starttime); //insert trip into the main trips list of the line
+	eventlist->add_event(starttime, line); //book the activation of this trip in the eventlist
+	return true;
+}
+
+bool NullDispatching::calc_dispatch_time(Eventlist* eventlist, set<Bustrip*>& unscheduledTrips, double time)
+{
+    Q_UNUSED(eventlist);
+    Q_UNUSED(unscheduledTrips);
+    Q_UNUSED(time);
+
+    return false;
+}
+
+
+bool NaiveDispatching::calc_dispatch_time(Eventlist* eventlist, set<Bustrip*>& unscheduledTrips, double time)
+{
+	Q_UNUSED(time);
+	if (!unscheduledTrips.empty())
+	{
+		Bustrip* trip = (*unscheduledTrips.begin());
+		Bus* bus = trip->get_busv();
+		//check if the bus associated with this trip is available (TODO: remember that buses are deleted and copied when they finish their trip)
+		if (bus->is_idle() && bus->get_last_stop_visited()->get_id() == trip->get_last_stop_visited()->get_id())
+		{
+			if (!dispatch_trip(eventlist, trip))
+				return false;
+			else
+			{
+				unscheduledTrips.erase(trip); //trip is now scheduled for dispatch
+				return true;
+			}
+		}
+		else
+		{
+			DEBUG_MSG_V("Bus is unavailable for matched trip! Figure out why!");
+			abort();
+		}
+	}
+
+	return false;
+}
+
+
+//Controlcenter
+Controlcenter::Controlcenter(Eventlist* eventlist, int id, int tg_strategy, int tvm_strategy, int vd_strategy, QObject* parent)
+	: QObject(parent), vd_(eventlist), id_(id), tg_strategy_(tg_strategy), tvm_strategy_(tvm_strategy), vd_strategy_(vd_strategy)
 {
 	QString qname = QString::fromStdString(to_string(id));
 	this->setObjectName(qname); //name of control center does not really matter but useful for debugging purposes
@@ -399,16 +495,17 @@ ControlCenter::ControlCenter(int id, int tg_strategy, int tvm_strategy, Eventlis
 
 	tg_.setTripGenerationStrategy(tg_strategy); //set the initial generation strategy of BustripGenerator
 	tvm_.setMatchingStrategy(tvm_strategy);	//set initial matching strategy of BustripVehicleMatcher
+	vd_.setDispatchingStrategy(vd_strategy); //set initial dispatching strategy of VehicleDispatcher
 	connectInternal(); //connect internal signal slots
 }
-ControlCenter::~ControlCenter()
+Controlcenter::~Controlcenter()
 {
 	DEBUG_MSG("Destroying CC" << id_);
 }
 
-void ControlCenter::reset()
+void Controlcenter::reset()
 {
-	disconnect(this, 0, 0, 0); //Disconnect all signals of controlcenter
+	disconnect(this, 0, 0, 0); //Disconnect all signals of Controlcenter
 
 	connectInternal(); //reconnect internal signal slots
 
@@ -416,67 +513,92 @@ void ControlCenter::reset()
 	rh_.reset();
 	tg_.reset(tg_strategy_); 
 	tvm_.reset(tvm_strategy_);
-	//fs_.reset();
+	vd_.reset(vd_strategy_);
 
-	//Clear all members of ControlCenter
-	connectedPass_.clear();
+	//Clear all members of Controlcenter
+	for (pair<Bus*, Bustrip*> vehtrip : completedVehicleTrips_)
+	{
+		//TODO: add to vehicle recycler instead of deleting, maybe add a trips recycler as well
+		if (initialVehicles_.count(vehtrip.first) == 0) //do not delete the initial buses
+		{
+			delete vehtrip.first;
+		}
+		delete vehtrip.second;
+	}
+	completedVehicleTrips_.clear();
+	
+	for (pair<int, Bus*> veh : connectedVeh_)
+	{
+		if (initialVehicles_.count(veh.second) == 0) //do not delete the initial buses
+		{
+			delete veh.second;
+		}
+	}
 	connectedVeh_.clear();
+	connectedPass_.clear();
+
 }
 
-void ControlCenter::connectInternal()
+void Controlcenter::connectInternal()
 {
 	bool ok;
-	ok = QObject::connect(this, &ControlCenter::requestRejected, this, &ControlCenter::on_requestRejected, Qt::DirectConnection);
+	ok = QObject::connect(this, &Controlcenter::requestRejected, this, &Controlcenter::on_requestRejected, Qt::DirectConnection);
 	assert(ok);
-	ok = QObject::connect(this, &ControlCenter::requestAccepted, this, &ControlCenter::on_requestAccepted, Qt::DirectConnection);
+	ok = QObject::connect(this, &Controlcenter::requestAccepted, this, &Controlcenter::on_requestAccepted, Qt::DirectConnection);
 	assert(ok);
 
 	//Triggers to generate trips via BustripGenerator
-	ok = QObject::connect(this, &ControlCenter::requestAccepted, this, &ControlCenter::requestTrip, Qt::DirectConnection); 
+	ok = QObject::connect(this, &Controlcenter::requestAccepted, this, &Controlcenter::requestTrip, Qt::DirectConnection); 
 	assert(ok);
-	//ok = QObject::connect(this, &ControlCenter::fleetStateChanged, this, &ControlCenter::requestTrip, Qt::DirectConnection);
+	//ok = QObject::connect(this, &Controlcenter::fleetStateChanged, this, &Controlcenter::requestTrip, Qt::DirectConnection);
 	//assert(ok);
 
 	//Triggers to match vehicles in trips via BustripVehicleMatcher
-	ok = QObject::connect(this, &ControlCenter::tripGenerated, this, &ControlCenter::on_tripGenerated, Qt::DirectConnection);
+	ok = QObject::connect(this, &Controlcenter::tripGenerated, this, &Controlcenter::on_tripGenerated, Qt::DirectConnection);
 	assert(ok);
-	ok = QObject::connect(this, &ControlCenter::tripGenerated, this, &ControlCenter::matchVehiclesToTrips, Qt::DirectConnection);
-	assert(ok);	
+	ok = QObject::connect(this, &Controlcenter::tripGenerated, this, &Controlcenter::matchVehiclesToTrips, Qt::DirectConnection);
+	assert(ok);
+
+	//Triggers to schedule vehicle - trip pairs via VehicleDispatcher
+	ok = QObject::connect(this, &Controlcenter::tripVehicleMatchFound, this, &Controlcenter::on_tripVehicleMatchFound, Qt::DirectConnection);
+	assert(ok);
+	ok = QObject::connect(this, &Controlcenter::tripVehicleMatchFound, this, &Controlcenter::dispatchMatchedTrips, Qt::DirectConnection);
+	assert(ok);
 }
 
-void ControlCenter::connectPassenger(Passenger* pass)
+void Controlcenter::connectPassenger(Passenger* pass)
 {
 	//DEBUG_MSG("Testing unique connection");
-	//ok = QObject::connect(pass, &Passenger::sendRequest, this, &ControlCenter::recieveRequest, static_cast<Qt::ConnectionType>(Qt::DirectConnection | Qt::UniqueConnection));
+	//ok = QObject::connect(pass, &Passenger::sendRequest, this, &Controlcenter::receiveRequest, static_cast<Qt::ConnectionType>(Qt::DirectConnection | Qt::UniqueConnection));
 	int pid = pass->get_id();
 	assert(connectedPass_.count(pid) == 0); //passenger should only be added once
 	connectedPass_[pid] = pass;
 
-	if (!QObject::connect(pass, &Passenger::sendRequest, this, &ControlCenter::recieveRequest, Qt::DirectConnection))
+	if (!QObject::connect(pass, &Passenger::sendRequest, this, &Controlcenter::receiveRequest, Qt::DirectConnection))
 	{
-		DEBUG_MSG_V(Q_FUNC_INFO << " connecting Passenger::sendRequest to ControlCenter::recieveRequest failed!");
+		DEBUG_MSG_V(Q_FUNC_INFO << " connecting Passenger::sendRequest to Controlcenter::receiveRequest failed!");
 		abort();
 	}
-	if (!QObject::connect(pass, &Passenger::boardedBus, this, &ControlCenter::removeRequest, Qt::DirectConnection))
+	if (!QObject::connect(pass, &Passenger::boardedBus, this, &Controlcenter::removeRequest, Qt::DirectConnection))
 	{
-		DEBUG_MSG_V(Q_FUNC_INFO << " connecting Passenger::boardedBus to ControlCenter::removeRequest failed!");
+		DEBUG_MSG_V(Q_FUNC_INFO << " connecting Passenger::boardedBus to Controlcenter::removeRequest failed!");
 		abort();
 	}
 }
-void ControlCenter::disconnectPassenger(Passenger* pass)
+void Controlcenter::disconnectPassenger(Passenger* pass)
 {
 	assert(pass);
 	int pid = pass->get_id();
 	assert(connectedPass_.count(pid) != 0);
 
 	connectedPass_.erase(connectedPass_.find(pid));
-	bool ok = QObject::disconnect(pass, &Passenger::sendRequest, this, &ControlCenter::recieveRequest);
+	bool ok = QObject::disconnect(pass, &Passenger::sendRequest, this, &Controlcenter::receiveRequest);
 	assert(ok);
-	ok = QObject::disconnect(pass, &Passenger::boardedBus, this, &ControlCenter::removeRequest);
+	ok = QObject::disconnect(pass, &Passenger::boardedBus, this, &Controlcenter::removeRequest);
 	assert(ok);
 }
 
-void ControlCenter::connectVehicle(Bus* transitveh)
+void Controlcenter::connectVehicle(Bus* transitveh)
 {
 	assert(transitveh);
 	int bvid = transitveh->get_bus_id();
@@ -484,76 +606,111 @@ void ControlCenter::connectVehicle(Bus* transitveh)
 	connectedVeh_[bvid] = transitveh;
 
 	//connect bus state changes to control center
-	if (!QObject::connect(transitveh, &Bus::stateChanged, this, &ControlCenter::updateFleetState, Qt::DirectConnection))
+	if (!QObject::connect(transitveh, &Bus::stateChanged, this, &Controlcenter::updateFleetState, Qt::DirectConnection))
 	{
 		DEBUG_MSG_V(Q_FUNC_INFO << " connectVehicle failed!");
 		abort();
 	}
 }
-void ControlCenter::disconnectVehicle(Bus* transitveh)
+void Controlcenter::disconnectVehicle(Bus* transitveh)
 {
 	assert(transitveh);
 	int bvid = transitveh->get_bus_id();
 	assert(connectedVeh_.count(bvid) != 0); //only disconnect vehicles that have been added
 
 	connectedVeh_.erase(connectedVeh_.find(bvid));
-	bool ok = QObject::disconnect(transitveh, &Bus::stateChanged, this, &ControlCenter::updateFleetState);
+	bool ok = QObject::disconnect(transitveh, &Bus::stateChanged, this, &Controlcenter::updateFleetState);
 	assert(ok);
 }
 
-void ControlCenter::addServiceRoute(Busline* line)
+void Controlcenter::addServiceRoute(Busline* line)
 {
 	assert(line->is_flex_line()); //only flex lines should be added to control center for now
 	tg_.addServiceRoute(line);
 }
 
-void ControlCenter::addVehicleToServiceRoute(int line_id, Bus* transitveh)
+void Controlcenter::addVehicleToServiceRoute(int line_id, Bus* transitveh)
 {
+	assert(transitveh);
 	tvm_.addVehicleToServiceRoute(line_id, transitveh);
 }
 
+void Controlcenter::removeVehicleFromServiceRoute(int line_id, Bus* transitveh)
+{
+	assert(transitveh);
+	tvm_.removeVehicleFromServiceRoute(line_id, transitveh);
+
+}
+
+void Controlcenter::addInitialVehicle(Bus * transitveh)
+{
+	assert(transitveh);
+	if (initialVehicles_.count(transitveh) == 0)
+	{
+		initialVehicles_.insert(transitveh);
+	}
+}
+
+void Controlcenter::addCompletedVehicleTrip(Bus * transitveh, Bustrip * trip)
+{
+	assert(transitveh);
+	assert(trip);
+	completedVehicleTrips_.push_back(make_pair(transitveh, trip));
+}
+
 //Slot implementations
-void ControlCenter::recieveRequest(Request req, double time)
+void Controlcenter::receiveRequest(Request req, double time)
 {
 	assert(req.time >= 0 && req.load > 0); //assert that request is valid
 	rh_.addRequest(req) ? emit requestAccepted(time) : emit requestRejected(time);
 }
 
-void ControlCenter::removeRequest(int pass_id)
+void Controlcenter::removeRequest(int pass_id)
 {
 	DEBUG_MSG(Q_FUNC_INFO);
 	rh_.removeRequest(pass_id);
 }
 
-void ControlCenter::on_requestAccepted(double time)
+void Controlcenter::on_requestAccepted(double time)
 {
 	DEBUG_MSG(Q_FUNC_INFO << ": Request Accepted at time " << time);
 }
-void ControlCenter::on_requestRejected(double time)
+void Controlcenter::on_requestRejected(double time)
 {
 	DEBUG_MSG(Q_FUNC_INFO << ": Request Rejected at time " << time);
 }
 
-void ControlCenter::on_tripGenerated(double time)
+void Controlcenter::on_tripGenerated(double time)
 {
 	DEBUG_MSG(Q_FUNC_INFO << ": Trip Generated at time " << time);
 }
 
-void ControlCenter::updateFleetState(int bus_id, BusState newstate, double time)
+void Controlcenter::on_tripVehicleMatchFound(double time)
+{
+	DEBUG_MSG(Q_FUNC_INFO << ": Vehicle - Trip match found at time " << time);
+}
+
+void Controlcenter::updateFleetState(int bus_id, BusState newstate, double time)
 {
 	int state = static_cast<int>(newstate);
-	DEBUG_MSG("ControlCenter " << id_ << " - Updating fleet state at time " << time);
+	DEBUG_MSG("Controlcenter " << id_ << " - Updating fleet state at time " << time);
 	DEBUG_MSG("Bus " << bus_id << " - " << state );
 	emit fleetStateChanged(time);
 }
 
-void ControlCenter::requestTrip(double time)
+void Controlcenter::requestTrip(double time)
 {
 	if (tg_.requestTrip(rh_, time))
 		emit tripGenerated(time);
 }
 
-void ControlCenter::matchVehiclesToTrips(double time)
+void Controlcenter::matchVehiclesToTrips(double time)
 {
-	tvm_.matchVehiclesToTrips(tg_, time);
+	if(tvm_.matchVehiclesToTrips(tg_, time))
+		emit tripVehicleMatchFound(time);
+}
+
+void Controlcenter::dispatchMatchedTrips(double time)
+{
+	vd_.dispatchMatchedTrips(tvm_, time);
 }

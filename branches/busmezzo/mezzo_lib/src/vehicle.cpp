@@ -130,7 +130,7 @@ Bus::Bus(QObject* parent) : QObject(parent), Vehicle()
 	last_stop_visited_ = nullptr;
 	state_ = BusState::Null;
 }
-Bus::Bus(int id_, int type_, double length_, Route* route_, ODpair* odpair_, double time_, QObject* parent) : QObject(parent),
+Bus::Bus(int id_, int type_, double length_, Route* route_, ODpair* odpair_, double time_, bool flex_vehicle, QObject* parent) : QObject(parent), flex_vehicle_(flex_vehicle),
 	Vehicle(id_, type_, length_, route_, odpair_, time_)
 {
 	occupancy = 0;
@@ -152,7 +152,7 @@ Bus::Bus(int id_, int type_, double length_, Route* route_, ODpair* odpair_, dou
 	last_stop_visited_ = nullptr;
 	state_ = BusState::Null;
 };
-Bus::Bus(int bv_id_, Bustype* bty, QObject* parent) : QObject(parent)
+Bus::Bus(int bv_id_, Bustype* bty, bool flex_vehicle, QObject* parent) : QObject(parent), flex_vehicle_(flex_vehicle)
 {
 	bus_id = bv_id_;
 	type = 4;
@@ -184,7 +184,7 @@ void Bus::reset ()
 	type = 4;
 	output_vehicle.clear();
 
-	//ControlCenter
+	//Controlcenter
 	disconnect(this, 0, 0, 0); //disconnect all signal slots (will reconnect to control center in Network::init)
 	last_stop_visited_ = nullptr;
 	state_ = BusState::Null;
@@ -208,6 +208,16 @@ void Bus::set_bustype_attributes (Bustype* bty)
 
 void Bus::advance_curr_trip (double time, Eventlist* eventlist) // progresses trip-pointer 
 {
+	if (flex_vehicle_)
+		DEBUG_MSG("Bus " << id << " advancing curr trip at time " << time);
+
+	if (flex_vehicle_ && curr_trip->is_flex_trip()) //if the trip that just finished was dynamically scheduled then the controlcenter is in charge of bookeeping the trip and bus for writing outputs
+	{
+		Controlcenter* cc = last_stop_visited_->get_CC(); //TODO: what if multiple control centers are associated with this stop?
+		curr_trip->get_line()->remove_flex_trip(curr_trip); //remove from set of uncompleted flex trips in busline, control center takes ownership of the trip for deletion
+		cc->addCompletedVehicleTrip(this, curr_trip); //save bus - bustrip pair in control center of last stop 
+	}
+
 	vector <Start_trip*>::iterator trip1, next_trip; // find the pointer to the current and next trip
 	for (vector <Start_trip*>::iterator trip = curr_trip->driving_roster.begin(); trip < curr_trip->driving_roster.end(); trip++)
 	{
@@ -226,8 +236,45 @@ void Bus::advance_curr_trip (double time, Eventlist* eventlist) // progresses tr
 			Busline* line = (*next_trip)->first->get_line();
 			// then the trip is activated
 			(*next_trip)->first->activate(time, line->get_busroute(), line->get_odpair(), eventlist);
+			return;
 		}
 		// if the bus is early for the next trip, then it will be activated at the scheduled time from Busline
+	}
+
+	//busvehicle should be unassigned at opposing stop after completing its trip, then mimic the initialization process for DRT vehicles from network reader
+	if (flex_vehicle_ && curr_trip->is_flex_trip())
+	{
+		assert(occupancy == 0); //no passengers should be remaining on the bus at this point
+		vid++;
+		Bus* newbus = recycler.newBus(); //want to clone the bus that just finished its trip with its final stop as its 'origin stop'
+		
+		//copy over info from the old bus to the new
+		newbus->set_flex_vehicle(true);
+		newbus->set_bus_id(id);
+		newbus->set_bustype_attributes(bus_type);
+		newbus->set_curr_trip(nullptr); //bus has no trip assigned to it yet
+
+		Controlcenter* cc = last_stop_visited_->get_CC();
+		cc->disconnectVehicle(this); //disconnect old bus and connect new bus
+		cc->connectVehicle(newbus);
+
+		for (const int& sroute_id : sroute_ids_)
+		{
+			newbus->add_sroute_id(sroute_id);
+			cc->removeVehicleFromServiceRoute(sroute_id, this);
+			cc->addVehicleToServiceRoute(sroute_id, newbus);
+		}
+
+		//if an opposing stop exists, initialize newbus at the opposing stop associated with last stop visited by oldbus with expected arrival time as soon as possible
+		if (last_stop_visited_->get_opposing_stop() != nullptr)
+		{
+			Busstop* opposing_stop = last_stop_visited_->get_opposing_stop();
+			opposing_stop->add_unassigned_bus_arrival(eventlist, newbus, time);
+		}
+		else //bus stays at the current stop (but cannot currently go anywhere until it has turned around)
+		{
+			last_stop_visited_->add_unassigned_bus_arrival(eventlist, newbus, time);
+		}
 	}
 }
 
