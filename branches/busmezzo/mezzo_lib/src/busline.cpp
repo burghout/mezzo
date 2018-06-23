@@ -1698,9 +1698,8 @@ void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, d
 				{
 					if (next_stop->get_id() == this->get_id())  // pass stays at the same stop
 					{
-						passengers wait_pass = odstop->get_waiting_passengers(); // add passanger's to the waiting queue on the new OD
-						wait_pass.push_back (*alighting_passenger);
-						odstop->set_waiting_passengers(wait_pass);
+						odstop->add_pass_waiting((*alighting_passenger));
+
 						(*alighting_passenger)->set_arrival_time_at_stop(time);
 						pair<Busstop*,double> stop_time;
 						stop_time.first = this;
@@ -1718,6 +1717,9 @@ void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, d
 								//(*alighting_passenger)->set_AWT_first_leg_boarding();
 							}
 						}
+						
+						Request req = (*alighting_passenger)->createRequest(1, time); //create a request with load of 1 to be picked up as soon as possible
+						emit (*alighting_passenger)->sendRequest(req, time); //send this request to the control center of this stop
 					}
 					else  // pass walks to another stop
 					{
@@ -1734,9 +1736,7 @@ void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, d
 				}
 				else
 				{
-					passengers wait_pass;
-					wait_pass.push_back(*alighting_passenger);
-					odstop->set_waiting_passengers(wait_pass);
+					odstop->add_pass_waiting(*alighting_passenger);
 					(*alighting_passenger)->add_to_selected_path_stop(stop_time);
 				}
 			}
@@ -1829,8 +1829,13 @@ void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, d
 								trip->passengers_on_board[(*check_pass)->make_alighting_decision(trip, time)].push_back((*check_pass)); 
 							}
 							trip->get_busv()->set_occupancy(trip->get_busv()->get_occupancy()+1);
-							emit(*check_pass)->boardedBus((*check_pass)->get_id()); //boarding passenger signals control center that they have just boarded
 							
+							if (theParameters->drt && CC != nullptr)
+							{
+								emit(*check_pass)->boardedBus((*check_pass)->get_id()); //boarding passenger signals control center that they have just boarded
+								CC->disconnectPassenger((*check_pass)); //now disconnect this passenger from the control center of this stop
+							}
+
 							if (check_pass < pass_waiting_od.end()-1)
 							{
 								check_pass++;

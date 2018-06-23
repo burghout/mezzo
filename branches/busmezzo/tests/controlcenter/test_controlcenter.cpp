@@ -53,7 +53,7 @@ void TestControlcenter::testConnectPassenger()
     Busstop* origin = new Busstop();
     Busstop* destination = new Busstop();
     ODstops* OD_stop= new ODstops(origin,destination);
-    auto pass = new Passenger(0,0.0,OD_stop,nullptr,nullptr);
+    auto pass = new Passenger(0,0.0,OD_stop,nullptr);
 
     ccPtr->connectPassenger(pass);
     QVERIFY2 (ccPtr->connectedPass_.size() == 1, "Failure, connectedPass_.size should now be 1" );

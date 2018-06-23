@@ -155,6 +155,16 @@ void ODstops::delete_passengers()
 	active = false;
 }
 
+void ODstops::add_pass_waiting(Passenger* add_pass)
+{
+	assert(add_pass);
+	if (theParameters->drt && origin_stop->get_CC() != nullptr)
+	{
+		origin_stop->get_CC()->connectPassenger(add_pass); //connect passenger to the control center of their current stop if one exists
+	}
+	waiting_passengers.push_back(add_pass);
+}
+
 bool ODstops::execute (Eventlist* eventlist, double curr_time) // generate passengers with this OD and books an event for next passenger generation
 {
 	if (check_path_set() == true && active == false)
@@ -169,7 +179,7 @@ bool ODstops::execute (Eventlist* eventlist, double curr_time) // generate passe
             
             while (curr_time < theParameters->stop_pass_generation)
             {
-                Passenger* pass = new Passenger(pid, curr_time, this, this->get_origin()->get_CC());
+                Passenger* pass = new Passenger(pid, curr_time, this);
                 passengers_during_simulation.push_back(pass);
                 pid++;
                 pass->init();

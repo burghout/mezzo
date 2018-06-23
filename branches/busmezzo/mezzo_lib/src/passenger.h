@@ -25,7 +25,6 @@ public:
 		int		   pass_id,
 		double	   start_time_,
 		ODstops*   OD_stop_,
-		Controlcenter* CC = nullptr,
 		QObject*   parent = nullptr
 	);
 	Passenger ();
@@ -124,7 +123,6 @@ public:
     double get_walking_time(Busstop*,double);
 
 	//Controlcenter
-private:
 	Request createRequest(int load = 1, double time = -1); //creates a request for this passenger with a given load and a given time (Note: uses protected members of Passenger)
 public:
 signals:
