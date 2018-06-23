@@ -248,6 +248,8 @@ class Controlcenter : public QObject
 {
 	Q_OBJECT
     friend class TestControlcenter;
+	friend class Network;
+
 public:
 	explicit Controlcenter(
 		Eventlist* eventlist = nullptr, //currently the dispatcher needs the eventlist to book Busline (vehicle - trip dispatching) events

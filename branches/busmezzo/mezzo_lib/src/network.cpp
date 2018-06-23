@@ -6213,6 +6213,7 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
     {
         (*iter)->write_output(out4);
     }
+
     // writing the aggregate summary output for each bus line
     write_transitlinesum_header(out3);
     write_transitlineloads_header(out9);
@@ -6255,6 +6256,21 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
             }
         }
         write_passenger_welfare_summary(out17, total_pass_GTC, pass_counter);
+
+		//write outputs for objects owned by control centers
+		for (const pair<int, Controlcenter*>& cc : ccmap) //writing trajectory output for each drt vehicle
+		{
+			for (const pair<Bus*, Bustrip*>& vehtrip : cc.second->completedVehicleTrips_)
+			{
+				vehtrip.first->write_output(out4); //write trajectory output for each bus vehicle that completed a trip
+				vehtrip.second->write_assign_segments_output(out7); // writing the assignment results in terms of each segment on individual trips
+			}
+			for (const pair<int, Bus*>& veh : cc.second->connectedVeh_)
+			{
+				veh.second->write_output(out4); //write trajectory output for each bus vehicle that has not completed a trip
+			}
+		}
+
         /* deactivated - unneccessary files in most cases
         for (vector<Busstop*>::iterator stop_iter = busstops.begin(); stop_iter < busstops.end(); stop_iter++)
         {
