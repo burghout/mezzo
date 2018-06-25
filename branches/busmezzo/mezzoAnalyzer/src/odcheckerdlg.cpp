@@ -396,6 +396,8 @@ void ODCheckerDlg::checkOD(bool check_)
 void ODCheckerDlg::selectionHandle(	const QItemSelection& sel, 
 								    const QItemSelection& unsel)
 {
+    Q_UNUSED(sel);
+    Q_UNUSED(unsel);
 	// initialize a row and column counter for the selection area
 	rowCnt_=itemmodel_->rowCount();
 	colCnt_=itemmodel_->columnCount();
@@ -556,13 +558,13 @@ void ODCheckerDlg::loadInitOD()
 	//for(unsigned i=0; i<origs.size(); i++)
 	//	origcomb->addItem(QString::number(origs[i]->get_id()));
 	map <int, Origin*>::iterator o_iter=origs.begin();
-	for (o_iter;o_iter!=origs.end();o_iter++)
+    for (;o_iter!=origs.end();o_iter++)
 	{
 		origcomb->addItem(QString::number(o_iter->first));
 	}
 
 	map <int, Destination*>::iterator d_iter=dests.begin();
-	for (d_iter;d_iter!=dests.end();d_iter++)
+    for (;d_iter!=dests.end();d_iter++)
 	{
 		destcomb->addItem(QString::number(d_iter->first));
 	}

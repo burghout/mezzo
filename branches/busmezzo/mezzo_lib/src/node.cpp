@@ -362,6 +362,7 @@ BoundaryOut::~BoundaryOut ()
 
 bool BoundaryOut::process_veh(Vehicle* veh, double time)
 {
+    Q_UNUSED (time);
 	#ifdef _MIME
 		Link* lptr=NULL;
 		Link* clptr=NULL;
