@@ -2107,6 +2107,12 @@ double Busstop::calc_holding_departure_time (Bustrip* trip, double time)
 					}
 				}
 				break;
+			case 20: // case of holding and speed adjustment 
+				{
+
+
+				}
+				break;
 		default:
 			return time + dwelltime;
 	}

@@ -1670,11 +1670,11 @@ bool Network::readbusline(istream& in) // reads a busline
 {
   char bracket;
   int busline_id, opposite_busline_id, ori_id, dest_id, route_id, vehtype, holding_strategy, nr_stops, stop_id, nr_tp, tp_id, nr_stops_init_occup;
-  double max_headway_holding;
+  double max_headway_holding, max_speed, min_speed; //!< in case of headway control strategy 20 which involves speed adjustments 
   double init_occup_per_stop;
   string name;
   vector <Busstop*> stops, line_timepoint;
-  Busstop* stop;
+  Busstop* stop; 
   Busstop* tp;
 
   //David added 2016-04-18, transfer related variables

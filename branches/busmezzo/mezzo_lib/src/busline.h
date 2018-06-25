@@ -261,6 +261,7 @@ protected:
 	Vtype* vtype;							//!< the type of vehicle for the buses to be generated.
 
 	float max_headway_holding;
+	double max_speed, min_speed; //!< in case of headway control strategy 20 which involves speed adjustments 
 
 	double desired_offset, planned_headway; //!< relevant in case headway control is of type 10
 	int holding_strategy; 
