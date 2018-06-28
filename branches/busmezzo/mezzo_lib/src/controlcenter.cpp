@@ -200,7 +200,8 @@ vector<Visit_stop*> TripGenerationStrategy::create_schedule(double init_dispatch
 	//add init_dispatch_time to all stop deltas for schedule
 	for (const pair<Busstop*, double>& stop_delta : time_between_stops)
 	{
-		Visit_stop* vs = new Visit_stop((stop_delta.first), stop_delta.second + arrival_time_at_stop);
+		arrival_time_at_stop = arrival_time_at_stop + stop_delta.second;
+		Visit_stop* vs = new Visit_stop((stop_delta.first), arrival_time_at_stop);
 		schedule.push_back(vs);
 	}
 
