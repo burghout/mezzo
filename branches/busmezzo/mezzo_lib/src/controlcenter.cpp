@@ -174,6 +174,7 @@ vector<Busline*> TripGenerationStrategy::get_lines_between_stops(const vector<Bu
 }
 Bustrip* TripGenerationStrategy::create_unassigned_trip(Busline* line, double desired_dispatch_time, const vector<Visit_stop*>& desired_schedule) const
 {
+	assert(line);
 	int trip_id; 
 	Bustrip* trip;
 
@@ -200,7 +201,7 @@ vector<Visit_stop*> TripGenerationStrategy::create_schedule(double init_dispatch
 	//add init_dispatch_time to all stop deltas for schedule
 	for (const pair<Busstop*, double>& stop_delta : time_between_stops)
 	{
-		arrival_time_at_stop = arrival_time_at_stop + stop_delta.second;
+		arrival_time_at_stop += stop_delta.second;
 		Visit_stop* vs = new Visit_stop((stop_delta.first), arrival_time_at_stop);
 		schedule.push_back(vs);
 	}
@@ -311,6 +312,8 @@ bool BustripVehicleMatcher::matchVehiclesToTrips(BustripGenerator& tg, double ti
 //MatchingStrategy
 void MatchingStrategy::assign_idlevehicle_to_trip(Bus* veh, Bustrip* trip, double starttime)
 {
+	assert(veh);
+	assert(trip);
 	assert(!veh->get_curr_trip()); //this particular bus instance (remember there may be copies of it if there is a trip chain, should not have a trip)
 	assert(veh->is_idle());
 
@@ -319,9 +322,9 @@ void MatchingStrategy::assign_idlevehicle_to_trip(Bus* veh, Bustrip* trip, doubl
 	trip->set_busv(veh); //assign bus to the trip
 	veh->set_curr_trip(trip); //assign trip to the bus
 	trip->set_bustype(veh->get_bus_type());//set the bustype of the trip (so trip has access to this bustypes dwell time function)
-	trip->get_busv()->set_on_trip(true); //flag the bus as busy for all trips except the first on its chain (it shouldnt) TODO: maybe move this to dispatcher
-	
-	vector<Start_trip*> driving_roster; //contains all other trips in this trips chain (if there are any) (TODO might move to dispatcher
+	trip->get_busv()->set_on_trip(true); //flag the bus as busy for all trips except the first on its chain (TODO might move to dispatcher)
+
+	vector<Start_trip*> driving_roster; //contains all other trips in this trips chain (if there are any) (TODO might move to dispatcher)
 	Start_trip* st = new Start_trip(trip, starttime);
 
 	driving_roster.push_back(st);
@@ -437,6 +440,9 @@ void VehicleDispatcher::setDispatchingStrategy(int d_strategy_type)
 //DispatchingStrategy
 bool DispatchingStrategy::dispatch_trip(Eventlist* eventlist, Bustrip* trip)
 {
+	assert(eventlist);
+	assert(trip);
+
 	Busline* line = trip->get_line();
 	double starttime = trip->get_starttime();
 	assert(line->is_flex_line());
@@ -460,11 +466,12 @@ bool NullDispatching::calc_dispatch_time(Eventlist* eventlist, set<Bustrip*>& un
 bool NaiveDispatching::calc_dispatch_time(Eventlist* eventlist, set<Bustrip*>& unscheduledTrips, double time)
 {
 	Q_UNUSED(time);
+	assert(eventlist);
 	if (!unscheduledTrips.empty())
 	{
 		Bustrip* trip = (*unscheduledTrips.begin());
 		Bus* bus = trip->get_busv();
-		//check if the bus associated with this trip is available (TODO: remember that buses are deleted and copied when they finish their trip)
+		//check if the bus associated with this trip is available
 		if (bus->is_idle() && bus->get_last_stop_visited()->get_id() == trip->get_last_stop_visited()->get_id())
 		{
 			if (!dispatch_trip(eventlist, trip))
@@ -551,8 +558,8 @@ void Controlcenter::connectInternal()
 	//Triggers to generate trips via BustripGenerator
 	ok = QObject::connect(this, &Controlcenter::requestAccepted, this, &Controlcenter::requestTrip, Qt::DirectConnection); 
 	assert(ok);
-	//ok = QObject::connect(this, &Controlcenter::fleetStateChanged, this, &Controlcenter::requestTrip, Qt::DirectConnection);
-	//assert(ok);
+	ok = QObject::connect(this, &Controlcenter::newUnassignedVehicle, this, &Controlcenter::requestTrip, Qt::DirectConnection);
+	assert(ok);
 
 	//Triggers to match vehicles in trips via BustripVehicleMatcher
 	ok = QObject::connect(this, &Controlcenter::tripGenerated, this, &Controlcenter::on_tripGenerated, Qt::DirectConnection);
@@ -569,8 +576,6 @@ void Controlcenter::connectInternal()
 
 void Controlcenter::connectPassenger(Passenger* pass)
 {
-	//DEBUG_MSG("Testing unique connection");
-	//ok = QObject::connect(pass, &Passenger::sendRequest, this, &Controlcenter::receiveRequest, static_cast<Qt::ConnectionType>(Qt::DirectConnection | Qt::UniqueConnection));
 	int pid = pass->get_id();
 	assert(connectedPass_.count(pid) == 0); //passenger should only be added once
 	connectedPass_[pid] = pass;
@@ -609,7 +614,7 @@ void Controlcenter::connectVehicle(Bus* transitveh)
 	//connect bus state changes to control center
 	if (!QObject::connect(transitveh, &Bus::stateChanged, this, &Controlcenter::updateFleetState, Qt::DirectConnection))
 	{
-		DEBUG_MSG_V(Q_FUNC_INFO << " connectVehicle failed!");
+		DEBUG_MSG_V(Q_FUNC_INFO << " connecting Bus::stateChanged with Controlcenter::updateFleetState failed!");
 		abort();
 	}
 }
@@ -640,7 +645,6 @@ void Controlcenter::removeVehicleFromServiceRoute(int line_id, Bus* transitveh)
 {
 	assert(transitveh);
 	tvm_.removeVehicleFromServiceRoute(line_id, transitveh);
-
 }
 
 void Controlcenter::addInitialVehicle(Bus * transitveh)
@@ -696,7 +700,19 @@ void Controlcenter::updateFleetState(int bus_id, BusState newstate, double time)
 	int state = static_cast<int>(newstate);
 	DEBUG_MSG("Controlcenter " << id_ << " - Updating fleet state at time " << time);
 	DEBUG_MSG("Bus " << bus_id << " - " << state );
-	emit fleetStateChanged(time);
+	if (newstate == BusState::IdleEmpty)
+	{
+		//Ugly solution! TODO: Maybe add an additional state 'OnCall' to BusStates. add_unassigned_vehicle in charge of setting vehicle state to OnCall
+		assert(connectedVeh_.count(bus_id) != 0);
+		Bus* bus = connectedVeh_[bus_id]; //check if bus has arrived unassigned to a stop
+		Busstop* stop = bus->get_last_stop_visited();
+		vector<pair<Bus*, double>> ua_at_stop = stop->get_unassigned_buses_at_stop();
+		vector<pair<Bus*, double>>::iterator it;
+		it = find_if(ua_at_stop.begin(), ua_at_stop.end(), [bus_id](const pair<Bus*, double>& ua_bus)->bool {return ua_bus.first->get_bus_id() == bus_id; });
+		if(it != ua_at_stop.end())
+			emit newUnassignedVehicle(time);
+	}
+	
 }
 
 void Controlcenter::requestTrip(double time)

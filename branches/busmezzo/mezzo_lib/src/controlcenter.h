@@ -285,7 +285,7 @@ signals:
 	void requestAccepted(double time);
 	void requestRejected(double time);
 
-	void fleetStateChanged(double time);
+	void newUnassignedVehicle(double time);
 
 	void tripGenerated(double time);
 	void tripVehicleMatchFound(double time);
