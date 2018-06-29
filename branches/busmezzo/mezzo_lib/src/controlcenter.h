@@ -49,6 +49,7 @@ Q_DECLARE_METATYPE(Request);
 /*Responsible for adding Requests to requestSet as well as sorting and distributing the requestSet*/
 class RequestHandler
 {
+	friend class TestControlcenter;
 	friend class BustripGenerator; //BustripGenerator receives access to the requestSet as input to trip generation decisions
 
 public:
@@ -248,7 +249,7 @@ class Controlcenter : public QObject
 {
 	Q_OBJECT
     friend class TestControlcenter;
-	friend class Network;
+	friend class Network; //for writing outputs
 
 public:
 	explicit Controlcenter(
