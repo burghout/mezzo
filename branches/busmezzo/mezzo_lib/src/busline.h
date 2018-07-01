@@ -197,6 +197,8 @@ public:
 	Output_Summary_Line get_output_summary () {return output_summary;}
 	vector <Start_trip>::iterator get_curr_trip() {return curr_trip;} 
 	vector <Start_trip> get_trips () {return trips;}
+	double get_min_speed() { return min_speed; }
+	double get_max_speed() { return max_speed; }
 
 	//transfer gets and sets
 	int	get_tr_line_id() {return tr_line_id;}
@@ -206,6 +208,7 @@ public:
 	void add_timepoints (vector <Busstop*> tp) {line_timepoint = tp;}
 	void add_trip(Bustrip* trip, double starttime){trips.push_back(Start_trip(trip,starttime));}
 	void add_disruptions (Busstop* from_stop, Busstop* to_stop, double disruption_start_time, double disruption_end_time, double cap_reduction);
+	void add_speeds(double min_speed_, double max_speed_) { max_speed = max_speed_; min_speed = min_speed_;}
 
 	//transfer initilization
 	void add_tr_line_id (int id) {tr_line_id = id;}
@@ -369,6 +372,8 @@ public:
 	void set_holding_at_stop(bool holding_at_stop_){holding_at_stop = holding_at_stop_;} //David added 2016-05-26
 	bool get_holding_at_stop(){return holding_at_stop;} //David added 2016-05-26
 	bool get_complying(){return complying_bustrip;}
+	double calc_forward_headway();
+	double calc_backward_headway();
 
 // other functions:	
 //	bool is_trip_timepoint(Busstop* stop); //!< returns 1 if true, 0 if false, -1 if busstop not found

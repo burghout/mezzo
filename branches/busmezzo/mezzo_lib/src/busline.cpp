@@ -739,6 +739,18 @@ bool Bustrip::advance_next_stop (double time, Eventlist* eventlist)
 	}
 }
 
+double Bustrip::calc_forward_headway()
+{
+
+	return 0;
+}
+
+double Bustrip::calc_backward_headway()
+{
+
+	return 0;
+}
+
 bool Bustrip::activate (double time, Route* route, ODpair* odpair, Eventlist* eventlist_)
 {
 	// inserts the bus at the origin of the route
@@ -2107,10 +2119,28 @@ double Busstop::calc_holding_departure_time (Bustrip* trip, double time)
 					}
 				}
 				break;
-			case 20: // case of holding and speed adjustment 
+			case 20: // case of holding and speed adjustment; holding itself is the same as Case 6
+				if (trip->get_line()->is_line_timepoint(this) == true && trip->get_line()->check_last_trip(trip) == false && trip->get_line()->check_first_trip(trip) == false) // if it is a time point and it is not the first or last trip
 				{
-
-
+					Bustrip* next_trip = trip->get_line()->get_next_trip(trip);
+					Bustrip* previous_trip = trip->get_line()->get_previous_trip(trip);
+					vector <Visit_stop*> ::iterator& next_trip_next_stop = next_trip->get_next_stop();
+					if (next_trip->check_end_trip() == false && (*next_trip_next_stop)->first != trip->get_line()->stops.front() && previous_trip->check_end_trip() == false) // in case the next trip already started and the previous trip hadn't finished yet(otherwise - no base for holding)
+					{
+						vector <Visit_stop*> ::iterator curr_stop; // hold the scheduled time for this trip at this stop
+						for (vector <Visit_stop*> ::iterator trip_stops = next_trip->stops.begin(); trip_stops < next_trip->stops.end(); trip_stops++)
+						{
+							if ((*trip_stops)->first->get_id() == this->get_id())
+							{
+								curr_stop = trip_stops;
+								break;
+							}
+						}
+						double expected_next_arrival = (*(next_trip_next_stop - 1))->first->get_last_departure(trip->get_line()) + (*curr_stop)->second - (*(next_trip_next_stop - 1))->second; // time at last stop + scheduled travel time between stops
+						double average_curr_headway = ((expected_next_arrival - time) + (time - last_departures[trip->get_line()].second)) / 2; // average of the headway in front and behind
+						double holding_departure_time = min(last_departures[trip->get_line()].second + average_curr_headway, time + trip->get_line()->get_max_headway_holding()); // headway ratio means here how tolerant we are to exceed the gap (1+(1-ratio)) -> 2-ratio
+						return holding_departure_time;
+					}
 				}
 				break;
 		default:

@@ -1625,6 +1625,7 @@ bool Network::readbusstop (istream& in) // reads a busstop
     if (linkmap.find(link_id) == linkmap.end())
     {
         cout << "readfile::readsbusstop error at stop " << stop_id << ". Link " << link_id << " does not exist." << endl;
+		return false;
     }
 
     Busstop* st= new Busstop (stop_id, name, link_id, position, length, has_bay, can_overtake, min_DT, RTI_stop, non_Ramdon_Pass_Generation);
@@ -1668,7 +1669,6 @@ Busstop* Network::get_busstop_from_name(string bus_stop_name) {
 
 bool Network::readbusline(istream& in) // reads a busline
 {
-<<<<<<< HEAD
   char bracket;
   int busline_id, opposite_busline_id, ori_id, dest_id, route_id, vehtype, holding_strategy, nr_stops, stop_id, nr_tp, tp_id, nr_stops_init_occup;
   double max_headway_holding, max_speed, min_speed; //!< in case of headway control strategy 20 which involves speed adjustments 
@@ -1684,23 +1684,6 @@ bool Network::readbusline(istream& in) // reads a busline
   int tr_stop_id;	//!< ids of each transfer stop
   vector <Busstop*> tr_stops;
   Busstop* tr_stop;
-=======
-    char bracket;
-    int busline_id, opposite_busline_id, ori_id, dest_id, route_id, vehtype, holding_strategy, nr_stops, stop_id, nr_tp, tp_id, nr_stops_init_occup;
-    double max_headway_holding;
-    double init_occup_per_stop;
-    string name;
-    vector <Busstop*> stops, line_timepoint;
-    Busstop* stop;
-    Busstop* tp;
-
-    //David added 2016-04-18, transfer related variables
-    int tr_line_id;	//!< id of line that 'this' busline synchronizes transfers with, 0 if line is not synchronizing transfers
-    int nr_tr_stops;	//!< number of transfer stops for this pair of lines
-    int tr_stop_id;	//!< ids of each transfer stop
-    vector <Busstop*> tr_stops;
-    Busstop* tr_stop;
->>>>>>> 813f61167047986061c10fe925db120abff31ec7
 
     bool ok= true;
     in >> bracket;
@@ -1710,7 +1693,12 @@ bool Network::readbusline(istream& in) // reads a busline
         return false;
     }
     bracket = ' '; // 2016-03-29 David added: reset bracket when we are checking for more than one consecutive '{', or '}'. Maybe use a bracket counter instead?
-    in >> busline_id >> opposite_busline_id >> name >> ori_id >> dest_id >> route_id >> vehtype >> holding_strategy >> max_headway_holding >> init_occup_per_stop >> nr_stops_init_occup;
+	in >> busline_id >> opposite_busline_id >> name >> ori_id >> dest_id >> route_id >> vehtype >> holding_strategy;
+	if (holding_strategy == 20) // involves speed adjustment 
+	{
+		in >> min_speed >> max_speed; 
+	}
+	in >> max_headway_holding >> init_occup_per_stop >> nr_stops_init_occup;
     if(theParameters->transfer_sync)
     {
         in >> tr_line_id;
@@ -1742,7 +1730,7 @@ bool Network::readbusline(istream& in) // reads a busline
     Busroute* br=(*(find_if(busroutes.begin(), busroutes.end(), compare <Route> (route_id) )));
     Vtype* vt= (*(find_if(vehtypes.vtypes.begin(), vehtypes.vtypes.end(), compare <Vtype> (vehtype) )));
     Busline* bl= new Busline (busline_id, opposite_busline_id, name, br, stops, vt, odptr, holding_strategy, max_headway_holding, init_occup_per_stop, nr_stops_init_occup);
-
+	bl->add_speeds(min_speed, max_speed);
     for (vector<Busstop*>::iterator stop_iter = bl->stops.begin(); stop_iter < bl->stops.end(); stop_iter++)
     {
         (*stop_iter)->add_lines(bl);
@@ -5676,15 +5664,14 @@ bool Network::readserverrate(istream& in)
     return true;
 }
 
-
 bool Network::readwalkingtimedistribution(istream& in) // reads a walking time distribution
 {
     
     char bracket;
+
+	int orig_id, dest_id;
     
-    string orig_name, dest_name;
-    
-    Busstop *orig_stop_ptr, *dest_stop_ptr;
+    Busstop *orig_stop, *dest_stop;
     
     double interval_start, interval_end;
     
@@ -5699,12 +5686,12 @@ bool Network::readwalkingtimedistribution(istream& in) // reads a walking time d
     }
     bracket = ' '; //reset bracket
     
-    //read origin name, destination name, interval start and end second as well as number of quantiles
-    in >> orig_name >> dest_name >> interval_start >> interval_end >> num_quantiles;
+    //read origin id, destination id, interval start and end second as well as number of quantiles
+    in >> orig_id >> dest_id >> interval_start >> interval_end >> num_quantiles;
     
     //get pointer to origin and destination stop
-    orig_stop_ptr = get_busstop_from_name(orig_name);
-    dest_stop_ptr = get_busstop_from_name(dest_name);
+	orig_stop = (*(find_if(busstops.begin(), busstops.end(), compare <Busstop>(orig_id)))); // find the stop
+    dest_stop = (*(find_if(busstops.begin(), busstops.end(), compare <Busstop>(dest_id)))); // find the stop
     
     //containers for quantile position and quantile values
     vector<double> quantiles(num_quantiles);
@@ -5762,7 +5749,7 @@ bool Network::readwalkingtimedistribution(istream& in) // reads a walking time d
     
     
     //store walking time distribution
-    orig_stop_ptr->add_walking_time_quantiles(dest_stop_ptr, quantiles, quantile_values, num_quantiles, interval_start, interval_end);
+    orig_stop->add_walking_time_quantiles(dest_stop, quantiles, quantile_values, num_quantiles, interval_start, interval_end);
     
     return true;
 }
