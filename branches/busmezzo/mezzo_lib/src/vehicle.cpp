@@ -209,7 +209,7 @@ void Bus::set_bustype_attributes (Bustype* bty)
 void Bus::advance_curr_trip (double time, Eventlist* eventlist) // progresses trip-pointer 
 {
 	if (flex_vehicle_)
-		DEBUG_MSG("Bus " << id << " advancing curr trip at time " << time);
+		DEBUG_MSG("----------Bus " << id << " finishing trip " << curr_trip->get_id() << " at time " << time);
 
 	if (flex_vehicle_ && curr_trip->is_flex_trip()) //if the trip that just finished was dynamically scheduled then the controlcenter is in charge of bookeeping the trip and bus for writing outputs
 	{
@@ -253,6 +253,7 @@ void Bus::advance_curr_trip (double time, Eventlist* eventlist) // progresses tr
 		newbus->set_bus_id(id);
 		newbus->set_bustype_attributes(bus_type);
 		newbus->set_curr_trip(nullptr); //bus has no trip assigned to it yet
+		newbus->set_on_trip(false);
 
 		Controlcenter* cc = last_stop_visited_->get_CC();
 		cc->disconnectVehicle(this); //disconnect old bus and connect new bus
@@ -296,7 +297,7 @@ BusState Bus::calc_state(const bool bus_exiting_stop, const int occupancy) const
 {
 	assert(occupancy <= capacity && occupancy >= 0); //occupancy should be a valid load for this vehicle
 
-	if (!bus_exiting_stop) //if the vehicle is idle/waiting at a stop
+	if (!bus_exiting_stop) //if the vehicle has just entered a stop and is standing still
 	{
 		if (occupancy == 0) //bus is empty
 			return BusState::IdleEmpty;

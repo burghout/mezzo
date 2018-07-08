@@ -677,8 +677,6 @@ void Busline::remove_flex_trip(Bustrip * trip)
 bool Busline::is_unique_tripid(int trip_id)
 {
 	list <Start_trip>::iterator it;
-	
-	//check if id exists among initial trips for this line
 	it = find_if(trips.begin(), trips.end(),
 			[trip_id](const Start_trip& st) -> bool
 			{
@@ -687,16 +685,6 @@ bool Busline::is_unique_tripid(int trip_id)
 		);
 	if (it != trips.end())
 		return false;
-
-	if (flex_line)
-	{
-		//check if id exists among dynamically generated trips for this line
-		for (const Bustrip* trip : flex_trips)
-		{
-			if (trip->get_id() == trip_id)
-				return false;
-		}
-	}
 
 	return true;
 }
@@ -1154,6 +1142,7 @@ Busstop::Busstop()
 	turning_begin = false;
 	turning_end = false;
 	opposing_stop = nullptr;
+	CC = nullptr;
 }
 
 Busstop::Busstop (int id_, string name_, int link_id_, double position_, double length_, bool has_bay_, bool can_overtake_, double min_DT_, int rti_, bool gate_flag_, Controlcenter* CC_):
@@ -1468,7 +1457,7 @@ bool Busstop::execute(Eventlist* eventlist, double time) // is executed by the e
 			DEBUG_MSG("Activating unassigned bus " << ua_bus->get_bus_id() << " at time " << time << " at stop " << name);
 			ua_bus->set_last_stop_visited(this); //update this here before setting state
 			add_unassigned_bus(ua_bus, time); //add vehicle to vector of unassigned buses at this stop
-			ua_bus->set_state(BusState::IdleEmpty, time); //vehicle is now available and signals its availability to control center
+			ua_bus->set_state(BusState::IdleEmpty, time); //emits state change signal to control center
 			unassigned_bus_arrivals.erase(ua_bus_it); 
 			return true;
 		} 
@@ -2123,6 +2112,7 @@ double Busstop::calc_exiting_time (Eventlist* eventlist, Bustrip* trip, double t
 	{
 		if(ready_to_depart > time + dwelltime)
 		{
+			assert(!theParameters->drt); //holding at time points is not supported at the moment
 			trip->set_holding_at_stop(true); //David added 2016-05-26: set indicator that additional passengers that board whil bus is held at time point need to be accounting for at the bus's exit time
 		}
 	}
@@ -2335,14 +2325,14 @@ return total_nr_waiting;
 void Busstop::add_unassigned_bus_arrival(Eventlist* eventlist, Bus* bus, double expected_arrival_time)
 {
 	assert(bus);
-	DEBUG_MSG("Adding bus " << bus->get_bus_id() << " to unassigned buses at stop " << name);
+	DEBUG_MSG("Adding bus " << bus->get_bus_id() << " to unassigned bus arrivals at stop " << name);
 	assert(bus->get_occupancy() == 0); //unassigned buses should be empty
 	assert(expected_arrival_time >= 0);
 	unassigned_bus_arrivals.push_back(make_pair(bus, expected_arrival_time));
 	sort(unassigned_bus_arrivals.begin(), unassigned_bus_arrivals.end(),
 		[](const pair<Bus*,double>& left, const pair<Bus*, double>& right) -> bool
 		{
-			return left.second < right.second;	//keep vector sorted by arrival time (smallest at the back of the vector)
+			return left.second < right.second;	//keep vector sorted by arrival time (smallest at the front of the vector)
 		}
 	); 
 	eventlist->add_event(expected_arrival_time, this);	//add a Busstop event scheduled for the arrival time of vehicle to switch state of bus to IdleEmpty from Null and add to unassigned_buses_at_stop

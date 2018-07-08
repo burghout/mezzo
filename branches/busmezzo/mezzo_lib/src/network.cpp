@@ -412,7 +412,7 @@ int Network::reset()
     }
 
 	//controlcenters (and all their initial drt vehicles)
-	for (auto& controlcenter : ccmap)
+	for (pair<const int, Controlcenter*>& controlcenter : ccmap)
 	{
 		controlcenter.second->reset();
 	}
@@ -5394,7 +5394,6 @@ bool Network::read_unassignedvehicle(istream& in) //reads a bus vehicles that ar
 
 	unassignedvehicle = make_tuple(bus, init_stop, init_time, sroute_ids);
 	drtvehicles.push_back(unassignedvehicle);
-	//busvehicles.push_back(bus); //add drt bus to busvehicles vector for resets and writing output
 
 	return true;
 }
@@ -6257,6 +6256,8 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
         }
         write_passenger_welfare_summary(out17, total_pass_GTC, pass_counter);
 
+		if (theParameters->drt)
+		{
 		//write outputs for objects owned by control centers
 		for (const pair<int, Controlcenter*>& cc : ccmap) //writing trajectory output for each drt vehicle
 		{
@@ -6270,7 +6271,7 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
 				veh.second->write_output(out4); //write trajectory output for each bus vehicle that has not completed a trip
 			}
 		}
-
+		}
         /* deactivated - unneccessary files in most cases
         for (vector<Busstop*>::iterator stop_iter = busstops.begin(); stop_iter < busstops.end(); stop_iter++)
         {
@@ -7979,7 +7980,10 @@ bool Network::init()
 			double init_time = get<2>(drt_init);
 			vector<int> sroute_ids = get<3>(drt_init);
 
+			assert(bus->is_flex_vehicle());
+
 			bus->set_curr_trip(nullptr); //unlike non-dynamically generated bus/trips this bus should not have a trip between resets as well
+			bus->set_on_trip(false);
 			ccmap[1]->connectVehicle(bus); //connect vehicle to a control center
 			ccmap[1]->addInitialVehicle(bus);
 			stop->add_unassigned_bus_arrival(eventlist, bus, init_time); //should be in a Null state until their init_time (also adds a Busstop event scheduled for the init_time of vehicle  to switch state of bus to IdleEmpty from Null)

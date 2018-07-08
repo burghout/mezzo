@@ -74,23 +74,23 @@ class TripGenerationStrategy;
 class BustripGenerator
 {
 	enum generationStrategyType { Null = 0, Naive }; //ids of trip generation strategies known to BustripGenerator
-	friend class BustripVehicleMatcher; //give matcher class access to plannedTrips_. May remove trip from this set without destroying it if it has been matched
+	friend class BustripVehicleMatcher; //give matcher class access to unmatchedTrips_. May remove trip from this set without destroying it if it has been matched
 
 public:
 	explicit BustripGenerator(TripGenerationStrategy* generationStrategy = nullptr);
 	~BustripGenerator();
 
-	bool requestTrip(const RequestHandler& rh, double time); //returns true if an unassigned trip has been generated and added to plannedTrips_ and false otherwise
+	bool requestTrip(const RequestHandler& rh, double time); //returns true if an unassigned trip has been generated and added to unmatchedTrips_ and false otherwise
 	void setTripGenerationStrategy(int type);
 
 	void reset(int generation_strategy_type);
 	void addServiceRoute(Busline* line);
 	
-	void cancelPlannedTrip(Bustrip* trip); //destroy and remove trip from set of plannedTrips_
+	void cancelUnmatchedTrip(Bustrip* trip); //destroy and remove trip from set of unmatchedTrips_
 	
 
 private:
-	set<Bustrip*> plannedTrips_; //set of trips to be performed that have not been matched to vehicles yet
+	set<Bustrip*> unmatchedTrips_; //set of trips to be performed that have not been matched to vehicles yet
 	vector<Busline*> serviceRoutes_; //lines (i.e. routes and stops to visit along the route) that this BustripGenerator can create trips for (TODO: do other process classes do not need to know about this?)
 
 	TripGenerationStrategy* generationStrategy_;
@@ -112,6 +112,8 @@ public:
 
 protected:
 	//supporting methods for generating trips with whatever TripGenerationStrategy
+	map<pair<int, int>, int> countRequestsPerOD(const set<Request>& requestSet) const; //counts the number of requests with a particular od
+	bool line_exists_in_tripset(const set<Bustrip*>& tripSet, const Busline* line) const; //returns true if a trip exists in tripset for the given busline
 	vector<Busline*> get_lines_between_stops(const vector<Busline*>& lines, const int ostop_id, const int dstop_id) const; //returns buslines among lines given as input that run from a given originstop to a given destination stop (Note: assumes lines are uni-directional and that busline stops are ordered, which they currently are in BusMezzo)
 	vector<Visit_stop*> create_schedule(double init_dispatch_time, const vector<pair<Busstop*, double>>& time_between_stops) const; //creates a vector of scheduled visits to stops starting from the dispatch time (given by simulation time)
 	Bustrip* create_unassigned_trip(Busline* line, double desired_dispatch_time, const vector<Visit_stop*>& schedule) const; //creates a Bustrip for a given line with a desired start time and a scheduled arrival to stops along this line (subject to the availablility of a vehicle to serve this trip)
@@ -167,30 +169,30 @@ class MatchingStrategy
 public:
 	virtual ~MatchingStrategy() {}
 	virtual bool find_tripvehicle_match(
-		set<Bustrip*>&					plannedTrips,					//set of trips that are currently not assigned to any vehicle
+		Bustrip*						unmatchedTrip,					//set of trips that are currently not assigned to any vehicle
 		map<int, set<Bus*>>&			candidateVehicles_per_SRoute,	//set of candidate vehicles assigned with different service routes
 		const double					time,							//time for which find_tripvehicle_match is called
 		set<Bustrip*>&					matchedTrips					//set of trips that each have a vehicle assigned to them
-	) = 0; //returns true if a trip from plannedTrips has been matched with a vehicle from candidateVehicles_per_SRoute and added to matchedTrips. The trip is in this case also removed from plannedTrips
+	) = 0; //returns true if a trip from unmatchedTrips has been matched with a vehicle from candidateVehicles_per_SRoute and added to matchedTrips. The trip is in this case also removed from unmatchedTrips
 
 protected:
 	void assign_idlevehicle_to_trip(Bus* idletransitveh, Bustrip* trip, double starttime); //performs all operations (similar to Network::read_busvehicle) required in assigning a trip to an idle vehicle (TODO: assigning driving vehicles)
-
+	Bustrip* find_most_recent_trip(const set<Bustrip*>& trips) const; //returns trip with the earliest starttime among a set of trips
 };
 /*Null matching strategy that always returns false*/
 class NullMatching : public MatchingStrategy
 {
 public:
 	~NullMatching() override {}
-	bool find_tripvehicle_match(set<Bustrip*>& plannedTrips, map<int, set<Bus*>>& veh_per_sroute, const double time, set<Bustrip*>& matchedTrips) override;
+	bool find_tripvehicle_match(Bustrip* unmatchedTrip, map<int, set<Bus*>>& veh_per_sroute, const double time, set<Bustrip*>& matchedTrips) override;
 };
 
-/*Naive matching strategy always matches the first trip in plannedTrips to the first candidate transit veh found (if any) at the origin stop of the trip.*/
+/*Naive matching strategy always matches the first trip in unmatchedTrips to the first candidate transit veh found (if any) at the origin stop of the trip.*/
 class NaiveMatching : public MatchingStrategy
 {
 public:
 	~NaiveMatching() override {}
-	bool find_tripvehicle_match(set<Bustrip*>& plannedTrips, map<int, set<Bus*>>& veh_per_sroute, const double time, set<Bustrip*>& matchedTrips) override;
+	bool find_tripvehicle_match(Bustrip* unmatchedTrip, map<int, set<Bus*>>& veh_per_sroute, const double time, set<Bustrip*>& matchedTrips) override;
 };
 
 /*In charge of dispatching transit vehicle - trip pairs*/
@@ -209,7 +211,6 @@ public:
 	void setDispatchingStrategy(int type);
 
 private:
-	set<Bustrip*> scheduledTrips_;
 	Eventlist* eventlist_; //currently the dispatching strategy books a busline event (vehicle - trip dispatching event)
 
 	DispatchingStrategy* dispatchingStrategy_; //strategy that is used to determine the start time (for dispatch) of flexible transit vehicle trips

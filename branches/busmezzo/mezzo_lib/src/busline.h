@@ -187,7 +187,7 @@ public:
 	void reset_curr_trip (); // initialize after reading bustrips
 
 	// Gets and sets
-	int		  get_id () {return id;}									//!< returns id, used in the compare  functions for find and find_if algorithms
+	int		  get_id () const {return id;}									//!< returns id, used in the compare  functions for find and find_if algorithms
 	Busroute* get_busroute() {return busroute;}							//!< returns Busroute
 	Vtype*	  get_vtype() {return vtype;}								//!< returns Vtype
 	ODpair*	  get_odpair() {return odpair;}								//!< returns ODpair
@@ -375,7 +375,7 @@ public:
 	Bustype* get_bustype () {return btype;}
 	void set_line (Busline* line_) {line = line_;}
 	Busline* get_line () {return line;}
-	double get_starttime () {return starttime;}
+	double get_starttime () const {return starttime;}
 	double get_init_occup_per_stop () {return init_occup_per_stop;}
 	int get_nr_stops_init_occup () {return nr_stops_init_occup;}
 	vector <Visit_stop*> :: iterator& get_next_stop() {return next_stop;} //!< returns pointer to next stop

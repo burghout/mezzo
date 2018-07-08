@@ -181,6 +181,7 @@ public:
 	void set_last_stop_visited(Busstop* last_stop_visited) { last_stop_visited_ = last_stop_visited; } 
 
 	void set_flex_vehicle(bool flex_vehicle) { flex_vehicle_ = flex_vehicle; }
+	bool is_flex_vehicle() const { return flex_vehicle_; }
 	void add_sroute_id(int sroute_id) { sroute_ids_.insert(sroute_id); }
 	void remove_sroute_id(int sroute_id) { if (sroute_ids_.count(sroute_id) != 0) { sroute_ids_.erase(sroute_id); } }
 
