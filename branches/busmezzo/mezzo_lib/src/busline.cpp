@@ -280,16 +280,27 @@ double Busline::calc_next_scheduled_arrival_at_stop (Busstop* stop, double time)
 
 double Busline::find_time_till_next_scheduled_trip_at_stop (Busstop* stop, double time)
 {
-	for (list <Start_trip>::iterator trip_iter = trips.begin(); trip_iter != trips.end(); trip_iter++)
+	if (!trips.empty())
 	{
-		map <Busstop*, double> stop_time = (*trip_iter).first->stops_map;
-		if (stop_time[stop] > time)
-		// assuming that trips are stored according to their chronological order
+		for (list <Start_trip>::iterator trip_iter = trips.begin(); trip_iter != trips.end(); trip_iter++)
 		{
-			return ((*trip_iter).first->stops_map[stop] - time);
+			map <Busstop*, double> stop_time = (*trip_iter).first->stops_map;
+			if (stop_time[stop] > time)
+				// assuming that trips are stored according to their chronological order
+			{
+				return ((*trip_iter).first->stops_map[stop] - time);
+			}
+		}
+	}
+	else
+	{
+		if (flex_line) //if this line can have dynamically generated trips, then a trip may still arrive within the planned headway
+		{
+			return ::drt_first_rep_planned_headway;
 		}
 	}
 	// currently - in case that there is no additional trip scheduled - return the time till simulation end
+	//DEBUG_MSG_V("Busline::find_time_till_next_scheduled_trip_at_stop returning time until simulation end " << theParameters->running_time - time << " for line with no trips");
 	return theParameters->running_time - time;
 }
 
@@ -298,7 +309,7 @@ Bustrip* Busline::find_next_expected_trip_at_stop (Busstop* stop)
 	Bustrip* next_expected_trip = nullptr;
 	if (trips.empty()) //there are no expected trips from this line for this stop
 	{
-		DEBUG_MSG_V("Find expected trip at stop returning nullptr for busline " << id);
+		//DEBUG_MSG_V("Find next expected trip at stop returning nullptr for busline " << id);
 		return next_expected_trip;
 	}
 	if (stop->get_had_been_visited(this) == false)
@@ -333,7 +344,17 @@ double Busline::time_till_next_arrival_at_stop_after_time (Busstop* stop, double
 	{
 		if (trips.empty()) //in case no trip has started yet and no trip is scheduled
 		{
-			return theParameters->running_time; //return scenario stop time TODO: see how this effects passenger RTI calculations
+			if (flex_line)
+			{
+				//DEBUG_MSG_V("Busline::time_till_next_arrival_at_stop_after_time returning drt planned headway " << drt_first_rep_planned_headway << " for line " << id << " with no trips");
+				return ::drt_first_rep_planned_headway;
+			}
+			else
+			{
+				// currently - in case that there is no additional trip scheduled - return the time till simulation end
+				//DEBUG_MSG_V("Busline::time_till_next_arrival_at_stop_after_time returning time until simulation end " << theParameters->running_time - time << " for line " << id << " with no trips");
+				return theParameters->running_time - time; //return scenario stop time TODO: see how this effects passenger RTI calculations
+			}
 		}
 		else
 		{
@@ -389,8 +410,8 @@ double Busline::calc_curr_line_headway ()
 	//TODO: add condition for when trips vector is empty!
 	if (trips.empty() || static_cast<int> (trips.size()) == 1)
 	{
-		DEBUG_MSG_V("Busline::calc_curr_line_headway returning headway 0.0 for empty/single trips list");
-		return 0.0;
+		//DEBUG_MSG_V("Busline::calc_curr_line_headway returning headway " << drt_first_rep_planned_headway << " for empty/single trips list in line " << id);
+		return ::drt_first_rep_planned_headway; //return a default headway that enables passengers to try out the drt service in the first replication
 	}
 
 	list<Start_trip>::iterator succ_trip;
@@ -418,8 +439,8 @@ double Busline::calc_curr_line_headway_forward ()
 	//TODO: add condition for when trips vector is empty!
 	if (trips.empty() || static_cast<int>(trips.size()) == 1)
 	{
-		DEBUG_MSG_V("Busline::calc_curr_line_headway returning headway 0.0 for empty/single trips list");
-		return 0.0;
+		//DEBUG_MSG_V("Busline::calc_curr_line_headway returning headway " << drt_first_rep_planned_headway << " for empty/single trips list " << this->get_id());
+		return ::drt_first_rep_planned_headway;
 	}
 
 	list<Start_trip>::iterator succ_trip;
@@ -450,12 +471,21 @@ double Busline::calc_curr_line_headway_forward ()
 double Busline:: calc_max_headway ()
 {
 	double max_headway = 0.0;
-	for (list <Start_trip>::iterator start_trip_iter = trips.begin(); start_trip_iter != prev(trips.end()); start_trip_iter++)
+	if (!trips.empty() && static_cast<int>(trips.size()) != 1)
 	{
-		max_headway = max (max_headway, (*(next(start_trip_iter))).second - (*(start_trip_iter)).second);
+		for (list <Start_trip>::iterator start_trip_iter = trips.begin(); start_trip_iter != prev(trips.end()); start_trip_iter++)
+		{
+			max_headway = max(max_headway, (*(next(start_trip_iter))).second - (*(start_trip_iter)).second);
+		}
 	}
-	if (max_headway == 0.0)
-		DEBUG_MSG_V("Busline::calc_max_headway returning 0.0 for empty/single trips list");
+	else
+	{
+		if(theParameters->drt && flex_line)
+			max_headway = ::drt_first_rep_planned_headway;
+		
+		//DEBUG_MSG_V("Busline::calc_max_headway returning " << drt_first_rep_planned_headway << " for empty/single trips list " << this->get_id());
+	}
+	
 	return max_headway;
 }
 
@@ -490,12 +520,12 @@ double Busline::calc_curr_line_ivt (Busstop* start_stop, Busstop* end_stop, int 
 	{
 		extra_travel_time = check_subline_disruption(start_stop, end_stop, time);
 	}
-	vector<Visit_stop*>::iterator board_stop;
-	vector<Visit_stop*>::iterator alight_stop;
 	bool found_board = false;
 	bool found_alight = false;
 	if (!trips.empty())
 	{
+		vector<Visit_stop*>::iterator board_stop;
+		vector<Visit_stop*>::iterator alight_stop;
 		list <Start_trip>::iterator check_trip;
 		if (curr_trip == trips.end())
 		{
@@ -526,8 +556,38 @@ double Busline::calc_curr_line_ivt (Busstop* start_stop, Busstop* end_stop, int 
 
 		return ((*alight_stop)->second - (*board_stop)->second) + extra_travel_time; // in seconds
 	}
-	DEBUG_MSG_V("Path generation returning IVT 10 for line without trips");
-	return 10;
+	else
+	{
+		//assert(flex_line); //if trips list for this busline is empty then it should be a line that allows for dynamically generated trips
+		vector<pair<Busstop*, double>>::iterator board_stop;
+		vector<pair<Busstop*, double>>::iterator alight_stop;
+		double earliest_time_ostop;
+		double cumulative_arrival_time; //arrival times starting from zero for initial stop
+
+		//In case no trips have been assigned to the line yet then use default ivt between stops for the line
+		for (vector<pair<Busstop*, double>>::iterator stop = delta_at_stops.begin(); stop != delta_at_stops.end(); ++stop)
+		{
+			cumulative_arrival_time += (*stop).second;
+			if ((*stop).first->get_id() == start_stop->get_id() || (*stop).first->get_name() == start_stop->get_name())
+			{
+				earliest_time_ostop = cumulative_arrival_time;
+				board_stop = stop;
+				found_board = true;
+			}
+			if ((*stop).first->get_id() == end_stop->get_id() || (*stop).first->get_name() == end_stop->get_name())
+			{
+				alight_stop = stop;
+				found_alight = true;
+				break;
+			}
+		}
+		if (found_board == false || found_alight == false)
+			return 10000; //default in case of no matching
+
+		//double ivt = cumulative_arrival_time - earliest_time_ostop + extra_travel_time;
+		//DEBUG_MSG_V("Busline::calc_curr_line_ivt returning IVT " << ivt << " for line " << id << " with no trips assigned to it yet between stop " << start_stop->get_name() << " and stop " << end_stop->get_name() << endl );
+		return cumulative_arrival_time - earliest_time_ostop + extra_travel_time;
+	}
 }
 
 double Busline::check_subline_disruption (Busstop* last_visited_stop, Busstop* pass_stop, double time)

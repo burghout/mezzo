@@ -5386,6 +5386,12 @@ bool Network::read_unassignedvehicle(istream& in) //reads a bus vehicles that ar
 	bus->set_curr_trip(nullptr); // bus has no trip assigned to it, on_trip should = false
 	
 	init_stop = (*(find_if(busstops.begin(), busstops.end(), compare <Busstop>(init_stop_id))));
+	
+	if (!init_stop->is_turning_end())
+	{
+		DEBUG_MSG_V("readfile::read_unassignedvehicle error, initial stop " << init_stop_id << " of unassigned vehicle " << bv_id << " is not the start stop of a transit line. Aborting...");
+		abort();
+	}
 
 	for (int id : sroute_ids)
 	{
@@ -6258,19 +6264,19 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
 
 		if (theParameters->drt)
 		{
-		//write outputs for objects owned by control centers
-		for (const pair<int, Controlcenter*>& cc : ccmap) //writing trajectory output for each drt vehicle
-		{
-			for (const pair<Bus*, Bustrip*>& vehtrip : cc.second->completedVehicleTrips_)
+			//write outputs for objects owned by control centers
+			for (const pair<int, Controlcenter*>& cc : ccmap) //writing trajectory output for each drt vehicle
 			{
-				vehtrip.first->write_output(out4); //write trajectory output for each bus vehicle that completed a trip
-				vehtrip.second->write_assign_segments_output(out7); // writing the assignment results in terms of each segment on individual trips
+				for (const pair<Bus*, Bustrip*>& vehtrip : cc.second->completedVehicleTrips_)
+				{
+					vehtrip.first->write_output(out4); //write trajectory output for each bus vehicle that completed a trip
+					vehtrip.second->write_assign_segments_output(out7); // writing the assignment results in terms of each segment on individual trips
+				}
+				for (const pair<int, Bus*>& veh : cc.second->connectedVeh_)
+				{
+					veh.second->write_output(out4); //write trajectory output for each bus vehicle that has not completed a trip
+				}
 			}
-			for (const pair<int, Bus*>& veh : cc.second->connectedVeh_)
-			{
-				veh.second->write_output(out4); //write trajectory output for each bus vehicle that has not completed a trip
-			}
-		}
 		}
         /* deactivated - unneccessary files in most cases
         for (vector<Busstop*>::iterator stop_iter = busstops.begin(); stop_iter < busstops.end(); stop_iter++)

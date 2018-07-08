@@ -290,7 +290,7 @@ protected:
 	//drt related attributes
 	bool flex_line;	//!< true if trips can be created dynamically for this line
 	set<Bustrip*> flex_trips; //!< trips that were created dynamically for this line via a controlcenter
-	vector<pair<Busstop*,double>> delta_at_stops; //!<expected time between departures for all stops on this line (defined on input when reading bustrips for this line)
+	vector<pair<Busstop*,double>> delta_at_stops; //!<expected ivt between departures for all stops on this line (defined on input when reading bustrips for this line) with first stop departure at time = 0
 	int trip_count; //!<the number of trips created for this line
 	list <Start_trip> static_trips; //!< trips that were created from input files (i.e. were not created dynamically for this line), to be saved between resets
 
