@@ -154,7 +154,7 @@ void Busline::add_trip(Bustrip* trip, double starttime)
 		if (st1.second != st2.second)
 			return st1.second < st2.second;
 		else
-			return true; //if starttimes are equal the first start trip in the list is considered smaller
+			return st1.first->get_id() < st2.first->get_id(); //if starttimes are equal the start trip with the lowest id is considered smaller
 	}
 	); //keep earliest trips at the beginning of the list
 
