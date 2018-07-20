@@ -257,7 +257,7 @@ public:
 	void remove_flex_trip(Bustrip* trip); //remove trip from flex_trip set once it has been completed
 	void add_stop_delta(Busstop* stop, double delta_from_preceding_stop) { delta_at_stops.push_back(make_pair(stop, delta_from_preceding_stop)); } //set the scheduled/expected travel times between stops on this line (starting from 0 for the first stop)
 	vector<pair<Busstop*,double>> get_delta_at_stops() { return delta_at_stops; }
-	int generate_new_trip_id() { trip_count++; return id*100 + trip_count; } //generates a new tripid for this line and increments the trip counter for this line
+	int generate_new_trip_id() { trip_count++; return id*100 + trip_count; } //generates a new tripid for this line and increments the trip counter for this line, TODO: add condition if trips for this line > 100
 	bool is_unique_tripid(int tripid); //returns true if no trip in flex trips or trips for this line has this tripid
 
 	void set_static_trips(const list <Start_trip>& static_trips_) { static_trips = static_trips_; } //ugly solution, sole purpose is to save the initial trips vector between resets

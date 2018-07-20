@@ -551,6 +551,26 @@ bool DispatchingStrategy::dispatch_trip(Eventlist* eventlist, Bustrip* trip)
 	return true;
 }
 
+void DispatchingStrategy::update_schedule(Bustrip* trip, double new_starttime)
+{
+	assert(trip);
+	assert(new_starttime >= 0);
+	assert(new_starttime > trip->get_starttime()); //currently should never change the schedule to an earlier time
+
+	double delay = new_starttime - trip->get_starttime();
+	vector<Visit_stop*> schedule = trip->stops;
+
+	//add the delay to all the scheduled stop visits
+	for (Visit_stop* stop_arrival : schedule)
+	{
+		stop_arrival->second += delay;
+	}
+
+	trip->set_starttime(new_starttime); //set planned dispatch to new start time
+	trip->add_stops(schedule); //add the new scheduled stop visits to trip
+	trip->convert_stops_vector_to_map(); //TODO: not sure why this is necessary but is done for other trips so
+}
+
 bool NullDispatching::calc_dispatch_time(Eventlist* eventlist, set<Bustrip*>& unscheduledTrips, double time)
 {
     Q_UNUSED(eventlist);
@@ -569,9 +589,13 @@ bool NaiveDispatching::calc_dispatch_time(Eventlist* eventlist, set<Bustrip*>& u
 	{
 		Bustrip* trip = (*unscheduledTrips.begin());
 		Bus* bus = trip->get_busv();
+		
 		//check if the bus associated with this trip is available
 		if (bus->is_idle() && bus->get_last_stop_visited()->get_id() == trip->get_last_stop_visited()->get_id())
 		{
+			if (trip->get_starttime() < time) //if dispatch call was made after the trip was matched
+				update_schedule(trip, time); //update schedule for dispatch and stop visits according to new starttime
+
 			if (!dispatch_trip(eventlist, trip))
 				return false;
 			else

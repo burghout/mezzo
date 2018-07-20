@@ -225,6 +225,7 @@ public:
 
 protected:
 	bool dispatch_trip(Eventlist* eventlist, Bustrip* trip); //add a scheduled trip (i.e., trip has a vehicle, a line, and a start time) to trips vector of its Busline and adds a Busline event to dispatch this trip
+	void update_schedule(Bustrip* trip, double new_starttime); //takes trip that already has a desired schedule for both dispatch and stop visits, and updates both given a new start time
 };
 
 /*Null dispatching rule that always returns false*/
