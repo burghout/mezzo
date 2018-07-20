@@ -90,7 +90,8 @@ BustripGenerator::BustripGenerator(TripGenerationStrategy* generationStrategy) :
 BustripGenerator::~BustripGenerator()
 {
 	DEBUG_MSG("Destroying TG");
-	delete generationStrategy_;
+	if(generationStrategy_)
+		delete generationStrategy_;
 }
 
 void BustripGenerator::reset(int generation_strategy_type)
@@ -321,7 +322,8 @@ BustripVehicleMatcher::BustripVehicleMatcher(MatchingStrategy* matchingStrategy)
 BustripVehicleMatcher::~BustripVehicleMatcher()
 {
 	DEBUG_MSG("Destroying TVM");
-	delete matchingStrategy_;
+	if(matchingStrategy_)
+		delete matchingStrategy_;
 }
 
 void BustripVehicleMatcher::reset(int matching_strategy_type)
@@ -496,7 +498,8 @@ VehicleDispatcher::VehicleDispatcher(Eventlist* eventlist, DispatchingStrategy* 
 VehicleDispatcher::~VehicleDispatcher()
 {
 	DEBUG_MSG("Destroying FD");
-	delete dispatchingStrategy_;
+	if(dispatchingStrategy_)
+		delete dispatchingStrategy_;
 }
 
 void VehicleDispatcher::reset(int dispatching_strategy_type)

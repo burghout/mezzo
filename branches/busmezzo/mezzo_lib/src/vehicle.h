@@ -162,7 +162,7 @@ public:
 	
 // other functions:	
 	void set_bustype_attributes (Bustype* bty); // change the fields that are determined by the bustype
-	void advance_curr_trip (double time, Eventlist* eventlist); // progresses trip-pointer 
+	void advance_curr_trip (double time, Eventlist* eventlist); // progresses trip-pointer for statically scheduled vehicles and dynamically scheduled vehicles. If a dynamically scheduled vehicle has no trips remaining in its trip-chain then it is re-initialized as unassigned for the last stop it visited
 
 // output-related functions
 	void record_busvehicle_location (Bustrip* trip,  Busstop* stop, double time);

@@ -62,9 +62,6 @@ const odval Vehicle::get_odids ()
 
 int Vehicle::get_oid()
 {
-
-
-
 	odval oid=odpair->odids() ;
 	return oid.first;	
 }
@@ -211,7 +208,7 @@ void Bus::advance_curr_trip (double time, Eventlist* eventlist) // progresses tr
 	if (flex_vehicle_)
 		DEBUG_MSG("----------Bus " << id << " finishing trip " << curr_trip->get_id() << " at time " << time);
 
-	if (flex_vehicle_ && curr_trip->is_flex_trip()) //if the trip that just finished was dynamically scheduled then the controlcenter is in charge of bookeeping the trip and bus for writing outputs
+	if (flex_vehicle_ && curr_trip->is_flex_trip()) //if the trip that just finished was dynamically scheduled then the controlcenter is in charge of bookeeping the completed trip and bus for writing outputs
 	{
 		Controlcenter* cc = last_stop_visited_->get_CC(); //TODO: what if multiple control centers are associated with this stop?
 		curr_trip->get_line()->remove_flex_trip(curr_trip); //remove from set of uncompleted flex trips in busline, control center takes ownership of the trip for deletion
