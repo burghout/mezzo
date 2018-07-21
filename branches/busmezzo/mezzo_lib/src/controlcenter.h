@@ -176,7 +176,7 @@ public:
 	) = 0; //returns true if a trip from unmatchedTrips has been matched with a vehicle from candidateVehicles_per_SRoute and added to matchedTrips. The trip is in this case also removed from unmatchedTrips
 
 protected:
-	void assign_idlevehicle_to_trip(Bus* idletransitveh, Bustrip* trip, double starttime); //performs all operations (similar to Network::read_busvehicle) required in assigning a trip to an idle vehicle (TODO: assigning driving vehicles)
+	void assign_idlevehicle_to_trip(Busstop* currentStop, Bus* idletransitveh, Bustrip* trip, double starttime); //performs all operations (similar to Network::read_busvehicle) required in assigning a trip to an idle vehicle (TODO: assigning driving vehicles). Also removes the the assigned vehicle from vector of unassigned vehicles at stop from currentStop
 	Bustrip* find_most_recent_trip(const set<Bustrip*>& trips) const; //returns trip with the earliest starttime among a set of trips
 };
 /*Null matching strategy that always returns false*/
@@ -224,7 +224,7 @@ public:
 	virtual bool calc_dispatch_time(Eventlist* eventlist, set<Bustrip*>& unscheduledTrips, double time) = 0; //returns true if an unscheduled trip has been given a dispatch time and added to its line
 
 protected:
-	bool dispatch_trip(Eventlist* eventlist, Bustrip* trip); //add a scheduled trip (i.e., trip has a vehicle, a line, and a start time) to trips vector of its Busline and adds a Busline event to dispatch this trip
+	bool dispatch_trip(Eventlist* eventlist, Bustrip* trip); //add a matched trip (i.e., trip has a vehicle, a line, a schedule and a start time) to trips vector of its Busline and adds a Busline event to dispatch this at the start time of the trip
 	void update_schedule(Bustrip* trip, double new_starttime); //takes trip that already has a desired schedule for both dispatch and stop visits, and updates both given a new start time
 };
 

@@ -392,7 +392,7 @@ bool BustripVehicleMatcher::matchVehiclesToTrips(BustripGenerator& tg, double ti
 }
 
 //MatchingStrategy
-void MatchingStrategy::assign_idlevehicle_to_trip(Bus* veh, Bustrip* trip, double starttime)
+void MatchingStrategy::assign_idlevehicle_to_trip(Busstop* currentStop, Bus* veh, Bustrip* trip, double starttime)
 {
 	assert(veh);
 	assert(trip);
@@ -416,13 +416,13 @@ void MatchingStrategy::assign_idlevehicle_to_trip(Bus* veh, Bustrip* trip, doubl
 	
 	DEBUG_MSG("Delay in start time for trip " << trip->get_id() << ": " << delay);
 
-	Busstop* stop = veh->get_last_stop_visited();
+	//Busstop* stop = veh->get_last_stop_visited();
 	
-	if (!stop->remove_unassigned_bus(veh)) //bus is no longer unassigned and is removed from vector of unassigned buses at whatever stop the vehicle is waiting idle at
+	if (!currentStop->remove_unassigned_bus(veh)) //bus is no longer unassigned and is removed from vector of unassigned buses at whatever stop the vehicle is waiting idle at
 											//trip associated with this bus will be added later to expected_bus_arrivals via
 											//Busline::execute -> Bustrip::activate -> Origin::insert_veh -> Link::enter_veh -> Bustrip::book_stop_visit -> Busstop::book_bus_arrival
 	{
-		DEBUG_MSG_V("Busstop::remove_unassigned_bus failed for bus " << veh->get_bus_id() << " and stop " << stop->get_id());
+		DEBUG_MSG_V("Busstop::remove_unassigned_bus failed for bus " << veh->get_bus_id() << " and stop " << currentStop->get_id());
 	}
 
 }
@@ -467,9 +467,9 @@ bool NaiveMatching::find_tripvehicle_match(Bustrip* unmatchedTrip, map<int, set<
 		if (!candidate_buses.empty()) //there is at least one bus serving the route of this trip
 		{
 			Busstop* origin_stop = unmatchedTrip->get_last_stop_visited(); //get the initial stop of the trip
-			vector<pair<Bus*, double>> ua_buses_at_stop = origin_stop->get_unassigned_buses_at_stop(); 
+			vector<pair<Bus*, double>> ua_buses_at_stop = origin_stop->get_unassigned_buses_at_stop();
 
-			//check if one of the unassigned transit vehicles at the origin stop is currently serving the route of the trip
+			//check if one of the unassigned transit vehicles at the origin stop (or its opposing stop TODO: add a smarter solution for the opposing stops when you have more time) is currently serving the route of the trip
 			for (const pair<Bus*, double>& ua_bus : ua_buses_at_stop)
 			{
 				set<Bus*>::iterator c_bus_it;
@@ -479,7 +479,27 @@ bool NaiveMatching::find_tripvehicle_match(Bustrip* unmatchedTrip, map<int, set<
 				{
 					DEBUG_MSG("Trip - vehicle match found!");
 					veh = (*c_bus_it);
-					assign_idlevehicle_to_trip(veh, unmatchedTrip, time); //schedule the vehicle to perform the trip at this time
+					assign_idlevehicle_to_trip(origin_stop, veh, unmatchedTrip, time); //schedule the vehicle to perform the trip at this time
+
+					return true;
+				}
+			}
+
+			//check opposing stop to origin stop of line TODO: add a smarter solution to this, e.g. have bus in a 'middle' state as OnCall for both the last stop it visited and the opposing stop that it turns from with some kind of turning time
+			Busstop* origin_stop_opp = origin_stop->get_opposing_stop();
+			vector<pair<Bus*, double>> ua_buses_at_stop_opp = origin_stop_opp->get_unassigned_buses_at_stop();
+
+			for (const pair<Bus*, double>& ua_bus : ua_buses_at_stop_opp)
+			{
+				set<Bus*>::iterator c_bus_it;
+				c_bus_it = candidate_buses.find(ua_bus.first); //first bus in list should be the bus that arrived to the stop earliest
+
+				if (c_bus_it != candidate_buses.end()) //a bus match has been found
+				{
+					DEBUG_MSG("Trip - vehicle match found!");
+					veh = (*c_bus_it);
+					veh->set_last_stop_visited(origin_stop); //TODO: last_stop_visited used in dispatcher to check if vehicle is at the origin stop of the trip. We teleport it there for now ugly solution!
+					assign_idlevehicle_to_trip(origin_stop_opp, veh, unmatchedTrip, time); //schedule the vehicle to perform the trip at this time
 
 					return true;
 				}
@@ -555,20 +575,22 @@ void DispatchingStrategy::update_schedule(Bustrip* trip, double new_starttime)
 {
 	assert(trip);
 	assert(new_starttime >= 0);
-	assert(new_starttime > trip->get_starttime()); //currently should never change the schedule to an earlier time
 
-	double delay = new_starttime - trip->get_starttime();
-	vector<Visit_stop*> schedule = trip->stops;
-
-	//add the delay to all the scheduled stop visits
-	for (Visit_stop* stop_arrival : schedule)
+	if (trip->get_starttime() != new_starttime)
 	{
-		stop_arrival->second += delay;
-	}
+		double delta = new_starttime - trip->get_starttime(); //positive to shift the schedule later in time, and negative if it should shift earlier in time
+		vector<Visit_stop*> schedule = trip->stops;
 
-	trip->set_starttime(new_starttime); //set planned dispatch to new start time
-	trip->add_stops(schedule); //add the new scheduled stop visits to trip
-	trip->convert_stops_vector_to_map(); //TODO: not sure why this is necessary but is done for other trips so
+		//add the delta to all the scheduled stop visits
+		for (Visit_stop* stop_arrival : schedule)
+		{
+			stop_arrival->second += delta;
+		}
+
+		trip->set_starttime(new_starttime); //set planned dispatch to new start time
+		trip->add_stops(schedule); //overwrite old schedule with the new scheduled stop visits
+		trip->convert_stops_vector_to_map(); //TODO: not sure why this is necessary but is done for other trips so
+	}
 }
 
 bool NullDispatching::calc_dispatch_time(Eventlist* eventlist, set<Bustrip*>& unscheduledTrips, double time)
