@@ -56,8 +56,9 @@
 #endif
 
 //temporary globals for DRT implementation
-const double drt_first_rep_planned_headway = 360.0; //in seconds
-const double drt_first_rep_waiting_utility = 10.0;
+extern double drt_first_rep_planned_headway;// = 300.0; //in seconds
+extern double drt_first_rep_waiting_utility;// = 10.0;
+extern int drt_min_occupancy;// = 40;
 
 // GLOBAL VARIABLES
 extern long int randseed; // random seed

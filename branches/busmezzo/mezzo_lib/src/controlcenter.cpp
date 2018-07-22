@@ -254,7 +254,7 @@ bool NaiveTripGeneration::calc_trip_generation(const set<Request>& requestSet, c
 {
 	if (!requestSet.empty() && !candidateServiceRoutes.empty())
 	{
-		if (requestSet.size() % 10 == 0) //generate a trip every ten requests in the requestSet
+		if (requestSet.size() >= drt_min_occupancy) //do not attempt to generate trip unless requestSet is greater than the desired occupancy
 		{
 			DEBUG_MSG("------------Trip Generating Naively!-------------");
 			//find od pair with the highest frequency in requestSet
@@ -268,7 +268,13 @@ bool NaiveTripGeneration::calc_trip_generation(const set<Request>& requestSet, c
 			}
 			assert(!sortedODcounts.empty());
 			sort(sortedODcounts.begin(), sortedODcounts.end(), 
-				[](const od_count& p1, const od_count& p2)->bool {return p1.second > p2.second; });
+				[](const od_count& p1, const od_count& p2)->bool {return p1.second > p2.second; }); //sort with the largest at the front
+
+			if (sortedODcounts.front().second < drt_min_occupancy)
+			{
+				DEBUG_MSG("No trip generated! Maximum OD count in request set " << sortedODcounts.front().second << " is smaller than min occupancy " << drt_min_occupancy);
+				return false;
+			}
 
 			/*attempt to generate trip for odpair with largest demand, 
 			if candidate lines connecting this od stop pair already have an unmatched trip existing for them 

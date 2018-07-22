@@ -16,6 +16,9 @@
 //using namespace std;
 
 // initialise the global variables and objects
+double drt_first_rep_planned_headway=0;
+double drt_first_rep_waiting_utility=10;
+int drt_min_occupancy=0;
 
 long int randseed=0;
 int vid=0;
@@ -1312,6 +1315,41 @@ bool Network::readroute(istream& in)
     cout << " read a route"<<endl;
 #endif //_DEBUG_NETWORK
     return true;
+}
+
+bool Network::readcontrolcenter(const string& name)
+{
+	ifstream in(name.c_str());
+	string keyword;
+	in >> keyword;
+	if (keyword != "drt_first_rep_planned_headway:")
+	{
+		DEBUG_MSG("readcontrolcenter:: no drt_first_rep_planned_headway keyword, read: " << keyword);
+		in.close();
+		return false;
+	}
+	in >> drt_first_rep_planned_headway;
+
+	in >> keyword;
+	if (keyword != "drt_first_rep_waiting_utility:")
+	{
+		DEBUG_MSG("readcontrolcenter:: no drt_first_rep_waiting_utility keyword, read: " << keyword);
+		in.close();
+		return false;
+	}
+	in >> drt_first_rep_waiting_utility;
+	
+	in >> keyword;
+	if (keyword != "drt_min_occupancy:")
+	{
+		DEBUG_MSG("readcontrolcenter:: no first_rep_waiting_utility keyword, read: " << keyword);
+		in.close();
+		return false;
+	}
+	in >> drt_min_occupancy;
+
+	in.close();
+	return true;
 }
 
 // read BUS routes
@@ -5387,11 +5425,11 @@ bool Network::read_unassignedvehicle(istream& in) //reads a bus vehicles that ar
 	
 	init_stop = (*(find_if(busstops.begin(), busstops.end(), compare <Busstop>(init_stop_id))));
 	
-	if (!init_stop->is_turning_end())
-	{
-		DEBUG_MSG_V("readfile::read_unassignedvehicle error, initial stop " << init_stop_id << " of unassigned vehicle " << bv_id << " is not the start stop of a transit line. Aborting...");
-		abort();
-	}
+	//if (!init_stop->is_turning_end())
+	//{
+	//	DEBUG_MSG_V("readfile::read_unassignedvehicle error, initial stop " << init_stop_id << " of unassigned vehicle " << bv_id << " is not the start stop of a transit line. Aborting...");
+	//	abort();
+	//}
 
 	for (int id : sroute_ids)
 	{
@@ -7542,6 +7580,14 @@ double Network::executemaster(QPixmap * pm_,QMatrix * wm_)
     // NEW 2007_03_08
 #ifdef _BUSES
     // read the transit system input
+	if (theParameters->drt)
+	{
+		if (!readcontrolcenter(workingdir + "controlcenter.dat"))
+		{
+			DEBUG_MSG_V("Problem reading controlcenter.dat. Aborting...");
+			abort();
+		}
+	}
     this->readtransitroutes (workingdir + "transit_routes.dat"); //FIX IN THE MAIN READ & WRITE
     this->readtransitnetwork (workingdir + "transit_network.dat"); //FIX IN THE MAIN READ & WRITE
     this->readtransitfleet (workingdir + "transit_fleet.dat");
@@ -7639,6 +7685,14 @@ double Network::executemaster()
     readsignalcontrols(filenames[2]);
 #ifdef _BUSES
     // read the transit system input
+	if (theParameters->drt)
+	{
+		if (!readcontrolcenter(workingdir + "controlcenter.dat"))
+		{
+			DEBUG_MSG_V("Problem reading controlcenter.dat. Aborting...");
+			abort();
+		}
+	}
     this->readtransitroutes (workingdir + "transit_routes.dat"); //FIX IN THE MAIN READ & WRITE
     this->readtransitnetwork (workingdir + "transit_network.dat"); //FIX IN THE MAIN READ & WRITE
     this->readtransitfleet (workingdir + "transit_fleet.dat");
