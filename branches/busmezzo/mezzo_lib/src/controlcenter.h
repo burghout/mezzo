@@ -50,17 +50,19 @@ private:
 /*Responsible for generating planned trips without vehicles and adding these to a set of planned trips*/
 class BustripGenerator
 {
-	enum generationStrategyType { Null = 0, Naive }; //ids of trip generation strategies known to BustripGenerator
+	enum generationStrategyType { Null = 0, Naive }; //ids of passenger trip generation strategies known to BustripGenerator
+	enum emptyVehicleStrategyType {	EVNull = 0, NearestLongestQueue }; //ids of empty-vehicle redistribution strategies known to BustripGenerator
 	friend class BustripVehicleMatcher; //give matcher class access to unmatchedTrips_. May remove trip from this set without destroying it if it has been matched
 
 public:
-	explicit BustripGenerator(TripGenerationStrategy* generationStrategy = nullptr);
+	explicit BustripGenerator(TripGenerationStrategy* generationStrategy = nullptr, TripGenerationStrategy* emptyVehicleStrategy = nullptr);
 	~BustripGenerator();
 
 	bool requestTrip(const RequestHandler& rh, double time); //returns true if an unassigned trip has been generated and added to unmatchedTrips_ and false otherwise
 	void setTripGenerationStrategy(int type);
+	void setEmptyVehicleStrategy(int type);
 
-	void reset(int generation_strategy_type);
+	void reset(int generation_strategy_type, int empty_vehicle_strategy_type);
 	void addServiceRoute(Busline* line);
 	
 	void cancelUnmatchedTrip(Bustrip* trip); //destroy and remove trip from set of unmatchedTrips_
@@ -70,7 +72,8 @@ private:
 	set<Bustrip*> unmatchedTrips_; //set of trips to be performed that have not been matched to vehicles yet
 	vector<Busline*> serviceRoutes_; //lines (i.e. routes and stops to visit along the route) that this BustripGenerator can create trips for (TODO: do other process classes do not need to know about this?)
 
-	TripGenerationStrategy* generationStrategy_;
+	TripGenerationStrategy* generationStrategy_; //strategy for passenger carrying trips
+	TripGenerationStrategy* emptyVehicleStrategy_; //strategy for supply re-balancing trips
 };
 
 /*Responsible for assigning trips to transit vehicles and adding these to matchedTripSet as well as the trip's associated Busline*/
@@ -133,6 +136,7 @@ public:
 		Eventlist* eventlist = nullptr, //currently the dispatcher needs the eventlist to book Busline (vehicle - trip dispatching) events
 		int id = 0,
 		int tg_strategy = 0,
+		int ev_strategy = 0,
 		int tvm_strategy = 0,
 		int vd_strategy = 0,
 		QObject* parent = nullptr
@@ -191,6 +195,7 @@ private:
 	//OBS! remember to add all mutable members to reset method, including reset functions of process classes
 	const int id_;	//id of control center
 	const int tg_strategy_;	//initial trip generation strategy
+	const int ev_strategy_; //initial empty vehicle strategy
 	const int tvm_strategy_; //initial trip - vehicle matching strategy
 	const int vd_strategy_; //initial vehicle dispatching strategy
 	

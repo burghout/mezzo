@@ -5,19 +5,6 @@
 #include <algorithm>
 #include <assert.h>
 
-template<class T>
-struct compare
-{
-	compare(int id_) :id(id_) {}
-	bool operator () (T* thing)
-
-	{
-		return (thing->get_id() == id);
-	}
-
-	int id;
-};
-
 //RequestHandler
 RequestHandler::RequestHandler()
 {
@@ -61,7 +48,7 @@ void RequestHandler::removeRequest(const int pass_id)
 }
 
 //BustripGenerator
-BustripGenerator::BustripGenerator(TripGenerationStrategy* generationStrategy) : generationStrategy_(generationStrategy)
+BustripGenerator::BustripGenerator(TripGenerationStrategy* generationStrategy, TripGenerationStrategy* emptyVehicleStrategy) : generationStrategy_(generationStrategy), emptyVehicleStrategy_(emptyVehicleStrategy)
 {
 	DEBUG_MSG("Constructing TG");
 }
@@ -70,9 +57,11 @@ BustripGenerator::~BustripGenerator()
 	DEBUG_MSG("Destroying TG");
 	if(generationStrategy_)
 		delete generationStrategy_;
+	if (emptyVehicleStrategy_)
+		delete emptyVehicleStrategy_;
 }
 
-void BustripGenerator::reset(int generation_strategy_type)
+void BustripGenerator::reset(int generation_strategy_type, int empty_vehicle_strategy_type)
 {
 	for (Bustrip* trip : unmatchedTrips_) //clean up planned trips that were never matched. Note: currently network reset is called even after the last simulation replication
 	{
@@ -80,6 +69,7 @@ void BustripGenerator::reset(int generation_strategy_type)
 	}
 	unmatchedTrips_.clear();
 	setTripGenerationStrategy(generation_strategy_type);
+	setEmptyVehicleStrategy(empty_vehicle_strategy_type);
 }
 
 void BustripGenerator::addServiceRoute(Busline * line)
@@ -112,14 +102,31 @@ void BustripGenerator::setTripGenerationStrategy(int type)
 		delete generationStrategy_;
 
 	DEBUG_MSG("Changing trip generation strategy to " << type);
-	if (type == Null)
+	if (type == generationStrategyType::Null)
 		generationStrategy_ = new NullTripGeneration();
-	else if (type == Naive)
+	else if (type == generationStrategyType::Naive)
 		generationStrategy_ = new NaiveTripGeneration();
 	else
 	{
 		DEBUG_MSG("This generation strategy is not recognized!");
 		generationStrategy_ = nullptr;
+	}
+}
+
+void BustripGenerator::setEmptyVehicleStrategy(int type)
+{
+	if (emptyVehicleStrategy_)
+		delete emptyVehicleStrategy_;
+
+	DEBUG_MSG("Changing empty vehicle strategy to " << type);
+	if (type == emptyVehicleStrategyType::EVNull)
+		emptyVehicleStrategy_ = new NullTripGeneration();
+	else if (type == emptyVehicleStrategyType::NearestLongestQueue)
+		emptyVehicleStrategy_ = new NearestLongestQueueEVTripGeneration();
+	else
+	{
+		DEBUG_MSG("This empty vehicle strategy is not recognized!");
+		emptyVehicleStrategy_ = nullptr;
 	}
 }
 
@@ -245,14 +252,15 @@ void VehicleDispatcher::setDispatchingStrategy(int d_strategy_type)
 }
 
 //Controlcenter
-Controlcenter::Controlcenter(Eventlist* eventlist, int id, int tg_strategy, int tvm_strategy, int vd_strategy, QObject* parent)
-	: QObject(parent), vd_(eventlist), id_(id), tg_strategy_(tg_strategy), tvm_strategy_(tvm_strategy), vd_strategy_(vd_strategy)
+Controlcenter::Controlcenter(Eventlist* eventlist, int id, int tg_strategy, int ev_strategy, int tvm_strategy, int vd_strategy, QObject* parent)
+	: QObject(parent), vd_(eventlist), id_(id), tg_strategy_(tg_strategy), ev_strategy_(ev_strategy), tvm_strategy_(tvm_strategy), vd_strategy_(vd_strategy)
 {
 	QString qname = QString::fromStdString(to_string(id));
 	this->setObjectName(qname); //name of control center does not really matter but useful for debugging purposes
 	DEBUG_MSG("Constructing CC" << id_);
 
 	tg_.setTripGenerationStrategy(tg_strategy); //set the initial generation strategy of BustripGenerator
+	tg_.setEmptyVehicleStrategy(ev_strategy); //set the initial empty vehicle strategy of BustripGenerator
 	tvm_.setMatchingStrategy(tvm_strategy);	//set initial matching strategy of BustripVehicleMatcher
 	vd_.setDispatchingStrategy(vd_strategy); //set initial dispatching strategy of VehicleDispatcher
 	connectInternal(); //connect internal signal slots
@@ -270,7 +278,7 @@ void Controlcenter::reset()
 
 	//Reset all process classes
 	rh_.reset();
-	tg_.reset(tg_strategy_); 
+	tg_.reset(tg_strategy_, ev_strategy_); 
 	tvm_.reset(tvm_strategy_);
 	vd_.reset(vd_strategy_);
 

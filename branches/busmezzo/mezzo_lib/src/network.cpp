@@ -1317,14 +1317,15 @@ bool Network::readroute(istream& in)
     return true;
 }
 
-bool Network::readcontrolcenter(const string& name)
+bool Network::readcontrolcenters(const string& name)
 {
 	ifstream in(name.c_str());
+	assert(in);
 	string keyword;
 	in >> keyword;
 	if (keyword != "drt_first_rep_planned_headway:")
 	{
-		DEBUG_MSG("readcontrolcenter:: no drt_first_rep_planned_headway keyword, read: " << keyword);
+		DEBUG_MSG("readcontrolcenters:: no drt_first_rep_planned_headway keyword, read: " << keyword);
 		in.close();
 		return false;
 	}
@@ -1333,7 +1334,7 @@ bool Network::readcontrolcenter(const string& name)
 	in >> keyword;
 	if (keyword != "drt_first_rep_waiting_utility:")
 	{
-		DEBUG_MSG("readcontrolcenter:: no drt_first_rep_waiting_utility keyword, read: " << keyword);
+		DEBUG_MSG("readcontrolcenters:: no drt_first_rep_waiting_utility keyword, read: " << keyword);
 		in.close();
 		return false;
 	}
@@ -1342,11 +1343,56 @@ bool Network::readcontrolcenter(const string& name)
 	in >> keyword;
 	if (keyword != "drt_min_occupancy:")
 	{
-		DEBUG_MSG("readcontrolcenter:: no first_rep_waiting_utility keyword, read: " << keyword);
+		DEBUG_MSG("readcontrolcenters:: no first_rep_waiting_utility keyword, read: " << keyword);
 		in.close();
 		return false;
 	}
 	in >> ::drt_min_occupancy;
+
+	//Create Controlcenters here or somewhere else. OBS: currently a pointer to this CC is given to Busstop via its constructor
+	in >> keyword;
+	if (keyword != "controlcenters:")
+	{
+		DEBUG_MSG("readcontrolcenters:: no controlcenters keyword, read: " << keyword);
+		in.close();
+		return false;
+	}
+	int numControlCenters;
+	in >> numControlCenters;
+	
+	if(numControlCenters == 0)
+		DEBUG_MSG("Warning: drt activated but no control centers defined in controlcenters.dat");
+
+	for (int i = 0; i < numControlCenters; ++i)
+	{
+		int id; //id of control center
+		int tg_strategy; //id of trip generation strategy
+		int ev_strategy; //id of empty vehicle strategy
+		int tvm_strategy; //id of trip vehicle matching strategy
+		int vd_strategy; //id of vehicle dispatching strategy
+
+		char bracket;
+		in >> bracket;
+		if (bracket != '{')
+		{
+			cout << "readcontrolcenters:: controlcenter scanner expected '{', read: " << bracket;
+			in.close();
+			return false;
+		}
+		in >> id >> tg_strategy >> ev_strategy >> tvm_strategy >> vd_strategy;
+
+		Controlcenter* cc = new Controlcenter(eventlist, id, tg_strategy, ev_strategy, tvm_strategy, vd_strategy);
+		ccmap[id] = cc; //add to network map of control centers
+
+		bracket = ' ';
+		in >> bracket;
+		if (bracket != '}')
+		{
+			cout << "readcontrolcenters:: controlcenter scanner expected '}', read: " << bracket;
+			in.close();
+			return false;
+		}
+	}
 
 	in.close();
 	return true;
@@ -1463,17 +1509,6 @@ bool Network::readtransitnetwork(string name) //!< reads the stops, distances be
     assert (in);
     string keyword;
     int format;
-
-	//Create Controlcenters here or somewhere else. OBS: currently a pointer to this CC is given to Busstop via its constructor
-	if (theParameters->drt)
-	{
-		int id = 1;
-		int tg_strategy = 1;
-		int tvm_strategy = 1;
-		int vd_strategy = 1;
-		Controlcenter* cc = new Controlcenter(eventlist, id, tg_strategy, tvm_strategy, vd_strategy); //for testing purposes, TODO: move to a controlcenter reader
-		ccmap[id] = cc;
-	}
 
     // First read the busstops
     in >> keyword;
@@ -7582,9 +7617,9 @@ double Network::executemaster(QPixmap * pm_,QMatrix * wm_)
     // read the transit system input
 	if (theParameters->drt)
 	{
-		if (!readcontrolcenter(workingdir + "controlcenter.dat"))
+		if (!readcontrolcenters(workingdir + "controlcenters.dat")) //should be read before transit network
 		{
-			DEBUG_MSG_V("Problem reading controlcenter.dat. Aborting...");
+			DEBUG_MSG_V("Problem reading controlcenters.dat. Aborting...");
 			abort();
 		}
 	}
@@ -7687,9 +7722,9 @@ double Network::executemaster()
     // read the transit system input
 	if (theParameters->drt)
 	{
-		if (!readcontrolcenter(workingdir + "controlcenter.dat"))
+		if (!readcontrolcenters(workingdir + "controlcenters.dat"))
 		{
-			DEBUG_MSG_V("Problem reading controlcenter.dat. Aborting...");
+			DEBUG_MSG_V("Problem reading controlcenters.dat. Aborting...");
 			abort();
 		}
 	}

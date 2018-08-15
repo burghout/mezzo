@@ -212,6 +212,12 @@ bool NaiveTripGeneration::calc_trip_generation(const set<Request>& requestSet, c
 	return false;
 }
 
+//Empty vehicle trip generation
+bool NearestLongestQueueEVTripGeneration::calc_trip_generation(const set<Request>& requestSet, const vector<Busline*>& candidateServiceRoutes, const double time, set<Bustrip*>& tripSet) const
+{
+	return false;
+}
+
 //MatchingStrategy
 void MatchingStrategy::assign_idlevehicle_to_trip(Busstop* currentStop, Bus* veh, Bustrip* trip, double starttime)
 {
@@ -277,6 +283,8 @@ bool NullMatching::find_tripvehicle_match(Bustrip* unmatchedTrip, map<int, set<B
 
 bool NaiveMatching::find_tripvehicle_match(Bustrip* unmatchedTrip, map<int, set<Bus*>>& veh_per_sroute, const double time, set<Bustrip*>& matchedTrips)
 {
+	Q_UNUSED(matchedTrips);
+
 	//attempt to match the first trip among unmatchedTrips with first idle vehicle found at the origin stop of the trip
 	if (unmatchedTrip && !veh_per_sroute.empty())
 	{

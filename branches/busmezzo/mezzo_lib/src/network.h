@@ -262,7 +262,7 @@ public:
 	void write_transitlineloads_header(ostream& out);
 	void write_transittriploads_header(ostream& out);
 
-	bool readcontrolcenter(const string& name); //!< reads control center parameters, strategies etc.
+	bool readcontrolcenters(const string& name); //!< reads control center parameters, strategies etc.
 	bool readtransitroutes(string name); //!< reads the transit routes, similar to readroutes
 	bool readtransitnetwork(string name); //!< reads the stops, distances between stops, lines, trips and travel disruptions
 	bool readtransitdemand (string name); //!< reads passenger demand for transit services

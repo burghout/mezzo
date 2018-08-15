@@ -70,6 +70,14 @@ public:
 	bool calc_trip_generation(const set<Request>& requestSet, const vector<Busline*>& candidateServiceRoutes, const double time, set<Bustrip*>& tripSet) const override;
 };
 
+/*Algorithms for generating empty vehicle trips*/
+/*Empty vehicle repositioning strategy that attempts to generate a trip going from a source of supply at an adjacent stop*/
+class NearestLongestQueueEVTripGeneration : public TripGenerationStrategy
+{
+	~NearestLongestQueueEVTripGeneration() override {}
+	bool calc_trip_generation(const set<Request>& requestSet, const vector<Busline*>& candidateServiceRoutes, const double time, set<Bustrip*>& tripSet) const override;
+};
+
 //Matching Strategies
 /*Algorithms for assigning a transit vehicle to a Bustrip*/
 //e.g. Hungarian, k-opt, insertion
