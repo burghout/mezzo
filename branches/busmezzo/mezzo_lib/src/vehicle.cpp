@@ -1,5 +1,6 @@
 #include "vehicle.h"
 #include "MMath.h"
+#include "controlcenter.h"
 
 Vehicle::Vehicle()
 {

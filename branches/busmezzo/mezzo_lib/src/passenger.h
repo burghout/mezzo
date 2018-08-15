@@ -6,7 +6,7 @@
 #include "od_stops.h"
 #include "Random.h"
 #include <qobject.h> //for signals and slots in passenger/control center connection
-#include "controlcenter.h"
+#include "controlstrategies.h" 
 
 class Bustrip;
 class Busline;

@@ -119,7 +119,10 @@ enum class BusState //used by controlcenter to keep track of fleet state
 	IdleFull, 
 	DrivingEmpty, 
 	DrivingPartiallyFull, 
-	DrivingFull 
+	DrivingFull
+	//Loading/Unloading
+	//Refeuling
+	//OnCall
 }; 
 class Bus : public QObject, public Vehicle
 {

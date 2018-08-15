@@ -5,6 +5,8 @@
 #include "MMath.h"
 #include <sstream>
 #include <stddef.h>
+#include "controlcenter.h"
+#include "controlstrategies.h"
 
 template<class T>
 struct compare
@@ -1517,8 +1519,8 @@ bool Busstop::execute(Eventlist* eventlist, double time) // is executed by the e
 			DEBUG_MSG("Activating unassigned bus " << ua_bus->get_bus_id() << " at time " << time << " at stop " << name);
 			ua_bus->set_last_stop_visited(this); //update this here before setting state
 			add_unassigned_bus(ua_bus, time); //add vehicle to vector of unassigned buses at this stop
+			unassigned_bus_arrivals.erase(ua_bus_it); //vehicle is no longer arriving
 			ua_bus->set_state(BusState::IdleEmpty, time); //emits state change signal to control center
-			unassigned_bus_arrivals.erase(ua_bus_it); 
 			return true;
 		} 
 	}

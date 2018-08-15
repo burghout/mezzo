@@ -1328,7 +1328,7 @@ bool Network::readcontrolcenter(const string& name)
 		in.close();
 		return false;
 	}
-	in >> drt_first_rep_planned_headway;
+	in >> ::drt_first_rep_planned_headway;
 
 	in >> keyword;
 	if (keyword != "drt_first_rep_waiting_utility:")
@@ -1337,7 +1337,7 @@ bool Network::readcontrolcenter(const string& name)
 		in.close();
 		return false;
 	}
-	in >> drt_first_rep_waiting_utility;
+	in >> ::drt_first_rep_waiting_utility;
 	
 	in >> keyword;
 	if (keyword != "drt_min_occupancy:")
@@ -1346,7 +1346,7 @@ bool Network::readcontrolcenter(const string& name)
 		in.close();
 		return false;
 	}
-	in >> drt_min_occupancy;
+	in >> ::drt_min_occupancy;
 
 	in.close();
 	return true;
