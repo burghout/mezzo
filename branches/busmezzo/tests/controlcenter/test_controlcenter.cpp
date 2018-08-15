@@ -28,7 +28,7 @@ public:
 
 
 private Q_SLOTS:
-    void testConstruction(); //!< test contstruction
+    void testConstruction(); //!< test construction
     void testConnectDisconnectPassenger(); //!< tests connecting a new passenger
 	void testRequestHandler(); //!< tests for receiving and removing a request
 

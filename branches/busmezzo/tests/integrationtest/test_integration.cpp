@@ -11,7 +11,7 @@
 #include <QFileInfo>
 
 //! Integration Tests BusMezzo
-//! The tests contain loading, initialising, running, saving results and deleting network.
+//! The tests contain loading, initializing, running, saving results and deleting network.
 //! NOTE: currently the std::ifstream is used everywhere, precluding the use of qrc resources,
 //! unless we switch to QFile everywhere.
 
@@ -85,7 +85,7 @@ void TestIntegration::testInitNetwork()
 
     nt->init();
  // Test here various properties that should be true after reading the network
-    // Test if the network is properly read and initialised
+    // Test if the network is properly read and initialized
     QVERIFY2(net->get_links().size() == 15, "Failure, network should have 15 links ");
     QVERIFY2(net->get_nodes().size() == 13, "Failure, network should have 13 nodes ");
     QVERIFY2(net->get_odpairs().size() == 4, "Failure, network should have 4 nodes ");

@@ -31,6 +31,7 @@ HEADERS += $$MEZZO_ROOT_RPATH/busline.h \
            $$MEZZO_ROOT_RPATH/od_stops.h \
            $$MEZZO_ROOT_RPATH/pass_route.h \
            $$MEZZO_ROOT_RPATH/controlcenter.h \
+		   $$MEZZO_ROOT_RPATH/controlstrategies.h \
 
 
 SOURCES += $$MEZZO_ROOT_RPATH/busline.cpp \
@@ -61,3 +62,4 @@ SOURCES += $$MEZZO_ROOT_RPATH/busline.cpp \
            $$MEZZO_ROOT_RPATH/od_stops.cpp \
            $$MEZZO_ROOT_RPATH/pass_route.cpp \
            $$MEZZO_ROOT_RPATH/controlcenter.cpp \
+		   $$MEZZO_ROOT_RPATH/controlstrategies.cpp \
