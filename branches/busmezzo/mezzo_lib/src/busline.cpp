@@ -563,8 +563,8 @@ double Busline::calc_curr_line_ivt (Busstop* start_stop, Busstop* end_stop, int 
 		//assert(flex_line); //if trips list for this busline is empty then it should be a line that allows for dynamically generated trips
 		vector<pair<Busstop*, double>>::iterator board_stop;
 		vector<pair<Busstop*, double>>::iterator alight_stop;
-		double earliest_time_ostop;
-		double cumulative_arrival_time; //arrival times starting from zero for initial stop
+		double earliest_time_ostop = 0.0;
+		double cumulative_arrival_time = 0.0; //arrival times starting from zero for initial stop
 
 		//In case no trips have been assigned to the line yet then use default ivt between stops for the line
 		for (vector<pair<Busstop*, double>>::iterator stop = delta_at_stops.begin(); stop != delta_at_stops.end(); ++stop)
