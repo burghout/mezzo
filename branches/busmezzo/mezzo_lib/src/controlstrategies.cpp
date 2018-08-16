@@ -224,7 +224,7 @@ void MatchingStrategy::assign_idlevehicle_to_trip(Busstop* currentStop, Bus* veh
 	assert(veh);
 	assert(trip);
 	assert(!veh->get_curr_trip()); //this particular bus instance (remember there may be copies of it if there is a trip chain, should not have a trip)
-	assert(veh->is_idle());
+	assert(veh->is_oncall());
 
 	DEBUG_MSG("---Assigning vehicle " << veh->get_bus_id() << " to trip " << trip->get_id() << "---");
 
@@ -398,7 +398,7 @@ bool NaiveDispatching::calc_dispatch_time(Eventlist* eventlist, set<Bustrip*>& u
 		Bus* bus = trip->get_busv();
 
 		//check if the bus associated with this trip is available
-		if (bus->is_idle() && bus->get_last_stop_visited()->get_id() == trip->get_last_stop_visited()->get_id())
+		if (bus->is_oncall() && bus->get_last_stop_visited()->get_id() == trip->get_last_stop_visited()->get_id())
 		{
 			if (trip->get_starttime() < time) //if dispatch call was made after the trip was matched
 				update_schedule(trip, time); //update schedule for dispatch and stop visits according to new starttime

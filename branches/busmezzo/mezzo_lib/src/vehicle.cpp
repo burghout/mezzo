@@ -209,7 +209,7 @@ void Bus::advance_curr_trip (double time, Eventlist* eventlist) // progresses tr
 	if (flex_vehicle_)
 		DEBUG_MSG("----------Bus " << id << " finishing trip " << curr_trip->get_id() << " at time " << time);
 
-	if (flex_vehicle_ && curr_trip->is_flex_trip()) //if the trip that just finished was dynamically scheduled then the controlcenter is in charge of bookeeping the completed trip and bus for writing outputs
+	if (flex_vehicle_ && curr_trip->is_flex_trip()) //if the trip that just finished was dynamically scheduled then the controlcenter is in charge of bookkeeping the completed trip and bus for writing outputs
 	{
 		Controlcenter* cc = last_stop_visited_->get_CC(); //TODO: what if multiple control centers are associated with this stop?
 		curr_trip->get_line()->remove_flex_trip(curr_trip); //remove from set of uncompleted flex trips in busline, control center takes ownership of the trip for deletion
@@ -226,7 +226,7 @@ void Bus::advance_curr_trip (double time, Eventlist* eventlist) // progresses tr
 		}
 	}
 	next_trip = trip1+1;
-	on_trip = false;  // the bus is avaliable for its next trip
+	on_trip = false;  // the bus is available for its next trip
 	if (next_trip != curr_trip->driving_roster.end()) // there are more trips for this bus
 	{
 		if ((*next_trip)->first->get_starttime() <= time) // if the bus is already late for the next trip
@@ -291,9 +291,12 @@ void Bus::write_output(ostream & out)
 	}
 }
 
-BusState Bus::calc_state(const bool bus_exiting_stop, const int occupancy) const
+BusState Bus::calc_state(const bool assigned_to_trip, const bool bus_exiting_stop, const int occupancy) const
 {
 	assert(occupancy <= capacity && occupancy >= 0); //occupancy should be a valid load for this vehicle
+	
+	if (!assigned_to_trip) //if the vehicle is currently not assigned to any passenger carrying or rebalancing trip
+		return BusState::OnCall;
 
 	if (!bus_exiting_stop) //if the vehicle has just entered a stop and is standing still
 	{
@@ -322,9 +325,10 @@ void Bus::set_state(const BusState newstate, const double time)
 {
 	if (state_ != newstate)
 	{
+		BusState oldstate = state_;
 		state_ = newstate;
 		print_state();
-		emit stateChanged(bus_id, state_, time);
+		emit stateChanged(this, oldstate, state_, time);
 	}
 }
 
@@ -333,6 +337,9 @@ void Bus::print_state()
 	cout << "Bus " << bus_id << " is ";
 	switch (state_)
 	{
+	case BusState::OnCall:
+		cout << "OnCall";
+		break;
 	case BusState::IdleEmpty:
 		cout << "IdleEmpty";
 		break;
@@ -386,6 +393,22 @@ bool Bus::is_driving() const
 	default:
 		return false;
 	}
+}
+
+bool Bus::is_oncall() const
+{
+	if (state_ == BusState::OnCall)
+		return true;
+	return false;
+}
+
+Busstop* Bus::get_next_stop() const
+{
+	Busstop* next_stop = nullptr;
+	if(curr_trip)
+		next_stop = (*curr_trip->get_next_stop())->first;
+
+	return next_stop;
 }
 
 // ***** Bus-types functions *****

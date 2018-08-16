@@ -404,15 +404,15 @@ public:
 	bool check_end_trip ();																//!< returns 1 if true, 0 if false
 	double calc_departure_time (double time);											//!< calculates departure time from origin according to arrival time and schedule (including layover effect)
 	void convert_stops_vector_to_map();													//!< building stops_map
-	double find_crowding_coeff (Passenger* pass);										//!< returns the crowding coefficeint based on lod factor and pass. seating/standing
-	static double find_crowding_coeff (bool sits, double load_factor);					//!< returns the crowding coefficeint based on lod factor and pass. seating/standing
+	double find_crowding_coeff (Passenger* pass);										//!< returns the crowding coefficient based on load factor and pass. seating/standing
+	static double find_crowding_coeff (bool sits, double load_factor);					//!< returns the crowding coefficient based on load factor and pass. seating/standing
 	pair<double, double> crowding_dt_factor (double nr_boarding, double nr_alighting);
 	vector <Busstop*> get_downstream_stops(); //!< return the remaining stops to be visited starting from 'next_stop', returns empty Busstop vector if there are none
 	vector <Visit_stop*> get_downstream_stops_till_horizon(Visit_stop* target_stop); //!< return the remaining stops to be visited starting from 'next_stop'
 
 // output-related functions
 	void write_assign_segments_output(ostream & out);
-	void record_passenger_loads (vector <Visit_stop*>::iterator start_stop); //!< creates a log-file for passenegr load assignment info
+	void record_passenger_loads (vector <Visit_stop*>::iterator start_stop); //!< creates a log-file for passenger load assignment info
 
 // public vectors
 	vector <Visit_stop*> stops;						//!< contains all the busstops and the times that they are supposed to be served. NOTE: this can be a subset of the total nr of stops in the Busline (according to the schedule input file)
@@ -420,7 +420,7 @@ public:
 	vector <Start_trip*> driving_roster;			//!< trips assignment for each bus vehicle.
 	map <Busstop*, passengers> passengers_on_board; //!< passenger on-board stored by their alighting stop (format 3)
 	map <Busstop*, int> nr_expected_alighting;		//!< number of passengers expected to alight at the busline's stops (format 2)
-	map <Busstop*, int> assign_segements;			//!< contains the number of pass. travelling between trip segments
+	map <Busstop*, int> assign_segements;			//!< contains the number of pass. traveling between trip segments
 
 //Control Center
 	void set_starttime(double starttime_) { starttime = starttime_; }
@@ -441,7 +441,7 @@ protected:
 	double actual_dispatching_time;
 	vector <Visit_stop*> :: iterator next_stop; 
 	Random* random;
-	list <Bustrip_assign> output_passenger_load;  //!< contains the information on travelling on the segment starting at stop
+	list <Bustrip_assign> output_passenger_load;  //!< contains the information on traveling on the segment starting at stop
 	double enter_time;							  //!< the time it entered the most recently bus stop
 	double last_stop_exit_time;					  //!< the time stamp of the exit time from the last stop that had been visited by this trip
 	double last_stop_enter_time; 
@@ -733,7 +733,7 @@ public:
 //control center related functions
 	Controlcenter* get_CC() { return CC; }
 	void add_unassigned_bus_arrival(Eventlist* eventlist, Bus* bus, double expected_arrival_time); //add bus to vector of unassigned (i.e. no trip and no busline) bus vehicles arrivals, sorted by expected arrival time and add a Busstop event scheduled for the init_time of vehicle  to switch state of bus to IdleEmpty from Null
-	void add_unassigned_bus(Bus* bus, double arrival_time); //add bus to vector of unassigned buses at this stop sorted by actual arrival time
+	void add_unassigned_bus(Bus* bus, double arrival_time); //add bus to vector of unassigned buses at this stop sorted by actual arrival time, sets bus state to "OnCall"
 	bool remove_unassigned_bus(const Bus* bus); //remove bus from vector of unassigned buses at stop, returns false if bus does not exist
 	vector<pair<Bus*, double>> get_unassigned_buses_at_stop() { return unassigned_buses_at_stop; }
 

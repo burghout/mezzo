@@ -1460,7 +1460,7 @@ bool Busstop::execute(Eventlist* eventlist, double time) // is executed by the e
 
 		// update vehicle state
 		Bus* busv = exiting_trip->get_busv();
-		BusState state = busv->calc_state(bus_exit, busv->get_occupancy());
+		BusState state = busv->calc_state(true, bus_exit, busv->get_occupancy());
 		busv->set_last_stop_visited(this); //update this here before setting state
 		busv->set_state(state, time); //emits a signal to control center
 
@@ -1503,7 +1503,7 @@ bool Busstop::execute(Eventlist* eventlist, double time) // is executed by the e
 
 		//update vehicle state
 		Bus* busv = entering_trip->get_busv();
-		BusState state = busv->calc_state(bus_exit, busv->get_occupancy());
+		BusState state = busv->calc_state(true, bus_exit, busv->get_occupancy());
 		busv->set_last_stop_visited(this); //update this here before setting state
 		busv->set_state(state, time); //emits a signal to control center
 
@@ -1518,9 +1518,9 @@ bool Busstop::execute(Eventlist* eventlist, double time) // is executed by the e
 			Bus* ua_bus = (*ua_bus_it).first;
 			DEBUG_MSG("Activating unassigned bus " << ua_bus->get_bus_id() << " at time " << time << " at stop " << name);
 			ua_bus->set_last_stop_visited(this); //update this here before setting state
-			add_unassigned_bus(ua_bus, time); //add vehicle to vector of unassigned buses at this stop
-			unassigned_bus_arrivals.erase(ua_bus_it); //vehicle is no longer arriving
-			ua_bus->set_state(BusState::IdleEmpty, time); //emits state change signal to control center
+			unassigned_bus_arrivals.erase(ua_bus_it); //vehicle is no longer arriving 
+			add_unassigned_bus(ua_bus, time); //add vehicle to vector of unassigned buses at this stop with current time as arrival time
+			
 			return true;
 		} 
 	}
@@ -2410,6 +2410,7 @@ void Busstop::add_unassigned_bus(Bus* bus, double arrival_time)
 			return left.second < right.second; //keep vector sorted by arrival time (smallest at the back of the vector)
 		}
 	);
+	bus->set_state(BusState::OnCall, arrival_time); //emits state change signal to control center
 }
 
 bool Busstop::remove_unassigned_bus(const Bus* bus)

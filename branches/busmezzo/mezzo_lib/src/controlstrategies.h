@@ -71,7 +71,7 @@ public:
 };
 
 /*Algorithms for generating empty vehicle trips*/
-/*Empty vehicle repositioning strategy that attempts to generate a trip going from a source of supply at an adjacent stop*/
+/*Reactive empty vehicle repositioning strategy that attempts to generate a trip going from a source of supply at an adjacent stop to a source of demand*/
 class NearestLongestQueueEVTripGeneration : public TripGenerationStrategy
 {
 	~NearestLongestQueueEVTripGeneration() override {}

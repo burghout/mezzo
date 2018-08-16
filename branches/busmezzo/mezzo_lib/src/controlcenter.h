@@ -185,7 +185,7 @@ private slots:
 	void on_tripVehicleMatchFound(double time);
 
 	//fleet related
-	void updateFleetState(int bus_id, BusState newstate, double time);
+	void updateFleetState(Bus* bus, BusState oldstate, BusState newstate, double time);
 	void requestTrip(double time); //delegates to BustripGenerator to generate a trip depending on whatever strategy it currently uses and the state of the RequestHandler and add this to its list of trips
 
 	void matchVehiclesToTrips(double time);
@@ -203,7 +203,8 @@ private:
 	map<int, Passenger*> connectedPass_; //passengers currently connected to Controlcenter 
 	map<int, Bus*> connectedVeh_; //transit vehicles currently connected to Controlcenter
 	//map<BusState, vector<Bus*>> fleetState; //among transit vehicles connected to Controlcenter keeps track of which are in each possible bus vehicle (i.e. transit vehicle) state 
-	
+	map<BusState, set<Bus*>> fleetState_;
+
 	RequestHandler rh_;
 	BustripGenerator tg_;
 	BustripVehicleMatcher tvm_;

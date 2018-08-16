@@ -465,19 +465,19 @@ void Controlcenter::on_tripVehicleMatchFound(double time)
 	DEBUG_MSG(Q_FUNC_INFO << ": Vehicle - Trip match found at time " << time);
 }
 
-void Controlcenter::updateFleetState(int bus_id, BusState newstate, double time)
+void Controlcenter::updateFleetState(Bus* bus, BusState oldstate, BusState newstate, double time)
 {
-	if (newstate == BusState::IdleEmpty)
+	assert(bus->get_state() == newstate); //the newstate should be the current state of the bus
+	assert(bus->is_flex_vehicle()); //fixed vehicles do not currently have a control center
+	assert(connectedVeh_.count(bus->get_bus_id()) != 0); //assert that bus is connected to this control center (otherwise state change signal should have never been heard)
+
+	//update the fleet state map
+	fleetState_[oldstate].erase(bus);
+	fleetState_[newstate].insert(bus);
+
+	if (newstate == BusState::OnCall)
 	{
-		//Ugly solution! TODO: Maybe add an additional state 'OnCall' to BusStates. add_unassigned_vehicle in charge of setting vehicle state to OnCall
-		assert(connectedVeh_.count(bus_id) != 0);
-		Bus* bus = connectedVeh_[bus_id]; //check if bus has arrived unassigned to a stop
-		Busstop* stop = bus->get_last_stop_visited();
-		vector<pair<Bus*, double>> ua_at_stop = stop->get_unassigned_buses_at_stop();
-		vector<pair<Bus*, double>>::iterator it;
-		it = find_if(ua_at_stop.begin(), ua_at_stop.end(), [bus_id](const pair<Bus*, double>& ua_bus)->bool {return ua_bus.first->get_bus_id() == bus_id; });
-		if(it != ua_at_stop.end())
-			emit newUnassignedVehicle(time);
+		emit newUnassignedVehicle(time);
 	}
 }
 
