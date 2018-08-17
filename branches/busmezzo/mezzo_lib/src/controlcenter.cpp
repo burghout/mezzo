@@ -312,7 +312,7 @@ void Controlcenter::reset()
 	
 	connectedVeh_.clear();
 	connectedPass_.clear();
-
+	fleetState_.clear();
 }
 
 void Controlcenter::connectInternal()
@@ -471,9 +471,11 @@ void Controlcenter::updateFleetState(Bus* bus, BusState oldstate, BusState newst
 	assert(bus->is_flex_vehicle()); //fixed vehicles do not currently have a control center
 	assert(connectedVeh_.count(bus->get_bus_id()) != 0); //assert that bus is connected to this control center (otherwise state change signal should have never been heard)
 
-	//update the fleet state map
-	fleetState_[oldstate].erase(bus);
-	fleetState_[newstate].insert(bus);
+	//update the fleet state map, vehicles should be null before they are available, and null when they finish a trip and are copied
+	if(oldstate != BusState::Null)
+		fleetState_[oldstate].erase(bus);
+	if(newstate != BusState::Null)
+		fleetState_[newstate].insert(bus);
 
 	if (newstate == BusState::OnCall)
 	{

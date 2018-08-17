@@ -245,6 +245,7 @@ void Bus::advance_curr_trip (double time, Eventlist* eventlist) // progresses tr
 		assert(occupancy == 0); //no passengers should be remaining on the bus at this point
 		vid++;
 		Bus* newbus = recycler.newBus(); //want to clone the bus that just finished its trip with its final stop as its 'origin stop'
+		assert(newbus->get_state() == BusState::Null);
 		
 		//copy over info from the old bus to the new
 		newbus->set_flex_vehicle(true);
@@ -254,6 +255,7 @@ void Bus::advance_curr_trip (double time, Eventlist* eventlist) // progresses tr
 		newbus->set_on_trip(false);
 
 		Controlcenter* cc = last_stop_visited_->get_CC();
+		this->set_state(BusState::Null, time); //set state of old bus to Null to remove it from fleet state map
 		cc->disconnectVehicle(this); //disconnect old bus and connect new bus
 		cc->connectVehicle(newbus);
 
