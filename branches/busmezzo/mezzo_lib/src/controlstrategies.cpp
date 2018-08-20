@@ -1,4 +1,6 @@
 #include "controlstrategies.h"
+#include "vehicle.h"
+#include "busline.h"
 
 template<class T>
 struct compare
@@ -133,18 +135,21 @@ vector<Visit_stop*> TripGenerationStrategy::create_schedule(double init_dispatch
 	return schedule;
 }
 
-bool NullTripGeneration::calc_trip_generation(const set<Request>& requestSet, const vector<Busline*>& candidateServiceRoutes, const double time, set<Bustrip*>& tripSet) const
+bool NullTripGeneration::calc_trip_generation(const set<Request>& requestSet, const vector<Busline*>& candidateServiceRoutes, const map<BusState, set<Bus*>>& fleetState, const double time, set<Bustrip*>& tripSet) const
 {
 	Q_UNUSED(requestSet);
 	Q_UNUSED(candidateServiceRoutes);
+	Q_UNUSED(fleetState);
 	Q_UNUSED(time);
 	Q_UNUSED(tripSet);
 
 	return false;
 }
 
-bool NaiveTripGeneration::calc_trip_generation(const set<Request>& requestSet, const vector<Busline*>& candidateServiceRoutes, const double time, set<Bustrip*>& tripSet) const
+bool NaiveTripGeneration::calc_trip_generation(const set<Request>& requestSet, const vector<Busline*>& candidateServiceRoutes, const map<BusState, set<Bus*>>& fleetState, const double time, set<Bustrip*>& tripSet) const
 {
+	Q_UNUSED(fleetState);
+
 	if (!requestSet.empty() && !candidateServiceRoutes.empty())
 	{
 		if (requestSet.size() >= drt_min_occupancy) //do not attempt to generate trip unless requestSet is greater than the desired occupancy

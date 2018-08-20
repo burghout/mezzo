@@ -15,6 +15,7 @@ class Busline;
 class Busstop;
 typedef pair<Busstop*, double> Visit_stop;
 class Bus;
+enum class BusState;
 
 /*Request structure that corresponds to a request from a passenger for a vehicle to travel between an origin stop and a destination stop*/
 struct Request
@@ -43,6 +44,7 @@ public:
 	virtual bool calc_trip_generation(
 		const set<Request>&		requestSet,				//set of requests that motivate the potential generation of a trip
 		const vector<Busline*>& candidateServiceRoutes, //service routes available to potentially serve the requests
+		const map<BusState,set<Bus*>>& fleetState,		//state of all vehicles that are potentially available to serve the requests
 		const double			time,					//time for which calc_trip_generation is called
 		set<Bustrip*>&			tripSet					//set of trips that have been generated to serve requests that have not been assigned to a vehicle yet
 	) const = 0; //returns true if a trip was generated and added to tripSet container according to some strategy and false otherwise
@@ -60,14 +62,14 @@ class NullTripGeneration : public TripGenerationStrategy
 {
 public:
 	~NullTripGeneration() override {}
-	bool calc_trip_generation(const set<Request>& requestSet, const vector<Busline*>& candidateServiceRoutes, const double time, set<Bustrip*>& tripSet) const override;
+	bool calc_trip_generation(const set<Request>& requestSet, const vector<Busline*>& candidateServiceRoutes, const map<BusState, set<Bus*>>& fleetState, const double time, set<Bustrip*>& tripSet) const override;
 };
 /*Matches trip according to oldest unassigned request & first line found to serve this request*/
 class NaiveTripGeneration : public TripGenerationStrategy
 {
 public:
 	~NaiveTripGeneration() override {}
-	bool calc_trip_generation(const set<Request>& requestSet, const vector<Busline*>& candidateServiceRoutes, const double time, set<Bustrip*>& tripSet) const override;
+	bool calc_trip_generation(const set<Request>& requestSet, const vector<Busline*>& candidateServiceRoutes, const map<BusState, set<Bus*>>& fleetState, const double time, set<Bustrip*>& tripSet) const override;
 };
 
 /*Algorithms for generating empty vehicle trips*/
@@ -75,7 +77,7 @@ public:
 class NearestLongestQueueEVTripGeneration : public TripGenerationStrategy
 {
 	~NearestLongestQueueEVTripGeneration() override {}
-	bool calc_trip_generation(const set<Request>& requestSet, const vector<Busline*>& candidateServiceRoutes, const double time, set<Bustrip*>& tripSet) const override;
+	bool calc_trip_generation(const set<Request>& requestSet, const vector<Busline*>& candidateServiceRoutes, const map<BusState, set<Bus*>>& fleetState, const double time, set<Bustrip*>& tripSet) const override;
 };
 
 //Matching Strategies

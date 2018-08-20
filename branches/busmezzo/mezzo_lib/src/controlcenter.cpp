@@ -1,6 +1,7 @@
-#include "controlcenter.h"
 #include "controlstrategies.h"
-#include "busline.h"
+#include "passenger.h"
+#include "vehicle.h"
+#include "controlcenter.h"
 
 #include <algorithm>
 #include <assert.h>
@@ -87,11 +88,30 @@ void BustripGenerator::cancelUnmatchedTrip(Bustrip* trip)
 	} 
 }
 
-bool BustripGenerator::requestTrip(const RequestHandler& rh, double time)
+void BustripGenerator::cancelRebalancingTrip(Bustrip* trip)
+{
+	assert(trip->driving_roster.empty());
+	if (unmatchedTripsRebalancing_.count(trip) != 0)
+	{
+		delete trip;
+		unmatchedTripsRebalancing_.erase(trip);
+	}
+}
+
+bool BustripGenerator::requestTrip(const RequestHandler& rh, const map<BusState, set<Bus*>>& fleetState, double time)
 {
 	if (generationStrategy_)
 	{
-		return generationStrategy_->calc_trip_generation(rh.requestSet_, serviceRoutes_, time, unmatchedTrips_); //returns true if trip has been generated and added to the unmatchedTrips_
+		return generationStrategy_->calc_trip_generation(rh.requestSet_, serviceRoutes_, fleetState, time, unmatchedTrips_); //returns true if trip has been generated and added to the unmatchedTrips_
+	}
+	return false;
+}
+
+bool BustripGenerator::requestRebalancingTrip(const RequestHandler& rh, const map<BusState, set<Bus*>>& fleetState, double time)
+{
+	if (emptyVehicleStrategy_)
+	{
+		return emptyVehicleStrategy_->calc_trip_generation(rh.requestSet_, serviceRoutes_, fleetState, time, unmatchedTripsRebalancing_); //returns true if trip has been generated and added to the unmatchedTripsRebalancing_
 	}
 	return false;
 }
@@ -485,7 +505,7 @@ void Controlcenter::updateFleetState(Bus* bus, BusState oldstate, BusState newst
 
 void Controlcenter::requestTrip(double time)
 {
-	if (tg_.requestTrip(rh_, time))
+	if (tg_.requestTrip(rh_, fleetState_, time))
 		emit tripGenerated(time);
 }
 

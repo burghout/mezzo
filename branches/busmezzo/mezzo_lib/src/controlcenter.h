@@ -24,9 +24,15 @@ Offers interface to connected vehicles as well as connected passengers
 #include <qobject.h>
 
 #include "busline.h"
-#include "passenger.h"
-#include "vehicle.h"
-#include "controlstrategies.h"
+
+struct Request;
+class Bus;
+enum class BusState;
+class TripGenerationStrategy;
+class MatchingStrategy;
+class DispatchingStrategy;
+class Eventlist;
+class Passenger;
 
 /*Responsible for adding Requests to requestSet as well as sorting and distributing the requestSet*/
 class RequestHandler
@@ -58,7 +64,9 @@ public:
 	explicit BustripGenerator(TripGenerationStrategy* generationStrategy = nullptr, TripGenerationStrategy* emptyVehicleStrategy = nullptr);
 	~BustripGenerator();
 
-	bool requestTrip(const RequestHandler& rh, double time); //returns true if an unassigned trip has been generated and added to unmatchedTrips_ and false otherwise
+	bool requestTrip(const RequestHandler& rh, const map<BusState, set<Bus*>>& fleetState, double time); //returns true if an unassigned trip has been generated and added to unmatchedTrips_ and false otherwise
+	bool requestRebalancingTrip(const RequestHandler& rh, const map<BusState,set<Bus*>>& fleetState, double time); //returns true if an unassigned rebalancing trip has been generated and added to unmatchedTripsRebalancing_ and false otherwise
+
 	void setTripGenerationStrategy(int type);
 	void setEmptyVehicleStrategy(int type);
 
@@ -66,10 +74,11 @@ public:
 	void addServiceRoute(Busline* line);
 	
 	void cancelUnmatchedTrip(Bustrip* trip); //destroy and remove trip from set of unmatchedTrips_
-	
+	void cancelRebalancingTrip(Bustrip* trip); //destroy and remove rebalancing trip from set of unmatchedTripsRebalancing_
 
 private:
-	set<Bustrip*> unmatchedTrips_; //set of trips to be performed that have not been matched to vehicles yet
+	set<Bustrip*> unmatchedTrips_; //set of planned passenger carrying trips to be performed that have not been matched to vehicles yet
+	set<Bustrip*> unmatchedTripsRebalancing_; //set of planned empty-vehicle rebalancing trips to be performed that have not been matched to vehicles yet
 	vector<Busline*> serviceRoutes_; //lines (i.e. routes and stops to visit along the route) that this BustripGenerator can create trips for (TODO: do other process classes do not need to know about this?)
 
 	TripGenerationStrategy* generationStrategy_; //strategy for passenger carrying trips
@@ -123,8 +132,6 @@ private:
 };
 
 /*Groups together processes that control or modify transit Vehicles and provides an interface to Passenger*/
-class Passenger;
-enum class BusState;
 class Controlcenter : public QObject
 {
 	Q_OBJECT
@@ -186,8 +193,8 @@ private slots:
 
 	//fleet related
 	void updateFleetState(Bus* bus, BusState oldstate, BusState newstate, double time);
+	
 	void requestTrip(double time); //delegates to BustripGenerator to generate a trip depending on whatever strategy it currently uses and the state of the RequestHandler and add this to its list of trips
-
 	void matchVehiclesToTrips(double time);
 	void dispatchMatchedTrips(double time);
 
