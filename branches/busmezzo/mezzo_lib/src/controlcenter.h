@@ -14,7 +14,7 @@ General Notes:
 - VehicleDispatcher
 
 Registers (unregisters) service vehicles
-Offers interface to connected vehicles as well as connected passengers
+Offers interface between connected vehicles and connected passengers at connected stops
 
 */
 
@@ -209,8 +209,7 @@ private:
 	//maps for bookkeeping connected passengers and vehicles
 	map<int, Passenger*> connectedPass_; //passengers currently connected to Controlcenter 
 	map<int, Bus*> connectedVeh_; //transit vehicles currently connected to Controlcenter
-	//map<BusState, vector<Bus*>> fleetState; //among transit vehicles connected to Controlcenter keeps track of which are in each possible bus vehicle (i.e. transit vehicle) state 
-	map<BusState, set<Bus*>> fleetState_;
+	map<BusState, set<Bus*>> fleetState_; //among transit vehicles connected to Controlcenter keeps track of which are in each possible bus vehicle (i.e. transit vehicle) state 
 
 	RequestHandler rh_;
 	BustripGenerator tg_;
@@ -218,6 +217,6 @@ private:
 	VehicleDispatcher vd_;
 
 	set<Bus*> initialVehicles_; //vehicles assigned to this control center on input (should be preserved between resets)
-	vector<pair<Bus*, Bustrip*>> completedVehicleTrips_; //used for bookkeeping heap allocated buses and bustrips (similar to busvehicles and bustrips in network) for writing output and deleting between resets
+	vector<pair<Bus*, Bustrip*>> completedVehicleTrips_; //used for bookkeeping dynamically generated buses and bustrips (similar to busvehicles and bustrips in network) for writing output and deleting between resets
 };
 #endif

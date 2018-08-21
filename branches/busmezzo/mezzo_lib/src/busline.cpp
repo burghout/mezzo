@@ -1201,14 +1201,14 @@ Busstop::Busstop()
 	can_overtake = true;
 	dwelltime = 0;
 	rti = 0;
-	turning_begin = false;
-	turning_end = false;
+	line_end = false;
+	line_begin = false;
 	opposing_stop = nullptr;
 	CC = nullptr;
 }
 
-Busstop::Busstop (int id_, string name_, int link_id_, double position_, double length_, bool has_bay_, bool can_overtake_, double min_DT_, int rti_, bool gate_flag_, Controlcenter* CC_):
-id(id_), name(name_), link_id(link_id_), position (position_), length(length_), has_bay(has_bay_), can_overtake(can_overtake_), min_DT(min_DT_), rti (rti_), gate_flag (gate_flag_), CC (CC_)
+Busstop::Busstop (int id_, string name_, int link_id_, double position_, double length_, bool has_bay_, bool can_overtake_, double min_DT_, int rti_, bool gate_flag_, Controlcenter* CC_, Origin* origin_node_, Destination* dest_node_):
+id(id_), name(name_), link_id(link_id_), position (position_), length(length_), has_bay(has_bay_), can_overtake(can_overtake_), min_DT(min_DT_), rti (rti_), gate_flag (gate_flag_), CC (CC_), origin_node(origin_node_), dest_node(dest_node_)
 {
 	avaliable_length = length;
 	nr_boarding = 0;
@@ -1227,8 +1227,8 @@ id(id_), name(name_), link_id(link_id_), position (position_), length(length_), 
 	{
 		random->randomize();
 	}
-	turning_begin = false;
-	turning_end = false;
+	line_end = false;
+	line_begin = false;
 	opposing_stop = nullptr;
 }
 

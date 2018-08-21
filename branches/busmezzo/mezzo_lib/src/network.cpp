@@ -1756,36 +1756,6 @@ bool Network::readbusstop (istream& in) // reads a busstop
 	{
 		st = new Busstop(stop_id, name, link_id, position, length, has_bay, can_overtake, min_DT, RTI_stop, non_Ramdon_Pass_Generation, ccmap[1]);
 	}
-  
-  if (theParameters->drt) //read if the stop is at the beginning or end of a turning point between two opposing stops
-  {
-	  int turning_point; //defines whether or not the stop is the beginning of a turn between opposing stops, the end of a turn between opposing stops
-	  in >> turning_point;
-	  switch (turning_point)
-	  {
-		  case 0:
-		  {
-			  st->set_turning_begin(false);
-			  st->set_turning_end(false);
-			  break;
-		  }
-		  case 1:
-		  {
-			  st->set_turning_begin(true);
-			  break;
-		  }
-		  case 2:
-		  {
-			  st->set_turning_end(true);
-			  break;
-		  }
-		  default:
-		  {
-			  DEBUG_MSG_V("readfile::readbusstop invalid input " << turning_point << " read for busstop " << stop_id << ". Aborting...");
-			  abort();
-		  }
-	  }
-  }
  
   st->add_distance_between_stops(st,0.0);
     in >> bracket;
@@ -1806,8 +1776,8 @@ bool Network::readbusstop (istream& in) // reads a busstop
 bool Network::readstopturningpoint(istream & in)
 {
 	char bracket = ' ';
-	int stopid1; //id of stop that corresponds to the beginning of the turn point (e.g. the final stop of a transit route before turning to the other direction)
-	int stopid2; //id of stop that corresponds to the end of the turn point (e.g. the first stop of a transit route in the opposite direction
+	int stopid1; //id of stop that corresponds to the beginning or end of a turn point (e.g. the final stop of a transit route before turning to the other direction)
+	int stopid2; //id of stop that corresponds to the beginning or end of a turn point (e.g. the first stop of a transit route in the opposite direction
 
 	in >> bracket;
 	if (bracket != '{')
@@ -1828,22 +1798,6 @@ bool Network::readstopturningpoint(istream & in)
 
 	Busstop* stop1 = (*find_if(busstops.begin(), busstops.end(), compare<Busstop>(stopid1)));
 	Busstop* stop2 = (*find_if(busstops.begin(), busstops.end(), compare<Busstop>(stopid2)));
-
-	if (stop1->is_turning_end() && stop2->is_turning_end())
-	{
-		DEBUG_MSG_V("readfile::readstopturningpoint both stop " << stopid1 << " and " << stopid2 << " are at the end of a turn point! Aborting... ");
-		abort();
-	}
-	if (stop1->is_turning_begin() && stop2->is_turning_begin())
-	{
-		DEBUG_MSG_V("readfile::readstopturningpoint both stop " << stopid1 << " and " << stopid2 << " are at the beginning of a turn point! Aborting... ");
-		abort();
-	}
-	if ( (!stop1->is_turning_begin() && !stop1->is_turning_end()) || (!stop2->is_turning_begin() && !stop2->is_turning_end()) )
-	{
-		DEBUG_MSG_V("readfile::readstopturningpoint stop " << stopid1 << " or " << stopid2 << " is not at a turning point! Aborting...");
-		abort();
-	}
 
 	stop1->set_opposing_stop(stop2);
 	stop2->set_opposing_stop(stop1);
@@ -1869,8 +1823,6 @@ Busstop* Network::get_busstop_from_name(string bus_stop_name) {
     }
     
 }
-
-
 
 bool Network::readbusline(istream& in) // reads a busline
 {
@@ -2017,12 +1969,27 @@ bool Network::readbusline(istream& in) // reads a busline
         return false;
     }
 
-  if (flex_line) //if flexible vehicle scheduling is allowed for this line then add it to a controlcenter as a potential service route
+  if (flex_line) //if flexible vehicle scheduling is allowed for this line then add it to a controlcenter as a potential service route and let the start and end stops of the line know of their origin and destination nodes for use in shortest path methods
   {
 	  assert(theParameters->drt);
+	  Origin* origin_node = bl->get_odpair()->get_origin();
+	  Destination* dest_node = bl->get_odpair()->get_destination();
+	  Busstop* firststop = bl->stops.front();
+	  Busstop* laststop = bl->stops.back();
+
+	  if (!firststop->get_origin_node())
+	  {
+		  firststop->set_origin_node(origin_node);
+		  firststop->set_line_begin(true);
+	  }
+	  if (!laststop->get_dest_node())
+	  {
+		  laststop->set_dest_node(dest_node);
+		  laststop->set_line_end(true);
+	  }
+
 	  ccmap[1]->addServiceRoute(bl);
   }
-	
 
     // add to buslines vector
     buslines.push_back (bl);

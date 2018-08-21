@@ -211,6 +211,11 @@ void Bus::advance_curr_trip (double time, Eventlist* eventlist) // progresses tr
 
 	if (flex_vehicle_ && curr_trip->is_flex_trip()) //if the trip that just finished was dynamically scheduled then the controlcenter is in charge of bookkeeping the completed trip and bus for writing outputs
 	{
+		if (last_stop_visited_->get_dest_node() == nullptr)
+		{
+			DEBUG_MSG_V("Problem when ending trip in Bus::advance_curr_trip - final stop " << last_stop_visited_->get_id() << " does not have a destination node associated with it. Aborting...");
+			abort();
+		}
 		Controlcenter* cc = last_stop_visited_->get_CC(); //TODO: what if multiple control centers are associated with this stop?
 		curr_trip->get_line()->remove_flex_trip(curr_trip); //remove from set of uncompleted flex trips in busline, control center takes ownership of the trip for deletion
 		cc->addCompletedVehicleTrip(this, curr_trip); //save bus - bustrip pair in control center of last stop 
@@ -270,6 +275,11 @@ void Bus::advance_curr_trip (double time, Eventlist* eventlist) // progresses tr
 		if (last_stop_visited_->get_opposing_stop() != nullptr)
 		{
 			Busstop* opposing_stop = last_stop_visited_->get_opposing_stop();
+			if (opposing_stop->get_origin_node() == nullptr)
+			{
+				DEBUG_MSG_V("Problem when turning bus in Bus::advance_curr_trip - opposing stop " << opposing_stop->get_id() << " to stop " << last_stop_visited_->get_id() << " does not have an origin node associated with it. Aborting..." ); //opposing stop should have an origin node associated with it
+				abort();
+			}
 			opposing_stop->add_unassigned_bus_arrival(eventlist, newbus, time);
 		}
 		else //bus stays at the current stop (but cannot currently go anywhere until it has turned around)
