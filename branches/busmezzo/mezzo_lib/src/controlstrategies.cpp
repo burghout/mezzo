@@ -168,9 +168,9 @@ bool NaiveTripGeneration::calc_trip_generation(const set<Request>& requestSet, c
 			sort(sortedODcounts.begin(), sortedODcounts.end(),
 				[](const od_count& p1, const od_count& p2)->bool {return p1.second > p2.second; }); //sort with the largest at the front
 
-			if (sortedODcounts.front().second < drt_min_occupancy)
+			if (sortedODcounts.front().second < ::drt_min_occupancy)
 			{
-				DEBUG_MSG("No trip generated! Maximum OD count in request set " << sortedODcounts.front().second << " is smaller than min occupancy " << drt_min_occupancy);
+				DEBUG_MSG("No trip generated! Maximum OD count in request set " << sortedODcounts.front().second << " is smaller than min occupancy " << ::drt_min_occupancy);
 				return false;
 			}
 
@@ -224,18 +224,18 @@ bool NearestLongestQueueEVTripGeneration::calc_trip_generation(const set<Request
 }
 
 //MatchingStrategy
-void MatchingStrategy::assign_idlevehicle_to_trip(Busstop* currentStop, Bus* veh, Bustrip* trip, double starttime)
+void MatchingStrategy::assign_oncall_vehicle_to_trip(Busstop* currentStop, Bus* vehOnCall, Bustrip* trip, double starttime)
 {
-	assert(veh);
+	assert(vehOnCall);
 	assert(trip);
-	assert(!veh->get_curr_trip()); //this particular bus instance (remember there may be copies of it if there is a trip chain, should not have a trip)
-	assert(veh->is_oncall());
+	assert(!vehOnCall->get_curr_trip()); //this particular bus instance (remember there may be copies of it if there is a trip chain, should not have a trip)
+	assert(vehOnCall->is_oncall());
 
-	DEBUG_MSG("---Assigning vehicle " << veh->get_bus_id() << " to trip " << trip->get_id() << "---");
+	DEBUG_MSG("---Assigning vehicle " << vehOnCall->get_bus_id() << " to trip " << trip->get_id() << "---");
 
-	trip->set_busv(veh); //assign bus to the trip
-	veh->set_curr_trip(trip); //assign trip to the bus
-	trip->set_bustype(veh->get_bus_type());//set the bus type of the trip (so trip has access to this bustypes dwell time function)
+	trip->set_busv(vehOnCall); //assign bus to the trip
+	vehOnCall->set_curr_trip(trip); //assign trip to the bus
+	trip->set_bustype(vehOnCall->get_bus_type());//set the bus type of the trip (so trip has access to this bustypes dwell time function)
 	trip->get_busv()->set_on_trip(true); //flag the bus as busy for all trips except the first on its chain (TODO might move to dispatcher)
 
 	vector<Start_trip*> driving_roster; //contains all other trips in this trips chain (if there are any) (TODO might move to dispatcher)
@@ -248,13 +248,11 @@ void MatchingStrategy::assign_idlevehicle_to_trip(Busstop* currentStop, Bus* veh
 
 	DEBUG_MSG("Delay in start time for trip " << trip->get_id() << ": " << delay);
 
-	//Busstop* stop = veh->get_last_stop_visited();
-
-	if (!currentStop->remove_unassigned_bus(veh)) //bus is no longer unassigned and is removed from vector of unassigned buses at whatever stop the vehicle is waiting idle at
+	if (!currentStop->remove_unassigned_bus(vehOnCall, starttime)) //bus is no longer unassigned and is removed from vector of unassigned buses at whatever stop the vehicle is waiting on call at
 												  //trip associated with this bus will be added later to expected_bus_arrivals via
 												  //Busline::execute -> Bustrip::activate -> Origin::insert_veh -> Link::enter_veh -> Bustrip::book_stop_visit -> Busstop::book_bus_arrival
 	{
-		DEBUG_MSG_V("Busstop::remove_unassigned_bus failed for bus " << veh->get_bus_id() << " and stop " << currentStop->get_id());
+		DEBUG_MSG_V("Busstop::remove_unassigned_bus failed for bus " << vehOnCall->get_bus_id() << " and stop " << currentStop->get_id());
 	}
 
 }
@@ -290,7 +288,7 @@ bool NaiveMatching::find_tripvehicle_match(Bustrip* unmatchedTrip, map<int, set<
 {
 	Q_UNUSED(matchedTrips);
 
-	//attempt to match the first trip among unmatchedTrips with first idle vehicle found at the origin stop of the trip
+	//attempt to match unmatchedTrips with first on call vehicle found at the origin stop of the trip
 	if (unmatchedTrip && !veh_per_sroute.empty())
 	{
 		DEBUG_MSG("------------Matching Naively!-------------");
@@ -313,7 +311,7 @@ bool NaiveMatching::find_tripvehicle_match(Bustrip* unmatchedTrip, map<int, set<
 				{
 					DEBUG_MSG("Trip - vehicle match found!");
 					veh = (*c_bus_it);
-					assign_idlevehicle_to_trip(origin_stop, veh, unmatchedTrip, time); //schedule the vehicle to perform the trip at this time
+					assign_oncall_vehicle_to_trip(origin_stop, veh, unmatchedTrip, time); //schedule the vehicle to perform the trip at this time
 
 					return true;
 				}
@@ -333,7 +331,7 @@ bool NaiveMatching::find_tripvehicle_match(Bustrip* unmatchedTrip, map<int, set<
 					DEBUG_MSG("Trip - vehicle match found!");
 					veh = (*c_bus_it);
 					veh->set_last_stop_visited(origin_stop); //TODO: last_stop_visited used in dispatcher to check if vehicle is at the origin stop of the trip. We teleport it there for now ugly solution!
-					assign_idlevehicle_to_trip(origin_stop_opp, veh, unmatchedTrip, time); //schedule the vehicle to perform the trip at this time
+					assign_oncall_vehicle_to_trip(origin_stop_opp, veh, unmatchedTrip, time); //schedule the vehicle to perform the trip at this time
 
 					return true;
 				}
@@ -403,7 +401,7 @@ bool NaiveDispatching::calc_dispatch_time(Eventlist* eventlist, set<Bustrip*>& u
 		Bus* bus = trip->get_busv();
 
 		//check if the bus associated with this trip is available
-		if (bus->is_oncall() && bus->get_last_stop_visited()->get_id() == trip->get_last_stop_visited()->get_id())
+		if (bus->get_last_stop_visited()->get_id() == trip->get_last_stop_visited()->get_id())
 		{
 			if (trip->get_starttime() < time) //if dispatch call was made after the trip was matched
 				update_schedule(trip, time); //update schedule for dispatch and stop visits according to new starttime

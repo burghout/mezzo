@@ -95,7 +95,7 @@ public:
 	) = 0; //returns true if a trip from unmatchedTrips has been matched with a vehicle from candidateVehicles_per_SRoute and added to matchedTrips. The trip is in this case also removed from unmatchedTrips
 
 protected:
-	void assign_idlevehicle_to_trip(Busstop* currentStop, Bus* idletransitveh, Bustrip* trip, double starttime); //performs all operations (similar to Network::read_busvehicle) required in assigning a trip to an idle vehicle (TODO: assigning driving vehicles). Also removes the the assigned vehicle from vector of unassigned vehicles at stop from currentStop
+	void assign_oncall_vehicle_to_trip(Busstop* currentStop, Bus* vehOnCall, Bustrip* trip, double starttime); //performs all operations (similar to Network::read_busvehicle) required in assigning a trip to an idle vehicle (TODO: assigning driving vehicles). Also removes the the assigned vehicle from vector of unassigned vehicles at stop from currentStop
 	Bustrip* find_most_recent_trip(const set<Bustrip*>& trips) const; //returns trip with the earliest starttime among a set of trips
 };
 /*Null matching strategy that always returns false*/

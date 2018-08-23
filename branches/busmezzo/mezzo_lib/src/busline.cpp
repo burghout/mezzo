@@ -2413,7 +2413,7 @@ void Busstop::add_unassigned_bus(Bus* bus, double arrival_time)
 	bus->set_state(BusState::OnCall, arrival_time); //emits state change signal to control center
 }
 
-bool Busstop::remove_unassigned_bus(const Bus* bus)
+bool Busstop::remove_unassigned_bus(Bus* bus, const double time)
 {
 	vector<pair<Bus*, double>>::iterator it;
 	it = find_if(unassigned_buses_at_stop.begin(), unassigned_buses_at_stop.end(),
@@ -2424,7 +2424,9 @@ bool Busstop::remove_unassigned_bus(const Bus* bus)
 
 	if (it != unassigned_buses_at_stop.end())
 	{
+		assert(bus->get_state() == BusState::OnCall); //unassigned buses should be onCall when assigned
 		unassigned_buses_at_stop.erase(it);
+		bus->set_state(BusState::IdleEmpty, time); //bus is no longer on call 
 		return true;
 	}
 

@@ -335,6 +335,9 @@ BusState Bus::calc_state(const bool assigned_to_trip, const bool bus_exiting_sto
 
 void Bus::set_state(const BusState newstate, const double time)
 {
+	if (newstate == BusState::OnCall || newstate == BusState::IdleEmpty || newstate == BusState::DrivingEmpty)
+		assert(occupancy == 0); 
+
 	if (state_ != newstate)
 	{
 		BusState oldstate = state_;
