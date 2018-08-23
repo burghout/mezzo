@@ -103,6 +103,7 @@ public:
 	void setMatchingStrategy(int type);
 
 	bool matchVehiclesToTrips(BustripGenerator& tg, double time);
+	bool matchVehiclesToEmptyVehicleTrips(BustripGenerator& tg, double time);
 
 private:
 	set<Bustrip*> matchedTrips_; //set of trips that have been matched with a transit vehicle
@@ -177,7 +178,10 @@ signals:
 	void newUnassignedVehicle(double time);
 
 	void tripGenerated(double time);
+	void emptyVehicleTripGenerated(double time);
+
 	void tripVehicleMatchFound(double time);
+	void tripVehicleMatchNotFound(double time);
 
 private slots:
 	
@@ -195,7 +199,10 @@ private slots:
 	void updateFleetState(Bus* bus, BusState oldstate, BusState newstate, double time);
 	
 	void requestTrip(double time); //delegates to BustripGenerator to generate a trip depending on whatever strategy it currently uses and the state of the RequestHandler and add this to its list of trips
+	void requestRebalancingTrip(double time);
+
 	void matchVehiclesToTrips(double time);
+	void matchEmptyVehiclesToTrips(double time);
 	void dispatchMatchedTrips(double time);
 
 private:

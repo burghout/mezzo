@@ -227,6 +227,29 @@ bool BustripVehicleMatcher::matchVehiclesToTrips(BustripGenerator& tg, double ti
 	return false;
 }
 
+bool BustripVehicleMatcher::matchVehiclesToEmptyVehicleTrips(BustripGenerator& tg, double time)
+{
+	DEBUG_MSG("BustripVehicleMatcher is matching empty vehicle trips to vehicles at time " << time);
+	if (matchingStrategy_)
+	{
+		bool matchfound = false;
+		for (set<Bustrip*>::iterator it = tg.unmatchedTripsRebalancing_.begin(); it != tg.unmatchedTripsRebalancing_.end();) //attempt to match all trips in planned trips
+		{
+			Bustrip* trip = *it;
+			if (matchingStrategy_->find_tripvehicle_match(trip, candidateVehicles_per_SRoute_, time, matchedTrips_))
+			{
+				matchfound = true;
+				it = tg.unmatchedTripsRebalancing_.erase(it);
+				matchedTrips_.insert(trip);
+			}
+			else
+				++it;
+		}
+		return matchfound;
+	}
+	return false;
+}
+
 //VehicleDispatcher
 VehicleDispatcher::VehicleDispatcher(Eventlist* eventlist, DispatchingStrategy* dispatchingStrategy) : eventlist_(eventlist), dispatchingStrategy_(dispatchingStrategy)
 {
@@ -337,6 +360,8 @@ void Controlcenter::reset()
 
 void Controlcenter::connectInternal()
 {
+	//Note: the order in which the signals are connected to the slots matters! For example when newUnassignedVehicle is signaled, requestTrip will be called before matchVehiclesToTrips
+	//signal slots for debug messages TODO: remove later
 	bool ok;
 	ok = QObject::connect(this, &Controlcenter::requestRejected, this, &Controlcenter::on_requestRejected, Qt::DirectConnection);
 	assert(ok);
@@ -348,6 +373,8 @@ void Controlcenter::connectInternal()
 	assert(ok);
 	ok = QObject::connect(this, &Controlcenter::newUnassignedVehicle, this, &Controlcenter::requestTrip, Qt::DirectConnection);
 	assert(ok);
+	ok = QObject::connect(this, &Controlcenter::tripVehicleMatchNotFound, this, &Controlcenter::requestRebalancingTrip, Qt::DirectConnection);
+	assert(ok);
 
 	//Triggers to match vehicles in trips via BustripVehicleMatcher
 	ok = QObject::connect(this, &Controlcenter::tripGenerated, this, &Controlcenter::on_tripGenerated, Qt::DirectConnection);
@@ -355,6 +382,8 @@ void Controlcenter::connectInternal()
 	ok = QObject::connect(this, &Controlcenter::tripGenerated, this, &Controlcenter::matchVehiclesToTrips, Qt::DirectConnection);
 	assert(ok);
 	ok = QObject::connect(this, &Controlcenter::newUnassignedVehicle, this, &Controlcenter::matchVehiclesToTrips, Qt::DirectConnection);
+	assert(ok);
+	ok = QObject::connect(this, &Controlcenter::emptyVehicleTripGenerated, this, &Controlcenter::matchEmptyVehiclesToTrips, Qt::DirectConnection);
 	assert(ok);
 
 	//Triggers to schedule vehicle - trip pairs via VehicleDispatcher
@@ -509,9 +538,20 @@ void Controlcenter::requestTrip(double time)
 		emit tripGenerated(time);
 }
 
+void Controlcenter::requestRebalancingTrip(double time)
+{
+	if (tg_.requestRebalancingTrip(rh_, fleetState_, time))
+		emit emptyVehicleTripGenerated(time);
+}
+
 void Controlcenter::matchVehiclesToTrips(double time)
 {
-	if(tvm_.matchVehiclesToTrips(tg_, time))
+	tvm_.matchVehiclesToTrips(tg_, time) ? emit tripVehicleMatchFound(time) : emit tripVehicleMatchNotFound(time);
+}
+
+void Controlcenter::matchEmptyVehiclesToTrips(double time)
+{
+	if (tvm_.matchVehiclesToEmptyVehicleTrips(tg_, time))
 		emit tripVehicleMatchFound(time);
 }
 
