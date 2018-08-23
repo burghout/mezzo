@@ -1,6 +1,7 @@
 #include "controlstrategies.h"
 #include "vehicle.h"
 #include "busline.h"
+#include "network.h"
 
 template<class T>
 struct compare
@@ -72,9 +73,9 @@ bool TripGenerationStrategy::line_exists_in_tripset(const set<Bustrip*>& tripSet
 	return false;
 }
 
-vector<Busline*> TripGenerationStrategy::get_lines_between_stops(const vector<Busline*>& lines, const int ostop_id, const int dstop_id) const
+std::vector<Busline*> TripGenerationStrategy::find_lines_connecting_stops(const vector<Busline*>& lines, const int ostop_id, const int dstop_id) const
 {
-	vector<Busline*> lines_between_stops; // lines between stops given as input
+	vector<Busline*> lines_connecting_stops; // lines between stops given as input
 	if (!lines.empty())
 	{
 		for (Busline* line : lines)
@@ -90,14 +91,67 @@ vector<Busline*> TripGenerationStrategy::get_lines_between_stops(const vector<Bu
 					dstop_it = find_if(ostop_it, line->stops.end(), compare<Busstop>(dstop_id));
 
 					if (dstop_it != line->stops.end()) //if destination stop exists 
-						lines_between_stops.push_back(line); //add line as a possible transit connection between these stops
+						lines_connecting_stops.push_back(line); //add line as a possible transit connection between these stops
 				}
 			}
 		}
 	}
 
+	return lines_connecting_stops;
+}
+
+vector<Busline*> TripGenerationStrategy::find_lines_between_stops_and_opp_stops(const vector<Busline*>& lines, const Busstop* start_stop, const Busstop* end_stop) const
+{
+	vector<Busline*> lines_between_stops;
+	
+	const Busstop* start_stop_opp = start_stop->get_opposing_stop(); //stop opposing start stop
+	const Busstop* end_stop_opp = end_stop->get_opposing_stop(); //stop opposing end stop
+
+	for (Busline* line : lines)
+	{
+		bool connected = false; //true if the start and end stops are connected in some sense
+		
+		if (!line->stops.empty())
+		{
+			const Busstop* first_stop = line->stops.front(); 
+			const Busstop* last_stop = line->stops.back();
+			if (first_stop == start_stop && last_stop == end_stop)
+				connected = true;
+			
+			if (first_stop == start_stop_opp && last_stop == end_stop)
+				connected = true;
+
+			if (first_stop == start_stop && last_stop == end_stop_opp)
+				connected = true;
+
+			if (first_stop == start_stop_opp && last_stop == end_stop_opp)
+				connected = true;
+		}
+
+		if (connected)
+			lines_between_stops.push_back(line);
+	}
+
 	return lines_between_stops;
 }
+
+vector<Visit_stop*> TripGenerationStrategy::create_schedule(double init_dispatch_time, const vector<pair<Busstop*, double>>& time_between_stops) const
+{
+	assert(init_dispatch_time >= 0);
+	vector<Visit_stop*> schedule;
+	double arrival_time_at_stop = init_dispatch_time;
+
+	//add init_dispatch_time to all stop deltas for schedule
+	for (const pair<Busstop*, double>& stop_delta : time_between_stops)
+	{
+		arrival_time_at_stop += stop_delta.second;
+		Visit_stop* vs = new Visit_stop((stop_delta.first), arrival_time_at_stop);
+		schedule.push_back(vs);
+	}
+
+	return schedule;
+}
+
 Bustrip* TripGenerationStrategy::create_unassigned_trip(Busline* line, double desired_dispatch_time, const vector<Visit_stop*>& desired_schedule) const
 {
 	assert(line);
@@ -118,21 +172,44 @@ Bustrip* TripGenerationStrategy::create_unassigned_trip(Busline* line, double de
 
 }
 
-vector<Visit_stop*> TripGenerationStrategy::create_schedule(double init_dispatch_time, const vector<pair<Busstop*, double>>& time_between_stops) const
+double TripGenerationStrategy::calc_route_travel_time(const vector<Link*>& routelinks, double time) const
 {
-	assert(init_dispatch_time >= 0);
-	vector<Visit_stop*> schedule;
-	double arrival_time_at_stop = init_dispatch_time;
-
-	//add init_dispatch_time to all stop deltas for schedule
-	for (const pair<Busstop*, double>& stop_delta : time_between_stops)
+	double expected_travel_time = 0;	
+	for (const Link* link : routelinks)
 	{
-		arrival_time_at_stop += stop_delta.second;
-		Visit_stop* vs = new Visit_stop((stop_delta.first), arrival_time_at_stop);
-		schedule.push_back(vs);
+		expected_travel_time += link->get_cost(time);
 	}
 
-	return schedule;
+	return expected_travel_time;
+}
+
+vector<Link*> TripGenerationStrategy::find_shortest_path_between_stops(Network* theNetwork, const Busstop* origin_stop, const Busstop* destination_stop, const double start_time) const
+{
+	int rootlink_id = origin_stop->get_link_id();
+	int dest_node_id = destination_stop->get_dest_node()->get_id();
+
+	vector<Link*> rlinks = theNetwork->shortest_path_to_node(rootlink_id, dest_node_id, start_time);
+
+	return rlinks;
+}
+
+Busline* TripGenerationStrategy::find_shortest_busline(const vector<Busline*> lines, double time) const
+{
+	Busline* shortestline = nullptr;
+	double shortest_tt = HUGE_VAL; //shortest travel time
+	double expected_tt = 0; //expected travel time of a line
+
+	for (Busline* line : lines)
+	{
+		expected_tt = calc_route_travel_time(line->get_busroute()->get_links(), time);
+		if (expected_tt < shortest_tt)
+		{
+			shortest_tt = expected_tt;
+			shortestline = line;
+		}
+	}
+
+	return shortestline;
 }
 
 bool NullTripGeneration::calc_trip_generation(const set<Request>& requestSet, const vector<Busline*>& candidateServiceRoutes, const map<BusState, set<Bus*>>& fleetState, const double time, set<Bustrip*>& tripSet) const
@@ -187,7 +264,7 @@ bool NaiveTripGeneration::calc_trip_generation(const set<Request>& requestSet, c
 				dstop_id = od.first.second;
 
 				vector<Busline*> lines_between_stops;
-				lines_between_stops = get_lines_between_stops(candidateServiceRoutes, ostop_id, dstop_id); //check if any candidate service route connects the OD pair (even for segments of the route)
+				lines_between_stops = find_lines_connecting_stops(candidateServiceRoutes, ostop_id, dstop_id); //check if any candidate service route connects the OD pair (even for segments of the route)
 
 				bool found = false; //true only if one of the candidate lines that connects the od stop pair does not have a trip in the tripSet yet
 				for (Busline* candidateLine : lines_between_stops)//if all lines have a trip already planned for them without a vehicle then we have saturated planned trips for this od stop pair

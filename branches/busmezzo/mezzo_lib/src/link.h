@@ -126,13 +126,13 @@ public:
 		}
 	bool copy_linktimes_out_in(); //!< copies the output travel times to input (historical) travel times
 	double get_hist_time() {return hist_time;}
-	double get_cost (double time) {
+	double get_cost (double time) const {
 		if (histtimes)	
 			return histtimes->cost(time);
 		else	
 			return get_freeflow_time();
 		}
-	double get_freeflow_time() {return freeflowtime;}
+	double get_freeflow_time() const {return freeflowtime;}
 	double get_blocked() {return (blocked_until);}  // -1.0 = not blocked, -2.0 = blocked until further notice, other value= blocked until value
 	void set_blocked(double time) {blocked_until=time;}  // -1.0 = not blocked, -2.0 = blocked until further notice, other value= blocked until value
 	virtual bool full();
