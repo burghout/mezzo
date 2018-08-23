@@ -1381,7 +1381,7 @@ bool Network::readcontrolcenters(const string& name)
 		}
 		in >> id >> tg_strategy >> ev_strategy >> tvm_strategy >> vd_strategy;
 
-		Controlcenter* cc = new Controlcenter(eventlist, id, tg_strategy, ev_strategy, tvm_strategy, vd_strategy);
+		Controlcenter* cc = new Controlcenter(eventlist, this, id, tg_strategy, ev_strategy, tvm_strategy, vd_strategy);
 		ccmap[id] = cc; //add to network map of control centers
 
 		bracket = ' ';
@@ -1766,6 +1766,7 @@ bool Network::readbusstop (istream& in) // reads a busstop
     }
     busstops.push_back (st);
     add_busstop_to_name_map(name, st);
+	busstopsmap[stop_id] = st;
 
 #ifdef _DEBUG_NETWORK
     cout << " read busstop"<< stop_id <<endl;

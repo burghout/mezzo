@@ -61,7 +61,7 @@ class BustripGenerator
 	friend class BustripVehicleMatcher; //give matcher class access to unmatchedTrips_. May remove trip from this set without destroying it if it has been matched
 
 public:
-	explicit BustripGenerator(TripGenerationStrategy* generationStrategy = nullptr, TripGenerationStrategy* emptyVehicleStrategy = nullptr);
+	explicit BustripGenerator(Network* theNetwork = nullptr, TripGenerationStrategy* generationStrategy = nullptr, TripGenerationStrategy* emptyVehicleStrategy = nullptr);
 	~BustripGenerator();
 
 	bool requestTrip(const RequestHandler& rh, const map<BusState, set<Bus*>>& fleetState, double time); //returns true if an unassigned trip has been generated and added to unmatchedTrips_ and false otherwise
@@ -83,6 +83,8 @@ private:
 
 	TripGenerationStrategy* generationStrategy_; //strategy for passenger carrying trips
 	TripGenerationStrategy* emptyVehicleStrategy_; //strategy for supply re-balancing trips
+
+	Network* theNetwork_; //ugly solution but a reference to the network is kept by each control center for calculating shortest paths with dynamic travel times
 };
 
 /*Responsible for assigning trips to transit vehicles and adding these to matchedTripSet as well as the trip's associated Busline*/
@@ -142,6 +144,7 @@ class Controlcenter : public QObject
 public:
 	explicit Controlcenter(
 		Eventlist* eventlist = nullptr, //currently the dispatcher needs the eventlist to book Busline (vehicle - trip dispatching) events
+		Network* theNetwork = nullptr, //currently trip generator needs the network to calculate shortest paths
 		int id = 0,
 		int tg_strategy = 0,
 		int ev_strategy = 0,

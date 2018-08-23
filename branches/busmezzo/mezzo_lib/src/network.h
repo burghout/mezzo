@@ -226,6 +226,8 @@ public:
 	map <int, Destination*>& get_destinations() {return destinationmap;}
 	map <int, Node*>& get_nodes() {return nodemap;}
 	map <int,Link*>& get_links() {return linkmap;}
+
+	map <int, Busstop*>& get_stopsmap() { return busstopsmap; }
 	
 	multimap<odval, Route*>::iterator find_route (int id, odval val);
 	bool exists_route (int id, odval val); // checks if route with this ID exists for OD pair val
@@ -384,6 +386,7 @@ protected:
 	vector <Busline*> buslines; //!< the buslines that generate bus trips on busroutes, serving busstops
 	vector <Bustrip*> bustrips;  //!< the trips list of all buses
 	vector <Busstop*> busstops; //!< stops on the buslines
+	map<int, Busstop*> busstopsmap; //!< map of stops on buslines with id as key
 	vector <Busroute*> busroutes; //!< the routes that buses follow
 	vector <Dwell_time_function*> dt_functions;
     vector <Bustype*> bustypes; // types of bus vehicles

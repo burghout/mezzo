@@ -49,7 +49,7 @@ void RequestHandler::removeRequest(const int pass_id)
 }
 
 //BustripGenerator
-BustripGenerator::BustripGenerator(TripGenerationStrategy* generationStrategy, TripGenerationStrategy* emptyVehicleStrategy) : generationStrategy_(generationStrategy), emptyVehicleStrategy_(emptyVehicleStrategy)
+BustripGenerator::BustripGenerator(Network* theNetwork, TripGenerationStrategy* generationStrategy, TripGenerationStrategy* emptyVehicleStrategy) : theNetwork_(theNetwork), generationStrategy_(generationStrategy), emptyVehicleStrategy_(emptyVehicleStrategy)
 {
 	DEBUG_MSG("Constructing TG");
 }
@@ -142,7 +142,14 @@ void BustripGenerator::setEmptyVehicleStrategy(int type)
 	if (type == emptyVehicleStrategyType::EVNull)
 		emptyVehicleStrategy_ = new NullTripGeneration();
 	else if (type == emptyVehicleStrategyType::NearestLongestQueue)
-		emptyVehicleStrategy_ = new NearestLongestQueueEVTripGeneration();
+	{
+		if (!theNetwork_)
+		{
+			DEBUG_MSG_V("Problem with BustripGenerator::setEmptyVehicleStrategy - switching to NearestLongestQueue strategy failed due to theNetwork nullptr. Aborting...");
+			abort();
+		}
+		emptyVehicleStrategy_ = new NearestLongestQueueEVTripGeneration(theNetwork_);
+	}
 	else
 	{
 		DEBUG_MSG("This empty vehicle strategy is not recognized!");
@@ -295,8 +302,8 @@ void VehicleDispatcher::setDispatchingStrategy(int d_strategy_type)
 }
 
 //Controlcenter
-Controlcenter::Controlcenter(Eventlist* eventlist, int id, int tg_strategy, int ev_strategy, int tvm_strategy, int vd_strategy, QObject* parent)
-	: QObject(parent), vd_(eventlist), id_(id), tg_strategy_(tg_strategy), ev_strategy_(ev_strategy), tvm_strategy_(tvm_strategy), vd_strategy_(vd_strategy)
+Controlcenter::Controlcenter(Eventlist* eventlist, Network* theNetwork, int id, int tg_strategy, int ev_strategy, int tvm_strategy, int vd_strategy, QObject* parent)
+	: QObject(parent), vd_(eventlist), tg_(theNetwork), id_(id), tg_strategy_(tg_strategy), ev_strategy_(ev_strategy), tvm_strategy_(tvm_strategy), vd_strategy_(vd_strategy)
 {
 	QString qname = QString::fromStdString(to_string(id));
 	this->setObjectName(qname); //name of control center does not really matter but useful for debugging purposes

@@ -295,8 +295,94 @@ bool NaiveTripGeneration::calc_trip_generation(const set<Request>& requestSet, c
 }
 
 //Empty vehicle trip generation
-bool NearestLongestQueueEVTripGeneration::calc_trip_generation(const set<Request>& requestSet, const vector<Busline*>& candidateServiceRoutes, const double time, set<Bustrip*>& tripSet) const
+NearestLongestQueueEVTripGeneration::NearestLongestQueueEVTripGeneration(Network* theNetwork) : theNetwork_(theNetwork){}
+bool NearestLongestQueueEVTripGeneration::calc_trip_generation(const set<Request>& requestSet, const vector<Busline*>& candidateServiceRoutes, const map<BusState, set<Bus*>>& fleetState, const double time, set<Bustrip*>& tripSet) const
 {
+	if (!requestSet.empty() && !candidateServiceRoutes.empty()) //Reactive strategy so only when requests exist
+	{
+		if (fleetState.find(BusState::OnCall) == fleetState.end()) //a drt vehicle must have been initialized
+			return false;
+		if (fleetState.at(BusState::OnCall).empty()) //a drt vehicle must be available
+			return false;
+
+		DEBUG_MSG("------------Nearest Neighbour Longest Queue EV Trip Generation-------------");
+		//find od pair with the highest frequency in requestSet (highest source of shareable demand)
+		map<pair<int, int>, int> odcounts = countRequestsPerOD(requestSet);
+		typedef pair<pair<int, int>, int> od_count;
+		vector<od_count> sortedODcounts;
+
+		for (auto it = odcounts.begin(); it != odcounts.end(); ++it)
+		{
+			sortedODcounts.push_back(*it);
+		}
+		assert(!sortedODcounts.empty());
+		sort(sortedODcounts.begin(), sortedODcounts.end(),[](const od_count& p1, const od_count& p2)->bool {return p1.second > p2.second; }); //sort with the largest at the front
+
+		if (sortedODcounts.front().second < ::drt_min_occupancy)
+		{
+			DEBUG_MSG("No trip generated! Maximum OD count in request set " << sortedODcounts.front().second << " is smaller than min occupancy " << ::drt_min_occupancy);
+			return false;
+		}
+
+		int largest_demand_stop_id = sortedODcounts.front().first.first; //id of stop with largest source of demand
+		map<int, Busstop*> stopsmap = theNetwork_->get_stopsmap();
+		assert(stopsmap.count(largest_demand_stop_id) != 0);
+
+		//find the opposing stop to the largest source of demand to use as a destination for an empty vehicle trip if this stop is not a destination stop for any service route
+		Busstop* largest_demand_stop = theNetwork_->get_stopsmap()[largest_demand_stop_id];
+		if (!largest_demand_stop->is_line_end())
+			largest_demand_stop = largest_demand_stop->get_opposing_stop();
+
+		//find OnCall vehicle that is closest to largest source of demand
+		set<Bus*> vehOnCall = fleetState.at(BusState::OnCall); //vehicles that are currently available for empty vehicle rebalancing
+		Bus* closestVehicle = nullptr; //vehicle that is closest to the stop with the largest unserved source of demand
+		vector<Busline*> closestVehicle_serviceRoutes; //all service routes between the closest vehicle and the stop with the highest demand
+		double shortest_tt = HUGE_VAL;
+
+		for (Bus* veh : vehOnCall)
+		{
+			Busstop* vehloc = veh->get_last_stop_visited(); //location of on call vehicle
+			if (vehloc == largest_demand_stop)
+				DEBUG_MSG("Warning - vehicle location is already at the source of demand when planning empty vehicle trips.");
+			vector<Busline*> vehicle_serviceRoutes; //all service routes between the vehicle location (current stop and opposing stop) and the demand source (current stop and opposing stop)
+
+			//collect a vector of all possible service routes between the vehicles current location and the demand source
+			vehicle_serviceRoutes = find_lines_between_stops_and_opp_stops(candidateServiceRoutes, vehloc, largest_demand_stop);
+
+			if (!vehicle_serviceRoutes.empty())
+			{
+				vector<Link*> shortestpath = find_shortest_path_between_stops(theNetwork_, vehloc, largest_demand_stop, time);
+				assert(!shortestpath.empty()); //the network should be completely connected
+				double expected_tt = calc_route_travel_time(shortestpath, time);
+
+				if (expected_tt < shortest_tt)
+				{
+					shortest_tt = expected_tt;
+					closestVehicle = veh;
+					closestVehicle_serviceRoutes = vehicle_serviceRoutes;
+				}
+			}
+		}
+
+		//generate an empty vehicle trip between location of closest OnCall vehicle if found and the stop with the largest demand
+		if (closestVehicle)
+		{
+			Busline* line = find_shortest_busline(closestVehicle_serviceRoutes, time);
+			assert(line);
+
+			if (!line_exists_in_tripset(tripSet, line)) //if this trip does not already exist in unmatchedRebalancing trip set
+			{
+				DEBUG_MSG("Empty vehicle trip found! Generating trip for line " << line->get_id() << " between last location stop " << closestVehicle->get_last_stop_visited()->get_name() << " of vehicle " << closestVehicle->get_bus_id() << " and source of demand stop " << largest_demand_stop->get_name());
+
+				vector<Visit_stop*> schedule = create_schedule(time, line->get_delta_at_stops()); //build the schedule of stop visits for this trip (we visit all stops along the candidate line)
+				Bustrip* newtrip = create_unassigned_trip(line, time, schedule); //create a new trip for this line using now as the dispatch time
+				tripSet.insert(newtrip);//add this trip to the tripSet
+				return true;
+			}
+		}
+
+		DEBUG_MSG("No rebalancing trip found!");
+	}
 	return false;
 }
 

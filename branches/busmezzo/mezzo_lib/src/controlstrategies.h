@@ -82,11 +82,16 @@ public:
 };
 
 /*Algorithms for generating empty vehicle trips*/
-/*Reactive empty vehicle repositioning strategy that attempts to generate a trip going from a source of supply at an adjacent stop to a source of demand*/
+/*Reactive empty vehicle repositioning strategy that attempts to generate a trip going from a source of supply at an adjacent stop to the source of highest demand with the same od*/
 class NearestLongestQueueEVTripGeneration : public TripGenerationStrategy
 {
+public:
+	explicit NearestLongestQueueEVTripGeneration(Network* theNetwork = nullptr);
 	~NearestLongestQueueEVTripGeneration() override {}
 	bool calc_trip_generation(const set<Request>& requestSet, const vector<Busline*>& candidateServiceRoutes, const map<BusState, set<Bus*>>& fleetState, const double time, set<Bustrip*>& tripSet) const override;
+
+private:
+	Network* theNetwork_;
 };
 
 //Matching Strategies
