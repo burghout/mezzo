@@ -7098,19 +7098,19 @@ bool Network::shortest_paths_all()
 
 bool Network::shortest_pathtree_from_origin_link(int lid, double start_time)
 {
-    //Link* start_link = linkmap [lid];
-    bool initok=false;
-    if (!theParameters->shortest_paths_initialised) // initialise shortest path graph if needed
-        initok = init_shortest_path();
-    if (initok)
-    {   if (linkinfo)
+ 
+    if (!theParameters->shortest_paths_initialised) // initialize shortest path graph if needed
+        init_shortest_path(); //sets parameter to initialized if successful
+    if (theParameters->shortest_paths_initialised)
+    {  
+		if (linkinfo)
             graph->labelCorrecting(lid,start_time, linkinfo);
         else
             graph->labelCorrecting(lid,start_time);
     }
     else
-        return false; // cannot init graph, so no search done
-    return false;
+        return false; // could not init graph, so no search done
+    return true;
 }
 
 vector<Link*> Network::shortest_path_to_node(int rootlink, int dest_node, double start_time) //!< returns shortest path Links
