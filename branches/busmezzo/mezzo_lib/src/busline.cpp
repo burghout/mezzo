@@ -5,7 +5,8 @@
 #include "MMath.h"
 #include <sstream>
 #include <stddef.h>
-
+//coswpisalem
+//icostutej
 template<class T>
 struct compare
 {
