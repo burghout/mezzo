@@ -1649,7 +1649,9 @@ void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, d
 							}
 							if(theParameters->demand_format == 3)
 							{
-								trip->passengers_on_board[(*check_pass)->make_alighting_decision(trip, time)].push_back((*check_pass)); 
+								// RTCI changes - temporarily store pax. who have boarded the bus
+								//trip->passengers_on_board[(*check_pass)->make_alighting_decision(trip, time)].push_back((*check_pass)); 
+								trip->init_passengers_on_board[this].push_back((*check_pass));
 							}
 							trip->get_busv()->set_occupancy(trip->get_busv()->get_occupancy()+1);
 							if (check_pass < pass_waiting_od.end()-1)
@@ -1705,10 +1707,26 @@ void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, d
 			}
 		}	
 	}
+	// FIRST - update bus occupancy data
 	if (theParameters->demand_format!=3)
 	{
 		trip->get_busv()->set_occupancy(starting_occupancy + get_nr_boarding() - get_nr_alighting()); // updating the occupancy
 	}
+	
+	// RTCI algorithm here:
+	// 1. trip-> record_RTCI [this_stop]
+	// 2. iterator:: trips = trip, trip+1, trip+2... -> generate_RTCI [this_stop]
+	
+	// THEN - perform alighting decisions
+	if (theParameters->demand_format == 3)
+	{
+		passengers boarded_passengers = trip->init_passengers_on_board[this];
+		for (passengers::iterator boarded_pass = boarded_passengers.begin(); boarded_pass != boarded_passengers.end(); boarded_pass++)
+		{
+			trip->passengers_on_board[(*boarded_pass)->make_alighting_decision(trip, time)].push_back((*boarded_pass));
+		}
+	}
+	
 	if (id != trip->stops.back()->first->get_id()) // if it is not the last stop for this trip
 	{
 		trip->assign_segements[this] = trip->get_busv()->get_occupancy();
