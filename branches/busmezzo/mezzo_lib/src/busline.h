@@ -400,7 +400,9 @@ public:
 	vector <Visit_stop*> stops;						//!< contains all the busstops and the times that they are supposed to be served. NOTE: this can be a subset of the total nr of stops in the Busline (according to the schedule input file)
 	map <Busstop*, double> stops_map;
 	vector <Start_trip*> driving_roster;			//!< trips assignment for each bus vehicle.
-	map <Busstop*, passengers> passengers_on_board; //!< passenger on-board stored by their alighting stop (format 3)
+	// RTCI changes
+	map <Busstop*, passengers> init_passengers_on_board;	//!< pax. on-board temporarily stored before alighting decisions (format 3) - i.e. BEFORE the bus departure from stop
+	map <Busstop*, passengers> passengers_on_board; 	//!< passenger on-board stored by their alighting stop (format 3) - i.e. AFTER the bus departure from stop
 	map <Busstop*, int> nr_expected_alighting;		//!< number of passengers expected to alight at the busline's stops (format 2)
 	map <Busstop*, int> assign_segements;			//!< contains the number of pass. travelling between trip segments
 
