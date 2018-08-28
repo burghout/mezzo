@@ -643,6 +643,7 @@ void Bustrip::reset ()
 	assign_segements.clear();
 	nr_expected_alighting.clear();
 	passengers_on_board.clear();
+	init_passengers_on_board.clear();
 	output_passenger_load.clear();
 	last_stop_visited = stops.front()->first;
 	holding_at_stop = false;
