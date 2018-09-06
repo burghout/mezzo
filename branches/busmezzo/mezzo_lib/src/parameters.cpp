@@ -687,6 +687,14 @@ bool Parameters::read_parameters (istream & in )
             return false;
         }
         in >> gate_generation_time_diff;
+
+		//in >> keyword;
+		//if (keyword != "car_unit_modelling=")
+		//{
+			//cout << "ERROR reading Parameters file, expecting: car_unit_modelling=, read: " << keyword << endl;
+			//return false;
+		//}
+		//in >> car_unit_modelling;
         
 	}
 	in >> keyword;

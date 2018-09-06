@@ -642,7 +642,7 @@ void Bustrip::reset ()
 	next_stop = stops.begin();
 	assign_segements.clear();
 	nr_expected_alighting.clear();
-	passengers_on_board.clear();
+	//passengers_on_board.clear();
 	output_passenger_load.clear();
 	last_stop_visited = stops.front()->first;
 	holding_at_stop = false;
@@ -855,6 +855,7 @@ void Bustrip::record_passenger_loads (vector <Visit_stop*>::iterator start_stop)
 
 double Bustrip::find_crowding_coeff (Passenger* pass)
 {
+	
 	// first - calculate load factor
 	double load_factor = this->get_busv()->get_occupancy()/this->get_busv()->get_number_seats();
 	
@@ -862,7 +863,28 @@ double Bustrip::find_crowding_coeff (Passenger* pass)
 	bool sits = pass->get_pass_sitting();
 
 	return find_crowding_coeff(sits, load_factor);
+
 }
+
+
+//double Bustrip::find_crowding_coeff(Passenger* pass)
+//{
+//	//std::cout << "i am here 1" << std::endl;
+//	// first - calculate load factor
+//	for (std::map<int, int>::iterator it = this->get_busv()->get_car_occupancy().begin(); it != this->get_busv()->get_car_occupancy().end(); ++it)
+//	{
+//		//std::cout << "Map first Value:" << it->first << std::endl;
+//		//std::cout << "Map second Value:" << it->second << std::endl;
+//		std::cout << "Iterator:" << it << std::endl;
+//
+//		double load_factor = it->second / this->get_busv()->get_number_seats();
+//
+//	}
+//		// second - return value based on pass. standing/sitting
+//		bool sits = pass->get_pass_sitting();
+//	
+//	return find_crowding_coeff(sits, load_factor);
+//}
 
 double Bustrip::find_crowding_coeff (bool sits, double load_factor)
 {
@@ -932,9 +954,11 @@ double Bustrip::find_crowding_coeff (bool sits, double load_factor)
 	}
 }
 
-pair<double, double> Bustrip::crowding_dt_factor (double nr_boarding, double nr_alighting)
+
+pair<int, int> Bustrip::crowding_dt_factor(int nr_boarding, int nr_alighting)
 {
 	pair<double, double> crowding_factor;
+	//if (busv->get_car_capacity() == busv->get_number_seats())
 	if (busv->get_capacity() == busv->get_number_seats())
 	{
 		crowding_factor.first = 1;
@@ -942,10 +966,14 @@ pair<double, double> Bustrip::crowding_dt_factor (double nr_boarding, double nr_
 	}
 	else
 	{
-		double nr_standees_alighting = max(0.0, busv->get_occupancy() - (nr_boarding + nr_alighting) - busv->get_number_seats());
-		double nr_standees_boarding = max(0.0, busv->get_occupancy() - (nr_boarding + nr_alighting)/2 - busv->get_number_seats());
-		double crowdedness_ratio_alighting = nr_standees_alighting / (busv->get_capacity()- busv->get_number_seats());
-		double crowdedness_ratio_boarding = nr_standees_boarding / (busv->get_capacity()- busv->get_number_seats());
+		int nr_standees_alighting = max(0, busv->get_occupancy() - (nr_boarding + nr_alighting) - busv->get_number_seats());
+		int nr_standees_boarding = max(0, busv->get_occupancy() - (nr_boarding + nr_alighting) / 2 - busv->get_number_seats());
+		double crowdedness_ratio_alighting = nr_standees_alighting / (busv->get_capacity() - busv->get_number_seats());
+		double crowdedness_ratio_boarding = nr_standees_boarding / (busv->get_capacity() - busv->get_number_seats());
+		/*double nr_standees_alighting = max(0.0, busv->get_occupancy() - (nr_boarding + nr_alighting) - busv->get_number_seats());
+		double nr_standees_boarding = max(0.0, busv->get_occupancy() - (nr_boarding + nr_alighting) / 2 - busv->get_number_seats());
+		double crowdedness_ratio_alighting = nr_standees_alighting / (busv->get_capacity() - busv->get_number_seats());
+		double crowdedness_ratio_boarding = nr_standees_boarding / (busv->get_capacity() - busv->get_number_seats());*/
 		crowding_factor.second = 1 + 0.75 * pow(crowdedness_ratio_alighting, 2);
 		crowding_factor.first = 1 + 0.75 * pow(crowdedness_ratio_boarding, 2);
 	}
@@ -1288,32 +1316,24 @@ bool Busstop::execute(Eventlist* eventlist, double time) // is executed by the e
 	return true;
 }
 
-void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, double time) //!< progress passengers at stop: waiting, boarding and alighting
+void Busstop::passenger_activity_at_stop(Eventlist* eventlist, Bustrip* trip, double time) //!< progress passengers at stop: waiting, boarding and alighting
 {
 	nr_boarding = 0;
+	//for (int car_id = 1; car_id <= trip->get_busv->get_number_cars; car_id++) { nr_boarding.insert(std::pair<int, int>(car_id, 0)); }
 	nr_alighting = 0;
 	stops_rate stops_rate_dwell, stops_rate_coming, stops_rate_waiting;
 	int starting_occupancy; // bus crowdedness factor
-	
-	// find out bus occupancy when entering the stop
-	//if (trip->get_next_stop() == trip->stops.begin()) // pass. on the bus when entring the first stop
-	//{
-	//	starting_occupancy = trip->get_init_occupancy();
-	//}
-	//else
-	//{
-	starting_occupancy = trip->get_busv()->get_occupancy(); 
-	//}
+	starting_occupancy = trip->get_busv()->get_occupancy();
 
 	if (theParameters->demand_format == 1) // demand is given in terms of arrival rates and alighting fractions
 	{
 		// generate waiting pass. and alight passengers 
-		nr_waiting [trip->get_line()] += random -> poisson (((get_arrival_rates (trip)) * get_time_since_arrival (trip, time)) / 3600.0 );
-				//the arrival process follows a poisson distribution and the lambda is relative to the headway
-				// with arrival time and the headway as the duration
-		if (starting_occupancy > 0 && get_alighting_fractions (trip) > 0) 
+		nr_waiting[trip->get_line()] += random->poisson(((get_arrival_rates(trip)) * get_time_since_arrival(trip, time)) / 3600.0);
+		//the arrival process follows a poisson distribution and the lambda is relative to the headway
+		// with arrival time and the headway as the duration
+		if (starting_occupancy > 0 && get_alighting_fractions(trip) > 0)
 		{
-			set_nr_alighting (random -> binrandom (starting_occupancy, get_alighting_fractions (trip))); // the alighting process follows a binominal distribution 
+			set_nr_alighting(random->binrandom(starting_occupancy, get_alighting_fractions(trip))); // the alighting process follows a binominal distribution 
 					// the number of trials is the number of passengers on board with the probability of the alighting fraction
 		}
 	}
@@ -1329,40 +1349,40 @@ void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, d
 			{
 				simulation_start_slice = false;
 			}
-			if ((iter_slices+1) == update_rates_times[trip->get_line()].end() && time > (*iter_slices))
+			if ((iter_slices + 1) == update_rates_times[trip->get_line()].end() && time > (*iter_slices))
 				// it is the last slice
 			{
 				curr_slice_start = iter_slices;
 				break;
 			}
-			if ((*iter_slices)< time && (*(iter_slices+1)) >= time)
+			if ((*iter_slices) < time && (*(iter_slices + 1)) >= time)
 			{
 				curr_slice_start = iter_slices;
 				break;
 			}
 		}
-		if (simulation_start_slice == false && (time - get_time_since_arrival(trip,time) < (*curr_slice_start))) 
-		// if the previous bus from this line arrives on the previous slice - then take into account previous rate
+		if (simulation_start_slice == false && (time - get_time_since_arrival(trip, time) < (*curr_slice_start)))
+			// if the previous bus from this line arrives on the previous slice - then take into account previous rate
 		{
-			double time_previous_slice = ((*curr_slice_start) - (time - get_time_since_arrival(trip,time)));
+			double time_previous_slice = ((*curr_slice_start) - (time - get_time_since_arrival(trip, time)));
 			double time_current_slice = time - (*curr_slice_start);
-			nr_waiting [trip->get_line()] += random -> poisson ((previous_arrival_rates[trip->get_line()] * time_previous_slice) / 3600.0 ) + random -> poisson (((get_arrival_rates (trip)) * time_current_slice) / 3600.0 );
+			nr_waiting[trip->get_line()] += random->poisson((previous_arrival_rates[trip->get_line()] * time_previous_slice) / 3600.0) + random->poisson(((get_arrival_rates(trip)) * time_current_slice) / 3600.0);
 			// sum of two poisson processes - pass. arriving during the leftover of the previous lsice plus pass. arriving during the begining of this slice
-			double weighted_alighting_fraction = (get_alighting_fractions (trip) * time_current_slice + previous_alighting_fractions[trip->get_line()] * time_previous_slice) / (time_current_slice + time_previous_slice);
+			double weighted_alighting_fraction = (get_alighting_fractions(trip) * time_current_slice + previous_alighting_fractions[trip->get_line()] * time_previous_slice) / (time_current_slice + time_previous_slice);
 			if (starting_occupancy > 0 && weighted_alighting_fraction > 0)
 			{
-				set_nr_alighting (random -> binrandom (starting_occupancy, weighted_alighting_fraction)); // the alighting process follows a binominal distribution 
+				set_nr_alighting(random->binrandom(starting_occupancy, weighted_alighting_fraction)); // the alighting process follows a binominal distribution 
 					// the number of trials is the number of passengers on board with the probability of the weighted alighting fraction
 			}
 		}
 		else // take into account only current rates
 		{
-			nr_waiting [trip->get_line()] += random -> poisson (((get_arrival_rates (trip)) * get_time_since_arrival (trip, time)) / 3600.0 );
-				//the arrival process follows a poisson distribution and the lambda is relative to the headway
-				// with arrival time and the headway as the duration
-			if (starting_occupancy > 0 && get_alighting_fractions (trip) > 0) 
+			nr_waiting[trip->get_line()] += random->poisson(((get_arrival_rates(trip)) * get_time_since_arrival(trip, time)) / 3600.0);
+			//the arrival process follows a poisson distribution and the lambda is relative to the headway
+			// with arrival time and the headway as the duration
+			if (starting_occupancy > 0 && get_alighting_fractions(trip) > 0)
 			{
-				set_nr_alighting (random -> binrandom (starting_occupancy, get_alighting_fractions (trip))); // the alighting process follows a binominal distribution 
+				set_nr_alighting(random->binrandom(starting_occupancy, get_alighting_fractions(trip))); // the alighting process follows a binominal distribution 
 					// the number of trials is the number of passengers on board with the probability of the alighting fraction
 			}
 		}
@@ -1374,42 +1394,42 @@ void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, d
 		stops_rate_waiting = multi_nr_waiting[trip->get_line()];
 		for (vector <Busstop*>::iterator destination_stop = trip->get_line()->stops.begin(); destination_stop < trip->get_line()->stops.end(); destination_stop++)
 		{
-			if (stops_rate_dwell[(*destination_stop)] != 0 )
+			if (stops_rate_dwell[(*destination_stop)] != 0)
 			{
 				//2014-07-03 Jens changed from poisson to poisson1, poisson does not give correct answers!
 				//stops_rate_coming[(*destination_stop)] = random -> poisson (stops_rate_dwell[(*destination_stop)] * get_time_since_arrival (trip, time) / 3600.0 ); // randomized the number of new-comers to board that the destination stop
-				stops_rate_coming[(*destination_stop)] = random -> poisson1 (stops_rate_dwell[(*destination_stop)], get_time_since_arrival (trip, time) / 3600.0 ); // randomized the number of new-comers to board that the destination stop
+				stops_rate_coming[(*destination_stop)] = random->poisson1(stops_rate_dwell[(*destination_stop)], get_time_since_arrival(trip, time) / 3600.0); // randomized the number of new-comers to board that the destination stop
 				//trip->nr_expected_alighting[(*destination_stop)] += int (stops_rate_coming[(*destination_stop)]);
 				stops_rate_waiting[(*destination_stop)] += int(stops_rate_coming[(*destination_stop)]); // the total number of passengers waiting for the destination stop is updated by adding the new-comers
-				nr_waiting [trip->get_line()] += int(stops_rate_coming[(*destination_stop)]);
+				nr_waiting[trip->get_line()] += int(stops_rate_coming[(*destination_stop)]);
 			}
 		}
 		multi_nr_waiting[trip->get_line()] = stops_rate_waiting;
-		set_nr_alighting (trip->nr_expected_alighting[this]); // passengers heading for this stop alight
-		trip->nr_expected_alighting[this] = 0; 
+		set_nr_alighting(trip->nr_expected_alighting[this]); // passengers heading for this stop alight
+		trip->nr_expected_alighting[this] = 0;
 	}
 	if (theParameters->demand_format == 1 || theParameters->demand_format == 2 || theParameters->demand_format == 10) // in the case of non-individual passengers - boarding progress for waiting passengers (capacity constraints)
-	{	
+	{
 		if (trip->get_busv()->get_capacity() - (starting_occupancy - get_nr_alighting()) <= 0) //Added by Jens 2014-08-12, if capacity is exceeded no boarding should be allowed
 		{
 			set_nr_boarding(0);
 		}
-		else if (trip->get_busv()->get_capacity() - (starting_occupancy - get_nr_alighting()) < nr_waiting [trip->get_line()]) // if the capcity determines the boarding process
-		{	
+		else if (trip->get_busv()->get_capacity() - (starting_occupancy - get_nr_alighting()) < nr_waiting[trip->get_line()]) // if the capcity determines the boarding process
+		{
 			if (theParameters->demand_format == 1 || theParameters->demand_format == 10)
 			{
 				set_nr_boarding(trip->get_busv()->get_capacity() - (starting_occupancy - get_nr_alighting()));
-				nr_waiting [trip->get_line()] -= nr_boarding;
-			} 
+				nr_waiting[trip->get_line()] -= nr_boarding;
+			}
 			if (theParameters->demand_format == 2)
 			{
-				double ratio = double(nr_waiting [trip->get_line()])/(trip->get_busv()->get_capacity() - (starting_occupancy + get_nr_boarding() - get_nr_alighting()));
+				double ratio = double(nr_waiting[trip->get_line()]) / (trip->get_busv()->get_capacity() - (starting_occupancy + get_nr_boarding() - get_nr_alighting()));
 				for (vector <Busstop*>::iterator destination_stop = trip->get_line()->stops.begin(); destination_stop < trip->get_line()->stops.end(); destination_stop++)
-				 // allow only the ratio between supply and demand for boarding equally for all destination stops
+					// allow only the ratio between supply and demand for boarding equally for all destination stops
 				{
-					if (stops_rate_dwell[(*destination_stop)] != 0 )
-					{	
-						int added_expected_passengers = Round(stops_rate_waiting[(*destination_stop)]/ratio);
+					if (stops_rate_dwell[(*destination_stop)] != 0)
+					{
+						int added_expected_passengers = Round(stops_rate_waiting[(*destination_stop)] / ratio);
 						set_nr_boarding(get_nr_boarding() + added_expected_passengers);
 						if (nr_boarding < 0)
 						{
@@ -1425,9 +1445,9 @@ void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, d
 			}
 		}
 		else // all waiting passengers for this busline can board it
-		{	
-			set_nr_boarding(nr_waiting [trip->get_line()]);
-			nr_waiting [trip->get_line()] = 0;
+		{
+			set_nr_boarding(nr_waiting[trip->get_line()]);
+			nr_waiting[trip->get_line()] = 0;
 			if (theParameters->demand_format == 2)
 			{
 				// keep track of boarding and waiting passengers by destination
@@ -1442,155 +1462,158 @@ void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, d
 		}
 	}
 	if (theParameters->demand_format == 3)   // demand is given in terms of arrival rate of individual passengers per OD of stops (future - route choice)
-	{	
+	{
 		// * Alighting passengers *
-		nr_alighting = static_cast<int> ( trip->passengers_on_board[this].size()); 
-		for (vector <Passenger*> ::iterator alighting_passenger = trip->passengers_on_board[this].begin(); alighting_passenger != trip->passengers_on_board[this].end(); alighting_passenger++)
-		{
-			pair<Busstop*,double> stop_time;
-			stop_time.first = this;
-			stop_time.second = time;
-			(*alighting_passenger)->add_to_selected_path_stop(stop_time);
-			// update experienced crowding on-board
-			pair<double,double> riding_coeff;
-			riding_coeff.first = time - trip->get_enter_time(); // refers to difference between departures
-			riding_coeff.second = trip->find_crowding_coeff((*alighting_passenger));
-			(*alighting_passenger)->add_to_experienced_crowding_levels(riding_coeff);
-			//ODstops* od_stop = (*alighting_passenger)->get_OD_stop();
-			ODstops* od_stop = (*alighting_passenger)->get_original_origin()->get_stop_od_as_origin_per_stop((*alighting_passenger)->get_OD_stop()->get_destination());
-			od_stop->record_onboard_experience(*alighting_passenger, trip, this, riding_coeff);
+			nr_alighting = static_cast<int> (trip->passengers_on_board[this].size());
 
-			//set current stop as origin for alighting passenger's OD stop pair
-			Busstop* next_stop = this;
-			bool final_stop = false;
-			ODstops* od;
-			if (check_stop_od_as_origin_per_stop((*alighting_passenger)->get_OD_stop()->get_destination()) == false) //check if OD stop pair exists with this stop as origin to the destination of the passenger
+			for (vector <Passenger*> ::iterator alighting_passenger = trip->passengers_on_board[this].begin(); alighting_passenger != trip->passengers_on_board[this].end(); alighting_passenger++)
 			{
-				od = new ODstops(next_stop, (*alighting_passenger)->get_OD_stop()->get_destination());
-				add_odstops_as_origin((*alighting_passenger)->get_OD_stop()->get_destination(), od);
-				(*alighting_passenger)->get_OD_stop()->get_destination()->add_odstops_as_destination(next_stop, od);
-			}
-			else
-			{
-				od = stop_as_origin[(*alighting_passenger)->get_OD_stop()->get_destination()];
-			}
-			(*alighting_passenger)->set_ODstop(od); // set this stop as passenger's new origin
-			if (id == (*alighting_passenger)->get_OD_stop()->get_destination()->get_id() || (*alighting_passenger)->get_OD_stop()->check_path_set() == false) // if this stop is passenger's destination
-			{
-				// passenger has no further conection choice
-				next_stop = this;
-				final_stop = true;
-				pair<Busstop*,double> stop_time;
+				pair<Busstop*, double> stop_time;
 				stop_time.first = this;
 				stop_time.second = time;
 				(*alighting_passenger)->add_to_selected_path_stop(stop_time);
-				(*alighting_passenger)->set_end_time(time);
-				//pass_recycler.addPassenger(*alighting_passenger); // terminate passenger
-			}		
-			if (final_stop == false)
-			{
-				next_stop =(*alighting_passenger)->make_connection_decision(time);
-				// set connected_stop as the new origin
-				ODstops* new_od;
-				if (next_stop->check_stop_od_as_origin_per_stop((*alighting_passenger)->get_OD_stop()->get_destination()) == false)
+				// update experienced crowding on-board
+				pair<double, double> riding_coeff;
+				riding_coeff.first = time - trip->get_enter_time(); // refers to difference between departures
+				riding_coeff.second = trip->find_crowding_coeff((*alighting_passenger));
+				(*alighting_passenger)->add_to_experienced_crowding_levels(riding_coeff);
+				//ODstops* od_stop = (*alighting_passenger)->get_OD_stop();
+				ODstops* od_stop = (*alighting_passenger)->get_original_origin()->get_stop_od_as_origin_per_stop((*alighting_passenger)->get_OD_stop()->get_destination());
+				od_stop->record_onboard_experience(*alighting_passenger, trip, this, riding_coeff);
+				//set current stop as origin for alighting passenger's OD stop pair
+				Busstop* next_stop = this;
+				bool final_stop = false;
+				ODstops* od;
+				if (check_stop_od_as_origin_per_stop((*alighting_passenger)->get_OD_stop()->get_destination()) == false) //check if OD stop pair exists with this stop as origin to the destination of the passenger
 				{
-					new_od = new ODstops (next_stop,(*alighting_passenger)->get_OD_stop()->get_destination());
-					next_stop->add_odstops_as_origin((*alighting_passenger)->get_OD_stop()->get_destination(), new_od);
-					(*alighting_passenger)->get_OD_stop()->get_destination()->add_odstops_as_destination(next_stop, new_od);
+					od = new ODstops(next_stop, (*alighting_passenger)->get_OD_stop()->get_destination());
+					add_odstops_as_origin((*alighting_passenger)->get_OD_stop()->get_destination(), od);
+					(*alighting_passenger)->get_OD_stop()->get_destination()->add_odstops_as_destination(next_stop, od);
 				}
 				else
 				{
-					new_od = next_stop->get_stop_od_as_origin_per_stop((*alighting_passenger)->get_OD_stop()->get_destination());
+					od = stop_as_origin[(*alighting_passenger)->get_OD_stop()->get_destination()];
 				}
-				(*alighting_passenger)->set_ODstop(new_od); // set the connected stop as passenger's new origin (new OD)
-				ODstops* odstop = (*alighting_passenger)->get_OD_stop();
-				//if (odstop->get_waiting_passengers().size() != 0) //Why was it like this??
-				if (true)  //Changed by Jens 2014-06-23
+				(*alighting_passenger)->set_ODstop(od); // set this stop as passenger's new origin
+				if (id == (*alighting_passenger)->get_OD_stop()->get_destination()->get_id() || (*alighting_passenger)->get_OD_stop()->check_path_set() == false) // if this stop is passenger's destination
 				{
-					if (next_stop->get_id() == this->get_id())  // pass stays at the same stop
+					// passenger has no further conection choice
+					next_stop = this;
+					final_stop = true;
+					pair<Busstop*, double> stop_time;
+					stop_time.first = this;
+					stop_time.second = time;
+					(*alighting_passenger)->add_to_selected_path_stop(stop_time);
+					(*alighting_passenger)->set_end_time(time);
+					//pass_recycler.addPassenger(*alighting_passenger); // terminate passenger
+				}
+				if (final_stop == false)
+				{
+					next_stop = (*alighting_passenger)->make_connection_decision(time);
+					// set connected_stop as the new origin
+					ODstops* new_od;
+					if (next_stop->check_stop_od_as_origin_per_stop((*alighting_passenger)->get_OD_stop()->get_destination()) == false)
 					{
-						passengers wait_pass = odstop->get_waiting_passengers(); // add passanger's to the waiting queue on the new OD
-						wait_pass.push_back (*alighting_passenger);
-						odstop->set_waiting_passengers(wait_pass);
-						(*alighting_passenger)->set_arrival_time_at_stop(time);
-						pair<Busstop*,double> stop_time;
-						stop_time.first = this;
-						stop_time.second = time;
-						(*alighting_passenger)->add_to_selected_path_stop(stop_time);
-						if ((*alighting_passenger)->get_pass_RTI_network_level()==true || this->get_rti() > 0)
+						new_od = new ODstops(next_stop, (*alighting_passenger)->get_OD_stop()->get_destination());
+						next_stop->add_odstops_as_origin((*alighting_passenger)->get_OD_stop()->get_destination(), new_od);
+						(*alighting_passenger)->get_OD_stop()->get_destination()->add_odstops_as_destination(next_stop, new_od);
+					}
+					else
+					{
+						new_od = next_stop->get_stop_od_as_origin_per_stop((*alighting_passenger)->get_OD_stop()->get_destination());
+					}
+					(*alighting_passenger)->set_ODstop(new_od); // set the connected stop as passenger's new origin (new OD)
+					ODstops* odstop = (*alighting_passenger)->get_OD_stop();
+					//if (odstop->get_waiting_passengers().size() != 0) //Why was it like this??
+					if (true)  //Changed by Jens 2014-06-23
+					{
+						if (next_stop->get_id() == this->get_id())  // pass stays at the same stop
 						{
-							vector<Busline*> lines_at_stop = this->get_lines();
-							for (vector <Busline*>::iterator line_iter = lines_at_stop.begin(); line_iter < lines_at_stop.end(); line_iter++)
+							passengers wait_pass = odstop->get_waiting_passengers(); // add passanger's to the waiting queue on the new OD
+							wait_pass.push_back(*alighting_passenger);
+							odstop->set_waiting_passengers(wait_pass);
+							(*alighting_passenger)->set_arrival_time_at_stop(time);
+							pair<Busstop*, double> stop_time;
+							stop_time.first = this;
+							stop_time.second = time;
+							(*alighting_passenger)->add_to_selected_path_stop(stop_time);
+							
+							if ((*alighting_passenger)->get_pass_RTI_network_level() == true || this->get_rti() > 0)
 							{
-								pair<Busstop*, Busline*> stopline;
-								stopline.first = this;
-								stopline.second = (*line_iter);
-								(*alighting_passenger)->set_memory_projected_RTI(this,(*line_iter),(*line_iter)->time_till_next_arrival_at_stop_after_time(this,time));
-								//(*alighting_passenger)->set_AWT_first_leg_boarding();
+								vector<Busline*> lines_at_stop = this->get_lines();
+								for (vector <Busline*>::iterator line_iter = lines_at_stop.begin(); line_iter < lines_at_stop.end(); line_iter++)
+								{
+									pair<Busstop*, Busline*> stopline;
+									stopline.first = this;
+									stopline.second = (*line_iter);
+									(*alighting_passenger)->set_memory_projected_RTI(this, (*line_iter), (*line_iter)->time_till_next_arrival_at_stop_after_time(this, time));
+									//(*alighting_passenger)->set_AWT_first_leg_boarding();
+								}
 							}
 						}
+						else  // pass walks to another stop
+						{
+							// booking an event to the arrival time at the new stop
+
+							double arrival_time_connected_stop = time + get_walking_time(next_stop, time);
+							//(*alighting_passenger)->execute(eventlist,arrival_time_connected_stop);
+							eventlist->add_event(arrival_time_connected_stop, *alighting_passenger);
+							pair<Busstop*, double> stop_time;
+							stop_time.first = next_stop;
+							stop_time.second = arrival_time_connected_stop;
+							(*alighting_passenger)->add_to_selected_path_stop(stop_time);
+						}
 					}
-					else  // pass walks to another stop
+					else
 					{
-						// booking an event to the arrival time at the new stop
-                    
-						double arrival_time_connected_stop = time + get_walking_time(next_stop,time);
-						//(*alighting_passenger)->execute(eventlist,arrival_time_connected_stop);
-						eventlist->add_event(arrival_time_connected_stop, *alighting_passenger);
-						pair<Busstop*,double> stop_time;
-						stop_time.first = next_stop;
-						stop_time.second = arrival_time_connected_stop;
+						passengers wait_pass;
+						wait_pass.push_back(*alighting_passenger);
+						odstop->set_waiting_passengers(wait_pass);
 						(*alighting_passenger)->add_to_selected_path_stop(stop_time);
 					}
 				}
+			}
+			trip->passengers_on_board[this].clear(); // clear passengers with this stop as their alighting stop
+
+			trip->get_busv()->set_occupancy(trip->get_busv()->get_occupancy() - nr_alighting);	// update occupancy on bus
+
+			// * Passengers on-board
+			//int avialable_seats = trip->get_busv()->get_occupancy() - trip->get_busv()->get_number_seats();
+			map <Busstop*, passengers> passengers_onboard = trip->get_passengers_on_board();
+			//map <pair <Busstop*, int>, passengers> passengers_onboard = trip->get_passengers_on_board();
+			bool next_stop = false;
+			map <Busstop*, passengers>::iterator downstream_stops = passengers_onboard.end();
+			//map <pair <Busstop*,int>, passengers>::iterator downstream_stops = passengers_onboard.end();
+			downstream_stops--;
+			while (next_stop == false)
+			{
+				for (vector <Passenger*> ::iterator onboard_passenger = trip->passengers_on_board[(*downstream_stops).first].begin(); onboard_passenger != trip->passengers_on_board[(*downstream_stops).first].end(); onboard_passenger++)
+				{
+					// update experienced crowding on-board
+					pair<double, double> riding_coeff;
+					riding_coeff.first = time - trip->get_enter_time(); // refers to difference between departures
+					riding_coeff.second = trip->find_crowding_coeff((*onboard_passenger));
+					(*onboard_passenger)->add_to_experienced_crowding_levels(riding_coeff);
+					//ODstops* od_stop = (*onboard_passenger)->get_OD_stop();
+					ODstops* od_stop = (*onboard_passenger)->get_original_origin()->get_stop_od_as_origin_per_stop((*onboard_passenger)->get_OD_stop()->get_destination());
+					od_stop->record_onboard_experience(*onboard_passenger, trip, this, riding_coeff);
+					// update sitting status - if a passenger stands and there is an available seat - allow sitting; sitting priority among pass. already on-board by remaning travel distance
+					int available_seats = trip->get_busv()->get_occupancy() < trip->get_busv()->get_number_seats();
+					if (available_seats > 0 && (*onboard_passenger)->get_pass_sitting() == false)
+					{
+						(*onboard_passenger)->set_pass_sitting(true);
+						available_seats--;
+					}
+				}
+				if (downstream_stops == passengers_onboard.begin())
+				{
+					next_stop = true;
+				}
 				else
 				{
-					passengers wait_pass;
-					wait_pass.push_back(*alighting_passenger);
-					odstop->set_waiting_passengers(wait_pass);
-					(*alighting_passenger)->add_to_selected_path_stop(stop_time);
+					downstream_stops--;
 				}
 			}
-		}
-		trip->passengers_on_board[this].clear(); // clear passengers with this stop as their alighting stop
-		trip->get_busv()->set_occupancy(trip->get_busv()->get_occupancy()-nr_alighting);	// update occupancy on bus
-
-		// * Passengers on-board
-		//int avialable_seats = trip->get_busv()->get_occupancy() - trip->get_busv()->get_number_seats();
-		map <Busstop*, passengers> passengers_onboard = trip->get_passengers_on_board();
-		bool next_stop = false;
-		map <Busstop*, passengers>::iterator downstream_stops = passengers_onboard.end();
-		downstream_stops--;
-		while (next_stop == false)
-		{
-			for (vector <Passenger*> ::iterator onboard_passenger = trip->passengers_on_board[(*downstream_stops).first].begin(); onboard_passenger != trip->passengers_on_board[(*downstream_stops).first].end(); onboard_passenger++)
-			{
-				// update experienced crowding on-board
-				pair<double,double> riding_coeff;
-				riding_coeff.first = time - trip->get_enter_time(); // refers to difference between departures
-				riding_coeff.second = trip->find_crowding_coeff((*onboard_passenger));
-				(*onboard_passenger)->add_to_experienced_crowding_levels(riding_coeff);
-				//ODstops* od_stop = (*onboard_passenger)->get_OD_stop();
-				ODstops* od_stop = (*onboard_passenger)->get_original_origin()->get_stop_od_as_origin_per_stop((*onboard_passenger)->get_OD_stop()->get_destination());
-				od_stop->record_onboard_experience(*onboard_passenger, trip, this, riding_coeff);
-				// update sitting status - if a passenger stands and there is an available seat - allow sitting; sitting priority among pass. already on-board by remaning travel distance
-				int available_seats = trip->get_busv()->get_occupancy() < trip->get_busv()->get_number_seats();
-				if (available_seats > 0 && (*onboard_passenger)->get_pass_sitting() == false)
-				{
-					(*onboard_passenger)->set_pass_sitting(true);
-					available_seats--;
-				}
-			}
-			if (downstream_stops == passengers_onboard.begin())
-			{
-				next_stop = true;
-			}
-			else
-			{
-				downstream_stops--;
-			}
-		}
-
 		// * Boarding passengers *
 
 		for (map <Busstop*, ODstops*>::iterator destination_stop = stop_as_origin.begin(); destination_stop != stop_as_origin.end(); destination_stop++)
@@ -1601,7 +1624,7 @@ void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, d
 			{
 				passengers::iterator check_pass = pass_waiting_od.begin();
 				Passenger* next_pass;
-				bool last_waiting_pass = false; 
+				bool last_waiting_pass = false;
 				while (check_pass < pass_waiting_od.end())
 				{
 					// progress each waiting passenger  
@@ -1616,17 +1639,17 @@ void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, d
 					if ((*check_pass)->make_boarding_decision(trip, time) == true)
 					{
 						// if the passenger decided to board this bus
-						if (trip->get_busv()->get_occupancy() < trip->get_busv()->get_capacity()) 
+						if (trip->get_busv()->get_occupancy() < trip->get_busv()->get_capacity())
 						{
 							// if the bus is not completly full - then the passenger boards
 							// currently - alighting decision is made when boarding
 							(*check_pass)->record_waiting_experience(trip, time);
 							nr_boarding++;
-							pair<Bustrip*,double> trip_time;
+							pair<Bustrip*, double> trip_time;
 							trip_time.first = trip;
 							trip_time.second = time;
 							(*check_pass)->add_to_selected_path_trips(trip_time);
-							
+
 							if (trip->get_busv()->get_occupancy() > trip->get_busv()->get_number_seats()) // the passenger stands
 							{
 								(*check_pass)->set_pass_sitting(false);
@@ -1635,36 +1658,40 @@ void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, d
 							{
 								(*check_pass)->set_pass_sitting(true);
 							}
-							if(theParameters->demand_format == 3)
+							if (theParameters->demand_format == 3)
 							{
-								trip->passengers_on_board[(*check_pass)->make_alighting_decision(trip, time)].push_back((*check_pass)); 
+								trip->passengers_on_board[(*check_pass)->make_alighting_decision(trip, time)].push_back((*check_pass));
 							}
-							trip->get_busv()->set_occupancy(trip->get_busv()->get_occupancy()+1);
-							if (check_pass < pass_waiting_od.end()-1)
+
+							// Sets the car_id to the passenger. Added by Melina
+							(*check_pass)->add_to_selected_car(make_pair(trip, trip->get_busv()->get_car_id()));
+
+							trip->get_busv()->set_occupancy(trip->get_busv()->get_occupancy() + 1);
+							if (check_pass < pass_waiting_od.end() - 1)
 							{
 								check_pass++;
 								next_pass = (*check_pass);
-								pass_waiting_od.erase(check_pass-1);
-								check_pass = find(pass_waiting_od.begin(),pass_waiting_od.end(),next_pass);
+								pass_waiting_od.erase(check_pass - 1);
+								check_pass = find(pass_waiting_od.begin(), pass_waiting_od.end(), next_pass);
 							}
 							else
 							{
-								last_waiting_pass = true;				
+								last_waiting_pass = true;
 								pass_waiting_od.erase(check_pass);
 								break;
 							}
 						}
 						else
-						{		
+						{
 							// if the passenger CAN NOT board
 							if ((*check_pass)->empty_denied_boarding() == true || this->get_id() != (*check_pass)->get_last_denied_boarding_stop_id()) // no double registration 
 							{
-								pair<Busstop*,double> denied_boarding;
+								pair<Busstop*, double> denied_boarding;
 								denied_boarding.first = this;
 								denied_boarding.second = time;
 								(*check_pass)->add_to_denied_boarding(denied_boarding);
 							}
-							if (check_pass < pass_waiting_od.end()-1)
+							if (check_pass < pass_waiting_od.end() - 1)
 							{
 								check_pass++;
 							}
@@ -1672,13 +1699,13 @@ void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, d
 							{
 								last_waiting_pass = true;
 								break;
-							}	
+							}
 						}
-					}	
+					}
 					else
 					{
 						// if the passenger decides he DOES NOT WANT to board this bus
-						if (check_pass < pass_waiting_od.end()-1)
+						if (check_pass < pass_waiting_od.end() - 1)
 						{
 							check_pass++;
 						}
@@ -1686,23 +1713,25 @@ void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, d
 						{
 							last_waiting_pass = true;
 							break;
-						}	
+						}
 					}
 				}
 				(*destination_stop).second->set_waiting_passengers(pass_waiting_od); // updating the waiting list at the ODstops object (deleting boarding pass.)
 			}
-		}	
-	}
-	if (theParameters->demand_format!=3)
-	{
-		trip->get_busv()->set_occupancy(starting_occupancy + get_nr_boarding() - get_nr_alighting()); // updating the occupancy
-	}
-	if (id != trip->stops.back()->first->get_id()) // if it is not the last stop for this trip
-	{
-		trip->assign_segements[this] = trip->get_busv()->get_occupancy();
-		trip->record_passenger_loads(trip->get_next_stop());
+		}
+//}
+		if (theParameters->demand_format != 3)
+		{
+			trip->get_busv()->set_occupancy(starting_occupancy + get_nr_boarding() - get_nr_alighting()); // updating the occupancy
+		}
+		if (id != trip->stops.back()->first->get_id()) // if it is not the last stop for this trip
+		{
+			trip->assign_segements[this] = trip->get_busv()->get_occupancy();
+			trip->record_passenger_loads(trip->get_next_stop());
+		}
 	}
 }
+
 
 double Busstop::get_walking_time(Busstop* next_stop, double curr_time){
     
@@ -2138,7 +2167,9 @@ return total_nr_waiting;
 void Busstop::record_busstop_visit (Bustrip* trip, double enter_time)  // creates a log-file for stop-related info
 {
 	double arrival_headway = get_time_since_arrival (trip , enter_time);
+	//int starting_occupancy;
 	int occupancy = trip->get_busv()->get_occupancy();
+	map<int, int> car_occupancy = trip->get_busv()->get_car_occupancy();
 	int nr_riders = occupancy + nr_alighting - nr_boarding;
 	double riding_time;
 	double holdingtime = exit_time - enter_time - dwelltime;
@@ -2159,16 +2190,19 @@ void Busstop::record_busstop_visit (Bustrip* trip, double enter_time)  // create
 		int nr_seats = trip->get_busv()->get_number_seats();
 		crowded_pass_riding_time = calc_crowded_travel_time(riding_time, nr_riders, nr_seats);
 		crowded_pass_dwell_time = calc_crowded_travel_time(dwelltime, occupancy, nr_seats);
+		//crowded_pass_dwell_time = calc_crowded_travel_time(dwelltime, trip->get_busv()->get_occupancy(), nr_seats);
 		crowded_pass_holding_time = calc_crowded_travel_time(holdingtime, occupancy, nr_seats);
+		//crowded_pass_holding_time = calc_crowded_travel_time(holdingtime, trip->get_busv()->get_occupancy(), nr_seats);
 	}
 
 	if (trip->get_line()->check_first_trip(trip) == true)
 	{
 		arrival_headway = 0;
 	}
-	output_stop_visits.push_back(Busstop_Visit(trip->get_line()->get_id(), trip->get_id() , trip->get_busv()->get_bus_id() , get_id() , enter_time,
-		trip->scheduled_arrival_time (this),dwelltime,(enter_time - trip->scheduled_arrival_time (this)), exit_time, riding_time, riding_time * nr_riders, crowded_pass_riding_time, crowded_pass_dwell_time, crowded_pass_holding_time,
-		arrival_headway, get_time_since_departure (trip , exit_time), nr_alighting , nr_boarding , occupancy, calc_total_nr_waiting(), (arrival_headway * nr_boarding)/2, holdingtime)); 
+	output_stop_visits.push_back(Busstop_Visit(trip->get_line()->get_id(), trip->get_id(), trip->get_busv()->get_bus_id(), get_id(), enter_time,
+		trip->scheduled_arrival_time(this), dwelltime, (enter_time - trip->scheduled_arrival_time(this)), exit_time, riding_time, riding_time * nr_riders, crowded_pass_riding_time, crowded_pass_dwell_time, crowded_pass_holding_time,
+		arrival_headway, get_time_since_departure(trip, exit_time), nr_alighting, nr_boarding, occupancy, car_occupancy,
+		calc_total_nr_waiting(), (arrival_headway * nr_boarding) / 2, holdingtime));
 }
 
 double Busstop::calc_crowded_travel_time (double travel_time, int nr_riders, int nr_seats) //Returns the sum of the travel time weighted by the crowding factors

@@ -5027,7 +5027,7 @@ bool Network::read_dwell_time_function (istream& in)
 bool Network::read_bustype (istream& in) // reads a bustype
 {
   char bracket;
-  int type_id, number_seats, capacity, dtf_id;
+  int type_id, number_seats, number_cars, capacity, car_capacity, dtf_id;
   double length;
   string bus_type_name;
 
@@ -5038,9 +5038,9 @@ bool Network::read_bustype (istream& in) // reads a bustype
     cout << "readfile::readsbusstop scanner jammed at " << bracket;
     return false;
   }
-  in >> type_id  >> bus_type_name >> length >> number_seats >> capacity >> dtf_id;
+  in >> type_id  >> bus_type_name >> length >> number_seats >> number_cars >> capacity >> car_capacity >> dtf_id;
   Dwell_time_function* dtf=(*(find_if(dt_functions.begin(), dt_functions.end(), compare <Dwell_time_function> (dtf_id) )));
-  Bustype* bt= new Bustype (type_id, bus_type_name, length, number_seats, capacity,dtf);
+  Bustype* bt= new Bustype (type_id, bus_type_name, length, number_seats, number_cars, capacity, car_capacity, dtf);
   in >> bracket;
   if (bracket != '}')
   {

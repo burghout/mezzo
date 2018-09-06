@@ -1,5 +1,9 @@
 ///! passenger.cpp: implementation of the passenger class.
 #include "passenger.h"
+#include "busline.h"
+
+typedef vector <Passenger*> passengers;
+
 Passenger::Passenger ()
 {
 	boarding_decision = false;
@@ -70,6 +74,7 @@ void Passenger::reset ()
 
 	selected_path_stops.clear();
 	selected_path_trips.clear();
+	selected_car.clear();
 	experienced_crowding_levels.clear();
 	waiting_time_due_denied_boarding.clear();
 }
@@ -532,6 +537,7 @@ Busstop* Passenger::make_alighting_decision (Bustrip* boarding_bus, double time)
 Busstop* Passenger::make_connection_decision (double time)
 {
 	map <Busstop*, double> candidate_connection_stops_u; // the double value is the utility associated with the respective stop
+	//map <pair<Busstop*,int>, double> candidate_connection_stops_u;
 	map <Busstop*, double> candidate_connection_stops_p; // the double value is the probability associated with the respective stop
 	Busstop* bs_o = OD_stop->get_origin();
 	Busstop* bs_d = OD_stop->get_destination();
@@ -634,16 +640,24 @@ Busstop* Passenger::make_connection_decision (double time)
 
 Busstop* Passenger::make_first_stop_decision (double time)
 {
+	//Melina
 	map <Busstop*, double> candidate_origin_stops_u; // the double value is the utility associated with the respective stop
+	//map <pair<Busstop*,int>, double> candidate_origin_stops_u; // the double value is the utility associated with the respective stop and platform section
 	map <Busstop*, double> candidate_origin_stops_p; // the double value is the probability associated with the respective stop	
+	//map <pair<Busstop*, int>, double> candidate_origin_stops_p; // the double value is the probability associated with the respective stop and platform section	
 	already_walked = true;
 	// going over all relevant origin and destination stops combinations
 	if (origin_walking_distances.size() == 1) // in case there is only one possible origin stop
 	{
 		map<Busstop*,double>::iterator iter_stops = origin_walking_distances.begin();
 		return (*iter_stops).first;
+
+		//Melina
+		/*map<pair<Busstop*,int>, double>::iterator iter_stops = origin_walking_distances.begin();
+		return (*iter_stops).first.first;*/
 	}
 	for (map<Busstop*,double>::iterator o_stop_iter = origin_walking_distances.begin(); o_stop_iter != origin_walking_distances.end(); o_stop_iter++)
+	//for (map<pair<Busstop*,int>, double>::iterator o_stop_iter = origin_walking_distances.begin(); o_stop_iter != origin_walking_distances.end(); o_stop_iter++)
 	{
 		if ((*o_stop_iter).second <= theParameters->max_walking_distance)
 		{
@@ -651,6 +665,7 @@ Busstop* Passenger::make_first_stop_decision (double time)
 			for (map<Busstop*,double>::iterator d_stop_iter = destination_walking_distances.begin(); d_stop_iter != destination_walking_distances.end(); d_stop_iter++)
 			{
 				ODstops* possible_od = (*o_stop_iter).first->get_stop_od_as_origin_per_stop((*d_stop_iter).first);
+				//ODstops* possible_od = (*o_stop_iter).first.first->get_stop_od_as_origin_per_stop((*d_stop_iter).first);
 				vector<Pass_path*> path_set = possible_od->get_path_set();
 				for (vector <Pass_path*>::iterator path_iter = path_set.begin(); path_iter < path_set.end(); path_iter++)
 				{
@@ -665,24 +680,29 @@ Busstop* Passenger::make_first_stop_decision (double time)
 	}
 	// calc MNL probabilities
 	double MNL_denominator = 0.0;
+	//Melina
 	for (map <Busstop*, double>::iterator origin_stops = candidate_origin_stops_u.begin(); origin_stops != candidate_origin_stops_u.end(); origin_stops++)
+	//for (map <pair<Busstop*,int>, double>::iterator origin_stops = candidate_origin_stops_u.begin(); origin_stops != candidate_origin_stops_u.end(); origin_stops++)
 	{
 		// calc denominator value
 		MNL_denominator += exp((*origin_stops).second);
 	}
 	for (map <Busstop*, double>::iterator origin_stops = candidate_origin_stops_u.begin(); origin_stops != candidate_origin_stops_u.end(); origin_stops++)
+	//for (map <pair<Busstop*,int>, double>::iterator origin_stops = candidate_origin_stops_u.begin(); origin_stops != candidate_origin_stops_u.end(); origin_stops++)
 	{
 		candidate_origin_stops_p[(*origin_stops).first] = exp(candidate_origin_stops_u[(*origin_stops).first]) / MNL_denominator;
 	}
 	// perform choice
 	vector<double> origin_probs;
 	for (map <Busstop*, double>::iterator stops_probs = candidate_origin_stops_p.begin(); stops_probs != candidate_origin_stops_p.end(); stops_probs++)
+	//for (map <pair<Busstop*,int>, double>::iterator stops_probs = candidate_origin_stops_p.begin(); stops_probs != candidate_origin_stops_p.end(); stops_probs++)
 	{
 		origin_probs.push_back((*stops_probs).second);
 	}
 	int origin_stop_position = theRandomizers[0]->mrandom(origin_probs);
 	int iter = 0;
 	for (map <Busstop*, double>::iterator stops_probs = candidate_origin_stops_p.begin(); stops_probs != candidate_origin_stops_p.end(); stops_probs++)
+	//for (map <pair<Busstop*, int>, double>::iterator stops_probs = candidate_origin_stops_p.begin(); stops_probs != candidate_origin_stops_p.end(); stops_probs++)
 	{
 		iter++;
 		if (iter == origin_stop_position)
@@ -690,14 +710,19 @@ Busstop* Passenger::make_first_stop_decision (double time)
 			// constructing a structure for output
 			map<Busstop*,pair<double,double> > origin_MNL; // utility followed by probability per stop
 			for (map <Busstop*, double>::iterator iter_u = candidate_origin_stops_u.begin(); iter_u != candidate_origin_stops_u.end(); iter_u++)
+			//for (map <pair<Busstop*,int>, double>::iterator iter_u = candidate_origin_stops_u.begin(); iter_u != candidate_origin_stops_u.end(); iter_u++)
 			{
 				origin_MNL[(*iter_u).first].first = (*iter_u).second;
+				//origin_MNL[(*iter_u).first.first].first = (*iter_u).second;
 			}
 			for (map <Busstop*, double>::iterator iter_p = candidate_origin_stops_p.begin(); iter_p != candidate_origin_stops_p.end(); iter_p++)
+			//for (map <pair<Busstop*, int>, double>::iterator iter_p = candidate_origin_stops_p.begin(); iter_p != candidate_origin_stops_p.end(); iter_p++)
 			{
 				origin_MNL[(*iter_p).first].second = (*iter_p).second;
+				//origin_MNL[(*iter_p).first.first].second = (*iter_p).second;
 			}
 			return ((*stops_probs).first); // return the chosen stop by MNL choice model
+			//return ((*stops_probs).first.first); // return the chosen stop by MNL choice model
 		}
 	}
 	return candidate_origin_stops_p.begin()->first; // arbitary choice in case something failed
@@ -1045,6 +1070,7 @@ double Passenger::calc_IVT_crowding()
 	return VoT_crowding;
 }
 
+
 double Passenger::calc_total_walking_time()
 {
 	double total_walking_time = 0.0;
@@ -1084,7 +1110,6 @@ bool Passenger::line_is_rejected(int id)
 	return it != rejected_lines.end();
 }
 
-
 void Passenger::write_selected_path(ostream& out)
 {
 	// claculate passenger travel time components
@@ -1106,24 +1131,30 @@ void Passenger::write_selected_path(ostream& out)
 			<< total_IVT << '\t'
 			<< total_IVT_crowding << '\t'
 			<< end_time << '\t'
-			
-			<< '{';
-		for (vector <pair<Busstop*,double> >::iterator stop_iter = selected_path_stops.begin(); stop_iter < selected_path_stops.end(); stop_iter++)
+
+			<< '{' << '\t';
+		for (vector <pair<Busstop*, double> >::iterator stop_iter = selected_path_stops.begin(); stop_iter < selected_path_stops.end(); stop_iter++)
 		{
 			out << (*stop_iter).first->get_id() << '\t';
 		}
 
-		out << '}' << '\t' 
-			
+		out << '}' << '\t'
+
 			<< '{' << '\t';
-		for (vector <pair<Bustrip*,double> >::iterator trip_iter = selected_path_trips.begin(); trip_iter < selected_path_trips.end(); trip_iter++)
+		for (vector <pair<Bustrip*, double> >::iterator trip_iter = selected_path_trips.begin(); trip_iter < selected_path_trips.end(); trip_iter++)
 		{
 			out << (*trip_iter).first->get_id() << '\t';
-		}	
+			//out << car << '\t' << '}' << '\t';
+		}
+		out << '}' << '\t' << '{' << '\t';
+		for (vector <pair<Bustrip*, int> >::iterator trip_iter = selected_car.begin(); trip_iter < selected_car.end(); trip_iter++)
+		{
+			out << (*trip_iter).second << '\t';
+		}
 		out << '}' << endl;
 	}
-}
-
+	}
+		 
 int Passenger::get_selected_path_last_line_id ()
 {
 	return selected_path_trips.back().first->get_line()->get_id();

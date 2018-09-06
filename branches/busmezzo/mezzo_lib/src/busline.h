@@ -370,7 +370,8 @@ public:
 	void convert_stops_vector_to_map();													//!< building stops_map
 	double find_crowding_coeff (Passenger* pass);										//!< returns the crowding coefficeint based on lod factor and pass. seating/standing
 	static double find_crowding_coeff (bool sits, double load_factor);					//!< returns the crowding coefficeint based on lod factor and pass. seating/standing
-	pair<double, double> crowding_dt_factor (double nr_boarding, double nr_alighting);
+	//pair<double, double> crowding_dt_factor (double nr_boarding, double nr_alighting);
+	pair<int, int> crowding_dt_factor(int nr_boarding, int nr_alighting);
 	vector <Busstop*> get_downstream_stops(); //!< return the remaining stops to be visited starting from 'next_stop', returns empty Busstop vector if there are none
 	vector <Visit_stop*> get_downstream_stops_till_horizon(Visit_stop* target_stop); //!< return the remaining stops to be visited starting from 'next_stop'
 
@@ -417,55 +418,65 @@ typedef map <Busstop*, ODstops*> ODs_for_stop;
 class Busstop_Visit // container object holding output data for stop visits
 {
 public:
-	Busstop_Visit (
-		int		line_id_, 
-		int		trip_id_,	
-		int		vehicle_id_,	 
-		int		stop_id_, 
-		double	entering_time_,	
-		double	sched_arr_time_,	
-		double	dwell_time_,	
-		double	lateness_,					
+	Busstop_Visit(
+		int		line_id_,
+		int		trip_id_,
+		int		vehicle_id_,
+		int		stop_id_,
+		double	entering_time_,
+		double	sched_arr_time_,
+		double	dwell_time_,
+		double	lateness_,
 		double	exit_time_,
-		double	riding_time_, 
-		double	riding_pass_time_, 
-		double	crowded_pass_riding_time_, 
-		double	crowded_pass_dwell_time_, 
-		double	crowded_pass_holding_time_,					
-		double	time_since_arr_, 
+		double	riding_time_,
+		double	riding_pass_time_,
+		double	crowded_pass_riding_time_,
+		double	crowded_pass_dwell_time_,
+		double	crowded_pass_holding_time_,
+		double	time_since_arr_,
 		double	time_since_dep_,
-		int		nr_alighting_,	
-		int		nr_boarding_,	
+		int		nr_alighting_,
+		int		nr_boarding_,
 		int		occupancy_,	
+		map<int, int> car_occupancy_,
 		int		nr_waiting_, 
 		double	total_waiting_time_, 
 		double	holding_time_
 	): line_id(line_id_),trip_id(trip_id_),vehicle_id(vehicle_id_), stop_id(stop_id_),entering_time(entering_time_),sched_arr_time(sched_arr_time_),dwell_time(dwell_time_),
 	   lateness(lateness_), exit_time (exit_time_),riding_time (riding_time_), riding_pass_time (riding_pass_time_), crowded_pass_riding_time (crowded_pass_riding_time_), 
 	   crowded_pass_dwell_time (crowded_pass_dwell_time_), crowded_pass_holding_time (crowded_pass_holding_time_), time_since_arr(time_since_arr_),time_since_dep(time_since_dep_),
-	   nr_alighting(nr_alighting_),nr_boarding(nr_boarding_),occupancy(occupancy_),nr_waiting(nr_waiting_), total_waiting_time(total_waiting_time_),holding_time(holding_time_) {}
+	   nr_alighting(nr_alighting_),nr_boarding(nr_boarding_), occupancy(occupancy_), car_occupancy(car_occupancy_),
+		nr_waiting(nr_waiting_), total_waiting_time(total_waiting_time_),holding_time(holding_time_) {}
 
 	virtual ~Busstop_Visit(); //!< destructor
 	void write (ostream& out) { 
 		out << line_id << '\t'
 			<< trip_id << '\t'
 			<< vehicle_id << '\t'
-			<< stop_id<< '\t'
+			<< stop_id << '\t'
 			<< entering_time << '\t'
 			<< sched_arr_time << '\t'
 			<< dwell_time << '\t'
 			<< lateness << '\t'
-			<< exit_time <<'\t'
-			<< riding_time << '\t' 
+			<< exit_time << '\t'
+			<< riding_time << '\t'
 			<< riding_pass_time << '\t'
 			<< time_since_arr << '\t'
 			<< time_since_dep << '\t'
 			<< nr_alighting << '\t'
 			<< nr_boarding << '\t'
 			<< occupancy << '\t'
+			<< '{' << '\t' ;
+
+		for (std::map<int, int>::iterator car_id = car_occupancy.begin(); car_id != car_occupancy.end(); car_id++)
+
+		{ out << (*car_id).second << '\t'; }
+
+		out << '}' << '\t'
 			<< nr_waiting << '\t'
 			<< total_waiting_time << '\t' 
-			<< holding_time << '\t'	<< endl; 
+			<< holding_time << '\t'	
+			<< endl; 
 	}
 	void reset () {
 		line_id = 0; 
@@ -483,7 +494,8 @@ public:
 		time_since_dep = 0; 
 		nr_alighting = 0; 
 		nr_boarding = 0; 
-		occupancy = 0; 
+		occupancy = 0;
+		car_occupancy.clear();
 		nr_waiting = 0; 
 		total_waiting_time = 0; 
 		holding_time = 0; 
@@ -507,6 +519,7 @@ public:
 	int nr_alighting;
 	int nr_boarding;
 	int occupancy;
+	map<int, int> car_occupancy;
 	int nr_waiting;
 	double total_waiting_time;
 	double holding_time;

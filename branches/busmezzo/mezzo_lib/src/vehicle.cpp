@@ -112,7 +112,8 @@ VehicleRecycler::	~VehicleRecycler()
 // ***** Special Bus Functions *****
 void Bus::reset ()
 {
-	occupancy = 0;
+	//occupancy = 0;
+	occupancy.clear();
 	on_trip = true;
 	type = 4;
 	output_vehicle.clear();
@@ -130,7 +131,9 @@ void Bus::set_bustype_attributes (Bustype* bty)
 	type = 4;
 	length = bty->get_length();
 	number_seats = bty->get_number_seats();
+	number_cars = bty->get_number_cars();
 	capacity = bty->get_capacity();
+	car_capacity = bty->get_car_capacity();
 	bus_type = bty;
 }
 
@@ -159,6 +162,44 @@ void Bus::advance_curr_trip (double time, Eventlist* eventlist) // progresses tr
 	}
 }
 
+//Melina
+void Bus::set_occupancy(const int occup) {
+
+	int occup_remainder{ occup };
+	for (int car_id = 1; car_id <= this->number_cars; car_id++)
+	{
+
+		if (occup_remainder <= this->car_capacity)
+		{
+			occupancy[car_id] = occup_remainder;
+			occup_remainder = 0;
+		}
+		else
+		{
+			occupancy[car_id] = this->car_capacity;
+			occup_remainder -= occupancy[car_id];
+		}
+	}
+}
+/* Returns the car id in which the passenger will board
+*  IMPORTANT! It must be called before "set_occupancy"
+*  function.
+*/
+int Bus::get_car_id()
+{
+	int result{ 1 };
+
+	for (int car_id = 1; car_id <= this->number_cars; car_id++)
+	{
+		if (occupancy[car_id] < this->car_capacity)
+		{
+			result = car_id;
+			break;
+		}
+	}
+	return result;
+}
+
 void Bus::record_busvehicle_location (Bustrip* trip, Busstop* stop, double time)
 {
 	output_vehicle.push_back(Busvehicle_location(trip->get_line()->get_id(), trip->get_id() , stop->get_id(), bus_id , stop->get_link_id() , 1, time)); 
@@ -178,8 +219,8 @@ Bustype::Bustype ()
 {
 }
 
-Bustype::Bustype (int type_id_, string bus_type_name_, double length_, int number_seats_, int capacity_, Dwell_time_function* dwell_time_function_):
-	type_id(type_id_), bus_type_name(bus_type_name_), length(length_), number_seats(number_seats_), capacity(capacity_), dwell_time_function(dwell_time_function_)
+Bustype::Bustype (int type_id_, string bus_type_name_, double length_, int number_seats_, int number_cars_, int capacity_, int car_capacity_, Dwell_time_function* dwell_time_function_):
+	type_id(type_id_), bus_type_name(bus_type_name_), length(length_), number_seats(number_seats_), number_cars(number_cars_), capacity(capacity_), car_capacity(car_capacity_), dwell_time_function(dwell_time_function_)
 {
 
 }

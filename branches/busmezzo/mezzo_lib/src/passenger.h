@@ -36,7 +36,9 @@ public:
 	ODzone*		get_o_zone () {return o_zone;}
 	ODzone*		get_d_zone () {return d_zone;}
 	
+	//Melina
 	void		set_origin_walking_distances (map<Busstop*,double> origin_walking_distances_) {origin_walking_distances = origin_walking_distances_;}
+	//void		set_origin_walking_distances (map<pair<Busstop*,int>, double> origin_walking_distances_) {origin_walking_distances = origin_walking_distances_;}
 	void		set_destination_walking_distances (map<Busstop*,double> destination_walking_distances_) {destination_walking_distances = destination_walking_distances_;}
 	double		get_origin_walking_distance (Busstop* stop) {return origin_walking_distances[stop];}
 	double		get_destination_walking_distance (Busstop* stop) {return destination_walking_distances[stop];}
@@ -57,6 +59,7 @@ public:
 	bool	get_pass_sitting () {return sitting;}
 	double	get_latest_boarding_time () {return (selected_path_trips.back().second);}
     vector <pair<Busstop*,double> > get_selected_path_stops() {return selected_path_stops;}
+	//vector <pair<Busstop*, int> > get_selected_car() { return selected_car; } //Melina
 
 	bool execute(Eventlist* eventlist, double time); //!< called every time passengers choose to walk to another stop (origin/transfer), puts the passenger at the waiting list at the right timing
 	void walk(double time);
@@ -79,6 +82,7 @@ public:
 	void write_selected_path(ostream& out);
 	void add_to_selected_path_trips (pair<Bustrip*,double> trip_time) {selected_path_trips.push_back(trip_time);}
 	void add_to_selected_path_stop (pair<Busstop*,double> stop_time) {selected_path_stops.push_back(stop_time);}
+	void add_to_selected_car (pair<Bustrip*, int> stop_car) { selected_car.push_back(stop_car); } //Melina
 	void add_to_experienced_crowding_levels(pair<double,double> riding_coeff) {experienced_crowding_levels.push_back(riding_coeff);};
 	void add_to_denied_boarding (pair<Busstop*,double> denied_time) {waiting_time_due_denied_boarding.push_back(denied_time);}
 	bool check_selected_path_trips_empty () {return selected_path_trips.empty();}
@@ -123,6 +127,8 @@ protected:
 	double total_IVT_crowding;
 	double total_walking_time;
 	Busstop* original_origin;
+	Busstop* stop;
+	Bustrip* trip;
 	ODstops* OD_stop;
 	bool boarding_decision;
 	Random* random;
@@ -131,7 +137,9 @@ protected:
 	int nr_boardings;	//!< counts the number of times pass boarded a vehicle
     vector <pair<Busstop*,double> > selected_path_stops;				 //!< stops and corresponding arrival times
     vector <pair<Bustrip*,double> > selected_path_trips;				 //!< trips and corresponding boarding times
+	vector <pair <Bustrip*, int> > selected_car;						//!< trips and corresponding car units //Melina
     vector <pair<double,double> > experienced_crowding_levels;		 //!< IVT and corresponding crowding levels (route segment level)
+	//map<pair<Busstop*, int>, passengers > passengers_on_board;
     vector <pair<Busstop*,double> > waiting_time_due_denied_boarding; //!< stops at which the pass. experienced denied boarding and the corresponding time at which it was experienced
 	vector<int> rejected_lines; //!< To keep track of the lines that the passenger chose not to board earlier, these should not be regarded next time
 	bool RTI_network_level;
@@ -152,7 +160,9 @@ protected:
 	ODzone* o_zone;
 	ODzone* d_zone;
 	map<Busstop*,double> origin_walking_distances;
+	//map<pair<Busstop*,int>, double> origin_walking_distances; //Melina
 	map<Busstop*,double> destination_walking_distances;
+	//map<pair<Busstop*,int>, double> destination_walking_distances;
 	bool this_is_the_last_stop;
 };
 
