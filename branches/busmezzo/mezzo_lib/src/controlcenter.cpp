@@ -304,7 +304,7 @@ void VehicleDispatcher::setDispatchingStrategy(int d_strategy_type)
 
 //Controlcenter
 Controlcenter::Controlcenter(Eventlist* eventlist, Network* theNetwork, int id, int tg_strategy, int ev_strategy, int tvm_strategy, int vd_strategy, QObject* parent)
-    : QObject(parent), id_(id), tg_(theNetwork), vd_(eventlist), tg_strategy_(tg_strategy), ev_strategy_(ev_strategy), tvm_strategy_(tvm_strategy), vd_strategy_(vd_strategy)
+    : QObject(parent), id_(id), tg_strategy_(tg_strategy), ev_strategy_(ev_strategy), tvm_strategy_(tvm_strategy), vd_strategy_(vd_strategy), tg_(theNetwork), vd_(eventlist)
 {
 	QString qname = QString::fromStdString(to_string(id));
 	this->setObjectName(qname); //name of control center does not really matter but useful for debugging purposes
