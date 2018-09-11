@@ -362,7 +362,7 @@ bool Passenger:: make_boarding_decision (Bustrip* arriving_bus, double time)
 {
 	/*Busstop* curr_stop = selected_path_stops.back().first;
 	ODstops* od = curr_stop->get_stop_od_as_origin_per_stop(OD_stop->get_destination());*/
-	Busstop* curr_stop = OD_stop->get_origin(); //2014-04-14 Jens West changed this, because otherwise the passengers would board lines and then not know what to do
+//	Busstop* curr_stop = OD_stop->get_origin(); //2014-04-14 Jens West changed this, because otherwise the passengers would board lines and then not know what to do
 	ODstops* od = OD_stop;
 	double boarding_prob;
 

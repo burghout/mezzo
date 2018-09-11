@@ -128,8 +128,8 @@ Bus::Bus(QObject* parent) : QObject(parent), Vehicle()
 	last_stop_visited_ = nullptr;
 	state_ = BusState::Null;
 }
-Bus::Bus(int id_, int type_, double length_, Route* route_, ODpair* odpair_, double time_, bool flex_vehicle, QObject* parent) : QObject(parent), flex_vehicle_(flex_vehicle),
-	Vehicle(id_, type_, length_, route_, odpair_, time_)
+Bus::Bus(int id_, int type_, double length_, Route* route_, ODpair* odpair_, double time_, bool flex_vehicle, QObject* parent) : QObject(parent),
+    Vehicle(id_, type_, length_, route_, odpair_, time_), flex_vehicle_(flex_vehicle)
 {
 	occupancy = 0;
 	on_trip = false;

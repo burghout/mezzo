@@ -49,7 +49,8 @@ void RequestHandler::removeRequest(const int pass_id)
 }
 
 //BustripGenerator
-BustripGenerator::BustripGenerator(Network* theNetwork, TripGenerationStrategy* generationStrategy, TripGenerationStrategy* emptyVehicleStrategy) : theNetwork_(theNetwork), generationStrategy_(generationStrategy), emptyVehicleStrategy_(emptyVehicleStrategy)
+BustripGenerator::BustripGenerator(Network* theNetwork, TripGenerationStrategy* generationStrategy, TripGenerationStrategy* emptyVehicleStrategy) :
+                                  generationStrategy_(generationStrategy), emptyVehicleStrategy_(emptyVehicleStrategy), theNetwork_(theNetwork)
 {
 	DEBUG_MSG("Constructing TG");
 }
@@ -303,7 +304,7 @@ void VehicleDispatcher::setDispatchingStrategy(int d_strategy_type)
 
 //Controlcenter
 Controlcenter::Controlcenter(Eventlist* eventlist, Network* theNetwork, int id, int tg_strategy, int ev_strategy, int tvm_strategy, int vd_strategy, QObject* parent)
-	: QObject(parent), vd_(eventlist), tg_(theNetwork), id_(id), tg_strategy_(tg_strategy), ev_strategy_(ev_strategy), tvm_strategy_(tvm_strategy), vd_strategy_(vd_strategy)
+    : QObject(parent), id_(id), tg_(theNetwork), vd_(eventlist), tg_strategy_(tg_strategy), ev_strategy_(ev_strategy), tvm_strategy_(tvm_strategy), vd_strategy_(vd_strategy)
 {
 	QString qname = QString::fromStdString(to_string(id));
 	this->setObjectName(qname); //name of control center does not really matter but useful for debugging purposes

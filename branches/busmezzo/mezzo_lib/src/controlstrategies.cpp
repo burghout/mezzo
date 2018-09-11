@@ -229,7 +229,7 @@ bool NaiveTripGeneration::calc_trip_generation(const set<Request>& requestSet, c
 
 	if (!requestSet.empty() && !candidateServiceRoutes.empty())
 	{
-		if (requestSet.size() >= drt_min_occupancy) //do not attempt to generate trip unless requestSet is greater than the desired occupancy
+        if (requestSet.size() >= (std::size_t) drt_min_occupancy) //do not attempt to generate trip unless requestSet is greater than the desired occupancy
 		{
 			DEBUG_MSG("------------Trip Generating Naively!-------------");
 			//find od pair with the highest frequency in requestSet
