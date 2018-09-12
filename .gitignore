@@ -74,3 +74,4 @@ branches/busmezzo/mezzo.VC.VC.opendb
 trunk/gui/debug_log.txt
 trunk/gui/link_log.txt
 *.stash
+*.vs/
