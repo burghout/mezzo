@@ -37,6 +37,11 @@ double Server::next(const double time)
 		//double delay_std1 = theParameters->sd_server_scale * sqrt(delay_std) * sqrt (mu + delay); // This is specifically for the Tel-Aviv case study use - delay_std = total driving time for this busline
 		return (time + result) ;	
 	}
+
+	if (theParameters->server_type == 4)
+	{
+		return (time + random->loglogisticrandom(mu, sd));
+	}
 	else
 	{
 		double temp= _MAX(min_hdway,random->nrandom(mu,sd));

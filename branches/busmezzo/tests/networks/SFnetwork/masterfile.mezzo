@@ -1,0 +1,27 @@
+#input_files
+network= net.dat
+turnings= turnings.dat
+signals= signal.dat
+histtimes= histtimes.dat
+routes= routes.dat
+demand= demand.dat
+incident= noincident.dat
+vehicletypes= vehiclemix.dat
+virtuallinks= virtuallinks.dat
+serverrates= serverrates.dat
+#output_files
+linktimes= output/linktimes.dat
+output= output/output.dat
+summary= output/summary.dat
+speeds= output/speeds.dat
+inflows= output/inflows.dat
+outflows= output/outflows.dat
+queuelengths= output/queuelengths.dat
+densities= output/densities.dat
+#scenario
+starttime= 0
+stoptime= 5400
+calc_paths= 0
+traveltime_alpha= 0.4
+parameters= parameters.dat
+nobackground= 

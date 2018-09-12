@@ -26,6 +26,7 @@
 #include <string>
 #include <vector>
 #include "Random.h"
+#include <QtGlobal>
 
 #ifndef _NO_GUI
 #include <qcolor.h>
