@@ -1719,7 +1719,7 @@ void Busstop::passenger_activity_at_stop(Eventlist* eventlist, Bustrip* trip, do
 				(*destination_stop).second->set_waiting_passengers(pass_waiting_od); // updating the waiting list at the ODstops object (deleting boarding pass.)
 			}
 		}
-//}
+}
 		if (theParameters->demand_format != 3)
 		{
 			trip->get_busv()->set_occupancy(starting_occupancy + get_nr_boarding() - get_nr_alighting()); // updating the occupancy
@@ -1728,8 +1728,7 @@ void Busstop::passenger_activity_at_stop(Eventlist* eventlist, Bustrip* trip, do
 		{
 			trip->assign_segements[this] = trip->get_busv()->get_occupancy();
 			trip->record_passenger_loads(trip->get_next_stop());
-		}
-	}
+		}	
 }
 
 
