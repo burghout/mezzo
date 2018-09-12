@@ -11,7 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{070E1ABE-DD1C-399A-B62B-C08E8FA67043}</ProjectGuid>
+    <ProjectGuid>{456A0DB8-6880-3C4A-A0A9-4A6457F59A12}</ProjectGuid>
     <RootNamespace>test_integration</RootNamespace>
     <Keyword>Qt4VSv1.0</Keyword>
   </PropertyGroup>
@@ -35,6 +35,15 @@
     <PrimaryOutput>test_integration</PrimaryOutput>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <PropertyGroup Condition="'$(QtMsBuild)'=='' or !Exists('$(QtMsBuild)\qt.targets')">
+    <QtMsBuild>$(MSBuildProjectDirectory)\QtMsBuild</QtMsBuild>
+  </PropertyGroup>
+  <Target Name="QtMsBuildNotFound" BeforeTargets="CustomBuild;ClCompile" Condition="!Exists('$(QtMsBuild)\qt.targets') or !Exists('$(QtMsBuild)\qt.props')">
+    <Message Importance="High" Text="QtMsBuild: could not locate qt.targets, qt.props; project may not build correctly." />
+  </Target>
+  <ImportGroup Condition="Exists('$(QtMsBuild)\qt.props')">
+    <Import Project="$(QtMsBuild)\qt.props" />
+  </ImportGroup>
   <ImportGroup Label="ExtensionSettings" />
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" />
@@ -56,7 +65,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>.;..\..\mezzo_lib\src;$(QTDIR)\include;$(QTDIR)\include\QtTest;$(QTDIR)\include\QtCore;release;$(QTDIR)\mkspecs\win32-msvc2015;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\GeneratedFiles\$(ConfigurationName);.\GeneratedFiles;.;..\..\mezzo_lib\src;$(QTDIR)\include;$(QTDIR)\include\QtTest;$(QTDIR)\include\QtCore;release;$(QTDIR)\mkspecs\win32-msvc2015;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>-Zc:strictStrings -Zc:throwingNew -w34100 -w34189 -w44996 -w44456 -w44457 -w44458 %(AdditionalOptions)</AdditionalOptions>
       <AssemblerListingLocation>release\</AssemblerListingLocation>
       <BrowseInformation>false</BrowseInformation>
@@ -65,7 +74,7 @@
       <ExceptionHandling>Sync</ExceptionHandling>
       <ObjectFileName>$(IntDir)</ObjectFileName>
       <Optimization>MaxSpeed</Optimization>
-      <PreprocessorDefinitions>_CONSOLE;UNICODE;WIN32;WIN64;﻿_NO_GUI;_NO_GUI;QT_NO_DEBUG;QT_TESTLIB_LIB;QT_CORE_LIB;QT_TESTCASE_BUILDDIR="C:/mezzo/branches/busmezzo/tests/integrationtest";NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CONSOLE;UNICODE;WIN32;WIN64;﻿_NO_GUI;_NO_GUI;QT_NO_DEBUG;QT_TESTLIB_LIB;QT_CORE_LIB;QT_TESTCASE_BUILDDIR=".";NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessToFile>false</PreprocessToFile>
       <ProgramDataBaseFileName>$(IntDir)vc$(PlatformToolsetVersion).pdb</ProgramDataBaseFileName>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -73,6 +82,7 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
       <WarningLevel>Level3</WarningLevel>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <AdditionalDependencies>$(QTDIR)\lib\Qt5Test.lib;$(QTDIR)\lib\Qt5Core.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -93,12 +103,20 @@
       <WarningLevel>0</WarningLevel>
     </Midl>
     <ResourceCompile>
-      <PreprocessorDefinitions>_CONSOLE;UNICODE;WIN32;WIN64;﻿_NO_GUI;_NO_GUI;QT_NO_DEBUG;QT_TESTLIB_LIB;QT_CORE_LIB;QT_TESTCASE_BUILDDIR="C:/mezzo/branches/busmezzo/tests/integrationtest";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CONSOLE;UNICODE;WIN32;WIN64;﻿_NO_GUI;_NO_GUI;QT_NO_DEBUG;QT_TESTLIB_LIB;QT_CORE_LIB;QT_TESTCASE_BUILDDIR=".";%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ResourceCompile>
+    <QtRcc>
+      <QTDIR>$(QTDIR)</QTDIR>
+      <InputFile>%(FullPath)</InputFile>
+      <OutputFile>.\GeneratedFiles\qrc_%(Filename).cpp</OutputFile>
+      <InitFuncName>testdata</InitFuncName>
+      <Compression>default</Compression>
+      <ExecutionDescription>Rcc'ing %(Identity)...</ExecutionDescription>
+    </QtRcc>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>.;..\..\mezzo_lib\src;$(QTDIR)\include;$(QTDIR)\include\QtTest;$(QTDIR)\include\QtCore;debug;$(QTDIR)\mkspecs\win32-msvc2015;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\GeneratedFiles\$(ConfigurationName);.\GeneratedFiles;.;..\..\mezzo_lib\src;$(QTDIR)\include;$(QTDIR)\include\QtTest;$(QTDIR)\include\QtCore;debug;$(QTDIR)\mkspecs\win32-msvc2015;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>-Zc:strictStrings -Zc:throwingNew -w34100 -w34189 -w44996 -w44456 -w44457 -w44458 %(AdditionalOptions)</AdditionalOptions>
       <AssemblerListingLocation>debug\</AssemblerListingLocation>
       <BrowseInformation>false</BrowseInformation>
@@ -107,13 +125,14 @@
       <ExceptionHandling>Sync</ExceptionHandling>
       <ObjectFileName>$(IntDir)</ObjectFileName>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>_CONSOLE;UNICODE;WIN32;WIN64;﻿_NO_GUI;_NO_GUI;QT_TESTLIB_LIB;QT_CORE_LIB;QT_TESTCASE_BUILDDIR="C:/mezzo/branches/busmezzo/tests/integrationtest";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CONSOLE;UNICODE;WIN32;WIN64;﻿_NO_GUI;_NO_GUI;QT_TESTLIB_LIB;QT_CORE_LIB;QT_TESTCASE_BUILDDIR=".";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessToFile>false</PreprocessToFile>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
       <WarningLevel>Level3</WarningLevel>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <ProgramDataBaseFileName>$(IntDir)vc$(PlatformToolsetVersion).pdb</ProgramDataBaseFileName>
     </ClCompile>
     <Link>
@@ -134,8 +153,16 @@
       <WarningLevel>0</WarningLevel>
     </Midl>
     <ResourceCompile>
-      <PreprocessorDefinitions>_CONSOLE;UNICODE;WIN32;WIN64;﻿_NO_GUI;_NO_GUI;QT_TESTLIB_LIB;QT_CORE_LIB;QT_TESTCASE_BUILDDIR="C:/mezzo/branches/busmezzo/tests/integrationtest";_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CONSOLE;UNICODE;WIN32;WIN64;﻿_NO_GUI;_NO_GUI;QT_TESTLIB_LIB;QT_CORE_LIB;QT_TESTCASE_BUILDDIR=".";_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ResourceCompile>
+    <QtRcc>
+      <QTDIR>$(QTDIR)</QTDIR>
+      <InputFile>%(FullPath)</InputFile>
+      <OutputFile>.\GeneratedFiles\qrc_%(Filename).cpp</OutputFile>
+      <InitFuncName>testdata</InitFuncName>
+      <Compression>default</Compression>
+      <ExecutionDescription>Rcc'ing %(Identity)...</ExecutionDescription>
+    </QtRcc>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\mezzo_lib\src\Random.cpp" />
@@ -159,13 +186,6 @@
     <ClCompile Include="..\..\mezzo_lib\src\sdfunc.cpp" />
     <ClCompile Include="..\..\mezzo_lib\src\server.cpp" />
     <ClCompile Include="..\..\mezzo_lib\src\signature.cpp" />
-    <ClCompile Include="GeneratedFiles\qrc_testdata.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      </PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </PrecompiledHeader>
-    </ClCompile>
-    <ClCompile Include="test_integration.cpp" />
     <ClCompile Include="..\..\mezzo_lib\src\trafficsignal.cpp" />
     <ClCompile Include="..\..\mezzo_lib\src\turning.cpp" />
     <ClCompile Include="..\..\mezzo_lib\src\vehicle.cpp" />
@@ -220,59 +240,52 @@
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">release\moc_predefs.h;%(Outputs)</Outputs>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
     </CustomBuild>
-    <CustomBuild Include="debug\test_integration.moc.cbt">
-      <FileType>Document</FileType>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">test_integration.cpp;debug\moc_predefs.h;$(QTDIR)\bin\moc.exe;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(QTDIR)\bin\moc.exe  -DUNICODE -DWIN32 -DWIN64 -D﻿_NO_GUI -D_NO_GUI -DQT_TESTLIB_LIB -DQT_CORE_LIB -DQT_TESTCASE_BUILDDIR="C:/mezzo/branches/busmezzo/tests/integrationtest" --compiler-flavor=msvc --include debug/moc_predefs.h -IC:/Qt5.8/Qt5.8.0/5.8/msvc2015_64/mkspecs/win32-msvc2015 -IC:/mezzo/branches/busmezzo/tests/integrationtest -IC:/mezzo/branches/busmezzo/mezzo_lib/src -IC:/Qt5.8/Qt5.8.0/5.8/msvc2015_64/include -IC:/Qt5.8/Qt5.8.0/5.8/msvc2015_64/include/QtTest -IC:/Qt5.8/Qt5.8.0/5.8/msvc2015_64/include/QtCore -I"C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\INCLUDE" -I"C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\ATLMFC\INCLUDE" -I"C:\Program Files (x86)\Windows Kits\10\include\10.0.10240.0\ucrt" -I"C:\Program Files (x86)\Windows Kits\NETFXSDK\4.6.1\include\um" -I"C:\Program Files (x86)\Windows Kits\8.1\include\\shared" -I"C:\Program Files (x86)\Windows Kits\8.1\include\\um" -I"C:\Program Files (x86)\Windows Kits\8.1\include\\winrt" test_integration.cpp -o debug\test_integration.moc</Command>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">MOC test_integration.cpp</Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">debug\test_integration.moc;%(Outputs)</Outputs>
-    </CustomBuild>
-    <CustomBuild Include="release\test_integration.moc.cbt">
-      <FileType>Document</FileType>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">test_integration.cpp;release\moc_predefs.h;$(QTDIR)\bin\moc.exe;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(QTDIR)\bin\moc.exe  -DUNICODE -DWIN32 -DWIN64 -D﻿_NO_GUI -D_NO_GUI -DQT_NO_DEBUG -DQT_TESTLIB_LIB -DQT_CORE_LIB -DQT_TESTCASE_BUILDDIR="C:/mezzo/branches/busmezzo/tests/integrationtest" --compiler-flavor=msvc --include release/moc_predefs.h -IC:/Qt5.8/Qt5.8.0/5.8/msvc2015_64/mkspecs/win32-msvc2015 -IC:/mezzo/branches/busmezzo/tests/integrationtest -IC:/mezzo/branches/busmezzo/mezzo_lib/src -IC:/Qt5.8/Qt5.8.0/5.8/msvc2015_64/include -IC:/Qt5.8/Qt5.8.0/5.8/msvc2015_64/include/QtTest -IC:/Qt5.8/Qt5.8.0/5.8/msvc2015_64/include/QtCore -I"C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\INCLUDE" -I"C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\ATLMFC\INCLUDE" -I"C:\Program Files (x86)\Windows Kits\10\include\10.0.10240.0\ucrt" -I"C:\Program Files (x86)\Windows Kits\NETFXSDK\4.6.1\include\um" -I"C:\Program Files (x86)\Windows Kits\8.1\include\\shared" -I"C:\Program Files (x86)\Windows Kits\8.1\include\\um" -I"C:\Program Files (x86)\Windows Kits\8.1\include\\winrt" test_integration.cpp -o release\test_integration.moc</Command>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">MOC test_integration.cpp</Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">release\test_integration.moc;%(Outputs)</Outputs>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-    </CustomBuild>
+    <QtMoc Include="test_integration.cpp">
+      <QTDIR Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(QTDIR)</QTDIR>
+      <InputFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(FullPath)</InputFile>
+      <OutputFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.\GeneratedFiles\$(ConfigurationName)\%(Filename).moc</OutputFile>
+      <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.\GeneratedFiles\$(ConfigurationName);.\GeneratedFiles;$(QTDIR)\mkspecs/win32-msvc2015;.;C:/Users/mpeftitsi/Documents/GitHub/mezzo/branches/busmezzo/mezzo_lib/src;$(QTDIR)\include;$(QTDIR)\include/QtTest;$(QTDIR)\include/QtCore;C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\INCLUDE;C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\ATLMFC\INCLUDE;C:\Program Files (x86)\Windows Kits\10\include\10.0.10240.0\ucrt;C:\Program Files (x86)\Windows Kits\NETFXSDK\4.6.1\include\um;C:\Program Files (x86)\Windows Kits\8.1\include\\shared;C:\Program Files (x86)\Windows Kits\8.1\include\\um;C:\Program Files (x86)\Windows Kits\8.1\include\\winrt</IncludePath>
+      <Define Condition="'$(Configuration)|$(Platform)'=='Release|x64'">UNICODE;WIN32;WIN64;﻿_NO_GUI;_NO_GUI;QT_NO_DEBUG;QT_TESTLIB_LIB;QT_CORE_LIB;QT_TESTCASE_BUILDDIR=.</Define>
+      <CompilerFlavor Condition="'$(Configuration)|$(Platform)'=='Release|x64'">msvc</CompilerFlavor>
+      <Include Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(Configuration)/moc_predefs.h</Include>
+      <ExecutionDescription Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Moc'ing %(Identity)...</ExecutionDescription>
+      <DynamicSource Condition="'$(Configuration)|$(Platform)'=='Release|x64'">input</DynamicSource>
+      <QTDIR Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(QTDIR)</QTDIR>
+      <InputFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(FullPath)</InputFile>
+      <OutputFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.\GeneratedFiles\$(ConfigurationName)\%(Filename).moc</OutputFile>
+      <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.\GeneratedFiles\$(ConfigurationName);.\GeneratedFiles;$(QTDIR)\mkspecs/win32-msvc2015;.;C:/Users/mpeftitsi/Documents/GitHub/mezzo/branches/busmezzo/mezzo_lib/src;$(QTDIR)\include;$(QTDIR)\include/QtTest;$(QTDIR)\include/QtCore;C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\INCLUDE;C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\ATLMFC\INCLUDE;C:\Program Files (x86)\Windows Kits\10\include\10.0.10240.0\ucrt;C:\Program Files (x86)\Windows Kits\NETFXSDK\4.6.1\include\um;C:\Program Files (x86)\Windows Kits\8.1\include\\shared;C:\Program Files (x86)\Windows Kits\8.1\include\\um;C:\Program Files (x86)\Windows Kits\8.1\include\\winrt</IncludePath>
+      <Define Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">UNICODE;WIN32;WIN64;﻿_NO_GUI;_NO_GUI;QT_TESTLIB_LIB;QT_CORE_LIB;QT_TESTCASE_BUILDDIR=.</Define>
+      <CompilerFlavor Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">msvc</CompilerFlavor>
+      <Include Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(Configuration)/moc_predefs.h</Include>
+      <ExecutionDescription Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Moc'ing %(Identity)...</ExecutionDescription>
+      <DynamicSource Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">input</DynamicSource>
+    </QtMoc>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\networks\SFnetwork\masterfile.mezzo">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </None>
-    <CustomBuild Include="..\testdata.qrc">
-      <FileType>Document</FileType>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(FullPath);..\networks\SFnetwork\masterfile.mezzo;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">"$(QTDIR)\bin\rcc.exe" -name "%(Filename)" -no-compress "%(FullPath)" -o .\GeneratedFiles\qrc_%(Filename).cpp</Command>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Rcc%27ing %(Identity)...</Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.\GeneratedFiles\qrc_%(Filename).cpp;%(Outputs)</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(FullPath);..\networks\SFnetwork\masterfile.mezzo;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">"$(QTDIR)\bin\rcc.exe" -name "%(Filename)" -no-compress "%(FullPath)" -o .\GeneratedFiles\qrc_%(Filename).cpp</Command>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Rcc%27ing %(Identity)...</Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.\GeneratedFiles\qrc_%(Filename).cpp;%(Outputs)</Outputs>
-    </CustomBuild>
-    <CustomBuild Include="GeneratedFiles\Debug\test_integration.moc">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(QTDIR)\bin\moc.exe;.\test_integration.cpp</AdditionalInputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Moc%27ing test_integration.cpp...</Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.\GeneratedFiles\$(ConfigurationName)\%(Filename).moc</Outputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">"$(QTDIR)\bin\moc.exe"  "test_integration.cpp" -o ".\GeneratedFiles\$(ConfigurationName)\%(Filename).moc"  -D_CONSOLE -DUNICODE -DWIN32 -DWIN64 -D﻿_NO_GUI -D_NO_GUI -DQT_TESTLIB_LIB -DQT_CORE_LIB -DQT_TESTCASE_BUILDDIR=\"C:/mezzo/branches/busmezzo/tests/integrationtest\" "-I." "-I.\..\..\mezzo_lib\src" "-I$(QTDIR)\include" "-I$(QTDIR)\include\QtTest" "-I$(QTDIR)\include\QtCore" "-I.\debug" "-I$(QTDIR)\mkspecs\win32-msvc2015"</Command>
-    </CustomBuild>
-    <CustomBuild Include="GeneratedFiles\Release\test_integration.moc">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(QTDIR)\bin\moc.exe;.\test_integration.cpp</AdditionalInputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Moc%27ing test_integration.cpp...</Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.\GeneratedFiles\$(ConfigurationName)\%(Filename).moc</Outputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">"$(QTDIR)\bin\moc.exe"  "test_integration.cpp" -o ".\GeneratedFiles\$(ConfigurationName)\%(Filename).moc"  -D_CONSOLE -DUNICODE -DWIN32 -DWIN64 -D﻿_NO_GUI -D_NO_GUI -DQT_NO_DEBUG -DQT_TESTLIB_LIB -DQT_CORE_LIB -DQT_TESTCASE_BUILDDIR=\"C:/mezzo/branches/busmezzo/tests/integrationtest\" -DNDEBUG "-I." "-I.\..\..\mezzo_lib\src" "-I$(QTDIR)\include" "-I$(QTDIR)\include\QtTest" "-I$(QTDIR)\include\QtCore" "-I.\release" "-I$(QTDIR)\mkspecs\win32-msvc2015"</Command>
-    </CustomBuild>
+    <None Include="..\networks\SFnetwork\masterfile.mezzo" />
+    <None Include="..\networks\SFnetwork\ExpectedOutputs\o_od_stop_summary_without_paths.dat" />
+    <None Include="..\networks\SFnetwork\ExpectedOutputs\o_od_stops_summary.dat" />
+    <None Include="..\networks\SFnetwork\ExpectedOutputs\o_passenger_trajectory.dat" />
+    <None Include="..\networks\SFnetwork\ExpectedOutputs\o_path_set_generation.dat" />
+    <None Include="..\networks\SFnetwork\ExpectedOutputs\o_segments_line_loads.dat" />
+    <None Include="..\networks\SFnetwork\ExpectedOutputs\o_segments_trip_loads.dat" />
+    <None Include="..\networks\SFnetwork\ExpectedOutputs\o_selected_paths.dat" />
+    <None Include="..\networks\SFnetwork\ExpectedOutputs\o_transit_trajectory.dat" />
+    <None Include="..\networks\SFnetwork\ExpectedOutputs\o_transitline_sum.dat" />
+    <None Include="..\networks\SFnetwork\ExpectedOutputs\o_transitlog_out.dat" />
+    <None Include="..\networks\SFnetwork\ExpectedOutputs\o_transitstop_sum.dat" />
+    <None Include="..\networks\SFnetwork\ExpectedOutputs\o_trip_total_travel_time.dat" />
+    <QtRcc Include="..\testdata.qrc">
+    </QtRcc>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Condition="Exists('$(QtMsBuild)\qt.targets')">
+    <Import Project="$(QtMsBuild)\qt.targets" />
+  </ImportGroup>
   <ImportGroup Label="ExtensionTargets" />
   <ProjectExtensions>
     <VisualStudio>
-      <UserProperties UicDir=".\GeneratedFiles" RccDir=".\GeneratedFiles" Qt5Version_x0020_x64="Qt5.8 msvc2015_64" />
+      <UserProperties UicDir=".\GeneratedFiles" RccDir=".\GeneratedFiles" Qt5Version_x0020_x64="msvc2015_64" />
     </VisualStudio>
   </ProjectExtensions>
 </Project>

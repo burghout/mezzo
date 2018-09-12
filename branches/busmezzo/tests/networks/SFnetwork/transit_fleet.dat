@@ -2,7 +2,7 @@ dwell_time_functions: 1
 {1	11	1	0	0	0	0	0	}
 																																								   
 vehicle_types:	1																																								   
-{1	Bus_1_2_3_4	15	50	50	1}	
+{1	Bus_1_2_3_4	15	50	1 50 50	1}	
 																																	   																																		   
 																																									   
 vehicle_scheduling:	132			
