@@ -36,3 +36,4 @@ ui_*
 GeneratedFiles/
 bin/
 *.filters
+*.vs/
