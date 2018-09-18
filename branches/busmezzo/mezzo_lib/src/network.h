@@ -165,7 +165,9 @@ public:
 	bool find_alternatives_all (int lid, double penalty, Incident* incident); //!< finds the alternative paths 'without' link lid.
 	//void delete_spurious_routes(); //!< deletes all routes that have no OD pair.
 	void renum_routes (); //!< renumerates the routes, to keep a consecutive series after deletions & additions
-	bool run(int period); //!< RUNS the network for 'period' seconds
+    Busroute* create_busroute_from_stops(int id, Origin* origin_node, Destination* destination_node, vector<Busstop*> stops, double time = 0.0);//!< creates the
+
+    bool run(int period); //!< RUNS the network for 'period' seconds
 	bool addroutes (int oid, int did, ODpair* odpair); //!< adds routes to an ODpair
 	bool add_od_routes()	; //!< adds routes to all ODpairs
 	bool readdemandfile(string name);  //!< reads the OD matrix and creates the ODpairs
