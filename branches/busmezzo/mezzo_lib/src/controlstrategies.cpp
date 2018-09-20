@@ -185,6 +185,11 @@ double TripGenerationStrategy::calc_route_travel_time(const vector<Link*>& route
 
 vector<Link*> TripGenerationStrategy::find_shortest_path_between_stops(Network* theNetwork, const Busstop* origin_stop, const Busstop* destination_stop, const double start_time) const
 {
+    assert(origin_stop);
+    assert(destination_stop);
+    assert(theNetwork);
+    assert(start_time >= 0);
+
 	int rootlink_id = origin_stop->get_link_id();
 	int dest_node_id = destination_stop->get_dest_node()->get_id();
 
@@ -193,15 +198,14 @@ vector<Link*> TripGenerationStrategy::find_shortest_path_between_stops(Network* 
 	return rlinks;
 }
 
-Busline* TripGenerationStrategy::find_shortest_busline(const vector<Busline*> lines, double time) const
+Busline* TripGenerationStrategy::find_shortest_busline(const vector<Busline*>& lines, double time) const
 {
 	Busline* shortestline = nullptr;
 	double shortest_tt = HUGE_VAL; //shortest travel time
-	double expected_tt = 0; //expected travel time of a line
 
 	for (Busline* line : lines)
 	{
-		expected_tt = calc_route_travel_time(line->get_busroute()->get_links(), time);
+        double expected_tt = calc_route_travel_time(line->get_busroute()->get_links(), time); //expected travel time of a line
 		if (expected_tt < shortest_tt)
 		{
 			shortest_tt = expected_tt;

@@ -63,7 +63,7 @@ protected:
 	//supporting methods for empty-vehicle redistribution strategies (maybe others in the future too TODO: figure out how best to share these)
 	double calc_route_travel_time(const vector<Link*>& routelinks, double time) const; //returns the sum of dynamic travel time costs for the routelinks
 	vector<Link*> find_shortest_path_between_stops(Network* theNetwork, const Busstop* origin_stop, const Busstop* destination_stop, const double start_time) const;
-	Busline* find_shortest_busline(const vector<Busline*> lines, double time) const;
+	Busline* find_shortest_busline(const vector<Busline*>& lines, double time) const;
 };
 
 /*Null strategy that always returns false*/
