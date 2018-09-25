@@ -382,8 +382,8 @@ void Graph<T, I>::labelCorrecting(int s, double entry, I *info)
 		 // Wilco Burghout 2001_12_13 I WANT to make paths with U-turns possible (in case of incident)
 		 // commented out:
 		   
-		  if( p_link->dnNode_ == rootnode )
-		   continue;
+//		  if( p_link->dnNode_ == rootnode )
+//		   continue;
        
 
 		 // index position as an outgoing link at the upstream node

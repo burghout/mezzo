@@ -72,10 +72,17 @@ void TestRoutes::testInitGraph()
 
 void TestRoutes::testSimpleGraph()
 {
-    simpleGraph->labelCorrecting(40); // find shortest paths using label correcting from root link 0
-    simpleGraph->printLinkPathTree();
-     simpleGraph->printNodePathTree();
-     simpleGraph->printPathToNode(4);
+
+    simpleGraph->labelCorrecting(40); // find shortest paths using label correcting from root link 40
+//    simpleGraph->printLinkPathTree();
+//    simpleGraph->printNodePathTree();
+//    simpleGraph->printPathToNode(1);
+
+    QVERIFY(simpleGraph->reachable(1));
+    QVERIFY(simpleGraph->reachable(2));
+    QVERIFY(simpleGraph->reachable(3));
+    QVERIFY(simpleGraph->reachable(4));
+
 }
 
 
