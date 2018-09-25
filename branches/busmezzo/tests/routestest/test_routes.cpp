@@ -60,28 +60,27 @@ private:
 
 void TestRoutes::testInitGraph()
 {   
-    simpleGraph = new Graph<double, GraphNoInfo<double> > (10, 100, 9999999.0); // creates a simple graph with fixed link costs <double>
-    simpleGraph->addLink(10,1,2,10.0); // link 1 from node 1 to node 2
-    simpleGraph->addLink(20,2,1,10.0); // link 2 from node 2 to node 1
-    simpleGraph->addLink(30,2,3,10.0); // link 2 from node 2 to node 1
-    simpleGraph->addLink(40,3,2,10.0); // link 2 from node 2 to node 1
-    simpleGraph->addLink(50,3,4,10.0); // link 2 from node 2 to node 1
+    simpleGraph = new Graph<double, GraphNoInfo<double> > (10, 10, 9999999.0); // creates a simple graph with fixed link costs <double>
+    simpleGraph->addLink(1,1,2,10.0); // link 1 from node 1 to node 2
+    simpleGraph->addLink(2,2,1,10.0); // link 2 from node 2 to node 1
+    simpleGraph->addLink(3,2,3,10.0); // link 2 from node 2 to node 1
+    simpleGraph->addLink(4,3,2,10.0); // link 2 from node 2 to node 1
+    simpleGraph->addLink(5,3,4,10.0); // link 2 from node 2 to node 1
     QVERIFY (simpleGraph->nNodes()==10);
-    QVERIFY (simpleGraph->nLinks()==100);
+    QVERIFY (simpleGraph->nLinks()==10);
 }
 
 void TestRoutes::testSimpleGraph()
 {
-
-    simpleGraph->labelCorrecting(40); // find shortest paths using label correcting from root link 40
-//    simpleGraph->printLinkPathTree();
-//    simpleGraph->printNodePathTree();
-//    simpleGraph->printPathToNode(1);
-
-    QVERIFY(simpleGraph->reachable(1));
-    QVERIFY(simpleGraph->reachable(2));
-    QVERIFY(simpleGraph->reachable(3));
-    QVERIFY(simpleGraph->reachable(4));
+    for (int i = 1; i<=4; ++i) // for all root links except link 5
+    {
+        simpleGraph->labelCorrecting(i); // find shortest paths using label correcting from root link
+        for (int j=1; j <= 4; ++j) // for all destinations
+        {
+  //          qDebug() << i << " to " << j;
+             QVERIFY(simpleGraph->reachable(j)); // test if they are reachable
+        }
+    }
 
 }
 
