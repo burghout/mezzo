@@ -17,19 +17,21 @@ struct compare
 };
 
 // Request
-Request::Request(int pid, int oid, int did, int l, double t) : pass_id(pid), ostop_id(oid), dstop_id(did), load(l), time(t)
+Request::Request(int pid, int oid, int did, int l, double dt, double t) : pass_id(pid), ostop_id(oid), dstop_id(did), load(l), desired_departure_time(dt), time(t)
 {
 	qRegisterMetaType<Request>(); //register Request as a metatype for QT signal arguments
 }
 
 bool Request::operator==(const Request & rhs) const
 {
-	return (pass_id == rhs.pass_id && ostop_id == rhs.ostop_id && dstop_id == rhs.dstop_id && load == rhs.load && time == rhs.time);
+	return (pass_id == rhs.pass_id && ostop_id == rhs.ostop_id && dstop_id == rhs.dstop_id && load == rhs.load && desired_departure_time == rhs.desired_departure_time && time == rhs.time);
 }
 
 bool Request::operator<(const Request & rhs) const
 {
-	if (time != rhs.time)
+    if (desired_departure_time != rhs.desired_departure_time)
+        return desired_departure_time < rhs.desired_departure_time;
+	else if (time != rhs.time)
 		return time < rhs.time;
 	else if (load != rhs.load)
 		return load < rhs.load;

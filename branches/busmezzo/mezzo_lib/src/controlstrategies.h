@@ -22,14 +22,15 @@ class Link;
 /*Request structure that corresponds to a request from a passenger for a vehicle to travel between an origin stop and a destination stop*/
 struct Request
 {
-	int pass_id;		//id of passenger that created request
-	int ostop_id;		//id of origin stop
-	int dstop_id;		//id of destination stop
-	int load;			//number of passengers in request
-	double time;		//time request was generated
+	int pass_id;		            //id of passenger that created request
+	int ostop_id;		            //id of origin stop
+	int dstop_id;		            //id of destination stop
+	int load;			            //number of passengers in request
+    double desired_departure_time;  //desired/earliest departure time for passenger
+	double time;		            //time request was generated
 
 	Request() {};
-	Request(int pid, int oid, int did, int l, double t);
+	Request(int pid, int oid, int did, int l, double dt, double t);
 
 	bool operator == (const Request& rhs) const;
 	bool operator < (const Request& rhs) const; // default less-than comparison of Requests in the order of smallest time, smallest load, smallest origin stop id, smallest destination stop id and finally smallest passenger id

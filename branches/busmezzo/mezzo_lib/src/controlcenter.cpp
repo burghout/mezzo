@@ -493,7 +493,7 @@ void Controlcenter::addCompletedVehicleTrip(Bus * transitveh, Bustrip * trip)
 //Slot implementations
 void Controlcenter::receiveRequest(Request req, double time)
 {
-	assert(req.time >= 0 && req.load > 0); //assert that request is valid
+	assert(req.desired_departure_time >= 0 && req.time >= 0 && req.load > 0); //assert that request is valid
 	rh_.addRequest(req) ? emit requestAccepted(time) : emit requestRejected(time);
 }
 

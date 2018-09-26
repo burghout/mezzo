@@ -331,7 +331,7 @@ void Passenger::start (Eventlist* eventlist, double time)
 		else // if the pass. stays at the same stop
 		{
 			OD_stop->add_pass_waiting(this); // store the new passenger at the list of waiting passengers with this OD
-			Request req = createRequest(1, start_time); //create request with load 1 at current time 
+			Request req = createRequest(1, start_time, start_time); //create request with load 1 at current time 
 			emit sendRequest(req, time); //send request to any controlcenter that is connected
 
 			set_arrival_time_at_stop(start_time);
@@ -351,11 +351,12 @@ void Passenger::start (Eventlist* eventlist, double time)
 		}
 }
 
-Request Passenger::createRequest(int load, double time)
+Request Passenger::createRequest(int load, double desired_departure_time, double time)
 {
 	assert(load > 0);
+    assert(desired_departure_time >= 0);
 	assert(time >= 0);
-	return Request(this->get_id(), OD_stop->get_origin()->get_id(), OD_stop->get_destination()->get_id(), load, time);
+	return Request(this->get_id(), OD_stop->get_origin()->get_id(), OD_stop->get_destination()->get_id(), load, desired_departure_time, time);
 }
 
 bool Passenger:: make_boarding_decision (Bustrip* arriving_bus, double time) 
