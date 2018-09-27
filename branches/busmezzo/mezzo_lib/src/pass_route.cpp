@@ -405,9 +405,9 @@ double Pass_path::calc_waiting_utility (vector <vector <Busstop*> >::iterator st
 		if (next_trip)
 		// a dynamic filtering rule - if there is at least one line in the first leg which is available - then this waiting alternative is relevant
 		{
-			double ivt = calc_total_in_vehicle_time(time, pass);
-			double avg_walking_speed = random->nrandom(theParameters->average_walking_speed, theParameters->average_walking_speed/4);
-			double wt = calc_total_waiting_time(time, false, alighting_decision, avg_walking_speed, pass);
+			double ivt = calc_total_in_vehicle_time(time, pass); //minutes
+			double avg_walking_speed = random->nrandom(theParameters->average_walking_speed, theParameters->average_walking_speed/4); //meters per minute, TODO: change this to truncated normal dist?
+			double wt = calc_total_waiting_time(time, false, alighting_decision, avg_walking_speed, pass); //minutes
 
 			if (wt < theParameters->max_waiting_time) //Changed by Jens 2015-03-23 to avoid weird effects when the schedule is too pessimistic
 			{

@@ -355,7 +355,7 @@ void Bus::set_state(const BusState newstate, const double time)
 
 void Bus::print_state()
 {
-	cout << "Bus " << bus_id << " is ";
+	cout << endl << "Bus " << bus_id << " is ";
 	switch (state_)
 	{
 	case BusState::OnCall:

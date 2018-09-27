@@ -1498,7 +1498,7 @@ bool Busstop::execute(Eventlist* eventlist, double time) // is executed by the e
 		if ((*ua_bus_it).second == time)
 		{
 			Bus* ua_bus = (*ua_bus_it).first;
-			DEBUG_MSG("Activating unassigned bus " << ua_bus->get_bus_id() << " at time " << time << " at stop " << name);
+			DEBUG_MSG(endl << "Activating unassigned bus " << ua_bus->get_bus_id() << " at time " << time << " at stop " << name);
 			ua_bus->set_last_stop_visited(this); //update this here before setting state
 			unassigned_bus_arrivals.erase(ua_bus_it); //vehicle is no longer arriving 
 			add_unassigned_bus(ua_bus, time); //add vehicle to vector of unassigned buses at this stop with current time as arrival time
