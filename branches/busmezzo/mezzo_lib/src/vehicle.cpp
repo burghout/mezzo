@@ -206,20 +206,23 @@ void Bus::set_bustype_attributes (Bustype* bty)
 
 void Bus::advance_curr_trip (double time, Eventlist* eventlist) // progresses trip-pointer 
 {
-	if (flex_vehicle_)
-		DEBUG_MSG("----------Bus " << id << " finishing trip " << curr_trip->get_id() << " at time " << time);
+    if (theParameters->drt)
+    {
+        if (flex_vehicle_)
+            DEBUG_MSG("----------Bus " << id << " finishing trip " << curr_trip->get_id() << " at time " << time);
 
-	if (flex_vehicle_ && curr_trip->is_flex_trip()) //if the trip that just finished was dynamically scheduled then the controlcenter is in charge of bookkeeping the completed trip and bus for writing outputs
-	{
-		if (last_stop_visited_->get_dest_node() == nullptr)
-		{
-			DEBUG_MSG_V("Problem when ending trip in Bus::advance_curr_trip - final stop " << last_stop_visited_->get_id() << " does not have a destination node associated with it. Aborting...");
-			abort();
-		}
-		Controlcenter* cc = last_stop_visited_->get_CC(); //TODO: what if multiple control centers are associated with this stop?
-		curr_trip->get_line()->remove_flex_trip(curr_trip); //remove from set of uncompleted flex trips in busline, control center takes ownership of the trip for deletion
-		cc->addCompletedVehicleTrip(this, curr_trip); //save bus - bustrip pair in control center of last stop 
-	}
+        if (flex_vehicle_ && curr_trip->is_flex_trip()) //if the trip that just finished was dynamically scheduled then the controlcenter is in charge of bookkeeping the completed trip and bus for writing outputs
+        {
+            if (last_stop_visited_->get_dest_node() == nullptr)
+            {
+                DEBUG_MSG_V("Problem when ending trip in Bus::advance_curr_trip - final stop " << last_stop_visited_->get_id() << " does not have a destination node associated with it. Aborting...");
+                abort();
+            }
+            Controlcenter* cc = last_stop_visited_->get_CC(); //TODO: what if multiple control centers are associated with this stop?
+            curr_trip->get_line()->remove_flex_trip(curr_trip); //remove from set of uncompleted flex trips in busline, control center takes ownership of the trip for deletion
+            cc->addCompletedVehicleTrip(this, curr_trip); //save bus - bustrip pair in control center of last stop 
+        }
+    }
 
 	vector <Start_trip*>::iterator trip1, next_trip; // find the pointer to the current and next trip
 	for (vector <Start_trip*>::iterator trip = curr_trip->driving_roster.begin(); trip < curr_trip->driving_roster.end(); trip++)
@@ -245,48 +248,51 @@ void Bus::advance_curr_trip (double time, Eventlist* eventlist) // progresses tr
 	}
 
 	//busvehicle should be unassigned at opposing stop after completing its trip, then mimic the initialization process for DRT vehicles from network reader
-	if (flex_vehicle_ && curr_trip->is_flex_trip())
-	{
-		assert(occupancy == 0); //no passengers should be remaining on the bus at this point
-		vid++;
-		Bus* newbus = recycler.newBus(); //want to clone the bus that just finished its trip with its final stop as its 'origin stop'
-		assert(newbus->get_state() == BusState::Null);
-		
-		//copy over info from the old bus to the new
-		newbus->set_flex_vehicle(true);
-		newbus->set_bus_id(id);
-		newbus->set_bustype_attributes(bus_type);
-		newbus->set_curr_trip(nullptr); //bus has no trip assigned to it yet
-		newbus->set_on_trip(false);
+    if (theParameters->drt)
+    {
+        if (flex_vehicle_ && curr_trip->is_flex_trip())
+        {
+            assert(occupancy == 0); //no passengers should be remaining on the bus at this point
+            vid++;
+            Bus* newbus = recycler.newBus(); //want to clone the bus that just finished its trip with its final stop as its 'origin stop'
+            assert(newbus->get_state() == BusState::Null);
 
-		Controlcenter* cc = last_stop_visited_->get_CC();
-		this->set_state(BusState::Null, time); //set state of old bus to Null to remove it from fleet state map
-		cc->disconnectVehicle(this); //disconnect old bus and connect new bus
-		cc->connectVehicle(newbus);
+            //copy over info from the old bus to the new
+            newbus->set_flex_vehicle(true);
+            newbus->set_bus_id(id);
+            newbus->set_bustype_attributes(bus_type);
+            newbus->set_curr_trip(nullptr); //bus has no trip assigned to it yet
+            newbus->set_on_trip(false);
 
-		for (const int& sroute_id : sroute_ids_)
-		{
-			newbus->add_sroute_id(sroute_id);
-			cc->removeVehicleFromServiceRoute(sroute_id, this);
-			cc->addVehicleToServiceRoute(sroute_id, newbus);
-		}
+            Controlcenter* cc = last_stop_visited_->get_CC();
+            this->set_state(BusState::Null, time); //set state of old bus to Null to remove it from fleet state map
+            cc->disconnectVehicle(this); //disconnect old bus and connect new bus
+            cc->connectVehicle(newbus);
 
-		//if an opposing stop exists, initialize newbus at the opposing stop associated with last stop visited by oldbus with expected arrival time as soon as possible
-		if (last_stop_visited_->get_opposing_stop() != nullptr)
-		{
-			Busstop* opposing_stop = last_stop_visited_->get_opposing_stop();
-			if (opposing_stop->get_origin_node() == nullptr)
-			{
-				DEBUG_MSG_V("Problem when turning bus in Bus::advance_curr_trip - opposing stop " << opposing_stop->get_id() << " to stop " << last_stop_visited_->get_id() << " does not have an origin node associated with it. Aborting..." ); //opposing stop should have an origin node associated with it
-				abort();
-			}
-			opposing_stop->add_unassigned_bus_arrival(eventlist, newbus, time);
-		}
-		else //bus stays at the current stop (but cannot currently go anywhere until it has turned around)
-		{
-			last_stop_visited_->add_unassigned_bus_arrival(eventlist, newbus, time);
-		}
-	}
+            for (const int& sroute_id : sroute_ids_)
+            {
+                newbus->add_sroute_id(sroute_id);
+                cc->removeVehicleFromServiceRoute(sroute_id, this);
+                cc->addVehicleToServiceRoute(sroute_id, newbus);
+            }
+
+            //if an opposing stop exists, initialize newbus at the opposing stop associated with last stop visited by oldbus with expected arrival time as soon as possible
+            if (last_stop_visited_->get_opposing_stop() != nullptr)
+            {
+                Busstop* opposing_stop = last_stop_visited_->get_opposing_stop();
+                if (opposing_stop->get_origin_node() == nullptr)
+                {
+                    DEBUG_MSG_V("Problem when turning bus in Bus::advance_curr_trip - opposing stop " << opposing_stop->get_id() << " to stop " << last_stop_visited_->get_id() << " does not have an origin node associated with it. Aborting..."); //opposing stop should have an origin node associated with it
+                    abort();
+                }
+                opposing_stop->add_unassigned_bus_arrival(eventlist, newbus, time);
+            }
+            else //bus stays at the current stop (but cannot currently go anywhere until it has turned around)
+            {
+                last_stop_visited_->add_unassigned_bus_arrival(eventlist, newbus, time);
+            }
+        }
+    }
 }
 
 void Bus::record_busvehicle_location (Bustrip* trip, Busstop* stop, double time)
@@ -349,7 +355,7 @@ void Bus::set_state(const BusState newstate, const double time)
 
 void Bus::print_state()
 {
-	cout << "Bus " << bus_id << " is ";
+	cout << endl << "Bus " << bus_id << " is ";
 	switch (state_)
 	{
 	case BusState::OnCall:

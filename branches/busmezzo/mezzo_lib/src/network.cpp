@@ -1357,13 +1357,13 @@ bool Network::readcontrolcenters(const string& name)
         in.close();
         return false;
     }
-    int numControlCenters;
-    in >> numControlCenters;
+    int num_control_centers;
+    in >> num_control_centers;
 
-    if(numControlCenters == 0)
+    if(num_control_centers == 0)
         DEBUG_MSG("Warning: drt activated but no control centers defined in controlcenters.dat");
 
-    for (int i = 0; i < numControlCenters; ++i)
+    for (int i = 0; i < num_control_centers; ++i)
     {
         int id; //id of control center
         int tg_strategy; //id of trip generation strategy
@@ -7142,10 +7142,11 @@ bool Network::shortest_pathtree_from_origin_link(int lid, double start_time)
             graph->labelCorrecting(lid,start_time, linkinfo);
         else
             graph->labelCorrecting(lid,start_time);
+
+		return true;
     }
     else
         return false; // could not init graph, so no search done
-    return true;
 }
 
 vector<Link*> Network::shortest_path_to_node(int rootlink, int dest_node, double start_time) //!< returns shortest path Links

@@ -79,7 +79,7 @@ void TestControlcenter::testRequestHandler()
 	Passenger* pass = new Passenger(0, 0.0, OD_stop, nullptr);
 
 	//test create request via passenger method
-	Request req1 = pass->createRequest(1, 1.0); //request with pass_id of passenger
+	Request req1 = pass->createRequest(1, 1.0, 1.0); //request with pass_id of passenger
 	QVERIFY2(req1.ostop_id == oid, "Failure, createRequest returning incorrect origin stop id");
 	QVERIFY2(req1.dstop_id == did, "Failure, createRequest returning incorrect destination stop id");
 	
@@ -95,7 +95,7 @@ void TestControlcenter::testRequestHandler()
 	emit pass->sendRequest(req1, 0.0);
 	QVERIFY2(rhPtr->requestSet_.size() == 1, "Failure, there should still be 1 request in requestSet after duplicate sendRequest signal from connected passenger");
 
-	Request req2 = Request(1, 1, 1, 1, 0.0); //creates request with pass_id 1
+	Request req2 = Request(1, 1, 1, 1, 0.0, 0.0); //creates request with pass_id 1
 	rhPtr->addRequest(req2);
 	QVERIFY2(rhPtr->requestSet_.size() == 2, "Failure, there should be 2 requests in requestSet after direct call to addRequest");
 

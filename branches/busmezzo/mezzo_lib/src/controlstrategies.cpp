@@ -17,19 +17,21 @@ struct compare
 };
 
 // Request
-Request::Request(int pid, int oid, int did, int l, double t) : pass_id(pid), ostop_id(oid), dstop_id(did), load(l), time(t)
+Request::Request(int pid, int oid, int did, int l, double dt, double t) : pass_id(pid), ostop_id(oid), dstop_id(did), load(l), desired_departure_time(dt), time(t)
 {
 	qRegisterMetaType<Request>(); //register Request as a metatype for QT signal arguments
 }
 
 bool Request::operator==(const Request & rhs) const
 {
-	return (pass_id == rhs.pass_id && ostop_id == rhs.ostop_id && dstop_id == rhs.dstop_id && load == rhs.load && time == rhs.time);
+	return (pass_id == rhs.pass_id && ostop_id == rhs.ostop_id && dstop_id == rhs.dstop_id && load == rhs.load && desired_departure_time == rhs.desired_departure_time && time == rhs.time);
 }
 
 bool Request::operator<(const Request & rhs) const
 {
-	if (time != rhs.time)
+    if (desired_departure_time != rhs.desired_departure_time)
+        return desired_departure_time < rhs.desired_departure_time;
+	else if (time != rhs.time)
 		return time < rhs.time;
 	else if (load != rhs.load)
 		return load < rhs.load;
@@ -185,23 +187,27 @@ double TripGenerationStrategy::calc_route_travel_time(const vector<Link*>& route
 
 vector<Link*> TripGenerationStrategy::find_shortest_path_between_stops(Network* theNetwork, const Busstop* origin_stop, const Busstop* destination_stop, const double start_time) const
 {
+    assert(origin_stop);
+    assert(destination_stop);
+    assert(theNetwork);
+    assert(start_time >= 0);
+
 	int rootlink_id = origin_stop->get_link_id();
-	int dest_node_id = destination_stop->get_dest_node()->get_id();
+	int dest_node_id = destination_stop->get_dest_node()->get_id(); //TODO: can change these to look between upstream and downstream junction nodes as well
 
 	vector<Link*> rlinks = theNetwork->shortest_path_to_node(rootlink_id, dest_node_id, start_time);
 
 	return rlinks;
 }
 
-Busline* TripGenerationStrategy::find_shortest_busline(const vector<Busline*> lines, double time) const
+Busline* TripGenerationStrategy::find_shortest_busline(const vector<Busline*>& lines, double time) const
 {
 	Busline* shortestline = nullptr;
 	double shortest_tt = HUGE_VAL; //shortest travel time
-	double expected_tt = 0; //expected travel time of a line
 
 	for (Busline* line : lines)
 	{
-		expected_tt = calc_route_travel_time(line->get_busroute()->get_links(), time);
+        double expected_tt = calc_route_travel_time(line->get_busroute()->get_links(), time); //expected travel time of a line
 		if (expected_tt < shortest_tt)
 		{
 			shortest_tt = expected_tt;
@@ -231,7 +237,7 @@ bool NaiveTripGeneration::calc_trip_generation(const set<Request>& requestSet, c
 	{
         if (requestSet.size() >= (std::size_t) drt_min_occupancy) //do not attempt to generate trip unless requestSet is greater than the desired occupancy
 		{
-			DEBUG_MSG("------------Trip Generating Naively!-------------");
+			DEBUG_MSG(endl << "------------Trip Generating Naively!-------------");
 			//find od pair with the highest frequency in requestSet
 			map<pair<int, int>, int> odcounts = countRequestsPerOD(requestSet);
 			typedef pair<pair<int, int>, int> od_count;
@@ -305,7 +311,7 @@ bool NearestLongestQueueEVTripGeneration::calc_trip_generation(const set<Request
 		if (fleetState.at(BusState::OnCall).empty()) //a drt vehicle must be available
 			return false;
 
-		DEBUG_MSG("------------Nearest Neighbour Longest Queue EV Trip Generation-------------");
+		DEBUG_MSG(endl << "------------Nearest Neighbour Longest Queue EV Trip Generation-------------");
 		//find od pair with the highest frequency in requestSet (highest source of shareable demand)
 		map<pair<int, int>, int> odcounts = countRequestsPerOD(requestSet);
 		typedef pair<pair<int, int>, int> od_count;
@@ -454,7 +460,7 @@ bool NaiveMatching::find_tripvehicle_match(Bustrip* unmatchedTrip, map<int, set<
 	//attempt to match unmatchedTrips with first on call vehicle found at the origin stop of the trip
 	if (unmatchedTrip && !veh_per_sroute.empty())
 	{
-		DEBUG_MSG("------------Matching Naively!-------------");
+		DEBUG_MSG(endl << "------------Matching Naively!-------------");
 		Bus* veh = nullptr; //the transit veh that we wish to match to a trip
 		Busline* sroute = unmatchedTrip->get_line(); //get the line/service route of this trip
 		set<Bus*> candidate_buses = veh_per_sroute[sroute->get_id()]; //get all transit vehicles that have this route in their service area
