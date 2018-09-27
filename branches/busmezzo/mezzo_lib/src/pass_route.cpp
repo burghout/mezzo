@@ -416,8 +416,9 @@ double Pass_path::calc_waiting_utility (vector <vector <Busstop*> >::iterator st
 		}
 		else
 		{
-			//DEBUG_MSG_V("Pass_path::calc_waiting_utility returning " << drt_first_rep_waiting_utility << " for line with no scheduled trips");
-			return ::drt_first_rep_waiting_utility; //return a very positive waiting utility for lines with no trips
+			DEBUG_MSG_V("Pass_path::calc_waiting_utility returning " << drt_first_rep_waiting_utility << " for line with no scheduled trips");
+            if(theParameters->drt && (*iter_lines)->is_flex_line())
+			    return ::drt_first_rep_waiting_utility; //return a waiting utility parameter for lines with no trips
 		}
 	} 
 	// if none of the lines in the first leg is available - then the waiting alternative is irrelevant
