@@ -341,7 +341,7 @@ void Graph<T, I>::labelCorrecting(int s, double entry, I *info)
    GraphLink<T, I> *s_link, *p_link;
    GraphLink<T, I> *root = link(s);
    GraphNode<T, I> *pivot;
-   int rootnode = root->upNode_;
+//   int rootnode = root->upNode_; // commented out since no longer needed
 
    // initialize list and costs
 
