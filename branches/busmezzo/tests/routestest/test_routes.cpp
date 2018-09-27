@@ -50,6 +50,7 @@ private Q_SLOTS:
     void testInitGraphs();
     void testSimpleGraph();
     void testTimeDependentGraph();
+    void testTimeDependentDetour();
 
 private:
     //    NetworkThread* nt; //!< contains the network thread
@@ -114,11 +115,43 @@ void TestRoutes::testSimpleGraph()
 void TestRoutes::testTimeDependentGraph()
 {
     graph->labelCorrecting(1,0.0,linkinfo);
+    for (int j=1; j <= 4; ++j) // for all destinations
+    {
+        QVERIFY(graph->reachable(j)); // test if they are reachable
+    }
+    QVERIFY (graph->costToNode(4)==40.0);
+    graph->printNodePathTree();
+    graph->labelCorrecting(1,10.0,linkinfo);
+    QVERIFY (graph->costToNode(4)==60.0);
     graph->printNodePathTree();
     graph->labelCorrecting(1,20.0,linkinfo);
+    QVERIFY (graph->costToNode(4)==80.0);
     graph->printNodePathTree();
-    graph->labelCorrecting(1,40.0,linkinfo);
-    graph->printNodePathTree();
+}
+
+void TestRoutes::testTimeDependentDetour()
+{
+     graph->addLink(6,2,4,10.0); // add a bypass
+     LinkTime* lt = new LinkTime(6,3,20.0); // create the LinkTimes
+     lt->times [0] = 30.0;
+     lt->times [1] = 30.0;
+     lt->times [2] = 60.0; // same
+     linkinfo->times.insert(pair <int,LinkTime*>(6,lt));
+
+     graph->labelCorrecting(1,0.0,linkinfo);
+     for (int j=1; j <= 4; ++j) // for all destinations
+     {
+         QVERIFY(graph->reachable(j)); // test if they are reachable
+     }
+     QVERIFY (graph->costToNode(4)==40.0); // via node 3
+     graph->printNodePathTree();
+     graph->labelCorrecting(1,10.0,linkinfo);
+     QVERIFY (graph->costToNode(4)==40.0); // now via detour link 6
+     graph->printNodePathTree();
+     graph->labelCorrecting(1,20.0,linkinfo); // now via node 3, as detour more expensive
+     QVERIFY (graph->costToNode(4)==80.0);
+     graph->printNodePathTree();
+
 }
 
 QTEST_APPLESS_MAIN(TestRoutes)
