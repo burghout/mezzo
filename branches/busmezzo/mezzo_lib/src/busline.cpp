@@ -181,6 +181,34 @@ bool Busline::check_last_trip (Bustrip* trip)
 return false;
 }
 
+// RTCI - generation function
+// each time a (recorded) trip departs from stop, update the RTCI prediction of all further trips for this line segment (stop)
+void Busline::generate_RTCI(Bustrip* recorded_trip, Busstop* curr_stop)
+{
+	// exponential smoothing only - read alpha parameter
+	double alpha = theParameters->RTCI_smoothing_alpha;
+
+	for (vector<Start_trip>::iterator update_trip_RTCI = get_pointer_to_curr_trip(recorded_trip); update_trip_RTCI < trips.end(); update_trip_RTCI++)
+	{
+		// SCHEME 1 - latest-run RTCI only -> simply overwrite the RTCI value
+		if (theParameters->RTCI_generation_scheme == 1)
+		{
+			update_trip_RTCI->first->predicted_RTCI_factors[curr_stop] = recorded_trip->observed_marginal_RTCI_factors[curr_stop];
+		}
+		// SCHEME 2 - exponential smoothing RTCI -> multiply by the previous RTCI prediction
+		if (theParameters->RTCI_generation_scheme == 2)
+		{
+			double prev_trip_RTCI_prediction = update_trip_RTCI->first->predicted_RTCI_factors[curr_stop];
+			if (prev_trip_RTCI_prediction == 0.0) // exception required for 1st line departures
+			{
+				prev_trip_RTCI_prediction = 1.0;
+			}
+			update_trip_RTCI->first->predicted_RTCI_factors[curr_stop] = (1 - alpha) * prev_trip_RTCI_prediction + alpha * recorded_trip->observed_marginal_RTCI_factors[curr_stop];
+		}
+	}
+}
+
+
 /*
 double Busline::calc_next_scheduled_arrival_at_stop (Busstop* stop, double time)
 {
@@ -353,6 +381,54 @@ Bustrip* Busline::get_next_trip (Bustrip* reference_trip) //!< returns the trip 
 	return trips.back().first;
 }
 
+// RTCI
+vector <Start_trip>::iterator Busline::get_pointer_to_curr_trip(Bustrip* recorded_trip) //<<! returns the trip after the reference trip on the trips' vector
+{
+	for (vector<Start_trip>::iterator trips_iter = trips.begin(); trips_iter < trips.end(); trips_iter++)
+	{
+		if (trips_iter->first->get_id() == recorded_trip->get_id())
+		{
+			return trips_iter;
+		}
+	}
+}
+
+// RTCI
+vector <Start_trip>::iterator Busline::get_pointer_to_next_incoming_trip(Bustrip* recorded_trip) //<<! returns the trip after the reference trip on the trips' vector
+{
+	for (vector<Start_trip>::iterator trips_iter = trips.begin(); trips_iter < trips.end(); trips_iter++)
+	{
+		if (trips_iter->first->get_id() == recorded_trip->get_id())
+		{
+			return trips_iter + 1;
+		}
+	}
+}
+
+// RTCI
+double Busline::get_arrival_time_at_next_stop(Bustrip* incoming_trip, Busstop* this_stop) // returns the projected arrival time of this trip at the next downstream stop
+{
+	for (vector <Visit_stop*>::iterator stops_iter = incoming_trip->stops.begin(); stops_iter < incoming_trip->stops.end(); stops_iter++)
+	{
+		if ((*stops_iter)->first->get_id() == this_stop->get_id())
+		{
+			return (*(stops_iter + 1))->second;
+		}
+	}
+}
+
+// RTCI - used to extract the currently valid RTCI prediction for each considered IVT path segment
+double Busline::get_anticipated_segment_RTCI(Bustrip* expected_trip, Busstop* dep_stop)
+{
+	double toReturn;
+	toReturn = expected_trip->predicted_RTCI_factors[dep_stop];
+	if (toReturn == 0.0)	// exception in case no RTCI value is provided yet (assume = 1.0)
+	{
+		toReturn = 1.0;
+	}
+	return toReturn;
+}
+
 Bustrip* Busline::get_previous_trip (Bustrip* reference_trip) //!< returns the trip before the reference trip on the trips vector
 {
 	for (vector <Start_trip>::iterator trips_iter = trips.begin(); trips_iter < trips.end(); trips_iter++)
@@ -365,9 +441,15 @@ Bustrip* Busline::get_previous_trip (Bustrip* reference_trip) //!< returns the t
 	return trips.front().first;
 }
 
-double Busline::calc_curr_line_ivt (Busstop* start_stop, Busstop* end_stop, int rti, double time)
+// RTCI - crucial modifications!
+// IVT utility = [in-veh time * current RTCI] summed over all ivt segments
+double Busline::calc_curr_line_ivt (Busstop* start_stop, Busstop* end_stop, int rti, double time, bool include_ivt_RTCI)
 {
 	double extra_travel_time = 0.0;
+	double total_beta_CL = 1.0; // average crowding factor for the whole ivt path
+	double ivtt = 0; // raw IVT time
+	double ivtt_CL = 0; // weighted IVT time * RTCI
+	
 	if (rti == 3)
 	{
 		extra_travel_time = check_subline_disruption(start_stop, end_stop, time);
@@ -398,12 +480,31 @@ double Busline::calc_curr_line_ivt (Busstop* start_stop, Busstop* end_stop, int 
 				found_alight = true;
 				break;
 			}
+			// RTCI - update weighted ivt for each consecutive IVT segment 
+			if ((time > 0.0) & (theParameters->include_RTCI == true) & (found_board == true)) // access only once simulation has started (time > 0)
+			{
+				double next_stop_arrival_time;
+				next_stop_arrival_time = get_arrival_time_at_next_stop((*check_trip).first, (*stop)->first);
+				ivtt_CL += (next_stop_arrival_time - (*stop)->second) * get_anticipated_segment_RTCI((*check_trip).first, (*stop)->first);
+				// partial_ivtt_CL = segment_IVTT * segment RTCI
+			}				
 	}
 	if (found_board == false || found_alight == false)
 	{
 		return 10000; // default in case no matching
 	}
-	return ((*alight_stop)->second - (*board_stop)->second) + extra_travel_time; // in seconds
+	// RTCI - return total IVT weighted by total RTCI
+	if (time > 0.0 & include_ivt_RTCI == true)
+	{
+		//total_beta_CL = ivtt_CL / (((*alight_stop)->second - (*board_stop)->second)); 
+		return ivtt_CL;
+	}
+	// otherwise - return absolute IVT	
+	else	
+	{
+		ivtt = ((*alight_stop)->second - (*board_stop)->second) + extra_travel_time; // in seconds
+		return ivtt;
+	}
 }
 
 double Busline::check_subline_disruption (Busstop* last_visited_stop, Busstop* pass_stop, double time)
@@ -591,6 +692,12 @@ Bustrip::Bustrip ()
 	else
 	{
 		random->randomize();
+	}
+	// RTCI - initialise the RTCI maps of crowding factors
+	for (vector <Visit_stop*>::iterator visit_stops = stops.begin(); visit_stops < stops.end(); visit_stops++)
+	{
+		observed_marginal_RTCI_factors[(*visit_stops)->first] = 0.0;
+		predicted_RTCI_factors[(*visit_stops)->first] = 1.0;
 	}
 }
 
