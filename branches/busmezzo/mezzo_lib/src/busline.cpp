@@ -723,6 +723,12 @@ Bustrip::Bustrip (int id_, double start_time_, Busline* line_): id(id_), line(li
 	{
 		random->randomize();
 	}
+	// RTCI - initialise the RTCI maps of crowding factors
+	for (vector <Visit_stop*>::iterator visit_stops = stops.begin(); visit_stops < stops.end(); visit_stops++)
+	{
+		observed_marginal_RTCI_factors[(*visit_stops)->first] = 0.0;
+		predicted_RTCI_factors[(*visit_stops)->first] = 1.0;
+	}
 	/*  will be relevant only when time points will be trip-specific
 	for (map<Busstop*,bool>::iterator tp = trips_timepoint.begin(); tp != trips_timepoint.end(); tp++)
 	{
@@ -973,6 +979,59 @@ void Bustrip::record_passenger_loads (vector <Visit_stop*>::iterator start_stop)
 	}
 }
 
+// RTCI - updated functions
+
+// RTCI changes - distinguished between seated vs. standee crowding penalty
+double Bustrip::find_crowding_coeff(Passenger* pass)
+{
+	// first - calculate load factor
+	double load_factor_seatcap = 1.0 * this->get_busv()->get_occupancy() / this->get_busv()->get_number_seats();
+	double load_factor_totalcap = 1.0 * this->get_busv()->get_occupancy() / this->get_busv()->get_capacity();
+
+	// second - return value based on pass. standing/sitting
+	bool sits = pass->get_pass_sitting();
+
+	return find_crowding_coeff(sits, load_factor_seatcap, load_factor_totalcap);
+}
+
+// RTCI changes - simplified to 4 crowding levels, modified penalty values
+double Bustrip::find_crowding_coeff(bool sits, double load_factor_seatcap, double load_factor_totalcap)
+{
+
+	if (load_factor_seatcap < 0.81)
+	{
+		return 1.00;
+	}
+	else if (load_factor_seatcap < 1.00)
+	{
+		return 1.20;
+	}
+	else if (load_factor_totalcap < 0.81)
+	{
+		if (sits == true)
+		{
+			return 1.20;
+		}
+		else
+		{
+			return 1.60;
+		}
+	}
+	else
+	{
+		if (sits == true)
+		{
+			return 1.20;
+		}
+		else
+		{
+			return 2.00;
+		}
+	}
+}
+
+// old (pre-RTCI) versions below
+/*
 double Bustrip::find_crowding_coeff (Passenger* pass)
 {
 	// first - calculate load factor
@@ -1049,6 +1108,20 @@ double Bustrip::find_crowding_coeff (bool sits, double load_factor)
 		{
 			return 2.69;
 		}
+	}
+}
+*/
+
+// RTCI - record crowding information when a given trip departs from the stop
+double Bustrip::record_RTCI(double load_factor_seatcap, double load_factor_totalcap)
+{
+	if (load_factor_seatcap > 1.00) // if pass. volume > seat capacity
+	{
+		return find_crowding_coeff(false, load_factor_seatcap, load_factor_totalcap);
+	}
+	else // if on-board volume does not exceed seat capacity
+	{
+		return find_crowding_coeff(true, load_factor_seatcap, load_factor_totalcap);
 	}
 }
 
@@ -1821,9 +1894,18 @@ void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, d
 		trip->get_busv()->set_occupancy(starting_occupancy + get_nr_boarding() - get_nr_alighting()); // updating the occupancy
 	}
 	
-	// RTCI algorithm here:
-	// 1. trip-> record_RTCI [this_stop]
-	// 2. iterator:: trips = trip, trip+1, trip+2... -> generate_RTCI [this_stop]
+	// RTCI - record and update crowding info/predictions
+	if (theParameters->include_RTCI == true)
+	{
+		double RTCI_load_factor_seatcap;
+		double RTCI_load_factor_totalcap;
+		RTCI_load_factor_seatcap = 1.0 * (trip->get_busv()->get_occupancy()) / (trip->get_busv()->get_number_seats());
+		RTCI_load_factor_totalcap = 1.0 * (trip->get_busv()->get_occupancy()) / (trip->get_busv()->get_capacity());
+		// RTCI - step 1. - record the observed RTCI for a single trip (currently exiting the stop)
+		trip->observed_marginal_RTCI_factors[this] = trip->record_RTCI(RTCI_load_factor_seatcap, RTCI_load_factor_totalcap);
+		// RTCI - step 2. - generate (update) the predicted RTCI for all remaining (incoming) trips
+		trip->get_line()->generate_RTCI(trip, this);
+	}
 	
 	// THEN - perform alighting decisions
 	if (theParameters->demand_format == 3)
@@ -2320,9 +2402,11 @@ void Busstop::record_busstop_visit (Bustrip* trip, double enter_time)  // create
 	{
 		riding_time = enter_time - trip->get_last_stop_exit_time();
 		int nr_seats = trip->get_busv()->get_number_seats();
-		crowded_pass_riding_time = calc_crowded_travel_time(riding_time, nr_riders, nr_seats);
-		crowded_pass_dwell_time = calc_crowded_travel_time(dwelltime, occupancy, nr_seats);
-		crowded_pass_holding_time = calc_crowded_travel_time(holdingtime, occupancy, nr_seats);
+		// RTCI modifications
+		int total_cap = trip->get_busv()->get_capacity();
+		crowded_pass_riding_time = calc_crowded_travel_time(riding_time, nr_riders, nr_seats, total_cap);
+		crowded_pass_dwell_time = calc_crowded_travel_time(dwelltime, occupancy, nr_seats, total_cap);
+		crowded_pass_holding_time = calc_crowded_travel_time(holdingtime, occupancy, nr_seats, total_cap);
 	}
 
 	if (trip->get_line()->check_first_trip(trip) == true)
@@ -2334,19 +2418,21 @@ void Busstop::record_busstop_visit (Bustrip* trip, double enter_time)  // create
 		arrival_headway, get_time_since_departure (trip , exit_time), nr_alighting , nr_boarding , occupancy, calc_total_nr_waiting(), (arrival_headway * nr_boarding)/2, holdingtime)); 
 }
 
+// RTCI modifications - function of both seat and total capacity
 double Busstop::calc_crowded_travel_time (double travel_time, int nr_riders, int nr_seats) //Returns the sum of the travel time weighted by the crowding factors
 {
 	double crowded_travel_time;
-	double load_factor = nr_riders / nr_seats;
+	double load_factor_seatcap = 1.0 * nr_riders / nr_seats;
+	double load_factor_totalcap = 1.0 * nr_riders / total_cap;
 
 	if (load_factor < 1) //if everyone had a seat
 	{
-		crowded_travel_time = travel_time * nr_riders * Bustrip::find_crowding_coeff(true, load_factor);
+		crowded_travel_time = travel_time * nr_riders * Bustrip::find_crowding_coeff(true, load_factor_seatcap, load_factor_totalcap);
 	}
 	else
 	{
 		int nr_standees = nr_riders - nr_seats;
-		crowded_travel_time = travel_time * (nr_seats * Bustrip::find_crowding_coeff(true, load_factor) + nr_standees * Bustrip::find_crowding_coeff(false, load_factor));
+		crowded_travel_time = travel_time * (nr_seats * Bustrip::find_crowding_coeff(true, load_factor_seatcap, load_factor_totalcap) + nr_standees * Bustrip::find_crowding_coeff(false, load_factor_seatcap, load_factor_totalcap));
 	}
 
 	return crowded_travel_time;
