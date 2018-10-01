@@ -231,13 +231,21 @@ public:
 	double check_subline_disruption (Busstop* last_visited_stop, Busstop* pass_stop, double time);	//!< check if this pair of stops is included in the disruption area and return extra time due to disrupution
 	double extra_disruption_on_segment (Busstop* next_stop, double time);
 	
+	// RTCI
+	void generate_RTCI(Bustrip* recorded_trip, Busstop* recorded_stop);		// generate RTCI of veh trip at each stop-exit instance
+	vector <Start_trip>::iterator Busline::get_pointer_to_curr_trip(Bustrip* recorded_trip);
+	vector <Start_trip>::iterator Busline::get_pointer_to_next_incoming_trip(Bustrip* recorded_trip);
+	double get_arrival_time_at_next_stop(Bustrip* incoming_trip, Busstop* this_stop);	// returns the projected arrival time at the next stop of this trip
+	double get_anticipated_segment_RTCI(Bustrip* expected_trip, Busstop* dep_stop);	// used to access the current (valid) RTCI prediction at each pass. decision instance
+
+	
 	bool execute(Eventlist* eventlist, double time); //!< re-implemented from virtual function in Action this function does the real work. It initiates the current Bustrip and books the next one
 	
 	// calc attributes (for pass_paths)
 	double calc_curr_line_headway ();
 	double calc_curr_line_headway_forward ();
 	double calc_max_headway ();
-	double calc_curr_line_ivt (Busstop* start_stop, Busstop* end_stop, int rti, double time);
+	double calc_curr_line_ivt (Busstop* start_stop, Busstop* end_stop, int rti, double time, bool include_ivt_RTCI = false);	// RTCI modified
 	
 	// output-related functions
 	void calculate_sum_output_line(); 
@@ -387,7 +395,8 @@ public:
 	double calc_departure_time (double time);											//!< calculates departure time from origin according to arrival time and schedule (including layover effect)
 	void convert_stops_vector_to_map();													//!< building stops_map
 	double find_crowding_coeff (Passenger* pass);										//!< returns the crowding coefficeint based on lod factor and pass. seating/standing
-	static double find_crowding_coeff (bool sits, double load_factor);					//!< returns the crowding coefficeint based on lod factor and pass. seating/standing
+	// RTCI changes below - necessary to distinguish between seated vs. standee load factor
+	static double find_crowding_coeff (bool sits, double load_factor_seatcap, double load_factor_totalcap);			//!< returns the crowding coefficeint based on lod factor and pass. seating/standing
 	pair<double, double> crowding_dt_factor (double nr_boarding, double nr_alighting);
 	vector <Busstop*> get_downstream_stops(); //!< return the remaining stops to be visited starting from 'next_stop', returns empty Busstop vector if there are none
 	vector <Visit_stop*> get_downstream_stops_till_horizon(Visit_stop* target_stop); //!< return the remaining stops to be visited starting from 'next_stop'
@@ -406,6 +415,11 @@ public:
 	map <Busstop*, int> nr_expected_alighting;		//!< number of passengers expected to alight at the busline's stops (format 2)
 	map <Busstop*, int> assign_segements;			//!< contains the number of pass. travelling between trip segments
 
+// RTCI - crowding factors' maps
+	double record_RTCI (double load_factor_seatcap, double load_factor_totalcap);	// function used to generate (update) the current RTCI prediction of a given trip segment
+	map <Busstop*, double> observed_marginal_RTCI_factors;		// map containing "raw" crowding factors, recorded at each stop-exit instance
+	map <Busstop*, double> predicted_RTCI_factors;			// map containing currently valid crowding factors, updated in real-time
+	
 protected:
 	int id;										  //!< course nr
 	Bus* busv;									  //!< pointer to the bus vehicle
