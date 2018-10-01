@@ -75,7 +75,7 @@ bool TripGenerationStrategy::line_exists_in_tripset(const set<Bustrip*>& tripSet
 	return false;
 }
 
-std::vector<Busline*> TripGenerationStrategy::find_lines_connecting_stops(const vector<Busline*>& lines, const int ostop_id, const int dstop_id) const
+vector<Busline*> TripGenerationStrategy::find_lines_connecting_stops(const vector<Busline*>& lines, const int ostop_id, const int dstop_id) const
 {
 	vector<Busline*> lines_connecting_stops; // lines between stops given as input
 	if (!lines.empty())
@@ -271,6 +271,24 @@ bool NaiveTripGeneration::calc_trip_generation(const set<Request>& requestSet, c
 
 				vector<Busline*> lines_between_stops;
 				lines_between_stops = find_lines_connecting_stops(candidateServiceRoutes, ostop_id, dstop_id); //check if any candidate service route connects the OD pair (even for segments of the route)
+                
+                if (lines_between_stops.size() > 1) //if there are several possible service routes connecting ostop and dstop sort these by shortest scheduled ivt to prioritize most direct routes
+                {
+                    sort(lines_between_stops.begin(), lines_between_stops.end(), [](const Busline* line1, const Busline* line2)
+                        {
+                            double ivt1 = 0.0;
+                            double ivt2 = 0.0;
+                        
+                            vector<pair<Busstop*, double> > deltas1 = line1->get_delta_at_stops();
+                            vector<pair<Busstop*, double> > deltas2 = line2->get_delta_at_stops();
+
+                            for_each(deltas1.begin(), deltas1.end(), [&](const pair<Busstop*, double> delta){ ivt1 += delta.second; }); //scheduled ivt for line1
+                            for_each(deltas2.begin(), deltas2.end(), [&](const pair<Busstop*, double> delta) { ivt2 += delta.second; }); //scheduled ivt for line2
+
+                            return ivt1 < ivt2;
+                        }
+                    );
+                }
 
 				bool found = false; //true only if one of the candidate lines that connects the od stop pair does not have a trip in the tripSet yet
 				for (Busline* candidateLine : lines_between_stops)//if all lines have a trip already planned for them without a vehicle then we have saturated planned trips for this od stop pair

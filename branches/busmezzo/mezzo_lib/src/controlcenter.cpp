@@ -103,8 +103,7 @@ bool BustripGenerator::requestTrip(const RequestHandler& rh, const map<BusState,
 {
 	if (generationStrategy_)
 	{
-        bool trip_found = false;
-		trip_found = generationStrategy_->calc_trip_generation(rh.requestSet_, serviceRoutes_, fleetState, time, unmatchedTrips_); //returns true if trip has been generated and added to the unmatchedTrips_
+        bool trip_found = generationStrategy_->calc_trip_generation(rh.requestSet_, serviceRoutes_, fleetState, time, unmatchedTrips_); //returns true if trip has been generated and added to the unmatchedTrips_
 
         if (!trip_found && !unmatchedTrips_.empty()) //if no trip was found but an unmatched trip remains in the unmatchedTrips set
             trip_found = true;
