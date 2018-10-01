@@ -341,7 +341,7 @@ void Graph<T, I>::labelCorrecting(int s, double entry, I *info)
    GraphLink<T, I> *s_link, *p_link;
    GraphLink<T, I> *root = link(s);
    GraphNode<T, I> *pivot;
-   int rootnode = root->upNode_;
+//   int rootnode = root->upNode_; // commented out since no longer needed
 
    // initialize list and costs
 
@@ -382,8 +382,8 @@ void Graph<T, I>::labelCorrecting(int s, double entry, I *info)
 		 // Wilco Burghout 2001_12_13 I WANT to make paths with U-turns possible (in case of incident)
 		 // commented out:
 		   
-		  if( p_link->dnNode_ == rootnode )
-		   continue;
+//		  if( p_link->dnNode_ == rootnode )
+//		   continue;
        
 
 		 // index position as an outgoing link at the upstream node

@@ -62,7 +62,7 @@ LinkTimeInfo contains the LinkTime for all links in the network. It is used by t
 	double mean ();
 
  	//vector <LinkTime*> times;
-	map <int, LinkTime*> times;
+    map <int, LinkTime*> times; // maps link id to LinkTime*
  };
 	 	
 
