@@ -751,6 +751,28 @@ bool Parameters::read_parameters (istream & in )
 		return false;
 	}
 	in >> default_alpha_RTI;
+	// read RTCI-related (real-time crowding information) parameters
+	in >> keyword;
+	if (keyword!= "include_RTCI=")
+	{
+		cout << "ERROR reading Parameters file, expecting: include_RTCI=, read: " << keyword << endl;
+		return false;
+	}
+	in >> include_RTCI;
+	in >> keyword;
+	if (keyword!= "RTCI_generation_scheme=")
+	{
+		cout << "ERROR reading Parameters file, expecting: RTCI_generation_scheme=, read: " << keyword << endl;
+		return false;
+	}
+	in >> RTCI_generation_scheme;	
+	in >> keyword;
+	if (keyword!= "RTCI_smoothing_alpha=")
+	{
+		cout << "ERROR reading Parameters file, expecting: RTCI_smoothing_alpha=, read: " << keyword << endl;
+		return false;
+	}
+	in >> RTCI_smoothing_alpha;	
 	return true;
 }
 
