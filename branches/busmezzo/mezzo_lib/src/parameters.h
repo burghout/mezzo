@@ -205,6 +205,11 @@ public:
 // TODO: Implement the use of the following paramaters
    double vissim_step; //!< time step for the VISSIM micro model
    double sim_speed_factor; //!< REALTIME factor to keep the hybrid model running at a fixed speed
+
+// RTCI-related (real-time crowding information) parameters
+   bool include RTCI; // indicates whether RTCI should be included in simulation or not
+   int RTCI_generation_scheme; // RTCI generation method: 1 - latest-run-based RTCI only, 2 - weighted average RTCI (exponential smoothing)
+   double RTCI_smoothing_alpha; // only for RTCI_generation_scheme = 2: alpha value of expo. smoothing function	   
 };
 
 
