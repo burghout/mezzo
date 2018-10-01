@@ -1183,8 +1183,6 @@ Busstop::Busstop()
 	can_overtake = true;
 	dwelltime = 0;
 	rti = 0;
-	line_end = false;
-	line_begin = false;
 	opposing_stop = nullptr;
 	CC = nullptr;
 }
@@ -1209,8 +1207,6 @@ id(id_), name(name_), link_id(link_id_), position (position_), length(length_), 
 	{
 		random->randomize();
 	}
-	line_end = false;
-	line_begin = false;
 	opposing_stop = nullptr;
 }
 

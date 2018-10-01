@@ -740,14 +740,12 @@ public:
 	vector<pair<Bus*, double>> get_unassigned_buses_at_stop() { return unassigned_buses_at_stop; }
 
 	//bunch of accessors and modifiers related to buses ending a trip and being reinitialized at an opposing stop
-	bool is_line_end() const { return line_end; } //true if this stop is at the end of a line
-	bool is_line_begin() const { return line_begin; } //true if this stop is at the beginning of a line
-	void set_line_end(const bool line_end_) { line_end = line_end_; }
-	void set_line_begin(const bool line_begin_) { line_begin = line_begin_; }
+	bool is_line_end() const { return dest_node != nullptr; } //!< true if this stop is at the end of a route/line, and the beginning of turning point towards its opposite stop
+	bool is_line_begin() const { return origin_node != nullptr; } //!< true if this stop is at the beginning of a route/line, and the end of a turning point from an opposite stop
 	void set_opposing_stop(Busstop* opposing_stop_) { opposing_stop = opposing_stop_; }
 	Busstop* get_opposing_stop() const { return opposing_stop; }
-	Origin* get_origin_node() const { return origin_node; }
-	Destination* get_dest_node() const { return dest_node; }
+	Origin* get_origin_node() const { return origin_node; } //if this stop is at the beginning of a line it should have an origin node to initialize buses
+	Destination* get_dest_node() const { return dest_node; } //if this stop is at the end of a line it should have a destination node where buses end their trips
 	void set_origin_node(Origin* origin_node_) { origin_node = origin_node_; }
 	void set_dest_node(Destination* dest_node_) { dest_node = dest_node_; }
 		 
@@ -823,8 +821,6 @@ protected:
 	Controlcenter* CC; //!< control center that this stop is associated with
 	vector<pair<Bus*,double>> unassigned_bus_arrivals; //!< expected arrivals of transit vehicles to stop that are not assigned to any trip
 	vector<pair<Bus*, double>> unassigned_buses_at_stop; //!< unassigned buses currently at stop along with the time they arrived/were initialized to this stop
-	bool line_end; //!< true if this stop is at the end of a route/line, and the beginning of turning point towards its opposite stop 
-	bool line_begin; //!< true if this stop is at the beginning of a route/line, and the end of a turning point from an opposite stop
 	Busstop* opposing_stop; //!< opposite stop to this one if this busstop corresponds to a location with a turning point. Initialized to nullptr if no opposite stop exists
 	Origin* origin_node; //!< origin node for generating buses when a trip begins at this stop. Is equal to nullptr if no trip can begin at this stop
 	Destination* dest_node; //!< destination node for processing buses that end a trip at this stop. Is equal to nullptr if no trip can end at this stop

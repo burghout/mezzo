@@ -1981,12 +1981,10 @@ bool Network::readbusline(istream& in) // reads a busline
         if (!firststop->get_origin_node())
         {
             firststop->set_origin_node(origin_node);
-            firststop->set_line_begin(true);
         }
         if (!laststop->get_dest_node())
         {
             laststop->set_dest_node(dest_node);
-            laststop->set_line_end(true);
         }
 
         ccmap[1]->addServiceRoute(bl);
