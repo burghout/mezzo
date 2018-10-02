@@ -17,7 +17,7 @@
 
 // initialise the global variables and objects
 double drt_first_rep_planned_headway=0;
-double drt_first_rep_waiting_utility=10;
+double drt_first_rep_waiting_utility=10; //default is to evaluate waiting utility for drt service positively in the first rep
 int drt_min_occupancy=0;
 
 long int randseed=0;
