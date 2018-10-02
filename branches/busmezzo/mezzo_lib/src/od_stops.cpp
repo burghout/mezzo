@@ -601,6 +601,7 @@ double ODstops::calc_combined_set_utility_for_alighting_zone (Passenger* pass, B
 }
 
 double ODstops::calc_combined_set_utility_for_connection (double walking_distance, double time,Passenger* pass)
+// RTCI - profound modifications below
 {
 	// calc logsum over all the paths from this origin stop
 	double connection_utility = 0.0;
@@ -626,8 +627,30 @@ double ODstops::calc_combined_set_utility_for_connection (double walking_distanc
 		if (without_walking_first == true) // considering only no multi-walking alternatives
 		{
 			double time_till_connected_stop = walking_distance / random->nrandom(theParameters->average_walking_speed, theParameters->average_walking_speed / 4); // in minutes
-			connection_utility += exp(random->nrandom(theParameters->walking_time_coefficient, theParameters->walking_time_coefficient/4) * time_till_connected_stop + (*paths)->calc_waiting_utility(alt_stops_iter, time + (time_till_connected_stop * 60), false, pass));
-			// taking into account CT (walking time) till this connected stop and the utility of the path from this connected stop till the final destination
+			
+			// RTCI modified - skip utility of paths which include reboarding the same trip again
+			// (necessary in case of extended choice set, e.g. when relaxing dominancy rules)
+			
+			if (((*paths)->get_alt_lines().size() > 0) & (pass->get_nr_boardings() > 0))
+			{
+				int prev_line_id = pass->get_selected_path_last_line_id();
+				vector<vector<Busline*>> first_leg_line = (*paths)->get_alt_lines();
+				if ((*(*first_leg_line.begin()).begin())->get_id() == prev_line_id)
+				// in case this path would be reboarded again:
+				{
+					connection_utility += 0.0;
+				}
+				else
+				{
+					connection_utility += exp(random->nrandom(theParameters->walking_time_coefficient, theParameters->walking_time_coefficient / 4) * time_till_connected_stop + (*paths)->calc_waiting_utility(alt_stops_iter, time + (time_till_connected_stop * 60), false, pass));
+					// taking into account CT (walking time) till this connected stop and the utility of the path from this connected stop till the final destination
+				}
+			}
+			else
+			{
+				connection_utility += exp(random->nrandom(theParameters->walking_time_coefficient, theParameters->walking_time_coefficient / 4) * time_till_connected_stop + (*paths)->calc_waiting_utility(alt_stops_iter, time + (time_till_connected_stop * 60), false, pass));
+				// taking into account CT (walking time) till this connected stop and the utility of the path from this connected stop till the final destination
+			}		
 		}
 	}
 	return log(connection_utility);
