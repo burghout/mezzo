@@ -78,10 +78,11 @@ void Passenger::init ()
 {
 	RTI_network_level = theRandomizers[0]->brandom(theParameters->share_RTI_network);
 	
-	// RTCI - as of now, pax. has simultaneous access to RTI & RTCI (or not) - needs to be separated in the future
+	// RTCI access
+	// !! to be updated - RTI vs. RTCI access...? as of now - these are evaluated independent from each other
 	if (theParameters->include_RTCI == true)
 	{
-		RTCI_network_level = RTI_network_level;
+		RTCI_network_level = theRandomizers[0]->brandom(theParameters->share_RTCI_network);
 	}
 	else
 	{
