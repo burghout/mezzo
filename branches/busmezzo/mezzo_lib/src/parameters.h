@@ -210,6 +210,7 @@ public:
    bool include RTCI; // indicates whether RTCI should be included in simulation or not
    int RTCI_generation_scheme; // RTCI generation method: 1 - latest-run-based RTCI only, 2 - weighted average RTCI (exponential smoothing)
    double RTCI_smoothing_alpha; // only for RTCI_generation_scheme = 2: alpha value of expo. smoothing function	   
+   double share_RTCI_network; // RTCI penetration rate among passengers (0.00 - 1.00)
 };
 
 
