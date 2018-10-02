@@ -218,6 +218,9 @@ void Bus::advance_curr_trip (double time, Eventlist* eventlist) // progresses tr
                 DEBUG_MSG_V("Problem when ending trip in Bus::advance_curr_trip - final stop " << last_stop_visited_->get_id() << " does not have a destination node associated with it. Aborting...");
                 abort();
             }
+
+            double trip_time = curr_trip->get_enter_time() - curr_trip->get_starttime();
+            DEBUG_MSG("\t Total trip time: " << trip_time);
             Controlcenter* cc = last_stop_visited_->get_CC(); //TODO: what if multiple control centers are associated with this stop?
             curr_trip->get_line()->remove_flex_trip(curr_trip); //remove from set of uncompleted flex trips in busline, control center takes ownership of the trip for deletion
             cc->addCompletedVehicleTrip(this, curr_trip); //save bus - bustrip pair in control center of last stop 

@@ -366,8 +366,11 @@ bool NearestLongestQueueEVTripGeneration::calc_trip_generation(const set<Request
 		for (Bus* veh : vehOnCall)
 		{
 			Busstop* vehloc = veh->get_last_stop_visited(); //location of on call vehicle
-			if (vehloc == largest_demand_stop)
-				DEBUG_MSG("Warning - vehicle location is already at the source of demand when planning empty vehicle trips.");
+            if (vehloc == largest_demand_stop)
+            {
+                DEBUG_MSG("Warning - vehicle location is already at the source of demand when planning empty vehicle trips.");
+                abort();
+            }
 			vector<Busline*> vehicle_serviceRoutes; //all service routes between the vehicle location (current stop and opposing stop) and the demand source (current stop and opposing stop)
 
 			//collect a vector of all possible service routes between the vehicles current location and the demand source
@@ -543,6 +546,7 @@ bool DispatchingStrategy::dispatch_trip(Eventlist* eventlist, Bustrip* trip)
 	line->add_flex_trip(trip); //add trip as a flex trip of line for bookkeeping
 	line->add_trip(trip, starttime); //insert trip into the main trips list of the line
 	eventlist->add_event(starttime, line); //book the activation of this trip in the eventlist
+    trip->set_scheduled_for_dispatch(true);
 	return true;
 }
 

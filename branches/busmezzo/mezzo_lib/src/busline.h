@@ -451,7 +451,7 @@ protected:
 	Eventlist* eventlist;						 //!< for use by busstops etc to book themselves.
 	
 	//DRT
-	bool scheduled_for_dispatch; //!< true if this trip has been scheduled for dispatch for its respective line, false otherwise
+	bool scheduled_for_dispatch; //!< true if this trip has been scheduled for dispatch (i.e. a busline event has been created with for the starttime of this trip) for its respective line, false otherwise
 	bool flex_trip; //!< true if this trip was generated dynamically
 };
 

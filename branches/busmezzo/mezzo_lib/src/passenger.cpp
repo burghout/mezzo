@@ -331,8 +331,12 @@ void Passenger::start (Eventlist* eventlist, double time)
 		else // if the pass. stays at the same stop
 		{
 			OD_stop->add_pass_waiting(this); // store the new passenger at the list of waiting passengers with this OD
-			Request req = createRequest(1, start_time, start_time); //create request with load 1 at current time 
-			emit sendRequest(req, time); //send request to any controlcenter that is connected
+
+            if (theParameters->drt)
+            {
+                Request req = createRequest(1, start_time, start_time); //create request with load 1 at current time 
+                emit sendRequest(req, time); //send request to any controlcenter that is connected
+            }
 
 			set_arrival_time_at_stop(start_time);
 			add_to_selected_path_stop(stop_time);

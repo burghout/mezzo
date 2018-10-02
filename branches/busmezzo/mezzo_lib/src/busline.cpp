@@ -1747,8 +1747,11 @@ void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, d
 							}
 						}
 						
-						Request req = (*alighting_passenger)->createRequest(1, time, time); //create a request with load of 1 to be picked up as soon as possible
-						emit (*alighting_passenger)->sendRequest(req, time); //send this request to the control center of this stop
+                        if(theParameters->drt)
+                        {
+                            Request req = (*alighting_passenger)->createRequest(1, time, time); //create a request with load of 1 to be picked up as soon as possible
+                            emit(*alighting_passenger)->sendRequest(req, time); //send this request to the control center of this stop
+                        }
 					}
 					else  // pass walks to another stop
 					{
