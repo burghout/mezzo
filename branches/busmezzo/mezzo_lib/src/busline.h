@@ -734,7 +734,7 @@ public:
 
 //control center related functions
 	Controlcenter* get_CC() { return CC; }
-	void add_unassigned_bus_arrival(Eventlist* eventlist, Bus* bus, double expected_arrival_time); //add bus to vector of unassigned (i.e. no trip and no busline) bus vehicles arrivals, sorted by expected arrival time and add a Busstop event scheduled for the init_time of vehicle  to switch state of bus to IdleEmpty from Null
+	void book_unassigned_bus_arrival(Eventlist* eventlist, Bus* bus, double expected_arrival_time); //add bus to vector of unassigned (i.e. no trip and no busline) bus vehicles arrivals, sorted by expected arrival time and add a Busstop event scheduled for the init_time of vehicle  to switch state of bus to IdleEmpty from Null
 	void add_unassigned_bus(Bus* bus, double arrival_time); //add bus to vector of unassigned buses at this stop sorted by actual arrival time, sets bus state to "OnCall"
 	bool remove_unassigned_bus(Bus* bus, const double time); //remove bus from vector of unassigned buses at stop and sets its state to IdleEmpty, returns false if bus does not exist
 	vector<pair<Bus*, double>> get_unassigned_buses_at_stop() { return unassigned_buses_at_stop; }

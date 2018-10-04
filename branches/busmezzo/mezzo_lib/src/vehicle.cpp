@@ -288,11 +288,11 @@ void Bus::advance_curr_trip (double time, Eventlist* eventlist) // progresses tr
                     DEBUG_MSG_V("Problem when turning bus in Bus::advance_curr_trip - opposing stop " << opposing_stop->get_id() << " to stop " << last_stop_visited_->get_id() << " does not have an origin node associated with it. Aborting..."); //opposing stop should have an origin node associated with it
                     abort();
                 }
-                opposing_stop->add_unassigned_bus_arrival(eventlist, newbus, time);
+                opposing_stop->book_unassigned_bus_arrival(eventlist, newbus, time);
             }
             else //bus stays at the current stop (but cannot currently go anywhere until it has turned around)
             {
-                last_stop_visited_->add_unassigned_bus_arrival(eventlist, newbus, time);
+                last_stop_visited_->book_unassigned_bus_arrival(eventlist, newbus, time);
             }
         }
     }

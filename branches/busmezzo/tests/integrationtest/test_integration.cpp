@@ -58,8 +58,6 @@ private Q_SLOTS:
 private:
     NetworkThread* nt; //!< contains the network thread
     Network* net;
-
-
 };
 
 void TestIntegration::testCreateNetwork()
@@ -76,8 +74,6 @@ void TestIntegration::testCreateNetwork()
 
     QVERIFY2(nt != nullptr, "Failure, could not create network thread");
     QVERIFY2(net != nullptr, "Failure, could not create network");
-
-
 }
 
 void TestIntegration::testInitNetwork()
@@ -135,8 +131,6 @@ void TestIntegration::testCreateBusroute()
 
     Busroute* routeViaAandDandB = net->create_busroute_from_stops(2,od_pair->get_origin(), od_pair->get_destination(),stops);
     QVERIFY(routeViaAandDandB==nullptr); // should return nullptr since link 67 is not reachable
-
-
 }
 
 void TestIntegration::testRunNetwork()
@@ -152,8 +146,6 @@ void TestIntegration::testRunNetwork()
    // qDebug() << net->get_busstop_from_name("A")->get_last_departures().size();
     // and here you turn it into a test
     QVERIFY2 ( net->get_busstop_from_name("A")->get_last_departures().size() == 2, "Failure, get_last_departures().size() for stop A should be 2");
-
-
 }
 
 void TestIntegration::testSaveResults()
@@ -193,7 +185,6 @@ void TestIntegration::testDelete()
 {
     delete nt;
     QVERIFY2(true, "Failure ");
-
 }
 
 

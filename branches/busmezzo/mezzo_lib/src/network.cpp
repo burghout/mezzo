@@ -1369,7 +1369,7 @@ bool Network::readcontrolcenters(const string& name)
         int tg_strategy; //id of trip generation strategy
         int ev_strategy; //id of empty vehicle strategy
         int tvm_strategy; //id of trip vehicle matching strategy
-        int vd_strategy; //id of vehicle dispatching strategy
+        int vs_strategy; //id of vehicle scheduling strategy
 
         char bracket;
         in >> bracket;
@@ -1379,9 +1379,9 @@ bool Network::readcontrolcenters(const string& name)
             in.close();
             return false;
         }
-        in >> id >> tg_strategy >> ev_strategy >> tvm_strategy >> vd_strategy;
+        in >> id >> tg_strategy >> ev_strategy >> tvm_strategy >> vs_strategy;
 
-        Controlcenter* cc = new Controlcenter(eventlist, this, id, tg_strategy, ev_strategy, tvm_strategy, vd_strategy);
+        Controlcenter* cc = new Controlcenter(eventlist, this, id, tg_strategy, ev_strategy, tvm_strategy, vs_strategy);
         ccmap[id] = cc; //add to network map of control centers
 
         bracket = ' ';
@@ -8089,7 +8089,7 @@ bool Network::init()
             bus->set_on_trip(false);
             ccmap[1]->connectVehicle(bus); //connect vehicle to a control center
             ccmap[1]->addInitialVehicle(bus);
-            stop->add_unassigned_bus_arrival(eventlist, bus, init_time); //should be in a Null state until their init_time (also adds a Busstop event scheduled for the init_time of vehicle  to switch state of bus to IdleEmpty from Null)
+            stop->book_unassigned_bus_arrival(eventlist, bus, init_time); //should be in a Null state until their init_time (also adds a Busstop event scheduled for the init_time of vehicle  to switch state of bus to IdleEmpty from Null)
             for (const int& sroute_id : sroute_ids)
             {
                 ccmap[1]->addVehicleToServiceRoute(sroute_id, bus);//add vehicle as a candidate service vehicle for service routes

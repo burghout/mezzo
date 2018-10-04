@@ -26,30 +26,26 @@ class TestControlcenter : public QObject
 public:
     TestControlcenter(){}
 
-
 private Q_SLOTS:
-    void testConstruction(); //!< test construction
-    void testConnectDisconnectPassenger(); //!< tests connecting a new passenger
-	void testRequestHandler(); //!< tests for receiving and removing a request
+    void testConstruction(); //!< test construction of a Controlcenter
+    void testConnectDisconnectPassenger(); //!< tests connecting and disconnecting passengers to/from Controlcenter 
+	void testRequestHandler(); //!< tests for receiving and removing a request via passenger signals and controlcenter slots
+	//void testBustripGenerator(); //!< tests for generation of unplanned trips and supporting methods
+	void testDeletion(); //!< test deletion of Controlcenter
 
 private:
-
-
-
+	Controlcenter* ccPtr;
 };
 
 void TestControlcenter::testConstruction()
 {   
-    Controlcenter * ccPtr = new Controlcenter ();
+    ccPtr = new Controlcenter();
 
-    QVERIFY2(ccPtr, "Failing to create a Controlcenter");
-    delete ccPtr;
-
+    QVERIFY2(ccPtr, "Failed to create a Controlcenter");
 }
 
 void TestControlcenter::testConnectDisconnectPassenger()
 {
-    Controlcenter * ccPtr = new Controlcenter ();
     Busstop* origin = new Busstop();
     Busstop* destination = new Busstop();
     ODstops* OD_stop= new ODstops(origin,destination);
@@ -65,12 +61,10 @@ void TestControlcenter::testConnectDisconnectPassenger()
 //    delete destination; // cannot call delete on these
     delete OD_stop;
     delete pass;
-    delete ccPtr;
 }
 
 void TestControlcenter::testRequestHandler()
 {
-	Controlcenter* ccPtr = new Controlcenter();
 	int oid = 1;
 	int did = 2;
 	Busstop* origin = new Busstop(oid, "origin", 1, 1, 1, 0, 0, 1.0, 0, 0, nullptr);
@@ -111,10 +105,14 @@ void TestControlcenter::testRequestHandler()
 	rhPtr->removeRequest(1); //remove request associated with pass_id 1
 	QVERIFY2(rhPtr->requestSet_.size() == 0, "Failure, there should be 0 requests in requestSet after direct call to removeRequest");
 
-
 	delete pass;
 	delete OD_stop;
+}
+
+void TestControlcenter::testDeletion()
+{
 	delete ccPtr;
+	QVERIFY2(true, "Failed to delete Controlcenter");
 }
 
 QTEST_APPLESS_MAIN(TestControlcenter)

@@ -2365,7 +2365,7 @@ int Busstop::calc_total_nr_waiting ()
 return total_nr_waiting;
 }
 
-void Busstop::add_unassigned_bus_arrival(Eventlist* eventlist, Bus* bus, double expected_arrival_time)
+void Busstop::book_unassigned_bus_arrival(Eventlist* eventlist, Bus* bus, double expected_arrival_time)
 {
 	assert(bus);
 	DEBUG_MSG("Adding bus " << bus->get_bus_id() << " to unassigned bus arrivals at stop " << name);
