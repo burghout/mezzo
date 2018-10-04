@@ -1,5 +1,8 @@
+/**
+ * @addtogroup DRT
+ * @{
+ */
 /**@file   controlstrategies.h
- * @ingroup DRT
  * @brief  Collection of algorithms used by the process classes of Controlcenter to assign demand-responsive transit vehicles to passenger requests
  * 
  */
@@ -102,8 +105,8 @@ public:
 	bool calc_trip_generation(const set<Request>& requestSet, const vector<Busline*>& candidateServiceRoutes, const map<BusState, set<Bus*>>& fleetState, const double time, set<Bustrip*>& unmatchedTripSet) const override;
 };
 
-/*Algorithms for generating empty vehicle trips*/
 
+//Empty vehicle trip generation strategies
 //! @brief Reactive empty vehicle repositioning strategy that attempts to generate a trip from the current stop of the closest on-call transit vehicle to the origin stop of the OD in requestSet with the highest demand
 /*!
     @todo
@@ -203,3 +206,4 @@ public:
 };
 
 #endif // ifndef CONTROLSTRATEGIES_H
+/**@}*/

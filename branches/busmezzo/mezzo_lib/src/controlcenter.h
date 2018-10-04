@@ -1,9 +1,12 @@
+/**
+ * @defgroup DRT Simulation of demand-responsive transit
+ * @{
+ */
+
 /**@file   controlcenter.h
- * @ingroup DRT
  * @brief  Contains Controlcenter and supporting process classes used for communication between demand-responsive transit vehicles and potential passengers
  *
  */
-
 #ifndef CONTROLCENTER_H
 #define CONTROLCENTER_H
 
@@ -263,3 +266,4 @@ private:
 };
 
 #endif
+/**@}*/

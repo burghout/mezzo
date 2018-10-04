@@ -55,10 +55,15 @@
 #define DEBUG_MSG_V(str) do {} while (false)
 #endif
 
+/** @defgroup PassengerDecisionParameters
+    @ingroup DRT
+    @{
+*/
 //temporary globals for DRT implementation
-extern double drt_first_rep_planned_headway; //in seconds
-extern double drt_first_rep_waiting_utility;
-extern int drt_min_occupancy;
+extern double drt_first_rep_planned_headway; //!< sometimes returned by calc_headway... functions when a Busline currently has no Bustrips in its trips list yet
+extern double drt_first_rep_waiting_utility; //!< sometimes returned in calc_waiting_utility functions when a Busline currently has no Bustrips in its trips list yet
+extern int drt_min_occupancy; //!< currently used in controlstrategies to put different minimum size of the set of passenger requests to consider generating trips
+/**@}*/
 
 // GLOBAL VARIABLES
 extern long int randseed; // random seed

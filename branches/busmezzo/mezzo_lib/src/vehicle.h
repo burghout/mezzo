@@ -111,7 +111,10 @@ protected:
 	Dwell_time_function* dwell_time_function;
 };
 
-enum class BusState //used by controlcenter to keep track of fleet state
+/** @ingroup DRT
+    @brief Used by Controlcenter to keep track of fleet state of connected transit vehicles
+*/
+enum class BusState
 { 
 	Null = 0, 
 	IdleEmpty, 
