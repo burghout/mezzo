@@ -168,7 +168,7 @@ class Busline: public Action
 public:
 	Busline (
 		int						id_,						//!< unique identification number
-		int						opposite_id_,				//!< identification number of the line that indicates the opposite direction (relevant only when modelling passenger route choice)
+		int						opposite_id_,				//!< identification number of the line that indicates the opposite direction (relevant only when modeling passenger route choice)
 		string					name_,						//!< a descriptive name
 		Busroute*				busroute_,					//!< bus route
 		vector <Busstop*>		stops_,						//!< stops on line
@@ -179,7 +179,7 @@ public:
 		double					init_occup_per_stop_,		//!< average number of passengers that are on-board per prior upstream stops (scale of a Gamma distribution)
 		int						nr_stops_init_occup_,		//!< number of prior upstream stops resulting with initial occupancy (shape of a Gamma distribution)
 		bool					flex_line_ = false			//!< true if this line allows for dynamically scheduled trips
-	); //!< Initialising constructor
+	); //!< Initializing constructor
 
 	Busline ();			//!< simple constructor
 	virtual ~Busline(); //!< destructor
@@ -212,7 +212,7 @@ public:
 	void add_trip(Bustrip* trip, double starttime); 
 	void add_disruptions (Busstop* from_stop, Busstop* to_stop, double disruption_start_time, double disruption_end_time, double cap_reduction);
 
-	//transfer initilization
+	//transfer initialization
 	void add_tr_line_id (int id) {tr_line_id = id;}
 	void add_tr_stops (vector <Busstop*> stops) {tr_stops = stops;}
 	
@@ -256,7 +256,7 @@ public:
 	void add_flex_trip(Bustrip* trip); //adds trip to flex_trip set
 	void remove_flex_trip(Bustrip* trip); //remove trip from flex_trip set once it has been completed
 	void add_stop_delta(Busstop* stop, double delta_from_preceding_stop) { delta_at_stops.push_back(make_pair(stop, delta_from_preceding_stop)); } //set the scheduled/expected travel times between stops on this line (starting from 0 for the first stop)
-	vector<pair<Busstop*,double>> get_delta_at_stops() { return delta_at_stops; }
+	vector<pair<Busstop*,double>> get_delta_at_stops() const { return delta_at_stops; }
 	int generate_new_trip_id() { trip_count++; return id*100 + trip_count; } //generates a new tripid for this line and increments the trip counter for this line, TODO: add condition if trips for this line > 100
 	bool is_unique_tripid(int tripid); //returns true if no trip in flex trips or trips for this line has this tripid
 
@@ -404,15 +404,15 @@ public:
 	bool check_end_trip ();																//!< returns 1 if true, 0 if false
 	double calc_departure_time (double time);											//!< calculates departure time from origin according to arrival time and schedule (including layover effect)
 	void convert_stops_vector_to_map();													//!< building stops_map
-	double find_crowding_coeff (Passenger* pass);										//!< returns the crowding coefficeint based on lod factor and pass. seating/standing
-	static double find_crowding_coeff (bool sits, double load_factor);					//!< returns the crowding coefficeint based on lod factor and pass. seating/standing
+	double find_crowding_coeff (Passenger* pass);										//!< returns the crowding coefficient based on load factor and pass. seating/standing
+	static double find_crowding_coeff (bool sits, double load_factor);					//!< returns the crowding coefficient based on load factor and pass. seating/standing
 	pair<double, double> crowding_dt_factor (double nr_boarding, double nr_alighting);
 	vector <Busstop*> get_downstream_stops(); //!< return the remaining stops to be visited starting from 'next_stop', returns empty Busstop vector if there are none
 	vector <Visit_stop*> get_downstream_stops_till_horizon(Visit_stop* target_stop); //!< return the remaining stops to be visited starting from 'next_stop'
 
 // output-related functions
 	void write_assign_segments_output(ostream & out);
-	void record_passenger_loads (vector <Visit_stop*>::iterator start_stop); //!< creates a log-file for passenegr load assignment info
+	void record_passenger_loads (vector <Visit_stop*>::iterator start_stop); //!< creates a log-file for passenger load assignment info
 
 // public vectors
 	vector <Visit_stop*> stops;						//!< contains all the busstops and the times that they are supposed to be served. NOTE: this can be a subset of the total nr of stops in the Busline (according to the schedule input file)
@@ -420,7 +420,7 @@ public:
 	vector <Start_trip*> driving_roster;			//!< trips assignment for each bus vehicle.
 	map <Busstop*, passengers> passengers_on_board; //!< passenger on-board stored by their alighting stop (format 3)
 	map <Busstop*, int> nr_expected_alighting;		//!< number of passengers expected to alight at the busline's stops (format 2)
-	map <Busstop*, int> assign_segements;			//!< contains the number of pass. travelling between trip segments
+	map <Busstop*, int> assign_segements;			//!< contains the number of pass. traveling between trip segments
 
 //Control Center
 	void set_starttime(double starttime_) { starttime = starttime_; }
@@ -441,7 +441,7 @@ protected:
 	double actual_dispatching_time;
 	vector <Visit_stop*> :: iterator next_stop; 
 	Random* random;
-	list <Bustrip_assign> output_passenger_load;  //!< contains the information on travelling on the segment starting at stop
+	list <Bustrip_assign> output_passenger_load;  //!< contains the information on traveling on the segment starting at stop
 	double enter_time;							  //!< the time it entered the most recently bus stop
 	double last_stop_exit_time;					  //!< the time stamp of the exit time from the last stop that had been visited by this trip
 	double last_stop_enter_time; 
@@ -451,7 +451,7 @@ protected:
 	Eventlist* eventlist;						 //!< for use by busstops etc to book themselves.
 	
 	//DRT
-	bool scheduled_for_dispatch; //!< true if this trip has been scheduled for dispatch for its respective line, false otherwise
+	bool scheduled_for_dispatch; //!< true if this trip has been scheduled for dispatch (i.e. a busline event has been created with for the starttime of this trip) for its respective line, false otherwise
 	bool flex_trip; //!< true if this trip was generated dynamically
 };
 
@@ -629,27 +629,29 @@ class Busstop : public Action
 public:
 	Busstop ();
 	~Busstop ();
-    Busstop (
-		int		id_, 
-		string	name_, 
-		int		link_id_, 
-		double	position_, 
-		double	length_, 
-		bool	has_bay_, 
-		bool	can_overtake_, 
-		double	min_DT_, 
+	Busstop(
+		int		id_,
+		string	name_,
+		int		link_id_,
+		double	position_,
+		double	length_,
+		bool	has_bay_,
+		bool	can_overtake_,
+		double	min_DT_,
 		int		rti_,
-        bool    non_random_pass_generation_,
-		Controlcenter* CC_ = nullptr
+		bool    non_random_pass_generation_,
+		Controlcenter* CC_ = nullptr,
+		Origin* origin_node_ = nullptr,
+		Destination* dest_node_ = nullptr
 	);
 
 	void reset (); 
 
 // GETS & SETS:
-	int get_id () {return id;} //!< returns id, used in the compare <..> functions for find and find_if algorithms
-	int get_link_id() {return link_id;}
-	string get_name() {return name;}
-	int get_rti () {return rti;}
+	int get_id () const {return id;} //!< returns id, used in the compare <..> functions for find and find_if algorithms
+	int get_link_id() const {return link_id;}
+	string get_name() const {return name;}
+	int get_rti () const {return rti;}
 	double get_arrival_rates (Bustrip* trip) {return arrival_rates[trip->get_line()];}
 	double get_alighting_fractions (Bustrip* trip) {return alighting_fractions[trip->get_line()];}
 	const ODs_for_stop & get_stop_as_origin () {return stop_as_origin;}
@@ -713,13 +715,13 @@ public:
 // dwell-time calculation related functions	
 	double calc_dwelltime (Bustrip* trip);								//!< calculates the dwelltime of each bus serving this stop. currently includes: passenger service times ,out of stop, bay/lane		
 	double calc_holding_departure_time(Bustrip* trip, double time);		// David added 2016-04-01 calculates departure time from stop when holding is used, returns dwelltime + time if no holding is used
-	bool check_out_of_stop (Bus* bus);									//!< returns TRUE if there is NO avaliable space for the bus at the stop (meaning the bus is out of the stop)
-	void occupy_length (Bus* bus);										//!< update avaliable length when bus arrives
-	void free_length (Bus* bus);										//!< update avaliable length when bus leaves
-	void update_last_arrivals (Bustrip* trip, double time);				//!< everytime a bus ENTERS it updates the last_arrivals vector 
-	void update_last_departures (Bustrip* trip, double time);			//!< everytime a bus EXITS it updates the last_departures vector 
-	double get_time_since_arrival (Bustrip* trip, double time);			//!< calculates the headway (defined as the differnece in time between sequential arrivals) 
-	double get_time_since_departure (Bustrip* trip, double time);		//!< calculates the headway (defined as the differnece in time between sequential departures) 
+	bool check_out_of_stop (Bus* bus);									//!< returns TRUE if there is NO available space for the bus at the stop (meaning the bus is out of the stop)
+	void occupy_length (Bus* bus);										//!< update available length when bus arrives
+	void free_length (Bus* bus);										//!< update available length when bus leaves
+	void update_last_arrivals (Bustrip* trip, double time);				//!< every time a bus ENTERS it updates the last_arrivals vector 
+	void update_last_departures (Bustrip* trip, double time);			//!< every time a bus EXITS it updates the last_departures vector 
+	double get_time_since_arrival (Bustrip* trip, double time);			//!< calculates the headway (defined as the difference in time between sequential arrivals) 
+	double get_time_since_departure (Bustrip* trip, double time);		//!< calculates the headway (defined as the difference in time between sequential departures) 
 	double find_exit_time_bus_in_front ();								//!< returns the exit time of the bus vehicle that entered the bus stop before a certain bus (the bus in front)
 
 // output-related functions
@@ -732,22 +734,23 @@ public:
 
 //control center related functions
 	Controlcenter* get_CC() { return CC; }
-	void add_unassigned_bus_arrival(Eventlist* eventlist, Bus* bus, double expected_arrival_time); //add bus to vector of unassigned (i.e. no trip and no busline) bus vehicles arrivals, sorted by expected arrival time and add a Busstop event scheduled for the init_time of vehicle  to switch state of bus to IdleEmpty from Null
-	void add_unassigned_bus(Bus* bus, double arrival_time); //add bus to vector of unassigned buses at this stop sorted by actual arrival time
-	bool remove_unassigned_bus(const Bus* bus); //remove bus from vector of unassigned buses at stop, returns false if bus does not exist
+	void book_unassigned_bus_arrival(Eventlist* eventlist, Bus* bus, double expected_arrival_time); //add bus to vector of unassigned (i.e. no trip and no busline) bus vehicles arrivals, sorted by expected arrival time and add a Busstop event scheduled for the init_time of vehicle  to switch state of bus to IdleEmpty from Null
+	void add_unassigned_bus(Bus* bus, double arrival_time); //add bus to vector of unassigned buses at this stop sorted by actual arrival time, sets bus state to "OnCall"
+	bool remove_unassigned_bus(Bus* bus, const double time); //remove bus from vector of unassigned buses at stop and sets its state to IdleEmpty, returns false if bus does not exist
 	vector<pair<Bus*, double>> get_unassigned_buses_at_stop() { return unassigned_buses_at_stop; }
 
-	bool is_turning_begin() const { return turning_begin; }
-	bool is_turning_end() const { return turning_end; }
-	void set_turning_begin(const bool turning_begin_) { turning_begin = turning_begin_; }
-	void set_turning_end(const bool turning_end_) { turning_end = turning_end_; }
+	//bunch of accessors and modifiers related to buses ending a trip and being reinitialized at an opposing stop
+	bool is_line_end() const { return dest_node != nullptr; } //!< true if this stop is at the end of a route/line, and the beginning of turning point towards its opposite stop
+	bool is_line_begin() const { return origin_node != nullptr; } //!< true if this stop is at the beginning of a route/line, and the end of a turning point from an opposite stop
 	void set_opposing_stop(Busstop* opposing_stop_) { opposing_stop = opposing_stop_; }
 	Busstop* get_opposing_stop() const { return opposing_stop; }
-
+	Origin* get_origin_node() const { return origin_node; } //if this stop is at the beginning of a line it should have an origin node to initialize buses
+	Destination* get_dest_node() const { return dest_node; } //if this stop is at the end of a line it should have a destination node where buses end their trips
+	void set_origin_node(Origin* origin_node_) { origin_node = origin_node_; }
+	void set_dest_node(Destination* dest_node_) { dest_node = dest_node_; }
+		 
 // relevant only for demand format 2
-	multi_rates multi_arrival_rates; //!< parameter lambda that defines the poission proccess of passengers arriving at the stop for each sequential stop
-
-    //id(id_), name(name_), link_id(link_id_), position (position_), length(length_), has_bay(has_bay_), can_overtake(can_overtake_), min_DT(min_DT_), rti (rti_)
+	multi_rates multi_arrival_rates; //!< parameter lambda that defines the poisson process of passengers arriving at the stop for each sequential stop
     
     //methods related to exogenous walking times
     void add_walking_time_quantiles(Busstop*, vector<double>, vector<double>, int, double, double);
@@ -757,7 +760,7 @@ protected:
 	int id;						//!< stop id
 	string name;				//!< name of the bus stop "T-centralen"
 	int link_id;				//!< link it is on, maybe later a pointer to the respective link if needed
-    double position;		    //!< relative position from the upstream node of the link (beteen 0 to 1)
+    double position;		    //!< relative position from the upstream node of the link (between 0 to 1)
     double length;				//!< length of the busstop, determines how many buses can be served at the same time
     bool has_bay;				//!< TRUE if it has a bay so it has an extra dwell time
 	bool can_overtake;			//!< 0 - can't overtake, 1 - can overtake freely; TRUE if it is possible for a bus to overtake another bus that stops in front of it (if FALSE - dwell time is subject to the exit time of a blocking bus)
@@ -787,8 +790,8 @@ protected:
 	map <Busline*,bool> had_been_visited;					//!< indicates if this stop had been visited by a given line till now
 
 	// relevant only for demand format 1
-	map <Busline*, double> arrival_rates;		//!< parameter lambda that defines the poission proccess of passengers arriving at the stop
-	map <Busline*, double> alighting_fractions; //!< parameter that defines the poission process of the alighting passengers 
+	map <Busline*, double> arrival_rates;		//!< parameter lambda that defines the poisson process of passengers arriving at the stop
+	map <Busline*, double> alighting_fractions; //!< parameter that defines the poisson process of the alighting passengers 
 
 	// relevant only for demand format 1 TD (format 10)
 	map <Busline*, double> previous_arrival_rates;
@@ -796,7 +799,7 @@ protected:
 	map <Busline*, vector<double> > update_rates_times;		//!< contains the information about when there is a change in rates (but not the actual change)
 	
 	// relevant only for demand format 2
-	multi_rates multi_nr_waiting;			//!< for demant format is from type 2. 
+	multi_rates multi_nr_waiting;			//!< for demand format is from type 2. 
 
 	// relevant for demand formats 1 & 2
 	map <Busline*, int> nr_waiting;			//!< number of waiting passengers for each of the bus lines that stops at the stop
@@ -818,9 +821,9 @@ protected:
 	Controlcenter* CC; //!< control center that this stop is associated with
 	vector<pair<Bus*,double>> unassigned_bus_arrivals; //!< expected arrivals of transit vehicles to stop that are not assigned to any trip
 	vector<pair<Bus*, double>> unassigned_buses_at_stop; //!< unassigned buses currently at stop along with the time they arrived/were initialized to this stop
-	bool turning_begin; //!< true if this stop is at the end of a route/line, and the beginning of turning point towards its opposite stop 
-	bool turning_end; //!< true if this stop is at the beginning of a route/line, and the end of a turning point from an opposite stop
 	Busstop* opposing_stop; //!< opposite stop to this one if this busstop corresponds to a location with a turning point. Initialized to nullptr if no opposite stop exists
+	Origin* origin_node; //!< origin node for generating buses when a trip begins at this stop. Is equal to nullptr if no trip can begin at this stop
+	Destination* dest_node; //!< destination node for processing buses that end a trip at this stop. Is equal to nullptr if no trip can end at this stop
 
 	// transfer synchronization
 	vector<pair<Bustrip*, int> > trips_awaiting_transfers;	//!< David added 2016-05-30: contains trips that are currently waiting to synchronize transfers with a connecting trip, paired with the line ID of the connecting trip

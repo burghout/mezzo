@@ -4,4 +4,5 @@ TEMPLATE = subdirs
 
 SUBDIRS += \
     integrationtest \
-    controlcenter
+    controlcenter \
+    routestest

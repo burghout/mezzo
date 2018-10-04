@@ -6,7 +6,7 @@
 #include "od_stops.h"
 #include "Random.h"
 #include <qobject.h> //for signals and slots in passenger/control center connection
-#include "controlcenter.h"
+#include "controlstrategies.h" 
 
 class Bustrip;
 class Busline;
@@ -123,7 +123,7 @@ public:
     double get_walking_time(Busstop*,double);
 
 	//Controlcenter
-	Request createRequest(int load = 1, double time = -1); //creates a request for this passenger with a given load and a given time (Note: uses protected members of Passenger)
+	Request createRequest(int load = 1, double desired_departure_time = -1, double time = -1); //creates a request for this passenger with a given load and a given time (Note: uses protected members of Passenger)
 
 signals:
 	void sendRequest(Request req, double time); //signal to send Request to Controlcenter along with time in which signal is sent

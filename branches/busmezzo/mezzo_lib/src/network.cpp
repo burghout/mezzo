@@ -17,7 +17,7 @@
 
 // initialise the global variables and objects
 double drt_first_rep_planned_headway=0;
-double drt_first_rep_waiting_utility=10;
+double drt_first_rep_waiting_utility=10; //default is to evaluate waiting utility for drt service positively in the first rep
 int drt_min_occupancy=0;
 
 long int randseed=0;
@@ -307,11 +307,11 @@ Network::~Network()
     }
     turnpenalties.clear();
 
-	for (auto& controlcenter : ccmap)
-	{
-		delete controlcenter.second;
-	}
-	ccmap.clear();
+    for (auto& controlcenter : ccmap)
+    {
+        delete controlcenter.second;
+    }
+    ccmap.clear();
     // TODO: check if Stage SignalPlan and SignalControl need to be cleaned up now (in Trunk they are cleaned up here)
 }
 
@@ -414,11 +414,11 @@ int Network::reset()
         (*bus_iter)->reset();
     }
 
-	//controlcenters (and all their initial drt vehicles)
-	for (pair<const int, Controlcenter*>& controlcenter : ccmap)
-	{
-		controlcenter.second->reset();
-	}
+    //controlcenters (and all their initial drt vehicles)
+    for (pair<const int, Controlcenter*>& controlcenter : ccmap)
+    {
+        controlcenter.second->reset();
+    }
 
     //TO DO
 
@@ -1317,39 +1317,85 @@ bool Network::readroute(istream& in)
     return true;
 }
 
-bool Network::readcontrolcenter(const string& name)
+bool Network::readcontrolcenters(const string& name)
 {
-	ifstream in(name.c_str());
-	string keyword;
-	in >> keyword;
-	if (keyword != "drt_first_rep_planned_headway:")
-	{
-		DEBUG_MSG("readcontrolcenter:: no drt_first_rep_planned_headway keyword, read: " << keyword);
-		in.close();
-		return false;
-	}
-	in >> drt_first_rep_planned_headway;
+    ifstream in(name.c_str());
+    assert(in);
+    string keyword;
+    in >> keyword;
+    if (keyword != "drt_first_rep_planned_headway:")
+    {
+        DEBUG_MSG("readcontrolcenters:: no drt_first_rep_planned_headway keyword, read: " << keyword);
+        in.close();
+        return false;
+    }
+    in >> ::drt_first_rep_planned_headway;
 
-	in >> keyword;
-	if (keyword != "drt_first_rep_waiting_utility:")
-	{
-		DEBUG_MSG("readcontrolcenter:: no drt_first_rep_waiting_utility keyword, read: " << keyword);
-		in.close();
-		return false;
-	}
-	in >> drt_first_rep_waiting_utility;
-	
-	in >> keyword;
-	if (keyword != "drt_min_occupancy:")
-	{
-		DEBUG_MSG("readcontrolcenter:: no first_rep_waiting_utility keyword, read: " << keyword);
-		in.close();
-		return false;
-	}
-	in >> drt_min_occupancy;
+    in >> keyword;
+    if (keyword != "drt_first_rep_waiting_utility:")
+    {
+        DEBUG_MSG("readcontrolcenters:: no drt_first_rep_waiting_utility keyword, read: " << keyword);
+        in.close();
+        return false;
+    }
+    in >> ::drt_first_rep_waiting_utility;
 
-	in.close();
-	return true;
+    in >> keyword;
+    if (keyword != "drt_min_occupancy:")
+    {
+        DEBUG_MSG("readcontrolcenters:: no first_rep_waiting_utility keyword, read: " << keyword);
+        in.close();
+        return false;
+    }
+    in >> ::drt_min_occupancy;
+
+    //Create Controlcenters here or somewhere else. OBS: currently a pointer to this CC is given to Busstop via its constructor
+    in >> keyword;
+    if (keyword != "controlcenters:")
+    {
+        DEBUG_MSG("readcontrolcenters:: no controlcenters keyword, read: " << keyword);
+        in.close();
+        return false;
+    }
+    int num_control_centers;
+    in >> num_control_centers;
+
+    if(num_control_centers == 0)
+        DEBUG_MSG("Warning: drt activated but no control centers defined in controlcenters.dat");
+
+    for (int i = 0; i < num_control_centers; ++i)
+    {
+        int id; //id of control center
+        int tg_strategy; //id of trip generation strategy
+        int ev_strategy; //id of empty vehicle strategy
+        int tvm_strategy; //id of trip vehicle matching strategy
+        int vs_strategy; //id of vehicle scheduling strategy
+
+        char bracket;
+        in >> bracket;
+        if (bracket != '{')
+        {
+            cout << "readcontrolcenters:: controlcenter scanner expected '{', read: " << bracket;
+            in.close();
+            return false;
+        }
+        in >> id >> tg_strategy >> ev_strategy >> tvm_strategy >> vs_strategy;
+
+        Controlcenter* cc = new Controlcenter(eventlist, this, id, tg_strategy, ev_strategy, tvm_strategy, vs_strategy);
+        ccmap[id] = cc; //add to network map of control centers
+
+        bracket = ' ';
+        in >> bracket;
+        if (bracket != '}')
+        {
+            cout << "readcontrolcenters:: controlcenter scanner expected '}', read: " << bracket;
+            in.close();
+            return false;
+        }
+    }
+
+    in.close();
+    return true;
 }
 
 // read BUS routes
@@ -1464,17 +1510,6 @@ bool Network::readtransitnetwork(string name) //!< reads the stops, distances be
     string keyword;
     int format;
 
-	//Create Controlcenters here or somewhere else. OBS: currently a pointer to this CC is given to Busstop via its constructor
-	if (theParameters->drt)
-	{
-		int id = 1;
-		int tg_strategy = 1;
-		int tvm_strategy = 1;
-		int vd_strategy = 1;
-		Controlcenter* cc = new Controlcenter(eventlist, id, tg_strategy, tvm_strategy, vd_strategy); //for testing purposes, TODO: move to a controlcenter reader
-		ccmap[id] = cc;
-	}
-
     // First read the busstops
     in >> keyword;
 #ifdef _DEBUG_NETWORK
@@ -1500,30 +1535,30 @@ bool Network::readtransitnetwork(string name) //!< reads the stops, distances be
         }
     }
     
-	//in the case of drt, read which stop pairs are opposite one another (to e.g. represent turning at this stop to begin serving a route/line in the opposite direction)
-	if (theParameters->drt && theParameters->demand_format == 3)
-	{
-		in >> keyword;
-		if (keyword != "stops_turning_points:")
-		{
-			cout << " readtransitnetwork: no << stops_turning_points: >> keyword " << endl;
-			in.close();
-			return false;
-		}
-		in >> nr;
-		limit = i + nr;
-		for (; i < limit; ++i)
-		{
-			if (!readstopturningpoint(in))
-			{
-				cout << " readtransitnetwork: readstopturningpoint returned false for line nr " << (i + 1) << endl;
-				in.close();
-				return false;
-			}
-		}
-	}
+    //in the case of drt, read which stop pairs are opposite one another (to e.g. represent turning at this stop to begin serving a route/line in the opposite direction)
+    if (theParameters->drt && theParameters->demand_format == 3)
+    {
+        in >> keyword;
+        if (keyword != "stops_turning_points:")
+        {
+            cout << " readtransitnetwork: no << stops_turning_points: >> keyword " << endl;
+            in.close();
+            return false;
+        }
+        in >> nr;
+        limit = i + nr;
+        for (; i < limit; ++i)
+        {
+            if (!readstopturningpoint(in))
+            {
+                cout << " readtransitnetwork: readstopturningpoint returned false for line nr " << (i + 1) << endl;
+                in.close();
+                return false;
+            }
+        }
+    }
 
-	// in case of passenger route choice - read walking distances between stops
+    // in case of passenger route choice - read walking distances between stops
     if (theParameters->demand_format == 3)
     {
         in >> keyword;
@@ -1712,47 +1747,17 @@ bool Network::readbusstop (istream& in) // reads a busstop
         cout << "readfile::readsbusstop error at stop " << stop_id << ". Link " << link_id << " does not exist." << endl;
     }
 
-	Busstop* st = nullptr;
-	if (!theParameters->drt)
-	{
-		st = new Busstop(stop_id, name, link_id, position, length, has_bay, can_overtake, min_DT, RTI_stop, non_Ramdon_Pass_Generation);
-	}
-	else
-	{
-		st = new Busstop(stop_id, name, link_id, position, length, has_bay, can_overtake, min_DT, RTI_stop, non_Ramdon_Pass_Generation, ccmap[1]);
-	}
-  
-  if (theParameters->drt) //read if the stop is at the beginning or end of a turning point between two opposing stops
-  {
-	  int turning_point; //defines whether or not the stop is the beginning of a turn between opposing stops, the end of a turn between opposing stops
-	  in >> turning_point;
-	  switch (turning_point)
-	  {
-		  case 0:
-		  {
-			  st->set_turning_begin(false);
-			  st->set_turning_end(false);
-			  break;
-		  }
-		  case 1:
-		  {
-			  st->set_turning_begin(true);
-			  break;
-		  }
-		  case 2:
-		  {
-			  st->set_turning_end(true);
-			  break;
-		  }
-		  default:
-		  {
-			  DEBUG_MSG_V("readfile::readbusstop invalid input " << turning_point << " read for busstop " << stop_id << ". Aborting...");
-			  abort();
-		  }
-	  }
-  }
- 
-  st->add_distance_between_stops(st,0.0);
+    Busstop* st = nullptr;
+    if (!theParameters->drt)
+    {
+        st = new Busstop(stop_id, name, link_id, position, length, has_bay, can_overtake, min_DT, RTI_stop, non_Ramdon_Pass_Generation);
+    }
+    else
+    {
+        st = new Busstop(stop_id, name, link_id, position, length, has_bay, can_overtake, min_DT, RTI_stop, non_Ramdon_Pass_Generation, ccmap[1]);
+    }
+
+    st->add_distance_between_stops(st,0.0);
     in >> bracket;
     if (bracket != '}')
     {
@@ -1761,6 +1766,7 @@ bool Network::readbusstop (istream& in) // reads a busstop
     }
     busstops.push_back (st);
     add_busstop_to_name_map(name, st);
+    busstopsmap[stop_id] = st;
 
 #ifdef _DEBUG_NETWORK
     cout << " read busstop"<< stop_id <<endl;
@@ -1770,50 +1776,34 @@ bool Network::readbusstop (istream& in) // reads a busstop
 
 bool Network::readstopturningpoint(istream & in)
 {
-	char bracket = ' ';
-	int stopid1; //id of stop that corresponds to the beginning of the turn point (e.g. the final stop of a transit route before turning to the other direction)
-	int stopid2; //id of stop that corresponds to the end of the turn point (e.g. the first stop of a transit route in the opposite direction
+    char bracket = ' ';
+    int stopid1; //id of stop that corresponds to the beginning or end of a turn point (e.g. the final stop of a transit route before turning to the other direction)
+    int stopid2; //id of stop that corresponds to the beginning or end of a turn point (e.g. the first stop of a transit route in the opposite direction
 
-	in >> bracket;
-	if (bracket != '{')
-	{
-		cout << "readfile::readstopturningpoint scanner jammed at " << bracket;
-		return false;
-	}
+    in >> bracket;
+    if (bracket != '{')
+    {
+        cout << "readfile::readstopturningpoint scanner jammed at " << bracket;
+        return false;
+    }
 
-	in >> stopid1 >> stopid2;
-	
-	bracket = ' ';
-	in >> bracket;
-	if (bracket != '}')
-	{
-		cout << "readfile::readstopturningpoint scanner jammed at " << bracket;
-		return false;
-	}
+    in >> stopid1 >> stopid2;
 
-	Busstop* stop1 = (*find_if(busstops.begin(), busstops.end(), compare<Busstop>(stopid1)));
-	Busstop* stop2 = (*find_if(busstops.begin(), busstops.end(), compare<Busstop>(stopid2)));
+    bracket = ' ';
+    in >> bracket;
+    if (bracket != '}')
+    {
+        cout << "readfile::readstopturningpoint scanner jammed at " << bracket;
+        return false;
+    }
 
-	if (stop1->is_turning_end() && stop2->is_turning_end())
-	{
-		DEBUG_MSG_V("readfile::readstopturningpoint both stop " << stopid1 << " and " << stopid2 << " are at the end of a turn point! Aborting... ");
-		abort();
-	}
-	if (stop1->is_turning_begin() && stop2->is_turning_begin())
-	{
-		DEBUG_MSG_V("readfile::readstopturningpoint both stop " << stopid1 << " and " << stopid2 << " are at the beginning of a turn point! Aborting... ");
-		abort();
-	}
-	if ( (!stop1->is_turning_begin() && !stop1->is_turning_end()) || (!stop2->is_turning_begin() && !stop2->is_turning_end()) )
-	{
-		DEBUG_MSG_V("readfile::readstopturningpoint stop " << stopid1 << " or " << stopid2 << " is not at a turning point! Aborting...");
-		abort();
-	}
+    Busstop* stop1 = (*find_if(busstops.begin(), busstops.end(), compare<Busstop>(stopid1)));
+    Busstop* stop2 = (*find_if(busstops.begin(), busstops.end(), compare<Busstop>(stopid2)));
 
-	stop1->set_opposing_stop(stop2);
-	stop2->set_opposing_stop(stop1);
+    stop1->set_opposing_stop(stop2);
+    stop2->set_opposing_stop(stop1);
 
-	return true;
+    return true;
 }
 
 void Network::add_busstop_to_name_map(string bus_stop_name,Busstop* bus_stop_ptr){
@@ -1835,8 +1825,6 @@ Busstop* Network::get_busstop_from_name(string bus_stop_name) {
     
 }
 
-
-
 bool Network::readbusline(istream& in) // reads a busline
 {
     char bracket;
@@ -1855,8 +1843,8 @@ bool Network::readbusline(istream& in) // reads a busline
     vector <Busstop*> tr_stops;
     Busstop* tr_stop;
 
-  //DRT related variables
-  bool flex_line = false; //true if trips can be dynamically created for this line via a control center
+    //DRT related variables
+    bool flex_line = false; //true if trips can be dynamically created for this line via a control center
 
     bool ok= true;
     in >> bracket;
@@ -1871,10 +1859,10 @@ bool Network::readbusline(istream& in) // reads a busline
     {
         in >> tr_line_id;
     }
-	if (theParameters->drt)
-	{
-		in >> flex_line;
-	}
+    if (theParameters->drt)
+    {
+        in >> flex_line;
+    }
     in >> nr_stops;
     in >> bracket;
     if (bracket != '{')
@@ -1982,12 +1970,25 @@ bool Network::readbusline(istream& in) // reads a busline
         return false;
     }
 
-  if (flex_line) //if flexible vehicle scheduling is allowed for this line then add it to a controlcenter as a potential service route
-  {
-	  assert(theParameters->drt);
-	  ccmap[1]->addServiceRoute(bl);
-  }
-	
+    if (flex_line) //if flexible vehicle scheduling is allowed for this line then add it to a controlcenter as a potential service route and let the start and end stops of the line know of their origin and destination nodes for use in shortest path methods
+    {
+        assert(theParameters->drt);
+        Origin* origin_node = bl->get_odpair()->get_origin();
+        Destination* dest_node = bl->get_odpair()->get_destination();
+        Busstop* firststop = bl->stops.front();
+        Busstop* laststop = bl->stops.back();
+
+        if (!firststop->get_origin_node())
+        {
+            firststop->set_origin_node(origin_node);
+        }
+        if (!laststop->get_dest_node())
+        {
+            laststop->set_dest_node(dest_node);
+        }
+
+        ccmap[1]->addServiceRoute(bl);
+    }
 
     // add to buslines vector
     buslines.push_back (bl);
@@ -1999,10 +2000,10 @@ bool Network::readbusline(istream& in) // reads a busline
 
 bool Network::readbustrip_format1(istream& in) // reads a trip
 {
-	if (theParameters->drt){
-		DEBUG_MSG_V("DRT currently not available with trip format 1. Aborting...");
-		abort();
-	}
+    if (theParameters->drt){
+        DEBUG_MSG_V("DRT currently not available with trip format 1. Aborting...");
+        abort();
+    }
 
     char bracket;
     int trip_id, busline_id, nr_stops, stop_id;
@@ -2088,7 +2089,7 @@ bool Network::readbustrip_format2(istream& in) // reads a trip
         // find the stop in the list
         Visit_stop* vs = new Visit_stop ((*stops_iter), arrival_time_at_stop);
         delta_at_stops.push_back(vs);
-		bl->add_stop_delta((*stops_iter), arrival_time_at_stop); //add expected travel times between stops in the order of the stops visited for this line
+        bl->add_stop_delta((*stops_iter), arrival_time_at_stop); //add expected travel times between stops in the order of the stops visited for this line
         stops_iter++;
     }
     in >> bracket;
@@ -2110,15 +2111,15 @@ bool Network::readbustrip_format2(istream& in) // reads a trip
         in >> dispatching_time;
         vector <Visit_stop*> curr_trip;
         double acc_time_table = dispatching_time;
-		int tripid;
+        int tripid;
 
-		for (vector <Visit_stop*>::iterator iter = delta_at_stops.begin(); iter < delta_at_stops.end(); iter++)
+        for (vector <Visit_stop*>::iterator iter = delta_at_stops.begin(); iter < delta_at_stops.end(); iter++)
         {
             acc_time_table += (*iter)->second;
             Visit_stop* vs_ct = new Visit_stop ((*iter)->first, acc_time_table);
             curr_trip.push_back(vs_ct);
         }
-		tripid = bl->generate_new_trip_id(); //get a new trip_id for this line and increment trip counter
+        tripid = bl->generate_new_trip_id(); //get a new trip_id for this line and increment trip counter
         Bustrip* trip= new Bustrip (tripid, dispatching_time, bl); // e.g. line 2, 3rd trip: trip_id = 203
         trip->add_stops(curr_trip);
         bl->add_trip(trip,dispatching_time);
@@ -2126,7 +2127,7 @@ bool Network::readbustrip_format2(istream& in) // reads a trip
         trip->convert_stops_vector_to_map();
         bustrips.push_back (trip); // add to bustrips vector
     }
-	bl->set_static_trips(bl->get_trips()); //save trips to static_trips for resets
+    bl->set_static_trips(bl->get_trips()); //save trips to static_trips for resets
     in >> bracket;
     if (bracket != '}')
     {
@@ -2170,7 +2171,7 @@ bool Network::readbustrip_format3(istream& in) // reads a trip
         // find the stop in the list
         Visit_stop* vs = new Visit_stop ((*stops_iter), arrival_time_at_stop);
         delta_at_stops.push_back(vs);
-		bl->add_stop_delta((*stops_iter), arrival_time_at_stop); //add expected travel times between stops in the order of the stops visited for this line
+        bl->add_stop_delta((*stops_iter), arrival_time_at_stop); //add expected travel times between stops in the order of the stops visited for this line
         stops_iter++;
     }
 
@@ -2185,14 +2186,14 @@ bool Network::readbustrip_format3(istream& in) // reads a trip
     {
         double trip_acc_time = initial_dispatching_time;
         vector <Visit_stop*> curr_trip;
-		int tripid;
+        int tripid;
         for (vector <Visit_stop*>::iterator iter = delta_at_stops.begin(); iter < delta_at_stops.end(); iter++)
         {
             trip_acc_time = trip_acc_time + (*iter)->second;
             Visit_stop* vs_ct = new Visit_stop ((*iter)->first, trip_acc_time);
             curr_trip.push_back(vs_ct);
         }
-		tripid = bl->generate_new_trip_id(); //get a new trip_id for this line and increment trip counter
+        tripid = bl->generate_new_trip_id(); //get a new trip_id for this line and increment trip counter
         Bustrip* trip= new Bustrip (tripid, initial_dispatching_time,bl); // e.g. line 2, 3rd trip: trip_id = 203
         trip->add_stops(curr_trip);
         bl->add_trip(trip,curr_trip.front()->second);
@@ -2203,8 +2204,8 @@ bool Network::readbustrip_format3(istream& in) // reads a trip
         initial_dispatching_time = initial_dispatching_time + headway;
     }
 
-	bl->set_static_trips(bl->get_trips()); //save trips to static_trips for resets
-	
+    bl->set_static_trips(bl->get_trips()); //save trips to static_trips for resets
+
     in >> bracket;
     if (bracket != '}')
     {
@@ -3010,6 +3011,40 @@ void Network::generate_indirect_paths()
         }
     }
 }
+
+
+Busroute* Network::create_busroute_from_stops(int id, Origin* origin_node, Destination* destination_node, vector<Busstop *> stops, double time)//!< creates the
+{
+
+    // get path from origin to first stop ... to last stop; to destination
+    vector <Link*> rlinks, segment;
+    int rootlink = origin_node->get_links().front()->get_id(); // TODO: for all outgoing links from origin
+
+    for (auto s:stops)
+    {
+        if (s->get_link_id() != rootlink) // if the stop is not already on current rootlink
+        {
+            segment = shortest_path_to_node(rootlink,s->get_id(),time);
+            if (segment.empty()) // if one of the stops in the sequence is not reachable, return nullptr
+                return nullptr;
+            rlinks.insert(rlinks.end(),segment.begin(), segment.end()); // add segment to rlinks
+            rootlink = s->get_link_id();
+        }
+    }
+    // add segment to destination if needed
+    if (linkmap [rootlink]->get_out_node_id() != destination_node->get_id())
+    {
+        segment = shortest_path_to_node(rootlink,destination_node->get_id(),time);
+        if (segment.empty()) // if one of the stops in the sequence is not reachable, return nullptr
+            return nullptr;
+        rlinks.insert(rlinks.end(),segment.begin(), segment.end()); // add segment to rlinks
+    }
+    if (rlinks.empty())
+        return nullptr;
+    else
+        return new Busroute(id, origin_node,destination_node,rlinks);
+}
+
 
 vector<vector<Busline*> > Network::compose_line_sequence (Busstop* destination)
 {
@@ -5167,24 +5202,24 @@ bool Network::readtransitfleet (string name) // !< reads transit vehicle types, 
             return false;
         }
     }
-	if (theParameters->drt)
-	{
-		in >> keyword;
-		if (keyword != "unassigned_vehicles:")
-		{
-			DEBUG_MSG("readtransitfleet: no << drt_vehicles: >> keyword ");
-			return false;
-		}
-		in >> nr;
-		limit = i + nr;
-		for (; i < limit; i++)
-		{
-			if (!read_unassignedvehicle(in))
-			{
-				DEBUG_MSG("readtransitfleet: read_drtvehicle returned false for line nr" << (i+1));
-			}
-		}
-	}
+    if (theParameters->drt)
+    {
+        in >> keyword;
+        if (keyword != "unassigned_vehicles:")
+        {
+            DEBUG_MSG("readtransitfleet: no << drt_vehicles: >> keyword ");
+            return false;
+        }
+        in >> nr;
+        limit = i + nr;
+        for (; i < limit; i++)
+        {
+            if (!read_unassignedvehicle(in))
+            {
+                DEBUG_MSG("readtransitfleet: read_drtvehicle returned false for line nr" << (i+1));
+            }
+        }
+    }
     return true;
 }
 
@@ -5319,7 +5354,7 @@ bool Network::read_busvehicle(istream& in) // reads a bus vehicle
 
         //Moved here by Jens 2014-09-05
         Bus* bus=recycler.newBus(); // get a bus vehicle
-		bus->set_flex_vehicle(false); //vehicle can only run pre-planned fixed line, fixed schedule trips
+        bus->set_flex_vehicle(false); //vehicle can only run pre-planned fixed line, fixed schedule trips
         bus->set_bus_id(bv_id);
         bus->set_bustype_attributes(bty);
         btr->set_busv(bus);
@@ -5358,88 +5393,88 @@ bool Network::read_busvehicle(istream& in) // reads a bus vehicle
 
 bool Network::read_unassignedvehicle(istream& in) //reads a bus vehicles that are initialized without a trip assigned to them
 {
-	char bracket;
-	int bv_id; //id of bus vehicle
-	int type_id; //id of bus vehicle type
-	int init_stop_id; //id of stop that bus is initialized at (generated in an idle state)
-	Busstop* init_stop;
-	double init_time; //time at which bus is generated
-	int nr_sroutes; //nr of lines (service routes) that the bus is assigned to serve
-	int sroute_id; //id of a line (service route) that the bus is assigned to serve
-	vector<int> sroute_ids;
-	DrtVehicleInit unassignedvehicle; //tuple with vehicle, init stop, init time and initial service route ids
+    char bracket;
+    int bv_id; //id of bus vehicle
+    int type_id; //id of bus vehicle type
+    int init_stop_id; //id of stop that bus is initialized at (generated in an idle state)
+    Busstop* init_stop;
+    double init_time; //time at which bus is generated
+    int nr_sroutes; //nr of lines (service routes) that the bus is assigned to serve
+    int sroute_id; //id of a line (service route) that the bus is assigned to serve
+    vector<int> sroute_ids;
+    DrtVehicleInit unassignedvehicle; //tuple with vehicle, init stop, init time and initial service route ids
 
-	in >> bracket;
-	if (bracket != '{')
-	{
-		DEBUG_MSG_V("readfile::read_unassignedvehicle scanner jammed at " << bracket);
-		return false;
-	}
-	in >> bv_id >> type_id >> init_stop_id >> init_time;
-	in >> nr_sroutes;
-	bracket = ' ';
-	in >> bracket;
-	if (bracket != '{'){
-		DEBUG_MSG_V("readfile::read_unassignedvehicle scanner jammed at " << bracket);
-		return false;
-	}
-	//add the bus as a candidate transit vehicle for each service route it is assigned to
-	for (int i = 0; i < nr_sroutes; ++i)
-	{
-		in >> sroute_id;
-		vector<Busline*>::iterator line_it = find_if(buslines.begin(), buslines.end(), compare<Busline>(sroute_id) );
-		if (line_it != buslines.end() && (*line_it)->is_flex_line()) //service route exists and we can dynamically generate trips for this line
-		{
-			sroute_ids.push_back(sroute_id);
-		}
-		else
-		{
-			DEBUG_MSG_V("readfile::read_unassignedvehicle scanner jammed at " << sroute_id << endl
-						<< "flexible service route with this id does not exist! Aborting...");
-			abort();
-		}
+    in >> bracket;
+    if (bracket != '{')
+    {
+        DEBUG_MSG_V("readfile::read_unassignedvehicle scanner jammed at " << bracket);
+        return false;
+    }
+    in >> bv_id >> type_id >> init_stop_id >> init_time;
+    in >> nr_sroutes;
+    bracket = ' ';
+    in >> bracket;
+    if (bracket != '{'){
+        DEBUG_MSG_V("readfile::read_unassignedvehicle scanner jammed at " << bracket);
+        return false;
+    }
+    //add the bus as a candidate transit vehicle for each service route it is assigned to
+    for (int i = 0; i < nr_sroutes; ++i)
+    {
+        in >> sroute_id;
+        vector<Busline*>::iterator line_it = find_if(buslines.begin(), buslines.end(), compare<Busline>(sroute_id) );
+        if (line_it != buslines.end() && (*line_it)->is_flex_line()) //service route exists and we can dynamically generate trips for this line
+        {
+            sroute_ids.push_back(sroute_id);
+        }
+        else
+        {
+            DEBUG_MSG_V("readfile::read_unassignedvehicle scanner jammed at " << sroute_id << endl
+                        << "flexible service route with this id does not exist! Aborting...");
+            abort();
+        }
 
-	}
-	in >> bracket;
-	if (bracket != '}')
-	{
-		DEBUG_MSG_V("readfile::read_unassignedvehicle scanner jammed at " << bracket);
-	}
-	bracket = ' ';
-	in >> bracket;
-	if (bracket != '}')
-	{
-		DEBUG_MSG_V("readfile::read_unassignedvehicle scanner jammed at " << bracket);
-		return false;
-	}
+    }
+    in >> bracket;
+    if (bracket != '}')
+    {
+        DEBUG_MSG_V("readfile::read_unassignedvehicle scanner jammed at " << bracket);
+    }
+    bracket = ' ';
+    in >> bracket;
+    if (bracket != '}')
+    {
+        DEBUG_MSG_V("readfile::read_unassignedvehicle scanner jammed at " << bracket);
+        return false;
+    }
 
-	// find bus type and create bus vehicle
-	Bustype* bty = (*(find_if(bustypes.begin(), bustypes.end(), compare <Bustype>(type_id))));
-	// generate a new bus vehicle
-	vid++;
-	Bus* bus = recycler.newBus(); // get a bus vehicle
-	bus->set_flex_vehicle(true); //vehicle can be assigned dynamically generated trips
-	bus->set_bus_id(bv_id);
-	bus->set_bustype_attributes(bty);
-	bus->set_curr_trip(nullptr); // bus has no trip assigned to it, on_trip should = false
-	
-	init_stop = (*(find_if(busstops.begin(), busstops.end(), compare <Busstop>(init_stop_id))));
-	
-	//if (!init_stop->is_turning_end())
-	//{
-	//	DEBUG_MSG_V("readfile::read_unassignedvehicle error, initial stop " << init_stop_id << " of unassigned vehicle " << bv_id << " is not the start stop of a transit line. Aborting...");
-	//	abort();
-	//}
+    // find bus type and create bus vehicle
+    Bustype* bty = (*(find_if(bustypes.begin(), bustypes.end(), compare <Bustype>(type_id))));
+    // generate a new bus vehicle
+    vid++;
+    Bus* bus = recycler.newBus(); // get a bus vehicle
+    bus->set_flex_vehicle(true); //vehicle can be assigned dynamically generated trips
+    bus->set_bus_id(bv_id);
+    bus->set_bustype_attributes(bty);
+    bus->set_curr_trip(nullptr); // bus has no trip assigned to it, on_trip should = false
 
-	for (int id : sroute_ids)
-	{
-		bus->add_sroute_id(id); //bus has knowledge of its service area
-	}
+    init_stop = (*(find_if(busstops.begin(), busstops.end(), compare <Busstop>(init_stop_id))));
 
-	unassignedvehicle = make_tuple(bus, init_stop, init_time, sroute_ids);
-	drtvehicles.push_back(unassignedvehicle);
+    //if (!init_stop->is_turning_end())
+    //{
+    //	DEBUG_MSG_V("readfile::read_unassignedvehicle error, initial stop " << init_stop_id << " of unassigned vehicle " << bv_id << " is not the start stop of a transit line. Aborting...");
+    //	abort();
+    //}
 
-	return true;
+    for (int id : sroute_ids)
+    {
+        bus->add_sroute_id(id); //bus has knowledge of its service area
+    }
+
+    unassignedvehicle = make_tuple(bus, init_stop, init_time, sroute_ids);
+    drtvehicles.push_back(unassignedvehicle);
+
+    return true;
 }
 
 // read traffic control
@@ -6300,22 +6335,22 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
         }
         write_passenger_welfare_summary(out17, total_pass_GTC, pass_counter);
 
-		if (theParameters->drt)
-		{
-			//write outputs for objects owned by control centers
-			for (const pair<int, Controlcenter*>& cc : ccmap) //writing trajectory output for each drt vehicle
-			{
-				for (const pair<Bus*, Bustrip*>& vehtrip : cc.second->completedVehicleTrips_)
-				{
-					vehtrip.first->write_output(out4); //write trajectory output for each bus vehicle that completed a trip
-					vehtrip.second->write_assign_segments_output(out7); // writing the assignment results in terms of each segment on individual trips
-				}
-				for (const pair<int, Bus*>& veh : cc.second->connectedVeh_)
-				{
-					veh.second->write_output(out4); //write trajectory output for each bus vehicle that has not completed a trip
-				}
-			}
-		}
+        if (theParameters->drt)
+        {
+            //write outputs for objects owned by control centers
+            for (const pair<int, Controlcenter*>& cc : ccmap) //writing trajectory output for each drt vehicle
+            {
+                for (const pair<Bus*, Bustrip*>& vehtrip : cc.second->completedVehicleTrips_)
+                {
+                    vehtrip.first->write_output(out4); //write trajectory output for each bus vehicle that completed a trip
+                    vehtrip.second->write_assign_segments_output(out7); // writing the assignment results in terms of each segment on individual trips
+                }
+                for (const pair<int, Bus*>& veh : cc.second->connectedVeh_)
+                {
+                    veh.second->write_output(out4); //write trajectory output for each bus vehicle that has not completed a trip
+                }
+            }
+        }
         /* deactivated - unneccessary files in most cases
         for (vector<Busstop*>::iterator stop_iter = busstops.begin(); stop_iter < busstops.end(); stop_iter++)
         {
@@ -7096,26 +7131,34 @@ bool Network::shortest_paths_all()
 
 bool Network::shortest_pathtree_from_origin_link(int lid, double start_time)
 {
-    //Link* start_link = linkmap [lid];
-    bool initok=false;
-    if (!theParameters->shortest_paths_initialised) // initialise shortest path graph if needed
-        initok = init_shortest_path();
-    if (initok)
-    {   if (linkinfo)
+
+    if (!theParameters->shortest_paths_initialised) // initialize shortest path graph if needed
+        init_shortest_path(); //sets parameter to initialized if successful
+    if (theParameters->shortest_paths_initialised)
+    {
+        if (linkinfo)
             graph->labelCorrecting(lid,start_time, linkinfo);
         else
             graph->labelCorrecting(lid,start_time);
+
+		return true;
     }
     else
-        return false; // cannot init graph, so no search done
-    return false;
+        return false; // could not init graph, so no search done
 }
 
 vector<Link*> Network::shortest_path_to_node(int rootlink, int dest_node, double start_time) //!< returns shortest path Links
 {
+
     vector<Link*> rlinks;
     if (shortest_pathtree_from_origin_link(rootlink,start_time))
-        rlinks = get_path(dest_node);
+    {
+        if (graph->reachable(dest_node))
+            rlinks = get_path(dest_node);
+        else
+            cout << "ERROR: Node " << dest_node << " is not reachable from rootlink "
+                 << rootlink << std::endl;
+    }
     return rlinks;
 }
 
@@ -7580,14 +7623,14 @@ double Network::executemaster(QPixmap * pm_,QMatrix * wm_)
     // NEW 2007_03_08
 #ifdef _BUSES
     // read the transit system input
-	if (theParameters->drt)
-	{
-		if (!readcontrolcenter(workingdir + "controlcenter.dat"))
-		{
-			DEBUG_MSG_V("Problem reading controlcenter.dat. Aborting...");
-			abort();
-		}
-	}
+    if (theParameters->drt)
+    {
+        if (!readcontrolcenters(workingdir + "controlcenters.dat")) //should be read before transit network
+        {
+            DEBUG_MSG_V("Problem reading controlcenters.dat. Aborting...");
+            abort();
+        }
+    }
     this->readtransitroutes (workingdir + "transit_routes.dat"); //FIX IN THE MAIN READ & WRITE
     this->readtransitnetwork (workingdir + "transit_network.dat"); //FIX IN THE MAIN READ & WRITE
     this->readtransitfleet (workingdir + "transit_fleet.dat");
@@ -7685,14 +7728,14 @@ double Network::executemaster()
     readsignalcontrols(filenames[2]);
 #ifdef _BUSES
     // read the transit system input
-	if (theParameters->drt)
-	{
-		if (!readcontrolcenter(workingdir + "controlcenter.dat"))
-		{
-			DEBUG_MSG_V("Problem reading controlcenter.dat. Aborting...");
-			abort();
-		}
-	}
+    if (theParameters->drt)
+    {
+        if (!readcontrolcenters(workingdir + "controlcenters.dat"))
+        {
+            DEBUG_MSG_V("Problem reading controlcenters.dat. Aborting...");
+            abort();
+        }
+    }
     this->readtransitroutes (workingdir + "transit_routes.dat"); //FIX IN THE MAIN READ & WRITE
     this->readtransitnetwork (workingdir + "transit_network.dat"); //FIX IN THE MAIN READ & WRITE
     this->readtransitfleet (workingdir + "transit_fleet.dat");
@@ -8029,30 +8072,30 @@ bool Network::init()
             }
         }
     }
-	//Initialize the DRT vehicles to their starting stop at their starting time
-	if (theParameters->drt && !drtvehicles.empty())
-	{
-		//Add buses to vector of unassigned vehicles and initial Busstop
-		for (const DrtVehicleInit& drt_init : drtvehicles)
-		{
-			Busstop* stop = get<1>(drt_init);
-			Bus* bus = get<0>(drt_init);
-			double init_time = get<2>(drt_init);
-			vector<int> sroute_ids = get<3>(drt_init);
+    //Initialize the DRT vehicles to their starting stop at their starting time
+    if (theParameters->drt && !drtvehicles.empty())
+    {
+        //Add buses to vector of unassigned vehicles and initial Busstop
+        for (const DrtVehicleInit& drt_init : drtvehicles)
+        {
+            Busstop* stop = get<1>(drt_init);
+            Bus* bus = get<0>(drt_init);
+            double init_time = get<2>(drt_init);
+            vector<int> sroute_ids = get<3>(drt_init);
 
-			assert(bus->is_flex_vehicle());
+            assert(bus->is_flex_vehicle());
 
-			bus->set_curr_trip(nullptr); //unlike non-dynamically generated bus/trips this bus should not have a trip between resets as well
-			bus->set_on_trip(false);
-			ccmap[1]->connectVehicle(bus); //connect vehicle to a control center
-			ccmap[1]->addInitialVehicle(bus);
-			stop->add_unassigned_bus_arrival(eventlist, bus, init_time); //should be in a Null state until their init_time (also adds a Busstop event scheduled for the init_time of vehicle  to switch state of bus to IdleEmpty from Null)
-			for (const int& sroute_id : sroute_ids)
-			{
-				ccmap[1]->addVehicleToServiceRoute(sroute_id, bus);//add vehicle as a candidate service vehicle for service routes
-			}
-		}
-	}
+            bus->set_curr_trip(nullptr); //unlike non-dynamically generated bus/trips this bus should not have a trip between resets as well
+            bus->set_on_trip(false);
+            ccmap[1]->connectVehicle(bus); //connect vehicle to a control center
+            ccmap[1]->addInitialVehicle(bus);
+            stop->book_unassigned_bus_arrival(eventlist, bus, init_time); //should be in a Null state until their init_time (also adds a Busstop event scheduled for the init_time of vehicle  to switch state of bus to IdleEmpty from Null)
+            for (const int& sroute_id : sroute_ids)
+            {
+                ccmap[1]->addVehicleToServiceRoute(sroute_id, bus);//add vehicle as a candidate service vehicle for service routes
+            }
+        }
+    }
 #endif //_BUSES
 #ifdef _DEBUG_NETWORK
     cout << "turnings initialised" << endl;

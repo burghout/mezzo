@@ -41,3 +41,4 @@ moc_*
 *.ipch
 *.db-shm
 *.db-wal
+*.json

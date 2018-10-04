@@ -26,30 +26,26 @@ class TestControlcenter : public QObject
 public:
     TestControlcenter(){}
 
-
 private Q_SLOTS:
-    void testConstruction(); //!< test contstruction
-    void testConnectDisconnectPassenger(); //!< tests connecting a new passenger
-	void testRequestHandler(); //!< tests for receiving and removing a request
+    void testConstruction(); //!< test construction of a Controlcenter
+    void testConnectDisconnectPassenger(); //!< tests connecting and disconnecting passengers to/from Controlcenter 
+	void testRequestHandler(); //!< tests for receiving and removing a request via passenger signals and controlcenter slots
+	//void testBustripGenerator(); //!< tests for generation of unplanned trips and supporting methods
+	void testDeletion(); //!< test deletion of Controlcenter
 
 private:
-
-
-
+	Controlcenter* ccPtr;
 };
 
 void TestControlcenter::testConstruction()
 {   
-    Controlcenter * ccPtr = new Controlcenter ();
+    ccPtr = new Controlcenter();
 
-    QVERIFY2(ccPtr, "Failing to create a Controlcenter");
-    delete ccPtr;
-
+    QVERIFY2(ccPtr, "Failed to create a Controlcenter");
 }
 
 void TestControlcenter::testConnectDisconnectPassenger()
 {
-    Controlcenter * ccPtr = new Controlcenter ();
     Busstop* origin = new Busstop();
     Busstop* destination = new Busstop();
     ODstops* OD_stop= new ODstops(origin,destination);
@@ -65,12 +61,10 @@ void TestControlcenter::testConnectDisconnectPassenger()
 //    delete destination; // cannot call delete on these
     delete OD_stop;
     delete pass;
-    delete ccPtr;
 }
 
 void TestControlcenter::testRequestHandler()
 {
-	Controlcenter* ccPtr = new Controlcenter();
 	int oid = 1;
 	int did = 2;
 	Busstop* origin = new Busstop(oid, "origin", 1, 1, 1, 0, 0, 1.0, 0, 0, nullptr);
@@ -79,7 +73,7 @@ void TestControlcenter::testRequestHandler()
 	Passenger* pass = new Passenger(0, 0.0, OD_stop, nullptr);
 
 	//test create request via passenger method
-	Request req1 = pass->createRequest(1, 1.0); //request with pass_id of passenger
+	Request req1 = pass->createRequest(1, 1.0, 1.0); //request with pass_id of passenger
 	QVERIFY2(req1.ostop_id == oid, "Failure, createRequest returning incorrect origin stop id");
 	QVERIFY2(req1.dstop_id == did, "Failure, createRequest returning incorrect destination stop id");
 	
@@ -95,7 +89,7 @@ void TestControlcenter::testRequestHandler()
 	emit pass->sendRequest(req1, 0.0);
 	QVERIFY2(rhPtr->requestSet_.size() == 1, "Failure, there should still be 1 request in requestSet after duplicate sendRequest signal from connected passenger");
 
-	Request req2 = Request(1, 1, 1, 1, 0.0); //creates request with pass_id 1
+	Request req2 = Request(1, 1, 1, 1, 0.0, 0.0); //creates request with pass_id 1
 	rhPtr->addRequest(req2);
 	QVERIFY2(rhPtr->requestSet_.size() == 2, "Failure, there should be 2 requests in requestSet after direct call to addRequest");
 
@@ -111,10 +105,14 @@ void TestControlcenter::testRequestHandler()
 	rhPtr->removeRequest(1); //remove request associated with pass_id 1
 	QVERIFY2(rhPtr->requestSet_.size() == 0, "Failure, there should be 0 requests in requestSet after direct call to removeRequest");
 
-
 	delete pass;
 	delete OD_stop;
+}
+
+void TestControlcenter::testDeletion()
+{
 	delete ccPtr;
+	QVERIFY2(true, "Failed to delete Controlcenter");
 }
 
 QTEST_APPLESS_MAIN(TestControlcenter)

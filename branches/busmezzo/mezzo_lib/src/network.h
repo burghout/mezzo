@@ -165,7 +165,9 @@ public:
 	bool find_alternatives_all (int lid, double penalty, Incident* incident); //!< finds the alternative paths 'without' link lid.
 	//void delete_spurious_routes(); //!< deletes all routes that have no OD pair.
 	void renum_routes (); //!< renumerates the routes, to keep a consecutive series after deletions & additions
-	bool run(int period); //!< RUNS the network for 'period' seconds
+    Busroute* create_busroute_from_stops(int id, Origin* origin_node, Destination* destination_node, vector<Busstop*> stops, double time = 0.0);//!< creates the
+
+    bool run(int period); //!< RUNS the network for 'period' seconds
 	bool addroutes (int oid, int did, ODpair* odpair); //!< adds routes to an ODpair
 	bool add_od_routes()	; //!< adds routes to all ODpairs
 	bool readdemandfile(string name);  //!< reads the OD matrix and creates the ODpairs
@@ -226,6 +228,8 @@ public:
 	map <int, Destination*>& get_destinations() {return destinationmap;}
 	map <int, Node*>& get_nodes() {return nodemap;}
 	map <int,Link*>& get_links() {return linkmap;}
+
+	map <int, Busstop*>& get_stopsmap() { return busstopsmap; }
 	
 	multimap<odval, Route*>::iterator find_route (int id, odval val);
 	bool exists_route (int id, odval val); // checks if route with this ID exists for OD pair val
@@ -262,7 +266,7 @@ public:
 	void write_transitlineloads_header(ostream& out);
 	void write_transittriploads_header(ostream& out);
 
-	bool readcontrolcenter(const string& name); //!< reads control center parameters, strategies etc.
+	bool readcontrolcenters(const string& name); //!< reads control center parameters, strategies etc.
 	bool readtransitroutes(string name); //!< reads the transit routes, similar to readroutes
 	bool readtransitnetwork(string name); //!< reads the stops, distances between stops, lines, trips and travel disruptions
 	bool readtransitdemand (string name); //!< reads passenger demand for transit services
@@ -384,6 +388,7 @@ protected:
 	vector <Busline*> buslines; //!< the buslines that generate bus trips on busroutes, serving busstops
 	vector <Bustrip*> bustrips;  //!< the trips list of all buses
 	vector <Busstop*> busstops; //!< stops on the buslines
+	map<int, Busstop*> busstopsmap; //!< map of stops on buslines with id as key
 	vector <Busroute*> busroutes; //!< the routes that buses follow
 	vector <Dwell_time_function*> dt_functions;
     vector <Bustype*> bustypes; // types of bus vehicles
