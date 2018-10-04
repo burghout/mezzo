@@ -14,7 +14,7 @@ General Notes:
 - VehicleDispatcher
 
 Registers (unregisters) service vehicles
-Offers interface to connected vehicles as well as connected passengers
+Offers interface between connected vehicles and connected passengers at connected stops
 
 */
 
@@ -23,32 +23,21 @@ Offers interface to connected vehicles as well as connected passengers
 #include <set>
 #include <qobject.h>
 
-#include "passenger.h"
-#include "vehicle.h"
 #include "busline.h"
 
-/*structure that corresponds to a request from a passenger for a vehicle to travel between an origin stop and a destination stop*/
-struct Request
-{
-	int pass_id;		//id of passenger that created request
-	int ostop_id;		//id of origin stop
-	int dstop_id;		//id of destination stop
-	int load;			//number of passengers in request
-	double time;		//time request was generated
-
-	Request() {};
-    Request(int pid, int oid, int did, int l, double t);
-
-	bool operator == (const Request& rhs) const;
-	bool operator < (const Request& rhs) const; // default less-than comparison of Requests in the order of smallest time, smallest load, smallest origin stop id, smallest destination stop id and finally smallest passenger id
-
-};
-Q_DECLARE_METATYPE(Request);
-
+struct Request;
+class Bus;
+enum class BusState;
+class TripGenerationStrategy;
+class MatchingStrategy;
+class DispatchingStrategy;
+class Eventlist;
+class Passenger;
 
 /*Responsible for adding Requests to requestSet as well as sorting and distributing the requestSet*/
 class RequestHandler
 {
+	friend class TestControlcenter;
 	friend class BustripGenerator; //BustripGenerator receives access to the requestSet as input to trip generation decisions
 
 public:
@@ -64,77 +53,41 @@ private:
 	set<Request> requestSet_; //set of received requests sorted by time
 };
 
-
-
 /*Responsible for generating planned trips without vehicles and adding these to a set of planned trips*/
-class Bustrip;
-class Busline;
-class TripGenerationStrategy;
 class BustripGenerator
 {
-	enum generationStrategyType { Null = 0, Naive }; //ids of trip generation strategies known to BustripGenerator
-	friend class BustripVehicleMatcher; //give matcher class access to plannedTrips_. May remove trip from this set without destroying it if it has been matched
+	enum generationStrategyType { Null = 0, Naive }; //ids of passenger trip generation strategies known to BustripGenerator
+	enum emptyVehicleStrategyType {	EVNull = 0, NearestLongestQueue }; //ids of empty-vehicle redistribution strategies known to BustripGenerator
+	friend class BustripVehicleMatcher; //give matcher class access to unmatchedTrips_. May remove trip from this set without destroying it if it has been matched
 
 public:
-	explicit BustripGenerator(TripGenerationStrategy* generationStrategy = nullptr);
+	explicit BustripGenerator(Network* theNetwork = nullptr, TripGenerationStrategy* generationStrategy = nullptr, TripGenerationStrategy* emptyVehicleStrategy = nullptr);
 	~BustripGenerator();
 
-	bool requestTrip(const RequestHandler& rh, double time); //returns true if an unassigned trip has been generated and added to plannedTrips_ and false otherwise
-	void setTripGenerationStrategy(int type);
+	bool requestTrip(const RequestHandler& rh, const map<BusState, set<Bus*>>& fleetState, double time); //returns true if an unassigned trip has been generated and added to unmatchedTrips_ and false otherwise
+	bool requestRebalancingTrip(const RequestHandler& rh, const map<BusState,set<Bus*>>& fleetState, double time); //returns true if an unassigned rebalancing trip has been generated and added to unmatchedTripsRebalancing_ and false otherwise
 
-	void reset(int generation_strategy_type);
+	void setTripGenerationStrategy(int type);
+	void setEmptyVehicleStrategy(int type);
+
+	void reset(int generation_strategy_type, int empty_vehicle_strategy_type);
 	void addServiceRoute(Busline* line);
 	
-	void cancelPlannedTrip(Bustrip* trip); //destroy and remove trip from set of plannedTrips_
-	
+	void cancelUnmatchedTrip(Bustrip* trip); //destroy and remove trip from set of unmatchedTrips_
+	void cancelRebalancingTrip(Bustrip* trip); //destroy and remove rebalancing trip from set of unmatchedTripsRebalancing_
 
 private:
-	set<Bustrip*> plannedTrips_; //set of trips to be performed that have not been matched to vehicles yet
+	set<Bustrip*> unmatchedTrips_; //set of planned passenger carrying trips to be performed that have not been matched to vehicles yet
+	set<Bustrip*> unmatchedTripsRebalancing_; //set of planned empty-vehicle rebalancing trips to be performed that have not been matched to vehicles yet
 	vector<Busline*> serviceRoutes_; //lines (i.e. routes and stops to visit along the route) that this BustripGenerator can create trips for (TODO: do other process classes do not need to know about this?)
 
-	TripGenerationStrategy* generationStrategy_;
-};
+	TripGenerationStrategy* generationStrategy_; //strategy for passenger carrying trips
+	TripGenerationStrategy* emptyVehicleStrategy_; //strategy for supply re-balancing trips
 
-/*Algorithms for generating a Bustrip (unassigned to a vehicle)*/
-class Busstop;
-typedef pair<Busstop*, double> Visit_stop; 
-class TripGenerationStrategy
-{
-public:
-	virtual ~TripGenerationStrategy() {}
-	virtual bool calc_trip_generation(
-		const set<Request>&		requestSet,				//set of requests that motivate the potential generation of a trip
-		const vector<Busline*>& candidateServiceRoutes, //service routes available to potentially serve the requests
-		const double			time,					//time for which calc_trip_generation is called
-		set<Bustrip*>&			tripSet					//set of trips that have been generated to serve requests that have not been assigned to a vehicle yet
-	) const = 0; //returns true if a trip was generated and added to tripSet container according to some strategy and false otherwise
-
-protected:
-	//supporting methods for generating trips with whatever TripGenerationStrategy
-	vector<Busline*> get_lines_between_stops(const vector<Busline*>& lines, const int ostop_id, const int dstop_id) const; //returns buslines among lines given as input that run from a given originstop to a given destination stop (Note: assumes lines are uni-directional and that busline stops are ordered, which they currently are in BusMezzo)
-	vector<Visit_stop*> create_schedule(double init_dispatch_time, const vector<pair<Busstop*, double>>& time_between_stops) const; //creates a vector of scheduled visits to stops starting from the dispatch time (given by simulation time)
-	Bustrip* create_unassigned_trip(Busline* line, double desired_dispatch_time, const vector<Visit_stop*>& schedule) const; //creates a Bustrip for a given line with a desired start time and a scheduled arrival to stops along this line (subject to the availablility of a vehicle to serve this trip)
+	Network* theNetwork_; //ugly solution but a reference to the network is kept by each control center for calculating shortest paths with dynamic travel times
 };
-/*Null strategy that always returns false*/
-class NullTripGeneration : public TripGenerationStrategy
-{
-public:
-	~NullTripGeneration() override {}
-	bool calc_trip_generation(const set<Request>& requestSet, const vector<Busline*>& candidateServiceRoutes, const double time, set<Bustrip*>& tripSet) const override;
-};
-/*Matches trip according to oldest unassigned request & first line found to serve this request*/
-class NaiveTripGeneration : public TripGenerationStrategy
-{
-public:
-	~NaiveTripGeneration() override {}
-	bool calc_trip_generation(const set<Request>& requestSet, const vector<Busline*>& candidateServiceRoutes, const double time, set<Bustrip*>& tripSet) const override;
-};
-
-
 
 /*Responsible for assigning trips to transit vehicles and adding these to matchedTripSet as well as the trip's associated Busline*/
-class Bus;
-class MatchingStrategy; //e.g. hungarian, k-opt, insertion
 class BustripVehicleMatcher
 {
 	enum matchingStrategyType { Null = 0, Naive }; //ids of trip vehicle matching strategies known to BustripVehicleMatcher
@@ -152,6 +105,7 @@ public:
 	void setMatchingStrategy(int type);
 
 	bool matchVehiclesToTrips(BustripGenerator& tg, double time);
+	bool matchVehiclesToEmptyVehicleTrips(BustripGenerator& tg, double time);
 
 private:
 	set<Bustrip*> matchedTrips_; //set of trips that have been matched with a transit vehicle
@@ -160,40 +114,7 @@ private:
 	MatchingStrategy* matchingStrategy_;
 };
 
-/*Algorithms for assigning a transit vehicle to a Bustrip*/
-class MatchingStrategy
-{
-public:
-	virtual ~MatchingStrategy() {}
-	virtual bool find_tripvehicle_match(
-		set<Bustrip*>&					plannedTrips,					//set of trips that are currently not assigned to any vehicle
-		map<int, set<Bus*>>&			candidateVehicles_per_SRoute,	//set of candidate vehicles assigned with different service routes
-		const double					time,							//time for which find_tripvehicle_match is called
-		set<Bustrip*>&					matchedTrips					//set of trips that each have a vehicle assigned to them
-	) = 0; //returns true if a trip from plannedTrips has been matched with a vehicle from candidateVehicles_per_SRoute and added to matchedTrips. The trip is in this case also removed from plannedTrips
-
-protected:
-	void assign_idlevehicle_to_trip(Bus* idletransitveh, Bustrip* trip, double starttime); //performs all operations (similar to Network::read_busvehicle) required in assigning a trip to an idle vehicle (TODO: assigning driving vehicles)
-
-};
-/*Null matching strategy that always returns false*/
-class NullMatching : public MatchingStrategy
-{
-public:
-	~NullMatching() override {}
-	bool find_tripvehicle_match(set<Bustrip*>& plannedTrips, map<int, set<Bus*>>& veh_per_sroute, const double time, set<Bustrip*>& matchedTrips) override;
-};
-
-/*Naive matching strategy always matches the first trip in plannedTrips to the first candidate transit veh found (if any) at the origin stop of the trip.*/
-class NaiveMatching : public MatchingStrategy
-{
-public:
-	~NaiveMatching() override {}
-	bool find_tripvehicle_match(set<Bustrip*>& plannedTrips, map<int, set<Bus*>>& veh_per_sroute, const double time, set<Bustrip*>& matchedTrips) override;
-};
-
 /*In charge of dispatching transit vehicle - trip pairs*/
-class DispatchingStrategy;
 class VehicleDispatcher
 {
 	enum dispatchStrategyType {Null = 0, Naive = 1};
@@ -208,53 +129,25 @@ public:
 	void setDispatchingStrategy(int type);
 
 private:
-	set<Bustrip*> scheduledTrips_;
-	Eventlist* eventlist_; //currently the dispatching strategy books a busline event (vehicle - trip dispatching event)
+	Eventlist* eventlist_; //currently the dispatching strategy books a bus line event (vehicle - trip dispatching event)
 
 	DispatchingStrategy* dispatchingStrategy_; //strategy that is used to determine the start time (for dispatch) of flexible transit vehicle trips
 };
 
-/*Algorithms for deciding the start time of a trip that has been matched with a vehicle*/
-class DispatchingStrategy
-{
-public:
-	virtual ~DispatchingStrategy() {}
-	virtual bool calc_dispatch_time(Eventlist* eventlist, set<Bustrip*>& unscheduledTrips, double time) = 0; //returns true if an unscheduled trip has been given a dispatch time and added to its line
-
-protected:
-	bool dispatch_trip(Eventlist* eventlist, Bustrip* trip); //add a scheduled trip (i.e., trip has a vehicle, a line, and a start time) to trips vector of its Busline and adds a Busline event to dispatch this trip
-};
-
-/*Null dispatching rule that always returns false*/
-class NullDispatching : public DispatchingStrategy
-{
-public:
-	~NullDispatching() override {}
-    bool calc_dispatch_time(Eventlist* eventlist, set<Bustrip*>& unscheduledTrips, double time) override;
-};
-
-/*Dispatches the first trip found in unscheduledTrips at the earliest possible time*/
-class NaiveDispatching : public DispatchingStrategy
-{
-public:
-	~NaiveDispatching() override {}
-	bool calc_dispatch_time(Eventlist* eventlist, set<Bustrip*>& unscheduledTrips, double time) override;
-};
-
-/*Groups togethers processes that control or modify transit Vehicles and provides an interface to Passenger*/
-class Passenger;
-enum class BusState;
+/*Groups together processes that control or modify transit Vehicles and provides an interface to Passenger*/
 class Controlcenter : public QObject
 {
 	Q_OBJECT
     friend class TestControlcenter;
-	friend class Network;
+	friend class Network; //for writing outputs
 
 public:
 	explicit Controlcenter(
 		Eventlist* eventlist = nullptr, //currently the dispatcher needs the eventlist to book Busline (vehicle - trip dispatching) events
+		Network* theNetwork = nullptr, //currently trip generator needs the network to calculate shortest paths
 		int id = 0,
 		int tg_strategy = 0,
+		int ev_strategy = 0,
 		int tvm_strategy = 0,
 		int vd_strategy = 0,
 		QObject* parent = nullptr
@@ -285,10 +178,13 @@ signals:
 	void requestAccepted(double time);
 	void requestRejected(double time);
 
-	void fleetStateChanged(double time);
+	void newUnassignedVehicle(double time);
 
 	void tripGenerated(double time);
+	void emptyVehicleTripGenerated(double time);
+
 	void tripVehicleMatchFound(double time);
+	void tripVehicleMatchNotFound(double time);
 
 private slots:
 	
@@ -303,30 +199,34 @@ private slots:
 	void on_tripVehicleMatchFound(double time);
 
 	//fleet related
-	void updateFleetState(int bus_id, BusState newstate, double time);
+	void updateFleetState(Bus* bus, BusState oldstate, BusState newstate, double time);
+	
 	void requestTrip(double time); //delegates to BustripGenerator to generate a trip depending on whatever strategy it currently uses and the state of the RequestHandler and add this to its list of trips
+	void requestRebalancingTrip(double time);
 
 	void matchVehiclesToTrips(double time);
+	void matchEmptyVehiclesToTrips(double time);
 	void dispatchMatchedTrips(double time);
 
 private:
 	//OBS! remember to add all mutable members to reset method, including reset functions of process classes
 	const int id_;	//id of control center
 	const int tg_strategy_;	//initial trip generation strategy
+	const int ev_strategy_; //initial empty vehicle strategy
 	const int tvm_strategy_; //initial trip - vehicle matching strategy
 	const int vd_strategy_; //initial vehicle dispatching strategy
 	
 	//maps for bookkeeping connected passengers and vehicles
 	map<int, Passenger*> connectedPass_; //passengers currently connected to Controlcenter 
 	map<int, Bus*> connectedVeh_; //transit vehicles currently connected to Controlcenter
-	//map<BusState, vector<Bus*>> fleetState; //among transit vehicles connected to Controlcenter keeps track of which are in each possible bus vehicle (i.e. transit vehicle) state 
-	
+	map<BusState, set<Bus*>> fleetState_; //among transit vehicles connected to Controlcenter keeps track of which are in each possible bus vehicle (i.e. transit vehicle) state 
+
 	RequestHandler rh_;
 	BustripGenerator tg_;
 	BustripVehicleMatcher tvm_;
 	VehicleDispatcher vd_;
 
-	set<Bus*> initialVehicles_; //vehicles assigned to this controlcenter on input (should be preserved between resets)
-	vector<pair<Bus*, Bustrip*>> completedVehicleTrips_; //used for bookeeping heap allocated buses and bustrips (similar to busvehicles and bustrips in network) for writing output and deleting between resets
+	set<Bus*> initialVehicles_; //vehicles assigned to this control center on input (should be preserved between resets)
+	vector<pair<Bus*, Bustrip*>> completedVehicleTrips_; //used for bookkeeping dynamically generated buses and bustrips (similar to busvehicles and bustrips in network) for writing output and deleting between resets
 };
 #endif

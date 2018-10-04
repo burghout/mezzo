@@ -55,6 +55,11 @@
 #define DEBUG_MSG_V(str) do {} while (false)
 #endif
 
+//temporary globals for DRT implementation
+extern double drt_first_rep_planned_headway; //in seconds
+extern double drt_first_rep_waiting_utility;
+extern int drt_min_occupancy;
+
 // GLOBAL VARIABLES
 extern long int randseed; // random seed
 extern int vid;     // global vehicle id nr.

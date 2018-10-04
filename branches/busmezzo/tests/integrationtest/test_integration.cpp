@@ -11,7 +11,7 @@
 #include <QFileInfo>
 
 //! Integration Tests BusMezzo
-//! The tests contain loading, initialising, running, saving results and deleting network.
+//! The tests contain loading, initializing, running, saving results and deleting network.
 //! NOTE: currently the std::ifstream is used everywhere, precluding the use of qrc resources,
 //! unless we switch to QFile everywhere.
 
@@ -19,7 +19,7 @@
 const std::string network_path = "../networks/SFnetwork/";
 const std::string network_name = "masterfile.mezzo";
 
-const QString expected_outputs_path = ":\\networks\\SFnetwork\\ExpectedOutputs\\";
+const QString expected_outputs_path = "://networks/SFnetwork/ExpectedOutputs/";
 const QString path_set_generation_filename = "o_path_set_generation.dat";
 const vector<QString> output_filenames = 
 {
@@ -50,6 +50,7 @@ public:
 private Q_SLOTS:
     void testCreateNetwork(); //!< test loading a network
     void testInitNetwork(); //!< test generating passenger path sets & loading a network
+    void testCreateBusroute();
     void testRunNetwork(); //!< test running the network
     void testSaveResults(); //!< tests saving results
     void testDelete(); //!< tests correct deletion
@@ -85,7 +86,7 @@ void TestIntegration::testInitNetwork()
 
     nt->init();
  // Test here various properties that should be true after reading the network
-    // Test if the network is properly read and initialised
+    // Test if the network is properly read and initialized
     QVERIFY2(net->get_links().size() == 15, "Failure, network should have 15 links ");
     QVERIFY2(net->get_nodes().size() == 13, "Failure, network should have 13 nodes ");
     QVERIFY2(net->get_odpairs().size() == 4, "Failure, network should have 4 nodes ");
@@ -109,6 +110,33 @@ void TestIntegration::testInitNetwork()
 
 	ex_path_set_file.close();
 	path_set_file.close();
+}
+
+void TestIntegration::testCreateBusroute()
+{
+    // Test correct route
+    ODpair* od_pair = net->get_odpairs().front(); // path from Origin 1 to Destination 4
+    Busstop* stopA = net->get_busstop_from_name("A"); // on link 12
+    Busstop* stopD = net->get_busstop_from_name("D"); // on link 34
+    vector <Busstop*> stops;
+    stops.push_back(stopA);
+    stops.push_back(stopD);
+    Busroute* routeViaAandD = net->create_busroute_from_stops(1,od_pair->get_origin(), od_pair->get_destination(),stops);
+    QVERIFY(routeViaAandD); // if nullptr something went wrong
+    // verify the route links: 12 -> 23 -> 34
+    vector <Link*> links = routeViaAandD->get_links();
+    QVERIFY (links.size() == 3);
+    QVERIFY (links.front()->get_id() == 12);
+    QVERIFY (links.back()->get_id() == 34);
+
+    //test incorrect route
+    Busstop* stopB = net->get_busstop_from_name("B"); // on link 67, unreachable
+    stops.push_back(stopB);
+
+    Busroute* routeViaAandDandB = net->create_busroute_from_stops(2,od_pair->get_origin(), od_pair->get_destination(),stops);
+    QVERIFY(routeViaAandDandB==nullptr); // should return nullptr since link 67 is not reachable
+
+
 }
 
 void TestIntegration::testRunNetwork()

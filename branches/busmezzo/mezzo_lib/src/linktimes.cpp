@@ -76,7 +76,7 @@ double LinkTime::cost(const double time)
 		if (times.count(i)) // if exists (should always be true, but still
 			return times[i];
 		else
-			return 0.1;
+            return times.rbegin()->second; // if beyond the totaltime, use the last time period
 	}
     
 }

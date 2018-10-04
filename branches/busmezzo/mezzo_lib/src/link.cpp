@@ -428,6 +428,10 @@ bool Link::enter_veh(Vehicle* veh, double time)
 	#endif	//_RUNNING_ONLY
 #endif  //_RUNNING
 	double speed=sdfunc->speed(ro);	
+	
+	Bus* debugbus = (Bus*)(veh);
+	DEBUG_MSG("Bus " << debugbus->get_bus_id() << " is entering link " << this->get_id() << " at time " << time << " with speed " << speed << " m/s" << " and density " << ro << " veh/km");
+	
 	//moe_speed->report_value(speed,time);
 	moe_density->report_value(density(),time);
 	moe_queue->report_value((queue->queue(time)),time);
@@ -503,6 +507,7 @@ bool Link::enter_veh(Vehicle* veh, double time)
 				double time_to_stop = time + ((exit_time - time) * (stop_position / length)) + trip->get_line()->extra_disruption_on_segment(next_stop1->first, time + ((exit_time - time) * (stop_position / length)));
 
 				// book  stop visit
+				DEBUG_MSG("Booking arrival for bus " << bus->get_bus_id() << " to stop " << next_stop1->first->get_name() << " with position " << stop_position << " with time to stop " << time_to_stop);
 				trip->book_stop_visit (time_to_stop);
 				return true;
 			}
