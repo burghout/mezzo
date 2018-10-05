@@ -2418,14 +2418,14 @@ void Busstop::record_busstop_visit (Bustrip* trip, double enter_time)  // create
 		arrival_headway, get_time_since_departure (trip , exit_time), nr_alighting , nr_boarding , occupancy, calc_total_nr_waiting(), (arrival_headway * nr_boarding)/2, holdingtime)); 
 }
 
+double Busstop::calc_crowded_travel_time (double travel_time, int nr_riders, int nr_seats, int total_cap) //Returns the sum of the travel time weighted by the crowding factors
 // RTCI modifications - function of both seat and total capacity
-double Busstop::calc_crowded_travel_time (double travel_time, int nr_riders, int nr_seats) //Returns the sum of the travel time weighted by the crowding factors
 {
 	double crowded_travel_time;
 	double load_factor_seatcap = 1.0 * nr_riders / nr_seats;
 	double load_factor_totalcap = 1.0 * nr_riders / total_cap;
 
-	if (load_factor < 1) //if everyone had a seat
+	if (load_factor_seatcap < 1) //if everyone had a seat
 	{
 		crowded_travel_time = travel_time * nr_riders * Bustrip::find_crowding_coeff(true, load_factor_seatcap, load_factor_totalcap);
 	}
