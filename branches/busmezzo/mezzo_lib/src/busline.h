@@ -711,7 +711,7 @@ public:
 // output-related functions
 	void write_output(ostream & out);
 	void record_busstop_visit (Bustrip* trip, double enter_time); //!< creates a log-file for stop-related info
-	static double calc_crowded_travel_time (double travel_time, int nr_riders, int nr_seats);
+	static double calc_crowded_travel_time (double travel_time, int nr_riders, int nr_seats, int total_cap); // RTCI-updated
 	
 	void calculate_sum_output_stop_per_line(int line_id); //!< calculates for a single line that visits the stop (identified by line_id)
 	int calc_total_nr_waiting ();
