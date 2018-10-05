@@ -529,6 +529,7 @@ map<Pass_path*,double> ODstops::calc_path_size_factor_nr_stops (map<Pass_path*,d
 }	
 
 double ODstops::calc_combined_set_utility_for_alighting (Passenger* pass, Bustrip* bus_on_board, double time)
+// RTCI - profound modifications below
 {
 	// calc logsum over all the paths from this origin stop
 	staying_utility = 0.0;
@@ -538,9 +539,37 @@ double ODstops::calc_combined_set_utility_for_alighting (Passenger* pass, Bustri
 	}
 	for (vector <Pass_path*>::iterator paths = path_set.begin(); paths < path_set.end(); paths++)
 	{
-		double time_till_transfer = bus_on_board->get_line()->calc_curr_line_ivt(pass->get_OD_stop()->get_origin(),origin_stop,pass->get_OD_stop()->get_origin()->get_rti(), time); // in seconds
-		staying_utility += exp(random->nrandom(theParameters->in_vehicle_time_coefficient, theParameters->in_vehicle_time_coefficient / 4 ) * (time_till_transfer/60) + random->nrandom(theParameters->transfer_coefficient, theParameters->transfer_coefficient / 4 )  +  (*paths)->calc_waiting_utility((*paths)->get_alt_transfer_stops().begin(), time + time_till_transfer, true, pass));
-		// taking into account IVT till this intermediate stop, transfer penalty and the utility of the path from this transfer stop till the final destination
+		// RTCI modified - skip utility of paths which include reboarding the same trip again
+		// (necessary in case of extended choice set, e.g. when relaxing dominancy rules)
+		double extra_transfer_penalty = 1.0;
+		if ((*paths)->get_alt_lines().size() > 0)
+		{
+			vector<vector<Busline*>> alt_lines = (*paths)->get_alt_lines();
+			if ((*(*alt_lines.begin()).begin())->get_id() == bus_on_board->get_line()->get_id()) 			
+			// in case this path would be reboarded again:
+			{
+				// 1. method -> just skip its utility (* 1.0)
+				extra_transfer_penalty = 1.0;
+				// 2. method possible below -> transfer penalty ^ no of path alternatives
+				/* double no_of_alt_paths = path_set.size();
+				/extra_transfer_penalty = pow(exp(random->nrandom(theParameters->transfer_coefficient, theParameters->transfer_coefficient / 4)), no_of_alt_paths);*/				
+			}
+			else
+			{
+				double time_till_transfer = bus_on_board->get_line()->calc_curr_line_ivt(pass->get_OD_stop()->get_origin(), origin_stop, pass->get_OD_stop()->get_origin()->get_rti(), time, pass->get_pass_RTCI_network_level()); // in seconds
+				double abs_time_till_transfer = bus_on_board->get_line()->calc_curr_line_ivt(pass->get_OD_stop()->get_origin(), origin_stop, pass->get_OD_stop()->get_origin()->get_rti(), time, false); // in seconds
+				staying_utility += exp(random->nrandom(theParameters->in_vehicle_time_coefficient, theParameters->in_vehicle_time_coefficient / 4) * (time_till_transfer / 60) + random->nrandom(theParameters->transfer_coefficient, theParameters->transfer_coefficient / 4) + (*paths)->calc_waiting_utility((*paths)->get_alt_transfer_stops().begin(), time + abs_time_till_transfer, true, pass));			
+				// taking into account IVT till this intermediate stop, transfer penalty and the utility of the path from this transfer stop till the final destination
+			}
+		}
+		else
+		{
+			double time_till_transfer = bus_on_board->get_line()->calc_curr_line_ivt(pass->get_OD_stop()->get_origin(), origin_stop, pass->get_OD_stop()->get_origin()->get_rti(), time, pass->get_pass_RTCI_network_level()); // in seconds
+			double abs_time_till_transfer = bus_on_board->get_line()->calc_curr_line_ivt(pass->get_OD_stop()->get_origin(), origin_stop, pass->get_OD_stop()->get_origin()->get_rti(), time, false); // in seconds
+			staying_utility += exp(random->nrandom(theParameters->in_vehicle_time_coefficient, theParameters->in_vehicle_time_coefficient / 4) * (time_till_transfer / 60) + random->nrandom(theParameters->transfer_coefficient, theParameters->transfer_coefficient / 4) + (*paths)->calc_waiting_utility((*paths)->get_alt_transfer_stops().begin(), time + abs_time_till_transfer, true, pass));
+			// taking into account IVT till this intermediate stop, transfer penalty and the utility of the path from this transfer stop till the final destination
+		}
+		staying_utility *= extra_transfer_penalty;	
 	}
 	return log(staying_utility);
 }
@@ -572,6 +601,7 @@ double ODstops::calc_combined_set_utility_for_alighting_zone (Passenger* pass, B
 }
 
 double ODstops::calc_combined_set_utility_for_connection (double walking_distance, double time,Passenger* pass)
+// RTCI - profound modifications below
 {
 	// calc logsum over all the paths from this origin stop
 	double connection_utility = 0.0;
@@ -597,8 +627,30 @@ double ODstops::calc_combined_set_utility_for_connection (double walking_distanc
 		if (without_walking_first == true) // considering only no multi-walking alternatives
 		{
 			double time_till_connected_stop = walking_distance / random->nrandom(theParameters->average_walking_speed, theParameters->average_walking_speed / 4); // in minutes
-			connection_utility += exp(random->nrandom(theParameters->walking_time_coefficient, theParameters->walking_time_coefficient/4) * time_till_connected_stop + (*paths)->calc_waiting_utility(alt_stops_iter, time + (time_till_connected_stop * 60), false, pass));
-			// taking into account CT (walking time) till this connected stop and the utility of the path from this connected stop till the final destination
+			
+			// RTCI modified - skip utility of paths which include reboarding the same trip again
+			// (necessary in case of extended choice set, e.g. when relaxing dominancy rules)
+			
+			if (((*paths)->get_alt_lines().size() > 0) & (pass->get_nr_boardings() > 0))
+			{
+				int prev_line_id = pass->get_selected_path_last_line_id();
+				vector<vector<Busline*>> first_leg_line = (*paths)->get_alt_lines();
+				if ((*(*first_leg_line.begin()).begin())->get_id() == prev_line_id)
+				// in case this path would be reboarded again:
+				{
+					connection_utility += 0.0;
+				}
+				else
+				{
+					connection_utility += exp(random->nrandom(theParameters->walking_time_coefficient, theParameters->walking_time_coefficient / 4) * time_till_connected_stop + (*paths)->calc_waiting_utility(alt_stops_iter, time + (time_till_connected_stop * 60), false, pass));
+					// taking into account CT (walking time) till this connected stop and the utility of the path from this connected stop till the final destination
+				}
+			}
+			else
+			{
+				connection_utility += exp(random->nrandom(theParameters->walking_time_coefficient, theParameters->walking_time_coefficient / 4) * time_till_connected_stop + (*paths)->calc_waiting_utility(alt_stops_iter, time + (time_till_connected_stop * 60), false, pass));
+				// taking into account CT (walking time) till this connected stop and the utility of the path from this connected stop till the final destination
+			}		
 		}
 	}
 	return log(connection_utility);

@@ -58,6 +58,8 @@ public:
 	double	get_latest_boarding_time () {return (selected_path_trips.back().second);}
     vector <pair<Busstop*,double> > get_selected_path_stops() {return selected_path_stops;}
 
+	bool get_pass_RTCI_network_level () {return RTCI_network_level;}
+
 	bool execute(Eventlist* eventlist, double time); //!< called every time passengers choose to walk to another stop (origin/transfer), puts the passenger at the waiting list at the right timing
 	void walk(double time);
 	void start(Eventlist* eventlist);
@@ -144,6 +146,7 @@ protected:
 	//bool left_behind_before;
 	map<pair<Busstop*, Busline*>,double> memory_projected_RTI; 
 	double AWT_first_leg_boarding;
+	bool RTCI_network_level;
 	
 	// relevant only in case of day2day procedures
 	map<pair<Busstop*, Busline*>,double> anticipated_waiting_time;

@@ -111,6 +111,12 @@ Parameters::Parameters ()
 
 // day2day assignment
    default_alpha_RTI = 0.5;
+
+// RTCI (real-time crowding info) parameters
+   include_RTCI = false;
+   RTCI_generation_scheme = 1;
+   RTCI_smoothing_alpha = 0.50;
+   share_RTCI_network = 0.50;
 }
 
 bool Parameters::read_parameters (istream & in )
@@ -751,6 +757,41 @@ bool Parameters::read_parameters (istream & in )
 		return false;
 	}
 	in >> default_alpha_RTI;
+	// read RTCI-related (real-time crowding information) parameters
+	in >> keyword;
+	if (keyword != "#RTCI_parameters")
+	{
+		cout << "ERROR reading Parameters file, expecting: #RTCI_parameters, read: " << keyword << endl;
+		return false;
+	}
+	in >> keyword;
+	if (keyword!= "include_RTCI=")
+	{
+		cout << "ERROR reading Parameters file, expecting: include_RTCI=, read: " << keyword << endl;
+		return false;
+	}
+	in >> include_RTCI;
+	in >> keyword;
+	if (keyword!= "RTCI_generation_scheme=")
+	{
+		cout << "ERROR reading Parameters file, expecting: RTCI_generation_scheme=, read: " << keyword << endl;
+		return false;
+	}
+	in >> RTCI_generation_scheme;	
+	in >> keyword;
+	if (keyword!= "RTCI_smoothing_alpha=")
+	{
+		cout << "ERROR reading Parameters file, expecting: RTCI_smoothing_alpha=, read: " << keyword << endl;
+		return false;
+	}
+	in >> RTCI_smoothing_alpha;
+	in >> keyword;
+	if (keyword!= "share_RTCI_network=")
+	{
+		cout << "ERROR reading Parameters file, expecting: share_RTCI_network=, read: " << keyword << endl;
+		return false;
+	}
+	in >> share_RTCI_network;		
 	return true;
 }
 

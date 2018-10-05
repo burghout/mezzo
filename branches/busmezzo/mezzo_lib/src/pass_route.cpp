@@ -72,7 +72,8 @@ int Pass_path::find_number_of_transfers ()
 	return nr_trans-1; // omitting origin and destination stops
 }
 
-double Pass_path::calc_total_scheduled_in_vehicle_time (double time)
+double Pass_path::calc_total_scheduled_in_vehicle_time (double time, Passenger* pass)
+// RTCI modifications
 {
 	IVT.clear();
 	double sum_in_vehicle_time = 0.0;
@@ -80,7 +81,14 @@ double Pass_path::calc_total_scheduled_in_vehicle_time (double time)
 	iter_alt_transfer_stops++; // starting from the second stop
 	for (vector<vector <Busline*> >::iterator iter_alt_lines = alt_lines.begin(); iter_alt_lines < alt_lines.end(); iter_alt_lines++)
 	{
-		IVT.push_back((*iter_alt_lines).front()->calc_curr_line_ivt((*iter_alt_transfer_stops).front(),(*(iter_alt_transfer_stops+1)).front(),alt_transfer_stops.front().front()->get_rti(),time));
+		if (time > 0.0) // check if pass. has RTCI access during simulation -> weighted IVT * RTCI
+		{
+			IVT.push_back((*iter_alt_lines).front()->calc_curr_line_ivt((*iter_alt_transfer_stops).front(), (*(iter_alt_transfer_stops + 1)).front(), alt_transfer_stops.front().front()->get_rti(), time, pass->get_pass_RTCI_network_level()));			
+		}
+		else // otherwise -> absolute IVT
+		{
+			IVT.push_back((*iter_alt_lines).front()->calc_curr_line_ivt((*iter_alt_transfer_stops).front(),(*(iter_alt_transfer_stops+1)).front(),alt_transfer_stops.front().front()->get_rti(),time));
+		}
 		sum_in_vehicle_time += IVT.back();
 		iter_alt_transfer_stops++;
 		iter_alt_transfer_stops++; 
@@ -89,6 +97,7 @@ double Pass_path::calc_total_scheduled_in_vehicle_time (double time)
 }
 
 double Pass_path::calc_total_in_vehicle_time (double time, Passenger* pass)
+// RTCI modifications
 {
 	IVT.clear();
 	double sum_in_vehicle_time = 0.0;
@@ -113,7 +122,7 @@ double Pass_path::calc_total_in_vehicle_time (double time, Passenger* pass)
 					}
 					else
 					{
-						leg_ivtt = iter_alt_lines->front()->calc_curr_line_ivt(*(iter_leg_stops-1), *iter_leg_stops, alt_transfer_stops.front().front()->get_rti(), time);
+						leg_ivtt = iter_alt_lines->front()->calc_curr_line_ivt(*(iter_leg_stops-1), *iter_leg_stops, alt_transfer_stops.front().front()->get_rti(), time, pass->get_pass_RTCI_network_level());
 					}
 					
 					ivtt += leg_ivtt;
@@ -128,7 +137,7 @@ double Pass_path::calc_total_in_vehicle_time (double time, Passenger* pass)
 		}
 		else
 		{
-			ivtt = iter_alt_lines->front()->calc_curr_line_ivt(iter_alt_transfer_stops->front(), (iter_alt_transfer_stops+1)->front(), alt_transfer_stops.front().front()->get_rti(), time);
+			ivtt = iter_alt_lines->front()->calc_curr_line_ivt(iter_alt_transfer_stops->front(), (iter_alt_transfer_stops+1)->front(), alt_transfer_stops.front().front()->get_rti(), time, pass->get_pass_RTCI_network_level());
 		}
 		IVT.push_back(ivtt);
 		sum_in_vehicle_time += IVT.back();
@@ -458,4 +467,4 @@ map<Busline*, bool> Pass_path::check_maybe_worthwhile_to_wait (vector<Busline*> 
 		}
 	}
 	return worth_to_wait;
-}
+}

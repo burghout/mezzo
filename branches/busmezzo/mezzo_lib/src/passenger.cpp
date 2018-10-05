@@ -77,6 +77,18 @@ void Passenger::reset ()
 void Passenger::init ()
 {
 	RTI_network_level = theRandomizers[0]->brandom(theParameters->share_RTI_network);
+	
+	// RTCI access
+	// !! to be updated - RTI vs. RTCI access...? as of now - these are evaluated independent from each other
+	if (theParameters->include_RTCI == true)
+	{
+		RTCI_network_level = theRandomizers[0]->brandom(theParameters->share_RTCI_network);
+	}
+	else
+	{
+		RTCI_network_level = false; // if not included in parameters then no-one has access to RTCI anyway
+	}
+	
 	if (theParameters->pass_day_to_day_indicator == 1)
 	{
 		anticipated_waiting_time = OD_stop->get_anticipated_waiting_time(); //Changed by Jens 2014-06-27, here a local object with the same name was initialized, so the Passenger object was not updated
