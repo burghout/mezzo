@@ -758,6 +758,12 @@ bool Parameters::read_parameters (istream & in )
 	}
 	in >> default_alpha_RTI;
 	// read RTCI-related (real-time crowding information) parameters
+		in >> keyword;
+	if (keyword != "#RTCI_parameters")
+	{
+		cout << "ERROR reading Parameters file, expecting: #RTCI_parameters, read: " << keyword << endl;
+		return false;
+	}
 	in >> keyword;
 	if (keyword!= "include_RTCI=")
 	{
