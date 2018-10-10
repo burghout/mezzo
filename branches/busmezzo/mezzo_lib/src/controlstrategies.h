@@ -161,7 +161,7 @@ public:
 //! @brief Naive matching strategy always attempts to match the unmatchedTrip to the first candidate transit vehicle found (if any) at the origin stop of the unmatchedTrip
 /*!
     @todo
-        - Rework ugly hack for moving vehicles between stop pairs
+        - Rework ugly hack for moving vehicles between stop pairs, maybe implement a 'perform_Uturn' type method
 */
 class NaiveMatching : public MatchingStrategy
 {

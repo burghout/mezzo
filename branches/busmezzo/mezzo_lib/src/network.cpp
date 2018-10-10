@@ -2063,6 +2063,11 @@ bool Network::readbustrip_format1(istream& in) // reads a trip
 
 bool Network::readbustrip_format2(istream& in) // reads a trip
 {
+    if (theParameters->drt) {
+        DEBUG_MSG_V("DRT currently not available with trip format 2. Aborting...");
+        abort();
+    }
+
     char bracket;
     int busline_id, nr_stops, nr_trips;
     double arrival_time_at_stop, dispatching_time;
@@ -2205,6 +2210,7 @@ bool Network::readbustrip_format3(istream& in) // reads a trip
     }
 
     bl->set_static_trips(bl->get_trips()); //save trips to static_trips for resets
+    bl->set_planned_headway(headway); //store planned headway, assumed the same between resets
 
     in >> bracket;
     if (bracket != '}')

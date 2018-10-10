@@ -163,7 +163,7 @@ private:
        RequestHandler -> [requestSet]
     -> BustripGenerator -> [unmatchedTrips] & [unmatchedRebalancingTrips]
     -> BustripVehicleMatcher -> [matchedTrips]
-    -> VehicleScheduler
+    -> VehicleScheduler -> scheduled trip
 */
 class Controlcenter : public QObject
 {

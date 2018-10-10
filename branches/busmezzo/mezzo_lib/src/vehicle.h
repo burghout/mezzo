@@ -174,27 +174,31 @@ public:
 	void record_busvehicle_location (Bustrip* trip,  Busstop* stop, double time);
 	void write_output(ostream & out);
 
+/** @ingroup DRT
+    @{
+*/
 //Control Center
 	BusState get_state() const { return state_; }
-	BusState calc_state(const bool assigned_to_trip, const bool bus_exiting_stop, const int occupancy) const; //returns the BusState of bus depending whether a bus has just entered or exited a stop, and the occupancy of the bus. Other states for when a bus is not on a trip (e.g. onCall are set elsewhere)
-	void set_state(const BusState newstate, const double time); //sets state_ to newstate and emits stateChanged
-	void print_state(); //prints current BusState for debugging purposes (TODO: remove later)
+	BusState calc_state(const bool assigned_to_trip, const bool bus_exiting_stop, const int occupancy) const; //!< returns the BusState of bus depending whether a bus is assigned to a trip, has just entered or exited a stop, and the occupancy of the bus. Other states for when a bus is not on a trip (e.g. onCall are set elsewhere)
+	void set_state(const BusState newstate, const double time); //!< sets current state_ to newstate and emits stateChanged if newstate differs from current state_
+	void print_state(); //!< prints current BusState for debugging purposes
 
-	bool is_idle() const;	//returns true if bus is idle/waiting at a stop
-	bool is_driving() const; //returns true if bus is driving between stops
-	bool is_oncall() const; //returns true if bus is unassigned to any trip and is available for assignment
+	bool is_idle() const;	//!< returns true if bus is idle/waiting at a stop
+	bool is_driving() const; //!< returns true if bus is driving between stops
+	bool is_oncall() const; //!< returns true if bus is unassigned to any trip and is available for assignment
 
 	Busstop* get_last_stop_visited() const { return last_stop_visited_; }
 	void set_last_stop_visited(Busstop* last_stop_visited) { last_stop_visited_ = last_stop_visited; } 
-	Busstop* get_next_stop() const;
+	Busstop* get_next_stop() const; //!< returns the next stop of the current trip for this vehicle. If no trip is assigned to this vehicle then returns nullptr
 
 	void set_flex_vehicle(bool flex_vehicle) { flex_vehicle_ = flex_vehicle; }
 	bool is_flex_vehicle() const { return flex_vehicle_; }
 	void add_sroute_id(int sroute_id) { sroute_ids_.insert(sroute_id); } 
-	void remove_sroute_id(int sroute_id) { if (sroute_ids_.count(sroute_id) != 0) { sroute_ids_.erase(sroute_id); } }
+	void remove_sroute_id(int sroute_id) { if (sroute_ids_.count(sroute_id) != 0) { sroute_ids_.erase(sroute_id); } } 
 
 signals:
-	void stateChanged(Bus* bus, BusState oldstate, BusState newstate, double time); // Signal informing a change of BusState
+	void stateChanged(Bus* bus, BusState oldstate, BusState newstate, double time); //!< signal informing a change of BusState. Note: Currently 'bus' refers to 'this' bus, connected to slots of a control center if connected
+/**@}*/
 
 protected:
 	int	bus_id;
@@ -208,10 +212,14 @@ protected:
 	bool on_trip; // is true when bus is on a trip and false when waiting for the next trip
 	list <Busvehicle_location> output_vehicle; //!< list of output data for buses visiting stops
 	
-	Busstop* last_stop_visited_; //The last busstop (if no stop has been visited then initialized to nullptr) that this transit vehicle has entered
-	BusState state_; //state of the vehicle used for DRT service with controlcenter
-	bool flex_vehicle_; //true if vehicle can be assigned trips dynamically, false otherwise
-	set<int> sroute_ids_; //ids of service routes (buslines) that this bus can be assigned dynamically generated trips for
+/** @ingroup DRT
+    @{
+*/
+	Busstop* last_stop_visited_; //!< the last busstop (if no stop has been visited then initialized to nullptr) that this transit vehicle has entered (or exited)
+	BusState state_; //!< current BusState of the transit vehicle
+	bool flex_vehicle_; //!< true if vehicle can be assigned trips dynamically, false otherwise
+	set<int> sroute_ids_; //!< ids of service routes (buslines) that this bus can be assigned dynamically generated trips for
+/**@}*/
 };
 
 class Busvehicle_location // container object holding output data for stop visits

@@ -63,6 +63,7 @@ Busline::Busline (int id_, int opposite_id_, string name_, Busroute* busroute_, 
 {
 	active=false;
 	trip_count = 0;
+    planned_headway = 0.0; 
 }
 
 Busline::~Busline()
