@@ -78,34 +78,6 @@ bool Turning::process_veh(double time)
 		{
 			Vehicle* veh=inlink->exit_veh(time, outlink, size);
 
-			// Calc time in case of speed adjsutments for buses
-			// NOTE: This implementation assumes one stop per link with servers setting travel time distributions 
-			#ifdef _BUSES
-			if (veh->get_type() == 4)
-			{
-				Bus* bus = (Bus*)(veh); // so we can do Bus operations
-				Bustrip* trip = bus->get_curr_trip();
-				if (trip->get_line()->get_holding_strategy() == 20)
-				{
-					if (trip->check_end_trip() == false)
-					{
-						Visit_stop* next_stop1 = *(trip->get_next_stop());
-						double distance_between_stops = (inlink->get_length() - trip->get_last_stop_visited()->get_position()) + (next_stop1->first)->get_position(); // calc distance between stops as remaining from previous link + distance to next stop
-						double headway_diff = trip->calc_forward_headway() - trip->calc_backward_headway();
-						if (headway_diff > 0) // expected to be late
-						{
-							double min_less_driving_time = min(distance_between_stops / trip->get_line()->get_min_speed(), 2.0);
-							nexttime = inlink->next_action(time - min_less_driving_time);
-						}
-						else // expected to be early 
-						{
-							double max_extra_driving_time = max(distance_between_stops/trip->get_line()->get_max_speed(), 2.0);
-							nexttime = inlink->next_action(time + max_extra_driving_time);
-						}
-					}
-				}
-			}
-			#endif
 			//if (veh == NULL) //Added by Jens 2014-07-04, ugly quickfix
 			//{
 			//	cout << "Turning " << id << " dropped a vehicle." << endl;
@@ -113,7 +85,36 @@ bool Turning::process_veh(double time)
 			//}
 			if (inlink->exit_ok())
 			{
-			delay=server->get_delay(); // get new delay, may be stochastic (2007-10-26)
+				// Calc time in case of speed adjsutments for buses
+				// NOTE: This implementation assumes one stop per link with servers setting travel time distributions
+#ifdef _BUSES
+				if (veh->get_type() == 4)
+				{
+					Bus *bus = (Bus *)(veh); // so we can do Bus operations
+					Bustrip *trip = bus->get_curr_trip();
+					if (trip->get_line()->get_holding_strategy() == 20)
+					{
+						if (trip->check_end_trip() == false)
+						{
+							Visit_stop *next_stop1 = *(trip->get_next_stop());
+							double distance_between_stops = (inlink->get_length() - trip->get_last_stop_visited()->get_position()) + (next_stop1->first)->get_position(); // calc distance between stops as remaining from previous link + distance to next stop
+							double headway_diff = trip->calc_forward_headway() - trip->calc_backward_headway();
+							if (headway_diff > 0) // expected to be late
+							{
+								double min_less_driving_time = min(distance_between_stops / trip->get_line()->get_min_speed(), 2.0);
+								nexttime = inlink->next_action(time - min_less_driving_time);
+							}
+							else // expected to be early
+							{
+								double max_extra_driving_time = max(distance_between_stops / trip->get_line()->get_max_speed(), 2.0);
+								nexttime = inlink->next_action(time + max_extra_driving_time);
+							}
+						}
+					}
+				}
+#endif
+
+				delay = server->get_delay(); // get new delay, may be stochastic (2007-10-26)
 				ok=outlink->enter_veh(veh, time+delay);	
 			   if (ok)
 				 return true;
