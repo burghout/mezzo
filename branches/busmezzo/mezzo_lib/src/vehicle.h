@@ -197,7 +197,7 @@ public:
 	void remove_sroute_id(int sroute_id) { if (sroute_ids_.count(sroute_id) != 0) { sroute_ids_.erase(sroute_id); } } 
 
 signals:
-	void stateChanged(Bus* bus, BusState oldstate, BusState newstate, double time); //!< signal informing a change of BusState. Note: Currently 'bus' refers to 'this' bus, connected to slots of a control center if connected
+	void stateChanged(Bus* bus, BusState oldstate, BusState newstate, double time); //!< signal informing a change in this vehicle's BusState
 /**@}*/
 
 protected:
@@ -214,6 +214,8 @@ protected:
 	
 /** @ingroup DRT
     @{
+    @todo
+        - give vehicle a reference to whatever Controlcenter it is currently connected to. Easier to manage multiple CCs this way then e.g. connecting and disconnecting via stops always when a trip finishes
 */
 	Busstop* last_stop_visited_; //!< the last busstop (if no stop has been visited then initialized to nullptr) that this transit vehicle has entered (or exited)
 	BusState state_; //!< current BusState of the transit vehicle

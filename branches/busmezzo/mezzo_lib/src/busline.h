@@ -265,6 +265,7 @@ public:
 
 	void set_static_trips(const list <Start_trip>& static_trips_) { static_trips = static_trips_; } //!< ugly solution, sole purpose is to save the initial (non-dynamically generated) trips vector between resets
     void set_planned_headway(double planned_headway_) { planned_headway = planned_headway_; }
+    double get_planned_headway() const { return planned_headway; }
 	/**@}*/
 
 protected:

@@ -42,7 +42,7 @@ struct Request
     Request(int pid, int oid, int did, int l, double dt, double t);
 
     bool operator == (const Request& rhs) const; //!< default equality comparison of Requests
-    bool operator < (const Request& rhs) const; //!< default less-than comparison of Requests in the order of smallest time, smallest load, smallest origin stop id, smallest destination stop id and finally smallest passenger id
+    bool operator < (const Request& rhs) const; //!< default less-than comparison of Requests in the order of smallest departure time, smallest time, smallest load, smallest origin stop id, smallest destination stop id and finally smallest passenger id
 
 };
 Q_DECLARE_METATYPE(Request);
