@@ -1,4 +1,4 @@
-#include "pass_route.h"
+﻿#include "pass_route.h"
 
 Pass_path:: Pass_path ()
 {
@@ -315,9 +315,23 @@ double Pass_path::calc_total_scheduled_waiting_time (double time, bool without_f
 }
 */
 
+
+/** @ingroup PassengerDecisionParameters
+    Returns the accumulated headway of a given transit leg in minutes (sum of all vehicle frequencies for all lines that can serve the line leg of this trip). Used to calculate
+    the prior-knowledge expected waiting time in calc_total_waiting_time. To deal with the problem of double counting frequencies for drt lines, the accumulated frequency of all DRT lines
+    is considered to be a result of the average planned_headway over all DRT lines serving this transit leg.
+
+    @todo
+        - For a scenario without walking and a bi-directional line, it may not matter what the prior knowledge expected waiting time is. It may screw up the outputs of day2day potentially.
+        Problem for the future however is that the alternative lines for this leg includes ALL DRT lines, each with their own individual headway. When calculating the accumulated frequency
+        then we are double, triple...etc. count the frequency of a given ODstop path that includes multiple DRT lines of the same service.
+*/
 double Pass_path::calc_curr_leg_headway (vector<Busline*> leg_lines, vector <vector <Busstop*> >::iterator stop_iter, double time)
 {
 	double accumlated_frequency = 0.0;
+    double drt_sum_frequency = 0.0; //sum of all planned frequencies for all drt lines included in leg_lines for this path, used for calculating average between them
+    int drt_line_count = 0; //for calculating the drt average frequency
+
 	//map<Busline*, bool> worth_to_wait = check_maybe_worthwhile_to_wait(leg_lines, stop_iter, 1);
 	for (vector<Busline*>::iterator iter_leg_lines = leg_lines.begin(); iter_leg_lines < leg_lines.end(); iter_leg_lines++)
 	{
@@ -326,6 +340,13 @@ double Pass_path::calc_curr_leg_headway (vector<Busline*> leg_lines, vector <vec
 		if (time_till_next_trip < theParameters->max_waiting_time) 
 			// dynamic filtering rules - consider only if it is available in a pre-defined time frame and it is maybe worthwhile to wait for it
 		{
+            if ((*iter_leg_lines)->is_flex_line())
+            {
+                drt_sum_frequency += 3600.0 / (*iter_leg_lines)->get_planned_headway();
+                ++drt_line_count;
+                continue;
+            }
+
 			accumlated_frequency += 3600.0 / ((*iter_leg_lines)->calc_curr_line_headway ());
 		}
 	}
@@ -333,6 +354,13 @@ double Pass_path::calc_curr_leg_headway (vector<Busline*> leg_lines, vector <vec
 	{
 		return 0.0;
 	}
+    
+    if (drt_line_count > 0)
+    {
+        accumlated_frequency += drt_sum_frequency / drt_line_count; //add avg frequency of drt lines (assumes all drt lines are part of the same service)
+        DEBUG_MSG_V("Pass_path::calc_curr_leg_headway returning drt adjusted accumulated frequency " << accumlated_frequency << " at time " << time);
+    }
+
 	return (60/accumlated_frequency); // minutes
 }
 
@@ -386,6 +414,19 @@ double Pass_path::calc_arriving_utility (double time, Passenger* pass)
 	return (random->nrandom(theParameters->transfer_coefficient, theParameters->transfer_coefficient / 4) * number_of_transfers + random->nrandom(theParameters->in_vehicle_time_coefficient, theParameters->in_vehicle_time_coefficient / 4 ) * calc_total_in_vehicle_time(time, pass) + random->nrandom(theParameters->waiting_time_coefficient, theParameters->waiting_time_coefficient / 4) * calc_total_waiting_time (time, true, false, avg_walking_speed, pass) + random->nrandom(theParameters->walking_time_coefficient, theParameters->walking_time_coefficient/4) * (calc_total_walking_distance() / avg_walking_speed));
 }
 
+/** @ingroup PassengerDecisionParameters
+    Waiting utility is returned in staying decisions, connection decisions, path utility calculations. Currently returning a strongly positive utility in case ANY DRT 'line' without any trips assigned to it 
+    is included as an alternative in this path.
+    
+    This also calls calc_total_waiting_time -> calc_curr_leg_headway -> find_time_till_next_scheduled_trip_at_stop which returns a drt planned headway for that specific line if no trips are scheduled yet.
+    The find_next_expected_trip_at_stop check seems to be useless. Before I changed the trips vector to a list this returned an iterator to a vector<Start_trip>, where Start_trip is a typedef of pair<Bustrip*,double>.
+    It seems that the iterator was never used as an iterator, also the method would by default return either the next scheduled trip, the begin iterator or the end-1 iterator. So checking if the iterator is null seems pointless?
+    
+    @todo
+        - Ask Oded about how this function works in greater detail. Are all alt_lines for a given path considered equivalent by the passenger? It seems arbitrary to loop through the alt_lines and 
+        return the first time any of them matches a condition
+        
+*/
 double Pass_path::calc_waiting_utility (vector <vector <Busstop*> >::iterator stop_iter, double time, bool alighting_decision, Passenger* pass)
 {	
 	stop_iter++;
@@ -396,6 +437,13 @@ double Pass_path::calc_waiting_utility (vector <vector <Busstop*> >::iterator st
 	vector<vector <Busline*> >::iterator iter_alt_lines = alt_lines.begin();
 	for (vector <Busline*>::iterator iter_lines = (*iter_alt_lines).begin(); iter_lines < (*iter_alt_lines).end(); iter_lines++)
 	{
+        
+        if (theParameters->drt && (*iter_lines)->is_flex_line()) 
+        {
+            DEBUG_MSG_V("Pass_path::calc_waiting_utility returning " << drt_first_rep_waiting_utility << " for path set with flex_line");
+            return ::drt_first_rep_waiting_utility; // PassengerDecisionParameters: basically this if condition means that if ANY DRT line is included in the path set of any waiting decision for a passenger then the passenger is heavily incentivized to wait
+        }
+
 		Bustrip* next_trip = (*iter_lines)->find_next_expected_trip_at_stop((*stop_iter).front());
 		if (pass->line_is_rejected((*iter_lines)->get_id())) // in case the line was already rejected once before, added by Jens 2014-10-16
 		{
@@ -409,22 +457,34 @@ double Pass_path::calc_waiting_utility (vector <vector <Busstop*> >::iterator st
 			double avg_walking_speed = random->nrandom(theParameters->average_walking_speed, theParameters->average_walking_speed/4); //meters per minute, TODO: change this to truncated normal dist?
 			double wt = calc_total_waiting_time(time, false, alighting_decision, avg_walking_speed, pass); //minutes
 
-			if (wt < theParameters->max_waiting_time) //Changed by Jens 2015-03-23 to avoid weird effects when the schedule is too pessimistic
+			if (wt*60 < theParameters->max_waiting_time) //Changed by Jens 2015-03-23 to avoid weird effects when the schedule is too pessimistic
 			{
 				return (random->nrandom(theParameters->transfer_coefficient, theParameters->transfer_coefficient / 4) * number_of_transfers + random->nrandom(theParameters->in_vehicle_time_coefficient, theParameters->in_vehicle_time_coefficient / 4 ) * ivt + random->nrandom(theParameters->waiting_time_coefficient, theParameters->waiting_time_coefficient / 4) * wt + random->nrandom(theParameters->walking_time_coefficient, theParameters->walking_time_coefficient/4) * calc_total_walking_distance()/ avg_walking_speed);
 			}
 		}
-		else
-		{
-			DEBUG_MSG_V("Pass_path::calc_waiting_utility returning " << drt_first_rep_waiting_utility << " for line with no scheduled trips");
-            if(theParameters->drt && (*iter_lines)->is_flex_line())
-			    return ::drt_first_rep_waiting_utility; //return a waiting utility parameter for lines with no trips
-		}
+		//else 
+		//{
+  //          if (theParameters->drt && (*iter_lines)->is_flex_line())
+  //          {
+  //              DEBUG_MSG_V("Pass_path::calc_waiting_utility returning " << drt_first_rep_waiting_utility << " for line with no scheduled trips");
+  //              return ::drt_first_rep_waiting_utility; //return a waiting utility parameter for lines with no trips
+  //          }
+		//}
 	} 
 	// if none of the lines in the first leg is available - then the waiting alternative is irrelevant
 	return -10.0;
 }
 
+/** @ingroup PassengerDecisionParameters
+    Currently it seems that the 'check worthwhile to wait' condition is only checked in the CSGM. Dynamic indicator does not seemed to ever be set to true, for any scenario configuration.
+    First if condition 
+    IVT(1) + Max H (1) < IVT (2) then line 2 is not worthwhile to wait for 
+    is always followed by
+    IVT(1) + H (1) < IVT (2) then line 2 is not worthwhile to wait for
+    if it fails
+
+    For Max H(1) we now always return the drt_first_rep_max_headway via calc_max_headway for flex lines and for H(1) we always return the planned_headway via calc_curr_line_headway
+*/
 map<Busline*, bool> Pass_path::check_maybe_worthwhile_to_wait (vector<Busline*> leg_lines, vector <vector <Busstop*> >::iterator stop_iter, bool dynamic_indicator)
 {
 	// based on the complete headway

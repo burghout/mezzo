@@ -16,7 +16,7 @@
 //using namespace std;
 
 // initialise the global variables and objects
-double drt_first_rep_planned_headway=0;
+double drt_first_rep_max_headway=0;
 double drt_first_rep_waiting_utility=10; //default is to evaluate waiting utility for drt service positively in the first rep
 int drt_min_occupancy=0;
 
@@ -1323,13 +1323,13 @@ bool Network::readcontrolcenters(const string& name)
     assert(in);
     string keyword;
     in >> keyword;
-    if (keyword != "drt_first_rep_planned_headway:")
+    if (keyword != "drt_first_rep_max_headway:")
     {
-        DEBUG_MSG("readcontrolcenters:: no drt_first_rep_planned_headway keyword, read: " << keyword);
+        DEBUG_MSG("readcontrolcenters:: no drt_first_rep_max_headway keyword, read: " << keyword);
         in.close();
         return false;
     }
-    in >> ::drt_first_rep_planned_headway;
+    in >> ::drt_first_rep_max_headway;
 
     in >> keyword;
     if (keyword != "drt_first_rep_waiting_utility:")
