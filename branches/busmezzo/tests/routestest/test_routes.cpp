@@ -103,7 +103,7 @@ void TestRoutes::testSimpleGraph()
     for (int i = 1; i<=4; ++i) // for all root links except link 5
     {
         simpleGraph->labelCorrecting(i); // find shortest paths using label correcting from root link
-        simpleGraph->printNodePathTree();
+        //simpleGraph->printNodePathTree();
         for (int j=1; j <= 4; ++j) // for all destinations
         {
             QVERIFY(simpleGraph->reachable(j)); // test if they are reachable
@@ -120,13 +120,13 @@ void TestRoutes::testTimeDependentGraph()
         QVERIFY(graph->reachable(j)); // test if they are reachable
     }
     QVERIFY (graph->costToNode(4)==40.0);
-    graph->printNodePathTree();
+    //graph->printNodePathTree();
     graph->labelCorrecting(1,10.0,linkinfo);
     QVERIFY (graph->costToNode(4)==60.0);
-    graph->printNodePathTree();
+    //graph->printNodePathTree();
     graph->labelCorrecting(1,20.0,linkinfo);
     QVERIFY (graph->costToNode(4)==80.0);
-    graph->printNodePathTree();
+    //graph->printNodePathTree();
 }
 
 void TestRoutes::testTimeDependentDetour()
@@ -144,13 +144,13 @@ void TestRoutes::testTimeDependentDetour()
          QVERIFY(graph->reachable(j)); // test if they are reachable
      }
      QVERIFY (graph->costToNode(4)==40.0); // via node 3
-     graph->printNodePathTree();
+     //graph->printNodePathTree();
      graph->labelCorrecting(1,10.0,linkinfo);
      QVERIFY (graph->costToNode(4)==40.0); // now via detour link 6
-     graph->printNodePathTree();
+    // graph->printNodePathTree();
      graph->labelCorrecting(1,20.0,linkinfo); // now via node 3, as detour more expensive
      QVERIFY (graph->costToNode(4)==80.0);
-     graph->printNodePathTree();
+    // graph->printNodePathTree();
 
 }
 
