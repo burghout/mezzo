@@ -1998,6 +1998,71 @@ bool Network::readbusline(istream& in) // reads a busline
     return ok;
 }
 
+
+Busline* Network::create_busline (
+        int						busline_id,						//!< unique identification number
+        int						opposite_busline_id,				//!< identification number of the line that indicates the opposite direction (relevant only when modeling passenger route choice)
+        string					name,						//!< a descriptive name
+        Busroute*				br,					//!< bus route
+        vector <Busstop*>		stops,						//!< stops on line
+        Vtype*					vt,
+        ODpair*					odptr,					//!< OD pair
+        int						holding_strategy,			//!< indicates the type of holding strategy used for line
+        float					max_headway_holding,		//!< threshold parameter relevant in case holding strategies 1 or 3 are chosen or max holding time in [sec] in case of holding strategy 6
+        double					init_occup_per_stop,		//!< average number of passengers that are on-board per prior upstream stops (scale of a Gamma distribution)
+        int						nr_stops_init_occup,		//!< number of prior upstream stops resulting with initial occupancy (shape of a Gamma distribution)
+        bool					flex_line 		//!< true if this line allows for dynamically scheduled trips
+    )
+{
+    Busline* bl= new Busline (busline_id, opposite_busline_id, name, br, stops, vt, odptr, holding_strategy, max_headway_holding, init_occup_per_stop, nr_stops_init_occup, flex_line);
+
+    for (vector<Busstop*>::iterator stop_iter = bl->stops.begin(); stop_iter < bl->stops.end(); stop_iter++)
+    {
+        (*stop_iter)->add_lines(bl);
+        (*stop_iter)->add_line_nr_waiting(bl, 0);
+        (*stop_iter)->add_line_nr_boarding(bl, 0);
+        (*stop_iter)->add_line_nr_alighting(bl, 0);
+        (*stop_iter)->set_had_been_visited(bl, false);
+        if (theParameters->real_time_info == 0)
+        {
+            (*stop_iter)->add_real_time_info(bl,0);
+        }
+        else
+        {
+            (*stop_iter)->add_real_time_info(bl,1);
+        }
+    }
+
+    if (flex_line) //if flexible vehicle scheduling is allowed for this line then add it to a controlcenter as a potential service route and let the start and end stops of the line know of their origin and destination nodes for use in shortest path methods
+    {
+        assert(theParameters->drt);
+        Origin* origin_node = bl->get_odpair()->get_origin();
+        Destination* dest_node = bl->get_odpair()->get_destination();
+        Busstop* firststop = bl->stops.front();
+        Busstop* laststop = bl->stops.back();
+
+        if (!firststop->get_origin_node())
+        {
+            firststop->set_origin_node(origin_node);
+        }
+        if (!laststop->get_dest_node())
+        {
+            laststop->set_dest_node(dest_node);
+        }
+
+        ccmap[1]->addServiceRoute(bl);
+    }
+
+    // add to buslines vector
+    buslines.push_back (bl);
+
+
+
+    return bl;
+
+}
+
+
 bool Network::readbustrip_format1(istream& in) // reads a trip
 {
     if (theParameters->drt){

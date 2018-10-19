@@ -131,6 +131,43 @@ void TestIntegration::testCreateBusroute()
 
     Busroute* routeViaAandDandB = net->create_busroute_from_stops(2,od_pair->get_origin(), od_pair->get_destination(),stops);
     QVERIFY(routeViaAandDandB==nullptr); // should return nullptr since link 67 is not reachable
+
+    // WILCO: TEMP STUFF TO TEST CREATION OF BUSLINE
+    // test to create busline on the fly
+
+
+    Vtype* vtype = new Vtype(888,"octobus",1.0,20.0);
+    //Busline * bl = new Busline(1,0,"test",routeViaAandD,stops,vtype,od_pair,0,0.0,0.0,0,false);
+    Busline * bl = net->create_busline(5,0,"test",routeViaAandD,stops,vtype,od_pair,2,0.0,0.0,0,false);
+
+    // test to create nxn buslines from/to all stops
+    auto stopsmap = net->get_stopsmap();
+
+    int counter=100;
+    for (auto startstop:stopsmap)
+    {
+        for (auto endstop:stopsmap)
+        {
+            if (startstop != endstop)
+            {
+                stops.clear();
+                stops.push_back(startstop.second);
+                stops.push_back(endstop.second);
+                qDebug() << "checking route for busline: " << startstop.first << " to " << endstop.first;
+                Busroute* newRoute = net->create_busroute_from_stops(counter,od_pair->get_origin(), od_pair->get_destination(),stops);
+                if (newRoute != nullptr)
+                {
+                    qDebug() << " route found";
+                    Busline * newLine = net->create_busline(counter,0,"test",newRoute,stops,vtype,od_pair,2,0.0,0.0,0,false);
+                }
+                else
+                    qDebug() << " no route found" ;
+                counter++;
+
+            }
+        }
+    }
+
 }
 
 void TestIntegration::testRunNetwork()

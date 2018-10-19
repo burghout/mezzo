@@ -166,7 +166,20 @@ public:
 	//void delete_spurious_routes(); //!< deletes all routes that have no OD pair.
 	void renum_routes (); //!< renumerates the routes, to keep a consecutive series after deletions & additions
     Busroute* create_busroute_from_stops(int id, Origin* origin_node, Destination* destination_node, vector<Busstop*> stops, double time = 0.0);//!< creates the
-
+    Busline* create_busline  (
+            int						busline_id,						//!< unique identification number
+            int						opposite_busline_id,				//!< identification number of the line that indicates the opposite direction (relevant only when modeling passenger route choice)
+            string					name,						//!< a descriptive name
+            Busroute*				br,					//!< bus route
+            vector <Busstop*>		stops,						//!< stops on line
+            Vtype*					vt,
+            ODpair*					odptr,					//!< OD pair
+            int						holding_strategy,			//!< indicates the type of holding strategy used for line
+            float					max_headway_holding,		//!< threshold parameter relevant in case holding strategies 1 or 3 are chosen or max holding time in [sec] in case of holding strategy 6
+            double					init_occup_per_stop,		//!< average number of passengers that are on-board per prior upstream stops (scale of a Gamma distribution)
+            int						nr_stops_init_occup,		//!< number of prior upstream stops resulting with initial occupancy (shape of a Gamma distribution)
+            bool					flex_line = false			//!< true if this line allows for dynamically scheduled trips
+        );
     bool run(int period); //!< RUNS the network for 'period' seconds
 	bool addroutes (int oid, int did, ODpair* odpair); //!< adds routes to an ODpair
 	bool add_od_routes()	; //!< adds routes to all ODpairs
