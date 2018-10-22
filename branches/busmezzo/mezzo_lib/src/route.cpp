@@ -136,17 +136,17 @@ odval Route::get_oid_did()
  }
  
   		
-Link* Route::nextlink(Link* currentlink)
-{
- vector<Link*>::iterator iter=find(links.begin(), links.end(), currentlink);
- iter++;
-  if (iter<links.end())
+ Link* Route::nextlink(Link* currentlink)
  {
- 	return *iter;
+	 vector<Link*>::iterator iter = find(links.begin(), links.end(), currentlink);
+	 iter++;
+	 if (iter < links.end())
+	 {
+		 return *iter;
+	 }
+	 cout << "Route::nextlink: error! there is no next link after link " << currentlink->get_id() << "! " << endl;
+	 return nullptr;
  }
- cout << "Route::nextlink: error! there is no next link after link " << currentlink->get_id() << "! " << endl;
- return NULL;
-}
 
 
 

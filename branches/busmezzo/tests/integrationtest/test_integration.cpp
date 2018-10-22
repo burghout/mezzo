@@ -158,6 +158,19 @@ void TestIntegration::testCreateBusroute()
                 if (newRoute != nullptr)
                 {
                     qDebug() << " route found";
+
+					//test if route found is a connected sequence of links
+					vector<Link*> rlinks = newRoute->get_links();
+					for (Link* rlink : rlinks)
+					{
+						Link* nextlink = newRoute->nextlink(rlink);
+						if (nextlink)
+						{
+							QString msg = QString("Failure, link %1 is not an upstream link to link %2").arg(rlink->get_id()).arg(nextlink->get_id());
+							QVERIFY2(rlink->get_out_node_id() == nextlink->get_in_node_id(), qPrintable(msg)); //outnode of preceding link should be innode of succeeding link
+						}
+					}
+
                     Busline * newLine = net->create_busline(counter,0,"test",newRoute,stops,vtype,od_pair,2,0.0,0.0,0,false);
                 }
                 else
