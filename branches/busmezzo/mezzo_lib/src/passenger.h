@@ -21,6 +21,13 @@ public:
 		double	   start_time_,
 		ODstops*   OD_stop_
 	);
+	Passenger(
+		int		   pass_id,
+		double	   start_time_,
+		ODstops*   OD_stop_,
+		int		   orig_section_,
+		int		   dest_section_
+	);
 	Passenger ();
     virtual ~Passenger ();
 	void init ();
@@ -44,6 +51,8 @@ public:
 	double		get_destination_walking_distance (Busstop* stop) {return destination_walking_distances[stop];}
 	
 	Busstop*	get_original_origin () {return original_origin;}
+	// Erik 18-09-25: 
+	// int get_original_section() {return_original_section;}
 	int			get_nr_boardings () {return nr_boardings;}
     vector <pair<Busstop*,double> > get_chosen_path_stops () {return selected_path_stops;}
 	void		set_ODstop (ODstops* ODstop_) {OD_stop = ODstop_;}
@@ -57,6 +66,12 @@ public:
 	double	get_memory_projected_RTI (Busstop* stop, Busline* line);
 	void	set_pass_sitting (bool sits) {sitting = sits;}
 	bool	get_pass_sitting () {return sitting;}
+	// /* Erik 18-09-15
+	int		get_pass_car () {return car;}	
+	void	set_pass_car(int car_) { car = car_; }
+	int		get_pass_section() { return section; }
+	void	set_pass_section(int section_) { section = section_; }
+	// */
 	double	get_latest_boarding_time () {return (selected_path_trips.back().second);}
     vector <pair<Busstop*,double> > get_selected_path_stops() {return selected_path_stops;}
 	//vector <pair<Busstop*, int> > get_selected_car() { return selected_car; } //Melina
@@ -69,6 +84,7 @@ public:
 	bool	 make_boarding_decision (Bustrip* arriving_bus, double time);	//!< boarding decision making 
 	Busstop* make_alighting_decision (Bustrip* boarding_bus, double time);	//!< alighting decision making 
 	Busstop* make_connection_decision (double time);						//!< connection link decision (walking between stops)
+	pair<Busstop*,int> make_connection_decision_2(double time);						// Erik 18-09-27
 
 	// Demand in terms of zones
 	map<Busstop*,double> sample_walking_distances (ODzone* zone);
@@ -83,6 +99,9 @@ public:
 	void write_passenger_trajectory(ostream& out);
 	void add_to_selected_path_trips (pair<Bustrip*,double> trip_time) {selected_path_trips.push_back(trip_time);}
 	void add_to_selected_path_stop (pair<Busstop*,double> stop_time) {selected_path_stops.push_back(stop_time);}
+	//Erik 18-09-16
+	void add_to_selected_path_sections(pair<int, double> stop_section) { selected_path_sections.push_back(stop_section); } //Erik 18-09-16
+	void add_to_selected_path_cars(pair<int, double> stop_car) { selected_path_cars.push_back(stop_car); } //Erik 18-09-16
 	void add_to_selected_car (pair<Bustrip*, int> stop_car) { selected_car.push_back(stop_car); } //Melina
 	void add_to_experienced_crowding_levels(pair<double,double> riding_coeff) {experienced_crowding_levels.push_back(riding_coeff);};
 	void add_to_denied_boarding (pair<Busstop*,double> denied_time) {waiting_time_due_denied_boarding.push_back(denied_time);}
@@ -120,7 +139,10 @@ public:
     
     //walking time
     double get_walking_time(Busstop*,double);
-    
+	double get_walking_time(Busstop*, int, double); // Erik 18-10-08
+
+	double get_walking_distance(Busstop*, int);
+
 protected:
 	int passenger_id;
 	double start_time;
@@ -134,15 +156,23 @@ protected:
 	Busstop* stop;
 	Bustrip* trip;
 	ODstops* OD_stop;
+	// /* Erik 18-09-26
+	int orig_section;
+	int dest_section;
+	// */
 	bool boarding_decision;
 	Random* random;
 	bool already_walked;
 	bool sitting;		//!< 0 - sits; 1 - stands
+	int car; // chosen vehicle car Erik 18-09-16
+	int section; // chosen platform section Erik 18-09-16
 	int nr_boardings;	//!< counts the number of times pass boarded a vehicle
-    vector <pair<Busstop*,double> > selected_path_stops;				 //!< stops and corresponding arrival times
-    vector <pair<Bustrip*,double> > selected_path_trips;				 //!< trips and corresponding boarding times
+    vector <pair<Busstop*,double> > selected_path_stops;				//!< stops and corresponding arrival times
+    vector <pair<Bustrip*,double> > selected_path_trips;				//!< trips and corresponding boarding times
+	vector <pair<int, double> > selected_path_sections;					//!< platform sections and corresponding arrival times
+	vector <pair<int, double> > selected_path_cars;						//!< vehicle cars and corresponding boarding times //Erik 18-09-25
 	vector <pair <Bustrip*, int> > selected_car;						//!< trips and corresponding car units //Melina
-    vector <pair<double,double> > experienced_crowding_levels;		 //!< IVT and corresponding crowding levels (route segment level)
+    vector <pair<double,double> > experienced_crowding_levels;			//!< IVT and corresponding crowding levels (route segment level)
 	//map<pair<Busstop*, int>, passengers > passengers_on_board;
     vector <pair<Busstop*,double> > waiting_time_due_denied_boarding; //!< stops at which the pass. experienced denied boarding and the corresponding time at which it was experienced
 	vector<int> rejected_lines; //!< To keep track of the lines that the passenger chose not to board earlier, these should not be regarded next time

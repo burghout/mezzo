@@ -15,6 +15,11 @@ origin_stop(origin_stop_), destination_stop(destination_stop_)
 	arrival_rate = 0.0;
     origin_stop = origin_stop_;
     destination_stop = destination_stop_;
+	// /* Erik 18-09-25
+	//origin_section = 1;
+	//destination_section = 1;
+	section_fractions = vector<double>(1,1);
+	// */
 	active = false;
 	random = new (Random);
 	path_set.clear();
@@ -32,6 +37,11 @@ ODstops::ODstops (Busstop* origin_stop_, Busstop* destination_stop_, double arri
 {
 	origin_stop = origin_stop_;
 	destination_stop = destination_stop_;
+	// /* Erik 18-09-25
+	//origin_section = 1;
+	//destination_section = 1;
+	section_fractions = vector<double>(1,1);
+	// */
 	arrival_rate = arrival_rate_;
 	min_transfers = 100;
 	path_set.clear();
@@ -46,6 +56,49 @@ ODstops::ODstops (Busstop* origin_stop_, Busstop* destination_stop_, double arri
 		random->randomize();
 	}
 }
+
+// Erik 18-09-25
+ODstops::ODstops(Busstop* origin_stop_, Busstop* destination_stop_, double arrival_rate_, vector<double> section_fractions_) :
+	origin_stop(origin_stop_), destination_stop(destination_stop_), arrival_rate(arrival_rate_), section_fractions(section_fractions_)
+{
+	min_transfers = 100;
+	origin_stop = origin_stop_;
+	destination_stop = destination_stop_;
+	active = false;
+	random = new (Random);
+	path_set.clear();
+	if (randseed != 0)
+	{
+		random->seed(randseed);
+	}
+	else
+	{
+		random->randomize();
+	}
+}
+
+//ODstops::ODstops(Busstop* origin_stop_, int origin_section_, Busstop* destination_stop_, int destination_section_, double arrival_rate_)
+//{
+//	origin_stop = origin_stop_;
+//	destination_stop = destination_stop_;
+//	// /* Erik 18-09-25
+//	origin_section = origin_section_;
+//	destination_section = destination_section_;
+//	// */
+//	arrival_rate = arrival_rate_;
+//	min_transfers = 100;
+//	path_set.clear();
+//	active = false;
+//	random = new (Random);
+//	if (randseed != 0)
+//	{
+//		random->seed(randseed);
+//	}
+//	else
+//	{
+//		random->randomize();
+//	}
+//}
 
 ODstops::~ODstops()
 {
@@ -162,14 +215,30 @@ bool ODstops::execute (Eventlist* eventlist, double curr_time) // generate passe
         active = true;
         
         bool non_random_arrivals = origin_stop->get_gate_flag(); // 1 - passengers are generated according to timetable, 0 - passengers generated according to Poisson process
-        
+
+		int section_comb;
+		int num_orig_sections = origin_stop->get_num_sections();
+		int num_dest_sections = destination_stop->get_num_sections();
+		int orig_section;
+		int dest_section; 
+
         //origin node with random passenger arrival/generation pattern
         if ( non_random_arrivals == false) {
             curr_time = theParameters->start_pass_generation + theRandomizers[0]->erandom(arrival_rate / 3600.0); // passenger arrival is assumed to be a poission process (exp headways)
             
             while (curr_time < theParameters->stop_pass_generation)
             {
-                Passenger* pass = new Passenger(pid, curr_time, this);
+				//cout << "pid = " << pid << endl;
+				/*for (vector<double>::iterator it = section_fractions.begin(); it != section_fractions.end(); ++it)
+				{
+					cout << (*it) << '\t';
+				}
+				cout << endl;*/
+				section_comb = theRandomizers[0]->mrandom(section_fractions);
+				orig_section = (int)((section_comb-1) / num_dest_sections) + 1;
+				dest_section = ((section_comb-1) % num_dest_sections) + 1;
+				//cout << "orig_section = " << orig_section << '\t' << "dest_section = " << dest_section << endl;
+				Passenger* pass = new Passenger(pid, curr_time, this, orig_section, dest_section);
                 passengers_during_simulation.push_back(pass);
                 pid++;
                 pass->init();
@@ -277,7 +346,7 @@ double ODstops::calc_boarding_probability (Busline* arriving_bus, double time, P
 				{
 					if ((*iter_first_leg_lines)->get_id() == arriving_bus->get_id()) // if the arriving bus is a possible first leg for this path alternative
 					{
-						path_utility = (*iter_paths)->calc_arriving_utility(time, pass);
+						path_utility = (*iter_paths)->calc_arriving_utility(time, pass); // Erik 18-09-27: Depends on total walking distance
 						set_utilities[(*iter_paths)].first = true;
 						set_utilities[(*iter_paths)].second = path_utility;
 						boarding_utility += exp(path_utility); 
@@ -528,6 +597,7 @@ map<Pass_path*,double> ODstops::calc_path_size_factor_nr_stops (map<Pass_path*,d
 	return set_factors;
 }	
 
+// Erik 18-09-27: Independent of walking distances
 double ODstops::calc_combined_set_utility_for_alighting (Passenger* pass, Bustrip* bus_on_board, double time)
 {
 	// calc logsum over all the paths from this origin stop
@@ -596,8 +666,12 @@ double ODstops::calc_combined_set_utility_for_connection (double walking_distanc
 		}
 		if (without_walking_first == true) // considering only no multi-walking alternatives
 		{
-			double time_till_connected_stop = walking_distance / random->nrandom(theParameters->average_walking_speed, theParameters->average_walking_speed / 4); // in minutes
-			connection_utility += exp(random->nrandom(theParameters->walking_time_coefficient, theParameters->walking_time_coefficient/4) * time_till_connected_stop + (*paths)->calc_waiting_utility(alt_stops_iter, time + (time_till_connected_stop * 60), false, pass));
+			double time_till_connected_stop = walking_distance 
+				/ random->nrandom(theParameters->average_walking_speed, theParameters->average_walking_speed / 4); // in minutes
+			connection_utility += exp(random->nrandom(theParameters->walking_time_coefficient, theParameters->walking_time_coefficient/4) 
+				* time_till_connected_stop 
+				+ (*paths)->calc_waiting_utility(alt_stops_iter, time + (time_till_connected_stop * 60), false, pass)
+			);
 			// taking into account CT (walking time) till this connected stop and the utility of the path from this connected stop till the final destination
 		}
 	}

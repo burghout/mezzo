@@ -49,6 +49,35 @@ Passenger::Passenger (int pass_id, double start_time_, ODstops* OD_stop_)
 	this_is_the_last_stop = false;
 }
 
+// Erik 18-09-26
+Passenger::Passenger(int pass_id, double start_time_, ODstops* OD_stop_, int orig_section_, int dest_section_)
+{
+	passenger_id = pass_id;
+	start_time = start_time_;
+	end_time = 0;
+	nr_boardings = 0;
+	original_origin = OD_stop_->get_origin();
+	OD_stop = OD_stop_;
+	orig_section = orig_section_;
+	dest_section = dest_section_;
+	boarding_decision = false;
+	already_walked = false;
+	AWT_first_leg_boarding = 0;
+	random = new (Random);
+	if (randseed != 0)
+	{
+		random->seed(randseed);
+	}
+	else
+	{
+		random->randomize();
+	}
+	memory_projected_RTI.clear();
+	arrival_time_at_stop = 0;
+	this_is_the_last_stop = false;
+}
+
+
 Passenger::~Passenger()
 {
 }
@@ -267,6 +296,9 @@ bool Passenger::execute(Eventlist *eventlist, double time)
 return true;
 }
 
+
+// Erik 18-09-15: Should arrival_time_at_stop depend on choice of platform section?
+
 void Passenger::walk (double time)
 // called every time passengers choose to walk to another stop (origin/transfer)
 // puts the passenger at the waiting list at the right timing
@@ -306,7 +338,21 @@ void Passenger::start (Eventlist* eventlist)
 		stop_time.first = OD_stop->get_origin();
 		stop_time.second = start_time;
 		add_to_selected_path_stop(stop_time);
-		Busstop* connection_stop = make_connection_decision(start_time);
+		// Erik 18-09-15: Should make_connection_decision return both Busstop and platform section?
+		// Erik 18-09-24
+		//int connection_section = OD_stop->get_origin_section();
+		//int connection_section = orig_section;
+		section = orig_section; // Erik 18-10-08: set passenger's current platform section to its origin section
+		pair<int, double> section_time;
+		section_time.first = orig_section;
+		section_time.second = start_time;
+		add_to_selected_path_sections(section_time);
+
+		pair<Busstop*, int> stop_section = make_connection_decision_2(start_time);
+		Busstop* connection_stop = stop_section.first; 
+		int connection_section = stop_section.second;
+		cout << "orig " << OD_stop->get_origin()->get_id() << ", dest " << connection_stop->get_id();
+		cout << " orig_section " << orig_section << ", connection_section " << connection_section << endl;
 		stop_time.first = connection_stop;
 		if (connection_stop->get_id() != OD_stop->get_origin()->get_id()) // if the pass. walks to another stop
 		{
@@ -319,19 +365,46 @@ void Passenger::start (Eventlist* eventlist)
 			}
 			set_ODstop(connection_stop->get_stop_od_as_origin_per_stop(OD_stop->get_destination())); // set this stop as his new origin (new OD)
 
-			double arrival_time_to_connected_stop = start_time + get_walking_time(connection_stop,start_time);
+			// Erik 18-09-15: should get_walking time take both connection stop and platform section as input?
+			double arrival_time_to_connected_stop = start_time + get_walking_time(connection_stop, connection_section, start_time);
 			eventlist->add_event(arrival_time_to_connected_stop, this);
 
             pair<Busstop*,double> stop_time;
 			stop_time.first = connection_stop;
 			stop_time.second = arrival_time_to_connected_stop;
 			add_to_selected_path_stop(stop_time);
+
+			// Erik 18-09-24
+			//int connection_section = orig_section;
+			section = connection_section; 
+			pair<int, double> section_time;
+			section_time.first = connection_section;
+			section_time.second = arrival_time_to_connected_stop;
+			add_to_selected_path_sections(section_time);
 		}
 		else // if the pass. stays at the same stop
 		{
 			OD_stop->add_pass_waiting(this); // store the new passenger at the list of waiting passengers with this OD
 			set_arrival_time_at_stop(start_time);
 			add_to_selected_path_stop(stop_time);
+
+			// Erik 18-10-08
+			double arrival_time_to_connected_stop = start_time + get_walking_time(connection_stop, connection_section, start_time);
+			eventlist->add_event(arrival_time_to_connected_stop, this);
+
+			//pair<Busstop*, double> stop_time;
+			//stop_time.first = connection_stop;
+			//stop_time.second = arrival_time_to_connected_stop;
+			//add_to_selected_path_stop(stop_time);
+
+			// Erik 18-09-24
+			//int connection_section = orig_section;
+			section = connection_section;
+			pair<int, double> section_time;
+			section_time.first = connection_section;
+			section_time.second = arrival_time_to_connected_stop;
+			add_to_selected_path_sections(section_time);
+
 			if (get_pass_RTI_network_level() == true || OD_stop->get_origin()->get_rti() > 0)
 			{
 				vector<Busline*> lines_at_stop = OD_stop->get_origin()->get_lines();
@@ -347,6 +420,7 @@ void Passenger::start (Eventlist* eventlist)
 		}
 }
 
+// Erik 18-09-27: Depends on total walking distance
 bool Passenger:: make_boarding_decision (Bustrip* arriving_bus, double time)
 {
 	/*Busstop* curr_stop = selected_path_stops.back().first;
@@ -358,7 +432,7 @@ bool Passenger:: make_boarding_decision (Bustrip* arriving_bus, double time)
 	{
 		case 3:
 			// use the od based on last stop on record (in case of connections)
-			boarding_prob = od->calc_boarding_probability(arriving_bus->get_line(), time, this);
+			boarding_prob = od->calc_boarding_probability(arriving_bus->get_line(), time, this); // Erik 18-09-27: Depends on total walking distance
 			boarding_decision = theRandomizers[0]->brandom(boarding_prob);
 			OD_stop->record_passenger_boarding_decision (this, arriving_bus, time, boarding_prob, boarding_decision);
 			if (boarding_decision == 1)
@@ -430,6 +504,7 @@ void Passenger::record_waiting_experience(Bustrip* arriving_bus, double time)
 	}
 }
 
+// Erik 18-09-27: Independent of walking distances
 Busstop* Passenger::make_alighting_decision (Bustrip* boarding_bus, double time) // assuming that all passenger paths involve only direct trips
 {
 	// assuming that a pass. boards only paths from his path set
@@ -541,6 +616,7 @@ Busstop* Passenger::make_connection_decision (double time)
 	map <Busstop*, double> candidate_connection_stops_p; // the double value is the probability associated with the respective stop
 	Busstop* bs_o = OD_stop->get_origin();
 	Busstop* bs_d = OD_stop->get_destination();
+	// Erik 18-09-26: Should also get passenger's origin and destination sections
 	vector<Pass_path*> path_set = bs_o->get_stop_od_as_origin_per_stop(bs_d)->get_path_set();
 	//	OD_stop->get_path_set();
 	if (path_set.empty() == true) // move to a nearby stop in case needed
@@ -585,13 +661,19 @@ Busstop* Passenger::make_connection_decision (double time)
 				if ((*connected_stop)->get_id() == OD_stop->get_destination()->get_id())
 				// in case it is the final destination for this passeneger
 				{
-					candidate_connection_stops_u[(*connected_stop)] = theParameters->walking_time_coefficient * (*path_iter)->get_walking_distances().front() / theRandomizers[0]->nrandom(theParameters->average_walking_speed, theParameters->average_walking_speed/4);
+					// Erik 18-09-26: Walking distances enter here, check!
+					candidate_connection_stops_u[(*connected_stop)] = theParameters->walking_time_coefficient 
+						* (*path_iter)->get_walking_distances().front() 
+						/ theRandomizers[0]->nrandom(theParameters->average_walking_speed, theParameters->average_walking_speed/4);
 					// the only utility component is the CT (walking time) till the destination
 				}
 				else
 				// in case it is an intermediate transfer stop
 				{
-					candidate_connection_stops_u[(*connected_stop)] = left_od_stop->calc_combined_set_utility_for_connection ((*path_iter)->get_walking_distances().front(), time, this);
+					// Erik 18-09-26: Walking distances enter here, check!
+					candidate_connection_stops_u[(*connected_stop)] = 
+						left_od_stop->calc_combined_set_utility_for_connection (
+						(*path_iter)->get_walking_distances().front(), time, this);
 					// the utility is combined for all paths from this transfer stop (incl. walking time to the connected stop)
 				}
 			}
@@ -636,6 +718,170 @@ Busstop* Passenger::make_connection_decision (double time)
 		}
 	}
 	return candidate_connection_stops_p.begin()->first; // arbitary choice in case something failed
+}
+
+// Erik 18-09-27
+pair<Busstop*,int> Passenger::make_connection_decision_2(double time)
+{
+	map <Busstop*, double> candidate_connection_stops_u; // the double value is the utility associated with the respective stop
+														 //map <pair<Busstop*,int>, double> candidate_connection_stops_u;
+	map <Busstop*, double> candidate_connection_stops_p; // the double value is the probability associated with the respective stop
+	
+	map<Busstop*, map<int, double>> candidate_connection_stops_sections_u;
+	map<Busstop*, map<int, double>> candidate_connection_stops_sections_p;
+	
+	Busstop* bs_o = OD_stop->get_origin();
+	Busstop* bs_d = OD_stop->get_destination();
+	// Erik 18-09-26: Should also get passenger's origin and destination sections
+	// Avaiable as variables orig_section, dest_section 
+	vector<Pass_path*> path_set = bs_o->get_stop_od_as_origin_per_stop(bs_d)->get_path_set();
+	//	OD_stop->get_path_set();
+	if (path_set.empty() == true) // move to a nearby stop in case needed
+	{
+		map<Busstop*, double> & stops = OD_stop->get_origin()->get_walking_distances();
+		if (stops.begin()->first->get_id() == OD_stop->get_origin()->get_id()) // Erik 18-09-27: If first walkable neighbor is equal to origin
+		{
+			map<Busstop*, double>::iterator stops_iter = stops.begin();
+			stops_iter++;
+			if (stops_iter == stops.end()) // Erik 18-09-27: If only one walkable neighbor
+			{
+				return pair<Busstop*,int>(stops.begin()->first,section); // Erik 18-09-27: Go to that stop
+			}
+			return pair<Busstop*, int>(stops_iter->first, section); // Erik 18-09-27: Otherwise, go to second walkable neighbor
+		}
+		else
+		{
+			return pair<Busstop*, int>(stops.begin()->first, section); // Erik 18-09-27: Otherwise go to that stop
+		}
+	}
+	// Erik 18-09-27: Exists at least one path between origin and destination
+	for (vector <Pass_path*>::iterator path_iter = path_set.begin(); path_iter < path_set.end(); path_iter++)
+	{
+		vector<vector<Busstop*> > alt_stops = (*path_iter)->get_alt_transfer_stops();
+		vector<vector<Busstop*> >::iterator stops_iter = alt_stops.begin() + 1; // Erik 18-09-27: Second alt transfer point?
+		for (vector<Busstop*>::iterator connected_stop = (*stops_iter).begin(); connected_stop < (*stops_iter).end(); connected_stop++)
+			// going over all the stops at the second (connected) set
+		{
+			if ((candidate_connection_stops_sections_u.count(*connected_stop) == 0) && ((*connected_stop)->check_destination_stop(this->get_OD_stop()->get_destination()) == true))
+				// only if it wasn't done already and there exists an OD for the remaining part
+			{
+				ODstops* left_od_stop;
+				if ((*connected_stop)->check_stop_od_as_origin_per_stop(this->get_OD_stop()->get_destination()) == false)
+				{
+					ODstops* left_od_stop = new ODstops((*connected_stop), this->get_OD_stop()->get_destination());
+					(*connected_stop)->add_odstops_as_origin(this->get_OD_stop()->get_destination(), left_od_stop);
+					this->get_OD_stop()->get_destination()->add_odstops_as_destination((*connected_stop), left_od_stop);
+				}
+				else
+				{
+					left_od_stop = (*connected_stop)->get_stop_od_as_origin_per_stop(this->get_OD_stop()->get_destination());
+				}
+				if ((*connected_stop)->get_id() == OD_stop->get_destination()->get_id())
+					// in case it is the final destination for this passeneger
+				{
+
+
+					double connected_stop_section_walking_distance;
+					map<int, double> connected_stop_section_u;
+
+					// Erik 18-10-08: Passenger walks to destination platform section!
+					connected_stop_section_walking_distance = get_walking_distance(*connected_stop, dest_section);
+
+					// the only utility component is the CT (walking time) till the destination
+					candidate_connection_stops_u[(*connected_stop)] =
+						theParameters->walking_time_coefficient * connected_stop_section_walking_distance
+						/ theRandomizers[0]->nrandom(theParameters->average_walking_speed, theParameters->average_walking_speed / 4);
+
+					connected_stop_section_u[dest_section] = 0;
+					candidate_connection_stops_sections_u[(*connected_stop)] = connected_stop_section_u;
+				}
+				else
+					// in case it is an intermediate transfer stop
+				{
+					// Erik 18-09-26: Walking distances enter here, check!
+
+					double connected_stop_section_walking_distance;
+					map<int, double> connected_stop_section_u;
+					double logsum = 0.0;
+
+					int connected_stop_num_sections = (*connected_stop)->get_num_sections();
+					for (int section_id = 1; section_id <= connected_stop_num_sections; ++section_id)
+					{
+						connected_stop_section_walking_distance = get_walking_distance(*connected_stop, section_id);
+						connected_stop_section_u[section_id] =
+							left_od_stop->calc_combined_set_utility_for_connection(
+								connected_stop_section_walking_distance, time, this);
+
+						logsum += exp(connected_stop_section_u[section_id]);
+						//cout << "walk dist = " << connected_stop_section_walking_distance << " ";
+					}
+					//cout << endl;
+					logsum = log(logsum);
+
+					// Change from getting walking distances from path to getting them from busstops??
+					candidate_connection_stops_u[(*connected_stop)] = logsum;
+					candidate_connection_stops_sections_u[(*connected_stop)] = connected_stop_section_u;
+					// the utility is combined for all paths from this transfer stop (incl. walking time to the connected stop)
+				}
+			}
+		}
+	}
+	// calc MNL probabilities
+	double MNL_denominator = 0.0;
+	for (map <Busstop*, double>::iterator transfer_stops = candidate_connection_stops_u.begin(); transfer_stops != candidate_connection_stops_u.end(); transfer_stops++)
+	{
+		// calc denominator value
+		MNL_denominator += exp((*transfer_stops).second);
+	}
+	for (map <Busstop*, double>::iterator transfer_stops = candidate_connection_stops_u.begin(); transfer_stops != candidate_connection_stops_u.end(); transfer_stops++)
+	{
+		candidate_connection_stops_p[(*transfer_stops).first] = exp(candidate_connection_stops_u[(*transfer_stops).first]) / MNL_denominator;
+	}
+	// perform choice
+	vector<double> connecting_probs;
+	for (map <Busstop*, double>::iterator stops_probs = candidate_connection_stops_p.begin(); stops_probs != candidate_connection_stops_p.end(); stops_probs++)
+	{
+		connecting_probs.push_back((*stops_probs).second);
+	}
+	int transfer_stop_position = theRandomizers[0]->mrandom(connecting_probs); // Erik 18-10-08: 
+	int iter = 0;
+	for (map <Busstop*, double>::iterator stops_probs = candidate_connection_stops_p.begin(); stops_probs != candidate_connection_stops_p.end(); stops_probs++)
+	{
+		iter++;
+		if (iter == transfer_stop_position)
+		{
+			Busstop* chosen_stop = (*stops_probs).first;
+
+			map<int, double> sections = candidate_connection_stops_sections_u[chosen_stop];
+
+			double MNL_denominator = 0.0;
+			for (map<int, double>::iterator section_it = sections.begin(); section_it != sections.end(); ++section_it)
+			{
+				MNL_denominator += exp((*section_it).second);
+			}
+			vector<double> section_probs;
+			for (map<int, double>::iterator section_it = sections.begin(); section_it != sections.end(); ++section_it)
+			{
+				section_probs.push_back( exp((*section_it).second) / MNL_denominator );
+				//cout << "section prob = " << exp((*section_it).second) / MNL_denominator << " ";
+			}
+			//cout << endl;
+			int transfer_section = theRandomizers[0]->mrandom(section_probs);
+			// constructing a structure for output
+			map<Busstop*, pair<double, double> > connecting_MNL; // utility followed by probability per stop
+			for (map <Busstop*, double>::iterator iter_u = candidate_connection_stops_u.begin(); iter_u != candidate_connection_stops_u.end(); iter_u++)
+			{
+				connecting_MNL[(*iter_u).first].first = (*iter_u).second;
+			}
+			for (map <Busstop*, double>::iterator iter_p = candidate_connection_stops_p.begin(); iter_p != candidate_connection_stops_p.end(); iter_p++)
+			{
+				connecting_MNL[(*iter_p).first].second = (*iter_p).second;
+			}
+			OD_stop->record_passenger_connection_decision(this, time, (*stops_probs).first, connecting_MNL);
+			return pair<Busstop*, int>( ((*stops_probs).first) , transfer_section); // return the chosen stop by MNL choice model
+		}
+	}
+	return pair<Busstop*, int>(candidate_connection_stops_p.begin()->first,1); // arbitary choice in case something failed
 }
 
 Busstop* Passenger::make_first_stop_decision (double time)
@@ -1128,6 +1374,8 @@ void Passenger::write_selected_path(ostream& out)
 		<< original_origin->get_name() << '\t'
 		<< OD_stop->get_destination()->get_id() << '\t'
 		<< OD_stop->get_destination()->get_name() << '\t'
+		<< orig_section << '\t' 
+		<< dest_section << '\t'
 		<< start_time << '\t'
 		<< nr_transfers << '\t'
 		<< total_walking_time << '\t'
@@ -1152,10 +1400,22 @@ void Passenger::write_selected_path(ostream& out)
 	}
 
 	out << '}' << '\t' << '{' << '\t';
-	for (vector <pair<Bustrip*, int> >::iterator trip_iter = selected_car.begin(); trip_iter < selected_car.end(); trip_iter++)
+	for (vector <pair<int, double> >::iterator trip_iter = selected_path_sections.begin(); trip_iter < selected_path_sections.end(); trip_iter++)
 	{
-		out << (*trip_iter).second << '\t';
+		out << (*trip_iter).first << '\t';
 	}
+
+	out << '}' << '\t' << '{' << '\t';
+	for (vector <pair<int, double> >::iterator trip_iter = selected_path_cars.begin(); trip_iter < selected_path_cars.end(); trip_iter++)
+	{
+		out << (*trip_iter).first << '\t';
+	}
+
+	//out << '}' << '\t' << '{' << '\t';
+	//for (vector <pair<Bustrip*, int> >::iterator trip_iter = selected_car.begin(); trip_iter < selected_car.end(); trip_iter++)
+	//{
+	//	out << (*trip_iter).second << '\t';
+	//}
 
 	out << '}' << endl;
 }
@@ -1228,3 +1488,19 @@ double Passenger::get_walking_time(Busstop* busstop_dest_ptr, double curr_time)
 
     return busstop_orig_ptr->get_walking_time(busstop_dest_ptr, curr_time);
 }
+
+double Passenger::get_walking_time(Busstop* busstop_dest_ptr, int dest_section, double curr_time)
+{
+	Busstop* busstop_orig_ptr = OD_stop->get_origin();
+
+	return busstop_orig_ptr->get_walking_time(section, busstop_dest_ptr, dest_section, curr_time);
+}
+
+
+double Passenger::get_walking_distance(Busstop* busstop_dest_ptr, int section_dest)
+{
+	Busstop* busstop_orig_ptr = OD_stop->get_origin();
+
+	return busstop_orig_ptr->get_walking_distance_stop_section(section, busstop_dest_ptr, section_dest);
+}
+

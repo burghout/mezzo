@@ -1610,6 +1610,7 @@ bool Network::readbusstop (istream& in) // reads a busstop
 {
     char bracket;
     int stop_id, link_id, RTI_stop;
+	int num_sections; // Erik 18-09-15
     double position, length, min_DT;
     string name;
     bool has_bay, can_overtake, non_Ramdon_Pass_Generation;
@@ -1620,7 +1621,8 @@ bool Network::readbusstop (istream& in) // reads a busstop
         cout << "readfile::readsbusstop scanner jammed at " << bracket;
         return false;
     }
-    in >> stop_id >> name >> link_id >> position >> length >> has_bay >> can_overtake >> min_DT >> RTI_stop >> non_Ramdon_Pass_Generation;
+	// Erik 18-09-15
+    in >> stop_id >> name >> link_id >> position >> length >> num_sections >> has_bay >> can_overtake >> min_DT >> RTI_stop >> non_Ramdon_Pass_Generation;
 
     if (linkmap.find(link_id) == linkmap.end())
     {
@@ -1628,7 +1630,7 @@ bool Network::readbusstop (istream& in) // reads a busstop
 		return false;
     }
 
-    Busstop* st= new Busstop (stop_id, name, link_id, position, length, has_bay, can_overtake, min_DT, RTI_stop, non_Ramdon_Pass_Generation);
+    Busstop* st= new Busstop (stop_id, name, link_id, position, length, num_sections, has_bay, can_overtake, min_DT, RTI_stop, non_Ramdon_Pass_Generation);
     st->add_distance_between_stops(st,0.0);
     in >> bracket;
     if (bracket != '}')
@@ -2366,10 +2368,14 @@ bool Network::read_passenger_rates_format2 (istream& in) // reads the passenger 
     return ok;
 }
 
+
 bool Network::read_passenger_rates_format3 (istream& in) // reads the passenger rates in the format of arrival rate per OD in terms of stops (no path is pre-determined)
 {
     char bracket;
     int origin_stop_id, destination_stop_id;
+	// Erik 18-09-25
+	//int orgin_section, destination_section;
+	// */
     double arrival_rate;
     in >> bracket;
     if (bracket != '{')
@@ -2395,13 +2401,52 @@ bool Network::read_passenger_rates_format3 (istream& in) // reads the passenger 
     }
     Busstop* bs_d = *bs_d_it;
 
-    ODstops* od_stop = new ODstops (bs_o, bs_d, arrival_rate);
-    //ODstops* od_stop = bs_o->get_stop_od_as_origin_per_stop(bs_d);
-    od_stop->set_arrival_rate(arrival_rate* theParameters->demand_scale);
-    odstops.push_back(od_stop);
-    odstops_demand.push_back(od_stop);
-    bs_o->add_odstops_as_origin(bs_d, od_stop);
-    bs_d->add_odstops_as_destination(bs_o, od_stop);
+	// Erik 18-09-25
+	int num_orig_sections = bs_o->get_num_sections();
+	int num_dest_sections = bs_d->get_num_sections();
+	double section_fraction;
+	vector<double> section_fractions;
+	ODstops* od_stop;
+
+	if (num_orig_sections > 1 || num_dest_sections > 1)
+	{
+		cout << "Reading section fractions" << endl;
+		in >> bracket;
+		if (bracket != '{')
+		{
+			cout << "readfile::read_passenger_rates3 scanner jammed at " << bracket;
+			return false;
+		}
+
+
+		//map<int, double> section_fractions;
+		for (int section_comb_id = 1; section_comb_id <= num_orig_sections*num_dest_sections; ++section_comb_id)
+		{
+			in >> section_fraction;
+			section_fractions.push_back(section_fraction);
+			//cout << section_fraction << '\t';
+			//in >> section_fractions[num_sections*(orig_section_id - 1) + dest_section_id];
+		}
+		in >> bracket;
+		if (bracket != '}')
+		{
+			cout << "readfile::read_passenger_rates3 scanner jammed at " << bracket;
+			return false;
+		}
+		od_stop = new ODstops(bs_o, bs_d, arrival_rate, section_fractions);	
+	}
+	else 
+	{
+		od_stop = new ODstops(bs_o, bs_d, arrival_rate);
+	}
+
+	//ODstops* od_stop = bs_o->get_stop_od_as_origin_per_stop(bs_d);
+	od_stop->set_arrival_rate(arrival_rate* theParameters->demand_scale);
+	odstops.push_back(od_stop);
+	odstops_demand.push_back(od_stop);
+	bs_o->add_odstops_as_origin(bs_d, od_stop);
+	bs_d->add_odstops_as_destination(bs_o, od_stop);
+	
     in >> bracket;
     if (bracket != '}')
     {
@@ -2419,6 +2464,7 @@ bool Network::readbusstops_distances_format1 (istream& in)
     char bracket;
     int from_stop_id, to_stop_id, nr_stops;
     double distance;
+	int from_section, to_section; // Erik 18-09-27
     in >> bracket;
     if (bracket != '{')
     {
@@ -2441,7 +2487,7 @@ bool Network::readbusstops_distances_format1 (istream& in)
             cout << "readfile::readsbusstop_distances scanner jammed at " << bracket;
             return false;
         }
-        in >> to_stop_id >> distance;
+        in >> to_stop_id >> distance >> from_section >> to_section;
         // create the Visit_stop
         // find the stop in the list
         vector<Busstop*>::iterator to_bs_it = find_if(busstops.begin(), busstops.end(), compare <Busstop> (to_stop_id) );
@@ -2453,6 +2499,10 @@ bool Network::readbusstops_distances_format1 (istream& in)
         Busstop* to_bs = *to_bs_it;
         from_bs->add_distance_between_stops(to_bs,distance);
         to_bs->add_distance_between_stops(from_bs,distance);
+		// Erik 18-09-27 /*
+		from_bs->add_shortest_walk_between_stops(to_bs, pair<int, int>(from_section, to_section));
+		to_bs->add_shortest_walk_between_stops(from_bs, pair<int, int>(to_section, from_section));
+		// */
         in >> bracket;
         if (bracket != '}')
         {
@@ -5036,7 +5086,8 @@ bool Network::read_dwell_time_function (istream& in)
 bool Network::read_bustype (istream& in) // reads a bustype
 {
     char bracket;
-    int type_id, number_seats, number_cars, capacity, car_capacity, dtf_id;
+	// Erik 18-09-15
+    int type_id, number_seats, number_cars, car_capacity, dtf_id;
     double length;
     string bus_type_name;
 
@@ -5047,9 +5098,9 @@ bool Network::read_bustype (istream& in) // reads a bustype
         cout << "readfile::readsbusstop scanner jammed at " << bracket;
         return false;
     }
-    in >> type_id  >> bus_type_name >> length >> number_seats >> number_cars >> capacity >> car_capacity >> dtf_id;
+    in >> type_id  >> bus_type_name >> length >> number_seats >> number_cars >> car_capacity >> dtf_id;
     Dwell_time_function* dtf=(*(find_if(dt_functions.begin(), dt_functions.end(), compare <Dwell_time_function> (dtf_id) )));
-    Bustype* bt= new Bustype (type_id, bus_type_name, length, number_seats, number_cars, capacity, car_capacity, dtf);
+    Bustype* bt= new Bustype (type_id, bus_type_name, length, number_seats, number_cars, car_capacity, dtf);
     in >> bracket;
     if (bracket != '}')
     {
@@ -6140,6 +6191,8 @@ void Network::write_selected_path_header(ostream& out)
         << "Origin_stop_name" << '\t'
         << "Destination_stop_ID" << '\t'
         << "Destination_stop_name" << '\t'
+		<< "Origin_section" << '\t'
+		<< "Destination_section" << '\t'
         << "Start_time" << '\t'
         << "Number_transfers" << '\t'
         << "Total_walking_time" << '\t'
@@ -6147,6 +6200,10 @@ void Network::write_selected_path_header(ostream& out)
         << "Total_waiting_time_due_to_denied_boarding" << '\t'
         << "Total_in_vehicle_time" << '\t'
         << "Total_weighted_in_vehicle_time" << '\t'
+		<< "Path_stops" << '\t'
+		<< "Path_trips" << '\t'
+		<< "Path_sections" << '\t'
+		<< "Path_cars" << '\t'
         << "End_time" << '\t' << endl;
 }
 
@@ -6159,6 +6216,7 @@ void Network::write_transit_trajectory_header(ostream& out)
         << "Link_ID" << '\t'
         << "Entering?" << '\t'
         << "Arrival/Departure_time" << '\t' << endl;
+
 }
 
 void Network::write_od_summary_header(ostream& out)
@@ -7356,6 +7414,7 @@ double Network::executemaster()
     readsignalcontrols(filenames[2]);
 #ifdef _BUSES
     // read the transit system input
+	//set_workingdir(string("C:\\mezzo\\branches\\busmezzo\\standalone\\\Debug\\")); // Fix Erik 18-09-23
     this->readtransitroutes (workingdir + "transit_routes.dat"); //FIX IN THE MAIN READ & WRITE
     this->readtransitnetwork (workingdir + "transit_network.dat"); //FIX IN THE MAIN READ & WRITE
     this->readtransitfleet (workingdir + "transit_fleet.dat");
@@ -7682,7 +7741,9 @@ bool Network::init()
     {
         for (vector<ODstops*>::iterator iter_odstops = odstops_demand.begin(); iter_odstops < odstops_demand.end(); iter_odstops++ )
         {
-            if ((*iter_odstops)->get_arrivalrate() != 0.0 )
+			cout << "od arr rate " << (*iter_odstops)->get_arrivalrate() << '\t';
+			cout << "od check path set: " << (*iter_odstops)->check_path_set() << '\t';
+			if ((*iter_odstops)->get_arrivalrate() != 0.0 )
             {
                 if ((*iter_odstops)->check_path_set() == true)
                 {

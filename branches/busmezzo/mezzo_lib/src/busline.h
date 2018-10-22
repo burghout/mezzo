@@ -36,6 +36,7 @@ class Walking_time_dist;
 typedef pair<Bustrip*,double> Start_trip;
 typedef vector <Passenger*> passengers;
 
+
 class Output_Summary_Line // container object holding output data for busline
 {
 public:
@@ -108,8 +109,9 @@ public:
 		string start_stop_name_,
 		int end_stop_id_,
 		string end_stop_name_,
-		int passenger_load_
-		): line_id(line_id_), start_stop_id(start_stop_id_), start_stop_name(start_stop_name_),end_stop_id(end_stop_id_), end_stop_name(end_stop_name_),passenger_load(passenger_load_) {}
+		int passenger_load_ //,
+		//map<int,int> car_passenger_load_
+		): line_id(line_id_), start_stop_id(start_stop_id_), start_stop_name(start_stop_name_),end_stop_id(end_stop_id_), end_stop_name(end_stop_name_),passenger_load(passenger_load_) /*, car_passenger_load(car_passenger_load_)*/ {}
 
 	Busline_assign();			//!< simple constructor
 	virtual ~Busline_assign();  //!< destructor
@@ -121,13 +123,26 @@ public:
 			<< end_stop_id << '\t'
 			<< end_stop_name << '\t'
 			<< passenger_load << '\t'
+			/* << '{';
+		for (std::map<int, int>::iterator car_it = car_passenger_load.begin(); car_it != car_passenger_load.end(); car_it++)
+		{
+			out << (*car_it).second << '\t';
+		}
+
+		out << '}' */
 			<< endl;
+
 	}
 
 	void reset(){
 		start_stop_id = 0;
 		end_stop_id = 0;
 		passenger_load = 0;
+		//for (map<int, int>::iterator car_it = car_passenger_load.begin(); car_it != car_passenger_load.end(); car_it++)
+		//{
+		//	car_it->second = 0;
+		//	//car_occupancy[car_id] = 0;
+		//}
 	}
 
 	int line_id;
@@ -136,6 +151,8 @@ public:
 	int end_stop_id;
 	string end_stop_name;
 	int passenger_load;
+	// Erik 18-09-16
+	//map<int,int> car_passenger_load;
 };
 
 class Busline_travel_times // container that holds the total travel time experienced by line's trips
@@ -242,7 +259,9 @@ public:
 	// output-related functions
 	void calculate_sum_output_line();
 	// void calc_line_assignment();
+	// Erik 18-09-16
 	void add_record_passenger_loads_line (Busstop* stop1, Busstop* stop2, int pass_assign); //!< creates a log-file for passenegr load assignment info
+	//void add_record_passenger_loads_line(Busstop* stop1, Busstop* stop2, int pass_assign, map<int,int> car_pass_assign); //!< creates a log-file for passenegr load assignment info
 	void write_assign_output(ostream & out);
 	void update_total_travel_time (Bustrip* trip, double time);
 	void write_ttt_output(ostream & out);
@@ -287,6 +306,8 @@ protected:
 };
 
 typedef pair<Busstop*,double> Visit_stop;
+// Erik 18-09-16
+typedef pair<Busstop*, int> Stop_car;
 
 class Bustrip_assign // container object holding output data for trip assignments
 {
@@ -299,8 +320,10 @@ public:
 		string start_stop_name_,
 		int end_stop_id_,
 		string end_stop_name_,
-		int passenger_load_
-	): line_id(line_id_),trip_id(trip_id_),vehicle_id(vehicle_id_), start_stop_id(start_stop_id_), start_stop_name(start_stop_name_), end_stop_id(end_stop_id_),end_stop_name(end_stop_name_),passenger_load(passenger_load_) {}
+		int passenger_load_,
+		// Erik 18-09-16
+		map<int,int> car_passenger_load_
+	): line_id(line_id_),trip_id(trip_id_),vehicle_id(vehicle_id_), start_stop_id(start_stop_id_), start_stop_name(start_stop_name_), end_stop_id(end_stop_id_),end_stop_name(end_stop_name_),passenger_load(passenger_load_), car_passenger_load(car_passenger_load_) {}
 
 	virtual ~Bustrip_assign(); //!< destructor
 
@@ -313,6 +336,14 @@ public:
 			<< end_stop_id << '\t'
 			<< end_stop_name << '\t'
 			<< passenger_load << '\t'
+			<< '{';
+
+		for (std::map<int, int>::iterator car_it = car_passenger_load.begin(); car_it != car_passenger_load.end(); car_it++)
+		{
+			out << (*car_it).second << '\t';
+		}
+
+		out << '}'
 			<< endl;
 	}
 
@@ -323,6 +354,11 @@ public:
 		start_stop_id = 0;
 		end_stop_id = 0;
 		passenger_load = 0;
+		for (map<int, int>::iterator car_it = car_passenger_load.begin(); car_it != car_passenger_load.end(); car_it++)
+		{
+			car_it->second = 0;
+			//car_occupancy[car_id] = 0;
+		}
 	}
 
 	int line_id;
@@ -333,6 +369,7 @@ public:
 	int end_stop_id;
 	string end_stop_name;
 	int passenger_load;
+	map<int, int> car_passenger_load;
 };
 
 class Bustrip
@@ -368,6 +405,8 @@ public:
 	Busstop* get_last_stop_visited() {return last_stop_visited;}
 	double get_actual_dispatching_time () {return actual_dispatching_time;}
 	map <Busstop*, passengers> get_passengers_on_board () {return passengers_on_board;}
+	// Erik 18-09-15
+	//map<Busstop*, map<int,passengers>> get_passengers_on_board_car () {return passengers_on_board_car;}
 
 	void set_holding_at_stop(bool holding_at_stop_){holding_at_stop = holding_at_stop_;} //David added 2016-05-26
 	bool get_holding_at_stop(){return holding_at_stop;} //David added 2016-05-26
@@ -379,7 +418,7 @@ public:
 //	bool is_trip_timepoint(Busstop* stop); //!< returns 1 if true, 0 if false, -1 if busstop not found
 	bool activate (double time, Route* route, ODpair* odpair, Eventlist* eventlist_);	//!< activates the trip. Generates the bus and inserts in net.
 	bool advance_next_stop (double time, Eventlist* eventlist_);						//!< advances the pointer to the next stop (checking bounds)
-	void add_stops (vector <Visit_stop*>  st) {stops = st; next_stop = stops.begin();}
+	void add_stops(vector <Visit_stop*>  st);
 	void add_trips (vector <Start_trip*>  st) {driving_roster = st;}
 	double scheduled_arrival_time (Busstop* stop);										//!< finds the scheduled arrival time for a given bus stop
 	void book_stop_visit (double time);													//!< books a visit to the stop
@@ -396,14 +435,20 @@ public:
 // output-related functions
 	void write_assign_segments_output(ostream & out);
 	void record_passenger_loads (vector <Visit_stop*>::iterator start_stop); //!< creates a log-file for passenegr load assignment info
+	// Erik 18-09-16
+	//void record_passenger_loads(vector <pair<Busstop*,map<int,double>>*>::iterator start_stop);
 
 // public vectors
 	vector <Visit_stop*> stops;						//!< contains all the busstops and the times that they are supposed to be served. NOTE: this can be a subset of the total nr of stops in the Busline (according to the schedule input file)
 	map <Busstop*, double> stops_map;
 	vector <Start_trip*> driving_roster;			//!< trips assignment for each bus vehicle.
 	map <Busstop*, passengers> passengers_on_board; //!< passenger on-board stored by their alighting stop (format 3)
+	//Erik 18-09-16
+	//map<Busstop*, map<int, passengers>> passengers_on_board_car; //!< passenger on-board each car stored by alighting stop (format 3)
 	map <Busstop*, int> nr_expected_alighting;		//!< number of passengers expected to alight at the busline's stops (format 2)
 	map <Busstop*, int> assign_segements;			//!< contains the number of pass. travelling between trip segments
+	//Erik 18-09-16
+	map<Busstop*, map<int,int>> assign_car_segments; //!< contains the number of pass. travelling in each car between trip segments
 
 protected:
 	int id;										  //!< course nr
@@ -515,7 +560,13 @@ public:
 		nr_alighting = 0;
 		nr_boarding = 0;
 		occupancy = 0;
-		car_occupancy.clear();
+		// Erik 18-09-15
+		//car_occupancy.clear();
+		for (map<int, int>::iterator car_it = car_occupancy.begin(); car_it != car_occupancy.end(); car_it++)
+		{
+			car_it->second = 0;
+			//car_occupancy[car_id] = 0;
+		}
 		nr_waiting = 0;
 		total_waiting_time = 0;
 		holding_time = 0;
@@ -532,6 +583,7 @@ public:
 	double exit_time;
 	double riding_time;
 	double riding_pass_time;
+	// Erik 18-09-16: Check crowding calculations
 	double crowded_pass_riding_time;
 	double crowded_pass_dwell_time;
 	double crowded_pass_holding_time;
@@ -619,6 +671,8 @@ public:
 		int		link_id_,
 		double	position_,
 		double	length_,
+		// Erik 18-09-15
+		int		num_sections_,
 		bool	has_bay_,
 		bool	can_overtake_,
 		double	min_DT_,
@@ -639,6 +693,8 @@ public:
 	ODstops* get_stop_od_as_origin_per_stop (Busstop* stop) {return stop_as_origin[stop];}
 	bool check_stop_od_as_origin_per_stop (Busstop* stop) {if (stop_as_origin.count(stop)==0) return false; else return true;}
 	double get_length () {return length;}
+	// Erik 18-09-15
+	int get_num_sections() { return num_sections; }
 	double get_avaliable_length () {return avaliable_length;}
 	void set_avaliable_length (double avaliable_length_) {avaliable_length = avaliable_length_;}
 	bool get_bay () {return has_bay;}
@@ -646,7 +702,13 @@ public:
 	void set_nr_boarding (int nr_boarding_) {nr_boarding = nr_boarding_;}
 	void set_nr_alighting (int nr_alighting_) {nr_alighting = nr_alighting_;}
 	int get_nr_alighting () {return nr_alighting;}
-	int get_nr_waiting (Bustrip* trip) {return nr_waiting[trip->get_line()];}
+	// Erik 18-09-16
+	map<int, int> get_nr_boarding_section() { return nr_boarding_section; }
+	void set_nr_boarding_section(map<int,int> nr_boarding_section_) { nr_boarding_section = nr_boarding_section_; }
+	map<int, int> get_nr_alighting_section() { return nr_alighting_section; }
+	void set_nr_alighting_section(map<int, int> nr_alighting_section_) { nr_alighting_section = nr_alighting_section_; }
+
+	int get_nr_waiting(Bustrip* trip) { return nr_waiting[trip->get_line()]; }
 	double get_position () { return position;}
 	double get_exit_time() { return exit_time;}
 	vector<Busline*> get_lines () {return lines;}
@@ -657,6 +719,7 @@ public:
 	map<Busstop*,double> & get_walking_distances () {return distances;}
 	bool get_had_been_visited ( Busline * line) {return had_been_visited[line];}
 	double get_walking_distance_stop (Busstop* stop) {return distances[stop];}
+	double get_walking_distance_stop_section(int orig_section, Busstop* stop, int dest_section);
 	void save_previous_arrival_rates () {previous_arrival_rates.swap(arrival_rates);}
 	void save_previous_alighting_fractions () {previous_alighting_fractions.swap(alighting_fractions);}
 	bool check_walkable_stop ( Busstop* const & stop);
@@ -681,6 +744,7 @@ public:
 	void add_odstops_as_origin(Busstop* destination_stop, ODstops* od_stop){stop_as_origin[destination_stop]= od_stop; is_origin = true;}
 	void add_odstops_as_destination(Busstop* origin_stop, ODstops* od_stop){stop_as_destination[origin_stop]= od_stop; is_destination = true;}
 	void add_distance_between_stops (Busstop* stop, double distance) {distances[stop] = distance;}
+	void add_shortest_walk_between_stops(Busstop* stop, pair<int,int> section_pair) { shortest_walks[stop] = section_pair; } // Erik 18-09-27
 
 	void clear_odstops_as_origin(Busstop* destination_stop){stop_as_origin.erase(destination_stop);}
 	void clear_odstops_as_destination(Busstop* origin_stop){stop_as_destination.erase(origin_stop);}
@@ -691,7 +755,11 @@ public:
 	void book_bus_arrival(Eventlist* eventlist, double time, Bustrip* trip);			  //!< add to expected arrivals
 	double calc_exiting_time (Eventlist* eventlist, Bustrip* trip, double time);		  //!< To be implemented when time-points will work
 
-    double get_walking_time(Busstop*,double);
+	double get_walking_time(Busstop* next_stop, double curr_time);
+	double get_walking_time(int curr_section, Busstop* next_stop, int next_section, double curr_time); // Erik 18-09-27
+
+	//double get_walking_distance(Busstop* next_stop, double curr_time); // Erik 18-09-27
+	//double get_walking_distance(int curr_section, Busstop* next_stop, int next_section, double curr_time); // Erik 18-09-27
 
 // dwell-time calculation related functions
 	double calc_dwelltime (Bustrip* trip);								//!< calculates the dwelltime of each bus serving this stop. currently includes: passenger service times ,out of stop, bay/lane
@@ -729,6 +797,7 @@ protected:
 	int link_id;				//!< link it is on, maybe later a pointer to the respective link if needed
     double position;		    //!< relative position from the upstream node of the link (beteen 0 to 1)
     double length;				//!< length of the busstop, determines how many buses can be served at the same time
+	int num_sections;			//!< number of platform sections, used for section-specific crowding and car boarding
     bool has_bay;				//!< TRUE if it has a bay so it has an extra dwell time
 	bool can_overtake;			//!< 0 - can't overtake, 1 - can overtake freely; TRUE if it is possible for a bus to overtake another bus that stops in front of it (if FALSE - dwell time is subject to the exit time of a blocking bus)
     double min_DT;
@@ -742,6 +811,10 @@ protected:
 
 	int nr_boarding;			//!< pass. boarding
 	int nr_alighting;			//!< pass alighting
+
+	//Erik 18-09-16
+	map<int, int> nr_boarding_section; //!< pass. boarding car
+	map<int, int> nr_alighting_section; //!< pass. alighting car
 
     list<double> exogenous_arrivals; //!< unordered list of arrival times of exogenous trains
 
@@ -779,7 +852,9 @@ protected:
 	map <Busline*, bool> real_time_info;	//!< indicates for each line if it has real-time info. at this stop
 
 	// walking distances between stops (relevant only for demand format 3 and 4)
+	// Erik 18-09-15: Should be from other <stop,platform section> pairs?
 	map<Busstop*,double> distances;			//!< contains the distances [meters] from other bus stops
+	map<Busstop*, pair<int, int>> shortest_walks; // Erik 18-09-27: Pair of platform sections for which distances applies; other combinations get distance penalties
 
     // walking times between steps
     map<Busstop*, vector<Walking_time_dist*> > walking_time_distribution_map; //!< contains set of distributions for a given destination node

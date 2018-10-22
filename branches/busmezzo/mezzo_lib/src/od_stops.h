@@ -298,6 +298,9 @@ public:
 	ODstops ();
 	ODstops (Busstop* origin_stop_, Busstop* destination_stop_);
 	ODstops (Busstop* origin_stop_, Busstop* destination_stop_, double arrival_rate_);
+	// Erik 18-09-25: Should also contain origin and destination sections?
+	ODstops(Busstop* origin_stop_, Busstop* destination_stop_, double arrival_rate_, vector<double> section_fractions_);
+	//ODstops(Busstop* origin_stop_, int origin_section_, Busstop* destination_stop_, int destination_section_, double arrival_rate_);
 	~ODstops ();
 	void reset ();
 	void delete_passengers();
@@ -305,6 +308,12 @@ public:
 	//Gets and Sets:
 	Busstop* get_origin() {return origin_stop;}
 	Busstop* get_destination () {return destination_stop;}
+	// /* Erik 18-09-25
+	//int get_origin_section() { return origin_section; }
+	//int get_destination_section() { return destination_section; }
+	vector<double> get_section_fractions() { return section_fractions; }
+	void set_section_fractions(vector<double> section_fractions_) { section_fractions=section_fractions_; }
+	// */
 	void set_arrival_rate (double rate_) {arrival_rate= rate_;}
 	vector <Pass_path*> get_path_set () {return path_set;}
 	void set_path_set (vector <Pass_path*> path_set_) {path_set = path_set_;}
@@ -315,6 +324,10 @@ public:
 	void set_waiting_passengers(passengers passengers_) {waiting_passengers = passengers_;}
 	void set_origin (Busstop* origin_stop_) {origin_stop=origin_stop_;}
 	void set_destination (Busstop* destination_stop_) {destination_stop=destination_stop_;}
+	// /* Erik 18-09-25 
+	//void set_origin_section(int origin_section_) { origin_section = origin_section_; }
+	//void set_destination_section(int destination_section_) { destination_section = destination_section_; }
+	// */
 	void set_min_transfers (int min_transfers_) {min_transfers = min_transfers_;}
     map <Passenger*,list<Pass_boarding_decision> > get_boarding_output () {return output_pass_boarding_decision;}
     map <Passenger*,list<Pass_alighting_decision> > get_alighting_output () {return output_pass_alighting_decision;}
@@ -372,6 +385,11 @@ public:
 protected:
 	Busstop* origin_stop;
 	Busstop* destination_stop;
+	// /* Erik 18-09-25
+	//int origin_section;
+	//int destination_section;
+	// */ 
+	vector<double> section_fractions;
 	double arrival_rate; 
 	passengers waiting_passengers; // a list of passengers with this OD that wait at the origin
 	int min_transfers; // the minimum number of trnasfers possible for getting from O to D

@@ -26,6 +26,8 @@ Pass_path:: Pass_path (int path_id, vector<vector<Busline*> > alt_lines_, vector
 	}
 }
 
+// Erik 18-09-16: Walking distances are stored separately 
+// Do not contain crowding information -> no need to keep track of car
 Pass_path::Pass_path (int path_id, vector<vector<Busline*> > alt_lines_, vector <vector <Busstop*> > alt_transfer_stops_, vector<double> walking_distances_)
 {
 	p_id = path_id;
@@ -138,6 +140,7 @@ double Pass_path::calc_total_in_vehicle_time (double time, Passenger* pass)
 	return (sum_in_vehicle_time/60); // minutes
 }
 
+// Erik 18-09-16: Depends on walking distances
 double Pass_path::calc_total_walking_distance()
 {
 	double sum_walking_distance = 0.0;
@@ -379,13 +382,18 @@ double Pass_path::calc_curr_leg_waiting_RTI (vector<Busline*> leg_lines, vector 
 	return (min_waiting_time/60); // minutes
 }
 
+// Erik 18-09-16: Depends on total walking distance
 double Pass_path::calc_arriving_utility (double time, Passenger* pass)
 // taking into account: transfer penalty + future waiting times + in-vehicle time + walking times
 { 
 	double avg_walking_speed = random->nrandom(theParameters->average_walking_speed, theParameters->average_walking_speed/4);
-	return (random->nrandom(theParameters->transfer_coefficient, theParameters->transfer_coefficient / 4) * number_of_transfers + random->nrandom(theParameters->in_vehicle_time_coefficient, theParameters->in_vehicle_time_coefficient / 4 ) * calc_total_in_vehicle_time(time, pass) + random->nrandom(theParameters->waiting_time_coefficient, theParameters->waiting_time_coefficient / 4) * calc_total_waiting_time (time, true, false, avg_walking_speed, pass) + random->nrandom(theParameters->walking_time_coefficient, theParameters->walking_time_coefficient/4) * (calc_total_walking_distance() / avg_walking_speed));
+	return (random->nrandom(theParameters->transfer_coefficient, theParameters->transfer_coefficient / 4) * number_of_transfers 
+		+ random->nrandom(theParameters->in_vehicle_time_coefficient, theParameters->in_vehicle_time_coefficient / 4 ) * calc_total_in_vehicle_time(time, pass) 
+		+ random->nrandom(theParameters->waiting_time_coefficient, theParameters->waiting_time_coefficient / 4) * calc_total_waiting_time (time, true, false, avg_walking_speed, pass) 
+		+ random->nrandom(theParameters->walking_time_coefficient, theParameters->walking_time_coefficient/4) * (calc_total_walking_distance() / avg_walking_speed));
 }
 
+// Erik 18-09-16: Depends on total walking distance
 double Pass_path::calc_waiting_utility (vector <vector <Busstop*> >::iterator stop_iter, double time, bool alighting_decision, Passenger* pass)
 {	
 	stop_iter++;
@@ -412,7 +420,10 @@ double Pass_path::calc_waiting_utility (vector <vector <Busstop*> >::iterator st
 
 			if (wt < theParameters->max_waiting_time) //Changed by Jens 2015-03-23 to avoid weird effects when the schedule is too pessimistic
 			{
-				return (random->nrandom(theParameters->transfer_coefficient, theParameters->transfer_coefficient / 4) * number_of_transfers + random->nrandom(theParameters->in_vehicle_time_coefficient, theParameters->in_vehicle_time_coefficient / 4 ) * ivt + random->nrandom(theParameters->waiting_time_coefficient, theParameters->waiting_time_coefficient / 4) * wt + random->nrandom(theParameters->walking_time_coefficient, theParameters->walking_time_coefficient/4) * calc_total_walking_distance()/ avg_walking_speed);
+				return (random->nrandom(theParameters->transfer_coefficient, theParameters->transfer_coefficient / 4) * number_of_transfers 
+					+ random->nrandom(theParameters->in_vehicle_time_coefficient, theParameters->in_vehicle_time_coefficient / 4 ) * ivt 
+					+ random->nrandom(theParameters->waiting_time_coefficient, theParameters->waiting_time_coefficient / 4) * wt 
+					+ random->nrandom(theParameters->walking_time_coefficient, theParameters->walking_time_coefficient/4) * calc_total_walking_distance()/ avg_walking_speed);
 			}
 		}
 	} 

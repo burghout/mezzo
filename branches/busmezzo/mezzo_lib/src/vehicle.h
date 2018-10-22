@@ -93,12 +93,14 @@ class Bustype
 {
 public:
 	Bustype ();
-	Bustype (int type_id_, string bus_type_name, double length_, int number_seats_, int number_cars_, int capacity_, int car_capacity_, Dwell_time_function* dwell_time_function_);
+	// Erik 18-09-15
+	Bustype (int type_id_, string bus_type_name, double length_, int number_seats_, int number_cars_, int car_capacity_, Dwell_time_function* dwell_time_function_);
 	~Bustype ();
 	double get_length () {return length;}
-	int get_number_seats () {return number_seats;}
+	int get_number_seats () {return number_cars*car_number_seats;}
+	int get_car_number_seats() { return car_number_seats; }
 	int get_number_cars() { return number_cars; }
-	int get_capacity () {return capacity;}
+	int get_capacity () {return number_cars*car_capacity;}
 	int get_car_capacity() { return car_capacity; }
 	Dwell_time_function* get_dt_function() {return dwell_time_function;}
 	int get_id () {return type_id;}
@@ -106,9 +108,9 @@ protected:
 	int type_id;	// bus type id
 	string bus_type_name;
 	double length;
-	int number_seats;
+	int car_number_seats;
 	int number_cars;
-	int capacity;
+	//int capacity;
 	int car_capacity;
 	Dwell_time_function* dwell_time_function;
 };
@@ -124,10 +126,16 @@ public:
 			occupancy.insert(std::pair<int, int>(car_id, 0)); 
 		}*/
 		on_trip = false;
-		number_seats = 45;
+		car_number_seats = 45;
 		number_cars = 1;
-		capacity = 70;
-		car_capacity = 50;
+		// Erik 18-08-15
+		car_occupancy = map<int, int>();
+		for (int car_id = 1; car_id <= number_cars; car_id++) {
+			car_occupancy.insert(std::pair<int, int>(car_id, 0));
+		}
+		// Erik 18-09-15
+		//capacity = 70;
+		car_capacity = 70;
 		type = 4;
 		random = new (Random);
 		if (randseed != 0)
@@ -146,10 +154,15 @@ public:
 			occupancy.insert(std::pair<int, int>(car_id, 0)); 
 		}*/
 		on_trip = false;
-		number_seats = 50;
+		// Erik 18-09-15
+		car_number_seats = 50;
 		number_cars = 1;
-		capacity = 70;
-		car_capacity = 50;
+		car_occupancy = map<int, int>();
+		for (int car_id = 1; car_id <= number_cars; car_id++) {
+			car_occupancy.insert(std::pair<int, int>(car_id, 0));
+		}		
+		//capacity = 70;
+		car_capacity = 70;
 		type = 4;
 		random = new (Random);
 		if (randseed != 0)
@@ -170,9 +183,13 @@ public:
 		}*/
 		on_trip = false;
 		length = bty->get_length();
-		number_seats = bty->get_number_seats();
+		car_number_seats = bty->get_car_number_seats();
 		number_cars = bty->get_number_cars();
-		capacity = bty->get_capacity();
+		car_occupancy = map<int, int>();
+		for (int car_id = 1; car_id <= number_cars; car_id++) {
+			car_occupancy.insert(std::pair<int, int>(car_id, 0));
+		}
+		//capacity = bty->get_capacity();
 		car_capacity = bty->get_car_capacity();
 		random = new (Random);
 		if (randseed != 0)
@@ -189,8 +206,8 @@ public:
 // GETS and SETS
 	int get_bus_id () {return bus_id;}
 	void set_bus_id (int bus_id_) {bus_id = bus_id_;}
-	map<int, int> get_car_occupancy() {return occupancy;}
-	int get_occupancy() { return std::accumulate(std::begin(occupancy), std::end(occupancy), 0, [](int value, const std::map<int, int>::value_type& p) { return value + p.second; }); }
+	map<int, int> get_car_occupancy() {return car_occupancy;}
+	int get_car_occupancy(int car_) { return car_occupancy[car_]; }
 	//int get_occupancy() {return occupancy;}
 	//void set_occupancy (const int occup) {occupancy=occup;}
 	/*void set_occupancy(const int occup) {
@@ -214,9 +231,11 @@ public:
 	//	else { occupancy[3] = get_car_capacity(); occupancy[2] = occup - occupancy[3]; occupancy[1] = 0; }
 	//}
 
-	int get_number_seats () {return number_seats;}
+	int get_number_seats () {return number_cars*car_number_seats;}
+	int get_car_number_seats() { return car_number_seats; }
 	int get_number_cars () {return number_cars;}
-	int get_capacity () {return capacity;}
+	// Erik 18-09-15
+	int get_capacity () {return number_cars*car_capacity;}
 	int get_car_capacity() { return car_capacity; }
 	bool get_on_trip () {return on_trip;}
 	void set_on_trip (bool on_trip_) {on_trip=on_trip_;}
@@ -227,7 +246,10 @@ public:
 // other functions:	
 	void set_bustype_attributes (Bustype* bty); // change the fields that are determined by the bustype
 	void advance_curr_trip (double time, Eventlist* eventlist); // progresses trip-pointer 
+	int get_occupancy();
 	void set_occupancy(const int occup);
+	void set_car_occupancy(const map<int, int> car_occup);
+	void set_car_occupancy(int car_, int occ_) { car_occupancy[car_] = occ_; }
 	int get_car_id(); //FOR_DELETE
 
 // output-related functions
@@ -238,12 +260,12 @@ protected:
 	int	bus_id;
 	Bustype* bus_type;
 	Random* random;
-	int number_seats; // Two added variables for LOS satistics and for dwell time calculations
+	int car_number_seats; // Two added variables for LOS satistics and for dwell time calculations
 	int number_cars;
-	int capacity; // In the future will be determined according to the bus type
+	//int capacity; // In the future will be determined according to the bus type
 	int car_capacity;
 	//int occupancy;
-	map<int, int> occupancy;
+	map<int, int> car_occupancy;
 	Bustrip* curr_trip;
 	bool on_trip; // is true when bus is on a trip and false when waiting for the next trip
 	list <Busvehicle_location> output_vehicle; //!< list of output data for buses visiting stops
