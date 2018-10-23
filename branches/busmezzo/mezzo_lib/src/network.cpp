@@ -1836,7 +1836,7 @@ bool Network::readbusline(istream& in) // reads a busline
     Busstop* stop;
     Busstop* tp;
 
-    //David added 2016-04-18, transfer related variables
+    //transfer related variables
     int tr_line_id;	//!< id of line that 'this' busline synchronizes transfers with, 0 if line is not synchronizing transfers
     int nr_tr_stops;	//!< number of transfer stops for this pair of lines
     int tr_stop_id;	//!< ids of each transfer stop
@@ -1853,7 +1853,7 @@ bool Network::readbusline(istream& in) // reads a busline
         cout << "readfile::readsbusline scanner jammed at " << bracket << ", expected {";
         return false;
     }
-    bracket = ' '; // 2016-03-29 David added: reset bracket when we are checking for more than one consecutive '{', or '}'. Maybe use a bracket counter instead?
+    bracket = ' ';
     in >> busline_id >> opposite_busline_id >> name >> ori_id >> dest_id >> route_id >> vehtype >> holding_strategy >> max_headway_holding >> init_occup_per_stop >> nr_stops_init_occup;
     if(theParameters->transfer_sync)
     {
@@ -1962,7 +1962,7 @@ bool Network::readbusline(istream& in) // reads a busline
         }
     }
 
-    bracket = ' '; // David added 2016-03-29
+    bracket = ' ';
     in >> bracket;
     if (bracket != '}')
     {
@@ -2000,21 +2000,21 @@ bool Network::readbusline(istream& in) // reads a busline
 
 
 Busline* Network::create_busline(
-    int                 busline_id,             //!< unique identification number
-    int                 opposite_busline_id,    //!< identification number of the line that indicates the opposite direction (relevant only when modeling passenger route choice)
-    string              name,                   //!< a descriptive name
-    Busroute*           br,                     //!< bus route
-    vector <Busstop*>   stops,                  //!< stops on line
-    Vtype*              vt,
-    ODpair*             odptr,                  //!< OD pair
-    int                 holding_strategy,       //!< indicates the type of holding strategy used for line
-    float               max_headway_holding,    //!< threshold parameter relevant in case holding strategies 1 or 3 are chosen or max holding time in [sec] in case of holding strategy 6
-    double              init_occup_per_stop,    //!< average number of passengers that are on-board per prior upstream stops (scale of a Gamma distribution)
-    int                 nr_stops_init_occup,    //!< number of prior upstream stops resulting with initial occupancy (shape of a Gamma distribution)
-    bool                flex_line               //!< true if this line allows for dynamically scheduled trips
+    int                     busline_id,            //!< unique identification number
+    int                     opposite_busline_id,   //!< identification number of the line that indicates the opposite direction (relevant only when modeling passenger route choice)
+    string                  name,                  //!< a descriptive name
+    Busroute*               broute,                //!< bus route
+    vector <Busstop*>       stops,                 //!< stops on line
+    Vtype*                  vtype,                 //!< Vehicle type of this line (TODO 2018-10-23: Currently completely unusued but removing will invalidate all current network inputs)
+    ODpair*                 odptr,                 //!< OD pair
+    int                     holding_strategy,      //!< indicates the type of holding strategy used for line
+    float                   max_headway_holding,   //!< threshold parameter relevant in case holding strategies 1 or 3 are chosen or max holding time in [sec] in case of holding strategy 6
+    double                  init_occup_per_stop,   //!< average number of passengers that are on-board per prior upstream stops (scale of a Gamma distribution)
+    int                     nr_stops_init_occup,   //!< number of prior upstream stops resulting with initial occupancy (shape of a Gamma distribution)
+    bool                    flex_line              //!< true if this line allows for dynamically scheduled trips
 )
 {
-    Busline* bl = new Busline(busline_id, opposite_busline_id, name, br, stops, vt, odptr, holding_strategy, max_headway_holding, init_occup_per_stop, nr_stops_init_occup, flex_line);
+    Busline* bl = new Busline(busline_id, opposite_busline_id, name, broute, stops, vtype, odptr, holding_strategy, max_headway_holding, init_occup_per_stop, nr_stops_init_occup, flex_line);
 
     for (vector<Busstop*>::iterator stop_iter = bl->stops.begin(); stop_iter < bl->stops.end(); stop_iter++)
     {

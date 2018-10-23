@@ -213,7 +213,7 @@ void TestIntegration::testSaveResults()
      // test here the properties that should be true after saving the results
 
 	//test if output files match the expected output files
-	for (const QString o_filename : output_filenames)
+    for (const QString& o_filename : output_filenames)
 	{
 		QString ex_o_fullpath = expected_outputs_path + o_filename;
 		QFile ex_outputfile(ex_o_fullpath);

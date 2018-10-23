@@ -163,23 +163,23 @@ public:
 	double total_travel_time;
 };
 
-class Busline: public Action
+class Busline : public Action
 {
 public:
-	Busline (
-		int						id_,						//!< unique identification number
-		int						opposite_id_,				//!< identification number of the line that indicates the opposite direction (relevant only when modeling passenger route choice)
-		string					name_,						//!< a descriptive name
-		Busroute*				busroute_,					//!< bus route
-		vector <Busstop*>		stops_,						//!< stops on line
-		Vtype*					vtype_,
-		ODpair*					odpair_,					//!< OD pair
-		int						holding_strategy_,			//!< indicates the type of holding strategy used for line
-		float					max_headway_holding_,		//!< threshold parameter relevant in case holding strategies 1 or 3 are chosen or max holding time in [sec] in case of holding strategy 6
-		double					init_occup_per_stop_,		//!< average number of passengers that are on-board per prior upstream stops (scale of a Gamma distribution)
-		int						nr_stops_init_occup_,		//!< number of prior upstream stops resulting with initial occupancy (shape of a Gamma distribution)
-		bool					flex_line_ = false			//!< true if this line allows for dynamically scheduled trips
-	); //!< Initializing constructor
+    Busline(
+        int                     id_,                    //!< unique identification number
+        int                     opposite_id_,           //!< identification number of the line that indicates the opposite direction (relevant only when modeling passenger route choice)
+        string                  name_,                  //!< a descriptive name
+        Busroute*               busroute_,              //!< bus route
+        vector <Busstop*>       stops_,                 //!< stops on line
+        Vtype*                  vtype_,                 //!< Vehicle type of this line (TODO 2018-10-23: Currently completely unusued but removing will invalidate all current network inputs)
+        ODpair*                 odpair_,                //!< OD pair
+        int                     holding_strategy_,      //!< indicates the type of holding strategy used for line
+        float                   max_headway_holding_,   //!< threshold parameter relevant in case holding strategies 1 or 3 are chosen or max holding time in [sec] in case of holding strategy 6
+        double                  init_occup_per_stop_,   //!< average number of passengers that are on-board per prior upstream stops (scale of a Gamma distribution)
+        int                     nr_stops_init_occup_,   //!< number of prior upstream stops resulting with initial occupancy (shape of a Gamma distribution)
+        bool                    flex_line_ = false      //!< true if this line allows for dynamically scheduled trips
+    ); //!< Initializing constructor
 
 	Busline ();			//!< simple constructor
 	virtual ~Busline(); //!< destructor
