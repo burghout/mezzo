@@ -63,6 +63,7 @@ Busline::Busline (int id_, int opposite_id_, string name_, Busroute* busroute_, 
 {
 	active=false;
 	trip_count = 0;
+    planned_headway = 0.0; 
 }
 
 Busline::~Busline()
@@ -254,9 +255,21 @@ bool Busline::check_last_trip (Bustrip* trip)
 return false;
 }
 
-
+/*! @ingroup PassengerDecisionParameters
+    
+    Returns time, according to schedule, until the next trip is expected to arrive at stop. If no trip is scheduled to arrive, and no dynamically generated trips can be assigned to this line, then time to end of simulation is returned.
+    Currently, if the busline is a flex line, the planned headway for this line is ALWAYS returned. Used in Pass_path::calc_curr_leg_headway both for day2day calculation of prior knowledge
+    as well as for CSGM filtering rule as well as connection decision calculation of waiting time due to prior knowledge
+*/
 double Busline::find_time_till_next_scheduled_trip_at_stop (Busstop* stop, double time)
 {
+    if (theParameters->drt && flex_line) //if this line can have dynamically generated trips, then a trip may still arrive within the planned headway
+    {
+        DEBUG_MSG_V("Busline::find_time_till_next_scheduled_trip_at_stop returning planned headway " << planned_headway << " for flex line " << id);
+        return planned_headway;
+        //return ::drt_first_rep_max_headway;
+    }
+
 	if (!trips.empty())
 	{
 		for (list <Start_trip>::iterator trip_iter = trips.begin(); trip_iter != trips.end(); trip_iter++)
@@ -269,24 +282,24 @@ double Busline::find_time_till_next_scheduled_trip_at_stop (Busstop* stop, doubl
 			}
 		}
 	}
-	else
-	{
-		if (theParameters->drt && flex_line) //if this line can have dynamically generated trips, then a trip may still arrive within the planned headway
-		{
-			return ::drt_first_rep_planned_headway;
-		}
-	}
+	
 	// currently - in case that there is no additional trip scheduled - return the time till simulation end
-	//DEBUG_MSG_V("Busline::find_time_till_next_scheduled_trip_at_stop returning time until simulation end " << theParameters->running_time - time << " for line with no trips");
 	return theParameters->running_time - time;
 }
 
+/*! @ingroup PassengerDecisionParameters
+    Returns the trip that is scheduled to arrive next at the given stop from this line. If the line is DRT and no trip is scheduled to arrive yet, then nullptr is returned.
+
+    @todo
+        - Check cases where nullptr is returned
+*/
 Bustrip* Busline::find_next_expected_trip_at_stop (Busstop* stop)
 {
 	Bustrip* next_expected_trip = nullptr;
 	if (trips.empty()) //there are no expected trips from this line for this stop
 	{
-		//DEBUG_MSG_V("Find next expected trip at stop returning nullptr for busline " << id);
+        assert(theParameters->drt);
+		DEBUG_MSG_V("Find next expected trip at stop returning nullptr for busline " << id);
 		return next_expected_trip;
 	}
 	if (stop->get_had_been_visited(this) == false)
@@ -313,8 +326,21 @@ Bustrip* Busline::find_next_expected_trip_at_stop (Busstop* stop)
 	return trips.back().first; //default is to return the last trip to visit the stop if no other trip from this line is scheduled to visit the stop
 }
 
+/** @ingroup PassengerDecisionParameters
+    According to method description this is supposed to be a estimation of waiting time based on real-time calculations. If no trip is scheduled for a DRT
+    route we return the collective planned headway for the DRT service, regardless of distance between stops. Kindof like a pizza delivery guarantee. Should replace this
+    with a real time prediction of next arrival based on en-route DRT vehicles as well or closest oncall vehicles or both.
+
+    @todo
+        - What to return here? Planned headway here certainly does not make sense. Want to return an expected WT based on real-time calculations, maybe add a method to control center to return the expected IVT of the closest on_call or incoming vehicle to this stop
+        - If RTI = 0 is this method never accessed?
+*/
 double Busline::time_till_next_arrival_at_stop_after_time (Busstop* stop, double time)
 {
+    assert(theParameters->real_time_info != 0); //this method at least claims that its based on RTI
+    if (theParameters->drt && flex_line)
+        return planned_headway;
+
 	double time_till_next_visit;
 	if (stops.front()->get_had_been_visited(this) == false) 
 	// in case no trip started yet - according to time table of the first trip
@@ -323,8 +349,9 @@ double Busline::time_till_next_arrival_at_stop_after_time (Busstop* stop, double
 		{
 			if (theParameters->drt && flex_line)
 			{
-				//DEBUG_MSG_V("Busline::time_till_next_arrival_at_stop_after_time returning drt planned headway " << drt_first_rep_planned_headway << " for line " << id << " with no trips");
-				return ::drt_first_rep_planned_headway;
+				//DEBUG_MSG_V("Busline::time_till_next_arrival_at_stop_after_time returning drt planned headway " << drt_first_rep_max_headway << " for line " << id << " with no trips");
+                return planned_headway;
+                //return ::drt_first_rep_max_headway;
 			}
 			else
 			{
@@ -383,16 +410,32 @@ double Busline::extra_disruption_on_segment (Busstop* next_stop, double time)
 	}
 	return 0.0;
 }
+
+/** @ingroup PassengerDecisionParameters
+    All headways returned here are schedule based. Used for calculating attributes for passenger paths. Used in calculations of path utility, waiting utility, staying utility, connection utility. Used 
+    for holding times, disruptions. Used for CSGM for 'check worthwhile to wait' rule. Used for recording waiting information for passengers, WT_PK. Used when calculating accumulated frequency for
+    collective path utility evaluation.
+    
+    @todo 
+        - Sometimes the headway returned here is used to represent the waiting time for a single line. Sometimes the line headways are collected to give the expected frequency of a specific stop. Need
+        to first decide if DRT lines vs fixed lines should be represented as either separate paths in the same path set or as alternative lines within the same path. Once this has been decided I will need
+        to adjust these headway calculations again.
+*/
 double Busline::calc_curr_line_headway ()
 {
-    if (theParameters->drt) //Note: current busmezzo implementation without DRT still assumes at least 2 scheduled trips per line, will cause out of bounds iterator violation otherwise
+    if (theParameters->drt && flex_line)
     {
-        if (trips.empty() || static_cast<int> (trips.size()) == 1)
-        {
-            DEBUG_MSG_V("Busline::calc_curr_line_headway returning headway " << drt_first_rep_planned_headway << " for empty/single trips list in line " << id);
-            return ::drt_first_rep_planned_headway; //return a default headway that enables passengers to try out the drt service in the first replication
-        }
+        assert(theParameters->real_time_info == 0);
+        return planned_headway;
     }
+    //if (theParameters->drt) //Note: current busmezzo implementation without DRT still assumes at least 2 scheduled trips per line, will cause out of bounds iterator violation otherwise
+    //{
+    //    if (trips.empty() || static_cast<int> (trips.size()) == 1)
+    //    {
+    //        DEBUG_MSG_V("Busline::calc_curr_line_headway returning headway " << drt_first_rep_max_headway << " for empty/single trips list in line " << id);
+    //        return ::drt_first_rep_max_headway; //return a default headway that enables passengers to try out the drt service in the first replication
+    //    }
+    //}
 
 	list<Start_trip>::iterator succ_trip;
 	list<Start_trip>::iterator prec_trip;
@@ -414,16 +457,29 @@ double Busline::calc_curr_line_headway ()
 	}
 }
 
+/** @ingroup PassengerDecisionParameters
+    Really this method seems to only be used for holding strategy 3. For DRT we currently assume no RTI and no holding for DRT lines.
+    Returning the line-specific planned headway for all drt 
+
+    @todo
+        - Like many other methods we still assume RTI == 0. Figure out what we return when RTI is available
+*/
 double Busline::calc_curr_line_headway_forward ()
 {
-    if (theParameters->drt)
+    if (theParameters->drt && flex_line)
+    {
+        assert(holding_strategy == 0);
+        assert(theParameters->real_time_info == 0);
+        return planned_headway; //currently return planned headway no matter what dynamically generated trips are currently scheduled for this line
+    }
+    /*if (theParameters->drt)
     {
         if (trips.empty() || static_cast<int>(trips.size()) == 1)
         {
-            DEBUG_MSG_V("Busline::calc_curr_line_headway returning headway " << drt_first_rep_planned_headway << " for empty/single trips list " << this->get_id());
-            return ::drt_first_rep_planned_headway;
+            DEBUG_MSG_V("Busline::calc_curr_line_headway returning headway " << drt_first_rep_max_headway << " for empty/single trips list " << this->get_id());
+            return ::drt_first_rep_max_headway;
         }
-    }
+    }*/
 
 	list<Start_trip>::iterator succ_trip;
 	list<Start_trip>::iterator prec_trip;
@@ -450,8 +506,23 @@ double Busline::calc_curr_line_headway_forward ()
 	}
 }
 
-double Busline:: calc_max_headway ()
+/** @ingroup PassengerDecisionParameters
+    Returns time-independent maximum headway. Headway for DRT is always greater or equal to the default of 0 that is usually returned when no trips are available for this line.
+    Used only for eliminating paths when generating the collective consideration choice set in "check worthwhile to wait".  
+    
+    @todo
+        - Since this is network dependent, should be generated automatically instead (via e.g. freeflow times between stop links). To save time
+    and move forward a shared guaranteed maximum waiting time from anywhere in the DRT service area. Effect is that less lines will be excluded from the pass_paths unless
+    this parameter is set very low relative to other transit services.
+*/
+double Busline:: calc_max_headway () 
 {
+    if (theParameters->drt && flex_line)
+    {
+        DEBUG_MSG_V("Busline::calc_max_headway returning " << ::drt_first_rep_max_headway << " for line " << this->get_id());
+        return ::drt_first_rep_max_headway;
+    }
+
 	double max_headway = 0.0;
 	if (!trips.empty() && static_cast<int>(trips.size()) != 1)
 	{
@@ -460,14 +531,19 @@ double Busline:: calc_max_headway ()
 			max_headway = max(max_headway, (*(next(start_trip_iter))).second - (*(start_trip_iter)).second);
 		}
 	}
-	else
-	{
-		if(theParameters->drt && flex_line)
-			max_headway = ::drt_first_rep_planned_headway;
-		
-		//DEBUG_MSG_V("Busline::calc_max_headway returning " << drt_first_rep_planned_headway << " for empty/single trips list " << this->get_id());
-	}
-	
+	//else
+	//{
+ //       if (theParameters->drt && flex_line) //currently it is expected that all lines with no trips initially assigned to them are flex lines
+ //       {
+ //           DEBUG_MSG_V("Busline::calc_max_headway returning " << ::drt_first_rep_max_headway << " for empty/single trips list " << this->get_id());
+ //           return ::drt_first_rep_max_headway;
+ //       }
+	//	/*if(theParameters->drt && flex_line)
+	//		max_headway = ::drt_first_rep_max_headway; 
+	//	*/
+	//	
+	//}
+	//
 	return max_headway;
 }
 
@@ -495,7 +571,14 @@ Bustrip* Busline::get_previous_trip (Bustrip* reference_trip) //!< returns the t
 	return trips.front().first;
 }
 
-double Busline::calc_curr_line_ivt (Busstop* start_stop, Busstop* end_stop, int rti, double time)
+/** @ingroup PassengerDecisionParameters
+    If the trips list is empty, returns a time-independent expected IVT for this DRT service line/route based on delta_at_stops read from transit_network.dat.
+    If the trips list is not empty, will return the expected IVT (based on schedule) of whatever is the current trip for this line
+    Method is used in CSGM and all dynamic compensatory utility calculations, used also to calculate total ivt for use in dominancy rules
+    @todo
+        - Calc expected IVT from freeflow 'i.e. scheduled' times or speed-density functions of busline route links instead? Any dangers with this?
+*/
+double Busline::calc_curr_line_ivt (Busstop* start_stop, Busstop* end_stop, int rti, double time) 
 {
 	double extra_travel_time = 0.0;
 	if (rti == 3)
@@ -541,8 +624,8 @@ double Busline::calc_curr_line_ivt (Busstop* start_stop, Busstop* end_stop, int 
 	else
 	{
         assert(theParameters->drt); //trips list should never be empty for a non-drt scenario, this was a very widespread assumption in many different places of the code
-		if(!flex_line) //if trips list for this busline is empty then it should be a line that allows for dynamically generated trips
-            DEBUG_MSG_V("Warning: IVT being calculated for a busline that is not a flex line and with no schedule trips for it");
+        assert(flex_line); //if trips list for this busline is empty then it should be a line that allows for dynamically generated trips
+            
 		vector<pair<Busstop*, double>>::iterator board_stop;
 		vector<pair<Busstop*, double>>::iterator alight_stop;
 		double earliest_time_ostop = 0.0;
@@ -568,8 +651,8 @@ double Busline::calc_curr_line_ivt (Busstop* start_stop, Busstop* end_stop, int 
 		if (found_board == false || found_alight == false)
 			return 10000; //default in case of no matching
 
-		//double ivt = cumulative_arrival_time - earliest_time_ostop + extra_travel_time;
-		//DEBUG_MSG_V("Busline::calc_curr_line_ivt returning IVT " << ivt << " for line " << id << " with no trips assigned to it yet between stop " << start_stop->get_name() << " and stop " << end_stop->get_name() << endl );
+		double ivt = cumulative_arrival_time - earliest_time_ostop + extra_travel_time;
+		DEBUG_MSG_V("Busline::calc_curr_line_ivt returning IVT " << ivt << " for line " << id << " with no trips assigned to it yet between stop " << start_stop->get_name() << " and stop " << end_stop->get_name() << endl );
 		return cumulative_arrival_time - earliest_time_ostop + extra_travel_time;
 	}
 }

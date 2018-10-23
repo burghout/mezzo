@@ -1,5 +1,8 @@
+/**
+ * @addtogroup DRT
+ * @{
+ */
 /**@file   controlstrategies.h
- * @ingroup DRT
  * @brief  Collection of algorithms used by the process classes of Controlcenter to assign demand-responsive transit vehicles to passenger requests
  * 
  */
@@ -39,7 +42,7 @@ struct Request
     Request(int pid, int oid, int did, int l, double dt, double t);
 
     bool operator == (const Request& rhs) const; //!< default equality comparison of Requests
-    bool operator < (const Request& rhs) const; //!< default less-than comparison of Requests in the order of smallest time, smallest load, smallest origin stop id, smallest destination stop id and finally smallest passenger id
+    bool operator < (const Request& rhs) const; //!< default less-than comparison of Requests in the order of smallest departure time, smallest time, smallest load, smallest origin stop id, smallest destination stop id and finally smallest passenger id
 
 };
 Q_DECLARE_METATYPE(Request);
@@ -102,8 +105,8 @@ public:
 	bool calc_trip_generation(const set<Request>& requestSet, const vector<Busline*>& candidateServiceRoutes, const map<BusState, set<Bus*>>& fleetState, const double time, set<Bustrip*>& unmatchedTripSet) const override;
 };
 
-/*Algorithms for generating empty vehicle trips*/
 
+//Empty vehicle trip generation strategies
 //! @brief Reactive empty vehicle repositioning strategy that attempts to generate a trip from the current stop of the closest on-call transit vehicle to the origin stop of the OD in requestSet with the highest demand
 /*!
     @todo
@@ -158,7 +161,7 @@ public:
 //! @brief Naive matching strategy always attempts to match the unmatchedTrip to the first candidate transit vehicle found (if any) at the origin stop of the unmatchedTrip
 /*!
     @todo
-        - Rework ugly hack for moving vehicles between stop pairs
+        - Rework ugly hack for moving vehicles between stop pairs, maybe implement a 'perform_Uturn' type method
 */
 class NaiveMatching : public MatchingStrategy
 {
@@ -203,3 +206,4 @@ public:
 };
 
 #endif // ifndef CONTROLSTRATEGIES_H
+/**@}*/

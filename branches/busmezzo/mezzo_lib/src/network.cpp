@@ -16,7 +16,7 @@
 //using namespace std;
 
 // initialise the global variables and objects
-double drt_first_rep_planned_headway=0;
+double drt_first_rep_max_headway=0;
 double drt_first_rep_waiting_utility=10; //default is to evaluate waiting utility for drt service positively in the first rep
 int drt_min_occupancy=0;
 
@@ -1323,13 +1323,13 @@ bool Network::readcontrolcenters(const string& name)
     assert(in);
     string keyword;
     in >> keyword;
-    if (keyword != "drt_first_rep_planned_headway:")
+    if (keyword != "drt_first_rep_max_headway:")
     {
-        DEBUG_MSG("readcontrolcenters:: no drt_first_rep_planned_headway keyword, read: " << keyword);
+        DEBUG_MSG("readcontrolcenters:: no drt_first_rep_max_headway keyword, read: " << keyword);
         in.close();
         return false;
     }
-    in >> ::drt_first_rep_planned_headway;
+    in >> ::drt_first_rep_max_headway;
 
     in >> keyword;
     if (keyword != "drt_first_rep_waiting_utility:")
@@ -1998,6 +1998,71 @@ bool Network::readbusline(istream& in) // reads a busline
     return ok;
 }
 
+
+Busline* Network::create_busline(
+    int                 busline_id,             //!< unique identification number
+    int                 opposite_busline_id,    //!< identification number of the line that indicates the opposite direction (relevant only when modeling passenger route choice)
+    string              name,                   //!< a descriptive name
+    Busroute*           br,                     //!< bus route
+    vector <Busstop*>   stops,                  //!< stops on line
+    Vtype*              vt,
+    ODpair*             odptr,                  //!< OD pair
+    int                 holding_strategy,       //!< indicates the type of holding strategy used for line
+    float               max_headway_holding,    //!< threshold parameter relevant in case holding strategies 1 or 3 are chosen or max holding time in [sec] in case of holding strategy 6
+    double              init_occup_per_stop,    //!< average number of passengers that are on-board per prior upstream stops (scale of a Gamma distribution)
+    int                 nr_stops_init_occup,    //!< number of prior upstream stops resulting with initial occupancy (shape of a Gamma distribution)
+    bool                flex_line               //!< true if this line allows for dynamically scheduled trips
+)
+{
+    Busline* bl = new Busline(busline_id, opposite_busline_id, name, br, stops, vt, odptr, holding_strategy, max_headway_holding, init_occup_per_stop, nr_stops_init_occup, flex_line);
+
+    for (vector<Busstop*>::iterator stop_iter = bl->stops.begin(); stop_iter < bl->stops.end(); stop_iter++)
+    {
+        (*stop_iter)->add_lines(bl);
+        (*stop_iter)->add_line_nr_waiting(bl, 0);
+        (*stop_iter)->add_line_nr_boarding(bl, 0);
+        (*stop_iter)->add_line_nr_alighting(bl, 0);
+        (*stop_iter)->set_had_been_visited(bl, false);
+        if (theParameters->real_time_info == 0)
+        {
+            (*stop_iter)->add_real_time_info(bl,0);
+        }
+        else
+        {
+            (*stop_iter)->add_real_time_info(bl,1);
+        }
+    }
+
+    if (flex_line) //if flexible vehicle scheduling is allowed for this line then add it to a controlcenter as a potential service route and let the start and end stops of the line know of their origin and destination nodes for use in shortest path methods
+    {
+        assert(theParameters->drt);
+        Origin* origin_node = bl->get_odpair()->get_origin();
+        Destination* dest_node = bl->get_odpair()->get_destination();
+        Busstop* firststop = bl->stops.front();
+        Busstop* laststop = bl->stops.back();
+
+        if (!firststop->get_origin_node())
+        {
+            firststop->set_origin_node(origin_node);
+        }
+        if (!laststop->get_dest_node())
+        {
+            laststop->set_dest_node(dest_node);
+        }
+
+        ccmap[1]->addServiceRoute(bl);
+    }
+
+    // add to buslines vector
+    buslines.push_back (bl);
+
+
+
+    return bl;
+
+}
+
+
 bool Network::readbustrip_format1(istream& in) // reads a trip
 {
     if (theParameters->drt){
@@ -2063,6 +2128,11 @@ bool Network::readbustrip_format1(istream& in) // reads a trip
 
 bool Network::readbustrip_format2(istream& in) // reads a trip
 {
+    if (theParameters->drt) {
+        DEBUG_MSG_V("DRT currently not available with trip format 2. Aborting...");
+        abort();
+    }
+
     char bracket;
     int busline_id, nr_stops, nr_trips;
     double arrival_time_at_stop, dispatching_time;
@@ -2205,6 +2275,7 @@ bool Network::readbustrip_format3(istream& in) // reads a trip
     }
 
     bl->set_static_trips(bl->get_trips()); //save trips to static_trips for resets
+    bl->set_planned_headway(headway); //store planned headway, assumed the same between resets
 
     in >> bracket;
     if (bracket != '}')
@@ -3013,36 +3084,41 @@ void Network::generate_indirect_paths()
 }
 
 
-Busroute* Network::create_busroute_from_stops(int id, Origin* origin_node, Destination* destination_node, vector<Busstop *> stops, double time)//!< creates the
+Busroute* Network::create_busroute_from_stops(int id, Origin* origin_node, Destination* destination_node, const vector<Busstop*>& stops, double time)
 {
+    assert(origin_node);
+    assert(destination_node);
+    if (stops.empty())
+        return nullptr;
 
     // get path from origin to first stop ... to last stop; to destination
     vector <Link*> rlinks, segment;
     int rootlink = origin_node->get_links().front()->get_id(); // TODO: for all outgoing links from origin
+    rlinks.push_back(linkmap[rootlink]); //rootlink of origin will always be included in potential route
 
-    for (auto s:stops)
+    for (auto s : stops)
     {
         if (s->get_link_id() != rootlink) // if the stop is not already on current rootlink
         {
-            segment = shortest_path_to_node(rootlink,s->get_id(),time);
+            int dsnode = linkmap[s->get_link_id()]->get_out_node_id(); //id of closest node downstream from stop
+            segment = shortest_path_to_node(rootlink, dsnode, time);
+
             if (segment.empty()) // if one of the stops in the sequence is not reachable, return nullptr
                 return nullptr;
-            rlinks.insert(rlinks.end(),segment.begin(), segment.end()); // add segment to rlinks
+            rlinks.insert(rlinks.end(), segment.begin() + 1, segment.end()); // add segment to rlinks, always exclude rootlink
             rootlink = s->get_link_id();
         }
     }
     // add segment to destination if needed
-    if (linkmap [rootlink]->get_out_node_id() != destination_node->get_id())
+    if (linkmap[rootlink]->get_out_node_id() != destination_node->get_id())
     {
-        segment = shortest_path_to_node(rootlink,destination_node->get_id(),time);
+        segment = shortest_path_to_node(rootlink, destination_node->get_id(), time);
         if (segment.empty()) // if one of the stops in the sequence is not reachable, return nullptr
             return nullptr;
-        rlinks.insert(rlinks.end(),segment.begin(), segment.end()); // add segment to rlinks
+        rlinks.insert(rlinks.end(), segment.begin() + 1, segment.end()); // add segment to rlinks excluding rootlink for last stop
     }
-    if (rlinks.empty())
-        return nullptr;
-    else
-        return new Busroute(id, origin_node,destination_node,rlinks);
+
+    return new Busroute(id, origin_node, destination_node, rlinks);
 }
 
 

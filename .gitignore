@@ -42,3 +42,4 @@ moc_*
 *.db-shm
 *.db-wal
 *.json
+Doxyfile

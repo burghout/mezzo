@@ -744,6 +744,7 @@ bool Parameters::read_parameters (istream & in )
 	if (keyword != "drt=")
 	{
 		cout << "ERROR reading Parameters file, expecting: drt=, read: " << keyword << endl;
+        return false;
 	}
 	in >> drt;
     if (drt && theParameters->demand_format != 3) //connections between CC and passenger are currently only possible for demand format 3
