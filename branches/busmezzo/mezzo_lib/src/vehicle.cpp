@@ -351,7 +351,9 @@ void Bus::set_state(const BusState newstate, const double time)
 	{
 		BusState oldstate = state_;
 		state_ = newstate;
-		print_state();
+#ifdef  _DRTDEBUG
+        print_state();
+#endif //  DRTDEBUG_
 		emit stateChanged(this, oldstate, state_, time);
 	}
 }
