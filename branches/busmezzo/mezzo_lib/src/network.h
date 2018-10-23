@@ -165,7 +165,7 @@ public:
 	bool find_alternatives_all (int lid, double penalty, Incident* incident); //!< finds the alternative paths 'without' link lid.
 	//void delete_spurious_routes(); //!< deletes all routes that have no OD pair.
 	void renum_routes (); //!< renumerates the routes, to keep a consecutive series after deletions & additions
-    Busroute* create_busroute_from_stops(int id, Origin* origin_node, Destination* destination_node, vector<Busstop*> stops, double time = 0.0);//!< creates the
+    Busroute* create_busroute_from_stops(int id, Origin* origin_node, Destination* destination_node, const vector<Busstop*>& stops, double time = 0.0);//!< creates the
     Busline* create_busline  (
             int						busline_id,						//!< unique identification number
             int						opposite_busline_id,				//!< identification number of the line that indicates the opposite direction (relevant only when modeling passenger route choice)

@@ -3084,36 +3084,41 @@ void Network::generate_indirect_paths()
 }
 
 
-Busroute* Network::create_busroute_from_stops(int id, Origin* origin_node, Destination* destination_node, vector<Busstop *> stops, double time)//!< creates the
+Busroute* Network::create_busroute_from_stops(int id, Origin* origin_node, Destination* destination_node, const vector<Busstop*>& stops, double time)
 {
+    assert(origin_node);
+    assert(destination_node);
+    if (stops.empty())
+        return nullptr;
+
     // get path from origin to first stop ... to last stop; to destination
     vector <Link*> rlinks, segment;
     int rootlink = origin_node->get_links().front()->get_id(); // TODO: for all outgoing links from origin
-	rlinks.push_back(linkmap[rootlink]); //rootlink of origin will always be included in potential route
+    rlinks.push_back(linkmap[rootlink]); //rootlink of origin will always be included in potential route
 
-    for (auto s:stops)
+    for (auto s : stops)
     {
         if (s->get_link_id() != rootlink) // if the stop is not already on current rootlink
         {
-			int dsnode = linkmap[s->get_link_id()]->get_out_node_id(); //id of closest node downstream from stop
-			segment = shortest_path_to_node(rootlink, dsnode, time);
-            
+            int dsnode = linkmap[s->get_link_id()]->get_out_node_id(); //id of closest node downstream from stop
+            segment = shortest_path_to_node(rootlink, dsnode, time);
+
             if (segment.empty()) // if one of the stops in the sequence is not reachable, return nullptr
                 return nullptr;
-            rlinks.insert(rlinks.end(),segment.begin()+1, segment.end()); // add segment to rlinks, always exclude rootlink
+            rlinks.insert(rlinks.end(), segment.begin() + 1, segment.end()); // add segment to rlinks, always exclude rootlink
             rootlink = s->get_link_id();
         }
     }
     // add segment to destination if needed
-    if (linkmap [rootlink]->get_out_node_id() != destination_node->get_id())
+    if (linkmap[rootlink]->get_out_node_id() != destination_node->get_id())
     {
-        segment = shortest_path_to_node(rootlink,destination_node->get_id(),time);
+        segment = shortest_path_to_node(rootlink, destination_node->get_id(), time);
         if (segment.empty()) // if one of the stops in the sequence is not reachable, return nullptr
             return nullptr;
-		rlinks.insert(rlinks.end(), segment.begin()+1, segment.end()); // add segment to rlinks excluding rootlink for last stop
+        rlinks.insert(rlinks.end(), segment.begin() + 1, segment.end()); // add segment to rlinks excluding rootlink for last stop
     }
-    
-    return new Busroute(id, origin_node,destination_node,rlinks);
+
+    return new Busroute(id, origin_node, destination_node, rlinks);
 }
 
 

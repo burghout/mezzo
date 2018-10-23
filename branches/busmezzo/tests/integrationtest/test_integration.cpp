@@ -115,38 +115,39 @@ void TestIntegration::testCreateBusroute()
     Busstop* stopA = net->get_busstop_from_name("A"); // on link 12
     Busstop* stopD = net->get_busstop_from_name("D"); // on link 34
     vector <Busstop*> stops;
+
+    Busroute* emptyStopsRoute = net->create_busroute_from_stops(1, od_pair->get_origin(), od_pair->get_destination(), stops);
+    QVERIFY(emptyStopsRoute == nullptr);
+
     stops.push_back(stopA);
     stops.push_back(stopD);
-    Busroute* routeViaAandD = net->create_busroute_from_stops(1,od_pair->get_origin(), od_pair->get_destination(),stops);
+    Busroute* routeViaAandD = net->create_busroute_from_stops(2, od_pair->get_origin(), od_pair->get_destination(), stops);
     QVERIFY(routeViaAandD); // if nullptr something went wrong
+
     // verify the route links: 12 -> 23 -> 34
     vector <Link*> links = routeViaAandD->get_links();
-    QVERIFY (links.size() == 3);
-    QVERIFY (links.front()->get_id() == 12);
-    QVERIFY (links.back()->get_id() == 34);
+    QVERIFY(links.size() == 3);
+    QVERIFY(links.front()->get_id() == 12);
+    QVERIFY(links.back()->get_id() == 34);
 
     //test incorrect route
     Busstop* stopB = net->get_busstop_from_name("B"); // on link 67, unreachable
     stops.push_back(stopB);
 
-    Busroute* routeViaAandDandB = net->create_busroute_from_stops(2,od_pair->get_origin(), od_pair->get_destination(),stops);
-    QVERIFY(routeViaAandDandB==nullptr); // should return nullptr since link 67 is not reachable
+    Busroute* routeViaAandDandB = net->create_busroute_from_stops(3, od_pair->get_origin(), od_pair->get_destination(), stops);
+    QVERIFY(routeViaAandDandB == nullptr); // should return nullptr since link 67 is not reachable
 
-    // WILCO: TEMP STUFF TO TEST CREATION OF BUSLINE
-    // test to create busline on the fly
+    //Vtype* vtype = new Vtype(888, "octobus", 1.0, 20.0);
 
-
-    Vtype* vtype = new Vtype(888,"octobus",1.0,20.0);
-    //Busline * bl = new Busline(1,0,"test",routeViaAandD,stops,vtype,od_pair,0,0.0,0.0,0,false);
-    Busline * bl = net->create_busline(5,0,"test",routeViaAandD,stops,vtype,od_pair,2,0.0,0.0,0,false);
-
-    // test to create nxn buslines from/to all stops
+    // test to create direct busroutes from/to all stops
     auto stopsmap = net->get_stopsmap();
+    vector<Busroute*> routesFound;
+    routesFound.reserve(6);
 
-    int counter=100;
-    for (auto startstop:stopsmap)
+    int counter = 100;
+    for (auto startstop : stopsmap)
     {
-        for (auto endstop:stopsmap)
+        for (auto endstop : stopsmap)
         {
             if (startstop != endstop)
             {
@@ -154,32 +155,33 @@ void TestIntegration::testCreateBusroute()
                 stops.push_back(startstop.second);
                 stops.push_back(endstop.second);
                 qDebug() << "checking route for busline: " << startstop.first << " to " << endstop.first;
-                Busroute* newRoute = net->create_busroute_from_stops(counter,od_pair->get_origin(), od_pair->get_destination(),stops);
+                Busroute* newRoute = net->create_busroute_from_stops(counter, od_pair->get_origin(), od_pair->get_destination(), stops);
                 if (newRoute != nullptr)
                 {
                     qDebug() << " route found";
 
-					//test if route found is a connected sequence of links
-					vector<Link*> rlinks = newRoute->get_links();
-					for (Link* rlink : rlinks)
-					{
-						Link* nextlink = newRoute->nextlink(rlink);
-						if (nextlink)
-						{
-							QString msg = QString("Failure, link %1 is not an upstream link to link %2").arg(rlink->get_id()).arg(nextlink->get_id());
-							QVERIFY2(rlink->get_out_node_id() == nextlink->get_in_node_id(), qPrintable(msg)); //outnode of preceding link should be innode of succeeding link
-						}
-					}
+                    //test if route found is a connected sequence of links
+                    vector<Link*> rlinks = newRoute->get_links();
+                    for (Link* rlink : rlinks)
+                    {
+                        Link* nextlink = newRoute->nextlink(rlink);
+                        if (nextlink)
+                        {
+                            QString msg = QString("Failure, link %1 is not an upstream link to link %2").arg(rlink->get_id()).arg(nextlink->get_id());
+                            QVERIFY2(rlink->get_out_node_id() == nextlink->get_in_node_id(), qPrintable(msg)); //outnode of preceding link should be innode of succeeding link
+                        }
+                    }
 
-                    Busline * newLine = net->create_busline(counter,0,"test",newRoute,stops,vtype,od_pair,2,0.0,0.0,0,false);
+                    routesFound.push_back(newRoute);
                 }
                 else
-                    qDebug() << " no route found" ;
+                    qDebug() << " no route found";
                 counter++;
-
             }
         }
     }
+
+    QVERIFY2(routesFound.size() == 6, "Failure, there should be 6 direct routes from/to all stops for the SF network: A->B, A->C, A->D, B->C, B->D and C->D");
 
 }
 
