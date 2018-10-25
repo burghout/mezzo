@@ -1,0 +1,83 @@
+#drawing_parameters
+   draw_link_ids= 0
+   link_thickness= 1
+   node_thickness= 1
+   node_radius= 3
+   queue_thickness= 2
+   selected_thickness= 10
+   show_background_image= 1
+   linkcolor= black
+   nodecolor= blue
+   queuecolor= red
+   backgroundcolor= white
+   selectedcolor= green
+   gui_update_step= 0.2
+#moe_parameters
+   moe_speed_update= 900.0
+   moe_inflow_update= 900.0
+   moe_outflow_update= 900.0
+   moe_queue_update= 900.0
+   moe_density_update= 900.0
+   linktime_alpha= 0.2
+#assignment_matrix_parameters
+   use_ass_matrix= 0
+   ass_link_period= 900.0
+   ass_od_period= 900.0
+#turning_parameters
+   default_lookback_size= 20
+   turn_penalty_cost= 99999.0
+#server_parameters
+   od_servers_deterministic= 1
+   odserver_sigma= 0.2
+   sd_server_scale= 1.0
+   server_type= 3
+#vehicle_parameters
+   standard_veh_length= 7
+#route_parameters
+   update_interval_routes= 900.0
+   mnl_theta= -0.00417
+   kirchoff_alpha= -1.0
+   delete_bad_routes= 0
+   max_rel_route_cost= 1.5
+   small_od_rate= 0.0
+#mime_parameters
+   mime_comm_step= 0.4
+   mime_min_queue_length= 20
+   mime_queue_dis_speed= 6
+   vissim_step= 0.1
+   sim_speed_factor= 1.9
+#transit_demand_parameters
+   demand_format= 3
+   demand_scale= 1.0
+   choice_set_indicator= 0
+   pass_day_to_day_indicator= 0
+   in_vehicle_d2d_indicator= 0
+   break_criterium= 0.1
+   transfer_coefficient= -0.334
+   in_vehicle_time_coefficient= -0.04
+   waiting_time_coefficient= -0.07
+   walking_time_coefficient= -0.07
+   average_walking_speed= 66.66
+   max_nr_extra_transfers= 1
+   absolute_max_transfers= 3
+   max_in_vehicle_time_ratio= 2.0
+   max_walking_distance= 2500.0
+   max_waiting_time= 1800.0
+   dominancy_perception_threshold= 1.5
+   choice_model= 1
+   real_time_info= 0
+   share_RTI_network= 0.0
+   start_pass_generation= 3600.0
+   stop_pass_generation= 7200.0
+   od_pairs_for_generation= 0
+   gate_generation_time_diff= 120.0
+#transit_control_parameters
+   riding_time_weight= 1.0
+   dwell_time_weight= 1.0
+   waiting_time_weight= 1.0
+   holding_time_weight= 1.0
+   compliance_rate= 0.8
+   transfer_sync= 0
+   drt= 1
+#day2day_assignment
+    default_alpha_RTI= 0.7
