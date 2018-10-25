@@ -180,6 +180,7 @@ public:
         int                     nr_stops_init_occup,   //!< number of prior upstream stops resulting with initial occupancy (shape of a Gamma distribution)
         bool                    flex_line              //!< true if this line allows for dynamically scheduled trips
     ); //!< creates a busline and adds it to Network::buslines
+    bool createAllDRTLines(); //!< creates all the DRT lines between each stop pair that has a viable route between them
     bool run(int period); //!< RUNS the network for 'period' seconds
 	bool addroutes (int oid, int did, ODpair* odpair); //!< adds routes to an ODpair
 	bool add_od_routes()	; //!< adds routes to all ODpairs

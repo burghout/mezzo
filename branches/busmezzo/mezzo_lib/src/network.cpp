@@ -12,6 +12,7 @@
 
 #include "network.h"
 #include "od.h"
+#include <QDebug>
 
 //using namespace std;
 
@@ -2056,10 +2057,90 @@ Busline* Network::create_busline(
     // add to buslines vector
     buslines.push_back (bl);
 
-
-
     return bl;
+}
 
+bool Network::createAllDRTLines()
+{
+    // test to create direct busroutes from/to all stops
+    vector <Busstop*> stops;
+    auto stopsmap = get_stopsmap();
+    vector<Busroute*> routesFound;
+    vector<Busline*>  buslinesFound;
+    //*** Start of dummy values
+    theParameters->drt=true;
+    ODpair* od_pair = odpairs.front(); // for now just use this as dummy
+    Vtype* vtype = new Vtype(888, "octobus", 1.0, 20.0);
+
+
+    int routeIdCounter = 10000; // TODO: update to find max routeId from busroutes vector
+    int busLineIdCounter = 10000; //  TODO: update later
+
+   //*** end of dummy values
+
+    for (auto startstop : stopsmap)
+    {
+        // find best origin for startstop if it does not exist
+        if (startstop.second->get_origin_node() == nullptr)
+        {
+            // find  origin node
+
+        }
+        for (auto endstop : stopsmap)
+        {
+            if (endstop.second->get_dest_node() == nullptr)
+            {
+                // find  destination node
+
+            }
+            if (startstop != endstop)
+            {
+                // find best destination for endstop and add to map
+                // find best OD pair or create.
+                stops.clear();
+                stops.push_back(startstop.second);
+                stops.push_back(endstop.second);
+                qDebug() << "checking route for busline: " << startstop.first << " to " << endstop.first;
+
+                Busroute* newRoute = create_busroute_from_stops(routeIdCounter, od_pair->get_origin(), od_pair->get_destination(), stops);
+                if (newRoute != nullptr)
+                {
+                    qDebug() << " route found";
+
+//                    //test if route found is a connected sequence of links
+//                    vector<Link*> rlinks = newRoute->get_links();
+//                    for (Link* rlink : rlinks)
+//                    {
+//                        Link* nextlink = newRoute->nextlink(rlink);
+//                        if (nextlink)
+//                        {
+//                            QString msg = QString("Failure, link %1 is not an upstream link to link %2").arg(rlink->get_id()).arg(nextlink->get_id());
+//                            qDebug() << msg;
+//                        }
+//                    }
+
+                    routesFound.push_back(newRoute);
+                    routeIdCounter++;
+                    // create busLine
+                    Busline* newLine = create_busline(busLineIdCounter,0,"DRT Line",newRoute,stops,vtype,od_pair,0,0.0,0.0,0,true);
+                    if (newLine != nullptr)
+                    {
+                        buslinesFound.push_back(newLine);
+                        busLineIdCounter++;
+                    }
+                }
+                else
+                    qDebug() << " no route found";
+
+            }
+        }
+    }
+    // add the routes found to the busroutes
+    busroutes.insert(busroutes.end(), routesFound.begin(), routesFound.end());
+    // add the buslines
+    buslines.insert(buslines.end(),buslinesFound.begin(),buslinesFound.end());
+
+    return true;
 }
 
 

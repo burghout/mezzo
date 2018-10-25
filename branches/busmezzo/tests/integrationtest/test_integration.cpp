@@ -50,7 +50,8 @@ public:
 private Q_SLOTS:
     void testCreateNetwork(); //!< test loading a network
     void testInitNetwork(); //!< test generating passenger path sets & loading a network
-    void testCreateBusroute();
+    void testCreateBusroute(); //!< tests creation of busroutes from stop pairs
+    void testCreateBusLine(); //!< tests creation of buslines
     void testRunNetwork(); //!< test running the network
     void testSaveResults(); //!< tests saving results
     void testDelete(); //!< tests correct deletion
@@ -183,6 +184,11 @@ void TestIntegration::testCreateBusroute()
 
     QVERIFY2(routesFound.size() == 6, "Failure, there should be 6 direct routes from/to all stops for the SF network: A->B, A->C, A->D, B->C, B->D and C->D");
 
+}
+
+void TestIntegration::testCreateBusLine()
+{
+    net->createAllDRTLines();
 }
 
 void TestIntegration::testRunNetwork()
