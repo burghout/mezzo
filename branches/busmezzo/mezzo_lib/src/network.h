@@ -236,6 +236,8 @@ public:
 	double get_runtime(){return runtime;}
 	double get_time_alpha(){return time_alpha;}
 	Parameters* get_parameters () {return theParameters;} 
+
+    // WILCO: note: returning a reference to member variables of an object is in general a BAD IDEA
 	vector <ODpair*>& get_odpairs () {return odpairs;} // keep as vector
 
 	map <int, Origin*>& get_origins() {return originmap;}
@@ -244,6 +246,8 @@ public:
 	map <int,Link*>& get_links() {return linkmap;}
 
 	map <int, Busstop*>& get_stopsmap() { return busstopsmap; }
+    vector <Busroute*>&  get_busroutes() { return busroutes; } // bad idea, but consistent with the other get_*
+    vector <Busline*>& get_buslines() {return buslines;}
 	
 	multimap<odval, Route*>::iterator find_route (int id, odval val);
 	bool exists_route (int id, odval val); // checks if route with this ID exists for OD pair val

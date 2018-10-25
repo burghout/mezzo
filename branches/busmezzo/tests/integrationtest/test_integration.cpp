@@ -51,7 +51,7 @@ private Q_SLOTS:
     void testCreateNetwork(); //!< test loading a network
     void testInitNetwork(); //!< test generating passenger path sets & loading a network
     void testCreateBusroute(); //!< tests creation of busroutes from stop pairs
-    void testCreateBusLine(); //!< tests creation of buslines
+    void testCreateAllDRTLines(); //!< tests creation of buslines
     void testRunNetwork(); //!< test running the network
     void testSaveResults(); //!< tests saving results
     void testDelete(); //!< tests correct deletion
@@ -186,9 +186,16 @@ void TestIntegration::testCreateBusroute()
 
 }
 
-void TestIntegration::testCreateBusLine()
+void TestIntegration::testCreateAllDRTLines()
 {
-    net->createAllDRTLines();
+    auto busroutes = net->get_busroutes();
+    auto buslines = net->get_buslines();
+    QVERIFY (busroutes.size() == 4);
+    QVERIFY (buslines.size() == 9);
+    net->createAllDRTLines(); // should find 6 more routes and create 6 more lines
+
+    QVERIFY (busroutes.size() == 10);
+    QVERIFY (buslines.size() == 15);
 }
 
 void TestIntegration::testRunNetwork()
