@@ -12,7 +12,7 @@
 
 #include "network.h"
 #include "od.h"
-#include <QDebug>
+
 
 //using namespace std;
 
@@ -2071,7 +2071,10 @@ bool Network::createAllDRTLines()
     theParameters->drt=true;
     ODpair* od_pair = odpairs.front(); // for now just use this as dummy
     Vtype* vtype = new Vtype(888, "octobus", 1.0, 20.0);
-
+    int id = 1;
+    int tg_strategy=0, ev_strategy=0, tvm_strategy=0, vs_strategy = 0;
+    Controlcenter* cc = new Controlcenter(eventlist, this, id, tg_strategy, ev_strategy, tvm_strategy, vs_strategy);
+    ccmap[id] = cc; //add to network map of control centers
 
     int routeIdCounter = 10000; // TODO: update to find max routeId from busroutes vector
     int busLineIdCounter = 10000; //  TODO: update later
