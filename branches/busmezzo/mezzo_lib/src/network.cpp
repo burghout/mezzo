@@ -6013,7 +6013,6 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
                 for (map<Passenger*,list<Pass_alighting_decision> >::iterator pass_iter2 = alighting_decisions.begin(); pass_iter2 != alighting_decisions.end(); pass_iter2++)
                 {
                     od_iter->second->write_alighting_output(out6, (*pass_iter2).first);
-                    break;
                 }
 
                 map <Passenger*,list<Pass_connection_decision> > connection_decisions = od_iter->second->get_connection_output();
