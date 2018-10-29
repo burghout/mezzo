@@ -197,6 +197,11 @@ void TestDRT::testCreateAllDRTLines()
     buslines = net->get_buslines();
     QVERIFY (busroutes.size() == 10);
     QVERIFY (buslines.size() == 16);
+
+    // WILCO temp crap
+    Busstop* stopB = net->get_busstop_from_name("B"); // on link 12
+    auto o = net->findNearestOriginToStop(stopB);
+
 }
 
 void TestDRT::testRunNetwork()
