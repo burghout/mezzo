@@ -2141,6 +2141,7 @@ bool Network::createAllDRTLines()
         {
             // find  origin node
 
+
         }
         for (auto endstop : stopsmap)
         {
@@ -2199,7 +2200,69 @@ bool Network::createAllDRTLines()
     return true;
 }
 
+Origin* Network::findNearestOriginToStop(Busstop* stop)
+{
+    int upstreamNodeId = linkmap[stop->get_link_id()]->get_in_node_id();
+    if (originmap.count(upstreamNodeId)) // if upstream node is origin, found the nearest and return
+      return originmap [upstreamNodeId];
+    if (junctionmap.count(upstreamNodeId))
+    {
+        Junction* upstreamNode = junctionmap [upstreamNodeId];
+        std::map <double, Origin*> nearestOrigins;
+        for (Link* il:upstreamNode->get_incoming())
+        {
+            if (originmap.count(il->get_in_node_id()))
+               nearestOrigins [il->get_cost(0.0)] = originmap [il->get_in_node_id()];
+        }
+        if (!nearestOrigins.empty())
+            return nearestOrigins.begin()->second;
+    }
 
+    // Otherwise do shortest path from every origin to upstreamNodeId
+
+    std::map <double, Origin*> costMap;
+    for (auto o:originmap)
+    {
+        for (auto rlink : o.second->get_links())
+        {
+            auto sp = shortest_path_to_node(rlink->get_id(),upstreamNodeId,0.0);
+            costMap [graph->costToNode(upstreamNodeId)] = o.second;
+        }
+    }
+    if (!costMap.empty())
+        return costMap.begin()->second;
+    // if control reaches here, there is no reachable downstream destination for the stop
+    qDebug() << "ERROR: Network::findNearestOriginFromStop(Busstop* stop) : cannot find Origin node for stop "
+             << stop->get_id();
+    return nullptr;
+}
+
+Destination* Network::findNearestDestinationToStop(Busstop* stop)
+{
+    int downstreamNodeId = linkmap[stop->get_link_id()]->get_out_node_id();
+    if (destinationmap.count(downstreamNodeId)) // downstream Node is Destination
+        return destinationmap [downstreamNodeId];
+    else
+    {
+        if (junctionmap.count(downstreamNodeId))
+        {
+            Junction* downstreamNode = junctionmap [downstreamNodeId];
+            std::map <double, Destination*> nearestDestinations;
+            for (Link* ol:downstreamNode->get_outgoing())
+            {
+                if (destinationmap.count(ol->get_out_node_id()))
+                   nearestDestinations [ol->get_cost(0.0)] = destinationmap [ol->get_out_node_id()];
+            }
+            if (!nearestDestinations.empty())
+                return nearestDestinations.begin()->second;
+        }
+    }
+    // if control reaches here, there is no reachable downstream destination for the stop
+    qDebug() << "ERROR: Network::findNearestDestinationToStop(Busstop* stop) : cannot find Destination node for stop "
+             << stop->get_id();
+    return nullptr;
+
+}
 bool Network::readbustrip_format1(istream& in) // reads a trip
 {
     if (theParameters->drt){
