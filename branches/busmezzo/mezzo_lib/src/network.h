@@ -437,7 +437,7 @@ protected:
 */
 	//DRT implementation
 #include <tuple>
-	typedef std::tuple<Bus*, Busstop*, double, vector<int>> DrtVehicleInit; //!< un-scheduled vehicle, initial busstop, initial time, and initial service route ids
+    typedef std::tuple<Bus*, Busstop*, Controlcenter*, double> DrtVehicleInit; //!< un-scheduled vehicle, initial busstop, initial controlcenter, initial time
 	map<int, Controlcenter*> ccmap; //!< map of all control centers with id as key
 	vector <DrtVehicleInit> drtvehicles; //!<  vector of all initially unassigned vehicles that are not assigned a schedule and line on input, along with values used for their initialization (used in Network::init())
 /**@}*/

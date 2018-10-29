@@ -1,4 +1,4 @@
-/*
+﻿/*
 	Mezzo Mesoscopic Traffic Simulation 
 	Copyright (C) 2008  Wilco Burghout
 
@@ -39,6 +39,8 @@ class Bustrip;
 class Busstop;
 class Busvehicle_location;
 class Dwell_time_function;
+
+class Controlcenter;
 
 class Vehicle
 {
@@ -133,14 +135,15 @@ class Bus : public QObject, public Vehicle
 
 public:
 	Bus(QObject* parent = nullptr);
-	Bus(
-		int id_,
-		int type_,
-		double length_,
-		Route* route_,
-		ODpair* odpair_,
-		double time_,
-		bool flex_vehicle = false,
+    Bus(
+        int id_,
+        int type_,
+        double length_,
+        Route* route_,
+        ODpair* odpair_,
+        double time_,
+        bool flex_vehicle = false,
+        Controlcenter* CC = nullptr,
 		QObject* parent = nullptr
 	);
 	
@@ -148,6 +151,7 @@ public:
 		int bv_id_, 
 		Bustype* bty,
 		bool flex_vehicle = false,
+        Controlcenter* CC = nullptr,
 		QObject* parent = nullptr
 	);
 
@@ -194,7 +198,8 @@ public:
 	void set_flex_vehicle(bool flex_vehicle) { flex_vehicle_ = flex_vehicle; }
 	bool is_flex_vehicle() const { return flex_vehicle_; }
 	void add_sroute_id(int sroute_id) { sroute_ids_.insert(sroute_id); } 
-	void remove_sroute_id(int sroute_id) { if (sroute_ids_.count(sroute_id) != 0) { sroute_ids_.erase(sroute_id); } } 
+	void remove_sroute_id(int sroute_id) { if (sroute_ids_.count(sroute_id) != 0) { sroute_ids_.erase(sroute_id); } }
+    void set_control_center(Controlcenter* CC) { CC_ = CC; }
 
 signals:
 	void stateChanged(Bus* bus, BusState oldstate, BusState newstate, double time); //!< signal informing a change in this vehicle's BusState
@@ -221,6 +226,7 @@ protected:
 	BusState state_; //!< current BusState of the transit vehicle
 	bool flex_vehicle_; //!< true if vehicle can be assigned trips dynamically, false otherwise
 	set<int> sroute_ids_; //!< ids of service routes (buslines) that this bus can be assigned dynamically generated trips for
+    Controlcenter* CC_; //!< control center that this vehicle is currently connected to. nullptr if not connected to any control center
 /**@}*/
 };
 

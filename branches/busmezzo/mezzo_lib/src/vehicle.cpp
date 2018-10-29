@@ -127,9 +127,11 @@ Bus::Bus(QObject* parent) : QObject(parent), Vehicle()
 	curr_trip = nullptr;
 	last_stop_visited_ = nullptr;
 	state_ = BusState::Null;
+    flex_vehicle_ = false;
+    CC_ = nullptr;
 }
-Bus::Bus(int id_, int type_, double length_, Route* route_, ODpair* odpair_, double time_, bool flex_vehicle, QObject* parent) : QObject(parent),
-    Vehicle(id_, type_, length_, route_, odpair_, time_), flex_vehicle_(flex_vehicle)
+Bus::Bus(int id_, int type_, double length_, Route* route_, ODpair* odpair_, double time_, bool flex_vehicle, Controlcenter* CC, QObject* parent) : QObject(parent),
+    Vehicle(id_, type_, length_, route_, odpair_, time_), flex_vehicle_(flex_vehicle), CC_(CC)
 {
 	occupancy = 0;
 	on_trip = false;
@@ -150,7 +152,7 @@ Bus::Bus(int id_, int type_, double length_, Route* route_, ODpair* odpair_, dou
 	last_stop_visited_ = nullptr;
 	state_ = BusState::Null;
 };
-Bus::Bus(int bv_id_, Bustype* bty, bool flex_vehicle, QObject* parent) : QObject(parent), flex_vehicle_(flex_vehicle)
+Bus::Bus(int bv_id_, Bustype* bty, bool flex_vehicle, Controlcenter* CC, QObject* parent) : QObject(parent), flex_vehicle_(flex_vehicle), CC_(CC)
 {
 	bus_id = bv_id_;
 	type = 4;
@@ -183,9 +185,14 @@ void Bus::reset ()
 	output_vehicle.clear();
 
 	//Controlcenter
-	disconnect(this, 0, 0, 0); //disconnect all signal slots (will reconnect to control center in Network::init)
-	last_stop_visited_ = nullptr;
-	state_ = BusState::Null;
+    if (theParameters->drt && flex_vehicle_)
+    {
+        disconnect(this, 0, 0, 0); //disconnect all signal slots (will reconnect to control center in Network::init if initially a DRT vehicle)
+        CC_ = nullptr; //re-added in Network::init if drt vehicle
+        last_stop_visited_ = nullptr;
+        state_ = BusState::Null;
+        sroute_ids_.clear(); //initial service routes re-added in Network::init
+    }
 }
 
 Bus::~Bus()
@@ -221,9 +228,9 @@ void Bus::advance_curr_trip (double time, Eventlist* eventlist) // progresses tr
 
             double trip_time = curr_trip->get_enter_time() - curr_trip->get_starttime();
             DEBUG_MSG("\t Total trip time: " << trip_time);
-            Controlcenter* cc = last_stop_visited_->get_CC(); //TODO: what if multiple control centers are associated with this stop?
+            
             curr_trip->get_line()->remove_flex_trip(curr_trip); //remove from set of uncompleted flex trips in busline, control center takes ownership of the trip for deletion
-            cc->addCompletedVehicleTrip(this, curr_trip); //save bus - bustrip pair in control center of last stop 
+            CC_->addCompletedVehicleTrip(this, curr_trip); //save bus - bustrip pair in control center of last stop 
         }
     }
 
@@ -267,14 +274,13 @@ void Bus::advance_curr_trip (double time, Eventlist* eventlist) // progresses tr
             newbus->set_curr_trip(nullptr); //bus has no trip assigned to it yet
             newbus->set_on_trip(false);
 
-            Controlcenter* cc = last_stop_visited_->get_CC();
+            Controlcenter* cc = CC_; //save local pointer to member control center, disconnectVehicle sets member to nullptr
             this->set_state(BusState::Null, time); //set state of old bus to Null to remove it from fleet state map
             cc->disconnectVehicle(this); //disconnect old bus and connect new bus
             cc->connectVehicle(newbus);
-
-            for (const int& sroute_id : sroute_ids_)
+            set<int> sroute_ids = sroute_ids_; //copy ids of service routes of old bus when it finished its trip, sroute_ids_ will change when removing oldbus from control center service routes
+            for (const int& sroute_id : sroute_ids)
             {
-                newbus->add_sroute_id(sroute_id);
                 cc->removeVehicleFromServiceRoute(sroute_id, this);
                 cc->addVehicleToServiceRoute(sroute_id, newbus);
             }

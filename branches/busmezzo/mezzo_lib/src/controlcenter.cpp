@@ -74,8 +74,9 @@ void BustripGenerator::reset(int generation_strategy_type, int empty_vehicle_str
 	setEmptyVehicleStrategy(empty_vehicle_strategy_type);
 }
 
-void BustripGenerator::addServiceRoute(Busline * line)
+void BustripGenerator::addServiceRoute(Busline* line)
 {
+    assert(line);
 	serviceRoutes_.push_back(line);
 }
 
@@ -186,18 +187,35 @@ void BustripVehicleMatcher::reset(int matching_strategy_type)
 	setMatchingStrategy(matching_strategy_type);
 }
 
+void BustripVehicleMatcher::addVehicleToAllServiceRoutes(const BustripGenerator& tg, Bus* transitveh)
+{
+    assert(transitveh);
+    for (const Busline* line : tg.serviceRoutes_)
+    {
+        addVehicleToServiceRoute(line->get_id(), transitveh);
+    }
+}
+
 void BustripVehicleMatcher::addVehicleToServiceRoute(int line_id, Bus* transitveh)
 {
 	assert(transitveh);
-	vehicles_per_service_route[line_id].insert(transitveh);
+    //TODO need to add check for when line_id that is not included as a service route, maybe move service routes to Controlcenter rather than BustripGenerator
+    if (vehicles_per_service_route[line_id].count(transitveh) == 0)
+    {
+        vehicles_per_service_route[line_id].insert(transitveh);
+        transitveh->add_sroute_id(line_id); //vehicle is also aware of its service routes for now. TODO: probably this is a bit unnecessary at the moment, since the vehicle also knows of its CC
+    }
 }
 
 void BustripVehicleMatcher::removeVehicleFromServiceRoute(int line_id, Bus * transitveh)
 {
 	assert(transitveh);
 	set<Bus*> candidateVehicles = vehicles_per_service_route[line_id];
-	if (candidateVehicles.count(transitveh) != 0)
-		vehicles_per_service_route[line_id].erase(transitveh);
+    if (candidateVehicles.count(transitveh) != 0)
+    {
+        vehicles_per_service_route[line_id].erase(transitveh);
+        transitveh->remove_sroute_id(line_id); //vehicle is also aware of its service routes for now. TODO: probably this is a bit unnecessary at the moment, since the vehicle also knows of its CC
+    }
 }
 
 void BustripVehicleMatcher::setMatchingStrategy(int type)
@@ -448,6 +466,8 @@ void Controlcenter::connectVehicle(Bus* transitveh)
 		DEBUG_MSG_V(Q_FUNC_INFO << " connecting Bus::stateChanged with Controlcenter::updateFleetState failed!");
 		abort();
 	}
+
+    transitveh->set_control_center(this);
 }
 void Controlcenter::disconnectVehicle(Bus* transitveh)
 {
@@ -458,12 +478,26 @@ void Controlcenter::disconnectVehicle(Bus* transitveh)
 	connectedVeh_.erase(connectedVeh_.find(bvid));
 	bool ok = QObject::disconnect(transitveh, &Bus::stateChanged, this, &Controlcenter::updateFleetState);
 	assert(ok);
+
+    transitveh->set_control_center(nullptr);
+}
+
+void Controlcenter::addStop(Busstop* stop)
+{
+    assert(stop);
+    connectedStops_.insert(stop);
 }
 
 void Controlcenter::addServiceRoute(Busline* line)
 {
 	assert(line->is_flex_line()); //only flex lines should be added to control center for now
 	tg_.addServiceRoute(line);
+}
+
+void Controlcenter::addVehicleToAllServiceRoutes(Bus* transitveh)
+{
+    assert(transitveh);
+    tvm_.addVehicleToAllServiceRoutes(tg_, transitveh);
 }
 
 void Controlcenter::addVehicleToServiceRoute(int line_id, Bus* transitveh)

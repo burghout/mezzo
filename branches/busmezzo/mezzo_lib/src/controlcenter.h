@@ -66,7 +66,7 @@ class BustripGenerator
 {
 	enum generationStrategyType { Null = 0, Naive }; //!< ids of passenger trip generation strategies known to BustripGenerator
 	enum emptyVehicleStrategyType {	EVNull = 0, EVNaive }; //!< ids of empty-vehicle redistribution strategies known to BustripGenerator
-	friend class BustripVehicleMatcher; //!< give matcher class access to unmatchedTrips_. May remove trip from this set without destroying it if it has been matched
+	friend class BustripVehicleMatcher; //!< give matcher class access to unmatchedTrips_. May remove trip from this set without destroying it if it has been matched. Also gives VehicleMatcher access to serviceRoutes for initializing vehicles
 
 public:
 	explicit BustripGenerator(Network* theNetwork = nullptr, TripGenerationStrategy* generationStrategy = nullptr, TripGenerationStrategy* emptyVehicleStrategy = nullptr);
@@ -88,7 +88,7 @@ public:
 private:
 	set<Bustrip*> unmatchedTrips_; //!< set of planned passenger carrying trips to be performed that have not been matched to vehicles yet
 	set<Bustrip*> unmatchedRebalancingTrips_; //!< set of planned empty-vehicle rebalancing trips to be performed that have not been matched to vehicles yet
-	vector<Busline*> serviceRoutes_; //!< lines (i.e. routes and stops to visit along the route) that this BustripGenerator can create trips for (TODO: do other process classes need to know about this?)
+	vector<Busline*> serviceRoutes_; //!< lines (i.e. routes and stops to visit along the route) that this BustripGenerator can create trips for (TODO: do other process classes need to know about this? Currently we never reset this either)
 
 	TripGenerationStrategy* generationStrategy_; //!< strategy for generating planned passenger carrying trips
 	TripGenerationStrategy* emptyVehicleStrategy_; //!< strategy for generating planned empty-vehicle rebalancing trips
@@ -114,6 +114,7 @@ public:
 	void reset(int matching_strategy_type); //!< resets members and matching strategy 
 
 	//find_candidate_vehicles
+    void addVehicleToAllServiceRoutes(const BustripGenerator& tg, Bus* transitveh); //!< adds vehicle as candidate to serve ALL service routes in BustripGenerator
 	void addVehicleToServiceRoute(int line_id, Bus* transitveh); //!< add vehicle to vector of vehicles assigned to serve the given line
 	void removeVehicleFromServiceRoute(int line_id, Bus* transitveh); //!< remove vehicle from vector of vehicles assigned to serve the given line
 	void setMatchingStrategy(int type); //!< destroy current matchingStrategy_ and set to new type
@@ -169,7 +170,7 @@ class Controlcenter : public QObject
 {
 	Q_OBJECT
     friend class TestControlcenter; //!< for writing unit tests for Controlcenter
-	friend class Network; //!< for writing results of completed trips to output files
+	friend class Network; //!< for writing results of completed trips to output files, and for generating direct lines between connectedStops_
 
 public:
 	explicit Controlcenter(
@@ -193,14 +194,16 @@ private:
                                  Connects signal slot triggers between member process classes */
 
 public:
-	//methods for connecting passengers, vehicles and lines
+	//methods for connecting passengers, vehicles, stops and lines
 	void connectPassenger(Passenger* pass); //!< connects passenger signals to control center slots
 	void disconnectPassenger(Passenger* pass); //!< disconnects passenger signals from control center slots
 	
 	void connectVehicle(Bus* transitveh); //!< connects transit vehicle signals to control center slots
 	void disconnectVehicle(Bus* transitveh); //!< disconnects transit vehicle signals from control center slots
 
+    void addStop(Busstop* stop); //!< add stop to stations_ the set of stops within the service area of this control center's fleet
 	void addServiceRoute(Busline* line); //!< add line to BustripGenerator's map of possible lines to create trips for
+    void addVehicleToAllServiceRoutes(Bus* transitveh); //!< add transit vehicle as a candidate vehicle to be assigned trips for to all service routes in BustripGenerator
 	void addVehicleToServiceRoute(int line_id, Bus* transitveh); //!< add transit vehicle to vector of candidate vehicles that may be assigned trips for a given line/service route
 	void removeVehicleFromServiceRoute(int line_id, Bus* transitveh); //!< remove bus from vector of candidate vehicles that may be assigned trips for a given line/service route
 
@@ -261,6 +264,7 @@ private:
 	BustripVehicleMatcher tvm_;
 	VehicleScheduler vs_;
 
+    set<Busstop*> connectedStops_; //!< set of stops in the service area of this control center's fleet of vehicles. In other words the stops for which this control center can generate trips between
 	set<Bus*> initialVehicles_; //!< vehicles assigned to this control center on input (that should be preserved between resets)
 	vector<pair<Bus*, Bustrip*>> completedVehicleTrips_; //!< used for bookkeeping dynamically generated buses and bustrips (similar to busvehicles and bustrips in network) for writing output and deleting between resets
 };
