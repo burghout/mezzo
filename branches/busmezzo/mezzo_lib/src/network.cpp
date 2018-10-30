@@ -1596,29 +1596,6 @@ bool Network::readtransitnetwork(string name) //!< reads the stops, distances be
             return false;
         }
     }
-    
-    //in the case of drt, read which stop pairs are opposite one another (to e.g. represent turning at this stop to begin serving a route/line in the opposite direction)
-    if (theParameters->drt && theParameters->demand_format == 3)
-    {
-        in >> keyword;
-        if (keyword != "stops_turning_points:")
-        {
-            cout << " readtransitnetwork: no << stops_turning_points: >> keyword " << endl;
-            in.close();
-            return false;
-        }
-        in >> nr;
-        limit = i + nr;
-        for (; i < limit; ++i)
-        {
-            if (!readstopturningpoint(in))
-            {
-                cout << " readtransitnetwork: readstopturningpoint returned false for line nr " << (i + 1) << endl;
-                in.close();
-                return false;
-            }
-        }
-    }
 
     // in case of passenger route choice - read walking distances between stops
     if (theParameters->demand_format == 3)
@@ -1826,38 +1803,6 @@ bool Network::readbusstop (istream& in) // reads a busstop
     cout << " read busstop"<< stop_id <<endl;
 #endif //_DEBUG_NETWORK
     return ok;
-}
-
-bool Network::readstopturningpoint(istream & in)
-{
-    char bracket = ' ';
-    int stopid1; //id of stop that corresponds to the beginning or end of a turn point (e.g. the final stop of a transit route before turning to the other direction)
-    int stopid2; //id of stop that corresponds to the beginning or end of a turn point (e.g. the first stop of a transit route in the opposite direction
-
-    in >> bracket;
-    if (bracket != '{')
-    {
-        cout << "readfile::readstopturningpoint scanner jammed at " << bracket;
-        return false;
-    }
-
-    in >> stopid1 >> stopid2;
-
-    bracket = ' ';
-    in >> bracket;
-    if (bracket != '}')
-    {
-        cout << "readfile::readstopturningpoint scanner jammed at " << bracket;
-        return false;
-    }
-
-    Busstop* stop1 = (*find_if(busstops.begin(), busstops.end(), compare<Busstop>(stopid1)));
-    Busstop* stop2 = (*find_if(busstops.begin(), busstops.end(), compare<Busstop>(stopid2)));
-
-    stop1->set_opposing_stop(stop2);
-    stop2->set_opposing_stop(stop1);
-
-    return true;
 }
 
 void Network::add_busstop_to_name_map(string bus_stop_name,Busstop* bus_stop_ptr){

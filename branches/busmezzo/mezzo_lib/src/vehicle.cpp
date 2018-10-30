@@ -281,25 +281,19 @@ void Bus::advance_curr_trip (double time, Eventlist* eventlist) // progresses tr
             set<int> sroute_ids = sroute_ids_; //copy ids of service routes of old bus when it finished its trip, sroute_ids_ will change when removing oldbus from control center service routes
             for (const int& sroute_id : sroute_ids)
             {
-                cc->removeVehicleFromServiceRoute(sroute_id, this);
-                cc->addVehicleToServiceRoute(sroute_id, newbus);
+                cc->removeVehicleFromServiceRoute(sroute_id, this); //strip oldbus (this) of all of its service routes, both in control center and from its member sroute_ids_
+                cc->addVehicleToServiceRoute(sroute_id, newbus); //initiate the newbus with the sroutes of the oldbus
             }
 
-            //if an opposing stop exists, initialize newbus at the opposing stop associated with last stop visited by oldbus with expected arrival time as soon as possible
-            if (last_stop_visited_->get_opposing_stop() != nullptr)
+            //initialize newbus as unassigned at the final stop of the trip
+            if (last_stop_visited_->get_origin_node() == nullptr) //bus cannot currently be assigned a new trip starting from this stop unless there is an origin node associated with it
             {
-                Busstop* opposing_stop = last_stop_visited_->get_opposing_stop();
-                if (opposing_stop->get_origin_node() == nullptr)
-                {
-                    DEBUG_MSG_V("Problem when turning bus in Bus::advance_curr_trip - opposing stop " << opposing_stop->get_id() << " to stop " << last_stop_visited_->get_id() << " does not have an origin node associated with it. Aborting..."); //opposing stop should have an origin node associated with it
-                    abort();
-                }
-                opposing_stop->book_unassigned_bus_arrival(eventlist, newbus, time);
+                DEBUG_MSG_V("ERROR in Bus::advance_curr_trip - problem re-initializing bus " << newbus->get_bus_id() << " at final stop " << last_stop_visited_->get_id() << 
+                                ", Busstop does not have an origin node associated with it. Aborting...");
+                abort();
             }
-            else //bus stays at the current stop (but cannot currently go anywhere until it has turned around)
-            {
-                last_stop_visited_->book_unassigned_bus_arrival(eventlist, newbus, time);
-            }
+            last_stop_visited_->book_unassigned_bus_arrival(eventlist, newbus, time);
+
         }
     }
 }

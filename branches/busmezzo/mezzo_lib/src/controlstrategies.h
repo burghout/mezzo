@@ -74,7 +74,6 @@ protected:
     map<pair<int, int>, int> countRequestsPerOD(const set<Request>& requestSet) const; //!< counts the number of requests with a particular od
     bool line_exists_in_tripset(const set<Bustrip*>& tripSet, const Busline* line) const; //!< returns true if a trip exists in trip set for the given bus line
     vector<Busline*> find_lines_connecting_stops(const vector<Busline*>& lines, const int ostop_id, const int dstop_id) const; //!< returns buslines among lines given as input that run from a given origin stop to a given destination stop (Note: assumes lines are unidirectional and that bus line stops are ordered, which they currently are in BusMezzo)
-    vector<Busline*> find_lines_between_stops_and_opp_stops(const vector<Busline*>& lines, const Busstop* start_stop, const Busstop* end_stop) const; //!< returns buslines among lines given as input that begin at start_stop or its opposing stop and end at end_stop or its opposing stop
 	vector<Visit_stop*> create_schedule(double init_dispatch_time, const vector<pair<Busstop*, double>>& time_between_stops) const; //!< creates a vector of scheduled visits to stops starting from the preliminary start time of the trip and given the scheduled in-vehicle time for the trip
 	Bustrip* create_unassigned_trip(Busline* line, double desired_dispatch_time, const vector<Visit_stop*>& schedule) const; //!< creates a Bustrip for a given line with a desired start time and a scheduled arrival to stops along this line (subject to the availability of a vehicle to serve this trip)
 	

@@ -754,10 +754,8 @@ public:
 	vector<pair<Bus*, double>> get_unassigned_buses_at_stop() { return unassigned_buses_at_stop; }
 
 	//bunch of accessors and modifiers related to buses ending a trip and being reinitialized at an opposing stop
-	bool is_line_end() const { return dest_node != nullptr; } //!< true if this stop is at the end of a route/line (i.e. has a destination node associated with it), and the beginning of turning point towards its opposite stop
-	bool is_line_begin() const { return origin_node != nullptr; } //!< true if this stop is at the beginning of a route/line (i.e. has an origin node associated with it), and the end of a turning point from an opposite stop
-	void set_opposing_stop(Busstop* opposing_stop_) { opposing_stop = opposing_stop_; }
-	Busstop* get_opposing_stop() const { return opposing_stop; }
+	bool is_line_end() const { return dest_node != nullptr; } //!< true if this stop is at the end of a transit route/line (i.e. has a destination node associated with it)
+	bool is_line_begin() const { return origin_node != nullptr; } //!< true if this stop is at the beginning of a transit route/line (i.e. has an origin node associated with it)
 	Origin* get_origin_node() const { return origin_node; } 
 	Destination* get_dest_node() const { return dest_node; } 
 	void set_origin_node(Origin* origin_node_) { origin_node = origin_node_; }
@@ -839,7 +837,6 @@ protected:
 	Controlcenter* CC; //!< control center that this stop is associated with @todo change to a collection of possible Controlcenters, currently only assuming one available
 	vector<pair<Bus*,double>> unassigned_bus_arrivals; //!< expected arrivals of transit vehicles to stop that are not assigned to any trip
 	vector<pair<Bus*, double>> unassigned_buses_at_stop; //!< unassigned buses currently at stop along with the time they arrived/were initialized to this stop
-	Busstop* opposing_stop; //!< opposite stop that vehicles at this stop can turn to when finishing/beginning trips. Initialized to nullptr if no opposite stop exists
 	Origin* origin_node; //!< origin node for generating buses when a trip begins at this stop. Is equal to nullptr if no trip can begin at this stop
 	Destination* dest_node; //!< destination node for processing buses that end a trip at this stop. Is equal to nullptr if no trip can end at this stop
     /**@}*/

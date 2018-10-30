@@ -963,7 +963,6 @@ double Bustrip::calc_departure_time (double time) // calculates departure time f
 
 bool Bustrip::advance_next_stop (double time, Eventlist* eventlist)
 {
-	// TODO - vec.end is post last 
 	if (busv->get_on_trip()== true && next_stop < stops.end()) // progress to the next stop, unless it is the last stop for this trip
 	{
 		next_stop++;
@@ -1266,7 +1265,6 @@ Busstop::Busstop()
 	can_overtake = true;
 	dwelltime = 0;
 	rti = 0;
-	opposing_stop = nullptr;
 	CC = nullptr;
 }
 
@@ -1290,7 +1288,6 @@ id(id_), name(name_), link_id(link_id_), position (position_), length(length_), 
 	{
 		random->randomize();
 	}
-	opposing_stop = nullptr;
 }
 
 Busstop::~Busstop ()
@@ -2454,6 +2451,9 @@ void Busstop::book_unassigned_bus_arrival(Eventlist* eventlist, Bus* bus, double
 	DEBUG_MSG("Adding bus " << bus->get_bus_id() << " to unassigned bus arrivals at stop " << name);
 	assert(bus->get_occupancy() == 0); //unassigned buses should be empty
 	assert(expected_arrival_time >= 0);
+    if (!origin_node) //if no origin node then the bus will not be able to begin trips starting from this stop
+        DEBUG_MSG("WARNING Busstop::book_unassigned_bus_arrival - unassigned bus " << bus->get_bus_id() << " is scheduled to arrive at stop " << id << " with no origin node associated with it");
+
 	unassigned_bus_arrivals.push_back(make_pair(bus, expected_arrival_time));
 	sort(unassigned_bus_arrivals.begin(), unassigned_bus_arrivals.end(),
 		[](const pair<Bus*,double>& left, const pair<Bus*, double>& right) -> bool

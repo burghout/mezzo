@@ -219,8 +219,6 @@ protected:
 	
 /** @ingroup DRT
     @{
-    @todo
-        - give vehicle a reference to whatever Controlcenter it is currently connected to. Easier to manage multiple CCs this way then e.g. connecting and disconnecting via stops always when a trip finishes
 */
 	Busstop* last_stop_visited_; //!< the last busstop (if no stop has been visited then initialized to nullptr) that this transit vehicle has entered (or exited)
 	BusState state_; //!< current BusState of the transit vehicle
