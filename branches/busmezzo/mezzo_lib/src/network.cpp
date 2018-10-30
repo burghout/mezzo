@@ -2080,26 +2080,38 @@ bool Network::createAllDRTLines()
     int busLineIdCounter = 10000; //  TODO: update later
 
    //*** end of dummy values
+    Origin* ori = nullptr;
+    Destination* dest = nullptr;
 
     for (auto startstop : stopsmap)
     {
+        ori = nullptr;
         // find best origin for startstop if it does not exist
         if (startstop.second->get_origin_node() == nullptr)
         {
             // find  origin node
-
-
+            ori = findNearestOriginToStop(startstop.second);
+            if (ori != nullptr)
+                startstop.second->set_origin_node(ori);
         }
         for (auto endstop : stopsmap)
         {
             if (endstop.second->get_dest_node() == nullptr)
             {
                 // find  destination node
-
+                dest = findNearestDestinationToStop(endstop.second);
+                if (dest != nullptr)
+                    endstop.second->set_dest_node(dest);
             }
             if (startstop != endstop)
             {
-                // find best destination for endstop and add to map
+                // find best odpair
+                int ori_id = startstop.second->get_origin_node()->get_id();
+                int dest_id = endstop.second->get_dest_node()->get_id();
+                odval odid (ori_id, dest_id);
+                ODpair* odptr=(*(find_if (odpairs.begin(),odpairs.end(), compareod (odid) )));
+                if (odptr != nullptr)
+                    od_pair = odptr;
                 // find best OD pair or create.
                 stops.clear();
                 stops.push_back(startstop.second);
@@ -2204,6 +2216,18 @@ Destination* Network::findNearestDestinationToStop(Busstop* stop)
                 return nearestDestinations.begin()->second;
         }
     }
+
+    // Otherwise do shortest path to every destination
+
+    std::map <double, Destination*> costMap;
+    for (auto d:destinationmap)
+    {
+        auto sp = shortest_path_to_node(stop->get_link_id(),d.first,0.0);
+        costMap [graph->costToNode(d.first)] = d.second;
+    }
+    if (!costMap.empty())
+        return costMap.begin()->second;
+
     // if control reaches here, there is no reachable downstream destination for the stop
     qDebug() << "ERROR: Network::findNearestDestinationToStop(Busstop* stop) : cannot find Destination node for stop "
              << stop->get_id();

@@ -49,8 +49,10 @@ private Q_SLOTS:
     void testCreateNetwork(); //!< test loading a network
     void testInitNetwork(); //!< test generating passenger path sets & loading a network
     void testCreateBusroute(); //!< tests creation of busroutes from stop pairs
+    void testFindOrigins(); //!< tests the findNearestOrigin function
+    void testFindDestinations(); //!< tests the findNearestDestination function
     void testCreateAllDRTLines(); //!< tests creation of buslines
-    void testRunNetwork(); //!< test running the network
+//    void testRunNetwork(); //!< test running the network
 //   void testSaveResults(); //!< tests saving results
     void testDelete(); //!< tests correct deletion
 
@@ -84,7 +86,7 @@ void TestDRT::testInitNetwork()
     // Test if the network is properly read and initialized
     QVERIFY2(net->get_links().size() == 15, "Failure, network should have 15 links ");
     QVERIFY2(net->get_nodes().size() == 13, "Failure, network should have 13 nodes ");
-    QVERIFY2(net->get_odpairs().size() == 4, "Failure, network should have 4 nodes ");
+    QVERIFY2(net->get_odpairs().size() == 6, "Failure, network should have 6 od pairs ");
     QVERIFY2 (net->get_busstop_from_name("A")->get_id() == 1, "Failure, bus stop A should be id 1 ");
     QVERIFY2 (net->get_busstop_from_name("B")->get_id() == 2, "Failure, bus stop B should be id 2 ");
     QVERIFY2 (net->get_busstop_from_name("C")->get_id() == 3, "Failure, bus stop C should be id 3 ");
@@ -181,6 +183,68 @@ void TestDRT::testCreateBusroute()
     }
 
     QVERIFY2(routesFound.size() == 6, "Failure, there should be 6 direct routes from/to all stops for the SF network: A->B, A->C, A->D, B->C, B->D and C->D");
+}
+
+void TestDRT::testFindOrigins()
+{
+    // verify that each stop has an origin
+    auto stopsmap = net->get_stopsmap();
+    for (auto s:stopsmap)
+    {
+        auto o = net->findNearestOriginToStop(s.second);
+        QVERIFY (o != nullptr);
+    }
+
+    Busstop* stopA = net->get_busstop_from_name("A"); // on link 12
+    Busstop* stopB = net->get_busstop_from_name("B"); // on link 67
+    Busstop* stopC = net->get_busstop_from_name("C"); // on link 1011
+    Busstop* stopD = net->get_busstop_from_name("D"); // on link 34
+
+    auto oA=net->findNearestOriginToStop(stopA);
+    qDebug() << " NearestOrigin to stop A : " << oA->get_id();
+    QVERIFY (oA->get_id() == 1);
+
+    auto oB=net->findNearestOriginToStop(stopB);
+    qDebug() << " NearestOrigin to stop B : " << oB->get_id();
+    QVERIFY (oB->get_id() == 5);
+
+    auto oC=net->findNearestOriginToStop(stopC);
+    qDebug() << " NearestOrigin to stop C : " << oC->get_id();
+    QVERIFY (oC->get_id() == 9);
+
+    auto oD=net->findNearestOriginToStop(stopD);
+    qDebug() << " NearestOrigin to stop D : " << oD->get_id();
+    QVERIFY (oD->get_id() == 1);
+}
+
+void TestDRT::testFindDestinations()
+{
+    auto stopsmap = net->get_stopsmap();
+    for (auto s:stopsmap)
+    {
+        auto d = net->findNearestDestinationToStop(s.second);
+        QVERIFY (d != nullptr);
+    }
+    Busstop* stopA = net->get_busstop_from_name("A"); // on link 12
+    Busstop* stopB = net->get_busstop_from_name("B"); // on link 67
+    Busstop* stopC = net->get_busstop_from_name("C"); // on link 1011
+    Busstop* stopD = net->get_busstop_from_name("D"); // on link 34
+
+    auto oA=net->findNearestDestinationToStop(stopA);
+    qDebug() << " NearestDestination to stop A : " << oA->get_id();
+    QVERIFY (oA->get_id() == 4);
+
+    auto oB=net->findNearestDestinationToStop(stopB);
+    qDebug() << " NearestDestination to stop B : " << oB->get_id();
+    QVERIFY (oB->get_id() == 12);
+
+    auto oC=net->findNearestDestinationToStop(stopC);
+    qDebug() << " NearestDestination to stop C : " << oC->get_id();
+    QVERIFY (oC->get_id() == 12);
+
+    auto oD=net->findNearestDestinationToStop(stopD);
+    qDebug() << " NearestDestination to stop D : " << oD->get_id();
+    QVERIFY (oD->get_id() == 4);
 
 }
 
@@ -195,6 +259,10 @@ void TestDRT::testCreateAllDRTLines()
 
     busroutes = net->get_busroutes();
     buslines = net->get_buslines();
+
+    qDebug() << " --busroutes " << busroutes.size();
+    qDebug() << " --buslines " << buslines.size();
+
     QVERIFY (busroutes.size() == 10);
     QVERIFY (buslines.size() == 16);
 
@@ -204,20 +272,20 @@ void TestDRT::testCreateAllDRTLines()
 
 }
 
-void TestDRT::testRunNetwork()
-{
+//void TestDRT::testRunNetwork()
+//{
 
-    nt->start(QThread::HighestPriority);
-    nt->wait();
+//    nt->start(QThread::HighestPriority);
+//    nt->wait();
 
-    // test here the properties that should be true after running the simulation
-    QVERIFY2 (net->get_currenttime() == 5400.1, "Failure current time should be 5400.1 after running the simulation");
+//    // test here the properties that should be true after running the simulation
+//    QVERIFY2 (net->get_currenttime() == 5400.1, "Failure current time should be 5400.1 after running the simulation");
 
-    // Example: way to check typical value for e.g. number of last departures from stop A:
-   // qDebug() << net->get_busstop_from_name("A")->get_last_departures().size();
-    // and here you turn it into a test
-    QVERIFY2 ( net->get_busstop_from_name("A")->get_last_departures().size() == 2, "Failure, get_last_departures().size() for stop A should be 2");
-}
+//    // Example: way to check typical value for e.g. number of last departures from stop A:
+//   // qDebug() << net->get_busstop_from_name("A")->get_last_departures().size();
+//    // and here you turn it into a test
+//    QVERIFY2 ( net->get_busstop_from_name("A")->get_last_departures().size() == 2, "Failure, get_last_departures().size() for stop A should be 2");
+//}
 
 //void TestDRT::testSaveResults()
 //{

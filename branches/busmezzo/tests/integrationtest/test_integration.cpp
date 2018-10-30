@@ -84,7 +84,7 @@ void TestIntegration::testInitNetwork()
     // Test if the network is properly read and initialized
     QVERIFY2(net->get_links().size() == 15, "Failure, network should have 15 links ");
     QVERIFY2(net->get_nodes().size() == 13, "Failure, network should have 13 nodes ");
-    QVERIFY2(net->get_odpairs().size() == 4, "Failure, network should have 4 nodes ");
+    QVERIFY2(net->get_odpairs().size() == 6, "Failure, network should have 6 od pairs ");
     QVERIFY2 (net->get_busstop_from_name("A")->get_id() == 1, "Failure, bus stop A should be id 1 ");
     QVERIFY2 (net->get_busstop_from_name("B")->get_id() == 2, "Failure, bus stop B should be id 2 ");
     QVERIFY2 (net->get_busstop_from_name("C")->get_id() == 3, "Failure, bus stop C should be id 3 ");
