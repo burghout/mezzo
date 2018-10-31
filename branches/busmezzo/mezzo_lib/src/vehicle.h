@@ -164,7 +164,7 @@ public:
 	void set_occupancy (const int occup) {occupancy=occup;}
 	int get_number_seats () {return number_seats;}
 	int get_capacity () {return capacity;}
-	bool get_on_trip () {return on_trip;}
+	bool get_on_trip () const {return on_trip;}
 	void set_on_trip (bool on_trip_) {on_trip=on_trip_;}
 	Bustype* get_bus_type () {return bus_type;}
 	void set_curr_trip (Bustrip* curr_trip_) {curr_trip = curr_trip_;}

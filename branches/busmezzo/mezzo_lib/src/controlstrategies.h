@@ -64,7 +64,7 @@ public:
     virtual bool calc_trip_generation(
         const set<Request>&             requestSet,             //!< set of requests that motivate the potential generation of a trip
         const vector<Busline*>&         candidateServiceRoutes, //!< service routes available to potentially serve the requests
-        const map<BusState, set<Bus*>>& fleetState,             //!< state of all vehicles that are potentially available to serve the requests
+        const map<BusState, set<Bus*> >& fleetState,             //!< state of all vehicles that are potentially available to serve the requests
         const double                    time,                   //!< time for which calc_trip_generation is called
         set<Bustrip*>&                  unmatchedTripSet        //!< set of trips that have been generated to serve requests that have not been assigned to a vehicle yet
     ) const = 0; //!< returns true if a trip was generated and added to the unmatchedTripSet and false otherwise
@@ -78,6 +78,8 @@ protected:
 	Bustrip* create_unassigned_trip(Busline* line, double desired_dispatch_time, const vector<Visit_stop*>& schedule) const; //!< creates a Bustrip for a given line with a desired start time and a scheduled arrival to stops along this line (subject to the availability of a vehicle to serve this trip)
 	
 	//supporting methods for empty-vehicle redistribution strategies (maybe others in the future too TODO: figure out how best to share these)
+    set<Bus*> get_driving_vehicles(const map<BusState, set<Bus*> >& fleetState) const;
+    set<Bus*> get_vehicles_enroute_to_stop(const Busstop* stop, const set<Bus*>& vehicles) const; //!< returns true if at least one bus is currently driving to stop (and no intermediate stops) and false otherwise
 	double calc_route_travel_time(const vector<Link*>& routelinks, double time) const; //!< returns the sum of dynamic travel time costs over all links in routelinks
     vector<Link*> find_shortest_path_between_stops(Network* theNetwork, const Busstop* origin_stop, const Busstop* destination_stop, const double start_time) const; //!< returns the shortest route between a pair of stops for a given time, returns empty vector if none exists
 	Busline* find_shortest_busline(const vector<Busline*>& lines, double time) const; //!< returns shortest busline in terms of scheduled in-vehicle time among lines
