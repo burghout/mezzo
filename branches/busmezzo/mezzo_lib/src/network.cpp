@@ -1404,7 +1404,7 @@ bool Network::readcontrolcenters(const string& name)
             in >> stopid;
             stop = (*find_if(busstops.begin(), busstops.end(), compare<Busstop>(stopid)));
 
-            cc->addStop(stop);
+            cc->addStopToServiceArea(stop);
             stop->add_CC(cc);
         }
         bracket = ' ';

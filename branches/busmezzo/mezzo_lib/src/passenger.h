@@ -126,7 +126,10 @@ public:
     @{
 */
 	//Controlcenter
-	Request createRequest(int load = 1, double desired_departure_time = -1, double time = -1); //!< creates a request for this passenger with a given load and a given time (Note: uses protected members of Passenger)
+	pair<bool,Request> createRequest(Busstop* origin_stop, Busstop* dest_stop, int load = 1, double desired_departure_time = -1, double time = -1); /*!< creates a request for this passenger between origin stop and destination stop
+                                                                                                   with a given load and a given time. If origin stop and destination stop are not within the same service area
+                                                                                                   then attempts to create a request to travel to the first transfer stop found within the service area instead. 
+                                                                                                   Returns TRUE and the request if successful, FALSE and an invalid request otherwise (Note: uses protected members of Passenger) */
 
 signals:
 	void sendRequest(Request req, double time); //!< signal to send Request message to Controlcenter along with time in which signal is sent

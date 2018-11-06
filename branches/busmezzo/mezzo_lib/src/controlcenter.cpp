@@ -21,14 +21,21 @@ void RequestHandler::reset()
 	requestSet_.clear();
 }
 
-bool RequestHandler::addRequest(const Request req)
+bool RequestHandler::addRequest(const Request req, const set<Busstop*>& serviceArea)
 {
+    if (!isFeasibleRequest(req, serviceArea))
+    {
+        DEBUG_MSG("INFO::RequestHandler::addRequest : rejecting request to travel between origin stop " << req.ostop_id << 
+                    " and destination stop " << req.dstop_id << ", destination stop not reachable within service area");
+        return false;
+    }
+
 	if (find(requestSet_.begin(), requestSet_.end(), req) == requestSet_.end()) //if request does not already exist in set (which it shouldn't)
 	{
 		requestSet_.insert(req);
 		return true;
 	}
-	DEBUG_MSG("Passenger request " << req.pass_id << " at time " << req.time << " already exists in request set!");
+	DEBUG_MSG("DEBUG: RequestHandler::addRequest : passenger request " << req.pass_id << " at time " << req.time << " already exists in request set!");
 	return false;
 }
 
@@ -45,7 +52,25 @@ void RequestHandler::removeRequest(const int pass_id)
 	if (it != requestSet_.end())
 		requestSet_.erase(it);
 	else
-		DEBUG_MSG_V("removeRequest for pass id " << pass_id << " failed. Passenger not found in requestSet.");
+		DEBUG_MSG_V("DEBUG: RequestHandler::removeRequest : Passenger id " << pass_id << " not found in requestSet.");
+}
+
+bool RequestHandler::isFeasibleRequest(const Request& req, const set<Busstop*>& serviceArea) const
+{    
+    //check if origin stop and destination stop are the same
+    if (req.ostop_id == req.dstop_id)
+        return false;
+    //check if destination stop of request is within serviceArea
+    auto it = find_if(serviceArea.begin(), serviceArea.end(), [req](const Busstop* stop) -> bool {return stop->get_id() == req.dstop_id; });
+    if (it == serviceArea.end())
+        return false;
+    //check if origin stop of request is within serviceArea
+    it = find_if(serviceArea.begin(), serviceArea.end(), [req](const Busstop* stop) -> bool {return stop->get_id() == req.ostop_id; });
+    if (it == serviceArea.end())
+        return false;
+
+    return true;
+
 }
 
 //BustripGenerator
@@ -423,6 +448,15 @@ void Controlcenter::connectInternal()
 	assert(ok);
 }
 
+set<Busstop*> Controlcenter::getServiceArea() const { return serviceArea_; }
+
+bool Controlcenter::isInServiceArea(Busstop* stop) const
+{
+    if(serviceArea_.count(stop) != 0)
+        return true;
+    return false;
+}
+
 void Controlcenter::connectPassenger(Passenger* pass)
 {
 	int pid = pass->get_id();
@@ -482,10 +516,10 @@ void Controlcenter::disconnectVehicle(Bus* transitveh)
     transitveh->set_control_center(nullptr);
 }
 
-void Controlcenter::addStop(Busstop* stop)
+void Controlcenter::addStopToServiceArea(Busstop* stop)
 {
     assert(stop);
-    connectedStops_.insert(stop);
+    serviceArea_.insert(stop);
 }
 
 void Controlcenter::addServiceRoute(Busline* line)
@@ -533,7 +567,7 @@ void Controlcenter::addCompletedVehicleTrip(Bus* transitveh, Bustrip * trip)
 void Controlcenter::receiveRequest(Request req, double time)
 {
 	assert(req.desired_departure_time >= 0 && req.time >= 0 && req.load > 0); //assert that request is valid
-	rh_.addRequest(req) ? emit requestAccepted(time) : emit requestRejected(time);
+	rh_.addRequest(req, serviceArea_) ? emit requestAccepted(time) : emit requestRejected(time);
 }
 
 void Controlcenter::removeRequest(int pass_id)

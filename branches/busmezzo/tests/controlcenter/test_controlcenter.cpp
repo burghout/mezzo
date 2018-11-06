@@ -73,25 +73,37 @@ void TestControlcenter::testRequestHandler()
 	Passenger* pass = new Passenger(0, 0.0, OD_stop, nullptr);
 
 	//test create request via passenger method
-	Request req1 = pass->createRequest(1, 1.0, 1.0); //request with pass_id of passenger
-	QVERIFY2(req1.ostop_id == oid, "Failure, createRequest returning incorrect origin stop id");
-	QVERIFY2(req1.dstop_id == did, "Failure, createRequest returning incorrect destination stop id");
-	
+	pair<bool, Request> invreq = pass->createRequest(origin, destination, 1, 1.0, 1.0);
+	QVERIFY2(invreq.first == false, "Failure, createRequest returned true for impossible request");
+
 	//test recieve Request
+	origin->add_CC(ccPtr);
+	destination->add_CC(ccPtr);
+	ccPtr->addStopToServiceArea(origin);
+	ccPtr->addStopToServiceArea(destination);
+
+	pair<bool,Request> req1 = pass->createRequest(origin, destination, 1, 1.0, 1.0); //request with pass_id of passenger
+	QVERIFY2(req1.second.ostop_id == oid, "Failure, createRequest returning incorrect origin stop id");
+	QVERIFY2(req1.second.dstop_id == did, "Failure, createRequest returning incorrect destination stop id");
+
 	RequestHandler* rhPtr = &(ccPtr->rh_); //pointer to control center's request handler
 
-	emit pass->sendRequest(req1, 0.0); 
+	emit pass->sendRequest(req1.second, 0.0); 
 	QVERIFY2(rhPtr->requestSet_.size() == 0, "Failure, there should be 0 requests in requestSet after sendRequest from unconnected passenger");
 
 	ccPtr->connectPassenger(pass);
-	emit pass->sendRequest(req1, 0.0);
+	emit pass->sendRequest(req1.second, 0.0);
 	QVERIFY2(rhPtr->requestSet_.size() == 1, "Failure, there should be 1 request in requestSet after sendRequest from connected passenger");
-	emit pass->sendRequest(req1, 0.0);
+	emit pass->sendRequest(req1.second, 0.0);
 	QVERIFY2(rhPtr->requestSet_.size() == 1, "Failure, there should still be 1 request in requestSet after duplicate sendRequest signal from connected passenger");
 
-	Request req2 = Request(1, 1, 1, 1, 0.0, 0.0); //creates request with pass_id 1
-	rhPtr->addRequest(req2);
+	Request req2 = Request(1, oid, did, 1, 0.0, 0.0); //creates request with pass_id 1
+	rhPtr->addRequest(req2, ccPtr->serviceArea_);
 	QVERIFY2(rhPtr->requestSet_.size() == 2, "Failure, there should be 2 requests in requestSet after direct call to addRequest");
+
+	Request invalidreq = Request(2, 1, 1000, 1, 0.0, 0.0); //creates request with destination stop outside of controlcenter service area
+	rhPtr->addRequest(invalidreq, ccPtr->serviceArea_);
+	QVERIFY2(rhPtr->requestSet_.size() == 2, "Failure, request accepted even though destination is outside of Controlcenter service area");
 
 	//test remove Request
 	ccPtr->disconnectPassenger(pass);

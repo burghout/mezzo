@@ -24,10 +24,10 @@ class Pass_path
 
 	// Gets and sets:
 	int get_id () {return p_id;}
-    vector <vector <Busline*> > get_alt_lines () {return alt_lines;}
+    vector <vector <Busline*> > get_alt_lines () const {return alt_lines;}
     vector <vector <Busstop*> > get_alt_transfer_stops () {return alt_transfer_stops;}
 	vector <double> get_walking_distances () {return walking_distances;};
-	int get_number_of_transfers () {return number_of_transfers;}
+	int get_number_of_transfers () const {return number_of_transfers;}
     void set_alt_transfer_stops (vector <vector <Busstop*> > trans_stops) {alt_transfer_stops = trans_stops;}
 	bool get_arriving_bus_rellevant () {return arriving_bus_rellevant;}
 	void set_arriving_bus_rellevant (bool arriving_bus_rellevant_) {arriving_bus_rellevant = arriving_bus_rellevant_;}
@@ -47,6 +47,12 @@ class Pass_path
     double calc_waiting_utility (vector <vector <Busstop*> >::iterator stop_iter, double time, bool alighting_decision, Passenger* pass);
     map<Busline*, bool> check_maybe_worthwhile_to_wait (vector<Busline*> leg_lines, vector <vector <Busstop*> >::iterator stop_iter, bool dynamic_indicator); // returns false for lines which are not worthwhile to wait for in any case
 
+
+    /** @ingroup DRT
+        @{
+    */
+    Busstop* get_first_transfer_stop() const; //returns the end stop of the first transit leg for this path if there are transfers. Returns false if there are no transfers in this path
+    /**@}*/
 protected:
 	int p_id;
 	Random* random;

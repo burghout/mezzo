@@ -1827,10 +1827,12 @@ void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, d
 							}
 						}
 						
-                        if(theParameters->drt)
+                        if(theParameters->drt && CC != nullptr)
                         {
-                            Request req = (*alighting_passenger)->createRequest(1, time, time); //create a request with load of 1 to be picked up as soon as possible
-                            emit(*alighting_passenger)->sendRequest(req, time); //send this request to the control center of this stop
+                            ODstops* odstops = (*alighting_passenger)->get_OD_stop();
+                            pair<bool, Request> req = (*alighting_passenger)->createRequest(odstops->get_origin(),odstops->get_destination(), 1, time, time); //create a request with load of 1 to be picked up as soon as possible
+                            if(req.first == true) //if connection or partial connection to destination was found within CC service area of origin stop
+                                emit(*alighting_passenger)->sendRequest(req.second, time); //send this request to the control center of this stop
                         }
 					}
 					else  // pass walks to another stop

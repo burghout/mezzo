@@ -48,8 +48,9 @@ public:
 
 	void reset(); //!< resets members between simulation replications
 
-	bool addRequest(const Request req); //!< adds request passenger Request to the requestSet
+	bool addRequest(const Request req, const set<Busstop*>& serviceArea); //!< adds request passenger Request to the requestSet
 	void removeRequest(const int pass_id); //!< removes requests with pass_id from the requestSet if it exists
+    bool isFeasibleRequest(const Request& req, const set<Busstop*>& serviceArea) const; //!< returns true if request is feasible for a given service area, false otherwise
 
 private:
 	set<Request> requestSet_; //!< set of received requests sorted by desired departure time
@@ -194,6 +195,9 @@ private:
                                  Connects signal slot triggers between member process classes */
 
 public:
+    set<Busstop*> getServiceArea() const;
+    bool isInServiceArea(Busstop* stop) const; //!< true if stop is included in service area of Controlcenter, false otherwise
+
 	//methods for connecting passengers, vehicles, stops and lines
 	void connectPassenger(Passenger* pass); //!< connects passenger signals to control center slots
 	void disconnectPassenger(Passenger* pass); //!< disconnects passenger signals from control center slots
@@ -201,7 +205,7 @@ public:
 	void connectVehicle(Bus* transitveh); //!< connects transit vehicle signals to control center slots
 	void disconnectVehicle(Bus* transitveh); //!< disconnects transit vehicle signals from control center slots
 
-    void addStop(Busstop* stop); //!< add stop to stations_ the set of stops within the service area of this control center's fleet
+    void addStopToServiceArea(Busstop* stop); //!< add stop to stations_ the set of stops within the service area of this control center's fleet
 	void addServiceRoute(Busline* line); //!< add line to BustripGenerator's map of possible lines to create trips for
     void addVehicleToAllServiceRoutes(Bus* transitveh); //!< add transit vehicle as a candidate vehicle to be assigned trips for to all service routes in BustripGenerator
 	void addVehicleToServiceRoute(int line_id, Bus* transitveh); //!< add transit vehicle to vector of candidate vehicles that may be assigned trips for a given line/service route
@@ -264,7 +268,7 @@ private:
 	BustripVehicleMatcher tvm_;
 	VehicleScheduler vs_;
 
-    set<Busstop*> connectedStops_; //!< set of stops in the service area of this control center's fleet of vehicles. In other words the stops for which this control center can generate trips between
+    set<Busstop*> serviceArea_; //!< set of stops in the service area of this control center's fleet of vehicles. In other words the stops for which this control center can generate trips between
 	set<Bus*> initialVehicles_; //!< vehicles assigned to this control center on input (that should be preserved between resets)
 	vector<pair<Bus*, Bustrip*>> completedVehicleTrips_; //!< used for bookkeeping dynamically generated buses and bustrips (similar to busvehicles and bustrips in network) for writing output and deleting between resets
 };

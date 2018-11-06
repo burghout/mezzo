@@ -523,4 +523,12 @@ map<Busline*, bool> Pass_path::check_maybe_worthwhile_to_wait (vector<Busline*> 
 		}
 	}
 	return worth_to_wait;
+}
+
+Busstop* Pass_path::get_first_transfer_stop() const
+{
+    Busstop* firsttransfer = nullptr;
+    if (number_of_transfers != 0)
+        firsttransfer = alt_lines.front().front()->stops.back(); //end stop of first transit leg
+    return firsttransfer;
 }

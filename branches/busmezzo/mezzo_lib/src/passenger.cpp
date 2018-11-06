@@ -1,5 +1,6 @@
 ///! passenger.cpp: implementation of the passenger class.
 #include "passenger.h"
+#include "controlcenter.h"
 
 Passenger::Passenger ()
 {
@@ -332,10 +333,11 @@ void Passenger::start (Eventlist* eventlist, double time)
 		{
 			OD_stop->add_pass_waiting(this); // store the new passenger at the list of waiting passengers with this OD
 
-            if (theParameters->drt)
+            if (theParameters->drt && OD_stop->get_origin()->get_CC() != nullptr) //if there is a controlcenter associated with the origin stop of passenger
             {
-                Request req = createRequest(1, start_time, start_time); //create request with load 1 at current time 
-                emit sendRequest(req, time); //send request to any controlcenter that is connected
+                pair<bool,Request> req = createRequest(OD_stop->get_origin(), OD_stop->get_destination(), 1, start_time, start_time); //create request with load 1 at current time 
+                if(req.first == true) //if a connection, or partial connection was found within the CC service of origin stop
+                    emit sendRequest(req.second, time); //send request to any controlcenter that is connected
             }
 
 			set_arrival_time_at_stop(start_time);
@@ -355,12 +357,50 @@ void Passenger::start (Eventlist* eventlist, double time)
 		}
 }
 
-Request Passenger::createRequest(int load, double desired_departure_time, double time)
+pair<bool,Request> Passenger::createRequest(Busstop* origin_stop, Busstop* dest_stop, int load, double desired_departure_time, double time)
 {
 	assert(load > 0);
     assert(desired_departure_time >= 0);
 	assert(time >= 0);
-	return Request(this->get_id(), OD_stop->get_origin()->get_id(), OD_stop->get_destination()->get_id(), load, desired_departure_time, time);
+
+    bool connection_found = false;
+    Request req = Request(this->get_id(), -1, -1, -1, -1, -1); //TODO: ugly default return value for impossible request
+
+    Controlcenter* cc = origin_stop->get_CC();
+    if (cc)
+    {
+        if (!cc->isInServiceArea(dest_stop)) //if destination of passenger is not within range of the controlcenter of origin stop
+        {
+            DEBUG_MSG("DEBUG: Passenger::start : passenger decided to stay at " << OD_stop->get_origin()->get_id() << ", but destination " <<
+                OD_stop->get_destination()->get_id() << " is outside of service area of controlcenter, searching for transfer stop...");
+            Busstop* transferstop = nullptr;
+            vector<Pass_path*> paths = OD_stop->get_path_set(); //check the path set of current ODstop pair
+
+            for (const Pass_path* path : paths)
+            {
+                if (path->get_number_of_transfers() != 0) //find first path that includes transfers
+                {
+                    //check if the first transfer point of this path is included within the drt service area
+                    transferstop = path->get_first_transfer_stop();
+                    if (transferstop != nullptr && cc->isInServiceArea(transferstop))
+                        break;
+                }
+            }
+
+            if (transferstop != nullptr) //create request for transfer stop of first path instead of final destination TODO: what to do when there are several transfer stops i.e. several paths
+            {
+                DEBUG_MSG("DEBUG: Passenger::start : Transfer stop found! Sending request to travel to transfer stop " << transferstop->get_id());
+                connection_found = true;
+                req = Request(this->get_id(), OD_stop->get_origin()->get_id(), transferstop->get_id(), load, desired_departure_time, time);
+            }
+        }
+        else
+        {
+            connection_found = true;
+            req = Request(this->get_id(), OD_stop->get_origin()->get_id(), OD_stop->get_destination()->get_id(), load, desired_departure_time, time); //create request with load 1 at current time 
+        }
+    }
+    return make_pair(connection_found, req);
 }
 
 bool Passenger:: make_boarding_decision (Bustrip* arriving_bus, double time) 
