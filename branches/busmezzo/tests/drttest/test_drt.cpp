@@ -252,6 +252,14 @@ void TestDRT::testCreateAllDRTLines()
 {
     auto busroutes = net->get_busroutes();
     auto buslines = net->get_buslines();
+    for (auto bl:buslines)
+    {
+        qDebug() << "__Busline " << bl->get_id();
+    }
+    for (auto br:busroutes)
+    {
+        qDebug() << "__Busroute " << br->get_id();
+    }
     QVERIFY (busroutes.size() == 4);
     qDebug() << buslines.size();
     QVERIFY (buslines.size() == 4);
@@ -264,61 +272,21 @@ void TestDRT::testCreateAllDRTLines()
     qDebug() << " --buslines " << buslines.size();
 
     QVERIFY (busroutes.size() == 10);
-    QVERIFY (buslines.size() == 16);
+    QVERIFY (buslines.size() == 10);
 
-    // WILCO temp crap
-    Busstop* stopB = net->get_busstop_from_name("B"); // on link 12
-    auto o = net->findNearestOriginToStop(stopB);
+    for (auto bl:buslines)
+    {
+        qDebug() << "__Busline " << bl->get_id();
+    }
+
+    for (auto br:busroutes)
+    {
+        qDebug() << "__Busroute " << br->get_id();
+    }
 
 }
 
-//void TestDRT::testRunNetwork()
-//{
 
-//    nt->start(QThread::HighestPriority);
-//    nt->wait();
-
-//    // test here the properties that should be true after running the simulation
-//    QVERIFY2 (net->get_currenttime() == 5400.1, "Failure current time should be 5400.1 after running the simulation");
-
-//    // Example: way to check typical value for e.g. number of last departures from stop A:
-//   // qDebug() << net->get_busstop_from_name("A")->get_last_departures().size();
-//    // and here you turn it into a test
-//    QVERIFY2 ( net->get_busstop_from_name("A")->get_last_departures().size() == 2, "Failure, get_last_departures().size() for stop A should be 2");
-//}
-
-//void TestDRT::testSaveResults()
-//{
-//    // remove old files:
-//	for (const QString& filename : output_filenames)
-//	{
-//		qDebug() << QFile::remove(filename);
-//	}
-
-//    // save results:
-//    nt->saveresults();
-//     // test here the properties that should be true after saving the results
-
-//	//test if output files match the expected output files
-//    for (const QString& o_filename : output_filenames)
-//	{
-//		QString ex_o_fullpath = expected_outputs_path + o_filename;
-//		QFile ex_outputfile(ex_o_fullpath);
-
-//		QString msg = "Failure, cannot open ExpectedOutputs/" + o_filename;
-//		QVERIFY2(ex_outputfile.open(QIODevice::ReadOnly | QIODevice::Text), qPrintable(msg));
-
-//		QFile outputfile(o_filename);
-//		msg = "Failure, cannot open " + o_filename;
-//		QVERIFY2(outputfile.open(QIODevice::ReadOnly | QIODevice::Text), qPrintable(msg));
-
-//		msg = "Failure, " + o_filename + " differs from ExpectedOutputs/" + o_filename;
-//		QVERIFY2(outputfile.readAll() == ex_outputfile.readAll(), qPrintable(msg));
-
-//		ex_outputfile.close();
-//		outputfile.close();
-//	}
-//}
 
 void TestDRT::testDelete()
 {

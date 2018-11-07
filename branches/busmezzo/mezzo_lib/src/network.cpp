@@ -2054,8 +2054,8 @@ Busline* Network::create_busline(
         ccmap[1]->addServiceRoute(bl);
     }
 
-    // add to buslines vector
-    buslines.push_back (bl);
+//    // add to buslines vector
+//    buslines.push_back (bl);
 
     return bl;
 }
@@ -2122,19 +2122,6 @@ bool Network::createAllDRTLines()
                 if (newRoute != nullptr)
                 {
                     qDebug() << " route found";
-
-//                    //test if route found is a connected sequence of links
-//                    vector<Link*> rlinks = newRoute->get_links();
-//                    for (Link* rlink : rlinks)
-//                    {
-//                        Link* nextlink = newRoute->nextlink(rlink);
-//                        if (nextlink)
-//                        {
-//                            QString msg = QString("Failure, link %1 is not an upstream link to link %2").arg(rlink->get_id()).arg(nextlink->get_id());
-//                            qDebug() << msg;
-//                        }
-//                    }
-
                     routesFound.push_back(newRoute);
                     routeIdCounter++;
                     // create busLine
