@@ -43,3 +43,4 @@ moc_*
 *.db-wal
 *.json
 Doxyfile
+*.orig

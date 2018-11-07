@@ -4,8 +4,6 @@ stops:	4
 {3   	C	56		1	19	0	1	1	0	0}
 {4		D 	78		1	19	0	1	1	0	0}
 
-stops_turning_points: 0
-
 stops_distances:	0
 format: 1
 
@@ -36,7 +34,7 @@ trips:	4
 format:	3
 {	1	2	{0	600}	    240	300		0	}
 {	10	2	{0	600}	    240	300		0	}
-{	2	3	{0	300 240 }	240	300		0	}
+{	2	3	{0	240 300 }	240	300		0	}
 {	3	3	{0	300 240 }	240	300		0	}
 
 travel_time_disruptions: 0

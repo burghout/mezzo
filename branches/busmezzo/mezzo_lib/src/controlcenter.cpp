@@ -21,14 +21,21 @@ void RequestHandler::reset()
 	requestSet_.clear();
 }
 
-bool RequestHandler::addRequest(const Request req)
+bool RequestHandler::addRequest(const Request req, const set<Busstop*>& serviceArea)
 {
+    if (!isFeasibleRequest(req, serviceArea))
+    {
+        DEBUG_MSG("INFO::RequestHandler::addRequest : rejecting request to travel between origin stop " << req.ostop_id << 
+                    " and destination stop " << req.dstop_id << ", destination stop not reachable within service area");
+        return false;
+    }
+
 	if (find(requestSet_.begin(), requestSet_.end(), req) == requestSet_.end()) //if request does not already exist in set (which it shouldn't)
 	{
 		requestSet_.insert(req);
 		return true;
 	}
-	DEBUG_MSG("Passenger request " << req.pass_id << " at time " << req.time << " already exists in request set!");
+	DEBUG_MSG("DEBUG: RequestHandler::addRequest : passenger request " << req.pass_id << " at time " << req.time << " already exists in request set!");
 	return false;
 }
 
@@ -45,7 +52,25 @@ void RequestHandler::removeRequest(const int pass_id)
 	if (it != requestSet_.end())
 		requestSet_.erase(it);
 	else
-		DEBUG_MSG_V("removeRequest for pass id " << pass_id << " failed. Passenger not found in requestSet.");
+		DEBUG_MSG_V("DEBUG: RequestHandler::removeRequest : Passenger id " << pass_id << " not found in requestSet.");
+}
+
+bool RequestHandler::isFeasibleRequest(const Request& req, const set<Busstop*>& serviceArea) const
+{    
+    //check if origin stop and destination stop are the same
+    if (req.ostop_id == req.dstop_id)
+        return false;
+    //check if destination stop of request is within serviceArea
+    auto it = find_if(serviceArea.begin(), serviceArea.end(), [req](const Busstop* stop) -> bool {return stop->get_id() == req.dstop_id; });
+    if (it == serviceArea.end())
+        return false;
+    //check if origin stop of request is within serviceArea
+    it = find_if(serviceArea.begin(), serviceArea.end(), [req](const Busstop* stop) -> bool {return stop->get_id() == req.ostop_id; });
+    if (it == serviceArea.end())
+        return false;
+
+    return true;
+
 }
 
 //BustripGenerator
@@ -74,8 +99,9 @@ void BustripGenerator::reset(int generation_strategy_type, int empty_vehicle_str
 	setEmptyVehicleStrategy(empty_vehicle_strategy_type);
 }
 
-void BustripGenerator::addServiceRoute(Busline * line)
+void BustripGenerator::addServiceRoute(Busline* line)
 {
+    assert(line);
 	serviceRoutes_.push_back(line);
 }
 
@@ -186,18 +212,35 @@ void BustripVehicleMatcher::reset(int matching_strategy_type)
 	setMatchingStrategy(matching_strategy_type);
 }
 
+void BustripVehicleMatcher::addVehicleToAllServiceRoutes(const BustripGenerator& tg, Bus* transitveh)
+{
+    assert(transitveh);
+    for (const Busline* line : tg.serviceRoutes_)
+    {
+        addVehicleToServiceRoute(line->get_id(), transitveh);
+    }
+}
+
 void BustripVehicleMatcher::addVehicleToServiceRoute(int line_id, Bus* transitveh)
 {
 	assert(transitveh);
-	vehicles_per_service_route[line_id].insert(transitveh);
+    //TODO need to add check for when line_id that is not included as a service route, maybe move service routes to Controlcenter rather than BustripGenerator
+    if (vehicles_per_service_route[line_id].count(transitveh) == 0)
+    {
+        vehicles_per_service_route[line_id].insert(transitveh);
+        transitveh->add_sroute_id(line_id); //vehicle is also aware of its service routes for now. TODO: probably this is a bit unnecessary at the moment, since the vehicle also knows of its CC
+    }
 }
 
 void BustripVehicleMatcher::removeVehicleFromServiceRoute(int line_id, Bus * transitveh)
 {
 	assert(transitveh);
 	set<Bus*> candidateVehicles = vehicles_per_service_route[line_id];
-	if (candidateVehicles.count(transitveh) != 0)
-		vehicles_per_service_route[line_id].erase(transitveh);
+    if (candidateVehicles.count(transitveh) != 0)
+    {
+        vehicles_per_service_route[line_id].erase(transitveh);
+        transitveh->remove_sroute_id(line_id); //vehicle is also aware of its service routes for now. TODO: probably this is a bit unnecessary at the moment, since the vehicle also knows of its CC
+    }
 }
 
 void BustripVehicleMatcher::setMatchingStrategy(int type)
@@ -405,6 +448,15 @@ void Controlcenter::connectInternal()
 	assert(ok);
 }
 
+set<Busstop*> Controlcenter::getServiceArea() const { return serviceArea_; }
+
+bool Controlcenter::isInServiceArea(Busstop* stop) const
+{
+    if(serviceArea_.count(stop) != 0)
+        return true;
+    return false;
+}
+
 void Controlcenter::connectPassenger(Passenger* pass)
 {
 	int pid = pass->get_id();
@@ -448,6 +500,8 @@ void Controlcenter::connectVehicle(Bus* transitveh)
 		DEBUG_MSG_V(Q_FUNC_INFO << " connecting Bus::stateChanged with Controlcenter::updateFleetState failed!");
 		abort();
 	}
+
+    transitveh->set_control_center(this);
 }
 void Controlcenter::disconnectVehicle(Bus* transitveh)
 {
@@ -458,12 +512,26 @@ void Controlcenter::disconnectVehicle(Bus* transitveh)
 	connectedVeh_.erase(connectedVeh_.find(bvid));
 	bool ok = QObject::disconnect(transitveh, &Bus::stateChanged, this, &Controlcenter::updateFleetState);
 	assert(ok);
+
+    transitveh->set_control_center(nullptr);
+}
+
+void Controlcenter::addStopToServiceArea(Busstop* stop)
+{
+    assert(stop);
+    serviceArea_.insert(stop);
 }
 
 void Controlcenter::addServiceRoute(Busline* line)
 {
 	assert(line->is_flex_line()); //only flex lines should be added to control center for now
 	tg_.addServiceRoute(line);
+}
+
+void Controlcenter::addVehicleToAllServiceRoutes(Bus* transitveh)
+{
+    assert(transitveh);
+    tvm_.addVehicleToAllServiceRoutes(tg_, transitveh);
 }
 
 void Controlcenter::addVehicleToServiceRoute(int line_id, Bus* transitveh)
@@ -499,7 +567,7 @@ void Controlcenter::addCompletedVehicleTrip(Bus* transitveh, Bustrip * trip)
 void Controlcenter::receiveRequest(Request req, double time)
 {
 	assert(req.desired_departure_time >= 0 && req.time >= 0 && req.load > 0); //assert that request is valid
-	rh_.addRequest(req) ? emit requestAccepted(time) : emit requestRejected(time);
+	rh_.addRequest(req, serviceArea_) ? emit requestAccepted(time) : emit requestRejected(time);
 }
 
 void Controlcenter::removeRequest(int pass_id)

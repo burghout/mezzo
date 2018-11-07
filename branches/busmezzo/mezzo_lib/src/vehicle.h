@@ -1,4 +1,4 @@
-/*
+﻿/*
 	Mezzo Mesoscopic Traffic Simulation 
 	Copyright (C) 2008  Wilco Burghout
 
@@ -39,6 +39,8 @@ class Bustrip;
 class Busstop;
 class Busvehicle_location;
 class Dwell_time_function;
+
+class Controlcenter;
 
 class Vehicle
 {
@@ -133,14 +135,15 @@ class Bus : public QObject, public Vehicle
 
 public:
 	Bus(QObject* parent = nullptr);
-	Bus(
-		int id_,
-		int type_,
-		double length_,
-		Route* route_,
-		ODpair* odpair_,
-		double time_,
-		bool flex_vehicle = false,
+    Bus(
+        int id_,
+        int type_,
+        double length_,
+        Route* route_,
+        ODpair* odpair_,
+        double time_,
+        bool flex_vehicle = false,
+        Controlcenter* CC = nullptr,
 		QObject* parent = nullptr
 	);
 	
@@ -148,6 +151,7 @@ public:
 		int bv_id_, 
 		Bustype* bty,
 		bool flex_vehicle = false,
+        Controlcenter* CC = nullptr,
 		QObject* parent = nullptr
 	);
 
@@ -160,7 +164,7 @@ public:
 	void set_occupancy (const int occup) {occupancy=occup;}
 	int get_number_seats () {return number_seats;}
 	int get_capacity () {return capacity;}
-	bool get_on_trip () {return on_trip;}
+	bool get_on_trip () const {return on_trip;}
 	void set_on_trip (bool on_trip_) {on_trip=on_trip_;}
 	Bustype* get_bus_type () {return bus_type;}
 	void set_curr_trip (Bustrip* curr_trip_) {curr_trip = curr_trip_;}
@@ -194,7 +198,8 @@ public:
 	void set_flex_vehicle(bool flex_vehicle) { flex_vehicle_ = flex_vehicle; }
 	bool is_flex_vehicle() const { return flex_vehicle_; }
 	void add_sroute_id(int sroute_id) { sroute_ids_.insert(sroute_id); } 
-	void remove_sroute_id(int sroute_id) { if (sroute_ids_.count(sroute_id) != 0) { sroute_ids_.erase(sroute_id); } } 
+	void remove_sroute_id(int sroute_id) { if (sroute_ids_.count(sroute_id) != 0) { sroute_ids_.erase(sroute_id); } }
+    void set_control_center(Controlcenter* CC) { CC_ = CC; }
 
 signals:
 	void stateChanged(Bus* bus, BusState oldstate, BusState newstate, double time); //!< signal informing a change in this vehicle's BusState
@@ -214,13 +219,12 @@ protected:
 	
 /** @ingroup DRT
     @{
-    @todo
-        - give vehicle a reference to whatever Controlcenter it is currently connected to. Easier to manage multiple CCs this way then e.g. connecting and disconnecting via stops always when a trip finishes
 */
 	Busstop* last_stop_visited_; //!< the last busstop (if no stop has been visited then initialized to nullptr) that this transit vehicle has entered (or exited)
 	BusState state_; //!< current BusState of the transit vehicle
 	bool flex_vehicle_; //!< true if vehicle can be assigned trips dynamically, false otherwise
 	set<int> sroute_ids_; //!< ids of service routes (buslines) that this bus can be assigned dynamically generated trips for
+    Controlcenter* CC_; //!< control center that this vehicle is currently connected to. nullptr if not connected to any control center
 /**@}*/
 };
 
