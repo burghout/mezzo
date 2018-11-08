@@ -2032,6 +2032,9 @@ Busline* Network::create_busline(
         }
     }
 
+	vector<pair<Busstop*,double> > interstopIVT = calc_interstop_freeflow_ivt(broute, stops); 
+	bl->set_delta_at_stops(interstopIVT); //add ivt based on freeflow as 'scheduled/expected' ivt between stops for busline
+
     if (flex_line) //if flexible vehicle scheduling is allowed for this line then let the start and end stops of the line know of their origin and destination nodes for use in shortest path methods
     {
         assert(theParameters->drt);
@@ -2219,6 +2222,53 @@ Destination* Network::findNearestDestinationToStop(Busstop* stop)
     return nullptr;
 
 }
+
+vector<pair<Busstop*,double> > Network::calc_interstop_freeflow_ivt(const Busroute* route, const vector<Busstop*>& stops) const
+{
+    //TODO only considers free-flow travel times, adjust for dynamic ones instead that are dependent on histtimes or current simulation time
+	assert(route);
+	vector<pair<Busstop*, double> > deltas_at_stops; //vector of inter stop times, for first stop ivt from origin node of route
+	const vector<Link*> routelinks = route->get_links();
+	if (!stops.empty() && !routelinks.empty())
+	{
+		double total_length; //total length of current link
+		double relative_length; //percentage of current link to calculate IVT for
+		double current_stop_pos; //position of stop on current link in meters from upstream node
+		double time_to_stop = 0.0; //travel time to stop from closest upstream node
+        double expected_ivt = 0.0;
+
+        auto current_link = routelinks.cbegin(); //iterator that always points to the next link on the route to be traversed when calculating ivts
+
+		for (auto next_stop = stops.cbegin(); next_stop != stops.cend(); ++next_stop)
+		{
+			expected_ivt = 0.0;
+			auto next_stop_link = find_if(current_link, routelinks.cend(), compare<Link>((*next_stop)->get_link_id())); //find iterator to link of next stop on busroute
+			if (next_stop_link == routelinks.cend()) //stop does not exist on this route
+			{
+				return deltas_at_stops; //return all the stop deltas found so far
+			}
+
+			//calculate ivt from current position to next stop position
+			for (; current_link != next_stop_link; ++current_link) //iterate through links in route up until link of stop
+			{
+				expected_ivt += (*current_link)->get_freeflow_time();
+			}
+
+			expected_ivt -= time_to_stop; //subtract the travel time for length of link that has already been traversed
+
+			//current_link now points to the same link of the next stop, add the ivt to the position of the next stop on the link
+			total_length = (*current_link)->get_length();
+			current_stop_pos = (*next_stop)->get_position();
+			relative_length = current_stop_pos / total_length;
+			time_to_stop = round(relative_length * (*current_link)->get_freeflow_time());
+
+			expected_ivt += time_to_stop;
+			deltas_at_stops.push_back(make_pair((*next_stop), expected_ivt));
+		}
+	}
+    return deltas_at_stops;
+}
+
 bool Network::readbustrip_format1(istream& in) // reads a trip
 {
     if (theParameters->drt){

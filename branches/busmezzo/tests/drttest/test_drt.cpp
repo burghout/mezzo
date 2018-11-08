@@ -48,6 +48,7 @@ public:
 private Q_SLOTS:
     void testCreateNetwork(); //!< test loading a network
     void testInitNetwork(); //!< test generating passenger path sets & loading a network
+    void testCalcBusrouteInterStopIVT(); //!< tests the calculation of ivts between stops along a busroute
     void testCreateBusroute(); //!< tests creation of busroutes from stop pairs
     void testFindOrigins(); //!< tests the findNearestOrigin function
     void testFindDestinations(); //!< tests the findNearestDestination function
@@ -107,6 +108,50 @@ void TestDRT::testInitNetwork()
 
 	ex_path_set_file.close();
 	path_set_file.close();
+}
+
+void TestDRT::testCalcBusrouteInterStopIVT()
+{
+	vector<Busline*> lines = net->get_buslines();
+	vector<pair<Busstop*, double> > interstopIVT;
+	
+	//test for existing lines
+	for (auto line : lines)
+	{
+		Busroute* route = line->get_busroute();
+		vector<Busstop*> stops = line->stops;
+		interstopIVT = net->calc_interstop_freeflow_ivt(route, stops);
+
+		QVERIFY2(interstopIVT.size() == stops.size() , "Failure, calculation of inter-stop IVT failed for existing busline");
+	}
+
+	//test multiple stops on same dummy links
+	Busstop* Aprime = new Busstop(10, "Aprime", 12, 19, 19, 0, 0, 1.0, 0, 0, nullptr); //add to the same link as stop A, downstream of A
+	Busstop* Bprime = new Busstop(20, "Bprime", 67, 19, 19, 0, 0, 1.0, 0, 0, nullptr); //add to the same link as stop B, downstream of B
+
+	vector<Busstop*> stops = { net->get_busstop_from_name("A"), Aprime, net->get_busstop_from_name("B"), Bprime };
+	Busroute* route = net->get_buslines()[1]->get_busroute(); //route of line 2
+
+	interstopIVT = net->calc_interstop_freeflow_ivt(route, stops);
+	QVERIFY2(interstopIVT.size() == stops.size(), "Failure, calculation of inter-stop IVT failed for route with multiple stops on dummy links");
+
+	stops.clear();
+	delete Aprime;
+	delete Bprime;
+
+	//test multiple stops on same real link
+	route = net->get_buslines()[0]->get_busroute(); //route of line 1
+	Busstop* upstream = new Busstop(30, "Upstream", 23, 5000, 20, 0, 0, 1.0, 0, 0, nullptr); //add stop 5000 meters from upstream node on link 23 
+	Busstop* middle = new Busstop(40, "Middle", 23, 7500, 20, 0, 0, 1.0, 0, 0, nullptr); //add stop 7500 meters from upstream node on link 23
+	Busstop* downstream = new Busstop(50, "Downstream", 23, 10000, 20, 0, 0, 1.0, 0, 0, nullptr); //add stop 10000 meters from upstream node on link 23
+	stops = { net->get_busstop_from_name("A"), upstream, middle, downstream, net->get_busstop_from_name("D") };
+	interstopIVT = net->calc_interstop_freeflow_ivt(route, stops);
+
+	QVERIFY2(interstopIVT.size() == stops.size(), "Failure, calculation of inter-stop IVT failed for route with multiple stops on same real link");
+
+	delete upstream;
+	delete middle;
+	delete downstream;
 }
 
 void TestDRT::testCreateBusroute()
@@ -285,8 +330,6 @@ void TestDRT::testCreateAllDRTLines()
     }
 
 }
-
-
 
 void TestDRT::testDelete()
 {
