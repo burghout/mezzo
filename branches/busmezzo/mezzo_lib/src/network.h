@@ -180,9 +180,15 @@ public:
         int                     nr_stops_init_occup,   //!< number of prior upstream stops resulting with initial occupancy (shape of a Gamma distribution)
         bool                    flex_line              //!< true if this line allows for dynamically scheduled trips
     ); //!< creates a busline and adds it to Network::buslines
+    bool createAllDRTLines(); //!< creates all the DRT lines between each stop pair that has a viable route between them
+    Origin* findNearestOriginToStop(Busstop* stop); //!< returns the nearest Origin Node to  stop
+    Destination* findNearestDestinationToStop(Busstop* stop);  //!< returns the nearest Destination Node from stop
+    vector<pair<Busstop*, double> > calc_interstop_freeflow_ivt(const Busroute* route, const vector<Busstop*>& stops) const; //!< returns the free-flow IVT (for parameter 'time') between all stops on a busroute
+
     bool run(int period); //!< RUNS the network for 'period' seconds
 	bool addroutes (int oid, int did, ODpair* odpair); //!< adds routes to an ODpair
 	bool add_od_routes()	; //!< adds routes to all ODpairs
+
 	bool readdemandfile(string name);  //!< reads the OD matrix and creates the ODpairs
 	bool readlinktimes(string name); //!< reads historical link travel times
 	bool set_freeflow_linktimes();
@@ -235,6 +241,8 @@ public:
 	double get_runtime(){return runtime;}
 	double get_time_alpha(){return time_alpha;}
 	Parameters* get_parameters () {return theParameters;} 
+
+    // WILCO: note: returning a reference to member variables of an object is in general a BAD IDEA
 	vector <ODpair*>& get_odpairs () {return odpairs;} // keep as vector
 
 	map <int, Origin*>& get_origins() {return originmap;}
@@ -243,6 +251,8 @@ public:
 	map <int,Link*>& get_links() {return linkmap;}
 
 	map <int, Busstop*>& get_stopsmap() { return busstopsmap; }
+    vector <Busroute*>&  get_busroutes() { return busroutes; } // bad idea, but consistent with the other get_*
+    vector <Busline*>& get_buslines() {return buslines;}
 	
 	multimap<odval, Route*>::iterator find_route (int id, odval val);
 	bool exists_route (int id, odval val); // checks if route with this ID exists for OD pair val
@@ -295,7 +305,6 @@ public:
 	bool read_pass_IVTT (pair<const ODSLL, Travel_time>& wt_row);
 	bool readbusroute(istream& in); //!< reads a transit route
 	bool readbusstop (istream& in); //!< reads a busstop
-	bool readstopturningpoint(istream& in); //!< read an 'opposing stop' relation between two different stops
 	bool readbusline(istream& in); //!< reads a busline
     bool readwalkingtimedistribution(istream& in); //!< reads a walking time distribution between two nodes that are within walking distance that can be generated using a dedicated walking model.
 	bool readbustrip_format1(istream& in); //!< reads trips based on detailed time-table
@@ -432,7 +441,7 @@ protected:
 */
 	//DRT implementation
 #include <tuple>
-	typedef std::tuple<Bus*, Busstop*, double, vector<int>> DrtVehicleInit; //!< un-scheduled vehicle, initial busstop, initial time, and initial service route ids
+    typedef std::tuple<Bus*, Busstop*, Controlcenter*, double> DrtVehicleInit; //!< un-scheduled vehicle, initial busstop, initial controlcenter, initial time
 	map<int, Controlcenter*> ccmap; //!< map of all control centers with id as key
 	vector <DrtVehicleInit> drtvehicles; //!<  vector of all initially unassigned vehicles that are not assigned a schedule and line on input, along with values used for their initialization (used in Network::init())
 /**@}*/

@@ -50,7 +50,6 @@ public:
 private Q_SLOTS:
     void testCreateNetwork(); //!< test loading a network
     void testInitNetwork(); //!< test generating passenger path sets & loading a network
-    void testCreateBusroute();
     void testRunNetwork(); //!< test running the network
     void testSaveResults(); //!< tests saving results
     void testDelete(); //!< tests correct deletion
@@ -85,7 +84,7 @@ void TestIntegration::testInitNetwork()
     // Test if the network is properly read and initialized
     QVERIFY2(net->get_links().size() == 15, "Failure, network should have 15 links ");
     QVERIFY2(net->get_nodes().size() == 13, "Failure, network should have 13 nodes ");
-    QVERIFY2(net->get_odpairs().size() == 4, "Failure, network should have 4 nodes ");
+    QVERIFY2(net->get_odpairs().size() == 5, "Failure, network should have 6 od pairs ");
     QVERIFY2 (net->get_busstop_from_name("A")->get_id() == 1, "Failure, bus stop A should be id 1 ");
     QVERIFY2 (net->get_busstop_from_name("B")->get_id() == 2, "Failure, bus stop B should be id 2 ");
     QVERIFY2 (net->get_busstop_from_name("C")->get_id() == 3, "Failure, bus stop C should be id 3 ");
@@ -108,82 +107,6 @@ void TestIntegration::testInitNetwork()
 	path_set_file.close();
 }
 
-void TestIntegration::testCreateBusroute()
-{
-    // Test correct route
-    ODpair* od_pair = net->get_odpairs().front(); // path from Origin 1 to Destination 4
-    Busstop* stopA = net->get_busstop_from_name("A"); // on link 12
-    Busstop* stopD = net->get_busstop_from_name("D"); // on link 34
-    vector <Busstop*> stops;
-
-    Busroute* emptyStopsRoute = net->create_busroute_from_stops(1, od_pair->get_origin(), od_pair->get_destination(), stops);
-    QVERIFY(emptyStopsRoute == nullptr);
-
-    stops.push_back(stopA);
-    stops.push_back(stopD);
-    Busroute* routeViaAandD = net->create_busroute_from_stops(2, od_pair->get_origin(), od_pair->get_destination(), stops);
-    QVERIFY(routeViaAandD); // if nullptr something went wrong
-
-    // verify the route links: 12 -> 23 -> 34
-    vector <Link*> links = routeViaAandD->get_links();
-    QVERIFY(links.size() == 3);
-    QVERIFY(links.front()->get_id() == 12);
-    QVERIFY(links.back()->get_id() == 34);
-
-    //test incorrect route
-    Busstop* stopB = net->get_busstop_from_name("B"); // on link 67, unreachable
-    stops.push_back(stopB);
-
-    Busroute* routeViaAandDandB = net->create_busroute_from_stops(3, od_pair->get_origin(), od_pair->get_destination(), stops);
-    QVERIFY(routeViaAandDandB == nullptr); // should return nullptr since link 67 is not reachable
-
-    //Vtype* vtype = new Vtype(888, "octobus", 1.0, 20.0);
-
-    // test to create direct busroutes from/to all stops
-    auto stopsmap = net->get_stopsmap();
-    vector<Busroute*> routesFound;
-    routesFound.reserve(6);
-
-    int counter = 100;
-    for (auto startstop : stopsmap)
-    {
-        for (auto endstop : stopsmap)
-        {
-            if (startstop != endstop)
-            {
-                stops.clear();
-                stops.push_back(startstop.second);
-                stops.push_back(endstop.second);
-                qDebug() << "checking route for busline: " << startstop.first << " to " << endstop.first;
-                Busroute* newRoute = net->create_busroute_from_stops(counter, od_pair->get_origin(), od_pair->get_destination(), stops);
-                if (newRoute != nullptr)
-                {
-                    qDebug() << " route found";
-
-                    //test if route found is a connected sequence of links
-                    vector<Link*> rlinks = newRoute->get_links();
-                    for (Link* rlink : rlinks)
-                    {
-                        Link* nextlink = newRoute->nextlink(rlink);
-                        if (nextlink)
-                        {
-                            QString msg = QString("Failure, link %1 is not an upstream link to link %2").arg(rlink->get_id()).arg(nextlink->get_id());
-                            QVERIFY2(rlink->get_out_node_id() == nextlink->get_in_node_id(), qPrintable(msg)); //outnode of preceding link should be innode of succeeding link
-                        }
-                    }
-
-                    routesFound.push_back(newRoute);
-                }
-                else
-                    qDebug() << " no route found";
-                counter++;
-            }
-        }
-    }
-
-    QVERIFY2(routesFound.size() == 6, "Failure, there should be 6 direct routes from/to all stops for the SF network: A->B, A->C, A->D, B->C, B->D and C->D");
-
-}
 
 void TestIntegration::testRunNetwork()
 {

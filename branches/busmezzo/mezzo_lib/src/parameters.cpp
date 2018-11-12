@@ -1,10 +1,14 @@
 #include "parameters.h"
 #include <iostream>
 
+
+
 Parameters::Parameters ()
 // Later this will be read from a file
 
 {
+   //qSetMessagePattern("%{file}:%{function}:%{type}:%{message}");
+
    viewmode = 0; // show simulation run
    max_thickness_value=1;
    max_colour_value=1;

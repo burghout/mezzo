@@ -56,7 +56,7 @@ class Route
 	bool less_than(Route* route);
 	double cost(double time=0.0);
 	bool equals (Route& route); // returns true if same route {return ( (route.get_links())==(get_links()) );}
-	vector<Link*> get_links() {return links;}	
+	vector<Link*> get_links() const {return links;}	
 	vector<Link*> get_upstream_links(int link_id) ;// returns all links upstream of link_id
 	vector<Link*> get_downstream_links(int link_id);  // returns all links downstream of link_id, including Link(link_id)
 	bool has_link(int lid);

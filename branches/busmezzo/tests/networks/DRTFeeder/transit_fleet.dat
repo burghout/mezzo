@@ -1,0 +1,17 @@
+dwell_time_functions: 2
+
+{1	11	 1	  0	   0	0	0	0	}
+{2	12	12.0  2.4  1.03 1.0 1.0 0.0	}
+
+vehicle_types: 2
+
+{1	Bus_1_2_3_4	15	50	50	1}
+{2  DRT_Shuttle  6	 8	24	2}
+
+
+vehicle_scheduling:	0
+
+unassigned_vehicles: 3
+{ 201	1	1 	1	1000}
+{ 202	1	2 	1	1000}
+{ 203	1	3 	1	1000}

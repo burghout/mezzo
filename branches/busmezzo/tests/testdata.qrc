@@ -14,5 +14,6 @@
         <file>networks/SFnetwork/ExpectedOutputs/o_transitstop_sum.dat</file>
         <file>networks/SFnetwork/ExpectedOutputs/o_transitlog_out.dat</file>
         <file>networks/SFnetwork/ExpectedOutputs/o_path_set_generation.dat</file>
+        <file alias="drtmasterfile.mezzo">networks/DRTFeeder/masterfile.mezzo</file>
     </qresource>
 </RCC>
