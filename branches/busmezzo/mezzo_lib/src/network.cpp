@@ -2052,12 +2052,7 @@ Busline* Network::create_busline(
             laststop->set_dest_node(dest_node);
         }
 
-        //ccmap[1]->addServiceRoute(bl);
     }
-
-//    // add to buslines vector
-//    buslines.push_back (bl);
-
     return bl;
 }
 
@@ -2124,12 +2119,12 @@ bool Network::createAllDRTLines()
                 stops.clear();
                 stops.push_back(startstop.second);
                 stops.push_back(endstop.second);
-                qDebug() << "checking route for busline: " << startstop.first << " to " << endstop.first;
+               // qDebug() << "checking route for busline: " << startstop.first << " to " << endstop.first;
 
                 Busroute* newRoute = create_busroute_from_stops(routeIdCounter, od_pair->get_origin(), od_pair->get_destination(), stops);
                 if (newRoute != nullptr)
                 {
-                    qDebug() << " route found";
+                    //qDebug() << " route found";
                     routesFound.push_back(newRoute);
                     routeIdCounter++;
                     // create busLine
@@ -2141,7 +2136,7 @@ bool Network::createAllDRTLines()
                     }
                 }
                 else
-                    qDebug() << " no route found";
+                    qDebug() << "DTR create buslines: no route found from stop " << startstop.first << " to " << endstop.first;
 
             }
         }
@@ -7415,7 +7410,7 @@ vector<Link*> Network::shortest_path_to_node(int rootlink, int dest_node, double
         if (graph->reachable(dest_node))
             rlinks = get_path(dest_node);
         else
-            cout << "ERROR: Node " << dest_node << " is not reachable from rootlink "
+            cout << "shortest_path_to_node : Error: Node " << dest_node << " is not reachable from rootlink "
                  << rootlink << std::endl;
     }
     return rlinks;

@@ -80,7 +80,7 @@ void TestDRT::testCreateNetwork()
 
 void TestDRT::testInitNetwork()
 {
-	qDebug() << QFile::remove(path_set_generation_filename); //remove old passenger path sets
+    QFile::remove(path_set_generation_filename); //remove old passenger path sets
 
     nt->init();
  // Test here various properties that should be true after reading the network
@@ -246,19 +246,19 @@ void TestDRT::testFindOrigins()
     Busstop* stopD = net->get_busstop_from_name("D"); // on link 34
 
     auto oA=net->findNearestOriginToStop(stopA);
-    qDebug() << " NearestOrigin to stop A : " << oA->get_id();
+//    qDebug() << " NearestOrigin to stop A : " << oA->get_id();
     QVERIFY (oA->get_id() == 1);
 
     auto oB=net->findNearestOriginToStop(stopB);
-    qDebug() << " NearestOrigin to stop B : " << oB->get_id();
+//    qDebug() << " NearestOrigin to stop B : " << oB->get_id();
     QVERIFY (oB->get_id() == 5);
 
     auto oC=net->findNearestOriginToStop(stopC);
-    qDebug() << " NearestOrigin to stop C : " << oC->get_id();
+//    qDebug() << " NearestOrigin to stop C : " << oC->get_id();
     QVERIFY (oC->get_id() == 9);
 
     auto oD=net->findNearestOriginToStop(stopD);
-    qDebug() << " NearestOrigin to stop D : " << oD->get_id();
+//    qDebug() << " NearestOrigin to stop D : " << oD->get_id();
     QVERIFY (oD->get_id() == 1);
 }
 
@@ -276,19 +276,19 @@ void TestDRT::testFindDestinations()
     Busstop* stopD = net->get_busstop_from_name("D"); // on link 34
 
     auto oA=net->findNearestDestinationToStop(stopA);
-    qDebug() << " NearestDestination to stop A : " << oA->get_id();
+//    qDebug() << " NearestDestination to stop A : " << oA->get_id();
     QVERIFY (oA->get_id() == 4);
 
     auto oB=net->findNearestDestinationToStop(stopB);
-    qDebug() << " NearestDestination to stop B : " << oB->get_id();
+//    qDebug() << " NearestDestination to stop B : " << oB->get_id();
     QVERIFY (oB->get_id() == 12);
 
     auto oC=net->findNearestDestinationToStop(stopC);
-    qDebug() << " NearestDestination to stop C : " << oC->get_id();
+//    qDebug() << " NearestDestination to stop C : " << oC->get_id();
     QVERIFY (oC->get_id() == 12);
 
     auto oD=net->findNearestDestinationToStop(stopD);
-    qDebug() << " NearestDestination to stop D : " << oD->get_id();
+//    qDebug() << " NearestDestination to stop D : " << oD->get_id();
     QVERIFY (oD->get_id() == 4);
 
 }
@@ -297,37 +297,37 @@ void TestDRT::testCreateAllDRTLines()
 {
     auto busroutes = net->get_busroutes();
     auto buslines = net->get_buslines();
-    for (auto bl:buslines)
-    {
-        qDebug() << "__Busline " << bl->get_id();
-    }
-    for (auto br:busroutes)
-    {
-        qDebug() << "__Busroute " << br->get_id();
-    }
+//    for (auto bl:buslines)
+//    {
+//        qDebug() << "__Busline " << bl->get_id();
+//    }
+//    for (auto br:busroutes)
+//    {
+//        qDebug() << "__Busroute " << br->get_id();
+//    }
     QVERIFY (busroutes.size() == 4);
-    qDebug() << buslines.size();
+//    qDebug() << buslines.size();
     QVERIFY (buslines.size() == 4);
     net->createAllDRTLines(); // should find 6 more routes and create 6 more lines
 
     busroutes = net->get_busroutes();
     buslines = net->get_buslines();
 
-    qDebug() << " --busroutes " << busroutes.size();
-    qDebug() << " --buslines " << buslines.size();
+//    qDebug() << " --busroutes " << busroutes.size();
+//    qDebug() << " --buslines " << buslines.size();
 
     QVERIFY (busroutes.size() == 10);
     QVERIFY (buslines.size() == 10);
 
-    for (auto bl:buslines)
-    {
-        qDebug() << "__Busline " << bl->get_id();
-    }
+//    for (auto bl:buslines)
+//    {
+//        qDebug() << "__Busline " << bl->get_id();
+//    }
 
-    for (auto br:busroutes)
-    {
-        qDebug() << "__Busroute " << br->get_id();
-    }
+//    for (auto br:busroutes)
+//    {
+//        qDebug() << "__Busroute " << br->get_id();
+//    }
 
 }
 
