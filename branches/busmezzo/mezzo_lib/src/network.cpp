@@ -2113,7 +2113,14 @@ bool Network::createAllDRTLines()
                 ODpair* odptr=(*(find_if (odpairs.begin(),odpairs.end(), compareod (odid) )));
                 if (odptr != nullptr)
                     od_pair = odptr;
-                // find best OD pair or create.
+                else // create new OD pair
+                {
+                    od_pair = new ODpair(startstop.second->get_origin_node(),endstop.second->get_dest_node(),0.0, &vehtypes);
+                    odpairs.push_back(od_pair);
+                    qDebug() <<  "----Missing OD pair, creating for Origin " << ori_id <<
+                                 ", destination " << dest_id;
+                }
+
                 stops.clear();
                 stops.push_back(startstop.second);
                 stops.push_back(endstop.second);
