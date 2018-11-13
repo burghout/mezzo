@@ -85,9 +85,9 @@ void TestDRT::testInitNetwork()
     nt->init();
  // Test here various properties that should be true after reading the network
     // Test if the network is properly read and initialized
-    QVERIFY2(net->get_links().size() == 15, "Failure, network should have 15 links ");
-    QVERIFY2(net->get_nodes().size() == 13, "Failure, network should have 13 nodes ");
-    QVERIFY2(net->get_odpairs().size() == 5, "Failure, network should have 6 od pairs ");
+    QVERIFY2(net->get_links().size() == 27, "Failure, network should have 27 links ");
+    QVERIFY2(net->get_nodes().size() == 16, "Failure, network should have 16 nodes ");
+    QVERIFY2(net->get_odpairs().size() == 9, "Failure, network should have 9 od pairs ");
     QVERIFY2 (net->get_busstop_from_name("A")->get_id() == 1, "Failure, bus stop A should be id 1 ");
     QVERIFY2 (net->get_busstop_from_name("B")->get_id() == 2, "Failure, bus stop B should be id 2 ");
     QVERIFY2 (net->get_busstop_from_name("C")->get_id() == 3, "Failure, bus stop C should be id 3 ");
@@ -97,17 +97,17 @@ void TestDRT::testInitNetwork()
 
 
 	//Test if newly generated passenger path sets match expected output
-	QString ex_path_set_fullpath = expected_outputs_path + path_set_generation_filename;
-	QFile ex_path_set_file(ex_path_set_fullpath); //expected o_path_set_generation.dat
-	QVERIFY2(ex_path_set_file.open(QIODevice::ReadOnly | QIODevice::Text), "Failure, cannot open ExpectedOutputs/o_path_set_generation.dat");
+//	QString ex_path_set_fullpath = expected_outputs_path + path_set_generation_filename;
+//	QFile ex_path_set_file(ex_path_set_fullpath); //expected o_path_set_generation.dat
+//	QVERIFY2(ex_path_set_file.open(QIODevice::ReadOnly | QIODevice::Text), "Failure, cannot open ExpectedOutputs/o_path_set_generation.dat");
 	
-	QFile path_set_file(path_set_generation_filename); //generated o_path_set_generation.dat
-	QVERIFY2(path_set_file.open(QIODevice::ReadOnly | QIODevice::Text), "Failure, cannot open o_path_set_generation.dat");
+//	QFile path_set_file(path_set_generation_filename); //generated o_path_set_generation.dat
+//	QVERIFY2(path_set_file.open(QIODevice::ReadOnly | QIODevice::Text), "Failure, cannot open o_path_set_generation.dat");
 
-	QVERIFY2(path_set_file.readAll() == ex_path_set_file.readAll(), "Failure, o_path_set_generation.dat differs from ExpectedOutputs/o_path_set_generation.dat");
+//	QVERIFY2(path_set_file.readAll() == ex_path_set_file.readAll(), "Failure, o_path_set_generation.dat differs from ExpectedOutputs/o_path_set_generation.dat");
 
-	ex_path_set_file.close();
-	path_set_file.close();
+//	ex_path_set_file.close();
+//	path_set_file.close();
 }
 
 void TestDRT::testCalcBusrouteInterStopIVT()
@@ -157,24 +157,37 @@ void TestDRT::testCalcBusrouteInterStopIVT()
 void TestDRT::testCreateBusroute()
 {
     // Test correct route
-    ODpair* od_pair = net->get_odpairs().front(); // path from Origin 1 to Destination 4
+    ODpair* od_pair = net->find_odpair(10,66); // 50 to 88
+    QVERIFY (od_pair);
+    qDebug() << "od pair " << od_pair->get_origin()->get_id() << " to "
+             << od_pair->get_destination()->get_id();
     Busstop* stopA = net->get_busstop_from_name("A"); // on link 12
-    Busstop* stopD = net->get_busstop_from_name("D"); // on link 34
+    Busstop* stopC = net->get_busstop_from_name("C"); // on link 56
     vector <Busstop*> stops;
 
     Busroute* emptyStopsRoute = net->create_busroute_from_stops(1, od_pair->get_origin(), od_pair->get_destination(), stops);
     QVERIFY(emptyStopsRoute == nullptr);
 
     stops.push_back(stopA);
-    stops.push_back(stopD);
-    Busroute* routeViaAandD = net->create_busroute_from_stops(2, od_pair->get_origin(), od_pair->get_destination(), stops);
-    QVERIFY(routeViaAandD); // if nullptr something went wrong
+    stops.push_back(stopC);
+    Busroute* routeViaAandC = net->create_busroute_from_stops(2, od_pair->get_origin(), od_pair->get_destination(), stops);
+    QVERIFY(routeViaAandC); // if nullptr something went wrong
 
-    // verify the route links: 12 -> 23 -> 34
-    vector <Link*> links = routeViaAandD->get_links();
-    QVERIFY(links.size() == 3);
-    QVERIFY(links.front()->get_id() == 12);
-    QVERIFY(links.back()->get_id() == 34);
+    // verify the route links:
+    vector <Link*> links = routeViaAandC->get_links();
+
+    for (auto rlink:links) // verify the route links are connected
+    {
+        Link* nextlink = routeViaAandC->nextlink(rlink);
+        if (nextlink)
+        {
+            QString msg = QString("Failure, link %1 is not an upstream link to link %2").arg(rlink->get_id()).arg(nextlink->get_id());
+            QVERIFY2(rlink->get_out_node_id() == nextlink->get_in_node_id(), qPrintable(msg)); //outnode of preceding link should be innode of succeeding link
+        }
+    }
+    QVERIFY(links.size() == 5);
+    QVERIFY(links.front()->get_id() == 101);
+    QVERIFY(links.back()->get_id() == 666);
 
     //test incorrect route
     Busstop* stopB = net->get_busstop_from_name("B"); // on link 67, unreachable
