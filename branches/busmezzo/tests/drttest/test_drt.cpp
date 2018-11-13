@@ -14,7 +14,9 @@
 //! Contains tests of parts of the DRT framework
 
 
-const std::string network_path = "../networks/SFnetwork/";
+const std::string network_path_1 = "../networks/SFnetwork/"; // Spiess Florian network
+const std::string network_path_2 = "../networks/DRTFeeder/"; // DRT feeder network
+
 const std::string network_name = "masterfile.mezzo";
 
 const QString expected_outputs_path = "://networks/SFnetwork/ExpectedOutputs/";
@@ -53,8 +55,6 @@ private Q_SLOTS:
     void testFindOrigins(); //!< tests the findNearestOrigin function
     void testFindDestinations(); //!< tests the findNearestDestination function
     void testCreateAllDRTLines(); //!< tests creation of buslines
-//    void testRunNetwork(); //!< test running the network
-//   void testSaveResults(); //!< tests saving results
     void testDelete(); //!< tests correct deletion
 
 private:
@@ -66,7 +66,7 @@ void TestDRT::testCreateNetwork()
 {   
     nt = nullptr;
     net = nullptr;
-    chdir(network_path.c_str());
+    chdir(network_path_2.c_str());
 
     QFileInfo check_file(network_name.c_str());
     QVERIFY2 (check_file.exists(), "Failure, masterfile cannot be found");
@@ -183,8 +183,6 @@ void TestDRT::testCreateBusroute()
     Busroute* routeViaAandDandB = net->create_busroute_from_stops(3, od_pair->get_origin(), od_pair->get_destination(), stops);
     QVERIFY(routeViaAandDandB == nullptr); // should return nullptr since link 67 is not reachable
 
-    //Vtype* vtype = new Vtype(888, "octobus", 1.0, 20.0);
-
     // test to create direct busroutes from/to all stops
     auto stopsmap = net->get_stopsmap();
     vector<Busroute*> routesFound;
@@ -246,19 +244,15 @@ void TestDRT::testFindOrigins()
     Busstop* stopD = net->get_busstop_from_name("D"); // on link 34
 
     auto oA=net->findNearestOriginToStop(stopA);
-//    qDebug() << " NearestOrigin to stop A : " << oA->get_id();
     QVERIFY (oA->get_id() == 1);
 
     auto oB=net->findNearestOriginToStop(stopB);
-//    qDebug() << " NearestOrigin to stop B : " << oB->get_id();
     QVERIFY (oB->get_id() == 5);
 
     auto oC=net->findNearestOriginToStop(stopC);
-//    qDebug() << " NearestOrigin to stop C : " << oC->get_id();
     QVERIFY (oC->get_id() == 9);
 
     auto oD=net->findNearestOriginToStop(stopD);
-//    qDebug() << " NearestOrigin to stop D : " << oD->get_id();
     QVERIFY (oD->get_id() == 1);
 }
 
@@ -276,19 +270,15 @@ void TestDRT::testFindDestinations()
     Busstop* stopD = net->get_busstop_from_name("D"); // on link 34
 
     auto oA=net->findNearestDestinationToStop(stopA);
-//    qDebug() << " NearestDestination to stop A : " << oA->get_id();
     QVERIFY (oA->get_id() == 4);
 
     auto oB=net->findNearestDestinationToStop(stopB);
-//    qDebug() << " NearestDestination to stop B : " << oB->get_id();
     QVERIFY (oB->get_id() == 12);
 
     auto oC=net->findNearestDestinationToStop(stopC);
-//    qDebug() << " NearestDestination to stop C : " << oC->get_id();
     QVERIFY (oC->get_id() == 12);
 
     auto oD=net->findNearestDestinationToStop(stopD);
-//    qDebug() << " NearestDestination to stop D : " << oD->get_id();
     QVERIFY (oD->get_id() == 4);
 
 }
@@ -297,38 +287,13 @@ void TestDRT::testCreateAllDRTLines()
 {
     auto busroutes = net->get_busroutes();
     auto buslines = net->get_buslines();
-//    for (auto bl:buslines)
-//    {
-//        qDebug() << "__Busline " << bl->get_id();
-//    }
-//    for (auto br:busroutes)
-//    {
-//        qDebug() << "__Busroute " << br->get_id();
-//    }
     QVERIFY (busroutes.size() == 4);
-//    qDebug() << buslines.size();
     QVERIFY (buslines.size() == 4);
     net->createAllDRTLines(); // should find 6 more routes and create 6 more lines
-
     busroutes = net->get_busroutes();
     buslines = net->get_buslines();
-
-//    qDebug() << " --busroutes " << busroutes.size();
-//    qDebug() << " --buslines " << buslines.size();
-
     QVERIFY (busroutes.size() == 10);
     QVERIFY (buslines.size() == 10);
-
-//    for (auto bl:buslines)
-//    {
-//        qDebug() << "__Busline " << bl->get_id();
-//    }
-
-//    for (auto br:busroutes)
-//    {
-//        qDebug() << "__Busroute " << br->get_id();
-//    }
-
 }
 
 void TestDRT::testDelete()
