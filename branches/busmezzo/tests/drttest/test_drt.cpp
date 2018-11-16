@@ -257,16 +257,16 @@ void TestDRT::testFindOrigins()
     Busstop* stopD = net->get_busstop_from_name("D"); // on link 34
 
     auto oA=net->findNearestOriginToStop(stopA);
-    QVERIFY (oA->get_id() == 1);
+    QVERIFY (oA->get_id() == 10);
 
     auto oB=net->findNearestOriginToStop(stopB);
-    QVERIFY (oB->get_id() == 5);
+    QVERIFY (oB->get_id() == 30);
 
     auto oC=net->findNearestOriginToStop(stopC);
-    QVERIFY (oC->get_id() == 9);
+    QVERIFY (oC->get_id() == 50);
 
     auto oD=net->findNearestOriginToStop(stopD);
-    QVERIFY (oD->get_id() == 1);
+    QVERIFY (oD->get_id() == 70);
 }
 
 void TestDRT::testFindDestinations()
@@ -283,16 +283,16 @@ void TestDRT::testFindDestinations()
     Busstop* stopD = net->get_busstop_from_name("D"); // on link 34
 
     auto oA=net->findNearestDestinationToStop(stopA);
-    QVERIFY (oA->get_id() == 4);
+    QVERIFY (oA->get_id() == 22);
 
     auto oB=net->findNearestDestinationToStop(stopB);
-    QVERIFY (oB->get_id() == 12);
+    QVERIFY (oB->get_id() == 44);
 
     auto oC=net->findNearestDestinationToStop(stopC);
-    QVERIFY (oC->get_id() == 12);
+    QVERIFY (oC->get_id() == 66);
 
     auto oD=net->findNearestDestinationToStop(stopD);
-    QVERIFY (oD->get_id() == 4);
+    QVERIFY (oD->get_id() == 88);
 
 }
 
@@ -300,13 +300,17 @@ void TestDRT::testCreateAllDRTLines()
 {
     auto busroutes = net->get_busroutes();
     auto buslines = net->get_buslines();
-    QVERIFY (busroutes.size() == 4);
+    qDebug() << " testCreateAllDRTLInes, busroutes.size() " << busroutes.size()
+             << " buslines.size() " << buslines.size();
+    QVERIFY (busroutes.size() == 18);
     QVERIFY (buslines.size() == 4);
     net->createAllDRTLines(); // should find 6 more routes and create 6 more lines
     busroutes = net->get_busroutes();
     buslines = net->get_buslines();
-    QVERIFY (busroutes.size() == 10);
-    QVERIFY (buslines.size() == 10);
+    qDebug() << " testCreateAllDRTLInes, busroutes.size() " << busroutes.size()
+             << " buslines.size() " << buslines.size();
+    QVERIFY (busroutes.size() == 30);
+    QVERIFY (buslines.size() == 16);
 }
 
 void TestDRT::testDelete()

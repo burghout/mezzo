@@ -2117,9 +2117,9 @@ bool Network::createAllDRTLines()
                 int ori_id = startstop.second->get_origin_node()->get_id();
                 int dest_id = endstop.second->get_dest_node()->get_id();
                 odval odid (ori_id, dest_id);
-                ODpair* odptr=(*(find_if (odpairs.begin(),odpairs.end(), compareod (odid) )));
-                if (odptr != nullptr)
-                    od_pair = odptr;
+                auto od_it = find_if (odpairs.begin(),odpairs.end(), compareod (odid) );
+                if (od_it != odpairs.end())
+                    od_pair = *od_it;
                 else // create new OD pair
                 {
                     od_pair = new ODpair(startstop.second->get_origin_node(),endstop.second->get_dest_node(),0.0, &vehtypes);
