@@ -16,7 +16,7 @@
 //! unless we switch to QFile everywhere.
 
 
-const std::string network_path = "../networks/SFnetwork/";
+const std::string network_path_1 = "../networks/SFnetwork/";
 const std::string network_name = "masterfile.mezzo";
 
 const QString expected_outputs_path = "://networks/SFnetwork/ExpectedOutputs/";
@@ -63,7 +63,7 @@ void TestIntegration::testCreateNetwork()
 {   
     nt = nullptr;
     net = nullptr;
-    chdir(network_path.c_str());
+    chdir(network_path_1.c_str());
 
     QFileInfo check_file(network_name.c_str());
     QVERIFY2 (check_file.exists(), "Failure, masterfile cannot be found");

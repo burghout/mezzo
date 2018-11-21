@@ -244,6 +244,7 @@ public:
 
     // WILCO: note: returning a reference to member variables of an object is in general a BAD IDEA
 	vector <ODpair*>& get_odpairs () {return odpairs;} // keep as vector
+    ODpair* find_odpair (const int origin_id, const int dest_id); //!< returns the ODpair if found, nullptr otherwise
 
 	map <int, Origin*>& get_origins() {return originmap;}
 	map <int, Destination*>& get_destinations() {return destinationmap;}

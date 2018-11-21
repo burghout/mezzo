@@ -433,6 +433,8 @@ int Network::reset()
     return runtime;
 }
 
+
+
 void Network::delete_passengers()
 {
     day = 1;
@@ -482,6 +484,16 @@ bool Network::exists_same_route (Route* route)
             return true;
     }
     return false;
+}
+
+ODpair* Network::find_odpair (const int origin_id, const int dest_id)
+{
+    odval odid (origin_id, dest_id);
+    vector <ODpair*>::iterator od_it= (find_if (odpairs.begin(),odpairs.end(), compareod (odid) ));
+    if (od_it == odpairs.end())
+        return nullptr;
+    else
+        return *od_it;
 }
 
 // define all the inputfunctions according to the rules in the
@@ -2105,9 +2117,9 @@ bool Network::createAllDRTLines()
                 int ori_id = startstop.second->get_origin_node()->get_id();
                 int dest_id = endstop.second->get_dest_node()->get_id();
                 odval odid (ori_id, dest_id);
-                ODpair* odptr=(*(find_if (odpairs.begin(),odpairs.end(), compareod (odid) )));
-                if (odptr != nullptr)
-                    od_pair = odptr;
+                auto od_it = find_if (odpairs.begin(),odpairs.end(), compareod (odid) );
+                if (od_it != odpairs.end())
+                    od_pair = *od_it;
                 else // create new OD pair
                 {
                     od_pair = new ODpair(startstop.second->get_origin_node(),endstop.second->get_dest_node(),0.0, &vehtypes);
