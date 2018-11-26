@@ -28,13 +28,14 @@ public:
 		int line_id_,
 		int trip_id_,
 		int stop_id_,
+		int car_id_, // Erik 18-11-25
 		double time_,
 		double generation_time_,
 		double boarding_probability_,
 		bool boarding_,
 		double u_boarding_,
 		double u_staying_
-		): pass_id(pass_id_),original_origin(original_origin_),destination_stop(destination_stop_),line_id(line_id_),trip_id(trip_id_), stop_id(stop_id_),time(time_),generation_time(generation_time_),boarding_probability(boarding_probability_),boarding(boarding_),u_boarding(u_boarding_),u_staying(u_staying_){}
+		): pass_id(pass_id_),original_origin(original_origin_),destination_stop(destination_stop_),line_id(line_id_),trip_id(trip_id_), stop_id(stop_id_),car_id(car_id_),time(time_),generation_time(generation_time_),boarding_probability(boarding_probability_),boarding(boarding_),u_boarding(u_boarding_),u_staying(u_staying_){}
 
 	virtual ~Pass_boarding_decision(); //!< destructor
 
@@ -45,6 +46,7 @@ public:
 			<< line_id << '\t'
 			<< trip_id << '\t'
 			<< stop_id<< '\t'
+			<< car_id << '\t'
 			<< time << '\t'
 			<< generation_time << '\t'
 			<< boarding_probability << '\t'
@@ -61,6 +63,7 @@ public:
 		line_id = 0;
 		trip_id = 0;
 		stop_id = 0;
+		car_id = 0; // Erik 18-11-25
 		time = 0;
 		generation_time = 0;
 		boarding = 0;
@@ -74,6 +77,7 @@ public:
 	int line_id;
 	int trip_id;
 	int stop_id;
+	int car_id;
 	double time;
 	double generation_time;
 	double boarding_probability;
@@ -92,11 +96,12 @@ public:
 		int line_id_,
 		int trip_id_,
 		int stop_id_,
+		int car_id_,
 		double time_,
 		double generation_time_,
 		int chosen_alighting_stop_,
         map<Busstop*,pair<double,double> > alighting_MNL_
-	): pass_id(pass_id_),original_origin(original_origin_),destination_stop(destination_stop_),line_id(line_id_),trip_id(trip_id_), stop_id(stop_id_),time(time_),generation_time(generation_time_),chosen_alighting_stop(chosen_alighting_stop_),alighting_MNL(alighting_MNL_){}
+	): pass_id(pass_id_),original_origin(original_origin_),destination_stop(destination_stop_),line_id(line_id_),trip_id(trip_id_), stop_id(stop_id_),car_id(car_id_),time(time_),generation_time(generation_time_),chosen_alighting_stop(chosen_alighting_stop_),alighting_MNL(alighting_MNL_){}
 
 	virtual ~Pass_alighting_decision(); //!< destructor
 	
@@ -109,6 +114,7 @@ public:
 		line_id = 0;
 		trip_id = 0;
 		stop_id = 0;
+		car_id = 0;
 		time = 0;
 		generation_time = 0;
 	}
@@ -119,6 +125,7 @@ public:
 	int line_id;
 	int trip_id;
 	int stop_id;
+	int car_id;
 	double time;
 	double generation_time;
 	int chosen_alighting_stop;
@@ -136,8 +143,9 @@ public:
 		double time_, 
 		double generation_time_, 
 		int chosen_connection_stop_, 
+		int chosen_connection_section_,
         map<Busstop*,pair<double,double> > connecting_MNL_
-	):	pass_id(pass_id_), original_origin(original_origin_), destination_stop(destination_stop_), stop_id(stop_id_),time(time_), generation_time(generation_time_), chosen_connection_stop(chosen_connection_stop_), connecting_MNL(connecting_MNL_) {}
+	):	pass_id(pass_id_), original_origin(original_origin_), destination_stop(destination_stop_), stop_id(stop_id_),time(time_), generation_time(generation_time_), chosen_connection_stop(chosen_connection_stop_), chosen_connection_section(chosen_connection_section_), connecting_MNL(connecting_MNL_) {}
 	
 	virtual ~Pass_connection_decision(); //!< destructor
 	
@@ -159,7 +167,8 @@ public:
 	double time;
 	double generation_time;
 	int chosen_connection_stop;
-    map<Busstop*,pair<double,double> > connecting_MNL;
+	int chosen_connection_section;
+	map<Busstop*,pair<double,double> > connecting_MNL;
 };
 
 class Pass_waiting_experience // container object holding output data for passenger waiting experience
@@ -234,6 +243,7 @@ public:
 	int nr_missed; //Nr of missed buses due to overcrowding
 };
 
+// Erik 18-11-26: Added car-specifics
 class Pass_onboard_experience
 {
 public:
@@ -245,9 +255,10 @@ public:
 		int trip_id_, 
 		int stop_id_, 
 		int leg_id_, 
+		int car_id_,
 		double expected_ivt_, 
 		pair<double, double> experienced_ivt_
-	): pass_id(pass_id_),original_origin(original_origin_),destination_stop(destination_stop_),line_id(line_id_), trip_id(trip_id_), stop_id(stop_id_), leg_id(leg_id_), expected_ivt(expected_ivt_), experienced_ivt(experienced_ivt_) {}
+	): pass_id(pass_id_),original_origin(original_origin_),destination_stop(destination_stop_),line_id(line_id_), trip_id(trip_id_), stop_id(stop_id_), leg_id(leg_id_), car_id(car_id_), expected_ivt(expected_ivt_), experienced_ivt(experienced_ivt_) {}
 	
 	void write (ostream& out){
 		out << pass_id << '\t' 
@@ -257,6 +268,7 @@ public:
 			<< trip_id << '\t' 
 			<< stop_id << '\t' 
 			<< leg_id << '\t' 
+			<< car_id << '\t'
 			<< expected_ivt << '\t' 
 			<< experienced_ivt.first << '\t' 
 			<< experienced_ivt.second 
@@ -270,10 +282,80 @@ public:
 	int trip_id;
 	int stop_id;
 	int leg_id;
+	int car_id;
 	double expected_ivt;
 	pair<double, double> experienced_ivt;
 	double crowding;
 };
+
+// Erik 18-11-25
+//class Pass_walking_experience // container object holding output data for passenger walking experience
+//{
+//public:
+//	Pass_waiting_experience(
+//		int pass_id_,
+//		int original_origin_,
+//		int destination_stop_,
+//		int from_stop_,
+//		int from_section_,
+//		int to_stop_,
+//		int to_section_,
+//		double time_,
+//		double generation_time_,
+//		double expected_WKT_PK_,
+//		//bool RTI_level_available_,
+//		//double projected_WKT_RTI_,
+//		double experienced_WKT_,
+//		double AWKT_
+//		//int nr_missed_
+//	) : pass_id(pass_id_), original_origin(original_origin_), destination_stop(destination_stop_), from_stop(from_stop_), from_section(from_section_), to_stop(to_stop_), to_section(to_section_), time(time_), generation_time(generation_time_), expected_WKT_PK(expected_WKT_PK_), experienced_WKT(experienced_WKT_), AWKT(AWKT_) {}
+//	virtual ~Pass_waiting_experience(); //!< destructor
+//
+//	void write(ostream& out) {
+//		out << pass_id << '\t'
+//			<< original_origin << '\t'
+//			<< destination_stop << '\t'
+//			<< from_stop << '\t'
+//			<< from_section << '\t'
+//			<< to_stop << '\t'
+//			<< to_section << '\t'
+//			<< time << '\t'
+//			<< generation_time << '\t'
+//			<< expected_WKT_PK << '\t'
+//			<< experienced_WKT << '\t'
+//			<< AWT << '\t'
+//			<< endl;
+//	}
+//
+//	void reset() {
+//		pass_id = 0;
+//		original_origin = 0;
+//		destination_stop = 0;
+//		from_stop = 0;
+//		from_section = 0;
+//		to_stop = 0;
+//		to_section = 0;
+//		time = 0;
+//		generation_time = 0;
+//		expected_WKT_PK = 0;
+//		experienced_WKT = 0;
+//		AWKT = 0;
+//	}
+//
+//	int pass_id;
+//	int original_origin;
+//	int destination_stop;
+//	int from_stop;
+//	int from_section;
+//	int to_stop;
+//	int to_section;
+//	double time;
+//	double generation_time;
+//	double expected_WKT_PK;
+//	double experienced_WKT;
+//	double AWKT;
+//};
+
 
 struct SLL
 {
@@ -291,6 +373,48 @@ struct SLL
 			return leg < rhs.leg;
 	}
 };
+
+// Erik 18-11-26
+struct SLLC
+{
+	Busstop* stop;
+	Busline* line;
+	Busstop* leg;
+	int car;
+
+	bool operator < (const SLLC& rhs) const
+	{
+		if (stop != rhs.stop)
+			return stop < rhs.stop;
+		else if (line != rhs.line)
+			return line < rhs.line;
+		else if (leg != rhs.leg)
+			return leg < rhs.leg;
+		else
+			return car < rhs.car;
+	}
+};
+
+// Erik 18-11-25
+//struct SS
+//{
+//	Busstop* from_stop;
+//	Busstop* to_stop;
+//	//int from_section;
+//	//int to_section;
+//
+//	bool operator < (const SS& rhs) const
+//	{
+//		if (from_stop != rhs.from_stop)
+//			return from_stop < rhs.from_stop;
+//		//else if (from_section != rhs.from_section)
+//		//	return from_section < rhs.from_section;
+//		else 
+//			return to_stop < rhs.to_stop;
+//		//else
+//		//	return to_section < rhs.to_section;
+//	}
+//};
 
 class ODstops : public Action
 {
@@ -358,7 +482,7 @@ public:
 	// output-related functions
 	void record_passenger_boarding_decision (Passenger* pass, Bustrip* trip, double time, double boarding_probability, bool boarding_decision); //!< creates a log-file for boarding decision related info
     void record_passenger_alighting_decision (Passenger* pass, Bustrip* trip, double time, Busstop* chosen_alighting_stop, map<Busstop*,pair<double,double> > alighting_MNL); // !< creates a log-file for alighting decision related info
-    void record_passenger_connection_decision (Passenger* pass, double time, Busstop* chosen_alighting_stop, map<Busstop*,pair<double,double> > connecting_MNL_);
+    void record_passenger_connection_decision (Passenger* pass, double time, Busstop* chosen_alighting_stop, int chosen_alighting_section, map<Busstop*,pair<double,double> > connecting_MNL_);
 	void record_waiting_experience (Passenger* pass, Bustrip* trip, double time, double experienced_WT, int level_of_rti_upon_decision, double projected_RTI, double AWT, int nr_missed); // !< creates a log-file for a decision and related waiting time components
 	void record_onboard_experience(Passenger* pass, Bustrip* trip, Busstop* stop, pair<double,double> riding_coeff);
 	void write_boarding_output(ostream & out, Passenger* pass);
@@ -372,15 +496,22 @@ public:
 
 	//Day2Day
 	void set_anticipated_waiting_time (Busstop* stop, Busline* line, double anticipated_WT);
-	void set_anticipated_ivtt (Busstop* stop, Busline* line, Busstop* leg, double anticipated_IVTT);
-	void set_alpha_RTI (Busstop* stop, Busline* line, double alpha); 
+	//void set_anticipated_ivtt (Busstop* stop, Busline* line, Busstop* leg, double anticipated_IVTT);
+	void set_anticipated_ivtt(Busstop* stop, Busline* line, Busstop* leg, int car, double anticipated_IVTT); // Erik 18-11-26
+	void set_alpha_RTI (Busstop* stop, Busline* line, double alpha);
 	void set_alpha_exp (Busstop* stop, Busline* line, double alpha); 
-	void set_ivtt_alpha_exp (Busstop* stop, Busline* line, Busstop* leg, double alpha); 
+	void set_ivtt_alpha_exp (Busstop* stop, Busline* line, Busstop* leg, int car, double alpha); // Erik 18-11-26
 	map<pair<Busstop*, Busline*>,double> get_anticipated_waiting_time () {return anticipated_waiting_time;}
 	map<pair<Busstop*, Busline*>,double> get_alpha_RTI () {return alpha_RTI;}
 	map<pair<Busstop*, Busline*>,double> get_alpha_exp () {return alpha_exp;}
-	map<SLL, double> get_anticipated_ivtt () {return anticipated_ivtt;}
-	map<SLL, double> get_ivtt_alpha_exp () {return ivtt_alpha_exp;}
+	//map<SLL, double> get_anticipated_ivtt () {return anticipated_ivtt;}
+	//map<SLL, double> get_ivtt_alpha_exp () {return ivtt_alpha_exp;}
+	map<SLLC, double> get_anticipated_ivtt() { return anticipated_ivtt; }
+	map<SLLC, double> get_ivtt_alpha_exp() { return ivtt_alpha_exp; }
+
+	//Erik 18-11-25
+	//void set_anticipated_walking_time(Busstop* from_stop, Busstop* to_stop, double anticipated_WKT);
+	//map <SS, double> get_anticipated_walking_time() { return anticipated_wkt; }
 
 protected:
 	Busstop* origin_stop;
@@ -407,6 +538,7 @@ protected:
     map <Passenger*,list<Pass_connection_decision> > output_pass_connection_decision;
     map <Passenger*,list<Pass_waiting_experience> > output_pass_waiting_experience;
     map <Passenger*,list<Pass_onboard_experience> > output_pass_onboard_experience;
+	//map <Passenger*, list<Pass_walking_experience> > output_pass_walking_experience; // Erik 18-11-25
 	vector <Passenger*> passengers_during_simulation;
 	
     vector <pair<vector<Busstop*>, pair <int,double> > > paths_tt;
@@ -419,8 +551,11 @@ protected:
 	map<pair<Busstop*, Busline*>,double> anticipated_waiting_time;
 	map<pair<Busstop*, Busline*>,double> alpha_RTI;
 	map<pair<Busstop*, Busline*>,double> alpha_exp;
-	map<SLL,double> anticipated_ivtt;
-	map<SLL,double> ivtt_alpha_exp;
+	//map<SLL, double> anticipated_ivtt;
+	//map<SLL, double> ivtt_alpha_exp;
+	map<SLLC,double> anticipated_ivtt; // Erik 18-11-26
+	map<SLLC,double> ivtt_alpha_exp; // Erik 18-11-26
+	//map<SS, double> anticipated_walking_time; // Erik 18-11-25
 
 };
 

@@ -4781,18 +4781,19 @@ bool Network::read_IVTT_day2day(string name)
     return true;
 }
 
-bool Network::read_IVTT_day2day(map<ODSLL, Travel_time>& ivt_map)
+// Erik 18-11-26: Changed to car-specifics
+bool Network::read_IVTT_day2day(map<ODSLLC, Travel_time>& ivt_map)
 {
     if (theParameters->in_vehicle_d2d_indicator == 1)
     {
-        for (map<ODSLL, Travel_time>::iterator row = ivt_map.begin(); row != ivt_map.end(); row++)
+        for (map<ODSLLC, Travel_time>::iterator row = ivt_map.begin(); row != ivt_map.end(); row++)
         {
             read_OD_IVTT(*row);
         }
     }
     else if (theParameters->in_vehicle_d2d_indicator == 2)
     {
-        for (map<ODSLL, Travel_time>::iterator row = ivt_map.begin(); row != ivt_map.end(); row++)
+        for (map<ODSLLC, Travel_time>::iterator row = ivt_map.begin(); row != ivt_map.end(); row++)
         {
             read_pass_IVTT(*row);
         }
@@ -4883,10 +4884,11 @@ bool Network::read_pass_day2day (pair<const ODSL, Travel_time>& wt_row)
     return true;
 }
 
+// Erik 18-11-26: Added car-specifics
 bool Network::read_OD_IVTT (istream& in)
 {
     char bracket;
-    int origin_stop_id, destination_stop_id, stop_id, line_id, leg_id;
+    int origin_stop_id, destination_stop_id, stop_id, line_id, leg_id, car_id /* Erik 18-11-26 */;
     double anticipated_in_vehicle_time, alpha_exp;
     in >> bracket;
     if (bracket != '{')
@@ -4901,8 +4903,8 @@ bool Network::read_OD_IVTT (istream& in)
     Busline* bl = (*(find_if(buslines.begin(), buslines.end(), compare <Busline> (line_id) )));
     Busstop* bs_l = (*(find_if(busstops.begin(), busstops.end(), compare <Busstop> (leg_id) )));
     ODstops* od_stop = bs_o->get_stop_od_as_origin_per_stop(bs_d);
-    od_stop->set_anticipated_ivtt(bs_s, bl, bs_l, anticipated_in_vehicle_time);
-    od_stop->set_ivtt_alpha_exp(bs_s, bl, bs_l, alpha_exp);
+    od_stop->set_anticipated_ivtt(bs_s, bl, bs_l, car_id /*Erik 18-11-26*/, anticipated_in_vehicle_time);
+    od_stop->set_ivtt_alpha_exp(bs_s, bl, bs_l, car_id /* Erik 18-11-26*/, alpha_exp);
     in >> bracket;
     if (bracket != '}')
     {
@@ -4912,13 +4914,15 @@ bool Network::read_OD_IVTT (istream& in)
     return true;
 }
 
-bool Network::read_OD_IVTT (pair<const ODSLL, Travel_time>& ivt_row)
+// Erik 18-11-26: Change to car-specifics
+bool Network::read_OD_IVTT (pair<const ODSLLC, Travel_time>& ivt_row)
 {
     const int& origin_stop_id = ivt_row.first.orig;
     const int& destination_stop_id = ivt_row.first.dest;
     const int& stop_id = ivt_row.first.stop;
     const int& line_id = ivt_row.first.line;
     const int& leg_id = ivt_row.first.leg;
+	const int& car_id = ivt_row.first.car;
     double anticipated_in_vehicle_time = ivt_row.second.tt[anticip];
     // double alpha_exp = ivt_row.second.alpha[EXP];
 
@@ -4928,12 +4932,13 @@ bool Network::read_OD_IVTT (pair<const ODSLL, Travel_time>& ivt_row)
     Busline* bl = (*(find_if(buslines.begin(), buslines.end(), compare <Busline> (line_id) )));
     Busstop* bs_l = (*(find_if(busstops.begin(), busstops.end(), compare <Busstop> (leg_id) )));
     ODstops* od_stop = bs_o->get_stop_od_as_origin_per_stop(bs_d);
-    od_stop->set_anticipated_ivtt(bs_s, bl, bs_l, anticipated_in_vehicle_time);
+    od_stop->set_anticipated_ivtt(bs_s, bl, bs_l, car_id, anticipated_in_vehicle_time);
 
     return true;
 }
 
-bool Network::read_pass_IVTT (pair<const ODSLL, Travel_time>& ivt_row)
+// Erik 18-11-26: Added car-specifics
+bool Network::read_pass_IVTT (pair<const ODSLLC, Travel_time>& ivt_row)
 {
     const int& pass_id = ivt_row.first.pid;
     const int& origin_stop_id = ivt_row.first.orig;
@@ -4941,6 +4946,7 @@ bool Network::read_pass_IVTT (pair<const ODSLL, Travel_time>& ivt_row)
     const int& stop_id = ivt_row.first.stop;
     const int& line_id = ivt_row.first.line;
     const int& leg_id = ivt_row.first.leg;
+	const int& car_id = ivt_row.first.car;
     double anticipated_in_vehicle_time = ivt_row.second.tt[anticip];
     // double alpha_exp = ivt_row.second.alpha[EXP];
 
@@ -4953,7 +4959,7 @@ bool Network::read_pass_IVTT (pair<const ODSLL, Travel_time>& ivt_row)
     ODstops* od_stop = bs_o->get_stop_od_as_origin_per_stop(bs_d);
     vector<Passenger*> passengers = od_stop->get_passengers_during_simulation();
     Passenger* p = *find_if(passengers.begin(), passengers.end(), compare<Passenger>(pass_id));
-    p->set_anticipated_ivtt(bs_s, bl, bs_l, anticipated_in_vehicle_time);
+    p->set_anticipated_ivtt(bs_s, bl, bs_l, car_id, anticipated_in_vehicle_time);
 
     return true;
 }

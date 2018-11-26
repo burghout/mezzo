@@ -266,13 +266,16 @@ public:
 	bool read_transitday2day (string name); // !< reads info on transit pass. day-to-day memory
 	bool read_transitday2day(map<ODSL, Travel_time>& ivt_map);
 	bool read_IVTT_day2day (string name);
-	bool read_IVTT_day2day(map<ODSLL, Travel_time>& ivt_map);
+	//bool read_IVTT_day2day(map<ODSLL, Travel_time>& ivt_map);
+	bool read_IVTT_day2day(map<ODSLLC, Travel_time>& ivt_map);
 	bool read_OD_day2day (istream& in); //!< reads day-to-dat info for a particular OD
 	bool read_OD_day2day (pair<const ODSL, Travel_time>& wt_row);
 	bool read_pass_day2day (pair<const ODSL, Travel_time>& wt_row);
 	bool read_OD_IVTT (istream& in);
-	bool read_OD_IVTT (pair<const ODSLL, Travel_time>& wt_row);
-	bool read_pass_IVTT (pair<const ODSLL, Travel_time>& wt_row);
+	//bool read_OD_IVTT (pair<const ODSLL, Travel_time>& wt_row);
+	//bool read_pass_IVTT (pair<const ODSLL, Travel_time>& wt_row);
+	bool read_OD_IVTT(pair<const ODSLLC, Travel_time>& wt_row);
+	bool read_pass_IVTT(pair<const ODSLLC, Travel_time>& wt_row);
 	bool readbusroute(istream& in); //!< reads a transit route
 	bool readbusstop (istream& in); //!< reads a busstop
 	bool readbusline(istream& in); //!< reads a busline
@@ -396,7 +399,8 @@ protected:
 
 	Day2day* day2day;
 	map<ODSL, Travel_time> wt_rec; //the record of waiting time data
-	map<ODSLL, Travel_time> ivt_rec; //the record of in-vehicle time data
+	//map<ODSLL, Travel_time> ivt_rec; //the record of in-vehicle time data
+	map<ODSLLC, Travel_time> ivt_rec; //the record of in-vehicle time data Erik 18-11-26
 	int day;
 
 	//Shortest path graph

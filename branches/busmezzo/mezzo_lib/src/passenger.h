@@ -12,6 +12,7 @@ class Busstop;
 class ODstops;
 class ODzone;
 struct SLL;
+struct SLLC;
 
 class Passenger : public Action
 {
@@ -83,7 +84,7 @@ public:
 	// Passenger decision processes
 	bool	 make_boarding_decision (Bustrip* arriving_bus, double time);	//!< boarding decision making 
 	Busstop* make_alighting_decision (Bustrip* boarding_bus, double time);	//!< alighting decision making 
-	Busstop* make_connection_decision (double time);						//!< connection link decision (walking between stops)
+	//Busstop* make_connection_decision (double time);						//!< connection link decision (walking between stops)
 	pair<Busstop*,int> make_connection_decision_2(double time);						// Erik 18-09-27
 
 	// Demand in terms of zones
@@ -123,10 +124,14 @@ public:
 	double get_alpha_RTI (Busstop* stop, Busline* line);
 	double get_alpha_exp (Busstop* stop, Busline* line);
 	bool any_previous_exp_ODSL (Busstop* stop, Busline* line);
-	void set_anticipated_ivtt (Busstop* stop, Busline* line, Busstop* leg, double anticipated_ivt);
-	double get_anticipated_ivtt (Busstop* stop, Busline* line, Busstop* leg);
-	double get_ivtt_alpha_exp (Busstop* stop, Busline* line, Busstop* leg);
-	bool any_previous_exp_ivtt (Busstop* stop, Busline* line, Busstop* leg);
+	//void set_anticipated_ivtt (Busstop* stop, Busline* line, Busstop* leg, double anticipated_ivt);
+	//double get_anticipated_ivtt (Busstop* stop, Busline* line, Busstop* leg);
+	void set_anticipated_ivtt(Busstop* stop, Busline* line, Busstop* leg, int car, double anticipated_ivt);
+	double get_anticipated_ivtt(Busstop* stop, Busline* line, Busstop* leg, int car);
+	//double get_ivtt_alpha_exp (Busstop* stop, Busline* line, Busstop* leg);
+	//bool any_previous_exp_ivtt (Busstop* stop, Busline* line, Busstop* leg);
+	double get_ivtt_alpha_exp(Busstop* stop, Busline* line, Busstop* leg, int car);
+	bool any_previous_exp_ivtt(Busstop* stop, Busline* line, Busstop* leg, int car);
 	void set_AWT_first_leg_boarding(Busstop* stop, Busline* line);
 
 	double calc_total_waiting_time();
@@ -187,8 +192,10 @@ protected:
 	map<pair<Busstop*, Busline*>,double> anticipated_waiting_time;
 	map<pair<Busstop*, Busline*>,double> alpha_RTI;
 	map<pair<Busstop*, Busline*>,double> alpha_exp;
-	map<SLL, double> anticipated_ivtt;
-	map<SLL, double> ivtt_alpha_exp;
+	//map<SLL, double> anticipated_ivtt;
+	//map<SLL, double> ivtt_alpha_exp;
+	map<SLLC, double> anticipated_ivtt; // Erik 18-11-26
+	map<SLLC, double> ivtt_alpha_exp; // Erik 18-11-26
 
 	// relevant only for OD in terms od zones
 	ODzone* o_zone;

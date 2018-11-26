@@ -90,6 +90,7 @@ double Pass_path::calc_total_scheduled_in_vehicle_time (double time)
 	return (sum_in_vehicle_time/60); // minutes
 }
 
+// Erik 18-11-26: Made car-specific
 double Pass_path::calc_total_in_vehicle_time (double time, Passenger* pass)
 {
 	IVT.clear();
@@ -109,9 +110,9 @@ double Pass_path::calc_total_in_vehicle_time (double time, Passenger* pass)
 				if (has_reached_boarding_stop)
 				{
 					double leg_ivtt;
-					if (pass->any_previous_exp_ivtt(iter_alt_transfer_stops->front(), iter_alt_lines->front(), *iter_leg_stops))
+					if (pass->any_previous_exp_ivtt(iter_alt_transfer_stops->front(), iter_alt_lines->front(), *iter_leg_stops, pass->get_pass_car() /*Erik 18-11-25*/))
 					{
-						leg_ivtt = pass->get_anticipated_ivtt(iter_alt_transfer_stops->front(), iter_alt_lines->front(), *iter_leg_stops);
+						leg_ivtt = pass->get_anticipated_ivtt(iter_alt_transfer_stops->front(), iter_alt_lines->front(), *iter_leg_stops, pass->get_pass_car()/*Erik 18-11-25*/);
 					}
 					else
 					{
@@ -130,7 +131,11 @@ double Pass_path::calc_total_in_vehicle_time (double time, Passenger* pass)
 		}
 		else
 		{
-			ivtt = iter_alt_lines->front()->calc_curr_line_ivt(iter_alt_transfer_stops->front(), (iter_alt_transfer_stops+1)->front(), alt_transfer_stops.front().front()->get_rti(), time);
+			ivtt = iter_alt_lines->front()->calc_curr_line_ivt(
+				iter_alt_transfer_stops->front(), 
+				(iter_alt_transfer_stops+1)->front(), 
+				alt_transfer_stops.front().front()->get_rti(), 
+				time);
 		}
 		IVT.push_back(ivtt);
 		sum_in_vehicle_time += IVT.back();
@@ -399,11 +404,15 @@ double Pass_path::calc_waiting_utility (vector <vector <Busstop*> >::iterator st
 	stop_iter++;
 	if (alt_transfer_stops.size() == 2) // in case is is walking-only path
 	{
-		return (random->nrandom(theParameters->walking_time_coefficient, theParameters->walking_time_coefficient/4) * calc_total_walking_distance()/ random->nrandom(theParameters->average_walking_speed, theParameters->average_walking_speed/4));
+		return (random->nrandom(theParameters->walking_time_coefficient, theParameters->walking_time_coefficient/4) 
+			* calc_total_walking_distance()
+			/ random->nrandom(theParameters->average_walking_speed, theParameters->average_walking_speed/4)
+			);
 	}
 	vector<vector <Busline*> >::iterator iter_alt_lines = alt_lines.begin();
 	for (vector <Busline*>::iterator iter_lines = (*iter_alt_lines).begin(); iter_lines < (*iter_alt_lines).end(); iter_lines++)
 	{
+		// erik 18-11-25: iter_lines points to a Busline*
 		vector<Start_trip>::iterator next_trip_iter = (*iter_lines)->find_next_expected_trip_at_stop((*stop_iter).front());
 		if (pass->line_is_rejected((*iter_lines)->get_id())) // in case the line was already rejected once before, added by Jens 2014-10-16
 		{
@@ -469,4 +478,4 @@ map<Busline*, bool> Pass_path::check_maybe_worthwhile_to_wait (vector<Busline*> 
 		}
 	}
 	return worth_to_wait;
-}
+}

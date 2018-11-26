@@ -990,12 +990,12 @@ void Bustrip::record_passenger_loads(vector <Visit_stop*>::iterator start_stop)
 //
 //}
 
-// Erik 18-09-16
+// Erik 18-10-30
 double Bustrip::find_crowding_coeff(Passenger* pass)
 {
-	map<int, int> car_occupancy = this->get_busv()->get_car_occupancy();
+	//map<int, int> car_occupancy = this->get_busv()->get_car_occupancy();
 	// first - calculate load factor
-	double load_factor = car_occupancy[pass->get_pass_car()] / this->get_busv()->get_car_number_seats();
+	double load_factor = this->get_busv()->get_car_occupancy(pass->get_pass_car()) / this->get_busv()->get_car_number_seats();
 
 	// second - return value based on pass. standing/sitting
 	bool sits = pass->get_pass_sitting();
@@ -2503,14 +2503,23 @@ void Busstop::record_busstop_visit (Bustrip* trip, double enter_time)  // create
 	}
 	else
 	{
-		// Erik 18-09-17: Update with car-specific crowding
+		// Erik 18-11-26: Updated with car-specific crowding
 		riding_time = enter_time - trip->get_last_stop_exit_time();
 		int nr_car_seats = trip->get_busv()->get_car_number_seats();
 		//int nr_seats = trip->get_busv()->get_number_seats();
-		crowded_pass_riding_time = calc_crowded_travel_time(riding_time, nr_riders, nr_car_seats);
-		crowded_pass_dwell_time = calc_crowded_travel_time(dwelltime, occupancy, nr_car_seats);
+		crowded_pass_riding_time = 0;
+		crowded_pass_dwell_time = 0;
+		crowded_pass_holding_time = 0;
+		for (int car_id = 1; car_id <= trip->get_busv()->get_number_cars(); ++car_id)
+		{
+			crowded_pass_riding_time  += calc_crowded_travel_time(riding_time, nr_car_riders[car_id], nr_car_seats);
+			crowded_pass_dwell_time   += calc_crowded_travel_time(dwelltime, car_occupancy[car_id], nr_car_seats);
+			crowded_pass_holding_time += calc_crowded_travel_time(holdingtime, car_occupancy[car_id], nr_car_seats);
+		}
+		//crowded_pass_riding_time = calc_crowded_travel_time(riding_time, nr_riders, nr_car_seats);
+		//crowded_pass_dwell_time = calc_crowded_travel_time(dwelltime, occupancy, nr_car_seats);
 		//crowded_pass_dwell_time = calc_crowded_travel_time(dwelltime, trip->get_busv()->get_occupancy(), nr_seats);
-		crowded_pass_holding_time = calc_crowded_travel_time(holdingtime, occupancy, nr_car_seats);
+		//crowded_pass_holding_time = calc_crowded_travel_time(holdingtime, occupancy, nr_car_seats);
 		//crowded_pass_holding_time = calc_crowded_travel_time(holdingtime, trip->get_busv()->get_occupancy(), nr_seats);
 	}
 

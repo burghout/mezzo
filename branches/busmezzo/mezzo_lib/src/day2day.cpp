@@ -7,6 +7,7 @@
 enum k {EXP, PK, RTI, anticip, anticip_EXP};
 enum l {e0, e1, crowding, e3, e4};
 enum m {wt, ivt};
+//enum m { wt, ivt, wkt }; // Erik 18-11-25
 
 float operator/ (const Travel_time& lhs, const Travel_time& rhs)
 {
@@ -90,6 +91,43 @@ float insert (map<ODSLL, Travel_time>& ODSL_reg, map<ODSLL, Travel_time>& ODSL_d
     return crit;
 };
 
+// Erik 18-11-26
+float insert(map<ODSLLC, Travel_time>& ODSL_reg, map<ODSLLC, Travel_time>& ODSL_data) //Method for inserting data for one day into record
+{
+	float crit = 0;
+	for (map<ODSLLC, Travel_time>::iterator row = ODSL_data.begin(); row != ODSL_data.end(); row++) //aggregate over days
+	{
+		row->second /= row->second.counter; //finish the averaging by dividing by the number of occurences which is counted when adding
+
+		ODSL_reg << *row; //if existing ODSL is found, data is replaced else a new row is inserted
+
+		crit += abs(row->second.convergence - 1); //for the break criterium
+	}
+
+	crit /= ODSL_data.size(); //to get the average
+
+	return crit;
+};
+
+//float insert(map<ODSS, Travel_time>& ODSS_reg, map<ODSS, Travel_time>& ODSS_data) //Method for inserting data for one day into record
+//{
+//	float crit = 0;
+//	for (map<ODSS, Travel_time>::iterator row = ODSS_data.begin(); row != ODSS_data.end(); row++) //aggregate over days
+//	{
+//		row->second /= row->second.counter; //finish the averaging by dividing by the number of occurences which is counted when adding
+//
+//		ODSS_reg << *row; //if existing ODSS is found, data is replaced else a new row is inserted
+//
+//		crit += abs(row->second.convergence - 1); //for the break criterium
+//	}
+//
+//	crit /= ODSS_data.size(); //to get the average
+//
+//	return crit;
+//};
+
+
+
 template <typename id_type>
 map<id_type, Travel_time>& operator += (map<id_type, Travel_time>& ODSLreg, const pair<const id_type, Travel_time>& row) //if existing ODSL is found, data is added, else a new row is inserted
 {
@@ -144,7 +182,9 @@ void insert_alphas (const id_type& tt_odsl, Travel_time& tt, map<id_type, Travel
 };
 
 typedef map<ODSL, Travel_time>::iterator wt_map_iterator;
-typedef map<ODSLL, Travel_time>::iterator ivt_map_iterator;
+//typedef map<ODSLL, Travel_time>::iterator ivt_map_iterator;
+typedef map<ODSLLC, Travel_time>::iterator ivt_map_iterator;
+//typedef map<ODSS, Travel_time>::iterator wkt_map_iterator; // Erik 18-11-25
 
 Day2day::Day2day (int nr_of_reps_)
 {
@@ -155,6 +195,10 @@ Day2day::Day2day (int nr_of_reps_)
 	ivt_alpha_base[EXP] = 0.0f;
 	ivt_alpha_base[PK] = 1.0f;
 	ivt_alpha_base[crowding] = 1.0f;
+
+	// Erik 18-11-25
+	//wkt_alpha_base[EXP] = 0.5f;
+	//wkt_alpha_base[PK] = 0.5f;
 
 	day = 1;
 	v = 2.0f;
@@ -177,12 +221,22 @@ Day2day::Day2day (int nr_of_reps_)
 		individual_ivt = true;
 	else
 		individual_ivt = false;
+
+	// Erik 18-11-25
+	//individual_wkt = true;
+	/*
+	if (theParameters->walking_d2d_indicator == 2)
+		individual_wkt = true;
+	else
+		individual_wkt = false;
+	*/
 }
 
 void Day2day::reset ()
 {
 	wt_day.clear();
 	ivt_day.clear();
+	//wkt_day.clear(); // Erik 18-11-25
 }
 
 void Day2day::update_day (int d)
@@ -194,6 +248,7 @@ void Day2day::update_day (int d)
 	day = d;
 	wt_day.clear();
 	ivt_day.clear();
+	//wkt_day.clear(); // Erik 18-11-25
 }
 
 void Day2day::write_output (string filename, string addition)
@@ -323,9 +378,10 @@ map<ODSL, Travel_time>& Day2day::process_wt_replication (vector<ODstops*>& odsto
 	return wt_day;
 }
 
-map<ODSLL, Travel_time>& Day2day::process_ivt_replication (vector<ODstops*>& odstops, map<ODSLL, Travel_time> ivt_rec)
+// Erik 18-11-26: Added car-specifics
+map<ODSLLC, Travel_time>& Day2day::process_ivt_replication (vector<ODstops*>& odstops, map<ODSLLC, Travel_time> ivt_rec)
 {
-	map<ODSLL, Travel_time> ivt_rep; //record of ODSL data for the current replication
+	map<ODSLLC, Travel_time> ivt_rep; //record of ODSL data for the current replication
 	nr_of_legs = 0;
 	total_in_vehicle_time = 0;
 	total_ivt_pk = 0;
@@ -351,6 +407,7 @@ map<ODSLL, Travel_time>& Day2day::process_ivt_replication (vector<ODstops*>& ods
 				int stop = exp_iter->stop_id;
 				int line = exp_iter->line_id;
 				int leg = exp_iter->leg_id;
+				int car = exp_iter->car_id;
 				ivt.tt[PK] = exp_iter->expected_ivt;
 				ivt.tt[EXP] = exp_iter->experienced_ivt.first;
 				ivt.tt[crowding] = exp_iter->experienced_ivt.second;
@@ -364,14 +421,14 @@ map<ODSLL, Travel_time>& Day2day::process_ivt_replication (vector<ODstops*>& ods
 				{
 					pid = 0;
 				}
-				const ODSLL ivt_odsl = {pid, orig, dest, stop, line, leg};
+				const ODSLLC ivt_odslc = {pid, orig, dest, stop, line, leg, car};
 
 				//insert base values and replace when previous experience found
-				insert_alphas(ivt_odsl, ivt, ivt_rec, ivt_alpha_base, day);
+				insert_alphas(ivt_odslc, ivt, ivt_rec, ivt_alpha_base, day);
 
 				//calculate anticipated waiting time and add to experience for this replication
 				calc_anticipated_ivt(ivt);
-				pair<const ODSLL, Travel_time> ivt_row (ivt_odsl, ivt);
+				pair<const ODSLLC, Travel_time> ivt_row (ivt_odslc, ivt);
 				ivt_rep += ivt_row; //if existing ODSL is found, data is added, else a new row is inserted
 
 				//add to output;
@@ -396,6 +453,86 @@ map<ODSLL, Travel_time>& Day2day::process_ivt_replication (vector<ODstops*>& ods
 
 	return ivt_day;
 }
+
+//map<ODSS, Travel_time>& Day2day::process_wkt_replication(vector<ODstops*>& odstops, map<ODSS, Travel_time> wkt_rec)
+//{
+//	map<ODSS, Travel_time> wkt_rep; //record of ODSL data for the current replication
+//	total_walking_time = 0;
+//	total_wkt_pk = 0;
+//	//total_wkt_rti = 0;
+//	total_wkt_exp = 0;
+//	total_wkt_anticip = 0;
+//	total_nr_missed = 0;
+//	nr_of_passengers = 0;
+//	nr_of_changes = 0;
+//	nr_on_line_2 = 0;
+//
+//	for (vector<ODstops*>::iterator od_iter = odstops.begin(); od_iter != odstops.end(); od_iter++)
+//	{
+//		map <Passenger*, list<Pass_walking_experience> > pass_list = (*od_iter)->get_walking_output();
+//		for (map<Passenger*, list<Pass_walking_experience> >::iterator pass_iter1 = pass_list.begin(); pass_iter1 != pass_list.end(); pass_iter1++)
+//		{
+//			nr_of_passengers++;
+//			list<Pass_walking_experience> walking_experience_list = (*pass_iter1).second;
+//			for (list<Pass_walking_experience>::iterator exp_iter = walking_experience_list.begin(); exp_iter != walking_experience_list.end(); exp_iter++)
+//			{
+//				Travel_time wt;
+//
+//				int pid = exp_iter->pass_id;
+//				int orig = exp_iter->original_origin;
+//				int dest = exp_iter->destination_stop;
+//				int from_stop = exp_iter->from_stop;
+//				int from_section = exp_iter->from_section;
+//				int to_stop = exp_iter->to_stop;
+//				int to_section = exp_iter->to_section;
+//				wt.tt[PK] = exp_iter->expected_WKT_PK;
+//				wt.tt[EXP] = exp_iter->experienced_WKT;
+//
+//				if (aggregate)
+//				{
+//					pid = 0;
+//					orig = 0;
+//					dest = 0;
+//				}
+//				if (!individual_wkt)
+//				{
+//					pid = 0;
+//				}
+//
+//				const ODSS wkt_odss = { pid, orig, dest, from_section, to_stop };
+//
+//				//insert base values and replace when previous experience found
+//				insert_alphas(wkt_odss, wkt, wkt_alpha_base, day);
+//
+//				//calculate anticipated waiting time and add to experience for this replication
+//				calc_anticipated_wkt(wkt);
+//				pair<const ODSS, Travel_time> wkt_row(wt_odss, wkt);
+//				wkt_rep += wkt_row; //if existing ODSSSS is found, data is added, else a new row is inserted
+//
+//								  //add to output;
+//				nr_of_changes++;
+//				total_walking_time += wt.tt[EXP];
+//				total_wkt_pk += wkt.tt[PK];
+//				total_wkt_exp += wkt.tt[anticip_EXP];
+//				total_wkt_anticip += wkt.tt[anticip];
+//				if (line == 2)
+//					nr_on_line_2++;
+//			}
+//		}
+//	}
+//
+//	if (nr_of_reps > 1 || theParameters->pass_day_to_day_indicator == 1)
+//	{
+//		wkt_day += wkt_rep; //add repetition to day data
+//	}
+//	else
+//	{
+//		wkt_day = wkt_rep;
+//	}
+//
+//	return wkt_day;
+//}
+
 
 void Day2day::calc_anticipated_wt (Travel_time& row)
 {
@@ -494,4 +631,50 @@ void Day2day::calc_anticipated_ivt (Travel_time& row)
 	alphaPK = 1 - alphaEXP;
 	aivtG = acrowdingEXP *(alphaEXP * aivtEXP + alphaPK * ivtPK);
 }
+
+
+//void Day2day::calc_anticipated_wkt(Travel_time& row)
+//{
+//	float& wktPK = row.tt[PK];
+//	float& wtEXP = row.tt[EXP];
+//	float& awktEXP = row.tt[anticip_EXP];
+//	float& alphaEXP = row.alpha[EXP];
+//	float& alphaPK = row.alpha[PK];
+//	float& awktG = row.tt[anticip];
+//
+//	//calc awt - this could be moved to insert_alphas
+//	if (wktEXP == 0) wktEXP = 1.0; //to avoid division by zero
+//	if (awktEXP >= 0) //If there is prior experience
+//	{
+//		awktG = alphaEXP * awktEXP + alphaPK * wktPK;
+//		float kapaAWKT = 1 / pow(1 + row.day / pow(abs(awktEXP / wktEXP - 1) + 1, v), r);
+//		awktEXP = (1 - kapaAWKT) * awktEXP + kapaAWKT * wktEXP;
+//	}
+//	else
+//	{
+//		awktG = alphaPK * wktPK;
+//		awktEXP = wktEXP;
+//	}
+//
+//	//calc temporary trust parameters for the alphas, to decide for which alpha trust should increase
+//	float aEXP = 1 / pow(abs(awktEXP / wktEXP - 1) + 1, v1);
+//	float aPK = 1 / pow(abs(wktPK / wktEXP - 1) + 1, v1);
+//
+//	//normalize a's
+//	float fnorm = 1 / (aEXP + aPK);
+//	aEXP = fnorm * aEXP;
+//	aPK = 1 - aEXP;
+//
+//	//calc alphas
+//	alphaEXP = (1 - kapa[EXP]) * alphaEXP + kapa[EXP] * aEXP;
+//	alphaPK = (1 - kapa[PK]) * alphaPK + kapa[PK] * aPK;
+//
+//	//if (day == 1)
+//	//	alphaEXP = max(0.0, 1.0 - alphaPK- alphaRTI);
+//
+//	//normalize alphas
+//	fnorm = 1 / (alphaEXP + alphaPK);
+//	alphaEXP = fnorm * alphaEXP;
+//	alphaPK = 1 - alphaEXP;
+//}
 

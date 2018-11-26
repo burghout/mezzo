@@ -125,14 +125,25 @@ void ODstops::set_anticipated_waiting_time (Busstop* stop, Busline* line, double
 	anticipated_waiting_time[stopline] = anticipated_WT;
 }
 
-void ODstops::set_anticipated_ivtt (Busstop* stop, Busline* line, Busstop* leg, double anticipated_IVTT)
+// Erik 18-11-26: Changed to car-specifics
+void ODstops::set_anticipated_ivtt (Busstop* stop, Busline* line, Busstop* leg, int car, double anticipated_IVTT)
 {
-	SLL stoplineleg;
+	SLLC stoplineleg;
 	stoplineleg.stop = stop;
 	stoplineleg.line = line;
 	stoplineleg.leg = leg;
+	stoplineleg.car = car;
 	anticipated_ivtt[stoplineleg] = anticipated_IVTT;
 }
+
+// Erik 18-11-25
+//void ODstops::set_anticipated_walking_time(Busstop* from_stop, Busstop* to_stop, double anticipated_WKT)
+//{
+//	SS stoppair;
+//	stoppair.from_stop = from_stop;
+//	stoppair.to_stop = to_stop;
+//	anticipated_walking_time[stoppair] = anticipated_WKT;
+//}
 
 void ODstops::set_alpha_RTI (Busstop* stop, Busline* line, double alpha)
 {
@@ -150,12 +161,14 @@ void ODstops::set_alpha_exp (Busstop* stop, Busline* line, double alpha)
 	alpha_exp[stopline] = alpha;
 }
 
-void ODstops::set_ivtt_alpha_exp (Busstop* stop, Busline* line, Busstop* leg, double alpha)
+// Erik 18-11-26: Added car-specifics
+void ODstops::set_ivtt_alpha_exp (Busstop* stop, Busline* line, Busstop* leg, int car, double alpha)
 {
-	SLL stoplineleg;
+	SLLC stoplineleg;
 	stoplineleg.stop = stop;
 	stoplineleg.line = line;
 	stoplineleg.leg = leg;
+	stoplineleg.car = car;
 	ivtt_alpha_exp[stoplineleg] = alpha;
 }
 
@@ -217,7 +230,7 @@ bool ODstops::execute (Eventlist* eventlist, double curr_time) // generate passe
         bool non_random_arrivals = origin_stop->get_gate_flag(); // 1 - passengers are generated according to timetable, 0 - passengers generated according to Poisson process
 
 		int section_comb;
-		int num_orig_sections = origin_stop->get_num_sections();
+		//int num_orig_sections = origin_stop->get_num_sections();
 		int num_dest_sections = destination_stop->get_num_sections();
 		int orig_section;
 		int dest_section; 
@@ -368,7 +381,8 @@ double ODstops::calc_boarding_probability (Busline* arriving_bus, double time, P
 				if (check_if_path_is_dominated((*iter_paths), arriving_paths) == false)
 				{
 					//path_utility = (*iter_paths)->calc_waiting_utility((*iter_paths)->get_alt_transfer_stops().begin(), time, false, pass); //Changed by Jens 2014-10-16, transfer penalty is added to disutility of staying to help passengers make up their mind faster
-					path_utility = (*iter_paths)->calc_waiting_utility((*iter_paths)->get_alt_transfer_stops().begin(), time, false, pass) + random->nrandom(theParameters->transfer_coefficient, theParameters->transfer_coefficient / 4);
+					path_utility = (*iter_paths)->calc_waiting_utility((*iter_paths)->get_alt_transfer_stops().begin(), time, false, pass) 
+						+ random->nrandom(theParameters->transfer_coefficient, theParameters->transfer_coefficient / 4);
 					set_utilities[(*iter_paths)].first = false;
 					set_utilities[(*iter_paths)].second = path_utility;
 					staying_utility += exp(path_utility);
@@ -649,7 +663,7 @@ double ODstops::calc_combined_set_utility_for_connection (double walking_distanc
 	{
 		return -10000;
 	}
-	for (vector <Pass_path*>::iterator paths = path_set.begin(); paths < path_set.end(); paths++)
+	for (vector <Pass_path*>::iterator paths = path_set.begin(); paths < path_set.end(); paths++) // Erik 18-11-25: loop over OD path set
 	{
 		bool without_walking_first = false;
 		// go only through paths that does not include walking to another stop from this connection stop
@@ -717,17 +731,18 @@ void ODstops::record_passenger_boarding_decision (Passenger* pass, Bustrip* trip
 	int original_origin_id = pass->get_original_origin()->get_id();
 	int destination_id = pass->get_OD_stop()->get_destination()->get_id();
 	int origin_id = pass->get_OD_stop()->get_origin()->get_id();
-	output_pass_boarding_decision[pass].push_back(Pass_boarding_decision(pass->get_id(), original_origin_id, destination_id, trip->get_line()->get_id(), trip->get_id() , origin_id , time, pass->get_start_time(), boarding_probability , boarding_decision, boarding_utility, staying_utility)); 
+	int car_id = pass->get_pass_section();
+	output_pass_boarding_decision[pass].push_back(Pass_boarding_decision(pass->get_id(), original_origin_id, destination_id, trip->get_line()->get_id(), trip->get_id() , origin_id , car_id, time, pass->get_start_time(), boarding_probability , boarding_decision, boarding_utility, staying_utility)); 
 }
 
 void ODstops::record_passenger_alighting_decision (Passenger* pass, Bustrip* trip, double time, Busstop* chosen_alighting_stop, map<Busstop*,pair<double,double> > alighting_MNL)  //  add to output structure alighting decision info
 {
-	output_pass_alighting_decision[pass].push_back(Pass_alighting_decision(pass->get_id(), pass->get_original_origin()->get_id(), pass->get_OD_stop()->get_destination()->get_id(), trip->get_line()->get_id(), trip->get_id() , pass->get_OD_stop()->get_origin()->get_id() , time, pass->get_start_time(), chosen_alighting_stop->get_id(), alighting_MNL)); 
+	output_pass_alighting_decision[pass].push_back(Pass_alighting_decision(pass->get_id(), pass->get_original_origin()->get_id(), pass->get_OD_stop()->get_destination()->get_id(), trip->get_line()->get_id(), trip->get_id() , pass->get_OD_stop()->get_origin()->get_id() , pass->get_pass_car(), time, pass->get_start_time(), chosen_alighting_stop->get_id(), alighting_MNL)); 
 }
 
-void ODstops::record_passenger_connection_decision (Passenger* pass, double time, Busstop* chosen_alighting_stop, map<Busstop*,pair<double,double> > connecting_MNL_)  //  add to output structure connection decision info
+void ODstops::record_passenger_connection_decision (Passenger* pass, double time, Busstop* chosen_alighting_stop, int chosen_alighting_section, map<Busstop*,pair<double,double> > connecting_MNL_)  //  add to output structure connection decision info
 {
-	output_pass_connection_decision[pass].push_back(Pass_connection_decision(pass->get_id(), pass->get_original_origin()->get_id(), pass->get_OD_stop()->get_destination()->get_id(), pass->get_OD_stop()->get_origin()->get_id() , time, pass->get_start_time(), chosen_alighting_stop->get_id(), connecting_MNL_)); 
+	output_pass_connection_decision[pass].push_back(Pass_connection_decision(pass->get_id(), pass->get_original_origin()->get_id(), pass->get_OD_stop()->get_destination()->get_id(), pass->get_OD_stop()->get_origin()->get_id() , time, pass->get_start_time(), chosen_alighting_stop->get_id(), chosen_alighting_section, connecting_MNL_));
 }
 
 void ODstops::record_waiting_experience(Passenger* pass, Bustrip* trip, double time, double experienced_WT, int level_of_rti_upon_decision, double projected_RTI, double AWT, int nr_missed)  //  add to output structure action info
@@ -737,6 +752,7 @@ void ODstops::record_waiting_experience(Passenger* pass, Bustrip* trip, double t
 	output_pass_waiting_experience[pass].push_back(Pass_waiting_experience(pass->get_id(), pass->get_original_origin()->get_id(), pass->get_OD_stop()->get_destination()->get_id(), trip->get_line()->get_id(), trip->get_id() , pass->get_OD_stop()->get_origin()->get_id() , time, pass->get_start_time(), expected_WT_PK, level_of_rti_upon_decision, projected_RTI ,experienced_WT, AWT, nr_missed)); 
 }
 
+// Erik 18-11-26: Added car-specifics
 void ODstops::record_onboard_experience(Passenger* pass, Bustrip* trip, Busstop* stop, pair<double,double> riding_coeff)
 {
 	double expected_ivt = 0.0;
@@ -753,7 +769,7 @@ void ODstops::record_onboard_experience(Passenger* pass, Bustrip* trip, Busstop*
 			first_stop_time = (*stop_v)->second;
 	}
 	//double experienced_ivt = riding_coeff.first*riding_coeff.second;
-	output_pass_onboard_experience[pass].push_back(Pass_onboard_experience(pass->get_id(), pass->get_original_origin()->get_id(), pass->get_OD_stop()->get_destination()->get_id(), trip->get_line()->get_id(), trip->get_id() , pass->get_OD_stop()->get_origin()->get_id(), stop->get_id(), expected_ivt, riding_coeff));
+	output_pass_onboard_experience[pass].push_back(Pass_onboard_experience(pass->get_id(), pass->get_original_origin()->get_id(), pass->get_OD_stop()->get_destination()->get_id(), trip->get_line()->get_id(), trip->get_id() , pass->get_OD_stop()->get_origin()->get_id(), stop->get_id(), pass->get_pass_car()/*Erik 18-11-26*/, expected_ivt, riding_coeff));
 }
 
 void ODstops::write_boarding_output(ostream & out, Passenger* pass)
@@ -918,7 +934,8 @@ void Pass_connection_decision::write (ostream& out)
 		<< stop_id << '\t' 
 		<< time << '\t'
 		<< generation_time << '\t' 
-		<< chosen_connection_stop << '\t';
+		<< chosen_connection_stop << '\t'
+		<< chosen_connection_section << '\t';
 	for (map<Busstop*,pair<double,double> >::iterator iter = connecting_MNL.begin(); iter != connecting_MNL.end(); iter++)
 	{
 		out << (*iter).first->get_id() << '\t';
