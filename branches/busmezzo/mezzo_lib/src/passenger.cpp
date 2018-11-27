@@ -851,6 +851,12 @@ pair<Busstop*,int> Passenger::make_connection_decision_2(double time)
 	{
 		connecting_probs.push_back((*stops_probs).second);
 	}
+
+	if (connecting_probs.size() == 0)
+	{
+		std::cout << "Passenger: " << this->get_id() << " Destination: " << bs_d->get_id() << " Origin: " << bs_o->get_id() << " DestinationName: " << bs_d->get_name() << " OriginName: " << bs_o->get_name() << endl;
+		return pair<Busstop*, int>(bs_d, 1); // arbitary choice in case something failed
+	}
 	int transfer_stop_position = theRandomizers[0]->mrandom(connecting_probs); // Erik 18-10-08: 
 	int iter = 0;
 	for (map <Busstop*, double>::iterator stops_probs = candidate_connection_stops_p.begin(); stops_probs != candidate_connection_stops_p.end(); stops_probs++)
@@ -894,11 +900,8 @@ pair<Busstop*,int> Passenger::make_connection_decision_2(double time)
 
 Busstop* Passenger::make_first_stop_decision (double time)
 {
-	//Melina
 	map <Busstop*, double> candidate_origin_stops_u; // the double value is the utility associated with the respective stop
-	//map <pair<Busstop*,int>, double> candidate_origin_stops_u; // the double value is the utility associated with the respective stop and platform section
 	map <Busstop*, double> candidate_origin_stops_p; // the double value is the probability associated with the respective stop
-	//map <pair<Busstop*, int>, double> candidate_origin_stops_p; // the double value is the probability associated with the respective stop and platform section
 	already_walked = true;
 	// going over all relevant origin and destination stops combinations
 	if (origin_walking_distances.size() == 1) // in case there is only one possible origin stop
@@ -906,12 +909,8 @@ Busstop* Passenger::make_first_stop_decision (double time)
 		map<Busstop*,double>::iterator iter_stops = origin_walking_distances.begin();
 		return (*iter_stops).first;
 
-		//Melina
-		/*map<pair<Busstop*,int>, double>::iterator iter_stops = origin_walking_distances.begin();
-		return (*iter_stops).first.first;*/
 	}
 	for (map<Busstop*,double>::iterator o_stop_iter = origin_walking_distances.begin(); o_stop_iter != origin_walking_distances.end(); o_stop_iter++)
-	//for (map<pair<Busstop*,int>, double>::iterator o_stop_iter = origin_walking_distances.begin(); o_stop_iter != origin_walking_distances.end(); o_stop_iter++)
 	{
 		if ((*o_stop_iter).second <= theParameters->max_walking_distance)
 		{
@@ -935,29 +934,24 @@ Busstop* Passenger::make_first_stop_decision (double time)
 	}
 	// calc MNL probabilities
 	double MNL_denominator = 0.0;
-	//Melina
 	for (map <Busstop*, double>::iterator origin_stops = candidate_origin_stops_u.begin(); origin_stops != candidate_origin_stops_u.end(); origin_stops++)
-	//for (map <pair<Busstop*,int>, double>::iterator origin_stops = candidate_origin_stops_u.begin(); origin_stops != candidate_origin_stops_u.end(); origin_stops++)
 	{
 		// calc denominator value
 		MNL_denominator += exp((*origin_stops).second);
 	}
 	for (map <Busstop*, double>::iterator origin_stops = candidate_origin_stops_u.begin(); origin_stops != candidate_origin_stops_u.end(); origin_stops++)
-	//for (map <pair<Busstop*,int>, double>::iterator origin_stops = candidate_origin_stops_u.begin(); origin_stops != candidate_origin_stops_u.end(); origin_stops++)
 	{
 		candidate_origin_stops_p[(*origin_stops).first] = exp(candidate_origin_stops_u[(*origin_stops).first]) / MNL_denominator;
 	}
 	// perform choice
 	vector<double> origin_probs;
 	for (map <Busstop*, double>::iterator stops_probs = candidate_origin_stops_p.begin(); stops_probs != candidate_origin_stops_p.end(); stops_probs++)
-	//for (map <pair<Busstop*,int>, double>::iterator stops_probs = candidate_origin_stops_p.begin(); stops_probs != candidate_origin_stops_p.end(); stops_probs++)
 	{
 		origin_probs.push_back((*stops_probs).second);
 	}
 	int origin_stop_position = theRandomizers[0]->mrandom(origin_probs);
 	int iter = 0;
 	for (map <Busstop*, double>::iterator stops_probs = candidate_origin_stops_p.begin(); stops_probs != candidate_origin_stops_p.end(); stops_probs++)
-	//for (map <pair<Busstop*, int>, double>::iterator stops_probs = candidate_origin_stops_p.begin(); stops_probs != candidate_origin_stops_p.end(); stops_probs++)
 	{
 		iter++;
 		if (iter == origin_stop_position)

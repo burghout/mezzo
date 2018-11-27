@@ -2023,12 +2023,12 @@ double Busstop::get_walking_distance_stop_section(int curr_section, Busstop* nex
 		//cout << " from = " << this->get_id() << " curr_section = " << curr_section << " to = " << next_stop->get_id() << " next_section = " << next_section;
 		//cout << " walking_distance = " << walking_distance << " sw1 = " << shortest_walks[next_stop].first << " sw2 " << shortest_walks[next_stop].second << endl;
 		// Adds walking distance along each platform
-		walking_distance += (curr_section_diff * curr_section_length + next_section_diff * next_section_length) / 1000.0;
+		walking_distance += (curr_section_diff * curr_section_length + next_section_diff * next_section_length);// / 1000.0;
 	}
 	else 
 	{
 		double curr_section_diff = abs(next_section - curr_section);
-		walking_distance = curr_section_diff * curr_section_length / 1000.0;
+		walking_distance = curr_section_diff * curr_section_length;// / 1000.0;
 	}
 
 	return walking_distance;

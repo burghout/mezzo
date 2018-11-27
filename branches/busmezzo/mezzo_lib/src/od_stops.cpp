@@ -873,7 +873,7 @@ void ODstops::calc_pass_measures ()
 				vector <pair<Busstop*,double> >::iterator checked_path_stops_iter = stops_time.begin();
 				for (vector<Busstop*>::iterator stops_iter = (*iter_path).first.begin(); stops_iter < (*iter_path).first.end(); stops_iter++)
 				{
-					if ((*stops_iter)->get_id() != (*checked_path_stops_iter).first->get_id() || checked_path_stops_iter == stops_time.end())
+					if ( checked_path_stops_iter == stops_time.end() || (*stops_iter)->get_id() != (*checked_path_stops_iter).first->get_id())
 					{
 						same_path = false;
 						break;
