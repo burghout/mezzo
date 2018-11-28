@@ -1991,16 +1991,10 @@ double Busstop::get_walking_time(int curr_section, Busstop* next_stop, int next_
 
 	//otherwise, infer walking time from walking distance
 	if (walking_time < 0) {
-		int curr_section_diff = abs(shortest_walks[next_stop].first - curr_section);
-		int next_section_diff = abs(shortest_walks[next_stop].second - next_section);
-		double curr_section_length = length / num_sections;
-		double next_section_length = next_stop->get_length() / next_stop->get_num_sections();
 
-		double walking_distance = distances[next_stop];
-		// Adds walking distance along each platform
-		walking_distance += curr_section_diff * curr_section_length + next_section_diff * next_section_length;
-		
-		walking_time = walking_distance * 60 / random->nrandom(theParameters->average_walking_speed, theParameters->average_walking_speed / 4);
+		walking_time = get_walking_distance_stop_section(curr_section, next_stop, next_section) 
+			* 60 / random->nrandom(theParameters->average_walking_speed, theParameters->average_walking_speed / 4);
+
 	}
 
 	return walking_time;

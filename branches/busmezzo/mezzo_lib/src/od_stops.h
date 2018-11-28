@@ -476,6 +476,7 @@ public:
 	double calc_combined_set_utility_for_alighting (Passenger* pass, Bustrip* bus_on_board, double time); // the trip that the pass. is currently on-board when calc. utility from downstream stop
 	double calc_combined_set_utility_for_alighting_zone (Passenger* pass, Bustrip* bus_on_board, double time); 
 	double calc_combined_set_utility_for_connection (double walking_distance, double time, Passenger* pass);
+	double calc_combined_set_utility_for_connection(double walking_distance, int section, double time, Passenger* pass); // Erik 18-11-27
 	double calc_combined_set_utility_for_connection_zone (Passenger* pass, double walking_distance, double time);
 	bool check_if_path_is_dominated (Pass_path* considered_path, vector<Pass_path*> arriving_paths);
 

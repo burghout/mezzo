@@ -818,7 +818,7 @@ pair<Busstop*,int> Passenger::make_connection_decision_2(double time)
 						connected_stop_section_walking_distance = get_walking_distance(*connected_stop, section_id);
 						connected_stop_section_u[section_id] =
 							left_od_stop->calc_combined_set_utility_for_connection(
-								connected_stop_section_walking_distance, time, this);
+								connected_stop_section_walking_distance, section_id, time, this);
 
 						logsum += exp(connected_stop_section_u[section_id]);
 						//cout << "walk dist = " << connected_stop_section_walking_distance << " ";

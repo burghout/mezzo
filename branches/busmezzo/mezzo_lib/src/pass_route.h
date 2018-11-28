@@ -45,7 +45,8 @@ class Pass_path
 
 	double calc_arriving_utility (double time, Passenger* pass);
     double calc_waiting_utility (vector <vector <Busstop*> >::iterator stop_iter, double time, bool alighting_decision, Passenger* pass);
-    map<Busline*, bool> check_maybe_worthwhile_to_wait (vector<Busline*> leg_lines, vector <vector <Busstop*> >::iterator stop_iter, bool dynamic_indicator); // returns false for lines which are not worthwhile to wait for in any case
+	double calc_waiting_utility(vector <vector <Busstop*> >::iterator stop_iter, int section, double time, bool alighting_decision, Passenger* pass); // Erik 18-11-27
+	map<Busline*, bool> check_maybe_worthwhile_to_wait (vector<Busline*> leg_lines, vector <vector <Busstop*> >::iterator stop_iter, bool dynamic_indicator); // returns false for lines which are not worthwhile to wait for in any case
 
 protected:
 	int p_id;

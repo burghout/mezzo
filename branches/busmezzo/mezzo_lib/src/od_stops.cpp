@@ -623,7 +623,9 @@ double ODstops::calc_combined_set_utility_for_alighting (Passenger* pass, Bustri
 	for (vector <Pass_path*>::iterator paths = path_set.begin(); paths < path_set.end(); paths++)
 	{
 		double time_till_transfer = bus_on_board->get_line()->calc_curr_line_ivt(pass->get_OD_stop()->get_origin(),origin_stop,pass->get_OD_stop()->get_origin()->get_rti(), time); // in seconds
-		staying_utility += exp(random->nrandom(theParameters->in_vehicle_time_coefficient, theParameters->in_vehicle_time_coefficient / 4 ) * (time_till_transfer/60) + random->nrandom(theParameters->transfer_coefficient, theParameters->transfer_coefficient / 4 )  +  (*paths)->calc_waiting_utility((*paths)->get_alt_transfer_stops().begin(), time + time_till_transfer, true, pass));
+		staying_utility += exp(random->nrandom(theParameters->in_vehicle_time_coefficient, theParameters->in_vehicle_time_coefficient / 4 ) * (time_till_transfer/60) 
+			+ random->nrandom(theParameters->transfer_coefficient, theParameters->transfer_coefficient / 4 )  
+			+  (*paths)->calc_waiting_utility((*paths)->get_alt_transfer_stops().begin(), time + time_till_transfer, true, pass));
 		// taking into account IVT till this intermediate stop, transfer penalty and the utility of the path from this transfer stop till the final destination
 	}
 	return log(staying_utility);
@@ -682,15 +684,54 @@ double ODstops::calc_combined_set_utility_for_connection (double walking_distanc
 		{
 			double time_till_connected_stop = walking_distance 
 				/ random->nrandom(theParameters->average_walking_speed, theParameters->average_walking_speed / 4); // in minutes
-			connection_utility += exp(random->nrandom(theParameters->walking_time_coefficient, theParameters->walking_time_coefficient/4) 
-				* time_till_connected_stop 
+			connection_utility += exp(random->nrandom(theParameters->walking_time_coefficient, theParameters->walking_time_coefficient/4) * time_till_connected_stop 
 				+ (*paths)->calc_waiting_utility(alt_stops_iter, time + (time_till_connected_stop * 60), false, pass)
 			);
 			// taking into account CT (walking time) till this connected stop and the utility of the path from this connected stop till the final destination
+			// Erik 18-11-27: Utility of the path from this connected stop till the final destination should take choice of car in consideration
 		}
 	}
 	return log(connection_utility);
 }
+
+// Erik 18-11-27: Added section input
+double ODstops::calc_combined_set_utility_for_connection(double walking_distance, int section, double time, Passenger* pass)
+{
+	// calc logsum over all the paths from this origin stop
+	double connection_utility = 0.0;
+	if (check_path_set() == false)
+	{
+		return -10000;
+	}
+	for (vector <Pass_path*>::iterator paths = path_set.begin(); paths < path_set.end(); paths++) // Erik 18-11-25: loop over OD path set
+	{
+		bool without_walking_first = false;
+		// go only through paths that does not include walking to another stop from this connection stop
+		vector<vector<Busstop*> > alt_stops = (*paths)->get_alt_transfer_stops();
+		vector<vector<Busstop*> >::iterator alt_stops_iter = alt_stops.begin();
+		alt_stops_iter++;
+		// check if the first (connected) stop is also included in the second element (no further walking)
+		for (vector<Busstop*>::iterator stop_iter = (*alt_stops_iter).begin(); stop_iter < (*alt_stops_iter).end(); stop_iter++)
+		{
+			if ((*stop_iter)->get_id() == (origin_stop->get_id()))
+			{
+				without_walking_first = true;
+			}
+		}
+		if (without_walking_first == true) // considering only no multi-walking alternatives
+		{
+			double time_till_connected_stop = walking_distance
+				/ random->nrandom(theParameters->average_walking_speed, theParameters->average_walking_speed / 4); // in minutes
+			connection_utility += exp(random->nrandom(theParameters->walking_time_coefficient, theParameters->walking_time_coefficient / 4) * time_till_connected_stop
+				+ (*paths)->calc_waiting_utility(alt_stops_iter, section, time + (time_till_connected_stop * 60), false, pass)
+			);
+			// taking into account CT (walking time) till this connected stop and the utility of the path from this connected stop till the final destination
+			// Erik 18-11-27: Utility of the path from this connected stop till the final destination should take choice of car in consideration
+		}
+	}
+	return log(connection_utility);
+}
+
 
 double ODstops::calc_combined_set_utility_for_connection_zone (Passenger* pass, double walking_distance, double time)
 {

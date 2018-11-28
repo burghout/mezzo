@@ -398,7 +398,6 @@ double Pass_path::calc_arriving_utility (double time, Passenger* pass)
 		+ random->nrandom(theParameters->walking_time_coefficient, theParameters->walking_time_coefficient/4) * (calc_total_walking_distance() / avg_walking_speed));
 }
 
-// Erik 18-09-16: Depends on total walking distance
 double Pass_path::calc_waiting_utility (vector <vector <Busstop*> >::iterator stop_iter, double time, bool alighting_decision, Passenger* pass)
 {	
 	stop_iter++;
@@ -409,7 +408,7 @@ double Pass_path::calc_waiting_utility (vector <vector <Busstop*> >::iterator st
 			/ random->nrandom(theParameters->average_walking_speed, theParameters->average_walking_speed/4)
 			);
 	}
-	vector<vector <Busline*> >::iterator iter_alt_lines = alt_lines.begin();
+	vector<vector <Busline*> >::iterator iter_alt_lines = alt_lines.begin(); // Erik 18-11-27: alt_lines contains all line sequencess in path set
 	for (vector <Busline*>::iterator iter_lines = (*iter_alt_lines).begin(); iter_lines < (*iter_alt_lines).end(); iter_lines++)
 	{
 		// erik 18-11-25: iter_lines points to a Busline*
@@ -436,6 +435,49 @@ double Pass_path::calc_waiting_utility (vector <vector <Busstop*> >::iterator st
 			}
 		}
 	} 
+	// if none of the lines in the first leg is available - then the waiting alternative is irrelevant
+	return -10.0;
+}
+
+// Erik 18-09-16: Depends on total walking distance
+// Erik 18-11-28: Added section dependency
+double Pass_path::calc_waiting_utility(vector <vector <Busstop*> >::iterator stop_iter, int section, double time, bool alighting_decision, Passenger* pass)
+{
+	stop_iter++;
+	if (alt_transfer_stops.size() == 2) // in case is is walking-only path
+	{
+		return (random->nrandom(theParameters->walking_time_coefficient, theParameters->walking_time_coefficient / 4)
+			* calc_total_walking_distance()
+			/ random->nrandom(theParameters->average_walking_speed, theParameters->average_walking_speed / 4)
+			);
+	}
+	vector<vector <Busline*> >::iterator iter_alt_lines = alt_lines.begin(); // Erik 18-11-27: alt_lines contains all line sequences in path set
+	for (vector <Busline*>::iterator iter_lines = (*iter_alt_lines).begin(); iter_lines < (*iter_alt_lines).end(); iter_lines++)
+	{
+		// erik 18-11-25: iter_lines points to a Busline*
+		vector<Start_trip>::iterator next_trip_iter = (*iter_lines)->find_next_expected_trip_at_stop((*stop_iter).front());
+		if (pass->line_is_rejected((*iter_lines)->get_id())) // in case the line was already rejected once before, added by Jens 2014-10-16
+		{
+			return -10.0;
+		}
+
+		//if ((*next_trip_iter).first != NULL && (*next_trip_iter).first->stops_map[(*stop_iter).front()] - time < theParameters->max_waiting_time)
+		if ((*next_trip_iter).first != NULL) //Changed by Jens 2015-03-23 to avoid weird effects when the schedule is too pessimistic
+											 // a dynamic filtering rule - if there is at least one line in the first leg which is available - then this waiting alternative is relevant
+		{
+			double ivt = calc_total_in_vehicle_time(time, pass);
+			double avg_walking_speed = random->nrandom(theParameters->average_walking_speed, theParameters->average_walking_speed / 4);
+			double wt = calc_total_waiting_time(time, false, alighting_decision, avg_walking_speed, pass);
+
+			if (wt < theParameters->max_waiting_time) //Changed by Jens 2015-03-23 to avoid weird effects when the schedule is too pessimistic
+			{
+				return (random->nrandom(theParameters->transfer_coefficient, theParameters->transfer_coefficient / 4) * number_of_transfers
+					+ random->nrandom(theParameters->in_vehicle_time_coefficient, theParameters->in_vehicle_time_coefficient / 4) * ivt
+					+ random->nrandom(theParameters->waiting_time_coefficient, theParameters->waiting_time_coefficient / 4) * wt
+					+ random->nrandom(theParameters->walking_time_coefficient, theParameters->walking_time_coefficient / 4) * calc_total_walking_distance() / avg_walking_speed);
+			}
+		}
+	}
 	// if none of the lines in the first leg is available - then the waiting alternative is irrelevant
 	return -10.0;
 }
