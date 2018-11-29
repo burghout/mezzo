@@ -422,6 +422,8 @@ void Controlcenter::connectInternal()
 	assert(ok);
 	ok = QObject::connect(this, &Controlcenter::requestAccepted, this, &Controlcenter::on_requestAccepted, Qt::DirectConnection);
 	assert(ok);
+    ok = QObject::connect(this, &Controlcenter::tripVehicleMatchFound, this, &Controlcenter::on_tripVehicleMatchFound, Qt::DirectConnection);
+    assert(ok);
 
 	//Triggers to generate trips via BustripGenerator
 	ok = QObject::connect(this, &Controlcenter::requestAccepted, this, &Controlcenter::requestTrip, Qt::DirectConnection); 
@@ -442,8 +444,6 @@ void Controlcenter::connectInternal()
 	assert(ok);
 
 	//Triggers to schedule vehicle - trip pairs via VehicleScheduler
-	ok = QObject::connect(this, &Controlcenter::tripVehicleMatchFound, this, &Controlcenter::on_tripVehicleMatchFound, Qt::DirectConnection);
-	assert(ok);
 	ok = QObject::connect(this, &Controlcenter::tripVehicleMatchFound, this, &Controlcenter::scheduleMatchedTrips, Qt::DirectConnection);
 	assert(ok);
 }

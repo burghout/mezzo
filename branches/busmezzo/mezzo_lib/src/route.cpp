@@ -67,8 +67,10 @@ void Route::reset()
 
 }
 
-odval Route::get_oid_did()
-  {return odval(origin->get_id(), destination->get_id());}		
+odval Route::get_oid_did() const
+{
+    return odval(origin->get_id(), destination->get_id());
+}		
 
  bool Route::check (int oid, int did)
 	{ return ( (origin->get_id()==oid) && (destination->get_id()==did) );}
@@ -126,7 +128,7 @@ odval Route::get_oid_did()
  }
 #endif
 
- bool Route::equals (Route& route) // returns true if same route 
+ bool Route::equals (const Route& route) // returns true if same route 
  {
 	 odval val=route.get_oid_did();
 	 if ((val.first != origin->get_id()) || (val.second != destination->get_id()))

@@ -181,9 +181,10 @@ public:
         bool                    flex_line              //!< true if this line allows for dynamically scheduled trips
     ); //!< creates a busline and adds it to Network::buslines
     bool createAllDRTLines(); //!< creates all the DRT lines between each stop pair that has a viable route between them
+    bool createControlcenterDRTLines(Controlcenter* cc); //!< creates all direct DRT lines between each stop pair in the service area of Controlcenter and assigns these lines to Controlcenter
     Origin* findNearestOriginToStop(Busstop* stop); //!< returns the nearest Origin Node to  stop
     Destination* findNearestDestinationToStop(Busstop* stop);  //!< returns the nearest Destination Node from stop
-    vector<pair<Busstop*, double> > calc_interstop_freeflow_ivt(const Busroute* route, const vector<Busstop*>& stops) const; //!< returns the free-flow IVT (for parameter 'time') between all stops on a busroute
+    vector<pair<Busstop*, double> > calc_interstop_freeflow_ivt(const Busroute* route, const vector<Busstop*>& stops) const; //!< returns the free-flow IVT between all stops on a busroute
 
     bool run(int period); //!< RUNS the network for 'period' seconds
 	bool addroutes (int oid, int did, ODpair* odpair); //!< adds routes to an ODpair

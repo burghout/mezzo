@@ -1428,7 +1428,15 @@ bool Network::readcontrolcenters(const string& name)
             return false;
         }
 
-        //read lines associated with this cc
+        //create and add all direct lines to cc
+        if (!createControlcenterDRTLines(cc))
+        {
+            cout << "readcontrolcenters:: problem generating direct lines for control center " << id;
+            in.close();
+            return false;
+        }
+
+        //read lines associated with this cc 
         in >> nr_lines;
         bracket = ' ';
         in >> bracket;
@@ -2068,6 +2076,107 @@ Busline* Network::create_busline(
     return bl;
 }
 
+bool Network::createControlcenterDRTLines(Controlcenter* cc)
+{
+    assert(theParameters->drt);
+    assert(cc);
+
+    set<Busstop*> serviceArea = cc->getServiceArea();
+    vector <Busstop*> stops;
+    vector<Busroute*> routesFound;
+    vector<Busline*>  buslinesFound;
+
+    //*** begin dummy values
+    Vtype* vtype = new Vtype(888, "octobus", 1.0, 20.0);
+    int routeIdCounter = 10000; // TODO: update to find max routeId from busroutes vector
+    int busLineIdCounter = 10000; //  TODO: update later
+   //*** end of dummy values
+
+    ODpair* od_pair = nullptr;
+    Origin* ori = nullptr;
+    Destination* dest = nullptr;
+
+    for (auto startstop : serviceArea)
+    {
+        ori = nullptr;
+        // find best origin for startstop if it does not exist
+        if (startstop->get_origin_node() == nullptr)
+        {
+            // find  origin node
+            ori = findNearestOriginToStop(startstop);
+            if (ori != nullptr)
+                startstop->set_origin_node(ori);
+        }
+        for (auto endstop : serviceArea)
+        {
+            if (endstop->get_dest_node() == nullptr)
+            {
+                // find  destination node
+                dest = findNearestDestinationToStop(endstop);
+                if (dest != nullptr)
+                    endstop->set_dest_node(dest);
+            }
+            if (startstop != endstop)
+            {
+                // find best odpair
+                int ori_id = startstop->get_origin_node()->get_id();
+                int dest_id = endstop->get_dest_node()->get_id();
+                odval odid(ori_id, dest_id);
+                auto od_it = find_if(odpairs.begin(), odpairs.end(), compareod(odid));
+                if (od_it != odpairs.end())
+                    od_pair = *od_it;
+                else // create new OD pair
+                {
+                    od_pair = new ODpair(startstop->get_origin_node(), endstop->get_dest_node(), 0.0, &vehtypes);
+                    odpairs.push_back(od_pair);
+                    qDebug() << "----Missing OD pair, creating for Origin " << ori_id <<
+                        ", destination " << dest_id;
+                }
+
+                stops.clear();
+                stops.push_back(startstop);
+                stops.push_back(endstop);
+
+                Busroute* newRoute = create_busroute_from_stops(routeIdCounter, od_pair->get_origin(), od_pair->get_destination(), stops);
+                if (newRoute != nullptr)
+                {
+                    //do not add busroutes that already exist
+                    auto existing_route_it = find_if(busroutes.begin(), busroutes.end(), [newRoute](Busroute* broute) -> bool { return (Route*)newRoute->equals((Route)*broute); });
+                    if (existing_route_it == busroutes.end())
+                    {
+                        routesFound.push_back(newRoute);
+                        routeIdCounter++;
+                    }
+                    
+                    // create busLine
+                    Busline* newLine = create_busline(busLineIdCounter, 0, "DRT Line", newRoute, stops, vtype, od_pair, 0, 0.0, 0.0, 0, true);
+                    if (newLine != nullptr)
+                    {
+                        newLine->set_planned_headway(::drt_first_rep_max_headway); //add a planned headway (associated with CC) for this line. Used when applying dominancy rules in CSGM and for prior knowledge calculations in pass decisions
+                        buslinesFound.push_back(newLine);
+                        busLineIdCounter++;
+                    }
+                }
+                else
+                    qDebug() << "DTR create buslines: no route found from stop " << startstop->get_id() << " to " << endstop->get_id();
+
+            }
+        }
+    }
+    // add the routes found to the busroutes
+    busroutes.insert(busroutes.end(), routesFound.begin(), routesFound.end());
+    // add the buslines
+    buslines.insert(buslines.end(), buslinesFound.begin(), buslinesFound.end());
+
+    //add buslines to cc
+    for (auto line : buslinesFound)
+    {
+        cc->addServiceRoute(line);
+    }
+
+    return true;
+}
+
 bool Network::createAllDRTLines()
 {
     // test to create direct busroutes from/to all stops
@@ -2249,13 +2358,12 @@ vector<pair<Busstop*,double> > Network::calc_interstop_freeflow_ivt(const Busrou
 		double relative_length; //percentage of current link to calculate IVT for
 		double current_stop_pos; //position of stop on current link in meters from upstream node
 		double time_to_stop = 0.0; //travel time to stop from closest upstream node
-        double expected_ivt = 0.0;
 
         auto current_link = routelinks.cbegin(); //iterator that always points to the next link on the route to be traversed when calculating ivts
 
 		for (auto next_stop = stops.cbegin(); next_stop != stops.cend(); ++next_stop)
 		{
-			expected_ivt = 0.0;
+			double expected_ivt = 0.0;
 			auto next_stop_link = find_if(current_link, routelinks.cend(), compare<Link>((*next_stop)->get_link_id())); //find iterator to link of next stop on busroute
 			if (next_stop_link == routelinks.cend()) //stop does not exist on this route
 			{
@@ -2588,6 +2696,7 @@ bool Network::readtransitdemand (string name)
             generate_consecutive_stops();
             if (theParameters->od_pairs_for_generation == true)
             {
+                assert(!theParameters->drt); //this call path is currently completely untested with DRT
                 read_od_pairs_for_generation (workingdir + "ODpairs_pathset.dat");
                 find_all_paths_with_OD_for_generation();
             }
@@ -3466,6 +3575,7 @@ bool Network::check_stops_opposing_directions (Busstop* origin, Busstop* destina
 void Network::find_all_paths ()
 // goes over all OD pairs for a given origin to generate their path choice set
 {
+    assert(!theParameters->drt); //currently untested with DRT
     generate_consecutive_stops();
     // first - generate all direct paths
     for (vector <Busstop*>::iterator basic_origin = busstops.begin(); basic_origin < busstops.end(); basic_origin++)

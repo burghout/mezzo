@@ -47,7 +47,7 @@ class Route
 	void set_id(int id_) {id=id_;}
 	Origin* get_origin() {return origin;}
 	Destination* get_destination() {return destination;}
-	odval get_oid_did();
+	odval get_oid_did() const;
 	void set_selected(bool selected); // sets the links' selected attribute
 #ifndef _NO_GUI
 	void set_selected_color(QColor selcolor);
@@ -55,7 +55,7 @@ class Route
 	bool check (int oid, int did);
 	bool less_than(Route* route);
 	double cost(double time=0.0);
-	bool equals (Route& route); // returns true if same route {return ( (route.get_links())==(get_links()) );}
+	bool equals (const Route& route); // returns true if same route {return ( (route.get_links())==(get_links()) );}
 	vector<Link*> get_links() const {return links;}	
 	vector<Link*> get_upstream_links(int link_id) ;// returns all links upstream of link_id
 	vector<Link*> get_downstream_links(int link_id);  // returns all links downstream of link_id, including Link(link_id)
