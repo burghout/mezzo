@@ -55,6 +55,7 @@ private Q_SLOTS:
     void testFindOrigins(); //!< tests the findNearestOrigin function
     void testFindDestinations(); //!< tests the findNearestDestination function
     void testCreateAllDRTLines(); //!< tests creation of buslines
+    void testCreateControlcenterDRTLines(); //!< tests the creation of direct buslines for the service area of a Controlcenter
     void testDelete(); //!< tests correct deletion
 
 private:
@@ -120,9 +121,8 @@ void TestDRT::testCalcBusrouteInterStopIVT()
 	{
 		Busroute* route = line->get_busroute();
 		vector<Busstop*> stops = line->stops;
-        //qDebug() << "Calculating busroute " << route->get_id() << " IVT between stop " << stops.front()->get_id() << " and " << stops.back()->get_id();
+        qDebug() << "Calculating busroute " << route->get_id() << " IVT between stop " << stops.front()->get_id() << " and " << stops.back()->get_id() << " for line " << line->get_id();
         interstopIVT = net->calc_interstop_freeflow_ivt(route, stops);
-
 		QVERIFY2(interstopIVT.size() == stops.size() , "Failure, calculation of inter-stop IVT failed for existing busline");
 	}
 
@@ -160,7 +160,7 @@ void TestDRT::testCalcBusrouteInterStopIVT()
 void TestDRT::testCreateBusroute()
 {
     // Test correct route
-    ODpair* od_pair = net->find_odpair(10,66); // 50 to 88
+    ODpair* od_pair = net->find_odpair(10,66); // 50 to 66
     QVERIFY (od_pair);
     qDebug() << "od pair " << od_pair->get_origin()->get_id() << " to "
              << od_pair->get_destination()->get_id();
@@ -255,9 +255,9 @@ void TestDRT::testFindOrigins()
     }
 
     Busstop* stopA = net->get_busstop_from_name("A"); // on link 12
-    Busstop* stopB = net->get_busstop_from_name("B"); // on link 67
-    Busstop* stopC = net->get_busstop_from_name("C"); // on link 1011
-    Busstop* stopD = net->get_busstop_from_name("D"); // on link 34
+    Busstop* stopB = net->get_busstop_from_name("B"); // on link 34
+    Busstop* stopC = net->get_busstop_from_name("C"); // on link 56
+    Busstop* stopD = net->get_busstop_from_name("D"); // on link 78
 
     auto oA=net->findNearestOriginToStop(stopA);
     QVERIFY (oA->get_id() == 10);
@@ -281,9 +281,9 @@ void TestDRT::testFindDestinations()
         QVERIFY (d != nullptr);
     }
     Busstop* stopA = net->get_busstop_from_name("A"); // on link 12
-    Busstop* stopB = net->get_busstop_from_name("B"); // on link 67
-    Busstop* stopC = net->get_busstop_from_name("C"); // on link 1011
-    Busstop* stopD = net->get_busstop_from_name("D"); // on link 34
+    Busstop* stopB = net->get_busstop_from_name("B"); // on link 34
+    Busstop* stopC = net->get_busstop_from_name("C"); // on link 56
+    Busstop* stopD = net->get_busstop_from_name("D"); // on link 78
 
     auto oA=net->findNearestDestinationToStop(stopA);
     QVERIFY (oA->get_id() == 22);
@@ -301,19 +301,50 @@ void TestDRT::testFindDestinations()
 
 void TestDRT::testCreateAllDRTLines()
 {
-    auto busroutes = net->get_busroutes();
-    auto buslines = net->get_buslines();
+    auto busroutes = net->get_busroutes(); //should be 4 existing busroutes
+    auto buslines = net->get_buslines(); //should be 4 existing buslines
     qDebug() << " testCreateAllDRTLInes, busroutes.size() " << busroutes.size()
              << " buslines.size() " << buslines.size();
-    QVERIFY (busroutes.size() == 18);
-    QVERIFY (buslines.size() == 4);
-    net->createAllDRTLines(); // should find 6 more routes and create 6 more lines
+    QVERIFY (busroutes.size() == 10);
+    QVERIFY (buslines.size() == 10);
+    net->createAllDRTLines(); // should find 12 more routes and create 12 more lines (all direct routes between 4 stops)
     busroutes = net->get_busroutes();
     buslines = net->get_buslines();
     qDebug() << " testCreateAllDRTLInes, busroutes.size() " << busroutes.size()
              << " buslines.size() " << buslines.size();
-    QVERIFY (busroutes.size() == 30);
-    QVERIFY (buslines.size() == 16);
+    QVERIFY (busroutes.size() == 22);
+    QVERIFY (buslines.size() == 22);
+}
+
+void TestDRT::testCreateControlcenterDRTLines()
+{
+    //create a dummy controlcenter
+    Controlcenter* cc = new Controlcenter();
+
+    //add stops A B and C to service area of controlcenter
+    cc->addStopToServiceArea(net->get_busstop_from_name("A")); // on link 12
+    cc->addStopToServiceArea(net->get_busstop_from_name("B")); // on link 34
+    cc->addStopToServiceArea(net->get_busstop_from_name("C")); // on link 56
+
+    QVERIFY(cc->getServiceArea().size() == 3); //there should be 3 stops in the service area of the controlcenter
+    QVERIFY(cc->tg_.serviceRoutes_.size() == 0); //there should be no service routes available yet
+
+    auto busroutes = net->get_busroutes();
+    auto buslines = net->get_buslines();
+    QVERIFY (busroutes.size() == 22);
+    QVERIFY (buslines.size() == 22);
+
+    net->createControlcenterDRTLines(cc);
+
+    //routes should not be duplicated, buslines can be duplicated
+    busroutes = net->get_busroutes();
+    buslines = net->get_buslines();
+    QVERIFY (busroutes.size() == 22); //all direct routes already generated in testCreateAllDRTLines
+    QVERIFY (buslines.size() == 28); //6 additional lines for 3 stops in service area of controlcenter
+
+    QVERIFY(cc->tg_.serviceRoutes_.size() == 6); //6 lines have been added to controlcenter
+
+    delete cc;
 }
 
 void TestDRT::testDelete()

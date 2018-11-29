@@ -65,6 +65,8 @@ private:
 */
 class BustripGenerator
 {
+    friend class TestDRT; //!< for writing drt integration tests
+
 	enum generationStrategyType { Null = 0, Naive }; //!< ids of passenger trip generation strategies known to BustripGenerator
 	enum emptyVehicleStrategyType {	EVNull = 0, EVNaive }; //!< ids of empty-vehicle redistribution strategies known to BustripGenerator
 	friend class BustripVehicleMatcher; //!< give matcher class access to unmatchedTrips_. May remove trip from this set without destroying it if it has been matched. Also gives VehicleMatcher access to serviceRoutes for initializing vehicles
@@ -171,6 +173,7 @@ class Controlcenter : public QObject
 {
 	Q_OBJECT
     friend class TestControlcenter; //!< for writing unit tests for Controlcenter
+    friend class TestDRT; //!< for writing drt integration tests
 	friend class Network; //!< for writing results of completed trips to output files, and for generating direct lines between connectedStops_
 
 public:
