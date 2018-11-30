@@ -1685,7 +1685,7 @@ void Busstop::passenger_activity_at_stop(Eventlist* eventlist, Bustrip* trip, do
 			{
 				// Erik 18-09-16: Connection decision should also return platform section
 				pair<Busstop*, int> stop_section;
-				stop_section = (*alighting_passenger)->make_connection_decision_2(time);
+				stop_section = (*alighting_passenger)->make_connection_decision_2(time); // Erik 18-11-30: Make new connection decision!
 				next_stop = stop_section.first;
 				next_section = stop_section.second;
 				// set connected_stop as the new origin
@@ -1705,7 +1705,7 @@ void Busstop::passenger_activity_at_stop(Eventlist* eventlist, Bustrip* trip, do
 				//if (odstop->get_waiting_passengers().size() != 0) //Why was it like this??
 				if (true)  //Changed by Jens 2014-06-23
 				{
-					if (next_stop->get_id() == this->get_id())  // pass stays at the same stop
+					if (next_stop->get_id() == this->get_id() && pass_car == next_section)  // pass stays at the same stop and section
 					{
 						passengers wait_pass = odstop->get_waiting_passengers(); // add passanger's to the waiting queue on the new OD
 						wait_pass.push_back(*alighting_passenger);
@@ -1731,19 +1731,22 @@ void Busstop::passenger_activity_at_stop(Eventlist* eventlist, Bustrip* trip, do
 							}
 						}
 					}
-					else  // pass walks to another stop
+					else  // pass walks to another stop and/or section Erik 18-11-27
 					{
 						// booking an event to the arrival time at the new stop
 
-						// Erik 18-09-15: walking time
-						double arrival_time_connected_stop = time + get_walking_time(next_stop, time);
+						double arrival_time_connected_stop_section = time + get_walking_time(pass_car, next_stop, next_section, time); // Erik 18-11-30
 						//(*alighting_passenger)->execute(eventlist,arrival_time_connected_stop);
-						eventlist->add_event(arrival_time_connected_stop, *alighting_passenger);
+						eventlist->add_event(arrival_time_connected_stop_section, *alighting_passenger);
 						pair<Busstop*, double> stop_time;
 						stop_time.first = next_stop;
-						stop_time.second = arrival_time_connected_stop;
+						stop_time.second = arrival_time_connected_stop_section;
+						pair <int, double> section_time; // Erik 18-11-30
+						section_time.first = next_section; // Erik 18-11-30
+						section_time.second = arrival_time_connected_stop_section; // Erik 18-11-30
 						(*alighting_passenger)->add_to_selected_path_stop(stop_time);
-						// Erik 18-09-16: Should also record the selected platform section
+						(*alighting_passenger)->add_to_selected_path_sections(section_time); // Erik 18-11-30
+
 					}
 				}
 				else
