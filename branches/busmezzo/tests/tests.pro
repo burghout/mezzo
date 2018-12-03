@@ -6,4 +6,5 @@ SUBDIRS += \
     integrationtest \
     controlcenter \
     routestest \
-    drttest
+    drttest \
+	pentafeeder_integrationtest

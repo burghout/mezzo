@@ -1,0 +1,32 @@
+stops:	6
+{1   	A	12		1	19	0	1	1	0	0}
+{2   	B	34	    1	19	0	1	1	0	0}
+{3   	C	56		1	19	0	1	1	0	0}
+{4		D 	78		1	19	0	1	1	0	0}
+{5   	E	910		1	19	0	1	1	0	0}
+{6		F 	1112	1	19	0	1	1	0	0}
+
+
+stops_distances:	0
+format: 1
+
+stops_walking_times:	0
+
+lines:	2
+{1	10	FixedTrunk_West	  900	1212	1	4	0	0	0	0	0
+	2	{5  6}
+	2	{5	6}
+}
+
+{10	1	FixedTrunk_East   1100	1010	10	4	0	0	0	0	0
+	2	{6  5}
+	2	{6  5}
+}
+
+
+trips:	2
+format:	3
+{	1	2	{0	600}	    1000	1200		5	}
+{	10	2	{0	600}	    1600	1200		5	}
+
+travel_time_disruptions: 0
