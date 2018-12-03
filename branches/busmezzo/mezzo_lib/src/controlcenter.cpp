@@ -105,6 +105,11 @@ void BustripGenerator::addServiceRoute(Busline* line)
 	serviceRoutes_.push_back(line);
 }
 
+vector<Busline*> BustripGenerator::getServiceRoutes() const
+{
+    return serviceRoutes_;
+}
+
 void BustripGenerator::cancelUnmatchedTrip(Bustrip* trip)
 {
 	assert(trip->driving_roster.empty());
@@ -449,6 +454,7 @@ void Controlcenter::connectInternal()
 }
 
 set<Busstop*> Controlcenter::getServiceArea() const { return serviceArea_; }
+vector<Busline*> Controlcenter::getServiceRoutes() const { return tg_.getServiceRoutes(); }
 
 bool Controlcenter::isInServiceArea(Busstop* stop) const
 {

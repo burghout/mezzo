@@ -232,6 +232,12 @@ void TestDRT::testCreateBusroute()
                         }
                     }
 
+                    //test if route actually visits location of both stops
+                    QString msg = QString("Failure, generated route between stops %1 -> %2 does not include link of stop %1").arg(startstop.second->get_id()).arg(endstop.second->get_id());
+                    QVERIFY2(newRoute->has_link(startstop.second->get_link_id()), qPrintable(msg));
+                    msg = QString("Failure, generated route between stops %1 -> %2 does not include link of stop %2").arg(startstop.second->get_id()).arg(endstop.second->get_id());
+                    QVERIFY2(newRoute->has_link(endstop.second->get_link_id()), qPrintable(msg));
+
                     routesFound.push_back(newRoute);
                 }
                 else
@@ -327,7 +333,7 @@ void TestDRT::testCreateControlcenterDRTLines()
     cc->addStopToServiceArea(net->get_busstop_from_name("C")); // on link 56
 
     QVERIFY(cc->getServiceArea().size() == 3); //there should be 3 stops in the service area of the controlcenter
-    QVERIFY(cc->tg_.serviceRoutes_.size() == 0); //there should be no service routes available yet
+    QVERIFY(cc->getServiceRoutes().size() == 0); //there should be no service routes available yet
 
     auto busroutes = net->get_busroutes();
     auto buslines = net->get_buslines();
@@ -342,7 +348,7 @@ void TestDRT::testCreateControlcenterDRTLines()
     QVERIFY (busroutes.size() == 22); //all direct routes already generated in testCreateAllDRTLines
     QVERIFY (buslines.size() == 28); //6 additional lines for 3 stops in service area of controlcenter
 
-    QVERIFY(cc->tg_.serviceRoutes_.size() == 6); //6 lines have been added to controlcenter
+    QVERIFY(cc->getServiceRoutes().size() == 6); //6 lines have been added to controlcenter
 
     delete cc;
 }

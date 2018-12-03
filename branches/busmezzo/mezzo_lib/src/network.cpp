@@ -3425,17 +3425,19 @@ Busroute* Network::create_busroute_from_stops(int id, Origin* origin_node, Desti
     int rootlink = origin_node->get_links().front()->get_id(); // TODO: for all outgoing links from origin
     rlinks.push_back(linkmap[rootlink]); //rootlink of origin will always be included in potential route
 
+   //1. find path to upstream node of next stop, 2. include all links of path besides rootlink, 3. set rootlink to location of next stop 4. add rootlink to rlinks, 5. increment next stop and return to step 1
     for (auto s : stops)
     {
         if (s->get_link_id() != rootlink) // if the stop is not already on current rootlink
         {
-            int dsnode = linkmap[s->get_link_id()]->get_out_node_id(); //id of closest node downstream from stop
-            segment = shortest_path_to_node(rootlink, dsnode, time);
+            int usnode = linkmap[s->get_link_id()]->get_in_node_id(); //id of closest node upstream from stop
+            segment = shortest_path_to_node(rootlink, usnode, time);
 
             if (segment.empty()) // if one of the stops in the sequence is not reachable, return nullptr
                 return nullptr;
             rlinks.insert(rlinks.end(), segment.begin() + 1, segment.end()); // add segment to rlinks, always exclude rootlink
             rootlink = s->get_link_id();
+            rlinks.push_back(linkmap[rootlink]); //add link that stop is located on to the end of route links
         }
     }
     // add segment to destination if needed

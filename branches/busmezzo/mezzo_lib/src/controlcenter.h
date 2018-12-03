@@ -65,8 +65,6 @@ private:
 */
 class BustripGenerator
 {
-    friend class TestDRT; //!< for writing drt integration tests
-
 	enum generationStrategyType { Null = 0, Naive }; //!< ids of passenger trip generation strategies known to BustripGenerator
 	enum emptyVehicleStrategyType {	EVNull = 0, EVNaive }; //!< ids of empty-vehicle redistribution strategies known to BustripGenerator
 	friend class BustripVehicleMatcher; //!< give matcher class access to unmatchedTrips_. May remove trip from this set without destroying it if it has been matched. Also gives VehicleMatcher access to serviceRoutes for initializing vehicles
@@ -84,7 +82,8 @@ public:
 	void setEmptyVehicleStrategy(int type); //!< destroy current emptyVehicleStrategy_ and set to new type
 
 	void addServiceRoute(Busline* line); //!< add a potential service route that this BustripGenerator can plan trips for
-	
+    vector<Busline*> getServiceRoutes() const;
+
 	void cancelUnmatchedTrip(Bustrip* trip); //!< destroy and remove trip from set of unmatchedTrips_
 	void cancelRebalancingTrip(Bustrip* trip); //!< destroy and remove rebalancing trip from set of unmatchedRebalancingTrips_
 
@@ -173,7 +172,6 @@ class Controlcenter : public QObject
 {
 	Q_OBJECT
     friend class TestControlcenter; //!< for writing unit tests for Controlcenter
-    friend class TestDRT; //!< for writing drt integration tests
 	friend class Network; //!< for writing results of completed trips to output files, and for generating direct lines between connectedStops_
 
 public:
@@ -199,6 +197,7 @@ private:
 
 public:
     set<Busstop*> getServiceArea() const;
+    vector<Busline*> getServiceRoutes() const;
     bool isInServiceArea(Busstop* stop) const; //!< true if stop is included in service area of Controlcenter, false otherwise
 
 	//methods for connecting passengers, vehicles, stops and lines

@@ -142,7 +142,7 @@ odval Route::get_oid_did() const
  {
 	 vector<Link*>::iterator iter = find(links.begin(), links.end(), currentlink);
 	 iter++;
-	 if (iter < links.end())
+     if (iter != links.end())
 	 {
 		 return *iter;
 	 }
