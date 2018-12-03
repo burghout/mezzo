@@ -82,7 +82,7 @@ void TestPentaFeeder::testCreateNetwork()
 
 void TestPentaFeeder::testInitNetwork()
 {
-    QFile::remove(path_set_generation_filename); //remove old passenger path sets
+    //QFile::remove(path_set_generation_filename); //remove old passenger path sets
 
     nt->init();
  // Test here various properties that should be true after reading the network
@@ -100,6 +100,8 @@ void TestPentaFeeder::testInitNetwork()
     QVERIFY2 (theParameters->drt == true, "Failure, DRT not activated in parameters for PentaFeeder_OnlyDRT");
     QVERIFY2 (net->get_currenttime() == 0, "Failure, currenttime should be 0 at start of simulation");
 
+    //TODO: add tests for path_set_generation file. Check to see if the most important paths are included when generating path set for this network. Currently passenger choice sets are read from input file
+    QVERIFY(theParameters->choice_set_indicator == true);
 
     //Test if newly generated passenger path sets match expected output
 //	QString ex_path_set_fullpath = expected_outputs_path + path_set_generation_filename;
