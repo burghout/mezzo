@@ -16,7 +16,7 @@
 
 //const std::string network_path_1 = "../networks/SFnetwork/"; // Spiess Florian network
 //const std::string network_path_2 = "../networks/DRTFeeder/"; // DRT feeder network
-const std::string network_path_3 = "../networks/PentaFeeder_DRTOnly/"; //Pentagram feeder DRT lines only
+const std::string network_path_3 = "../networks/PentaFeeder/"; //Pentagon feeder network
 
 const std::string network_name = "masterfile.mezzo";
 
@@ -326,19 +326,19 @@ void TestPentaFeeder::testFindDestinations()
 
 void TestPentaFeeder::testCreateAllDRTLines()
 {
-    auto busroutes = net->get_busroutes(); //should be 22 existing busroutes
-    auto buslines = net->get_buslines(); //should be 22 existing buslines
+    auto busroutes = net->get_busroutes(); //should be 23 existing busroutes
+    auto buslines = net->get_buslines(); //should be 3 existing buslines + 20 from controlcenter input
     qDebug() << " testCreateAllDRTLInes, busroutes.size() " << busroutes.size()
              << " buslines.size() " << buslines.size();
-    QVERIFY (busroutes.size() == 22);
-    QVERIFY (buslines.size() == 22);
+    QVERIFY(busroutes.size() == 23);
+    QVERIFY (buslines.size() == 23);
     net->createAllDRTLines(); // should find 30 more routes and create 30 more lines (all direct routes between 6 stops, duplicates are not excluded)
     busroutes = net->get_busroutes();
     buslines = net->get_buslines();
     qDebug() << " testCreateAllDRTLInes, busroutes.size() " << busroutes.size()
              << " buslines.size() " << buslines.size();
-    QVERIFY (busroutes.size() == 52);
-    QVERIFY (buslines.size() == 52);
+    QVERIFY (busroutes.size() == 53);
+    QVERIFY (buslines.size() == 53);
 }
 
 void TestPentaFeeder::testCreateControlcenterDRTLines()
@@ -356,16 +356,16 @@ void TestPentaFeeder::testCreateControlcenterDRTLines()
 
     auto busroutes = net->get_busroutes();
     auto buslines = net->get_buslines();
-    QVERIFY (busroutes.size() == 52); //2 from input files, 20 from input controlcenter with 5 stops, 30 from createALLDRTLines
-    QVERIFY (buslines.size() == 52);
+    QVERIFY (busroutes.size() == 53); //3 from input files, 20 from input controlcenter with 5 stops, 30 from createALLDRTLines
+    QVERIFY (buslines.size() == 53);
 
     net->createControlcenterDRTLines(cc);
 
     //routes should not be duplicated, buslines can be duplicated
     busroutes = net->get_busroutes();
     buslines = net->get_buslines();
-    QVERIFY (busroutes.size() == 52); //all direct routes already generated in testCreateAllDRTLines
-    QVERIFY (buslines.size() == 58); //6 additional lines for 3 stops in service area of controlcenter
+    QVERIFY (busroutes.size() == 53); //all direct routes already generated in testCreateAllDRTLines
+    QVERIFY (buslines.size() == 59); //6 additional lines for 3 stops in service area of controlcenter
 
     QVERIFY(cc->getServiceRoutes().size() == 6); //6 lines have been added to controlcenter
 
