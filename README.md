@@ -1,14 +1,14 @@
 ### mezzo main repository
-#Mezzo mesoscopic traffic simulation and BusMezzo mesoscopic transit simulation models
+# Mezzo mesoscopic traffic simulation and BusMezzo mesoscopic transit simulation models
 
-#structure
+# structure
 There are two proper branches at the moment: master and busmezzo_test
 In master all the deployable code (stable) resides.
 In busmezzo_test the new features are being developed and tested. Whenever something is stable enough to be put in master, you 
 create a pull request from busmezzo_test to master and I will test and then merge (if it is indeed stable and does not break anything)
 
 
-#old SVN structure
+# old SVN structure
 In each branch (master and busmezzo_test) you see Directories called 'branches' and 'trunk'.
 
 these are left over from the previous SVN source control, where there was a trunk for the main mezzo development and branches for some new 
