@@ -290,6 +290,7 @@ public:
 	void write_triptotaltraveltime_header(ostream& out);
 	void write_transitlineloads_header(ostream& out);
 	void write_transittriploads_header(ostream& out);
+    void write_transitroutes(string name); //!< Wilco 2018 -- writes the complete transit routes  (busroutes) to file.
 
 	bool readtransitroutes(string name); //!< reads the transit routes, similar to readroutes
 	bool readtransitnetwork(string name); //!< reads the stops, distances between stops, lines, trips and travel disruptions

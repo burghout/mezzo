@@ -7250,6 +7250,19 @@ bool Network::writepathfile(string name)
     return true;
 }
 
+void Network::write_transitroutes(string name)
+{
+    ofstream out(name.c_str());
+    assert(out);
+    out << "routes:" << '\t'<< busroutes.size() << endl;
+
+    for (auto r_iter:busroutes)
+    {
+        r_iter->write(out);
+    }
+    out.close();
+
+}
 
 bool Network::readassignmentlinksfile(string name)
 {
@@ -8210,7 +8223,7 @@ bool Network::writeall(unsigned int repl)
                 workingdir + "o_passenger_trajectory.dat",
                 workingdir + "o_passenger_welfare_summary.dat"
                 );
-
+    write_transitroutes(workingdir + "o_transit_routes.dat");
     return true;
 }
 
