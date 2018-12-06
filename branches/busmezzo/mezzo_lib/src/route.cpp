@@ -221,12 +221,12 @@ int Route::computeRouteLength()
 
 void Route::write(ostream& out)
 {
-	out << "{ " << id << " " << origin->get_id() << " " << destination->get_id() << " " << links.size() << "{";
+    out << "{\t" << id << '\t' << origin->get_id() << '\t' << destination->get_id() << '\t' << links.size() << '\t' << "{";
 	for (vector <Link*>::iterator iter=links.begin(); iter<links.end();iter++)
 	{
-	 	out <<" " <<(*iter)->get_id();
+        out <<'\t' <<(*iter)->get_id();
 	}
-	out << "} }" << endl;
+    out << "\t}\t}" << endl;
 }
 
 void Busroute::reset()
