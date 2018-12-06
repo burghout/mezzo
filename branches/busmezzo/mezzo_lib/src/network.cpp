@@ -2146,6 +2146,8 @@ bool Network::createControlcenterDRTLines(Controlcenter* cc)
                     {
                         routesFound.push_back(newRoute);
                         routeIdCounter++;
+                    } else {
+                        newRoute = *existing_route_it;
                     }
                     
                     // create busLine
