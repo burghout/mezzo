@@ -36,6 +36,7 @@ class Pass_path
 	int find_number_of_transfers ();
 	double calc_total_scheduled_in_vehicle_time (double time);
 	double calc_total_in_vehicle_time (double time, Passenger* pass);
+	double calc_total_walking_distance(int from_section);
 	double calc_total_walking_distance ();
 	double calc_total_waiting_time (double time, bool without_first_waiting, bool alighting_decision, double avg_walking_speed, Passenger* pass);
 //	double calc_total_scheduled_waiting_time (double time, bool without_first_waiting);
@@ -44,7 +45,8 @@ class Pass_path
     double calc_curr_leg_waiting_RTI (vector<Busline*> leg_lines, vector <vector <Busstop*> >::iterator stop_iter, double arriving_time);
 
 	double calc_arriving_utility (double time, Passenger* pass);
-    double calc_waiting_utility (vector <vector <Busstop*> >::iterator stop_iter, double time, bool alighting_decision, Passenger* pass);
+	double calc_arriving_utility(int section, double time, Passenger* pass);
+	double calc_waiting_utility (vector <vector <Busstop*> >::iterator stop_iter, double time, bool alighting_decision, Passenger* pass);
 	double calc_waiting_utility(vector <vector <Busstop*> >::iterator stop_iter, int section, double time, bool alighting_decision, Passenger* pass); // Erik 18-11-27
 	map<Busline*, bool> check_maybe_worthwhile_to_wait (vector<Busline*> leg_lines, vector <vector <Busstop*> >::iterator stop_iter, bool dynamic_indicator); // returns false for lines which are not worthwhile to wait for in any case
 

@@ -356,7 +356,7 @@ void Passenger::start (Eventlist* eventlist)
 		section_time.second = start_time;
 		add_to_selected_path_sections(section_time);
 
-		pair<Busstop*, int> stop_section = make_connection_decision_2(start_time);
+		pair<Busstop*, int> stop_section = make_connection_decision(start_time);
 		Busstop* connection_stop = stop_section.first; 
 		int connection_section = stop_section.second;
 		cout << "orig " << OD_stop->get_origin()->get_id() << ", dest " << connection_stop->get_id();
@@ -730,7 +730,7 @@ Busstop* Passenger::make_alighting_decision (Bustrip* boarding_bus, double time)
 
 
 // Erik 18-09-27
-pair<Busstop*,int> Passenger::make_connection_decision_2(double time)
+pair<Busstop*,int> Passenger::make_connection_decision(double time)
 {
 	map <Busstop*, double> candidate_connection_stops_u; // the double value is the utility associated with the respective stop
 														 //map <pair<Busstop*,int>, double> candidate_connection_stops_u;

@@ -85,7 +85,7 @@ public:
 	bool	 make_boarding_decision (Bustrip* arriving_bus, double time);	//!< boarding decision making 
 	Busstop* make_alighting_decision (Bustrip* boarding_bus, double time);	//!< alighting decision making 
 	//Busstop* make_connection_decision (double time);						//!< connection link decision (walking between stops)
-	pair<Busstop*,int> make_connection_decision_2(double time);						// Erik 18-09-27
+	pair<Busstop*,int> make_connection_decision(double time);						// Erik 18-09-27
 
 	// Demand in terms of zones
 	map<Busstop*,double> sample_walking_distances (ODzone* zone);

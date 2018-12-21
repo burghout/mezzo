@@ -145,6 +145,33 @@ double Pass_path::calc_total_in_vehicle_time (double time, Passenger* pass)
 	return (sum_in_vehicle_time/60); // minutes
 }
 
+
+// Erik 18-12-01
+double Pass_path::calc_total_walking_distance(int from_section)
+{
+	//IVT.clear();
+	//double sum_in_vehicle_time = 0.0;
+	vector<vector <Busstop*> >::iterator iter_alt_transfer_stops = alt_transfer_stops.begin();
+	iter_alt_transfer_stops++; // starting from the second stop
+	//iter_alt_transfer_stops++; // starting from the second stop
+
+	int to_section = iter_alt_transfer_stops->front()->get_shortest_walk_between_stops((iter_alt_transfer_stops + 1)->front()).first;
+
+	//vector<double>::iterator iter_walk = walking_distances.begin() + 1;
+	double sum_walking_distance = 0.0;
+
+	// Erik 18-12-01: Add distance to walk from alighting platform to shortest path section on alighting stop
+	sum_walking_distance += iter_alt_transfer_stops->front()->get_walking_distance_stop_section(from_section, iter_alt_transfer_stops->front(), to_section);
+
+	for (vector <double>::iterator iter_walking = walking_distances.begin(); iter_walking < walking_distances.end(); iter_walking++)
+	{
+		sum_walking_distance += (*iter_walking);
+	}
+
+	return sum_walking_distance; // meters
+}
+
+
 // Erik 18-09-16: Depends on walking distances
 double Pass_path::calc_total_walking_distance()
 {
@@ -398,6 +425,17 @@ double Pass_path::calc_arriving_utility (double time, Passenger* pass)
 		+ random->nrandom(theParameters->walking_time_coefficient, theParameters->walking_time_coefficient/4) * (calc_total_walking_distance() / avg_walking_speed));
 }
 
+// Erik 18-12-01
+double Pass_path::calc_arriving_utility(int section, double time, Passenger* pass)
+// taking into account: transfer penalty + future waiting times + in-vehicle time + walking times
+{
+	double avg_walking_speed = random->nrandom(theParameters->average_walking_speed, theParameters->average_walking_speed / 4);
+	return (random->nrandom(theParameters->transfer_coefficient, theParameters->transfer_coefficient / 4) * number_of_transfers
+		+ random->nrandom(theParameters->in_vehicle_time_coefficient, theParameters->in_vehicle_time_coefficient / 4) * calc_total_in_vehicle_time(time, pass)
+		+ random->nrandom(theParameters->waiting_time_coefficient, theParameters->waiting_time_coefficient / 4) * calc_total_waiting_time(time, true, false, avg_walking_speed, pass)
+		+ random->nrandom(theParameters->walking_time_coefficient, theParameters->walking_time_coefficient / 4) * (calc_total_walking_distance(section) / avg_walking_speed));
+}
+
 double Pass_path::calc_waiting_utility (vector <vector <Busstop*> >::iterator stop_iter, double time, bool alighting_decision, Passenger* pass)
 {	
 	stop_iter++;
@@ -447,7 +485,7 @@ double Pass_path::calc_waiting_utility(vector <vector <Busstop*> >::iterator sto
 	if (alt_transfer_stops.size() == 2) // in case is is walking-only path
 	{
 		return (random->nrandom(theParameters->walking_time_coefficient, theParameters->walking_time_coefficient / 4)
-			* calc_total_walking_distance()
+			* calc_total_walking_distance(section)
 			/ random->nrandom(theParameters->average_walking_speed, theParameters->average_walking_speed / 4)
 			);
 	}
@@ -474,7 +512,7 @@ double Pass_path::calc_waiting_utility(vector <vector <Busstop*> >::iterator sto
 				return (random->nrandom(theParameters->transfer_coefficient, theParameters->transfer_coefficient / 4) * number_of_transfers
 					+ random->nrandom(theParameters->in_vehicle_time_coefficient, theParameters->in_vehicle_time_coefficient / 4) * ivt
 					+ random->nrandom(theParameters->waiting_time_coefficient, theParameters->waiting_time_coefficient / 4) * wt
-					+ random->nrandom(theParameters->walking_time_coefficient, theParameters->walking_time_coefficient / 4) * calc_total_walking_distance() / avg_walking_speed);
+					+ random->nrandom(theParameters->walking_time_coefficient, theParameters->walking_time_coefficient / 4) * calc_total_walking_distance(section) /*Erik 18-12-02*/ / avg_walking_speed);
 			}
 		}
 	}

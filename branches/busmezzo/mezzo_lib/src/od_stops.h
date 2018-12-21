@@ -474,7 +474,7 @@ public:
 	map<Pass_path*,double> calc_path_size_factor_nr_stops (map<Pass_path*,double> cluster_set_utilities);
 	double calc_path_size_factor_between_clusters (Pass_path* path, map<Pass_path*,double> cluster_probs);
 	double calc_combined_set_utility_for_alighting (Passenger* pass, Bustrip* bus_on_board, double time); // the trip that the pass. is currently on-board when calc. utility from downstream stop
-	double calc_combined_set_utility_for_alighting_zone (Passenger* pass, Bustrip* bus_on_board, double time); 
+	double calc_combined_set_utility_for_alighting_zone (Passenger* pass, Bustrip* bus_on_board, double time);
 	double calc_combined_set_utility_for_connection (double walking_distance, double time, Passenger* pass);
 	double calc_combined_set_utility_for_connection(double walking_distance, int section, double time, Passenger* pass); // Erik 18-11-27
 	double calc_combined_set_utility_for_connection_zone (Passenger* pass, double walking_distance, double time);

@@ -725,6 +725,7 @@ public:
 	bool check_walkable_stop ( Busstop* const & stop);
 	bool check_destination_stop (Busstop* stop);
     bool get_gate_flag () {return gate_flag;};
+	pair<int, int> get_shortest_walk_between_stops(Busstop* stop) { return shortest_walks[stop]; } // Erik 18-12-01
 
 	//transfer related checks
 	bool is_awaiting_transfers(Bustrip* trip); //David added 2016-05-30: returns true if trip is currently awaiting transfers at stop

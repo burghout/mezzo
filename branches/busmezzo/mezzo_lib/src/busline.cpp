@@ -1678,14 +1678,16 @@ void Busstop::passenger_activity_at_stop(Eventlist* eventlist, Bustrip* trip, do
 				(*alighting_passenger)->set_end_time(time);
 				//pass_recycler.addPassenger(*alighting_passenger); // terminate passenger
 				// Erik 18-09-16: Not sure this is needed
+				pair <int, double> section_time;
+				section_time.first = pass_car;
+				section_time.second = time;
 				(*alighting_passenger)->add_to_selected_path_sections(section_time);
 				(*alighting_passenger)->set_pass_section(pass_car);
 			}
 			if (final_stop == false)
 			{
-				// Erik 18-09-16: Connection decision should also return platform section
 				pair<Busstop*, int> stop_section;
-				stop_section = (*alighting_passenger)->make_connection_decision_2(time); // Erik 18-11-30: Make new connection decision!
+				stop_section = (*alighting_passenger)->make_connection_decision(time); // Erik 18-11-30: Make new connection decision!
 				next_stop = stop_section.first;
 				next_section = stop_section.second;
 				// set connected_stop as the new origin
@@ -1716,6 +1718,9 @@ void Busstop::passenger_activity_at_stop(Eventlist* eventlist, Bustrip* trip, do
 						stop_time.second = time;
 						(*alighting_passenger)->add_to_selected_path_stop(stop_time);
 						// Erik 18-09-16
+						pair <int, double> section_time;
+						section_time.first = pass_car;
+						section_time.second = time;
 						(*alighting_passenger)->add_to_selected_path_sections(section_time);
 
 						if ((*alighting_passenger)->get_pass_RTI_network_level() == true || this->get_rti() > 0)
@@ -1731,7 +1736,7 @@ void Busstop::passenger_activity_at_stop(Eventlist* eventlist, Bustrip* trip, do
 							}
 						}
 					}
-					else  // pass walks to another stop and/or section Erik 18-11-27
+					else  // pass walks to another stop // and/or section Erik 18-11-27
 					{
 						// booking an event to the arrival time at the new stop
 
@@ -1755,6 +1760,7 @@ void Busstop::passenger_activity_at_stop(Eventlist* eventlist, Bustrip* trip, do
 					wait_pass.push_back(*alighting_passenger);
 					odstop->set_waiting_passengers(wait_pass);
 					(*alighting_passenger)->add_to_selected_path_stop(stop_time);
+					(*alighting_passenger)->add_to_selected_path_sections(section_time);
 				}
 			}
 		}

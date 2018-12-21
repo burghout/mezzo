@@ -359,7 +359,7 @@ double ODstops::calc_boarding_probability (Busline* arriving_bus, double time, P
 				{
 					if ((*iter_first_leg_lines)->get_id() == arriving_bus->get_id()) // if the arriving bus is a possible first leg for this path alternative
 					{
-						path_utility = (*iter_paths)->calc_arriving_utility(time, pass); // Erik 18-09-27: Depends on total walking distance
+						path_utility = (*iter_paths)->calc_arriving_utility(pass->get_pass_section(), time, pass); // Erik 18-12-01
 						set_utilities[(*iter_paths)].first = true;
 						set_utilities[(*iter_paths)].second = path_utility;
 						boarding_utility += exp(path_utility); 
@@ -381,7 +381,7 @@ double ODstops::calc_boarding_probability (Busline* arriving_bus, double time, P
 				if (check_if_path_is_dominated((*iter_paths), arriving_paths) == false)
 				{
 					//path_utility = (*iter_paths)->calc_waiting_utility((*iter_paths)->get_alt_transfer_stops().begin(), time, false, pass); //Changed by Jens 2014-10-16, transfer penalty is added to disutility of staying to help passengers make up their mind faster
-					path_utility = (*iter_paths)->calc_waiting_utility((*iter_paths)->get_alt_transfer_stops().begin(), time, false, pass) 
+					path_utility = (*iter_paths)->calc_waiting_utility((*iter_paths)->get_alt_transfer_stops().begin(), pass->get_pass_section(), time, false, pass) // Erik 18-12-01
 						+ random->nrandom(theParameters->transfer_coefficient, theParameters->transfer_coefficient / 4);
 					set_utilities[(*iter_paths)].first = false;
 					set_utilities[(*iter_paths)].second = path_utility;
@@ -611,7 +611,7 @@ map<Pass_path*,double> ODstops::calc_path_size_factor_nr_stops (map<Pass_path*,d
 	return set_factors;
 }	
 
-// Erik 18-09-27: Independent of walking distances
+// Erik 18-12-02: Added car dependency
 double ODstops::calc_combined_set_utility_for_alighting (Passenger* pass, Bustrip* bus_on_board, double time)
 {
 	// calc logsum over all the paths from this origin stop
@@ -625,11 +625,12 @@ double ODstops::calc_combined_set_utility_for_alighting (Passenger* pass, Bustri
 		double time_till_transfer = bus_on_board->get_line()->calc_curr_line_ivt(pass->get_OD_stop()->get_origin(),origin_stop,pass->get_OD_stop()->get_origin()->get_rti(), time); // in seconds
 		staying_utility += exp(random->nrandom(theParameters->in_vehicle_time_coefficient, theParameters->in_vehicle_time_coefficient / 4 ) * (time_till_transfer/60) 
 			+ random->nrandom(theParameters->transfer_coefficient, theParameters->transfer_coefficient / 4 )  
-			+  (*paths)->calc_waiting_utility((*paths)->get_alt_transfer_stops().begin(), time + time_till_transfer, true, pass));
+			+  (*paths)->calc_waiting_utility((*paths)->get_alt_transfer_stops().begin(), pass->get_pass_car() /*Erik 18-12-02*/, time + time_till_transfer, true, pass));
 		// taking into account IVT till this intermediate stop, transfer penalty and the utility of the path from this transfer stop till the final destination
 	}
 	return log(staying_utility);
 }
+
 
 double ODstops::calc_combined_set_utility_for_alighting_zone (Passenger* pass, Bustrip* bus_on_board, double time)
 {
