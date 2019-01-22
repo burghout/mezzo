@@ -29,6 +29,7 @@ public:
 	
 	// Gets and sets:
 	int			get_id () {return passenger_id;}
+	int			get_nrtransferring() { return nr_transferring; }
 	double		get_start_time () {return start_time;}
 	void		set_end_time (double end_time_) {end_time = end_time_;}
 	double		get_end_time () {return end_time;}
@@ -44,7 +45,8 @@ public:
 	Busstop*	get_original_origin () {return original_origin;}
 	int			get_nr_boardings () {return nr_boardings;}
     vector <pair<Busstop*,double> > get_chosen_path_stops () {return selected_path_stops;}
-	void		set_ODstop (ODstops* ODstop_) {OD_stop = ODstop_;}
+	void		set_ODstop(ODstops* ODstop_) { OD_stop = ODstop_; }
+	void		increase_XferCounter() { nr_transferring++; }
 	// bool get_already_walked () {return already_walked;}
 	// void set_already_walked (bool already_walked_) {already_walked = already_walked_;}
 	bool	get_this_is_the_last_stop () {return this_is_the_last_stop;}
@@ -125,6 +127,7 @@ protected:
 	bool already_walked;
 	bool sitting;		//!< 0 - sits; 1 - stands
 	int nr_boardings;	//!< counts the number of times pass boarded a vehicle
+	int nr_transferring; //counts the number of times pass transferred between different lines
     vector <pair<Busstop*,double> > selected_path_stops;				 //!< stops and corresponding arrival times
     vector <pair<Bustrip*,double> > selected_path_trips;				 //!< trips and corresponding boarding times
     vector <pair<double,double> > experienced_crowding_levels;		 //!< IVT and corresponding crowding levels (route segment level)

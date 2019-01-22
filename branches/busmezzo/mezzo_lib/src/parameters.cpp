@@ -111,6 +111,9 @@ Parameters::Parameters ()
 
 // day2day assignment
    default_alpha_RTI = 0.5;
+//Multiline Control Parameters
+   corridor_tolerance = 5;
+   mc_rolling_horizon = 5;
 }
 
 bool Parameters::read_parameters (istream & in )
@@ -742,6 +745,29 @@ bool Parameters::read_parameters (istream & in )
 		return false;
 	}
 	in >> default_alpha_RTI;
+	in >> keyword;
+	if (keyword != "#Multiline_Control_Parameters")
+	{
+		cout << "ERROR reading Parameters file, expecting: #Multiline_Control_Parameters, read: " << keyword << endl;
+		return false;
+	}
+	//read corridor tolerance
+	in >> keyword;
+	if (keyword != "corridor_tolerance=")
+	{
+		cout << "ERROR reading Parameters file, expecting: corridor_tolerance=, read: " << keyword << endl;
+		return false;
+	}
+	in >> corridor_tolerance;
+	//read multiline control rolling horizon
+	in >> keyword;
+	if (keyword != "mc_rolling_horizon=")
+	{
+		cout << "ERROR reading Parameters file, expecting: mc_rolling_horizon=, read: " << keyword << endl;
+		return false;
+	}
+	in >> mc_rolling_horizon;
+
 	return true;
 }
 

@@ -83,7 +83,7 @@ public:
 	Parameters () ;
 	bool read_parameters (istream & in);
 	void write_parameters(ostream & out);
-
+	void set_workingdir(string dir) { workingdir = dir; };
 // THE (PUBLIC) PARAMETERS
 	// Drawing parameters
 		
@@ -200,6 +200,10 @@ public:
 // day2day assignment
    double default_alpha_RTI; //!< Initial value of the real-time information credibility coefficient set for all travellers
 
+//Multiline Control Parameters
+   int corridor_tolerance; //How many consecutive common stops can be considered a shared transit corridor
+   int mc_rolling_horizon; //multiline control rolling horizon, how many stops ahead do you consider when calculating pax cost in control strategy 10
+   string workingdir;
 // TODO: Implement the use of the following paramaters
    double vissim_step; //!< time step for the VISSIM micro model
    double sim_speed_factor; //!< REALTIME factor to keep the hybrid model running at a fixed speed

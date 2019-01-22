@@ -7,6 +7,7 @@
 #include <stddef.h>
 #include <queue>
 #include <functional>
+#include <iostream>
 
 template<class T>
 struct compare
@@ -591,6 +592,11 @@ Bustrip::Bustrip ()
 	last_stop_visited = stops.front()->first;
 	holding_at_stop = false;
 	actual_dispatching_time = 0.0;
+	t_hold_reg=0;
+	t_hold_sync=0;
+	controller_decision=0;
+	C_pax_reg=0;
+	C_pax_sync=0;
 	for (vector <Visit_stop*>::iterator visit_stop_iter = stops.begin(); visit_stop_iter < stops.end(); visit_stop_iter++)
 	{
 		assign_segements[(*visit_stop_iter)->first] = 0;
@@ -615,6 +621,11 @@ Bustrip::Bustrip (int id_, double start_time_, Busline* line_): id(id_), startti
 	last_stop_enter_time = 0;
 	last_stop_exit_time = 0;
 	holding_at_stop = false;
+	t_hold_reg = 0;
+	t_hold_sync = 0;
+	controller_decision = 0;
+	C_pax_reg = 0;
+	C_pax_sync = 0;
 	for (vector<Visit_stop*>::iterator visit_stop_iter = stops.begin(); visit_stop_iter < stops.end(); visit_stop_iter++)
 	{
 		assign_segements[(*visit_stop_iter)->first] = 0;
@@ -657,6 +668,11 @@ void Bustrip::reset ()
 	output_passenger_load.clear();
 	last_stop_visited = stops.front()->first;
 	holding_at_stop = false;
+	t_hold_reg = 0;
+	t_hold_sync = 0;
+	controller_decision = 0;
+	C_pax_reg = 0;
+	C_pax_sync = 0;
 }
 
 void Bustrip::convert_stops_vector_to_map ()
@@ -1410,6 +1426,7 @@ void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, d
 				od = stop_as_origin[(*alighting_passenger)->get_OD_stop()->get_destination()];
 			}
 			(*alighting_passenger)->set_ODstop(od); // set this stop as passenger's new origin
+			(*alighting_passenger)->increase_XferCounter();
 			if (id == (*alighting_passenger)->get_OD_stop()->get_destination()->get_id() || (*alighting_passenger)->get_OD_stop()->check_path_set() == false) // if this stop is passenger's destination
 			{
 				// passenger has no further conection choice
@@ -1438,6 +1455,8 @@ void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, d
 					new_od = next_stop->get_stop_od_as_origin_per_stop((*alighting_passenger)->get_OD_stop()->get_destination());
 				}
 				(*alighting_passenger)->set_ODstop(new_od); // set the connected stop as passenger's new origin (new OD)
+				// flag the passenger as a transferring passenger on stop [this]
+				// (*alighting_passenger)->set_TransferPassenger(this,time)
 				ODstops* odstop = (*alighting_passenger)->get_OD_stop();
 				//if (odstop->get_waiting_passengers().size() != 0) //Why was it like this??
 				if (true)  //Changed by Jens 2014-06-23
@@ -2087,19 +2106,19 @@ double Busstop::calc_holding_departure_time(Bustrip* trip, double time)
 		if (trip->get_line()->is_line_timepoint(this) == true && trip->get_line()->check_last_trip(trip) == false && trip->get_line()->check_first_trip(trip) == false) // if it is a time point and it is not the first or last trip
 		{
 			
-
+			
 			//PART I: FINDING THE SHARED TRANSIT CORRIDOR
 			// When a vehicle arrives at the current stop (indicated by this) firstly the downstream stops are loaded
 			// An object is created called downstream stops !! IMPORTANT:Current stop is included
 
 			// Block 1: detect existence of shared corridor
 			downstreamStops = trip->get_downstream_stops();
-			
+		
 
 			if (Stop_Type.empty()) {
 
 				//Tolerance from shared transit corridor. How many consecutive stops we consider a shared transit corridor?
-				int howManyCommonStops = 6;
+				int howManyCommonStops = theParameters->corridor_tolerance;
 				// Create a new object in Busline class containing the common lines
 
 				//NOT IN USE FOR NOW: vector<pair<Busline*, int>> counter;
@@ -2618,7 +2637,7 @@ double Busstop::calc_holding_departure_time(Bustrip* trip, double time)
 
 				double S_theta_u = theta + u3;
 				double S_theta_u1 = (theta1+u1)/ S_theta_u;
-				double S_theta_u2 = (theta2 + u2) / S_theta_u;
+				double S_theta_u2 = ((theta2+ theta3) + u2) / S_theta_u;
 
 				double holding_time;
 				//Ι.5 Departure holding time
@@ -2750,9 +2769,9 @@ double Busstop::calc_holding_departure_time(Bustrip* trip, double time)
 						incoming_buses.pop();
 						if (tuple.second != trip)
 						{
-						curArrivalTimes.push_back(tuple.first);
-						curTrips.push_back(tuple.second);
-					}
+							curArrivalTimes.push_back(tuple.first);
+							curTrips.push_back(tuple.second);
+						}
 
 					}
 
@@ -2762,7 +2781,7 @@ double Busstop::calc_holding_departure_time(Bustrip* trip, double time)
 						break;
 					}
 					//assign to all the first cell of the matrix
-					double prev_dep_cs=curArrivalTimes[0];
+					double prev_dep_cs = curArrivalTimes[0];
 					double cur_dep_cs;
 					double next_dep_cs = curArrivalTimes[0];
 
@@ -2775,13 +2794,13 @@ double Busstop::calc_holding_departure_time(Bustrip* trip, double time)
 
 						}
 					}
-					for (int j = (curTrips.size()-1); j >= 0; j--)
+					for (int j = (curTrips.size() - 1); j >= 0; j--)
 					{
 						if (curArrivalTimes[j] > time)
 						{
 							next_dep_cs = curArrivalTimes[j];
 						}
-						
+
 					}
 
 					//keep this as check
@@ -2800,7 +2819,7 @@ double Busstop::calc_holding_departure_time(Bustrip* trip, double time)
 
 					//II.1.2. Passenger ratio
 					double pass_ratio;
-					double sum_arrival_rate_next_stops=0.0;
+					double sum_arrival_rate_next_stops = 0.0;
 					// Passenger Ratio for transit demand format 1
 					if (theParameters->demand_format == 1)
 					{/* To be coded
@@ -2954,7 +2973,7 @@ double Busstop::calc_holding_departure_time(Bustrip* trip, double time)
 											break;
 										}
 									}
-									;
+									
 									double expected_proj_arrival;
 
 									expected_proj_arrival = (*(next_trip_next_stop2 - 1))->first->get_last_departure(test_trip->get_line()) + (*stops_until_thisStop)->second - (*(next_trip_next_stop2 - 1))->second;
@@ -3001,14 +3020,17 @@ double Busstop::calc_holding_departure_time(Bustrip* trip, double time)
 					double prev_dep_cs = curArrivalTimes[0];
 					double cur_dep_cs;
 					double next_dep_cs = curArrivalTimes[0];
-
+					pair<double, Bustrip*> prev_joint_departure;
 					Bustrip* ref_trip = trip;
 					for (int j = 0; j < curTrips.size(); j++)
 					{
 						if (curArrivalTimes[j] < time)
 						{
 							prev_dep_cs = curArrivalTimes[j];
-
+							
+							prev_joint_departure.first = curArrivalTimes[j];
+							prev_joint_departure.second = curTrips[j];
+							
 						}
 					}
 					for (int j = (curTrips.size() - 1); j >= 0; j--)
@@ -3154,11 +3176,11 @@ double Busstop::calc_holding_departure_time(Bustrip* trip, double time)
 						tuple = incoming_buses.top();
 						incoming_buses.pop();
 						//take only buses from the same line with current
-						if (tuple.second->get_line() == trip->get_line() )
+						if (tuple.second->get_line() == trip->get_line())
 						{
-						projectedArrivalTimes.push_back(tuple.first);
-						projectedTrips.push_back(tuple.second);
-					}
+							projectedArrivalTimes.push_back(tuple.first);
+							projectedTrips.push_back(tuple.second);
+						}
 					}
 
 					int S_projectedTrips = projectedTrips.size();
@@ -3167,22 +3189,29 @@ double Busstop::calc_holding_departure_time(Bustrip* trip, double time)
 						break;
 					}
 
-					double prev_dep_lcs;
+					double prev_dep_lcs=projectedArrivalTimes[0];
 					double cur_dep_lcs;
-					double next_dep_lcs;
+					double next_dep_lcs = projectedArrivalTimes[0];
 
 					Bustrip* ref_trip2 = trip;
 					for (int j = 0; j < projectedTrips.size(); j++)
 					{
-						if (ref_trip2 == projectedTrips[j])
+						if (projectedTrips[j] == trip)
 						{
-							prev_dep_lcs = projectedArrivalTimes[j - 1];
 							cur_dep_lcs = projectedArrivalTimes[j];
-							next_dep_lcs = projectedArrivalTimes[j + 1];
-
-
+							if (j == projectedTrips.size())
+							{
+								next_dep_lcs = cur_dep_lcs;
+							}
+							else
+							{
+								prev_dep_lcs = projectedArrivalTimes[j - 1];
+								next_dep_lcs = projectedArrivalTimes[j + 1];
+							}
+						
 						}
 					}
+
 
 					double proj_head = (((next_dep_lcs - cur_dep_lcs) - (cur_dep_lcs - prev_dep_lcs)) / 2);
 
@@ -3270,6 +3299,8 @@ double Busstop::calc_holding_departure_time(Bustrip* trip, double time)
 											double joint_headway = min((sum_headways / headway_counter), (min_head / 2));
 											sum_arrival_rate_corridor += (a_r3 / (curhead / joint_headway));
 											sum_arrival_rate_next_stops += (a_r3 / (curhead / joint_headway));
+											sum_arrival_rate_corridor += a_r3;
+											sum_arrival_rate_next_stops += a_r3;
 										}
 										else
 										{
@@ -3294,7 +3325,7 @@ double Busstop::calc_holding_departure_time(Bustrip* trip, double time)
 					}
 					//II.2.5. Weights	
 					//distance weights 
-					
+
 					int sstopid = 0;
 					for (int k = 0; k < Stop_Type.size(); k++)
 					{
@@ -3310,7 +3341,10 @@ double Busstop::calc_holding_departure_time(Bustrip* trip, double time)
 						}
 
 					}
+
 					double alpha_distance = 0.5;
+
+
 					double build1 = sstopid - currStopidx;
 					double build2;
 					double build3;
@@ -3322,14 +3356,14 @@ double Busstop::calc_holding_departure_time(Bustrip* trip, double time)
 					else
 					{
 						build2 = 1 / build1;
-						build3 = 1 - build2; 
+						build3 = 1 - build2;
 					}
-					
+
 					double u1 = build3*alpha_distance; // corridor even headway	
 					double u2 = build3*(1 - alpha_distance); //even headway same line corridor
 					double u3 = build2; //projection to splitting stop
 
-					
+
 					double theta1;
 					double theta2;
 					double theta3;
@@ -3365,25 +3399,28 @@ double Busstop::calc_holding_departure_time(Bustrip* trip, double time)
 					}
 					//I.4. Weights
 
-					theta1 = sum_arrival_rate_corridor / sum_arrival_rate_next_stops ; //share of corridor demand
+					theta1 = sum_arrival_rate_corridor / sum_arrival_rate_next_stops; //share of corridor demand
 					theta2 = (sum_arrival_rate_corridor_to_branch / sum_arrival_rate_next_stops);	//share of demand from corridor to branch
 					//theta 3 is needed only if there is a branch after corridor
-					theta3 = sum_arrival_rate_branch_after_corridor / sum_arrival_rate_next_stops ;
+					theta3 = sum_arrival_rate_branch_after_corridor / sum_arrival_rate_next_stops;
 
 					//checks
 					double u4 = u1 + u2 + u3;
 					double theta = theta1 + theta2 + theta3; //check if sum is 1.0
 
+
+					//combining weights 
+
 					double S_theta_u = theta + u4;
 					double S_theta_u1 = (theta1 + u1) / S_theta_u; //theta 1 for demand of the corridor + u1 corridor even headway
 					double S_theta_u2 = (theta2 + u2) / S_theta_u;
 					double S_theta_u3 = (theta3 + u3) / S_theta_u;
-				
+
 					double sum_theta = S_theta_u1 + S_theta_u2 + S_theta_u3;
 
 					//II.2.6. Holding time
 					double holding_time;
-					//double term1 = (theta2*corridor_headway) + (theta1*average_curr_headway) + (theta3*proj_head) - pass_ratio;
+					//double term1 = (theta1*corridor_headway) + (theta2*average_curr_headway) + (theta3*proj_head) - pass_ratio;
 					double term1 = (S_theta_u1*corridor_headway) + (S_theta_u2*average_curr_headway) + (S_theta_u3*proj_head) - pass_ratio;
 					if (term1 >= 0)
 					{
@@ -3393,10 +3430,370 @@ double Busstop::calc_holding_departure_time(Bustrip* trip, double time)
 					{
 						holding_time = 0;
 					}
-					double holding_departure_time = time + holding_time;
-					return holding_departure_time;
-					break;
 
+					if (theParameters->transfer_sync == 0)
+					{
+						//return holding departure time with holding for regularity
+						double holding_departure_time = time + holding_time;
+						return holding_departure_time;
+						break;
+					}
+
+					else
+					{
+						//register holding time as holding time for regularity
+						double t_hold_reg = holding_time;
+						//calculate holding time for synchronization
+						//initialize variable
+						double t_hold_sync;
+						//get all lines apart from current
+						vector <Busline*> connecting_lines = this->get_lines();
+						vector <Busline*> line_connect;
+						for (int m = 0; m < connecting_lines.size(); m++)
+						{
+							if (connecting_lines[m]->get_holding_strategy() == 10)
+							{
+
+								if (connecting_lines[m]->get_id() != trip->get_line()->get_id())
+								{
+									line_connect.push_back(connecting_lines[m]);
+								}
+							}
+						}
+						
+						//assume that all buses serve the destination for now otherwise get destinations before and check one by one and register accordingly
+						//get destinations not belonging to the current line
+						//for all connecting lines see which serves which destination <pair>? destination, connecting line
+						vector <Start_trip> candidate_trips;
+						vector <pair<Bustrip*, double> > inc_trips2;
+						priority_queue<pair<double, Bustrip*>, vector<pair<double, Bustrip*>>, CompareByFirst> connecting_buses;
+						for (int i = 0; i < line_connect.size(); i++)
+						{
+							vector <Start_trip> candidate_trips = line_connect[i]->get_trips();
+							for (int m = 0; m < candidate_trips.size(); m++)
+							{
+								Bustrip* test_trip = candidate_trips[m].first;
+								double check_dispatch_time = candidate_trips[m].second;
+								double test_time;
+								Busstop* test_stop;
+								if (check_dispatch_time <= time)
+								{
+									test_time = test_trip->get_last_stop_exit_time();
+									if (test_time == 0)
+									{
+										break;
+									}
+									downstreamStops = test_trip->get_downstream_stops();
+									// check whether last stop visited is actually further downstream wrt. the current stop. if yes, continue;
+									vector<Busstop*>::iterator it;
+									it = find(downstreamStops.begin(), downstreamStops.end(), this);
+									if (it != downstreamStops.end())
+									{
+										vector <Visit_stop*> ::iterator& next_trip_next_stop2 = test_trip->get_next_stop();
+										vector <Visit_stop*> ::iterator stops_until_currentStop;
+										for (vector <Visit_stop*> ::iterator trip_stops = test_trip->stops.begin(); trip_stops < test_trip->stops.end(); trip_stops++)
+										{
+											if ((*trip_stops)->first->get_id() == this->get_id())
+											{
+												stops_until_currentStop = trip_stops;
+												break;
+											}
+										}
+										double expected_proj_arrival;
+										expected_proj_arrival = (*(next_trip_next_stop2 - 1))->first->get_last_departure(test_trip->get_line()) + (*stops_until_currentStop)->second - (*(next_trip_next_stop2 - 1))->second;
+										test_time = expected_proj_arrival;
+										//store
+										connecting_buses.push(make_pair(test_time, test_trip));
+									}
+
+								}
+								else
+								{
+									break;
+								}
+							}
+						}
+						//sort buses 
+						vector <double> Expected_Sync_ArrivalTimes;
+						vector <Bustrip*> Expected_Sync_Trips;
+						while (!connecting_buses.empty())
+						{
+							pair<double, Bustrip*> tuple;
+							tuple = connecting_buses.top();
+							connecting_buses.pop();
+							//take only buses from the same line with current
+							if (tuple.second->get_line() != trip->get_line())
+							{
+								Expected_Sync_ArrivalTimes.push_back(tuple.first);
+								Expected_Sync_Trips.push_back(tuple.second);
+							}
+						}
+						//find the next connecting bus and its expected arrival time
+						double next_connecting_arrival= Expected_Sync_ArrivalTimes[0];
+						//for (int j = Expected_Sync_Trips.size(); j < 0; j--)
+						//{
+						//	if (Expected_Sync_ArrivalTimes[j]>time)
+						//	{
+						//		next_connecting_arrival = Expected_Sync_ArrivalTimes[j];
+						//	}
+						//}
+
+						//Calculate holding time for synchronization
+						//transfer constant given by the user 
+						double const transfer_constant = 30; //move to Parameters?
+						t_hold_sync = (next_connecting_arrival - time) + transfer_constant;
+
+						//Calculate passenger costs
+						//initialize variables 
+						double C_pax_reg=0;
+						double C_pax_sync=0;
+
+						double C_held_reg=0;
+						double C_held_sync=0;
+						double C_wait_reg_1=0;
+						double C_wait_reg_2=0;
+
+						double C_wait_sync=0;
+
+						C_held_reg = (trip->get_busv()->get_occupancy())*t_hold_reg;
+						C_held_sync = (trip->get_busv()->get_occupancy())*t_hold_sync;
+
+						//Fetch number of transferring passengers
+
+						int transferrings;
+						char brackets;
+						int transfer_stop_id;
+						double transferring_pax;
+						string keyword;
+						int no;
+						int limit;
+						int i = 0;
+						//"C:\Users\georgios.laskaris\Desktop\Double_Fork_Feb18\transfer_hist_log.dat"
+						string workingdir = theParameters->workingdir;
+						//ifstream in("C:\\Users\\georgios.laskaris\\Desktop\\Double_Fork_Feb18\\transfer_hist_log.dat"); //problem here
+						ifstream in(workingdir+"transfer_hist_log.dat");
+						//in.open("transfer_hist_log.dat");
+						vector<pair<int, double>>transfer_log;
+						in >> keyword;
+						if (keyword != "t_arrival_rates:")
+						{
+							cout << "read_transfer_hist_log:: no << t_arrival_rates >> keyword " << endl;
+							return false;
+						}
+						in >> no;
+						limit = i + no;
+						for (i; i<limit; i++)
+						{
+							char brackets;
+							int transfer_stop_id;
+							double transferring_pax;
+							in >> brackets;
+							if (brackets != '{')
+							{
+								cout << "readfile::read_transfer_hist_log scanner jammed at " << brackets;
+								return false;
+							}
+
+							in >> transfer_stop_id >> transferring_pax;
+							// store to vector???
+							
+							transfer_log.push_back(make_pair(transfer_stop_id, transferring_pax));
+							
+
+							in >> brackets;
+							if (brackets != '}')
+							{
+								cout << "readfile::read_transfer_hist_log scanner jammed at " << brackets;
+								return false;
+							}
+
+						}
+
+						for (i = 0; i<transfer_log.size(); i++)
+						{
+							if (transfer_log[i].first == this->get_id())
+							{
+								transferrings = transfer_log[i].second;
+								break;
+							}
+
+						}
+						double test_alightings=this->get_nr_alighting();
+						double transferrings_estimation = transferrings*test_alightings;
+						/*
+						// Code segment-take the actual number of passengers
+						map<Busstop*, ODstops*> teststuff = this->get_stop_as_origin();
+						map<Busstop*, ODstops*>::iterator whatsit;
+						int howmanytransferringfuckersarewetalkingaboutanyway = 0;
+						for (whatsit = teststuff.begin(); whatsit != teststuff.end(); whatsit++)
+						{
+							whatsit->first; //this contains all of the stops which are plausible destinations for the current one
+											//it should be compared to a list or a vector of stops which we consider interesting, i.e. the list of all stops downstream of the last common stop for the transferee line
+											//if it is not in this list, just don't
+
+											//if it is, then fetch the list of waiting passengers:
+							vector<Passenger*> idontthinkso = whatsit->second->get_waiting_passengers();
+							for (int i = 0; i < idontthinkso.size(); i++) 
+							{
+								if (idontthinkso[i]->get_nrtransferring() > 0) 
+								{ 
+									howmanytransferringfuckersarewetalkingaboutanyway++;
+								}
+							}
+
+						}
+						*/
+
+						C_wait_reg_1 = (next_connecting_arrival - time)*transferrings;
+
+
+						//Rolling horizon
+						//Initially use the full corridor length until the lastCommonStop, if preliminary tests done then user can set a number of stops mu
+
+						//range between current and last common stop
+						int f_stopid = 0;
+						for (int k = 0; k < Stop_Type.size(); k++)
+						{
+							if (Stop_Type[k].first == thisline)
+							{
+								lineStops = Stop_Type[k].second;
+								for (int l = 0; l < lineStops.size(); l++)
+								{
+									if (lastCommonStop == lineStops[l].second)
+									{
+										f_stopid = l;
+										break;
+									}
+								}
+								break;
+							}
+
+						}
+						double range = f_stopid - currStopidx;
+						vector <Busstop*> Rolling_Horizon = trip->get_downstream_stops();
+						i = 0;
+						while (Rolling_Horizon[i]->get_id() != lastCommonStop->get_id())
+						{
+							vector <Visit_stop*> ::iterator& next_trip_next_stop2 = trip->get_next_stop();
+							vector <Visit_stop*> ::iterator Until_this_stop; // hold the scheduled time for this trip at this stop
+							for (vector <Visit_stop*> ::iterator trip_stops2 = trip->stops.begin(); trip_stops2 < trip->stops.end(); trip_stops2++)
+							{
+								if ((*trip_stops2)->first->get_id() == Rolling_Horizon[i]->get_id())
+								{
+									Until_this_stop = trip_stops2;
+									break;
+								}
+							}
+							double expected_arrival_curr = (*(next_trip_next_stop2 - 1))->first->get_last_departure(trip->get_line()) + (*Until_this_stop)->second - (*(next_trip_next_stop2 - 1))->second;
+							double expected_arrival_prev;
+							downstreamStops = prev_joint_departure.second->get_downstream_stops();
+							// check whether the last stop visited is actually further downstream wrt. the first common stop. if yes, continue;
+							vector<Busstop*>::iterator it2;
+							it2 = find(downstreamStops.begin(), downstreamStops.end(), Rolling_Horizon[i]);
+							if (it2 == downstreamStops.end())
+							{//already visited
+								int TripID2 = prev_joint_departure.second->get_id();
+								list <Busstop_Visit> out2 = Rolling_Horizon[i]->get_output_stop_visits();
+								while (!out2.empty())
+								{
+									Busstop_Visit v2 = out2.front();
+									out2.pop_front();
+									if (v2.trip_id == TripID2)
+									{
+										expected_arrival_prev = v2.exit_time;
+										continue;
+									}
+								}
+
+							}
+							else
+							{
+								vector <Visit_stop*> ::iterator& next_trip_next_stop3 = prev_joint_departure.second->get_next_stop();
+								vector <Visit_stop*> ::iterator Until_this_stop2;
+								for (vector <Visit_stop*> ::iterator trip_stops3 = prev_joint_departure.second->stops.begin(); trip_stops3 < prev_joint_departure.second->stops.end(); trip_stops3++)
+								{
+									if ((*trip_stops3)->first->get_id() == Rolling_Horizon[i]->get_id())
+									{
+										Until_this_stop2 = trip_stops3;
+										break;
+									}
+								}
+								expected_arrival_prev = (*(next_trip_next_stop3 - 1))->first->get_last_departure(prev_joint_departure.second->get_line()) + (*Until_this_stop2)->second - (*(next_trip_next_stop3 - 1))->second;
+
+							}
+							double expected_headway = (expected_arrival_curr - expected_arrival_prev);
+							
+							double sum_demand_ar;
+
+							if (theParameters->demand_format == 3)
+							{
+								ODstops* a_r;
+								Busstop* a_r2;
+								double a_r3;
+								
+								downstreamStops = trip->get_downstream_stops();
+								int iter_size = downstreamStops.size();
+
+								for (int j = i+1; j < downstreamStops.size(); j++)
+								{
+									a_r = downstreamStops[i]->get_stop_od_as_origin_per_stop(downstreamStops[j]);
+									if ((downstreamStops[i]->is_stop_origin()) && (downstreamStops[j]->is_stop_destination()))
+									{
+										a_r3 = a_r->get_arrivalrate();
+										sum_demand_ar += a_r3;
+
+									}
+								}
+								downstreamStops.erase(downstreamStops.begin());
+								if (downstreamStops.size() == 1)
+								{
+									continue;
+								}
+							}
+							sum_demand_ar = sum_demand_ar / 3600;
+							double cur_stop_cost = ((expected_headway *expected_headway) / 2)*sum_demand_ar;
+							C_wait_reg_2 = C_wait_reg_2 + cur_stop_cost;
+
+							i++;
+						}
+						
+
+						//calculate costs
+						C_wait_sync = C_wait_reg_2;
+						double beta_cost_held = 1.5;
+						double beta_cost_wait = 2;
+						C_pax_reg = (beta_cost_held*C_held_reg) + (beta_cost_wait*(C_wait_reg_1 + C_wait_reg_2));
+						C_pax_sync = (beta_cost_held*C_held_sync) + (beta_cost_wait*C_wait_sync);
+						//compare costs
+						int controller_decision;
+						if (C_pax_sync > C_pax_reg)
+						{
+							holding_time = t_hold_reg;
+							controller_decision = 1;
+							if (holding_time == 0)
+							{
+								controller_decision = 0;
+							}
+						}
+						else
+						{
+							holding_time = t_hold_sync;
+							controller_decision = 2;
+						}
+
+						double holding_departure_time = time + holding_time;
+
+						//store extra information stemming from control decisions at the trip level
+						trip->set_controller_decisions(t_hold_reg, t_hold_sync, controller_decision, C_pax_reg, C_pax_sync);
+
+						return holding_departure_time;
+
+						break;
+
+
+//edw kleinei to else gia transfer sync
+
+					}
 				}
 			}
 			else
@@ -3551,7 +3948,7 @@ void Busstop::record_busstop_visit (Bustrip* trip, double enter_time)  // create
 	}
 	output_stop_visits.push_back(Busstop_Visit(trip->get_line()->get_id(), trip->get_id() , trip->get_busv()->get_bus_id() , get_id() , enter_time,
 		trip->scheduled_arrival_time (this),dwelltime,(enter_time - trip->scheduled_arrival_time (this)), exit_time, riding_time, riding_time * nr_riders, crowded_pass_riding_time, crowded_pass_dwell_time, crowded_pass_holding_time,
-		arrival_headway, get_time_since_departure (trip , exit_time), nr_alighting , nr_boarding , occupancy, calc_total_nr_waiting(), (arrival_headway * nr_boarding)/2, holdingtime));
+		arrival_headway, get_time_since_departure (trip , exit_time), nr_alighting , nr_boarding , occupancy, calc_total_nr_waiting(), (arrival_headway * nr_boarding)/2, holdingtime, trip->get_t_hold_reg(), trip->get_t_hold_sync(),trip->get_controller_decision(),trip->get_C_pax_reg(),trip->get_C_pax_sync()));
 		//to add separated holding time components for rule 10, just add a pair<double> parameter to Bustrip, which is fed values from calculate_holding_time (assigned in a trip-wise fashion). The parameters standard to 0, unless control is applied, in which case they will sum up to "holdingtime" and actual values of theta1 theta2 will be derivable by division.
 }
 

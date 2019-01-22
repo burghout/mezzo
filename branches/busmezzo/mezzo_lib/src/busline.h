@@ -318,43 +318,49 @@ public:
 	int passenger_load;
 };
 
-class Bustrip 
+class Bustrip
 {
 public:
-	Bustrip (
-		int			id_, 
-		double		start_time_, 
+	Bustrip(
+		int			id_,
+		double		start_time_,
 		Busline*	line_
 	);
-	Bustrip ();
-	~Bustrip ();
-	void reset ();
+	Bustrip();
+	~Bustrip();
+	void reset();
 
-// GETS & SETS
-	int get_id () {return id;}											  //!< returns id, used in the compare <..> functions for find and find_if algorithms
-	Bus* get_busv () {return busv;}
-	void set_busv (Bus* busv_) {busv = busv_;}
-	void set_bustype (Bustype* btype_) {btype = btype_;}
-	Bustype* get_bustype () {return btype;}
-	void set_line (Busline* line_) {line = line_;}
-	Busline* get_line () {return line;}
-	double get_starttime () {return starttime;}
-	double get_init_occup_per_stop () {return init_occup_per_stop;}
-	int get_nr_stops_init_occup () {return nr_stops_init_occup;}
-	vector <Visit_stop*> :: iterator& get_next_stop() {return next_stop;} //!< returns pointer to next stop
-	void set_enter_time (double enter_time_) {enter_time = enter_time_;}
-	double get_enter_time () {return enter_time;}
-	list <Bustrip_assign> get_output_passenger_load() {return output_passenger_load;}
-	double get_last_stop_exit_time() {return last_stop_exit_time;}
-	void set_last_stop_exit_time (double last_stop_exit_time_) {last_stop_exit_time = last_stop_exit_time_;}
-	void set_last_stop_visited (Busstop* last_stop_visited_) {last_stop_visited = last_stop_visited_;}
-	Busstop* get_last_stop_visited() {return last_stop_visited;}
-	double get_actual_dispatching_time () {return actual_dispatching_time;}
-	map <Busstop*, passengers> get_passengers_on_board () {return passengers_on_board;}
+	// GETS & SETS
+	int get_id() { return id; }											  //!< returns id, used in the compare <..> functions for find and find_if algorithms
+	Bus* get_busv() { return busv; }
+	void set_busv(Bus* busv_) { busv = busv_; }
+	void set_bustype(Bustype* btype_) { btype = btype_; }
+	Bustype* get_bustype() { return btype; }
+	void set_line(Busline* line_) { line = line_; }
+	Busline* get_line() { return line; }
+	double get_starttime() { return starttime; }
+	double get_init_occup_per_stop() { return init_occup_per_stop; }
+	int get_nr_stops_init_occup() { return nr_stops_init_occup; }
+	vector <Visit_stop*> ::iterator& get_next_stop() { return next_stop; } //!< returns pointer to next stop
+	void set_enter_time(double enter_time_) { enter_time = enter_time_; }
+	double get_enter_time() { return enter_time; }
+	list <Bustrip_assign> get_output_passenger_load() { return output_passenger_load; }
+	double get_last_stop_exit_time() { return last_stop_exit_time; }
+	void set_last_stop_exit_time(double last_stop_exit_time_) { last_stop_exit_time = last_stop_exit_time_; }
+	void set_last_stop_visited(Busstop* last_stop_visited_) { last_stop_visited = last_stop_visited_; }
+	Busstop* get_last_stop_visited() { return last_stop_visited; }
+	double get_actual_dispatching_time() { return actual_dispatching_time; }
+	map <Busstop*, passengers> get_passengers_on_board() { return passengers_on_board; }
 
-	void set_holding_at_stop(bool holding_at_stop_){holding_at_stop = holding_at_stop_;} //David added 2016-05-26
-	bool get_holding_at_stop(){return holding_at_stop;} //David added 2016-05-26
-	bool get_complying(){return complying_bustrip;}
+	void set_holding_at_stop(bool holding_at_stop_) { holding_at_stop = holding_at_stop_; } //David added 2016-05-26
+	bool get_holding_at_stop() { return holding_at_stop; } //David added 2016-05-26
+	bool get_complying() { return complying_bustrip; }
+	void set_controller_decisions(double t_hold_reg_, double t_hold_sync_, int controller_decision_, double C_pax_reg_, double C_pax_sync_) { t_hold_reg = t_hold_reg_; t_hold_sync = t_hold_sync_;	controller_decision= controller_decision_;	C_pax_reg=C_pax_reg_;	C_pax_sync= C_pax_sync_;}
+	double get_t_hold_sync() { return t_hold_sync; }
+	double get_t_hold_reg() { return t_hold_reg; }
+	int get_controller_decision() { return controller_decision; }
+	double get_C_pax_reg() { return C_pax_reg; }
+	double get_C_pax_sync() { return C_pax_sync; }
 
 // other functions:	
 //	bool is_trip_timepoint(Busstop* stop); //!< returns 1 if true, 0 if false, -1 if busstop not found
@@ -405,6 +411,11 @@ protected:
 	bool holding_at_stop;						 //!< David added 2016-05-26: true if the trip is currently holding at a stop, false otherwise (used for progressing passengers in case of holding for demand format 3, should always be false for other formats)
 	//	map <Busstop*,bool> trips_timepoint;	 //!< will be relevant only when time points are trip-specific. binary map with time point indicatons for stops on route only (according to the schedule input file)  
 	Eventlist* eventlist;						 //!< for use by busstops etc to book themselves.
+	double t_hold_reg;
+	double t_hold_sync;
+	int controller_decision;
+	double C_pax_reg;
+	double C_pax_sync;
 };
 
 typedef pair<Busstop*, double> stop_rate;
@@ -416,34 +427,38 @@ typedef map <Busstop*, ODstops*> ODs_for_stop;
 class Busstop_Visit // container object holding output data for stop visits
 {
 public:
-	Busstop_Visit (
-		int		line_id_, 
-		int		trip_id_,	
-		int		vehicle_id_,	 
-		int		stop_id_, 
-		double	entering_time_,	
-		double	sched_arr_time_,	
-		double	dwell_time_,	
-		double	lateness_,					
+	Busstop_Visit(
+		int		line_id_,
+		int		trip_id_,
+		int		vehicle_id_,
+		int		stop_id_,
+		double	entering_time_,
+		double	sched_arr_time_,
+		double	dwell_time_,
+		double	lateness_,
 		double	exit_time_,
-		double	riding_time_, 
-		double	riding_pass_time_, 
-		double	crowded_pass_riding_time_, 
-		double	crowded_pass_dwell_time_, 
-		double	crowded_pass_holding_time_,					
-		double	time_since_arr_, 
+		double	riding_time_,
+		double	riding_pass_time_,
+		double	crowded_pass_riding_time_,
+		double	crowded_pass_dwell_time_,
+		double	crowded_pass_holding_time_,
+		double	time_since_arr_,
 		double	time_since_dep_,
-		int		nr_alighting_,	
-		int		nr_boarding_,	
-		int		occupancy_,	
-		int		nr_waiting_, 
-		double	total_waiting_time_, 
-		double	holding_time_
-	): line_id(line_id_),trip_id(trip_id_),vehicle_id(vehicle_id_), stop_id(stop_id_),entering_time(entering_time_),sched_arr_time(sched_arr_time_),dwell_time(dwell_time_),
-	   lateness(lateness_), exit_time (exit_time_),riding_time (riding_time_), riding_pass_time (riding_pass_time_), crowded_pass_riding_time (crowded_pass_riding_time_), 
-	   crowded_pass_dwell_time (crowded_pass_dwell_time_), crowded_pass_holding_time (crowded_pass_holding_time_), time_since_arr(time_since_arr_),time_since_dep(time_since_dep_),
-	   nr_alighting(nr_alighting_),nr_boarding(nr_boarding_),occupancy(occupancy_),nr_waiting(nr_waiting_), total_waiting_time(total_waiting_time_),holding_time(holding_time_) {}
-
+		int		nr_alighting_,
+		int		nr_boarding_,
+		int		occupancy_,
+		int		nr_waiting_,
+		double	total_waiting_time_,
+		double	holding_time_,
+		double t_hold_reg_,
+		double t_hold_sync_,
+		double controller_decision_,
+		double C_pax_reg_,
+		double C_pax_sync_
+	): line_id(line_id_), trip_id(trip_id_), vehicle_id(vehicle_id_), stop_id(stop_id_), entering_time(entering_time_), sched_arr_time(sched_arr_time_), dwell_time(dwell_time_),
+		lateness(lateness_), exit_time(exit_time_), riding_time(riding_time_), riding_pass_time(riding_pass_time_), crowded_pass_riding_time(crowded_pass_riding_time_),
+		crowded_pass_dwell_time(crowded_pass_dwell_time_), crowded_pass_holding_time(crowded_pass_holding_time_), time_since_arr(time_since_arr_), time_since_dep(time_since_dep_),
+		nr_alighting(nr_alighting_), nr_boarding(nr_boarding_), occupancy(occupancy_), nr_waiting(nr_waiting_), total_waiting_time(total_waiting_time_), holding_time(holding_time_), t_hold_reg(t_hold_reg_), t_hold_sync(t_hold_sync_), controller_decision(controller_decision_), C_pax_reg(C_pax_reg_), C_pax_sync(C_pax_sync_) {}
 	virtual ~Busstop_Visit(); //!< destructor
 	void write (ostream& out) { 
 		out << line_id << '\t'
@@ -464,7 +479,12 @@ public:
 			<< occupancy << '\t'
 			<< nr_waiting << '\t'
 			<< total_waiting_time << '\t' 
-			<< holding_time << '\t'	<< endl; //transitlog_out_comp
+			<< holding_time << '\t'	
+			<< t_hold_reg << '\t'
+			<< t_hold_sync << '\t'
+			<< controller_decision << '\t'
+			<< C_pax_reg << '\t'
+			<< C_pax_sync << endl; //transitlog_out_comp
 	}
 	void reset () {
 		line_id = 0; 
@@ -486,6 +506,11 @@ public:
 		nr_waiting = 0; 
 		total_waiting_time = 0; 
 		holding_time = 0; 
+		t_hold_reg = 0;
+		t_hold_sync = 0;
+		controller_decision = 0;
+		C_pax_reg = 0;
+		C_pax_sync = 0;
 	}
 	int line_id;
 	int trip_id;
@@ -509,6 +534,13 @@ public:
 	int nr_waiting;
 	double total_waiting_time;
 	double holding_time;
+	double t_hold_reg;
+	double t_hold_sync;
+	int controller_decision;
+	double C_pax_reg;
+	double C_pax_sync;
+
+
 };
 
 class Output_Summary_Stop_Line // container object holding output data for stop visits
@@ -600,6 +632,7 @@ public:
 	double get_arrival_rates (Bustrip* trip) {return arrival_rates[trip->get_line()];}
 	double get_alighting_fractions (Bustrip* trip) {return alighting_fractions[trip->get_line()];}
 	const ODs_for_stop & get_stop_as_origin () {return stop_as_origin;}
+	ODs_for_stop & get_stop_as_destination() { return stop_as_destination; }
 	ODstops* get_stop_od_as_origin_per_stop (Busstop* stop) {return stop_as_origin[stop];}
 	ODstops* get_stop_od_as_destination_per_stop(Busstop* stop) { return stop_as_destination[stop]; }
 	bool check_stop_od_as_origin_per_stop (Busstop* stop) {if (stop_as_origin.count(stop)==0) return false; else return true;}

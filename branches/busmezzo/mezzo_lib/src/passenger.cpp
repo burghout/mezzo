@@ -6,6 +6,7 @@ Passenger::Passenger ()
 	already_walked = false;
 	end_time = 0;
 	nr_boardings = 0;
+	nr_transferring = 0;
 	AWT_first_leg_boarding = 0;
 	random = new (Random);
 	if (randseed != 0)
@@ -26,6 +27,7 @@ Passenger::Passenger (int pass_id, double start_time_, ODstops* OD_stop_)
 	start_time = start_time_;
 	end_time = 0;
 	nr_boardings = 0;
+	nr_transferring = 0;
 	original_origin = OD_stop_->get_origin();
 	OD_stop = OD_stop_;
 	boarding_decision = false;
@@ -62,6 +64,7 @@ void Passenger::reset ()
 
 	end_time = 0;
 	nr_boardings = 0;
+	nr_transferring = 0;
 	AWT_first_leg_boarding = 0;
 	this_is_the_last_stop = false;
 	memory_projected_RTI.clear();
@@ -110,6 +113,7 @@ void Passenger::init_zone (int pass_id, double start_time_, ODzone* origin_, ODz
 	start_time = start_time_;
 	end_time = 0;
 	nr_boardings = 0;
+	nr_transferring = 0;
 	o_zone = origin_;
 	d_zone = destination_;
 	boarding_decision = false;

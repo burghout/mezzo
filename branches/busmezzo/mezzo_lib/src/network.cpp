@@ -6260,6 +6260,7 @@ bool Network::readparameters(string name)
             // WILCO : deleted windows specific error code
             //SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX);
         inputfile.close();
+		theParameters->set_workingdir(this->workingdir);
         return true;
     }
     else
