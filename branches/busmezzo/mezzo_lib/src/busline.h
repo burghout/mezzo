@@ -433,12 +433,15 @@ public:
 	map <Busstop*, int> nr_expected_alighting;		//!< number of passengers expected to alight at the busline's stops (format 2)
 	map <Busstop*, int> assign_segements;			//!< contains the number of pass. traveling between trip segments
 
-//Control Center
+/** @ingroup DRT
+    @{
+*/
 	void set_starttime(double starttime_) { starttime = starttime_; }
 	void set_scheduled_for_dispatch(bool scheduled_for_dispatch_) { scheduled_for_dispatch = scheduled_for_dispatch_; }
 	bool is_scheduled_for_dispatch() const { return scheduled_for_dispatch; }
 	void set_flex_trip(bool flex_trip_) { flex_trip = flex_trip_; }
 	bool is_flex_trip() const { return flex_trip; }
+/**@}*/
 
 protected:
 	int id;										  //!< course nr
@@ -461,9 +464,12 @@ protected:
 	//	map <Busstop*,bool> trips_timepoint;	 //!< will be relevant only when time points are trip-specific. binary map with time point indicatons for stops on route only (according to the schedule input file)  
 	Eventlist* eventlist;						 //!< for use by busstops etc to book themselves.
 	
-	//DRT
+	/** @ingroup DRT
+        @{
+    */
 	bool scheduled_for_dispatch; //!< true if this trip has been scheduled for dispatch (i.e. a busline event has been created with for the starttime of this trip) for its respective line, false otherwise
 	bool flex_trip; //!< true if this trip was generated dynamically
+    /**@}*/
 };
 
 typedef pair<Busstop*, double> stop_rate;

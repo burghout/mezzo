@@ -134,7 +134,6 @@ private:
         - Matching of en-route vehicles (or any vehicle that is not in the 'OnCall' state) to unmatched trips
     
 */
-//e.g. Hungarian, k-opt, insertion
 class MatchingStrategy
 {
 public:
