@@ -29,6 +29,7 @@ class Bustype;
 class Passenger;
 class ODstops;
 class Change_arrival_rate;
+///class Change_odgeneration_rate;
 class Bustrip_assign;
 class Dwell_time_function;
 class Walking_time_dist;
@@ -211,12 +212,15 @@ public:
 	void add_speeds(double min_speed_, double max_speed_) { max_speed = max_speed_; min_speed = min_speed_;}
 
 	//transfer initilization
+	void add_nr_tr_lines (int lines) { nr_tr_lines = lines;}
+	void add_tr_stops(vector <Busstop*> stops) { tr_stops = stops; }
 	void add_tr_line_id (int id) {tr_line_id = id;}
-	void add_tr_stops (vector <Busstop*> stops) {tr_stops = stops;}
+	void add_sync_stops(vector <Busstop*> stops) {sync_stops = stops;}
 	
 	// checks
 	bool check_last_stop (Busstop* stop);
 	bool is_line_timepoint (Busstop* stop);											//!< returns true if stops is a time point for this busline, otherwise it returns false
+	bool is_line_transferpoint (Busstop* stop);										//!< returns true if stops is a transfer synchronization point for this busline, otherwise it returns false
 	bool check_first_stop (Busstop* stop);											//!< returns true if the stop is the first stop on the bus line, otherwise it returns false 
 	bool check_first_trip (Bustrip* trip);											//!< returns true if the trip is the first trip on the bus line, otherwise it returns false  
 	bool check_last_trip (Bustrip* trip);											//!< returns true if the trip is the last trip on the bus line, otherwise it returns false  
@@ -272,8 +276,10 @@ protected:
 	int nr_stops_init_occup;
 
 	//transfer attributes
+	int nr_tr_lines; //!< declare identifier for number of lines to sync with
 	int	tr_line_id; //!< id of line 'this' line synchronizes transfers with, should be 0 if 'this' line is not synchronizing transfers
 	vector <Busstop*> tr_stops;	//!< contains all transfer stops for line
+	vector <Busstop*> sync_stops; //!< contains all sync stops for a line
 
     map <Busstop*,pair<Busstop*,pair<double,double> > > disruption_times; //!< contains the expected travel times between a pair of stops in case of disruption (does not affect actual travel time, only passenger information provision). Strat and end times
 	map <Busstop*, double> disruption_cap_reduction;
@@ -387,7 +393,8 @@ public:
 	double calc_departure_time (double time);											//!< calculates departure time from origin according to arrival time and schedule (including layover effect)
 	void convert_stops_vector_to_map();													//!< building stops_map
 	double find_crowding_coeff (Passenger* pass);										//!< returns the crowding coefficeint based on lod factor and pass. seating/standing
-	static double find_crowding_coeff (bool sits, double load_factor);					//!< returns the crowding coefficeint based on lod factor and pass. seating/standing
+	static double find_crowding_coeff (bool sits, double load_factor, double load_factor_c, double standing_density, double max_stand_crowding_mult);	//!< returns the crowding coefficeint based on load factor and pass. seating/standing
+	//static double find_crowding_coeff (bool sits, double load_factor);					//!< returns the crowding coefficeint based on lod factor and pass. seating/standing
 	pair<double, double> crowding_dt_factor (double nr_boarding, double nr_alighting);
 	vector <Busstop*> get_downstream_stops(); //!< return the remaining stops to be visited starting from 'next_stop', returns empty Busstop vector if there are none
 	vector <Visit_stop*> get_downstream_stops_till_horizon(Visit_stop* target_stop); //!< return the remaining stops to be visited starting from 'next_stop'
@@ -646,6 +653,7 @@ public:
 	double get_walking_distance_stop (Busstop* stop) {return distances[stop];}
 	void save_previous_arrival_rates () {previous_arrival_rates.swap(arrival_rates);}
 	void save_previous_alighting_fractions () {previous_alighting_fractions.swap(alighting_fractions);}
+	///void save_previous_arrival_rates30(ODstops * odstop) {previous_arrival_rates30.swap(arrival_rates);}
 	bool check_walkable_stop ( Busstop* const & stop);
 	bool check_destination_stop (Busstop* stop);
     bool get_gate_flag () {return gate_flag;};
@@ -695,7 +703,7 @@ public:
 // output-related functions
 	void write_output(ostream & out);
 	void record_busstop_visit (Bustrip* trip, double enter_time); //!< creates a log-file for stop-related info
-	static double calc_crowded_travel_time (double travel_time, int nr_riders, int nr_seats);
+	static double calc_crowded_travel_time (double travel_time, int nr_riders, int nr_seats, int capacity);
 	
 	void calculate_sum_output_stop_per_line(int line_id); //!< calculates for a single line that visits the stop (identified by line_id)
 	int calc_total_nr_waiting ();
@@ -764,6 +772,7 @@ protected:
 	bool is_origin;							//!< indicates if this busstop serves as an origin for some passenger demand
 	bool is_destination;					//!< indicates if this busstop serves as an destination for some passenger demand
 	map <Busline*, bool> real_time_info;	//!< indicates for each line if it has real-time info. at this stop
+	map <ODstops*, double> previous_arrival_rates30;
 
 	// walking distances between stops (relevant only for demand format 3 and 4)
 	map<Busstop*,double> distances;			//!< contains the distances [meters] from other bus stops
@@ -782,6 +791,7 @@ protected:
 
 typedef pair<Busline*,double> TD_single_pair;
 typedef map<Busstop*, map<Busline*,double> > TD_demand;
+///typedef map<ODstops*,double> TD_demand30;
 
 class Change_arrival_rate : public Action
 {
@@ -796,10 +806,28 @@ public:
 protected:
 	double loadtime;
 	// relevant only for time-dependent demand format 1
-	TD_demand arrival_rates_TD;			//!< parameter lambda that defines the poission proccess of passengers arriving at the stop
-	TD_demand alighting_fractions_TD;	//!< parameter that defines the poission process of the alighting passengers 
+	TD_demand arrival_rates_TD;			//!< parameter lambda that defines the poisson proccess of passengers arriving at the stop
+	TD_demand alighting_fractions_TD;	//!< parameter that defines the poisson process of the alighting passengers 
 
 };
+
+///class Change_odgeneration_rate : public Action
+///{
+///public:
+	///Change_odgeneration_rate(double time)
+	///{
+		///loadtime = time;
+	///}
+	///virtual ~Change_odgeneration_rate(); //!< destructor
+	///void book_update_odgeneration_rates(Eventlist* eventlist, double time);
+	///bool execute(Eventlist* eventlist, double time);
+	///void add_odstops(ODstops* od_stop, double value) { arrival_rates_TD.first = od_stop;  arrival_rates_TD[od_stop].insert(value); }
+
+///protected:
+	///double loadtime;
+	///TD_demand30 arrival_rates_TD;			//!< parameter lambda that defines the poisson proccess of passengers arriving at the stop
+
+///};
 
 class Walking_time_dist {
 public:

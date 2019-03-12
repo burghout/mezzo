@@ -145,6 +145,18 @@ bool Busline::is_line_timepoint (Busstop* stop)
 return false;
 }
 
+bool Busline::is_line_transferpoint(Busstop* stop)
+{
+	for (vector <Busstop*>::iterator tr = tr_stops.begin(); tr < tr_stops.end(); tr++)
+	{
+		if (stop == *(tr))
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
 bool Busline::check_first_stop (Busstop* stop)
 {
 	if (stop==*(stops.begin()))
@@ -865,81 +877,113 @@ void Bustrip::record_passenger_loads (vector <Visit_stop*>::iterator start_stop)
 	}
 }
 
-double Bustrip::find_crowding_coeff (Passenger* pass)
+double Bustrip::find_crowding_coeff (Passenger* pass) // find crowding expression
 {
-	// first - calculate load factor
+	// first - calculate load_factor_c, corrected load factor % between 50% seat occupancy and seat capacity, standing_density, % between seat and crush capacity, and max_stand_crowding_mult 
 	double load_factor = this->get_busv()->get_occupancy()/this->get_busv()->get_number_seats();
+	double seat_capacity = this->get_busv()->get_number_seats();
+	double occupancy = this->get_busv()->get_occupancy();
+	double load_factor_c = (occupancy - (seat_capacity / 2)) / (seat_capacity - (seat_capacity / 2));
+	double standing_density = (this->get_busv()->get_occupancy() - this->get_busv()->get_number_seats()) / (this->get_busv()->get_capacity() - this->get_busv()->get_number_seats());
+	double max_stand_crowding_mult = ((theParameters->max_standing_density) * 0.116) + 1.16; // calculates crowding multiplier for standing pax at crush capacity for RP parameter set
 	
 	// second - return value based on pass. standing/sitting
 	bool sits = pass->get_pass_sitting();
 
-	return find_crowding_coeff(sits, load_factor);
+	//return find_crowding_coeff(sits, load_factor);
+	return find_crowding_coeff (sits, load_factor, load_factor_c, standing_density, max_stand_crowding_mult);
 }
 
-double Bustrip::find_crowding_coeff (bool sits, double load_factor)
+//double Bustrip::find_crowding_coeff (bool sits, double load_factor)
+// calculate crowding multiplier based on RP or SP parameter set
+double Bustrip::find_crowding_coeff (bool sits, double load_factor, double load_factor_c, double standing_density, double max_stand_crowding_mult)
 {
-	
-	if (load_factor < 0.75)
+	if (theParameters->crowding_coefficient_set == 1) // calculate crowding multiplier based on RP parameter set
 	{
-		return 0.95;
-	}
-	else if (load_factor < 1.00)
-	{
-		return 1.05;
-	}
-	else if (load_factor < 1.25)
-	{
-		if (sits == true)
+		if (load_factor <= 0.50)
 		{
-			return 1.16;
+			return 0.95;
+		}
+		else if (load_factor <= 1.00)
+		{
+			return ((1.16 - 0.95) * load_factor_c) + 0.95;
 		}
 		else
 		{
-			return 1.78;
+			if (sits == true)
+			{
+				return 1.16;
+			}
+			else
+			{
+				return ((max_stand_crowding_mult - 1.16) * standing_density) + 1.16;
+			}
 		}
 	}
-	else if (load_factor < 1.50)
+	else // calculate crowding multiplier based on SP parameter set
 	{
-		if (sits == true)
+		if (load_factor < 0.75)
 		{
-			return 1.28;
+			return 0.95;
+		}
+		else if (load_factor < 1.00)
+		{
+			return 1.05;
+		}
+		else if (load_factor < 1.25)
+		{
+			if (sits == true)
+			{
+				return 1.16;
+			}
+			else
+			{
+				return 1.78;
+			}
+		}
+		else if (load_factor < 1.50)
+		{
+			if (sits == true)
+			{
+				return 1.28;
+			}
+			else
+			{
+				return 1.97;
+			}
+		}
+		else if (load_factor < 1.75)
+		{
+			if (sits == true)
+			{
+				return 1.40;
+			}
+			else
+			{
+				return 2.19;
+			}
+		}
+		else if (load_factor < 2.00)
+		{
+			if (sits == true)
+			{
+				return 1.55;
+			}
+			else
+			{
+				return 2.42;
+			}
 		}
 		else
 		{
-			return 1.97;
-		}
-	}
-	else if (load_factor < 1.75)
-	{
-		if (sits == true)
-		{
-			return 1.40;
-		}
-		else
-		{
-			return 2.19;
-		}
-	}
-	else if (load_factor < 2.00)
-	{
-		if (sits == true)
-		{
-			return 1.55;
-		}
-		else
-		{
-			return 2.42;
-		}
-	}
-	else
-	{
-		if (sits == true)
-		{
-			return 1.71;
-		}
-		else
-		{
-			return 2.69;
+			if (sits == true)
+			{
+				return 1.71;
+			}
+			else
+			{
+				return 2.69;
+			}
 		}
 	}
 }
@@ -1070,6 +1114,9 @@ Output_Summary_Stop_Line::~Output_Summary_Stop_Line ()
 
 Change_arrival_rate::~Change_arrival_rate()
 {}
+
+///Change_odgeneration_rate::~Change_odgeneration_rate()
+///{}
 
 Dwell_time_function::~Dwell_time_function()
 {}
@@ -1453,7 +1500,7 @@ void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, d
 			}
 		}
 	}
-	if (theParameters->demand_format == 3)   // demand is given in terms of arrival rate of individual passengers per OD of stops (future - route choice)
+	if (theParameters->demand_format == 3 || theParameters->demand_format == 30)   // demand is given in terms of arrival rate of individual passengers per OD of stops (future - route choice)
 	{	
 		// * Alighting passengers *
 		nr_alighting = static_cast<int> ( trip->passengers_on_board[this].size()); 
@@ -1647,7 +1694,7 @@ void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, d
 							{
 								(*check_pass)->set_pass_sitting(true);
 							}
-							if(theParameters->demand_format == 3)
+							if(theParameters->demand_format == 3 || theParameters->demand_format == 30)
 							{
 								trip->passengers_on_board[(*check_pass)->make_alighting_decision(trip, time)].push_back((*check_pass)); 
 							}
@@ -1705,7 +1752,7 @@ void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, d
 			}
 		}	
 	}
-	if (theParameters->demand_format!=3)
+	if (theParameters->demand_format!=3 && theParameters->demand_format!=30)
 	{
 		trip->get_busv()->set_occupancy(starting_occupancy + get_nr_boarding() - get_nr_alighting()); // updating the occupancy
 	}
@@ -1935,7 +1982,7 @@ double Busstop::calc_exiting_time (Eventlist* eventlist, Bustrip* trip, double t
 		}
 	}
 
-	if(theParameters->demand_format == 3) 
+	if(theParameters->demand_format == 3 || theParameters->demand_format == 30) 
 	{
 		if(ready_to_depart > time + dwelltime)
 		{
@@ -2119,6 +2166,14 @@ double Busstop::calc_holding_departure_time (Bustrip* trip, double time)
 					}
 				}
 				break;
+			case 10: // holding for transfer synchronization
+				if (trip->get_line()->is_line_transferpoint(this) == true) // if it is a transfer synchronization point
+				{
+					double holding_departure_time = last_departures[trip->get_line()].second + 1200;
+
+					return holding_departure_time;
+				}
+				break;			
 			case 20: // case of holding and speed adjustment; holding itself is the same as Case 6
 				if (trip->get_line()->is_line_timepoint(this) == true && trip->get_line()->check_last_trip(trip) == false && trip->get_line()->check_first_trip(trip) == false) // if it is a time point and it is not the first or last trip
 				{
@@ -2161,7 +2216,7 @@ int Busstop::calc_total_nr_waiting ()
 		}
 	}
 	// format 3
-	else if (theParameters->demand_format == 3)
+	else if (theParameters->demand_format == 3 || theParameters->demand_format == 30)
 	{
 		for (map <Busstop*, ODstops*>::iterator destination_stop = stop_as_origin.begin(); destination_stop != stop_as_origin.end(); destination_stop++)
 				// going through all the stops that this stop is their origin on a given OD pair
@@ -2194,9 +2249,10 @@ void Busstop::record_busstop_visit (Bustrip* trip, double enter_time)  // create
 	{
 		riding_time = enter_time - trip->get_last_stop_exit_time();
 		int nr_seats = trip->get_busv()->get_number_seats();
-		crowded_pass_riding_time = calc_crowded_travel_time(riding_time, nr_riders, nr_seats);
-		crowded_pass_dwell_time = calc_crowded_travel_time(dwelltime, occupancy, nr_seats);
-		crowded_pass_holding_time = calc_crowded_travel_time(holdingtime, occupancy, nr_seats);
+		int capacity = trip->get_busv()->get_capacity();
+		crowded_pass_riding_time = calc_crowded_travel_time(riding_time, nr_riders, nr_seats, capacity);
+		crowded_pass_dwell_time = calc_crowded_travel_time(dwelltime, occupancy, nr_seats, capacity);
+		crowded_pass_holding_time = calc_crowded_travel_time(holdingtime, occupancy, nr_seats, capacity);
 	}
 
 	if (trip->get_line()->check_first_trip(trip) == true)
@@ -2208,19 +2264,24 @@ void Busstop::record_busstop_visit (Bustrip* trip, double enter_time)  // create
 		arrival_headway, get_time_since_departure (trip , exit_time), nr_alighting , nr_boarding , occupancy, calc_total_nr_waiting(), (arrival_headway * nr_boarding)/2, holdingtime)); 
 }
 
-double Busstop::calc_crowded_travel_time (double travel_time, int nr_riders, int nr_seats) //Returns the sum of the travel time weighted by the crowding factors
+double Busstop::calc_crowded_travel_time (double travel_time, int nr_riders, int nr_seats, int capacity) //Returns the sum of the travel time weighted by the crowding factors
 {
 	double crowded_travel_time;
 	double load_factor = nr_riders / nr_seats;
-
+	double seat_capacity = nr_seats;
+	double occupancy = nr_riders;
+	double load_factor_c = (occupancy - (seat_capacity / 2)) / (seat_capacity - (seat_capacity / 2));
+	double standing_density = (nr_riders - nr_seats) / (capacity - nr_seats);
+	double max_stand_crowding_mult = ((theParameters->max_standing_density) * 0.116) + 1.16; // calculates crowding multiplier for standing pax at crush capacity for RP parameter set
+	
 	if (load_factor < 1) //if everyone had a seat
 	{
-		crowded_travel_time = travel_time * nr_riders * Bustrip::find_crowding_coeff(true, load_factor);
+		crowded_travel_time = travel_time * nr_riders * Bustrip::find_crowding_coeff(true, load_factor, load_factor_c, standing_density, max_stand_crowding_mult);
 	}
 	else
 	{
 		int nr_standees = nr_riders - nr_seats;
-		crowded_travel_time = travel_time * (nr_seats * Bustrip::find_crowding_coeff(true, load_factor) + nr_standees * Bustrip::find_crowding_coeff(false, load_factor));
+		crowded_travel_time = travel_time * (nr_seats * Bustrip::find_crowding_coeff(true, load_factor, load_factor_c, standing_density, max_stand_crowding_mult) + nr_standees * Bustrip::find_crowding_coeff(false, load_factor, load_factor_c, standing_density, max_stand_crowding_mult));
 	}
 
 	return crowded_travel_time;
@@ -2423,6 +2484,33 @@ bool Change_arrival_rate::execute(Eventlist* eventlist, double time) //variables
 	}
 	return true;
 }
+
+// Define loadtime is moved to busline.h row 811
+//Change_odgeneration_rate::Change_odgeneration_rate(double time)
+//{
+	//loadtime = time;
+//}
+
+///void Change_odgeneration_rate::book_update_odgeneration_rates(Eventlist* eventlist, double time)
+///{
+	///eventlist->add_event(time, this);
+///}
+
+///bool Change_odgeneration_rate::execute(Eventlist * eventlist, double time)
+///{
+	///Q_UNUSED (eventlist);
+	///Q_UNUSED (time);
+	///for (TD_demand30::iterator stop_iter = arrival_rates_TD.begin(); stop_iter != arrival_rates_TD.end(); stop_iter++)
+	//{
+		//map<ODstops*, double> TD_ODstops = (*stop_iter).second;
+		//(*stop_iter).first->save_previous_arrival_rates30 ();
+	//}
+	///return true;
+///}
+
+///void Change_odgeneration_rate::add_odstops(ODstops * od_stop, double value)
+///{
+///}
 
 Walking_time_dist::Walking_time_dist(Busstop* dest_stop_, vector<double> quantiles_, vector<double> quantile_values_, int num_quantiles_, double time_start_, double time_end_){
     

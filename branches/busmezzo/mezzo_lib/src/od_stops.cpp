@@ -378,7 +378,6 @@ bool ODstops::check_path_set ()
 	}
 } 
 
-
 double ODstops::calc_multinomial_logit (double utility_i, double utility_sum)
 {
 	return ((exp(utility_i)) / utility_sum);

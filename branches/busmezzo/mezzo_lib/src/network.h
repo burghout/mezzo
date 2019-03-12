@@ -285,6 +285,7 @@ public:
   bool read_passenger_rates_format1_TD_slices (istream& in);
   bool read_passenger_rates_format2 (istream& in); // reads the passenger rates in the format of arrival rate per line, origin stop and destination stop combination
   bool read_passenger_rates_format3 (istream& in); // reads the passenger rates in the format of arrival rate per OD in terms of stops (no path is pre-determined)
+  ///bool read_passenger_rates_format3_slices (istream& in); // reads the passenger rates in format 30 with arrival rate per OD in terms of stops using time slices
   bool readbusstops_distances_format1 (istream& in); // !< reads distances between stops through vectors at the stop level - relevant only for demand format 3
   bool readbusstops_distances_format2 (istream& in); // !< reads distances between stops through matrices between sets of stops - relevant only for demand format 3
   bool read_travel_time_disruptions (istream& in); // reads the expected travel time between stops due to disruptions - does not affect the actual travel time, just passengers expectations in case of information provision

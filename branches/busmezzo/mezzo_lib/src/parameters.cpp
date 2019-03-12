@@ -89,6 +89,8 @@ Parameters::Parameters ()
    waiting_time_coefficient = 0.0;
    walking_time_coefficient= 0.0;
    average_walking_speed = 4000.0;
+   crowding_coefficient_set = 1;
+   max_standing_density = 3;
    max_nr_extra_transfers = 1;
    absolute_max_transfers = 3;
    max_in_vehicle_time_ratio = 2.0;
@@ -530,7 +532,7 @@ bool Parameters::read_parameters (istream & in )
 		return false;
 	}
 	in >> demand_scale;
-	if (demand_format == 3)
+	if (demand_format == 3 || demand_format == 30)
 	{
 		in >> keyword;
 		if (keyword!= "choice_set_indicator=")
@@ -595,6 +597,20 @@ bool Parameters::read_parameters (istream & in )
 			return false;
 		}
 		in >> average_walking_speed;
+		in >> keyword; //crowding_multiplier_set, Menno added 2018-11-01
+		if (keyword != "crowding_coefficient_set=")
+		{
+			cout << "ERROR reading Parameters file, expecting: crowding_coefficient_set=, read: " << keyword << endl;
+			return false;
+		}
+		in >> crowding_coefficient_set;
+		in >> keyword; //max_standing_density, Menno added 2018-11-01
+		if (keyword != "max_standing_density=")
+		{
+			cout << "ERROR reading Parameters file, expecting: max_standing_density=, read: " << keyword << endl;
+			return false;
+		}
+		in >> max_standing_density;
 		in >> keyword;
 		if (keyword!= "max_nr_extra_transfers=")
 		{

@@ -396,7 +396,7 @@ bool Passenger:: make_boarding_decision (Bustrip* arriving_bus, double time)
 
 void Passenger::record_waiting_experience(Bustrip* arriving_bus, double time)
 {
-	if(theParameters->demand_format == 3)
+	if(theParameters->demand_format == 3 || theParameters->demand_format == 30)
 	{
 		Busstop* curr_stop = OD_stop->get_origin();
 		bool left_behind_before = !empty_denied_boarding() && curr_stop->get_id() == get_last_denied_boarding_stop_id();
@@ -562,7 +562,7 @@ Busstop* Passenger::make_connection_decision (double time)
 		for (vector<Busstop*>::iterator connected_stop = (*stops_iter).begin(); connected_stop < (*stops_iter).end(); connected_stop++)
 		// going over all the stops at the second (connected) set
 		{
-            if (candidate_connection_stops_u.count(*connected_stop) == 0)
+            if (candidate_connection_stops_u.count(*connected_stop) == 0) //&& ((*connected_stop)->check_destination_stop(this->get_OD_stop()->get_destination()) == true) )
 				// only if it wasn't done already 
 			{
 				ODstops* left_od_stop;

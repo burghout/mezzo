@@ -177,6 +177,8 @@ public:
    double waiting_time_coefficient;
    double walking_time_coefficient;
    double average_walking_speed;
+   int crowding_coefficient_set; // 0 - use SP-based values; 1 - use RP-based values
+   double max_standing_density; // If crowding_coefficient_set = 1: specify maximum standing density: maximum number of standing passengers per m2 at crush capacity; else put equal to 0
    int max_nr_extra_transfers;
    int absolute_max_transfers;
    double max_in_vehicle_time_ratio;
@@ -189,7 +191,7 @@ public:
    double start_pass_generation; 
    double stop_pass_generation;
    bool od_pairs_for_generation;
-    double gate_generation_time_diff; // passengers are generated slightly before service leaves to account for boarding time
+   double gate_generation_time_diff; // passengers are generated slightly before service leaves to account for boarding time
 
 // transit control parameters
    double riding_time_weight;
