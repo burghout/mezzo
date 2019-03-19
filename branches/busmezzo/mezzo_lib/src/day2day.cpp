@@ -29,9 +29,11 @@ map<id_type, Travel_time>& operator << (map<id_type, Travel_time>& ODSLreg, pair
 		odsl_sum->second = row.second;
 	}
 	else
+	{
 		row.second.day = 1;
 		ODSLreg.insert(row);
-	return ODSLreg;
+		return ODSLreg;
+	}
 };
 
 

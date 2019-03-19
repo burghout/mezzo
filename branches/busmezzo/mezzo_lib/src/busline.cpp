@@ -2166,11 +2166,14 @@ double Busstop::calc_holding_departure_time (Bustrip* trip, double time)
 					}
 				}
 				break;
-			case 10: // holding for transfer synchronization
+			case 11: // holding for transfer synchronization
 				if (trip->get_line()->is_line_transferpoint(this) == true) // if it is a transfer synchronization point
 				{
-					double holding_departure_time = last_departures[trip->get_line()].second + 1200;
+					//Bustrip* 
+					//for (vector <Start_trip>::iterator trip_iter = trips.begin(); trip_iter < trips.end(); trip_iter++)
 
+					double holding_departure_time = last_departures[trip->get_line()].second + 1200;
+					
 					return holding_departure_time;
 				}
 				break;			

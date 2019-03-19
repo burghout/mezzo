@@ -120,10 +120,14 @@ void MOE::report_value_day(double value, double time)
  		 	 		value_obs=0;
  		 	}
  		 	value_obs++;
- 		    if (value_obs== 1)
- 		    	*value_iter=value;
- 		    else
- 		    	*value_iter=((*value_iter)*(value_obs-1)+value ) /value_obs; 	
+			if (value_obs == 1)
+			{
+				*value_iter = value;
+			}
+			else
+			{
+				*value_iter = ((*value_iter)*(value_obs - 1) + value) / value_obs;
+			}
 			value_update = time;
 }
 
