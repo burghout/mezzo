@@ -3441,6 +3441,9 @@ double Busstop::calc_holding_departure_time(Bustrip* trip, double time)
 
 					else
 					{
+						if (this == firstCommonStop)
+						{
+						
 						//register holding time as holding time for regularity
 						double t_hold_reg = holding_time;
 						//calculate holding time for synchronization
@@ -3460,7 +3463,7 @@ double Busstop::calc_holding_departure_time(Bustrip* trip, double time)
 								}
 							}
 						}
-						
+
 						//assume that all buses serve the destination for now otherwise get destinations before and check one by one and register accordingly
 						//get destinations not belonging to the current line
 						//for all connecting lines see which serves which destination <pair>? destination, connecting line
@@ -3529,7 +3532,7 @@ double Busstop::calc_holding_departure_time(Bustrip* trip, double time)
 							}
 						}
 						//find the next connecting bus and its expected arrival time
-						double next_connecting_arrival= Expected_Sync_ArrivalTimes[0];
+						double next_connecting_arrival = Expected_Sync_ArrivalTimes[0];
 						//for (int j = Expected_Sync_Trips.size(); j < 0; j--)
 						//{
 						//	if (Expected_Sync_ArrivalTimes[j]>time)
@@ -3545,15 +3548,15 @@ double Busstop::calc_holding_departure_time(Bustrip* trip, double time)
 
 						//Calculate passenger costs
 						//initialize variables 
-						double C_pax_reg=0;
-						double C_pax_sync=0;
+						double C_pax_reg = 0;
+						double C_pax_sync = 0;
 
-						double C_held_reg=0;
-						double C_held_sync=0;
-						double C_wait_reg_1=0;
-						double C_wait_reg_2=0;
+						double C_held_reg = 0;
+						double C_held_sync = 0;
+						double C_wait_reg_1 = 0;
+						double C_wait_reg_2 = 0;
 
-						double C_wait_sync=0;
+						double C_wait_sync = 0;
 
 						C_held_reg = (trip->get_busv()->get_occupancy())*t_hold_reg;
 						C_held_sync = (trip->get_busv()->get_occupancy())*t_hold_sync;
@@ -3571,7 +3574,7 @@ double Busstop::calc_holding_departure_time(Bustrip* trip, double time)
 						//"C:\Users\georgios.laskaris\Desktop\Double_Fork_Feb18\transfer_hist_log.dat"
 						string workingdir = theParameters->workingdir;
 						//ifstream in("C:\\Users\\georgios.laskaris\\Desktop\\Double_Fork_Feb18\\transfer_hist_log.dat"); //problem here
-						ifstream in(workingdir+"transfer_hist_log.dat");
+						ifstream in(workingdir + "transfer_hist_log.dat");
 						//in.open("transfer_hist_log.dat");
 						vector<pair<int, double>>transfer_log;
 						in >> keyword;
@@ -3582,7 +3585,7 @@ double Busstop::calc_holding_departure_time(Bustrip* trip, double time)
 						}
 						in >> no;
 						limit = i + no;
-						for (i; i<limit; i++)
+						for (i; i < limit; i++)
 						{
 							char brackets;
 							int transfer_stop_id;
@@ -3596,9 +3599,9 @@ double Busstop::calc_holding_departure_time(Bustrip* trip, double time)
 
 							in >> transfer_stop_id >> transferring_pax;
 							// store to vector???
-							
+
 							transfer_log.push_back(make_pair(transfer_stop_id, transferring_pax));
-							
+
 
 							in >> brackets;
 							if (brackets != '}')
@@ -3609,7 +3612,7 @@ double Busstop::calc_holding_departure_time(Bustrip* trip, double time)
 
 						}
 
-						for (i = 0; i<transfer_log.size(); i++)
+						for (i = 0; i < transfer_log.size(); i++)
 						{
 							if (transfer_log[i].first == this->get_id())
 							{
@@ -3618,7 +3621,7 @@ double Busstop::calc_holding_departure_time(Bustrip* trip, double time)
 							}
 
 						}
-						double test_alightings=this->get_nr_alighting();
+						double test_alightings = this->get_nr_alighting();
 						double transferrings_estimation = transferrings*test_alightings;
 						/*
 						// Code segment-take the actual number of passengers
@@ -3633,23 +3636,23 @@ double Busstop::calc_holding_departure_time(Bustrip* trip, double time)
 
 											//if it is, then fetch the list of waiting passengers:
 							vector<Passenger*> idontthinkso = whatsit->second->get_waiting_passengers();
-							for (int i = 0; i < idontthinkso.size(); i++) 
+							for (int i = 0; i < idontthinkso.size(); i++)
 							{
-								if (idontthinkso[i]->get_nrtransferring() > 0) 
-								{ 
+								if (idontthinkso[i]->get_nrtransferring() > 0)
+								{
 									howmanytransferringfuckersarewetalkingaboutanyway++;
 								}
 							}
 
 						}
 						*/
-
+						//transfer synchronization is not guaranteed
 						C_wait_reg_1 = (next_connecting_arrival - time)*transferrings;
 
 
 						//Rolling horizon
 						//Initially use the full corridor length until the lastCommonStop, if preliminary tests done then user can set a number of stops mu
-
+						int Horizon_length = theParameters->mc_rolling_horizon;
 						//range between current and last common stop
 						int f_stopid = 0;
 						for (int k = 0; k < Stop_Type.size(); k++)
@@ -3672,8 +3675,11 @@ double Busstop::calc_holding_departure_time(Bustrip* trip, double time)
 						double range = f_stopid - currStopidx;
 						vector <Busstop*> Rolling_Horizon = trip->get_downstream_stops();
 						i = 0;
-						while (Rolling_Horizon[i]->get_id() != lastCommonStop->get_id())
+
+						//while (Rolling_Horizon[i]->get_id() != lastCommonStop->get_id())
+						while (i <= Horizon_length)
 						{
+
 							vector <Visit_stop*> ::iterator& next_trip_next_stop2 = trip->get_next_stop();
 							vector <Visit_stop*> ::iterator Until_this_stop; // hold the scheduled time for this trip at this stop
 							for (vector <Visit_stop*> ::iterator trip_stops2 = trip->stops.begin(); trip_stops2 < trip->stops.end(); trip_stops2++)
@@ -3722,7 +3728,7 @@ double Busstop::calc_holding_departure_time(Bustrip* trip, double time)
 
 							}
 							double expected_headway = (expected_arrival_curr - expected_arrival_prev);
-							
+
 							double sum_demand_ar;
 
 							if (theParameters->demand_format == 3)
@@ -3730,11 +3736,11 @@ double Busstop::calc_holding_departure_time(Bustrip* trip, double time)
 								ODstops* a_r;
 								Busstop* a_r2;
 								double a_r3;
-								
+
 								downstreamStops = trip->get_downstream_stops();
 								int iter_size = downstreamStops.size();
 
-								for (int j = i+1; j < downstreamStops.size(); j++)
+								for (int j = i + 1; j < downstreamStops.size(); j++)
 								{
 									a_r = downstreamStops[i]->get_stop_od_as_origin_per_stop(downstreamStops[j]);
 									if ((downstreamStops[i]->is_stop_origin()) && (downstreamStops[j]->is_stop_destination()))
@@ -3756,7 +3762,7 @@ double Busstop::calc_holding_departure_time(Bustrip* trip, double time)
 
 							i++;
 						}
-						
+
 
 						//calculate costs
 						C_wait_sync = C_wait_reg_2;
@@ -3779,6 +3785,10 @@ double Busstop::calc_holding_departure_time(Bustrip* trip, double time)
 						{
 							holding_time = t_hold_sync;
 							controller_decision = 2;
+							if (holding_time == 0)
+							{
+								controller_decision = 0;
+							}
 						}
 
 						double holding_departure_time = time + holding_time;
@@ -3789,8 +3799,13 @@ double Busstop::calc_holding_departure_time(Bustrip* trip, double time)
 						return holding_departure_time;
 
 						break;
-
-
+					}
+						else
+						{
+							double holding_departure_time = time + holding_time;
+							return holding_departure_time;
+							break;
+						}
 //edw kleinei to else gia transfer sync
 
 					}

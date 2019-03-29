@@ -24,7 +24,7 @@
 int main ( int argc, char **argv)
 {
   //SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX);
-	long int seed = 1;
+	long int seed = 78;
   unsigned int replications = 1;
   if (argc < 2)
   {
