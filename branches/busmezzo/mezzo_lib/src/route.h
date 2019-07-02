@@ -23,6 +23,7 @@
 #include "node.h"
 #include <vector>
 #include "linktimes.h"
+#include <iostream>
 
 #ifndef _NO_GUI
 	#include <QColor>
