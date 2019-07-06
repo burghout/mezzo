@@ -37,3 +37,6 @@ GeneratedFiles/
 bin/
 *.filters
 *.vs/
+*.json
+*.orig
+*.bat
