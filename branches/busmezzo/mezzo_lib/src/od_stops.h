@@ -325,7 +325,6 @@ public:
 	void add_pass_waiting (Passenger* add_pass) {waiting_passengers.push_back(add_pass);}
 	
 	// Passengers processes
-	void book_next_passenger (double curr_time);
 	bool execute(Eventlist* eventlist, double time);
 
 	// Path set
