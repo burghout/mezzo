@@ -189,7 +189,8 @@ public:
    double start_pass_generation; 
    double stop_pass_generation;
    bool od_pairs_for_generation;
-    double gate_generation_time_diff; // passengers are generated slightly before service leaves to account for boarding time
+   double gate_generation_time_diff; // passengers are generated slightly before service leaves to account for boarding time
+   int empirical_demand; //!< only relevant for demand format 3, default value is 0. Value of 1 indicates that empirical demand should be read from a "transit_demand_empirical.dat" input file. If 0 this file is ignored.
 
 // transit control parameters
    double riding_time_weight;

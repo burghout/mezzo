@@ -262,6 +262,7 @@ public:
 	bool readtransitroutes(string name); //!< reads the transit routes, similar to readroutes
 	bool readtransitnetwork(string name); //!< reads the stops, distances between stops, lines, trips and travel disruptions
 	bool readtransitdemand (string name); //!< reads passenger demand for transit services
+	bool readtransitdemand_empirical(const string& name); //!< reads empirical passenger demand (demand format 3 only)
 	bool readtransitfleet (string name); // !< reads transit vehicle types, vehicle scheduling and dwell time functions
 	bool read_transitday2day (string name); // !< reads info on transit pass. day-to-day memory
 	bool read_transitday2day(map<ODSL, Travel_time>& ivt_map);

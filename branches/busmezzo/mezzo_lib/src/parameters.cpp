@@ -100,6 +100,7 @@ Parameters::Parameters ()
    share_RTI_network = 0;
    start_pass_generation = 0;
    od_pairs_for_generation = 0;
+   empirical_demand = 0;
 
 // transit control parameters
    riding_time_weight = 0.0;
@@ -687,7 +688,13 @@ bool Parameters::read_parameters (istream & in )
             return false;
         }
         in >> gate_generation_time_diff;
-        
+		in >> keyword;
+		if (keyword != "empirical_demand=")
+		{
+			cout << "ERROR reading Parameters file, expecting: empirical_demand=, read: " << keyword << endl;
+			return false;
+		}
+		in >> empirical_demand;
 	}
 	in >> keyword;
 	if (keyword!= "#transit_control_parameters")
