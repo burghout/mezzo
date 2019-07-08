@@ -1,6 +1,9 @@
 #include <QString>
 #include <QtTest/QtTest>
 #include "network.h"
+#include <vector>
+#include <utility>
+
 #ifdef Q_OS_WIN
     #include <direct.h>
     #define chdir _chdir
@@ -14,7 +17,6 @@
 //! The tests contain loading, initializing, running, saving results and deleting network.
 //! NOTE: currently the std::ifstream is used everywhere, precluding the use of qrc resources,
 //! unless we switch to QFile everywhere.
-
 
 const std::string network_path = "../networks/SFnetwork/";
 const std::string network_name = "masterfile.mezzo";
@@ -103,6 +105,15 @@ void TestIntegration::testInitNetwork()
 
     QVERIFY2(path_set_file.readAll() == ex_path_set_file.readAll(), "Failure, o_path_set_generation.dat differs from ExpectedOutputs/o_path_set_generation.dat");
 
+    //Test reading of empirical passenger arrivals
+    vector<pair<ODstops*, double> > empirical_passenger_arrivals = net->get_empirical_passenger_arrivals();
+    QVERIFY2(empirical_passenger_arrivals.size() == 7, "Failure, there should be 7 empirical passenger arrivals");
+
+    for(const auto& pass_arrival : empirical_passenger_arrivals)
+    {
+        QVERIFY2(pass_arrival.second == (theParameters->start_pass_generation + 100), "Failure, empirical passenger arrivals should be 100 seconds after start_pass_generation");
+    }
+
     ex_path_set_file.close();
     path_set_file.close();
 }
@@ -125,7 +136,7 @@ void TestIntegration::testRunNetwork()
 
 void TestIntegration::testSaveResults()
 {
-    // remove old files:
+    // remove old output files:
     for (const QString& filename : output_filenames)
     {
         qDebug() << QFile::remove(filename);
