@@ -303,8 +303,8 @@ public:
 	void delete_passengers();
 	
 	//Gets and Sets:
-	Busstop* get_origin() {return origin_stop;}
-	Busstop* get_destination () {return destination_stop;}
+	Busstop* get_origin() const {return origin_stop;}
+	Busstop* get_destination () const {return destination_stop;}
 	void set_arrival_rate (double rate_) {arrival_rate= rate_;}
 	vector <Pass_path*> get_path_set () {return path_set;}
 	void set_path_set (vector <Pass_path*> path_set_) {path_set = path_set_;}
@@ -322,6 +322,7 @@ public:
     map <Passenger*,list<Pass_waiting_experience> > get_waiting_output () {return output_pass_waiting_experience;}
     map <Passenger*,list<Pass_onboard_experience> > get_onboard_output () {return output_pass_onboard_experience;}
 	vector <Passenger*> get_passengers_during_simulation () {return passengers_during_simulation;}
+	void add_passenger_to_odstop(Passenger* pass) { passengers_during_simulation.push_back(pass); }
 	void add_pass_waiting (Passenger* add_pass) {waiting_passengers.push_back(add_pass);}
 	
 	// Passengers processes

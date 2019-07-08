@@ -2121,30 +2121,37 @@ bool Network::readtransitdemand_empirical(const string& name)
 		++counter;
 		istringstream iss(line);
 		int origin_stop_id, destination_stop_id;
-		double arrival_time; //simulation clock arrival time
-		if (!(iss >> origin_stop_id >> destination_stop_id >> arrival_time) || arrival_time < 0)
+		double arrival_time; //arrival time in seconds after start passenger generation time
+
+		if (!(iss >> origin_stop_id >> destination_stop_id >> arrival_time))
 		{
 			cout << "readtransitdemand_empirical: scanner jammed at line nr " << counter << "." << endl
 				 << "\tRead: "<< line << endl;
 			return false;
 		}
 
+		if (arrival_time + theParameters->start_pass_generation < 0)
+		{
+			cout << "readtransitdemand_empirical: scanner jammed at line nr " << counter << ". Passenger arrival time " << arrival_time << " seconds after start_pass_generation " << theParameters->start_pass_generation << " is negative." <<  endl;
+			return false;
+		}
+
 		vector<Busstop*>::iterator bs_o_it = find_if(busstops.begin(), busstops.end(), compare <Busstop>(origin_stop_id));
 		if (bs_o_it == busstops.end())
 		{
-			cout << "Bus stop " << origin_stop_id << " not found.";
+			cout << "readtransitdemand_empirical: scanner jammed at line nr " << counter << ". Bus stop " << origin_stop_id << " not found." << endl;
 			return false;
 		}
 		Busstop* bs_o = *bs_o_it;
 		vector<Busstop*>::iterator bs_d_it = find_if(busstops.begin(), busstops.end(), compare <Busstop>(destination_stop_id));
 		if (bs_d_it == busstops.end())
 		{
-			cout << "Bus stop " << destination_stop_id << " not found.";
+			cout << "readtransitdemand_empirical: scanner jammed at line nr " << counter << ". Bus stop " << destination_stop_id << " not found." << endl;
 			return false;
 		}
 		Busstop* bs_d = *bs_d_it;
 
-		ODstops* od_stop;
+		ODstops* od_stop = nullptr;
 		//Check if this ODstops has already been created
 		if (bs_o->check_stop_od_as_origin_per_stop(bs_d) == false) //check if OD stop pair exists with this stop as origin to the destination of the passenger
 		{
@@ -2152,8 +2159,25 @@ bool Network::readtransitdemand_empirical(const string& name)
 			bs_o->add_odstops_as_origin(bs_d, od_stop);
 			bs_d->add_odstops_as_destination(bs_o, od_stop);
 			odstops.push_back(od_stop); //used for resets, as well as when passengers are deleted between resets
-			odstops_demand.push_back(od_stop); //if arrival rate is zero, should never be initialized via ODstops->execute. Used also for writing outputs for each ods
+			odstops_demand.push_back(od_stop); //if arrival rate is zero, should never be initialized via ODstops->execute. Used also for writing outputs for each odstop with at least one passenger generated
+		} else {
+			vector<ODstops*>::iterator od_stop_it;
+			od_stop_it = find_if(odstops.begin(), odstops.end(), [bs_o, bs_d](const ODstops* od_stop) -> bool
+				{
+					return (od_stop->get_origin() == bs_o) && (od_stop->get_destination() == bs_d);
+				}
+			);
+			if (od_stop_it == odstops.end()) //if true something is wrong with check_stop_od_as_origin_per_stop
+			{
+				cout << "readtransitdemand_empirical: scanner jammed at line nr " << counter << ". ODstop not found." << endl
+					 << "\tRead: " << line << endl;
+				return false;
+			}
+			else
+				od_stop = *od_stop_it;
 		}
+
+		empirical_passenger_arrivals.push_back(make_pair(od_stop, arrival_time + theParameters->start_pass_generation));
 	}
 
 	cout << "readtransitdemand_empirical: read " << counter << " passengers." << endl;
@@ -7778,6 +7802,23 @@ bool Network::init()
 
     if(theParameters->demand_format == 3)
     {
+		if (theParameters->empirical_demand == 1)
+		{
+			for (const auto& od_arrival : empirical_passenger_arrivals) //add all empirical passenger arrivals to corresponding OD in terms of stops. TODO: currently untested with day2day, should be fine though
+			{
+				ODstops* od_stop = od_arrival.first;
+				double arrival_time = od_arrival.second;
+
+				if (od_stop->check_path_set() == true)
+				{
+					Passenger* pass = new Passenger(pid, arrival_time, od_stop);
+					od_stop->add_passenger_to_odstop(pass);
+					pid++;
+					pass->init();
+					eventlist->add_event(arrival_time, pass);
+				}
+			}
+		}
         for (vector<ODstops*>::iterator iter_odstops = odstops_demand.begin(); iter_odstops < odstops_demand.end(); iter_odstops++ )
         {
             if ((*iter_odstops)->get_arrivalrate() != 0.0 )

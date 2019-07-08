@@ -400,6 +400,11 @@ protected:
 	map<ODSLL, Travel_time> ivt_rec; //the record of in-vehicle time data
 	int day;
 
+public:
+	vector<pair<ODstops*, double> > get_empirical_passenger_arrivals() const { return empirical_passenger_arrivals; }
+protected:
+	vector <pair<ODstops*, double> > empirical_passenger_arrivals; //!< all empirical passenger arrivals consisting of stop OD and arrival time. Used to generate and initialize passengers between resets. Added to ODstops::passengers_during_simulation in Network::init
+
 	//Shortest path graph
 #ifndef _USE_VAR_TIMES
 	Graph<double, GraphNoInfo<double> > * graph;
