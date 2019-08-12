@@ -48,8 +48,8 @@ public:
 
 	void reset(); //!< resets members between simulation replications
 
-	bool addRequest(const Request req, const set<Busstop*>& serviceArea); //!< adds request passenger Request to the requestSet
-	void removeRequest(const int pass_id); //!< removes requests with pass_id from the requestSet if it exists
+	bool addRequest(Request req, const set<Busstop*>& serviceArea); //!< adds request passenger Request to the requestSet
+	void removeRequest(int pass_id); //!< removes requests with pass_id from the requestSet if it exists
     bool isFeasibleRequest(const Request& req, const set<Busstop*>& serviceArea) const; //!< returns true if request is feasible for a given service area, false otherwise
 
 private:

@@ -20,7 +20,7 @@
 #ifndef MATH_HEADER
 #define MATH_HEADER
 
-#include <limits.h>
+#include <climits>
 
 #ifdef RogueWave
 #include <rw/math.h>

@@ -30,7 +30,7 @@
 #define EVENTLIST_HH
 #include <list>
 #include <map>
-#include <assert.h>
+#include <cassert>
 #include <algorithm>
 
 using namespace std;

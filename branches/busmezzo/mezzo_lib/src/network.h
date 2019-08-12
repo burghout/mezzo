@@ -28,6 +28,7 @@
 
 // standard template library inclusions
 
+#include <utility>
 #include <vector>
 #include <fstream>
 #include <string>
@@ -118,7 +119,7 @@ class MatrixAction: public Action
 {
 public:
 	MatrixAction(Eventlist* eventlist, double time, ODSlice* slice_, vector<ODpair*> *ods_);
-    bool execute(Eventlist* eventlist, double);
+    bool execute(Eventlist* eventlist, double /*time*/) override;
 private:
 	ODSlice* slice;
 	vector <ODpair*> * ods;
@@ -245,7 +246,7 @@ public:
 
     // WILCO: note: returning a reference to member variables of an object is in general a BAD IDEA
 	vector <ODpair*>& get_odpairs () {return odpairs;} // keep as vector
-    ODpair* find_odpair (const int origin_id, const int dest_id); //!< returns the ODpair if found, nullptr otherwise
+    ODpair* find_odpair (int origin_id, int dest_id); //!< returns the ODpair if found, nullptr otherwise
 
 	map <int, Origin*>& get_origins() {return originmap;}
 	map <int, Destination*>& get_destinations() {return destinationmap;}
@@ -280,7 +281,7 @@ public:
 	void write_passenger_welfare_summary(ostream& out, double total_gtc, int total_pass);
 	bool write_path_set (string name1); //!< writes the path-set generated at the initialization process (aimed to be used as an input file for other runs with the same network)
 	bool write_path_set_per_stop (string name1, Busstop* stop);
-	bool write_path_set_per_od (string name1, Busstop* origin_stop, Busstop* detination_stop);
+	bool write_path_set_per_od (string name1, Busstop* origin_stop, Busstop* destination_stop);
 	void write_transitlogout_header(ostream& out);
 	void write_transitstopsum_header(ostream& out);
 	void write_transitlinesum_header(ostream& out);
@@ -366,8 +367,8 @@ public:
   const vector<Busline*> & get_direct_lines (ODstops* odstops) {return od_direct_lines[odstops];}
   double calc_total_in_vechile_time (vector<vector<Busline*> > lines, vector<vector<Busstop*> > stops); // according to scheduled time
   bool read_od_pairs_for_generation (string name);
-  void add_busstop_to_name_map(string,Busstop*);
-  Busstop* get_busstop_from_name(string);
+  void add_busstop_to_name_map(string /*bus_stop_name*/,Busstop* /*bus_stop_ptr*/);
+  Busstop* get_busstop_from_name(string /*bus_stop_name*/);
 
 #ifndef _NO_GUI
 	double get_width_x() {return width_x;} //!< returns image width in original coordinate system
