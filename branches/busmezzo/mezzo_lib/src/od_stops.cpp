@@ -810,7 +810,8 @@ void ODstops::record_onboard_experience(Passenger* pass, Bustrip* trip, Busstop*
 			}
 			first_stop_time = (*stop_v)->second;
 	}
-	//double experienced_ivt = riding_coeff.first*riding_coeff.second;
+	/*double experienced_ivt = riding_coeff.first*riding_coeff.second;
+	cout << "pass: "<< pass->get_id() << ", origin: "<< pass->get_original_origin()->get_id()<< ", destination: "<< pass->get_OD_stop()->get_destination()->get_id() << ", experienced ivt: " << experienced_ivt << ", crowding: "<< riding_coeff.second<<  ",trip: "<< trip->get_id() << ", car: " << pass->get_pass_car() << endl;*/
 	output_pass_onboard_experience[pass].push_back(Pass_onboard_experience(pass->get_id(), pass->get_original_origin()->get_id(), pass->get_OD_stop()->get_destination()->get_id(), trip->get_line()->get_id(), trip->get_id() , pass->get_OD_stop()->get_origin()->get_id(), stop->get_id(), pass->get_pass_car()/*Erik 18-11-26*/, expected_ivt, riding_coeff));
 }
 

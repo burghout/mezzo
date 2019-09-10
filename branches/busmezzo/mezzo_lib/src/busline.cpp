@@ -993,11 +993,11 @@ void Bustrip::record_passenger_loads(vector <Visit_stop*>::iterator start_stop)
 // Erik 18-10-30
 double Bustrip::find_crowding_coeff(Passenger* pass)
 {
-	//map<int, int> car_occupancy = this->get_busv()->get_car_occupancy();
-	// first - calculate load factor
+	map<int, int> car_occupancy = this->get_busv()->get_car_occupancy();
+	 //first - calculate load factor
 	double load_factor = this->get_busv()->get_car_occupancy(pass->get_pass_car()) / this->get_busv()->get_car_number_seats();
 
-	// second - return value based on pass. standing/sitting
+	 //second - return value based on pass. standing/sitting
 	bool sits = pass->get_pass_sitting();
 
 	return find_crowding_coeff(sits, load_factor);
@@ -1461,6 +1461,13 @@ void Busstop::passenger_activity_at_stop(Eventlist* eventlist, Bustrip* trip, do
 	nr_boarding = 0;
 	//for (int car_id = 1; car_id <= trip->get_busv->get_number_cars; car_id++) { nr_boarding.insert(std::pair<int, int>(car_id, 0)); }
 	nr_alighting = 0;
+	car_nr_boarding.clear();
+
+	for ( int i = 1; i <= 3;i++)
+	{
+		car_nr_boarding[i] = 0;
+	}
+
 	stops_rate stops_rate_dwell, stops_rate_coming, stops_rate_waiting;
 	int starting_occupancy; // bus crowdedness factor
 	starting_occupancy = trip->get_busv()->get_occupancy();
@@ -1868,6 +1875,7 @@ void Busstop::passenger_activity_at_stop(Eventlist* eventlist, Bustrip* trip, do
 							nr_boarding++;
 							//Erik 18-09-16
 							nr_boarding_section[pass_car] += 1;
+							car_nr_boarding[pass_car] += 1;
 							pair<Bustrip*, double> trip_time;
 							trip_time.first = trip;
 							trip_time.second = time;
@@ -1989,7 +1997,7 @@ double Busstop::get_walking_time(Busstop* next_stop, double curr_time)
 }
 
 // Erik 18-09-27
-double Busstop::get_walking_time(int curr_section, Busstop* next_stop, int next_section, double curr_time)
+double Busstop::get_walking_time(int curr_section, Busstop* next_stop, int next_section, double curr_time) //in seconds
 {
 
 	double walking_time;
@@ -2003,6 +2011,16 @@ double Busstop::get_walking_time(int curr_section, Busstop* next_stop, int next_
 
 		walking_time = get_walking_distance_stop_section(curr_section, next_stop, next_section) 
 			* 60 / random->nrandom(theParameters->average_walking_speed, theParameters->average_walking_speed / 4);
+		//int curr_section_diff = abs(shortest_walks[next_stop].first - curr_section);
+		//int next_section_diff = abs(shortest_walks[next_stop].second - next_section);
+		//double curr_section_length = length / num_sections;
+		//double next_section_length = next_stop->get_length() / next_stop->get_num_sections();
+
+		//double walking_distance = distances[next_stop];
+		// Adds walking distance along each platform
+		//walking_distance += curr_section_diff * curr_section_length + next_section_diff * next_section_length;
+
+		//walking_time = walking_distance * 60 / random->nrandom(theParameters->average_walking_speed, theParameters->average_walking_speed / 4);
 
 	}
 
@@ -2011,7 +2029,7 @@ double Busstop::get_walking_time(int curr_section, Busstop* next_stop, int next_
 
 
 // Erik 18-09-27
-double Busstop::get_walking_distance_stop_section(int curr_section, Busstop* next_stop, int next_section)
+double Busstop::get_walking_distance_stop_section(int curr_section, Busstop* next_stop, int next_section) //in meters
 {
 	double walking_distance = 0.0;
 	double curr_section_length = length / (double)num_sections;
@@ -2027,6 +2045,7 @@ double Busstop::get_walking_distance_stop_section(int curr_section, Busstop* nex
 		//cout << " walking_distance = " << walking_distance << " sw1 = " << shortest_walks[next_stop].first << " sw2 " << shortest_walks[next_stop].second << endl;
 		// Adds walking distance along each platform
 		walking_distance += (curr_section_diff * curr_section_length + next_section_diff * next_section_length);// / 1000.0;
+		//cout << "walk distance: " << walking_distance << endl;
 	}
 	else 
 	{
@@ -2532,7 +2551,7 @@ void Busstop::record_busstop_visit (Bustrip* trip, double enter_time)  // create
 	}
 	output_stop_visits.push_back(Busstop_Visit(trip->get_line()->get_id(), trip->get_id() , trip->get_busv()->get_bus_id() , get_id() , get_name(), enter_time,
 		trip->scheduled_arrival_time (this),dwelltime,(enter_time - trip->scheduled_arrival_time (this)), exit_time, riding_time, riding_time * nr_riders, crowded_pass_riding_time, crowded_pass_dwell_time, crowded_pass_holding_time,
-		arrival_headway, get_time_since_departure (trip , exit_time), nr_alighting , nr_boarding , occupancy, car_occupancy, calc_total_nr_waiting(), (arrival_headway * nr_boarding)/2, holdingtime));
+		arrival_headway, get_time_since_departure (trip , exit_time), nr_alighting , nr_boarding , occupancy, car_occupancy, car_nr_boarding, calc_total_nr_waiting(), (arrival_headway * nr_boarding)/2, holdingtime));
 }
 
 double Busstop::calc_crowded_travel_time (double travel_time, int nr_riders, int nr_seats) //Returns the sum of the travel time weighted by the crowding factors

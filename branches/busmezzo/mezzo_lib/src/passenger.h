@@ -111,6 +111,8 @@ public:
 	int get_last_denied_boarding_stop_id ();
 	double get_GTC() { return total_GTC; }
 	void set_GTC (double pass_GTC) { total_GTC = pass_GTC; }
+	double get_GTC_inv() { return total_GTC_inv; }//Melina for weighted inv time
+	void set_GTC_inv(double pass_GTC_inv) { total_GTC_inv = pass_GTC_inv; }//Melina for weighted inv time
 	bool empty_denied_boarding ();
 	void remove_last_trip_selected_path_trips () {selected_path_trips.pop_back();}
 	void record_waiting_experience(Bustrip* arriving_bus, double time);
@@ -153,10 +155,11 @@ protected:
 	double start_time;
 	double end_time;
 	double total_waiting_time;
-	double toal_IVT;
+	double total_IVT;
 	double total_IVT_crowding;
 	double total_walking_time;
 	double total_GTC;
+	double total_GTC_inv; //Melina for weighted inv time
 	Busstop* original_origin;
 	Busstop* stop;
 	Bustrip* trip;

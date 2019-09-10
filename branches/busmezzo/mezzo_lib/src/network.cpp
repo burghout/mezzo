@@ -6029,6 +6029,7 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
     if (theParameters->demand_format == 3)
     {
         double total_pass_GTC = 0.0;
+		double total_pass_GTC_inv = 0.0; //Melina for weighted inv
         int pass_counter = 0;
         write_selected_path_header(out8);
         write_od_summary_header(out12);
@@ -6047,11 +6048,12 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
                     (*pass_iter)->write_selected_path(out8);
                     (*pass_iter)->write_passenger_trajectory(out16);
                     total_pass_GTC += (*pass_iter)->get_GTC();
+					total_pass_GTC_inv += (*pass_iter)->get_GTC_inv(); //weighted inv time included by Melina
                     pass_counter++;
                 }
             }
         }
-        write_passenger_welfare_summary(out17, total_pass_GTC, pass_counter);
+        write_passenger_welfare_summary(out17, total_pass_GTC, total_pass_GTC_inv, pass_counter); //weighted inv time included by Melina
         /* deactivated - unneccessary files in most cases
         for (vector<Busstop*>::iterator stop_iter = busstops.begin(); stop_iter < busstops.end(); stop_iter++)
         {
@@ -6135,7 +6137,17 @@ void Network::write_transitlogout_header(ostream& out)
         << "Time_since_departure" << '\t'
         << "Nr_alighting_pass" << '\t'
         << "Nr_boarding_pass" << '\t'
+		<< "{" << '\t'
+		<< "Nr_boarding_pass_car1" << '\t'
+		<< "Nr_boarding_pass_car2" << '\t'
+		<< "Nr_boarding_pass_car3" << '\t'
+		<< "}" << '\t'
         << "On-board_occupancy" << '\t'
+		<< "{" << '\t'
+		<< "On-board_occupancy_car1" << '\t'
+		<< "On-board_occupancy_car2" << '\t'
+		<< "On-board_occupancy_car3" << '\t'
+		<< "}" << '\t'
         << "Nr_waiting" << '\t'
         << "Total_waiting_time" << '\t'
         << "Holding_time" << '\t' << endl;
@@ -6236,10 +6248,11 @@ void Network::write_od_summary_header(ostream& out)
         << "Average_number_boardings" << '\t' << endl;
 }
 
-void Network::write_passenger_welfare_summary(ostream& out, double total_gtc, int total_pass)
+void Network::write_passenger_welfare_summary(ostream& out, double total_gtc, double total_gtc_inv, int total_pass) //weighted inv time included by Melina
 {
     out << "Total generalized travel cost:" << '\t' << total_gtc << endl
         << "Average generalized travel cost per passenger:" << '\t' << total_gtc / total_pass << endl
+		<< "Average weighted in-vehicle time per passenger:" << '\t' << total_gtc_inv / total_pass << endl
         << "Number of completed passenger journeys:" << '\t' << total_pass << endl;
 }
 
@@ -7747,8 +7760,8 @@ bool Network::init()
     {
         for (vector<ODstops*>::iterator iter_odstops = odstops_demand.begin(); iter_odstops < odstops_demand.end(); iter_odstops++ )
         {
-			cout << "od arr rate " << (*iter_odstops)->get_arrivalrate() << '\t';
-			cout << "od check path set: " << (*iter_odstops)->check_path_set() << '\t';
+			/*cout << "od arr rate " << (*iter_odstops)->get_arrivalrate() << '\t';
+			cout << "od check path set: " << (*iter_odstops)->check_path_set() << '\t';*/
 			if ((*iter_odstops)->get_arrivalrate() != 0.0 )
             {
                 if ((*iter_odstops)->check_path_set() == true)

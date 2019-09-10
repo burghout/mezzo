@@ -155,7 +155,7 @@ double Pass_path::calc_total_walking_distance(int from_section)
 	iter_alt_transfer_stops++; // starting from the second stop
 	//iter_alt_transfer_stops++; // starting from the second stop
 
-	int to_section = iter_alt_transfer_stops->front()->get_shortest_walk_between_stops((iter_alt_transfer_stops + 1)->front()).first;
+	int to_section = iter_alt_transfer_stops->front()->get_shortest_walk_between_stops((iter_alt_transfer_stops)->front()).first;
 
 	//vector<double>::iterator iter_walk = walking_distances.begin() + 1;
 	double sum_walking_distance = 0.0;

@@ -503,13 +503,14 @@ public:
 		int		nr_boarding_,
 		int		occupancy_,
 		map<int, int> car_occupancy_,
+		std::map<int, int> car_nr_boarding_,
 		int		nr_waiting_,
 		double	total_waiting_time_,
 		double	holding_time_
 	): line_id(line_id_),trip_id(trip_id_),vehicle_id(vehicle_id_), stop_id(stop_id_), stop_name(stop_name_), entering_time(entering_time_),sched_arr_time(sched_arr_time_),dwell_time(dwell_time_),
 	   lateness(lateness_), exit_time (exit_time_),riding_time (riding_time_), riding_pass_time (riding_pass_time_), crowded_pass_riding_time (crowded_pass_riding_time_),
 	   crowded_pass_dwell_time (crowded_pass_dwell_time_), crowded_pass_holding_time (crowded_pass_holding_time_), time_since_arr(time_since_arr_),time_since_dep(time_since_dep_),
-	   nr_alighting(nr_alighting_),nr_boarding(nr_boarding_), occupancy(occupancy_), car_occupancy(car_occupancy_),
+	   nr_alighting(nr_alighting_),nr_boarding(nr_boarding_), occupancy(occupancy_), car_occupancy(car_occupancy_), car_nr_boarding(car_nr_boarding_),
 		nr_waiting(nr_waiting_), total_waiting_time(total_waiting_time_),holding_time(holding_time_) {}
 
 	virtual ~Busstop_Visit(); //!< destructor
@@ -530,7 +531,15 @@ public:
 			<< time_since_dep << '\t'
 			<< nr_alighting << '\t'
 			<< nr_boarding << '\t'
-			<< occupancy << '\t'
+			<< '{' << '\t';
+
+		for (std::map<int, int>::iterator car_id = car_nr_boarding.begin(); car_id != car_nr_boarding.end(); car_id++)
+
+		{
+			out << (*car_id).second << '\t';
+		}
+
+			out << '}' << '\t' << occupancy << '\t'
 			<< '{' << '\t' ;
 
 		for (std::map<int, int>::iterator car_id = car_occupancy.begin(); car_id != car_occupancy.end(); car_id++)
@@ -593,6 +602,7 @@ public:
 	int nr_boarding;
 	int occupancy;
 	map<int, int> car_occupancy;
+	std::map<int, int> car_nr_boarding; // Number of boarding passengers per car
 	int nr_waiting;
 	double total_waiting_time;
 	double holding_time;
@@ -816,6 +826,8 @@ protected:
 	//Erik 18-09-16
 	map<int, int> nr_boarding_section; //!< pass. boarding car
 	map<int, int> nr_alighting_section; //!< pass. alighting car
+
+	std::map<int, int> car_nr_boarding; // Number of boarding passengers per car
 
     list<double> exogenous_arrivals; //!< unordered list of arrival times of exogenous trains
 
