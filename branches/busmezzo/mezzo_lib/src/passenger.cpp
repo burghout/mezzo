@@ -1271,21 +1271,6 @@ bool Passenger::stop_is_in_d_zone (Busstop* stop)
 	}
 }
 
-double Passenger::calc_total_waiting_time()
-{
-	double total_waiting_time = 0.0;
-	vector <pair<Busstop*,double> >::iterator iter_stop=selected_path_stops.begin();
-	iter_stop++;
-	for (vector <pair<Bustrip*,double> >::iterator iter_trip=selected_path_trips.begin(); iter_trip<selected_path_trips.end(); iter_trip++)
-	{
-		total_waiting_time += (*iter_trip).second - (*iter_stop).second;
-		iter_stop++;
-		iter_stop++;
-	}
-	return total_waiting_time;
-}
-
-////Melina
 //double Passenger::calc_total_waiting_time()
 //{
 //	double total_waiting_time = 0.0;
@@ -1293,13 +1278,28 @@ double Passenger::calc_total_waiting_time()
 //	iter_stop++;
 //	for (vector <pair<Bustrip*,double> >::iterator iter_trip=selected_path_trips.begin(); iter_trip<selected_path_trips.end(); iter_trip++)
 //	{
-//		if ((*iter_trip).second >= (*iter_stop).second)  //Melina for fixing negative waiting times
-//		 total_waiting_time += (*iter_trip).second - (*iter_stop).second;
+//		total_waiting_time += (*iter_trip).second - (*iter_stop).second;
 //		iter_stop++;
 //		iter_stop++;
 //	}
 //	return total_waiting_time;
 //}
+
+//Melina
+double Passenger::calc_total_waiting_time()
+{
+	double total_waiting_time = 0.0;
+	vector <pair<Busstop*, double> >::iterator iter_stop = selected_path_stops.begin();
+	iter_stop++;
+	for (vector<pair<Bustrip*, double> >::iterator iter_trip=selected_path_trips.begin(); iter_trip<selected_path_trips.end(); iter_trip++)
+	{
+		//if ((*iter_trip).second >= (*iter_stop).second)  //Melina for fixing negative waiting times
+		 total_waiting_time += (*iter_trip).second - (*iter_stop).second;
+		iter_stop++;
+		iter_stop++;
+	}
+	return total_waiting_time;
+}
 
 double Passenger::calc_total_IVT()
 {

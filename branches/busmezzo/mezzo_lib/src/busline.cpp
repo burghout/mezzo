@@ -1463,9 +1463,9 @@ void Busstop::passenger_activity_at_stop(Eventlist* eventlist, Bustrip* trip, do
 	nr_alighting = 0;
 	car_nr_boarding.clear();
 
-	for ( int i = 1; i <= 3;i++)
+	for (int car_id = 1; car_id <= num_sections; ++car_id)
 	{
-		car_nr_boarding[i] = 0;
+		car_nr_boarding[car_id] = 0;
 	}
 
 	stops_rate stops_rate_dwell, stops_rate_coming, stops_rate_waiting;
