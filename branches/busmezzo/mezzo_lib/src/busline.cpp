@@ -1616,7 +1616,7 @@ void Busstop::passenger_activity_at_stop(Eventlist* eventlist, Bustrip* trip, do
 		//int nr_alighting = 0;
 		//map<int, passengers> car_passengers = trip->passengers_on_board_car[this];
 		//map<int, int> nr_alighting_car;
-		
+
 		for (int car_id = 1; car_id <= num_sections; ++car_id)
 		{
 			//nr_alighting += static_cast<int> (car_passengers[car_id].size());
@@ -1675,21 +1675,40 @@ void Busstop::passenger_activity_at_stop(Eventlist* eventlist, Bustrip* trip, do
 			(*alighting_passenger)->set_ODstop(od); // set this stop as passenger's new origin
 			if (id == (*alighting_passenger)->get_OD_stop()->get_destination()->get_id() || (*alighting_passenger)->get_OD_stop()->check_path_set() == false) // if this stop is passenger's destination
 			{
-				// passenger has no further conection choice
-				next_stop = this;
-				final_stop = true;
-				pair<Busstop*, double> stop_time;
-				stop_time.first = this;
-				stop_time.second = time;
-				(*alighting_passenger)->add_to_selected_path_stop(stop_time);
-				(*alighting_passenger)->set_end_time(time);
-				//pass_recycler.addPassenger(*alighting_passenger); // terminate passenger
-				// Erik 18-09-16: Not sure this is needed
-				pair <int, double> section_time;
-				section_time.first = pass_car;
-				section_time.second = time;
-				(*alighting_passenger)->add_to_selected_path_sections(section_time);
-				(*alighting_passenger)->set_pass_section(pass_car);
+				
+				if (pass_car == (*alighting_passenger)->get_dest_section())//Melina 2019-10-31 THIS
+				{
+					next_stop = this;
+					final_stop = true;
+					pair<Busstop*, double> stop_time;
+					stop_time.first = this;
+					stop_time.second = time;
+					(*alighting_passenger)->add_to_selected_path_stop(stop_time);
+					(*alighting_passenger)->set_end_time(time);
+					// passenger has no further conection choice
+					//pass_recycler.addPassenger(*alighting_passenger); // terminate passenger
+					// Erik 18-09-16: Not sure this is needed
+					pair <int, double> section_time;
+					section_time.first = pass_car;
+					section_time.second = time;
+					(*alighting_passenger)->add_to_selected_path_sections(section_time);
+					(*alighting_passenger)->set_pass_section(pass_car);
+				} 
+				else 
+				{ 
+					next_stop = this;
+					final_stop = true;
+					pair<Busstop*, double> stop_time;
+					stop_time.first = this;
+					stop_time.second = time;
+					(*alighting_passenger)->add_to_selected_path_stop(stop_time);
+					double arrival_time_to_final_section = time + get_walking_time(pass_car, this, (*alighting_passenger)->get_dest_section(), time);
+					pair <int, double> section_time;
+					section_time.first = (*alighting_passenger)->get_dest_section();
+					section_time.second = arrival_time_to_final_section;
+					(*alighting_passenger)->add_to_selected_path_sections(section_time);
+					(*alighting_passenger)->set_end_time(arrival_time_to_final_section);
+				}
 			}
 			if (final_stop == false)
 			{
@@ -2039,10 +2058,7 @@ double Busstop::get_walking_distance_stop_section(int curr_section, Busstop* nex
 		double curr_section_diff = abs(shortest_walks[next_stop].first - curr_section);
 		double next_section_diff = abs(shortest_walks[next_stop].second - next_section);
 		double next_section_length = next_stop->get_length() / next_stop->get_num_sections();
-
 		walking_distance = distances[next_stop];
-		//cout << " from = " << this->get_id() << " curr_section = " << curr_section << " to = " << next_stop->get_id() << " next_section = " << next_section;
-		//cout << " walking_distance = " << walking_distance << " sw1 = " << shortest_walks[next_stop].first << " sw2 " << shortest_walks[next_stop].second << endl;
 		// Adds walking distance along each platform
 		walking_distance += (curr_section_diff * curr_section_length + next_section_diff * next_section_length);// / 1000.0;
 		//cout << "walk distance: " << walking_distance << endl;
@@ -2051,6 +2067,8 @@ double Busstop::get_walking_distance_stop_section(int curr_section, Busstop* nex
 	{
 		double curr_section_diff = abs(next_section - curr_section);
 		walking_distance = curr_section_diff * curr_section_length;// / 1000.0;
+		//cout << " from = " << this->get_id() << " curr_section = " << curr_section << " to = " << next_stop->get_id() << " next_section = " << next_section;
+		//cout << " walking_distance = " << walking_distance << " sw1 = " << shortest_walks[next_stop].first << " sw2 " << shortest_walks[next_stop].second << endl;
 	}
 
 	return walking_distance;

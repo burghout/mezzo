@@ -103,7 +103,8 @@ void Passenger::reset ()
 
 	selected_path_stops.clear();
 	selected_path_trips.clear();
-	selected_car.clear();
+	selected_path_sections.clear();
+	selected_path_cars.clear();
 	experienced_crowding_levels.clear();
 	waiting_time_due_denied_boarding.clear();
 }
@@ -392,19 +393,13 @@ void Passenger::start (Eventlist* eventlist)
 		}
 		else // if the pass. stays at the same stop
 		{
-			OD_stop->add_pass_waiting(this); // store the new passenger at the list of waiting passengers with this OD
+			//OD_stop->add_pass_waiting(this); // store the new passenger at the list of waiting passengers with this OD THIS
 			set_arrival_time_at_stop(start_time);
 			add_to_selected_path_stop(stop_time);
 
 			// Erik 18-10-08
 			double arrival_time_to_connected_stop = start_time + get_walking_time(connection_stop, connection_section, start_time);
 			eventlist->add_event(arrival_time_to_connected_stop, this);
-
-			//pair<Busstop*, double> stop_time;
-			//stop_time.first = connection_stop;
-			//stop_time.second = arrival_time_to_connected_stop;
-			//add_to_selected_path_stop(stop_time);
-
 			// Erik 18-09-24
 			//int connection_section = orig_section;
 			section = connection_section;
@@ -1289,7 +1284,7 @@ bool Passenger::stop_is_in_d_zone (Busstop* stop)
 double Passenger::calc_total_waiting_time()
 {
 	double total_waiting_time = 0.0;
-	vector <pair<Busstop*, double> >::iterator iter_stop = selected_path_stops.begin();
+	vector <pair<int, double> >::iterator iter_stop = selected_path_sections.begin();
 	iter_stop++;
 	for (vector<pair<Bustrip*, double> >::iterator iter_trip=selected_path_trips.begin(); iter_trip<selected_path_trips.end(); iter_trip++)
 	{
@@ -1370,7 +1365,7 @@ double Passenger::calc_total_waiting_time_due_to_denied_boarding()
 		{
 			if ((*iter_stop).first->get_id() == (*iter_denied).first->get_id())
 			{
-				if((*iter_trip).second>=(*iter_denied).second)  //Melina for fixing negative waiting times
+
 				 total_walking_time_due_to_denied_boarding += (*iter_trip).second - (*iter_denied).second;
 				break;
 			}
@@ -1400,6 +1395,8 @@ void Passenger::write_selected_path(ostream& out)
 
 	this->set_GTC(theParameters->walking_time_coefficient * total_walking_time + theParameters->waiting_time_coefficient * total_waiting_time + theParameters->waiting_time_coefficient * 3.5 *total_waiting_time_due_to_denied_boarding +  theParameters->in_vehicle_time_coefficient * total_IVT_crowding + theParameters->transfer_coefficient * nr_transfers);
 	this->set_GTC_inv(theParameters->in_vehicle_time_coefficient * total_IVT_crowding); //weighted inv time added by Melina
+	this->set_GTC_walk(theParameters->walking_time_coefficient * total_walking_time); //weighted walking time added by Melina
+	this->set_GTC_wait(theParameters->waiting_time_coefficient * total_waiting_time + theParameters->waiting_time_coefficient * 3.5 *total_waiting_time_due_to_denied_boarding); //weighted waiting time added by Melina
 
 	out << passenger_id << '\t'
 		<< original_origin->get_id() << '\t'
@@ -1442,12 +1439,6 @@ void Passenger::write_selected_path(ostream& out)
 	{
 		out << (*trip_iter).first << '\t';
 	}
-
-	//out << '}' << '\t' << '{' << '\t';
-	//for (vector <pair<Bustrip*, int> >::iterator trip_iter = selected_car.begin(); trip_iter < selected_car.end(); trip_iter++)
-	//{
-	//	out << (*trip_iter).second << '\t';
-	//}
 
 	out << '}' << endl;
 }

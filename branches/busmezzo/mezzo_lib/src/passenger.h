@@ -72,6 +72,8 @@ public:
 	void	set_pass_car(int car_) { car = car_; }
 	int		get_pass_section() { return section; }
 	void	set_pass_section(int section_) { section = section_; }
+	int		get_dest_section() { return dest_section; } //Melina 2019-10-31 THIS
+	int		get_orig_section() { return orig_section; } //Melina 2020-02-18
 	// */
 	double	get_latest_boarding_time () {return (selected_path_trips.back().second);}
     vector <pair<Busstop*,double> > get_selected_path_stops() {return selected_path_stops;}
@@ -103,7 +105,6 @@ public:
 	//Erik 18-09-16
 	void add_to_selected_path_sections(pair<int, double> stop_section) { selected_path_sections.push_back(stop_section); } //Erik 18-09-16
 	void add_to_selected_path_cars(pair<int, double> stop_car) { selected_path_cars.push_back(stop_car); } //Erik 18-09-16
-	void add_to_selected_car (pair<Bustrip*, int> stop_car) { selected_car.push_back(stop_car); } //Melina
 	void add_to_experienced_crowding_levels(pair<double,double> riding_coeff) {experienced_crowding_levels.push_back(riding_coeff);};
 	void add_to_denied_boarding (pair<Busstop*,double> denied_time) {waiting_time_due_denied_boarding.push_back(denied_time);}
 	bool check_selected_path_trips_empty () {return selected_path_trips.empty();}
@@ -113,6 +114,10 @@ public:
 	void set_GTC (double pass_GTC) { total_GTC = pass_GTC; }
 	double get_GTC_inv() { return total_GTC_inv; }//Melina for weighted inv time
 	void set_GTC_inv(double pass_GTC_inv) { total_GTC_inv = pass_GTC_inv; }//Melina for weighted inv time
+	double get_GTC_walk() { return total_GTC_walk; }//Melina for weighted walking time
+	void set_GTC_walk(double pass_GTC_walk) { total_GTC_walk = pass_GTC_walk; }//Melina for weighted walking time
+	double get_GTC_wait() { return total_GTC_wait; }//Melina for weighted waiting time
+	void set_GTC_wait(double pass_GTC_wait) { total_GTC_wait = pass_GTC_wait; }//Melina for weighted waiting time
 	bool empty_denied_boarding ();
 	void remove_last_trip_selected_path_trips () {selected_path_trips.pop_back();}
 	void record_waiting_experience(Bustrip* arriving_bus, double time);
@@ -160,6 +165,8 @@ protected:
 	double total_walking_time;
 	double total_GTC;
 	double total_GTC_inv; //Melina for weighted inv time
+	double total_GTC_walk; //Melina for weighted walking time
+	double total_GTC_wait; //Melina for weighted waiting time
 	Busstop* original_origin;
 	Busstop* stop;
 	Bustrip* trip;
@@ -179,7 +186,6 @@ protected:
     vector <pair<Bustrip*,double> > selected_path_trips;				//!< trips and corresponding boarding times
 	vector <pair<int, double> > selected_path_sections;					//!< platform sections and corresponding arrival times
 	vector <pair<int, double> > selected_path_cars;						//!< vehicle cars and corresponding boarding times //Erik 18-09-25
-	vector <pair <Bustrip*, int> > selected_car;						//!< trips and corresponding car units //Melina
     vector <pair<double,double> > experienced_crowding_levels;			//!< IVT and corresponding crowding levels (route segment level)
 	//map<pair<Busstop*, int>, passengers > passengers_on_board;
     vector <pair<Busstop*,double> > waiting_time_due_denied_boarding; //!< stops at which the pass. experienced denied boarding and the corresponding time at which it was experienced

@@ -6029,7 +6029,9 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
     if (theParameters->demand_format == 3)
     {
         double total_pass_GTC = 0.0;
-		double total_pass_GTC_inv = 0.0; //Melina for weighted inv
+		double total_pass_GTC_inv = 0.0; //Melina for weighted inv time
+		double total_pass_GTC_walk = 0.0; //Melina for weighted walking time
+		double total_pass_GTC_wait = 0.0; //Melina for weighted waiting time
         int pass_counter = 0;
         write_selected_path_header(out8);
         write_od_summary_header(out12);
@@ -6043,17 +6045,19 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
             vector<Passenger*> pass_vec = (*od_iter)->get_passengers_during_simulation();
             for (vector<Passenger*>::iterator pass_iter = pass_vec.begin(); pass_iter < pass_vec.end(); pass_iter++)
             {
-                if ((*pass_iter)->get_end_time() > 0)
+				if ((*pass_iter)->get_end_time() > 0)
                 {
                     (*pass_iter)->write_selected_path(out8);
                     (*pass_iter)->write_passenger_trajectory(out16);
                     total_pass_GTC += (*pass_iter)->get_GTC();
 					total_pass_GTC_inv += (*pass_iter)->get_GTC_inv(); //weighted inv time included by Melina
+					total_pass_GTC_walk += (*pass_iter)->get_GTC_walk();
+					total_pass_GTC_wait += (*pass_iter)->get_GTC_wait();
                     pass_counter++;
                 }
             }
         }
-        write_passenger_welfare_summary(out17, total_pass_GTC, total_pass_GTC_inv, pass_counter); //weighted inv time included by Melina
+        write_passenger_welfare_summary(out17, total_pass_GTC, total_pass_GTC_inv, total_pass_GTC_walk, total_pass_GTC_wait, pass_counter); //weighted inv time included by Melina
         /* deactivated - unneccessary files in most cases
         for (vector<Busstop*>::iterator stop_iter = busstops.begin(); stop_iter < busstops.end(); stop_iter++)
         {
@@ -6204,25 +6208,26 @@ void Network::write_transitlinesum_header(ostream& out)
 
 void Network::write_selected_path_header(ostream& out)
 {
-    out << "Passenger_ID" << '\t'
-        << "Origin_stop_ID" << '\t'
-        << "Origin_stop_name" << '\t'
-        << "Destination_stop_ID" << '\t'
-        << "Destination_stop_name" << '\t'
+	out << "Passenger_ID" << '\t'
+		<< "Origin_stop_ID" << '\t'
+		<< "Origin_stop_name" << '\t'
+		<< "Destination_stop_ID" << '\t'
+		<< "Destination_stop_name" << '\t'
 		<< "Origin_section" << '\t'
 		<< "Destination_section" << '\t'
-        << "Start_time" << '\t'
-        << "Number_transfers" << '\t'
-        << "Total_walking_time" << '\t'
-        << "Total_waiting_time" << '\t'
-        << "Total_waiting_time_due_to_denied_boarding" << '\t'
-        << "Total_in_vehicle_time" << '\t'
-        << "Total_weighted_in_vehicle_time" << '\t'
+		<< "Start_time" << '\t'
+		<< "Number_transfers" << '\t'
+		<< "Total_walking_time" << '\t'
+		<< "Total_waiting_time" << '\t'
+		<< "Total_waiting_time_due_to_denied_boarding" << '\t'
+		<< "Total_in_vehicle_time" << '\t'
+		<< "Total_weighted_in_vehicle_time" << '\t'
+		<< "End_time" << '\t'
 		<< "Path_stops" << '\t'
 		<< "Path_trips" << '\t'
 		<< "Path_sections" << '\t'
 		<< "Path_cars" << '\t'
-        << "End_time" << '\t' << endl;
+		<< endl;
 }
 
 void Network::write_transit_trajectory_header(ostream& out)
@@ -6248,11 +6253,13 @@ void Network::write_od_summary_header(ostream& out)
         << "Average_number_boardings" << '\t' << endl;
 }
 
-void Network::write_passenger_welfare_summary(ostream& out, double total_gtc, double total_gtc_inv, int total_pass) //weighted inv time included by Melina
+void Network::write_passenger_welfare_summary(ostream& out, double total_gtc, double total_gtc_inv, double total_gtc_walk, double total_gtc_wait, int total_pass) //weighted inv time included by Melina
 {
     out << "Total generalized travel cost:" << '\t' << total_gtc << endl
         << "Average generalized travel cost per passenger:" << '\t' << total_gtc / total_pass << endl
 		<< "Average weighted in-vehicle time per passenger:" << '\t' << total_gtc_inv / total_pass << endl
+		<< "Average weighted walking time per passenger:" << '\t' << total_gtc_walk / total_pass << endl
+		<< "Average weighted waiting time per passenger:" << '\t' << total_gtc_wait / total_pass << endl
         << "Number of completed passenger journeys:" << '\t' << total_pass << endl;
 }
 

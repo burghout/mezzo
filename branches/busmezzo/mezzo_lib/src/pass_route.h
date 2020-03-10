@@ -37,8 +37,10 @@ class Pass_path
 	double calc_total_scheduled_in_vehicle_time (double time);
 	double calc_total_in_vehicle_time (double time, Passenger* pass);
 	double calc_total_walking_distance(int from_section);
+	double calc_total_walking_distance(int from_section, int to_section); //Melina 20-02-03
 	double calc_total_walking_distance ();
 	double calc_total_waiting_time (double time, bool without_first_waiting, bool alighting_decision, double avg_walking_speed, Passenger* pass);
+	double calc_total_waiting_time(double time, bool without_first_waiting, bool alighting_decision, double avg_walking_speed, Passenger* pass, int next_section); //Melina 2020-02-19
 //	double calc_total_scheduled_waiting_time (double time, bool without_first_waiting);
     double calc_curr_leg_headway (vector<Busline*> leg_lines, vector <vector <Busstop*> >::iterator stop_iter, double time);
 //	double calc_curr_leg_waiting_schedule (vector<Busline*> leg_lines, vector <vector <Busstop*> >::iterator stop_iter, double arriving_time);
