@@ -5736,7 +5736,7 @@ bool Network::readtransitfleet (string name) // !< reads transit vehicle types, 
         in >> keyword;
         if (keyword != "unassigned_vehicles:")
         {
-            DEBUG_MSG("readtransitfleet: no << drt_vehicles: >> keyword ");
+            DEBUG_MSG("readtransitfleet: no << unassigned_vehicles: >> keyword ");
             return false;
         }
         in >> nr;
