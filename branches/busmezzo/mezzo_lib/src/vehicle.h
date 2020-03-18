@@ -62,6 +62,14 @@ public:
 	double get_entry_time() { return entry_time; }
 	void set_curr_link(Link* curr_link_);
 	Link* get_curr_link();
+	/** @ingroup DRT
+		Messy bunch of methods used to keep track of cycles (repeating links) in routes
+		@{
+	*/
+	void advance_curr_link_route_idx() { ++curr_link_route_idx; }
+	void set_curr_link_route_idx(int link_idx) { curr_link_route_idx = link_idx; }
+	int get_curr_link_route_idx() const { return curr_link_route_idx; }
+	/**@}*/
 	Route* get_route() { return route; }
 	Link* nextlink();
 	int get_id() { return id; }
@@ -85,6 +93,7 @@ protected:
 	double exit_time; 	
 	double arrival_time;
 	Link* curr_link;
+	int curr_link_route_idx; //!< index position of curr_link on route->links, initialized to 0
 	bool entered;
 	int switched;
 	int meters;
@@ -225,6 +234,7 @@ protected:
 	bool flex_vehicle_; //!< true if vehicle can be assigned trips dynamically, false otherwise
 	set<int> sroute_ids_; //!< ids of service routes (buslines) that this bus can be assigned dynamically generated trips for
     Controlcenter* CC_; //!< control center that this vehicle is currently connected to. nullptr if not connected to any control center
+
 /**@}*/
 };
 

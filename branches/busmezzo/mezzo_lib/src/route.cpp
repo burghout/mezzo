@@ -150,6 +150,28 @@ odval Route::get_oid_did() const
 	 return nullptr;
  }
 
+ Link* Route::nextlink(int currentlink_idx)
+ {
+	 Link* nextlink = nullptr;
+	 if (currentlink_idx + 1 < static_cast<int>(links.size()))
+		 nextlink = links[currentlink_idx + 1];
+	 else
+		cout << "Route::nextlink: error! there is no next link after "<< links[currentlink_idx]->get_id() << " at index " << currentlink_idx << "! " << endl;
+
+	 return nextlink;
+ }
+
+ bool Route::has_cycle()
+ {
+	 map<const Link*, int> counter;
+	 for (const Link* link : links)
+	 {
+		 ++counter[link];
+		 if (counter[link] > 1)
+			 return true;
+	 }
+	 return false;
+ }
 
 
 

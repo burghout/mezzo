@@ -23,7 +23,7 @@
 #include "node.h"
 #include <vector>
 #include "linktimes.h"
-
+#include <iostream>
 #ifndef _NO_GUI
 	#include <QColor>
 #endif
@@ -41,7 +41,14 @@ class Route
 	Route(int id_, Origin* origin_, Destination* destination_, vector <Link*> links_);
 	Route(int id, Route* route, vector<Link*> links_); // copy constructor that copies route and overwrites remaining part starting from links_.front()
 	void reset();
-	Link* nextlink(Link* currentlink);
+	Link* nextlink(Link* currentlink); //!< Note: does not work for routes with repeating links
+	/** @ingroup DRT 
+		@{
+	*/
+	Link* nextlink(int currentlink_idx); //!< returns nextlink based on index in links vector
+	bool has_cycle(); //!< returns true of this route contains repeating links
+	/**@}*/
+
 	Link* firstlink() {	return (links.front());}
 	int get_id () {return id;}
 	void set_id(int id_) {id=id_;}
