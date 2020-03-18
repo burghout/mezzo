@@ -1179,7 +1179,7 @@ creates automatically new turnings for all junctions, using server nr 0 from the
 
                 map<int,Turning*>::iterator t_iter;
                 t_iter=	turningmap.find(tid);
-                assert (t_iter != turningmap.end());
+                //assert (t_iter != turningmap.end());
                 Turning* t_ptr= new Turning(tid, (*iter1).second, sptr, (*iter2), (*iter3),size);
                 turningmap [tid]=t_ptr;
                 tid++;
