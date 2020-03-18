@@ -44,3 +44,4 @@ moc_*
 *.json
 Doxyfile
 *.orig
+tests.pro.user.*
