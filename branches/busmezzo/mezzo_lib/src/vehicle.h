@@ -67,8 +67,8 @@ public:
 		@{
 	*/
 	void advance_curr_link_route_idx() { ++curr_link_route_idx; }
-	void set_curr_link_route_idx(int link_idx) { curr_link_route_idx = link_idx; }
-	int get_curr_link_route_idx() const { return curr_link_route_idx; }
+	void set_curr_link_route_idx(size_t link_idx) { curr_link_route_idx = link_idx; }
+	size_t get_curr_link_route_idx() const { return curr_link_route_idx; }
 	/**@}*/
 	Route* get_route() { return route; }
 	Link* nextlink();
@@ -93,7 +93,7 @@ protected:
 	double exit_time; 	
 	double arrival_time;
 	Link* curr_link;
-	int curr_link_route_idx; //!< index position of curr_link on route->links, initialized to 0
+	size_t curr_link_route_idx; //!< index position of curr_link on route->links, initialized to 0
 	bool entered;
 	int switched;
 	int meters;

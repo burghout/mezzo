@@ -14,7 +14,7 @@ Vehicle::Vehicle()
  entered=false;
  switched=0;
  meters=0;
- this->set_curr_link_route_idx(-1);
+ this->set_curr_link_route_idx(0);
 }
 
 Vehicle::~Vehicle()
@@ -39,13 +39,13 @@ void Vehicle::init (int id_, int type_, double length_, Route* route_, ODpair* o
  entered=false;
  switched=0;
  meters=0;
- this->set_curr_link_route_idx(-1);
+ this->set_curr_link_route_idx(0);
 }
 
 void Vehicle::set_curr_link(Link* curr_link_)
 {
-	Bus* debugbus = (Bus*)(this);
-	this->advance_curr_link_route_idx();
+	if(entered)
+		this->advance_curr_link_route_idx();
 	curr_link=curr_link_;
 }
 
@@ -166,7 +166,7 @@ Bus::Bus(int id_, int type_, double length_, Route* route_, ODpair* odpair_, dou
 	curr_trip = nullptr;
 	last_stop_visited_ = nullptr;
 	state_ = BusState::Null;
-	this->set_curr_link_route_idx(-1);
+	this->set_curr_link_route_idx(0);
 };
 Bus::Bus(int bv_id_, Bustype* bty, bool flex_vehicle, Controlcenter* CC, QObject* parent) : QObject(parent), flex_vehicle_(flex_vehicle), CC_(CC)
 {
@@ -190,7 +190,7 @@ Bus::Bus(int bv_id_, Bustype* bty, bool flex_vehicle, Controlcenter* CC, QObject
 	curr_trip = nullptr;
 	last_stop_visited_ = nullptr;
 	state_ = BusState::Null;
-	this->set_curr_link_route_idx(-1);
+	this->set_curr_link_route_idx(0);
 };
 
 // ***** Special Bus Functions *****
@@ -200,7 +200,7 @@ void Bus::reset ()
 	on_trip = true;
 	type = 4;
 	output_vehicle.clear();
-	set_curr_link_route_idx(-1);
+	this->set_curr_link_route_idx(0);
 	//set_next_link_route_idx(0);
 
 	//Controlcenter

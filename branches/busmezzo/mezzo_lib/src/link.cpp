@@ -979,6 +979,7 @@ bool InputLink::enter_veh(Vehicle* veh, double time)
 {
   veh->set_exit_time(time);
   veh->set_curr_link(this);
+  veh->set_curr_link_route_idx(0);
   veh->set_entry_time(time);
   return queue->enter_veh(veh);
 }

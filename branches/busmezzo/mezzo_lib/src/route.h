@@ -45,7 +45,7 @@ class Route
 	/** @ingroup DRT 
 		@{
 	*/
-	Link* nextlink(int currentlink_idx); //!< returns nextlink based on index in links vector
+	Link* nextlink(size_t currentlink_idx); //!< returns nextlink based on index in links vector
 	bool has_cycle(); //!< returns true of this route contains repeating links
 	/**@}*/
 
