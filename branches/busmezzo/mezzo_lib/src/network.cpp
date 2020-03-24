@@ -1198,6 +1198,7 @@ bool Network::writeturnings(string name)
     {
         (*iter).second->write(out);
     }
+    out << endl << "giveways: 0" << endl;
     return true;
 }
 
