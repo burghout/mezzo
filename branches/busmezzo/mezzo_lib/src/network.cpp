@@ -2216,6 +2216,7 @@ bool Network::createControlcenterDRTLines(Controlcenter* cc)
                         newLine->set_planned_headway(::drt_first_rep_max_headway); //add a planned headway (associated with CC) for this line. Used when applying dominancy rules in CSGM and for prior knowledge calculations in pass decisions
                         buslinesFound.push_back(newLine);
                         busLineIdCounter++;
+                        od_pair->add_route(newRoute); //add route to OD pair so it does not get deleted in Network::init
                     }
                 }
                 else
