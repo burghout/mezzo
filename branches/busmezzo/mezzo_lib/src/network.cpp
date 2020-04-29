@@ -7830,7 +7830,7 @@ bool Network::find_alternatives_all (int lid, double penalty, Incident* incident
                 set <int> dests = mi->second;
                 graph->linkCost(lid, cost);
                 graph->labelCorrecting(root);
-                for (std::_Tree_const_iterator<std::_Tree_val<std::_Tree_simple_types<int> > >::value_type dest : dests)
+                for (auto dest : dests)
                 {
                     if (graph->reachable (dest))
                     {
