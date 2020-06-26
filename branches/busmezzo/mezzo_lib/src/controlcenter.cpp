@@ -460,6 +460,11 @@ void Controlcenter::connectInternal()
 	assert(ok);
 }
 
+int Controlcenter::getID() const
+{
+	return id_;
+}
+
 set<Busstop*> Controlcenter::getServiceArea() const { return serviceArea_; }
 vector<Busline*> Controlcenter::getServiceRoutes() const { return tg_.getServiceRoutes(); }
 

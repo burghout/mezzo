@@ -196,7 +196,8 @@ private:
                                  Connects signal slot triggers between member process classes */
 
 public:
-    set<Busstop*> getServiceArea() const;
+	int getID() const;
+	set<Busstop*> getServiceArea() const;
     vector<Busline*> getServiceRoutes() const;
     bool isInServiceArea(Busstop* stop) const; //!< true if stop is included in service area of Controlcenter, false otherwise
 

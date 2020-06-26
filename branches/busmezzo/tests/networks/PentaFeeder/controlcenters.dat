@@ -5,6 +5,7 @@ drt_min_occupancy: 0
 controlcenters: 1
 
 {	1	1	1	1	1 
+	1
 	5 {1 2 3 4 5}
 	0 {}
 }

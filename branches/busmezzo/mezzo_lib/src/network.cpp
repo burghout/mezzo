@@ -1431,6 +1431,7 @@ bool Network::readcontrolcenters(const string& name)
         int ev_strategy; //id of empty vehicle strategy
         int tvm_strategy; //id of trip vehicle matching strategy
         int vs_strategy; //id of vehicle scheduling strategy
+        int generate_direct_paths; // 1 if all direct paths between should be added as service routes to this cc and 0 otherwise
 
         int nr_stops; //number of stops in the control center's service area
         int nr_lines; //number of lines (given as input) in the control center's service area
@@ -1443,7 +1444,7 @@ bool Network::readcontrolcenters(const string& name)
             in.close();
             return false;
         }
-        in >> id >> tg_strategy >> ev_strategy >> tvm_strategy >> vs_strategy;
+        in >> id >> tg_strategy >> ev_strategy >> tvm_strategy >> vs_strategy >> generate_direct_paths;
 
         auto* cc = new Controlcenter(eventlist, this, id, tg_strategy, ev_strategy, tvm_strategy, vs_strategy);
 
@@ -1477,13 +1478,16 @@ bool Network::readcontrolcenters(const string& name)
         }
 
         //create and add all direct lines to cc
-        if (!createControlcenterDRTLines(cc))
+        if (generate_direct_paths == 1)
         {
-            cout << "readcontrolcenters:: problem generating direct lines for control center " << id;
-            in.close();
-            return false;
+            if (!createControlcenterDRTLines(cc))
+            {
+                cout << "readcontrolcenters:: problem generating direct lines for control center " << id;
+                in.close();
+                return false;
+            }
         }
-
+        
         //read lines associated with this cc 
         in >> nr_lines;
         bracket = ' ';
@@ -2150,6 +2154,7 @@ bool Network::createControlcenterDRTLines(Controlcenter* cc)
 {
     assert(theParameters->drt);
     assert(cc);
+    cout << "readcontrolcenters:: generating direct lines for control center " << cc->getID();
 
     set<Busstop*> serviceArea = cc->getServiceArea();
     vector <Busstop*> stops;
