@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.28307.168
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29806.167
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gui", "gui\gui.vcxproj", "{60259A8A-DDD3-4036-B4D1-C598A9F0B0E3}"
 EndProject
@@ -56,6 +56,7 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		Qt5Version = msvc2015_64
+		Qt5Version = $(QTDIR)
+		SolutionGuid = {8C9B985B-1CF8-4D61-941E-0E2E5025D847}
 	EndGlobalSection
 EndGlobal
