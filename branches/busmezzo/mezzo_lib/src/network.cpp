@@ -446,6 +446,17 @@ void Network::delete_passengers()
     }
 }
 
+unsigned int Network::count_generated_passengers()
+{
+    unsigned int count = 0;
+    for (const auto& odstop : odstops)
+    {
+        count += odstop->get_passengers_during_simulation().size();
+    }
+
+    return count;
+}
+
 void Network::end_of_simulation()
 {
     for (map<int,Link*>::iterator iter=linkmap.begin();iter != linkmap.end();iter++)
@@ -7062,6 +7073,7 @@ void Network::write_passenger_welfare_summary(ostream& out, double total_gtc, in
 {
     out << "Total generalized travel cost:" << '\t' << total_gtc << endl
         << "Average generalized travel cost per passenger:" << '\t' << total_gtc / total_pass << endl
+        << "Number of generated passengers: " << '\t' << count_generated_passengers() << endl
         << "Number of completed passenger journeys:" << '\t' << total_pass << endl;
 }
 
