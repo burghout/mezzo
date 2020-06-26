@@ -1,0 +1,11 @@
+Origin_stop_ID	Origin_stop_name	Destination_stop_ID	Destination_stop_name	Nr_pass_completed	Average_travel_time	Average_number_boardings	
+1	A	6	F	42	1751.62	2.02381	
+2	B	6	F	47	1988.49	2	
+3	C	6	F	53	1937.41	2.11321	
+4	D	6	F	53	1800.32	2	
+5	E	6	F	10	1059.32	1	
+6	F	1	A	6	1457.16	2	
+6	F	2	B	11	1724.83	2	
+6	F	3	C	13	1993.77	2	
+6	F	4	D	12	1433.93	2	
+6	F	5	E	11	908.601	1	

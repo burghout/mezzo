@@ -19,7 +19,7 @@ const std::string network_path_2 = "../networks/DRTFeeder/"; // DRT feeder netwo
 
 const std::string network_name = "masterfile.mezzo";
 
-const QString expected_outputs_path = "://networks/SFnetwork/ExpectedOutputs/";
+//const QString expected_outputs_path = "://networks/SFnetwork/ExpectedOutputs/";
 const QString path_set_generation_filename = "o_path_set_generation.dat";
 const vector<QString> output_filenames = 
 {

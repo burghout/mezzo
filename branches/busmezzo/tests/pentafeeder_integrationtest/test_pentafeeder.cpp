@@ -1,6 +1,7 @@
 #include <QString>
 #include <QtTest/QtTest>
 #include "network.h"
+#include <algorithm>
 #ifdef Q_OS_WIN
     #include <direct.h>
     #define chdir _chdir
@@ -20,7 +21,8 @@ const std::string network_path_3 = "../networks/PentaFeeder/"; //Pentagon feeder
 
 const std::string network_name = "masterfile.mezzo";
 
-const QString expected_outputs_path = "://networks/SFnetwork/ExpectedOutputs/";
+//const QString expected_outputs_path = "://networks/SFnetwork/ExpectedOutputs/";
+const QString expected_outputs_path = ":/networks/PentaFeeder/ExpectedOutputs/";
 const QString path_set_generation_filename = "o_path_set_generation.dat";
 const vector<QString> output_filenames =
 {
@@ -38,7 +40,28 @@ const vector<QString> output_filenames =
     "o_trip_total_travel_time.dat",
 };
 
+const vector<QString> skip_output_filenames =
+{
+//    "o_od_stop_summary_without_paths.dat",
+//    "o_od_stops_summary.dat",
+//    "o_passenger_trajectory.dat",
+//    "o_passenger_welfare_summary.dat",
+//    "o_segments_line_loads.dat",
+//    "o_segments_trip_loads.dat",
+//    "o_selected_paths.dat",
+//    "o_transit_trajectory.dat",
+//    "o_transitline_sum.dat",
+//    "o_transitlog_out.dat",
+//    "o_transitstop_sum.dat",
+//    "o_trip_total_travel_time.dat",
+}; //!< Files skipped in testSaveResults. @todo Get different results for certain files on identical runs, not sure if differences are significant enough to dig into at the moment
+
 const long int seed = 42;
+
+bool AreSame(double a, double b)
+{
+    return fabs(a - b) < DBL_EPSILON;
+}
 
 class TestPentaFeeder : public QObject
 {
@@ -51,6 +74,8 @@ public:
 private Q_SLOTS:
     void testCreateNetwork(); //!< test loading a network
     void testInitNetwork(); //!< test generating passenger path sets & loading a network
+    void testRunNetwork();
+    void testSaveResults();
     void testCalcBusrouteInterStopIVT(); //!< tests the calculation of ivts between stops along a busroute
     void testCreateBusroute(); //!< tests creation of busroutes from stop pairs
     void testFindOrigins(); //!< tests the findNearestOrigin function
@@ -98,10 +123,10 @@ void TestPentaFeeder::testInitNetwork()
     QVERIFY2 (net->get_busstop_from_name("F")->get_id() == 6, "Failure, bus stop F should be id 6 ");
 
     QVERIFY2 (theParameters->drt == true, "Failure, DRT not activated in parameters for PentaFeeder_OnlyDRT");
-    QVERIFY2 (net->get_currenttime() == 0, "Failure, currenttime should be 0 at start of simulation");
+    QVERIFY2 (AreSame(net->get_currenttime(),0), "Failure, currenttime should be 0 at start of simulation");
 
     //TODO: add tests for path_set_generation file. Check to see if the most important paths are included when generating path set for this network. Currently passenger choice sets are read from input file
-    QVERIFY(theParameters->choice_set_indicator == true);
+    QVERIFY(theParameters->choice_set_indicator == 1);
 
     //Test if newly generated passenger path sets match expected output
 //	QString ex_path_set_fullpath = expected_outputs_path + path_set_generation_filename;
@@ -115,6 +140,58 @@ void TestPentaFeeder::testInitNetwork()
 
 //	ex_path_set_file.close();
 //	path_set_file.close();
+}
+
+void TestPentaFeeder::testRunNetwork()
+{
+
+    nt->start(QThread::HighestPriority);
+    nt->wait();
+
+    // test here the properties that should be true after running the simulation
+    QString msg = "Failure current time " + QString::number(net->get_currenttime()) + " should be 10800.1 after running the simulation";
+    QVERIFY2 (AreSame(net->get_currenttime(),10800.1), qPrintable(msg));
+
+    // Example: way to check typical value for e.g. number of last departures from stop A:
+   // qDebug() << net->get_busstop_from_name("A")->get_last_departures().size();
+    // and here you turn it into a test
+    //QVERIFY2 ( net->get_busstop_from_name("A")->get_last_departures().size() == 2, "Failure, get_last_departures().size() for stop A should be 2");
+}
+
+void TestPentaFeeder::testSaveResults()
+{
+    // remove old files:
+    for (const QString& filename : output_filenames)
+    {
+        qDebug() << QFile::remove(filename);
+    }
+
+    // save results:
+    nt->saveresults();
+     // test here the properties that should be true after saving the results
+
+    //test if output files match the expected output files
+    for (const QString& o_filename : output_filenames)
+    {
+        if (find(skip_output_filenames.begin(), skip_output_filenames.end(), o_filename) != skip_output_filenames.end())
+            continue;
+
+        QString ex_o_fullpath = expected_outputs_path + o_filename;
+        QFile ex_outputfile(ex_o_fullpath);
+
+        QString msg = "Failure, cannot open ExpectedOutputs/" + o_filename;
+        QVERIFY2(ex_outputfile.open(QIODevice::ReadOnly | QIODevice::Text), qPrintable(msg));
+
+        QFile outputfile(o_filename);
+        msg = "Failure, cannot open " + o_filename;
+        QVERIFY2(outputfile.open(QIODevice::ReadOnly | QIODevice::Text), qPrintable(msg));
+
+        msg = "Failure, " + o_filename + " differs from ExpectedOutputs/" + o_filename;
+        QVERIFY2(outputfile.readAll() == ex_outputfile.readAll(), qPrintable(msg));
+
+        ex_outputfile.close();
+        outputfile.close();
+    }
 }
 
 void TestPentaFeeder::testCalcBusrouteInterStopIVT()
@@ -371,6 +448,7 @@ void TestPentaFeeder::testCreateControlcenterDRTLines()
 
     delete cc;
 }
+
 
 void TestPentaFeeder::testDelete()
 {

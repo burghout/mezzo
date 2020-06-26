@@ -45,3 +45,4 @@ moc_*
 Doxyfile
 *.orig
 tests.pro.user.*
+*.rej
