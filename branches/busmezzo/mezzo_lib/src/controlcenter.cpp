@@ -509,30 +509,44 @@ void Controlcenter::disconnectPassenger(Passenger* pass)
 void Controlcenter::connectVehicle(Bus* transitveh)
 {
 	assert(transitveh);
-	int bvid = transitveh->get_bus_id();
-	assert(connectedVeh_.count(bvid) == 0); //vehicle should only be added once
-	connectedVeh_[bvid] = transitveh;
-
-	//connect bus state changes to control center
-	if (QObject::connect(transitveh, &Bus::stateChanged, this, &Controlcenter::updateFleetState, Qt::DirectConnection) == nullptr)
+	if (transitveh)
 	{
-		DEBUG_MSG_V(Q_FUNC_INFO << " connecting Bus::stateChanged with Controlcenter::updateFleetState failed!");
-		abort();
-	}
+		int bvid = transitveh->get_bus_id();
+		assert(connectedVeh_.count(bvid) == 0); //vehicle should only be added once
+		connectedVeh_[bvid] = transitveh;
 
-    transitveh->set_control_center(this);
+		//connect bus state changes to control center
+		if (QObject::connect(transitveh, &Bus::stateChanged, this, &Controlcenter::updateFleetState, Qt::DirectConnection) == nullptr)
+		{
+			DEBUG_MSG_V(Q_FUNC_INFO << " connecting Bus::stateChanged with Controlcenter::updateFleetState failed!");
+			abort();
+		}
+
+		transitveh->set_control_center(this);
+	}
+	else
+	{
+		DEBUG_MSG("WARNING::Controlcenter::connectVehicle - null transit vehicle passed as argument");
+	}
 }
 void Controlcenter::disconnectVehicle(Bus* transitveh)
 {
 	assert(transitveh);
-	int bvid = transitveh->get_bus_id();
-	assert(connectedVeh_.count(bvid) != 0); //only disconnect vehicles that have been added
+	if(transitveh)
+	{ 
+		int bvid = transitveh->get_bus_id();
+		assert(connectedVeh_.count(bvid) != 0); //only disconnect vehicles that have been added
 
-	connectedVeh_.erase(connectedVeh_.find(bvid));
-	bool ok = QObject::disconnect(transitveh, &Bus::stateChanged, this, &Controlcenter::updateFleetState);
-	assert(ok);
+		connectedVeh_.erase(connectedVeh_.find(bvid));
+		bool ok = QObject::disconnect(transitveh, &Bus::stateChanged, this, &Controlcenter::updateFleetState);
+		assert(ok);
 
-    transitveh->set_control_center(nullptr);
+		transitveh->set_control_center(nullptr);
+	}
+	else
+	{
+		DEBUG_MSG("WARNING::Controlcenter::disconnectVehicle - null transit vehicle passed as argument");
+	}
 }
 
 void Controlcenter::addStopToServiceArea(Busstop* stop)
@@ -568,9 +582,16 @@ void Controlcenter::removeVehicleFromServiceRoute(int line_id, Bus* transitveh)
 void Controlcenter::addInitialVehicle(Bus* transitveh)
 {
 	assert(transitveh);
-	if (initialVehicles_.count(transitveh) == 0)
+	if(transitveh)
 	{
-		initialVehicles_.insert(transitveh);
+		if (initialVehicles_.count(transitveh) == 0)
+		{
+			initialVehicles_.insert(transitveh);
+		}
+	}
+	else
+	{
+		DEBUG_MSG("WARNING::Controlcenter::addInitialVehicle - null transit vehicle passed as argument");
 	}
 }
 
@@ -578,7 +599,8 @@ void Controlcenter::addCompletedVehicleTrip(Bus* transitveh, Bustrip * trip)
 {
 	assert(transitveh);
 	assert(trip);
-    assert(trip->get_next_stop() == trip->stops.end()); //currently a trip is considered completed via Bustrip::advance_next_stop -> Bus::advance_curr_trip
+	if(trip)
+		assert(trip->get_next_stop() == trip->stops.end()); //currently a trip is considered completed via Bustrip::advance_next_stop -> Bus::advance_curr_trip
 	completedVehicleTrips_.emplace_back(transitveh, trip);
 }
 
