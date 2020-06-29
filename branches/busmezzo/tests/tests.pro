@@ -7,4 +7,5 @@ SUBDIRS += \
     controlcenter \
     routestest \
     drttest \
-	pentafeeder_integrationtest
+    pentafeeder_integrationtest \
+    fixedwithflexible

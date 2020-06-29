@@ -46,3 +46,4 @@ Doxyfile
 *.orig
 tests.pro.user.*
 *.rej
+.vs/

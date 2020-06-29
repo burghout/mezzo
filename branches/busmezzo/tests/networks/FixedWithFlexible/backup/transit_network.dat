@@ -1,0 +1,18 @@
+stops:	5
+{1   	A	12		1	19	0	1	1	0	0}
+{2   	B	34	    1	19	0	1	1	0	0}
+{3   	C	56		1	19	0	1	1	0	0}
+{4		D 	78		1	19	0	1	1	0	0}
+{5   	E	910		1	19	0	1	1	0	0}
+
+stops_distances:	0
+format: 1
+
+stops_walking_times:	0
+
+lines:	0
+
+trips:	0
+format: 3
+
+travel_time_disruptions: 0
