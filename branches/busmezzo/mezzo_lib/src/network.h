@@ -436,10 +436,10 @@ protected:
 //	map<int,map<int, vector<Busline*> > > direct_lines; // contains all direct lines between a couple of stops
 	map<Busstop*,vector<Busstop*> > consecutive_stops; // contains all the stops that can be reached within no transfer per stop
 
-	Day2day* day2day;
+	Day2day* day2day=nullptr;
 	map<ODSL, Travel_time> wt_rec; //the record of waiting time data
 	map<ODSLL, Travel_time> ivt_rec; //the record of in-vehicle time data
-	int day;
+	int day=0;
 
 /** @ingroup DRT
     @{
@@ -454,20 +454,20 @@ protected:
 #ifndef _USE_VAR_TIMES
 	Graph<double, GraphNoInfo<double> > * graph;
 #else
-	Graph<double, LinkTimeInfo > * graph;
+	Graph<double, LinkTimeInfo>* graph=nullptr;
 #endif
 	// Random stream
-	Random* random;
+	Random* random=nullptr;
 
 	//GUI
 #ifndef _NO_GUI
-	Drawing* drawing; //!< the place where all the Icons live
-	QPixmap* pm; //!< the place where the drawing is drawn
-	QMatrix* wm; //!< worldmatrix that contains all the transformations of the drawing (scaling, translation, rotation, &c)
+	Drawing* drawing=nullptr; //!< the place where all the Icons live
+	QPixmap* pm=nullptr; //!< the place where the drawing is drawn
+	QMatrix* wm=nullptr; //!< worldmatrix that contains all the transformations of the drawing (scaling, translation, rotation, &c)
 	QMatrix initview_wm; //!< world matrix that transform the drawing to the inital view
-	double scale; //!< contains the scale of the drawing
-	double width_x; //!< width of boundaries of drawing in original coordinate system
-	double height_y; //!< height of boundaries of drawing in org. coord. sys.
+	double scale=100.0; //!< contains the scale of the drawing
+	double width_x=100.0; //!< width of boundaries of drawing in original coordinate system
+	double height_y=100.0; //!< height of boundaries of drawing in org. coord. sys.
 #endif // _NO_GUI
 	// Eventlist
 	Eventlist* eventlist;
@@ -506,16 +506,16 @@ protected:
 	// end of read functions
 	vector <string> filenames; //!< filenames for input/output as read in the master file
 	string workingdir;
-	unsigned int replication;
-	int runtime; //!< == stoptime
-	int starttime;
-	bool calc_paths; //!< if true new shortest paths are calculated and new paths added to the route file
-	double time;
-	int no_ass_links; //!< number of links observed in assignment matrix
+	unsigned int replication=0;
+	int runtime=0; //!< == stoptime
+	int starttime=0;
+	bool calc_paths=false; //!< if true new shortest paths are calculated and new paths added to the route file
+	double time=0.0;
+	int no_ass_links=0; //!< number of links observed in assignment matrix
 	// Linktimes
-	int nrperiods; //!< number of linktime periods
-	double periodlength; //!< length of each period in seconds.
-	LinkTimeInfo* linkinfo;
+	int nrperiods=0; //!< number of linktime periods
+	double periodlength=0; //!< length of each period in seconds.
+	LinkTimeInfo* linkinfo=nullptr;
 	// PVM communicator
 #ifdef _PVM   
 	PVM * communicator;
@@ -567,7 +567,7 @@ private:
 	bool blocked;
 	vector <double> incident_parameters; 
 #ifndef _NO_GUI
-	IncidentIcon* icon;
+	IncidentIcon* icon=nullptr;
 #endif
 };
 
@@ -633,7 +633,7 @@ private:
     long int seed_;
 
     Network* theNetwork;
-    double runtime_;
+    double runtime_=0.0;
 
 };
 
