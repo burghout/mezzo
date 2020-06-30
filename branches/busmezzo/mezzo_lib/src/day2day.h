@@ -121,43 +121,43 @@ private:
 
 	float kapa[4];
 
-	float v; //salience parameter
-	float v_c; //crowding salience parameter
-	float v1; //trust parameter
-	float r; //recency parameter
-	int nr_of_reps;
-	int day;
-	bool aggregate;
-	bool individual_wt;
-	bool individual_ivt;
+	float v = 0; //salience parameter
+	float v_c = 3; //crowding salience parameter
+	float v1 = 3; //trust parameter
+	float r = 1; //recency parameter
+	int nr_of_reps = 0;
+	int day = 0;
+	bool aggregate = false;
+	bool individual_wt = false;
+	bool individual_ivt = false;
 
 	void calc_anticipated_wt (Travel_time& row);
 	void calc_anticipated_ivt (Travel_time& row);
 
-	int nr_of_passengers;
-	int nr_of_changes;
-	int nr_of_legs;
-	double total_waiting_time;
-	double total_wt_pk;
-	double total_wt_rti;
-	double total_wt_exp;
-	double total_wt_anticip;
-	int total_nr_missed;
-	double total_in_vehicle_time;
-	double total_ivt_pk;
-	double total_ivt_exp;
-	double total_ivt_anticip;
-	double total_crowding;
-	double total_acrowding;
-	int nr_on_line_2;
+	int nr_of_passengers = 0;
+	int nr_of_changes = 0;
+	int nr_of_legs = 0;
+	double total_waiting_time = 0;
+	double total_wt_pk = 0;
+	double total_wt_rti = 0;
+	double total_wt_exp = 0;
+	double total_wt_anticip = 0;
+	int total_nr_missed = 0;
+	double total_in_vehicle_time = 0;
+	double total_ivt_pk = 0;
+	double total_ivt_exp = 0;
+	double total_ivt_anticip = 0;
+	double total_crowding = 0;
+	double total_acrowding = 0;
+	int nr_on_line_2 = 0;
 
 public:
 	Day2day (int nr_of_reps_);
 	void reset ();
-	void set_salience(float v_) {v = v_;};
-	void set_crowding_salience(float v_c_) {v_c = v_c_;};
-	void set_trust(float v1_) {v1 = v1_;};
-	void set_recency(float r_) {r = r_;};
+    void set_salience(float v_) {v = v_;}
+    void set_crowding_salience(float v_c_) {v_c = v_c_;}
+    void set_trust(float v1_) {v1 = v1_;}
+    void set_recency(float r_) {r = r_;}
 	void update_day (int d);
 	void write_output (string filename, string addition);
 	map<ODSL, Travel_time>& process_wt_replication (vector<ODstops*>& odstops, map<ODSL, Travel_time> wt_rec);
