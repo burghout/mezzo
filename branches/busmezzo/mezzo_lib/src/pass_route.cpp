@@ -191,7 +191,7 @@ double Pass_path::calc_total_waiting_time (double time, bool without_first_waiti
 		pass_arrival_time_at_next_stop = time + (sum_waiting_time*60) + sum_walking_times + sum_IVT;
 		wt_pk = (calc_curr_leg_headway((*iter_alt_lines), alt_transfer_stops_iter, pass_arrival_time_at_next_stop) / 2);
 		first_entrance = false;
-		bool leg_has_RTI;
+		bool leg_has_RTI = false; // default RTI is false if RTI_availability value is invalid at this point
 		int RTI_availability = theParameters->real_time_info;
 		if (theParameters->real_time_info == 4)
 		{
@@ -245,6 +245,9 @@ double Pass_path::calc_total_waiting_time (double time, bool without_first_waiti
 				// all legs are estimated based on real-time info
 				leg_has_RTI = true;
 				wt_rti = calc_curr_leg_waiting_RTI((*iter_alt_lines), alt_transfer_stops_iter, pass_arrival_time_at_next_stop);
+				break;
+			default:
+				DEBUG_MSG("WARNING Pass_path::calc_total_waiting_time invalid RTI availability parameter");
 				break;
 		}
 
