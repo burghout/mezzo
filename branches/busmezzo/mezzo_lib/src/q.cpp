@@ -45,7 +45,7 @@ void Q::reset()
 	}
 	viter = vehicles.begin();
 	ttime=1.0;
-	vehicle = NULL;
+    vehicle = nullptr;
 }
 
 
@@ -159,7 +159,7 @@ Vehicle* Q::exit_veh(double time, Link* nextlink, int lookback)
 	ok=false;
 	next_action=-1.0;
     if (empty())
-        return NULL;
+        return nullptr;
     else
     {
       n=0; // number of vehicles looked back in queue.
@@ -170,7 +170,7 @@ Vehicle* Q::exit_veh(double time, Link* nextlink, int lookback)
       {
           vehicle=viter->second;
 		  Link* vnext = vehicle->nextlink();
-		  if (vnext == NULL) //Added by Jens 2014-07-04, ugly quickfix
+          if (vnext == nullptr) //Added by Jens 2014-07-04, ugly quickfix
 		  {
 			  cout << "Error, next link missing for vehicle approaching link " << nextid << endl;
 			  //vehicles.erase(viter);
@@ -202,21 +202,21 @@ Vehicle* Q::exit_veh(double time, Link* nextlink, int lookback)
              {
                ok=false;
                next_action=time+1.0*(n/((vehicle->nextlink())->get_nr_lanes()));// ????????????? Could also do something like lookback*time per vehicle /nr_lanes
-               return NULL;
+               return nullptr;
              }
          }
          else // it cannot yet exit, so the next try should be when it (theoretically) can
          {
            ok=false;
            next_action=viter->first;
-           return NULL;
+           return nullptr;
          }     
       }
       else // no vehicle found viter==vehicles.end(), and the list of vehicles is not empty (otherwise it would have returned NULL before)
       {
         ok=false;
         next_action=time+freeflowtime;
-        return NULL;
+        return nullptr;
       }
     }
 }
@@ -244,8 +244,8 @@ Vehicle* Q::exit_veh(double time)
  		}
  	}
   else
-  	return NULL;
-  return NULL;
+    return nullptr;
+  return nullptr;
 }
 
 void Q::broadcast_incident_start(int lid, vector <double> parameters)

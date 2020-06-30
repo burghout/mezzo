@@ -24,7 +24,7 @@ void Random::create(int n) {
 Random::Random()
    : seed_(0L)
 {
-  static int counter = 0;
+  static unsigned int counter = 0;
   signature_ = counter;
   counter ++;
 }
@@ -94,7 +94,7 @@ Random::urandom(void)
    seed_ = A * (seed_ % Q) - R * (seed_ / Q);
    seed_ = (seed_ > 0) ? (seed_) : (seed_ + M);
 
-   return (double)seed_ / (double)M;
+   return static_cast<double>(seed_) / static_cast<double>(M);
 }
 
 
@@ -177,7 +177,7 @@ double Random::loglogisticrandom(double alpha, double beta)
 int
 Random::urandom(int n)
 {
-   return ((int)(urandom() * (double)n));
+   return (static_cast<int>((urandom() * static_cast<double>(n))));
 }
 
 
@@ -250,7 +250,7 @@ Random::mrandom (vector<double> probs)
 	{
 		if (value == 1.0)
 		{
-			return probs.size();
+			return static_cast<int>(probs.size());
 		}
 		if (value > (*iter1) && value < (*(iter1+1)))
 		{

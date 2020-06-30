@@ -93,7 +93,7 @@ class ODRate
 {
 public:
 	odval odid;
-	int rate;
+	int rate=0;
 };
 
 
