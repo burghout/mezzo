@@ -465,7 +465,7 @@ double ODstops::calc_path_size_factor_between_clusters (Pass_path* path, map<Pas
 {
 	vector<vector<Busstop*> > alt_transfer_stops = path->get_alt_transfer_stops();
 	double factor = 0.0;
-	double nr_counted_stops = 2 * (path->get_number_of_transfers()+1); // number of stops minus origin and destination
+	double nr_counted_stops = 2.0 * static_cast<double>(path->get_number_of_transfers()) + 1.0; // number of stops minus origin and destination
 	double nr_stops_set_factor;
 	map<Busstop*,int> delta_stops;
 	map<Busstop*,double> stop_factor;
@@ -505,7 +505,7 @@ map<Pass_path*,double> ODstops::calc_path_size_factor_nr_stops (map<Pass_path*,d
 	for (map<Pass_path*,double>::iterator set_iter = cluster_set_utilities.begin(); set_iter != cluster_set_utilities.end(); set_iter++)
 	{
 		set_factors[(*set_iter).first] = 0.0;
-		nr_counted_stops = 2 * ((*set_iter).first->get_number_of_transfers()+1); // number of stops minus origin and destination	
+		nr_counted_stops = 2.0 * static_cast<double>((*set_iter).first->get_number_of_transfers())+1.0; // number of stops minus origin and destination	
 		map<Busstop*,int> delta_stops;
 		map<Busstop*,double> stop_factor;
 		vector<vector<Busstop*> > alt_transfer_stops = (*set_iter).first->get_alt_transfer_stops();
@@ -531,7 +531,6 @@ map<Pass_path*,double> ODstops::calc_path_size_factor_nr_stops (map<Pass_path*,d
 				}
 				stop_factor[(*stops_iter)] = 1 / (nr_stops_set_factor * delta_stops[(*stops_iter)]);
 				set_factors[(*set_iter).first] += 1/ (stop_factor[(*stops_iter)] * 	nr_counted_stops);
-	;
 			}
 		}
 	}
@@ -735,7 +734,7 @@ void ODstops::write_connection_output(ostream & out, Passenger* pass)
 void ODstops::write_od_summary(ostream & out)
 {
 	calc_pass_measures();
-	int nr_paths = (int) paths_tt.size();
+    int nr_paths = static_cast<int>(paths_tt.size());
 	out << origin_stop->get_id() << '\t'
 		<< destination_stop->get_id() << '\t'
 		<< nr_pass_completed << '\t'

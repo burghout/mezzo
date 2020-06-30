@@ -113,21 +113,21 @@ public:
 	Route* filteredRoute(int index);
 private:
     //int id;  // for later use
-	ODaction* odaction;
-	Origin* origin;
-	Destination* destination;
-	double rate;
-	double start_rate; // original OD rate, to be used when OD pair is reset.
+	ODaction* odaction = nullptr;
+	Origin* origin = nullptr;
+	Destination* destination = nullptr;
+	double rate = 0;
+	double start_rate = 0; // original OD rate, to be used when OD pair is reset.
 	//double rate;
 	vector <Route*> routes;
 	vector <Route*> filtered_routes_;
 	vector <double> utilities;
-	Random* random;
-	Grid* grid;
-	Grid* oldgrid;
-	Vtypes* vtypes;
-	double totalU;    // total utility  = sum of all utilities
-	double subU;    //subsum of utilities
+	Random* random = nullptr;
+	Grid* grid = nullptr;
+	Grid* oldgrid = nullptr;
+	Vtypes* vtypes = nullptr;
+	double totalU = 0;    // total utility  = sum of all utilities
+	double subU = 0;    //subsum of utilities
 	vector <Route*>::iterator shortest_route; // stores the shortest_known_route
 };
 
