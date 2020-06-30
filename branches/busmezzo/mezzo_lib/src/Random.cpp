@@ -224,7 +224,7 @@ int
 Random::binrandom1 (int n, double p) // using calls to Bernoulli
 {
 	int sum = 0;
-	for (int i = 1; i == n ; i++)
+	for (int i = 1; i <= n ; i++)
 	{
 		sum += brandom (p);
 	}
