@@ -1431,7 +1431,7 @@ bool Network::readcontrolcenters(const string& name)
         int ev_strategy; //id of empty vehicle strategy
         int tvm_strategy; //id of trip vehicle matching strategy
         int vs_strategy; //id of vehicle scheduling strategy
-        int generate_direct_paths; // 1 if all direct paths between should be added as service routes to this cc and 0 otherwise
+        int generate_direct_routes; // 1 if all direct routes between should be added as service routes to this cc and 0 otherwise
 
         int nr_stops; //number of stops in the control center's service area
         int nr_lines; //number of lines (given as input) in the control center's service area
@@ -1444,7 +1444,7 @@ bool Network::readcontrolcenters(const string& name)
             in.close();
             return false;
         }
-        in >> id >> tg_strategy >> ev_strategy >> tvm_strategy >> vs_strategy >> generate_direct_paths;
+        in >> id >> tg_strategy >> ev_strategy >> tvm_strategy >> vs_strategy >> generate_direct_routes;
 
         auto* cc = new Controlcenter(eventlist, this, id, tg_strategy, ev_strategy, tvm_strategy, vs_strategy);
 
@@ -1478,7 +1478,7 @@ bool Network::readcontrolcenters(const string& name)
         }
 
         //create and add all direct lines to cc
-        if (generate_direct_paths == 1)
+        if (generate_direct_routes == true)
         {
             cout << "readcontrolcenters:: generating direct lines for control center " << cc->getID();
             if (!createControlcenterDRTLines(cc))
@@ -1487,6 +1487,7 @@ bool Network::readcontrolcenters(const string& name)
                 in.close();
                 return false;
             }
+            cc->setGeneratedDirectRoutes(generate_direct_routes);
         }
         
         //read lines associated with this cc 

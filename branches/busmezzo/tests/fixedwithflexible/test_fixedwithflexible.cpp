@@ -107,7 +107,11 @@ void TestFixedWithFlexible::testInitNetwork()
     QVERIFY2 (AreSame(net->get_currenttime(),0), "Failure, currenttime should be 0 at start of simulation");
 
     //TODO: add tests for path_set_generation file. Check to see if the most important paths are included when generating path set for this network. Currently passenger choice sets are read from input file
-    QVERIFY(theParameters->choice_set_indicator == 0);
+    QVERIFY2(theParameters->choice_set_indicator == 1, "Failure, choice set indicator is not set to 1");
+
+    map<int,Controlcenter*> ccmap = net->get_controlcenters();
+    QVERIFY2(ccmap.size() == 1, "Failure, network should have 1 controlcenter");
+    QVERIFY2(ccmap.begin()->second->getGeneratedDirectRoutes() == true, "Failure, generate direct routes of controlcenter is not set to 1");
 
     //Test if newly generated passenger path sets match expected output
 //	QString ex_path_set_fullpath = expected_outputs_path + path_set_generation_filename;

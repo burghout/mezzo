@@ -476,6 +476,16 @@ bool Controlcenter::isInServiceArea(Busstop* stop) const
     return false;
 }
 
+bool Controlcenter::getGeneratedDirectRoutes()
+{
+	return generated_direct_routes_;
+}
+
+void Controlcenter::setGeneratedDirectRoutes(bool generate_direct_routes)
+{
+	generated_direct_routes_ = generate_direct_routes;
+}
+
 void Controlcenter::connectPassenger(Passenger* pass)
 {
 	int pid = pass->get_id();

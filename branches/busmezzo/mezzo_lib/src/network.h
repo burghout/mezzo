@@ -253,6 +253,7 @@ public:
 	map <int, Destination*>& get_destinations() {return destinationmap;}
 	map <int, Node*>& get_nodes() {return nodemap;}
 	map <int,Link*>& get_links() {return linkmap;}
+	map<int, Controlcenter*> get_controlcenters() { return ccmap; }
 
 	map <int, Busstop*>& get_stopsmap() { return busstopsmap; }
     vector <Busroute*>&  get_busroutes() { return busroutes; } // bad idea, but consistent with the other get_*
