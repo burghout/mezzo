@@ -85,22 +85,22 @@ public:
 	}
 
 	// line summary measures
-	double line_avg_headway;
-	double line_avg_DT;
-	double line_avg_abs_deviation;
-	double line_avg_waiting_per_stop;
-	double line_total_boarding;
-	double line_sd_headway;		// averaged over stops (and not the SD for the whole dataset)
-	double line_sd_DT;			// averaged over stops (and not the SD for the whole dataset)
-	double line_on_time;
-	double line_early;
-	double line_late;
-	double total_pass_riding_time;
-	double total_pass_dwell_time;
-	double total_pass_waiting_time;
-	double total_pass_holding_time;
-	double control_objective_function;
-	double total_travel_time_crowding;
+	double line_avg_headway = 0;
+	double line_avg_DT = 0;
+	double line_avg_abs_deviation = 0;
+	double line_avg_waiting_per_stop = 0;
+	double line_total_boarding = 0;
+	double line_sd_headway = 0;		// averaged over stops (and not the SD for the whole dataset)
+	double line_sd_DT = 0;			// averaged over stops (and not the SD for the whole dataset)
+	double line_on_time = 0;
+	double line_early = 0;
+	double line_late = 0;
+	double total_pass_riding_time = 0;
+	double total_pass_dwell_time = 0;
+	double total_pass_waiting_time = 0;
+	double total_pass_holding_time = 0;
+	double control_objective_function = 0;
+	double total_travel_time_crowding = 0;
 };
 
 class Busline_assign // container object holding output data for trip assignments
@@ -113,7 +113,7 @@ public:
 		int end_stop_id_,	
 		string end_stop_name_,
 		int passenger_load_
-		): line_id(line_id_), start_stop_id(start_stop_id_), start_stop_name(start_stop_name_),end_stop_id(end_stop_id_), end_stop_name(end_stop_name_),passenger_load(passenger_load_) {}
+        ): line_id(line_id_), start_stop_id(start_stop_id_), end_stop_id(end_stop_id_), start_stop_name(start_stop_name_), end_stop_name(end_stop_name_),passenger_load(passenger_load_) {}
 
 	Busline_assign();			//!< simple constructor
 	virtual ~Busline_assign();  //!< destructor
@@ -134,12 +134,12 @@ public:
 		passenger_load = 0;
 	}
 
-	int line_id;
-	int start_stop_id;
-	string start_stop_name;
-	int end_stop_id;
-	string end_stop_name;
-	int passenger_load;
+    int line_id = -1;
+    int start_stop_id = 0;
+    int end_stop_id = 0;
+    string start_stop_name;
+    string end_stop_name;
+    int passenger_load = 0;
 };
 
 class Busline_travel_times // container that holds the total travel time experienced by line's trips
@@ -176,7 +176,7 @@ public:
         Vtype*                  vtype_,                 //!< Vehicle type of this line (TODO 2018-10-23: Currently completely unusued but removing will invalidate all current network inputs)
         ODpair*                 odpair_,                //!< OD pair
         int                     holding_strategy_,      //!< indicates the type of holding strategy used for line
-        float                   max_headway_holding_,   //!< threshold parameter relevant in case holding strategies 1 or 3 are chosen or max holding time in [sec] in case of holding strategy 6
+        double					max_headway_holding_,   //!< threshold parameter relevant in case holding strategies 1 or 3 are chosen or max holding time in [sec] in case of holding strategy 6
         double                  init_occup_per_stop_,   //!< average number of passengers that are on-board per prior upstream stops (scale of a Gamma distribution)
         int                     nr_stops_init_occup_,   //!< number of prior upstream stops resulting with initial occupancy (shape of a Gamma distribution)
         bool                    flex_line_ = false      //!< true if this line allows for dynamically scheduled trips
@@ -271,51 +271,51 @@ public:
 	/**@}*/
 
 protected:
-	int id;						//!< line ID
-	int opposite_id;			//!< the line ID of the opposite direction
-	//Busline* opposite_line;
-	string name;				//!< name of the busline "46 Sofia"
+    int id = -1;						//!< line ID
+    int opposite_id = -1;			//!< the line ID of the opposite direction
+    //Busline* opposite_line;
+    string name;				//!< name of the busline "46 Sofia"
 //	int vtype;					//!< vehicle type. There are usually multiple types of Busses
-    Busroute* busroute;						//!< the route (in terms of links) that the busses follow
+    Busroute* busroute = nullptr;						//!< the route (in terms of links) that the busses follow
 
-    ODpair* odpair;
-	vector <Busstop*> line_timepoint;
-	list <Start_trip> trips;				//!< the trips that are to be made
+    ODpair* odpair = nullptr;
+    vector <Busstop*> line_timepoint;
+    list <Start_trip> trips;				//!< the trips that are to be made
 
-	Vtype* vtype;							//!< the type of vehicle for the buses to be generated.
+    Vtype* vtype = nullptr;							//!< the type of vehicle for the buses to be generated.
 
-	float max_headway_holding;
+    double max_headway_holding = 0;
 
-	int holding_strategy; 
-	double init_occup_per_stop;
-	int nr_stops_init_occup;
+    int holding_strategy = 0;
+    double init_occup_per_stop = 0;
+    int nr_stops_init_occup = 0;
 
-	//transfer attributes
-	int	tr_line_id; //!< id of line 'this' line synchronizes transfers with, should be 0 if 'this' line is not synchronizing transfers
-	vector <Busstop*> tr_stops;	//!< contains all transfer stops for line
+    //transfer attributes
+    int	tr_line_id = 0; //!< id of line 'this' line synchronizes transfers with, should be 0 if 'this' line is not synchronizing transfers
+    vector <Busstop*> tr_stops;	//!< contains all transfer stops for line
 
     /** @ingroup DRT
         @{
     */
-	//drt related attributes
-	bool flex_line;	//!< true if trips can be created dynamically for this line
-	set<Bustrip*> flex_trips; //!< trips that were created dynamically for this line via a controlcenter
-	vector<pair<Busstop*,double> > delta_at_stops; //!< expected ivt between departures for all stops on this line (defined on input when reading bustrips for this line) with first stop departure at time = 0
-	int trip_count; //!< the number of trips created for this line
-	list <Start_trip> static_trips; //!< trips that were created from input files (i.e. were not created dynamically for this line), to be saved between resets
-    double planned_headway; //!< planned headway in seconds of this line, set to zero by default in constructor. If this is a DRT line then the planned headway is not based on pre-scheduled trips but on expectations given service design (@todo DRT currently only valid with trip format 3 now!)
+    //drt related attributes
+    bool flex_line = false;	//!< true if trips can be created dynamically for this line
+    set<Bustrip*> flex_trips; //!< trips that were created dynamically for this line via a controlcenter
+    vector<pair<Busstop*, double> > delta_at_stops; //!< expected ivt between departures for all stops on this line (defined on input when reading bustrips for this line) with first stop departure at time = 0
+    int trip_count = 0; //!< the number of trips created for this line
+    list <Start_trip> static_trips; //!< trips that were created from input files (i.e. were not created dynamically for this line), to be saved between resets
+    double planned_headway = 0; //!< planned headway in seconds of this line, set to zero by default in constructor. If this is a DRT line then the planned headway is not based on pre-scheduled trips but on expectations given service design (@todo DRT currently only valid with trip format 3 now!)
     /**@}*/
 
-    map <Busstop*,pair<Busstop*,pair<double,double> > > disruption_times; //!< contains the expected travel times between a pair of stops in case of disruption (does not affect actual travel time, only passenger information provision). Strat and end times
-	map <Busstop*, double> disruption_cap_reduction;
+    map <Busstop*, pair<Busstop*, pair<double, double> > > disruption_times; //!< contains the expected travel times between a pair of stops in case of disruption (does not affect actual travel time, only passenger information provision). Strat and end times
+    map <Busstop*, double> disruption_cap_reduction;
 
-	bool active;														//!< is true when the busline has started generating trips
-	list <Start_trip>::iterator curr_trip;							//!< indicates the next trip
-	list <Start_trip>::iterator next_trip; //!< indicates the next trip
-	Output_Summary_Line output_summary;
-	map <Busstop*, int> stop_pass;
-	map <Busstop*, Busline_assign> output_line_assign;
-	list <Busline_travel_times> output_travel_times;
+    bool active = false;														//!< is true when the busline has started generating trips
+    list <Start_trip>::iterator curr_trip;							//!< indicates the next trip
+    list <Start_trip>::iterator next_trip; //!< indicates the next trip
+    Output_Summary_Line output_summary;
+    map <Busstop*, int> stop_pass;
+    map <Busstop*, Busline_assign> output_line_assign;
+    list <Busline_travel_times> output_travel_times;
 };
 
 typedef pair<Busstop*,double> Visit_stop;
@@ -624,22 +624,22 @@ public:
 		stop_avg_holding_time = 0;
 		total_stop_travel_time_crowding = 0;
 	}
-	double stop_avg_headway;
-	double stop_avg_DT;
-	double stop_avg_abs_deviation;
-	double stop_avg_waiting_per_stop;
-	double stop_total_boarding;
-	double stop_sd_headway;
-	double stop_sd_DT;
-	double stop_on_time;
-	double stop_early;
-	double stop_late;
-	double total_stop_pass_riding_time;
-	double total_stop_pass_dwell_time;
-	double total_stop_pass_waiting_time;
-	double total_stop_pass_holding_time;
-	double stop_avg_holding_time;
-	double total_stop_travel_time_crowding;
+	double stop_avg_headway = 0;
+	double stop_avg_DT = 0;
+	double stop_avg_abs_deviation = 0;
+	double stop_avg_waiting_per_stop = 0;
+	double stop_total_boarding = 0;
+	double stop_sd_headway = 0;
+	double stop_sd_DT = 0;
+	double stop_on_time = 0;
+	double stop_early = 0;
+	double stop_late = 0;
+	double total_stop_pass_riding_time = 0;
+	double total_stop_pass_dwell_time = 0;
+	double total_stop_pass_waiting_time = 0;
+	double total_stop_pass_holding_time = 0;
+	double stop_avg_holding_time = 0;
+	double total_stop_travel_time_crowding = 0;
 };
 
 class Busstop : public Action
@@ -698,7 +698,7 @@ public:
 	void save_previous_alighting_fractions () {previous_alighting_fractions.swap(alighting_fractions);}
 	bool check_walkable_stop ( Busstop* const & stop);
 	bool check_destination_stop (Busstop* stop);
-    bool get_gate_flag () {return gate_flag;};
+    bool get_gate_flag () {return gate_flag;}
 
 	//transfer related checks
 	bool is_awaiting_transfers(Bustrip* trip); //David added 2016-05-30: returns true if trip is currently awaiting transfers at stop
@@ -778,28 +778,28 @@ public:
     double estimate_walking_time_from_quantiles(Busstop*, double);
 
 protected:
-	int id;						//!< stop id
-	string name;				//!< name of the bus stop "T-centralen"
-	int link_id;				//!< link it is on, maybe later a pointer to the respective link if needed
-    double position;		    //!< relative position from the upstream node of the link (between 0 to 1)
-    double length;				//!< length of the busstop, determines how many buses can be served at the same time
-    bool has_bay;				//!< TRUE if it has a bay so it has an extra dwell time
-	bool can_overtake;			//!< 0 - can't overtake, 1 - can overtake freely; TRUE if it is possible for a bus to overtake another bus that stops in front of it (if FALSE - dwell time is subject to the exit time of a blocking bus)
-    double min_DT;
-    int rti;					//!< indicates the level of real-time information at this stop: 0 - none; 1 - for all lines stoping at each stop; 2 - for all lines stoping at all connected stop; 3 - for the entire network.
-    
-    bool gate_flag; //!< gate flag. If set true, passenger generation subject to timetable of transport services
+    int id = -1;					//!< stop id
+    string name;				//!< name of the bus stop "T-centralen"
+    int link_id = -1;				//!< link it is on, maybe later a pointer to the respective link if needed
+    double position = 0;		    //!< relative position from the upstream node of the link (between 0 to 1)
+    double length = 20;			//!< length of the busstop, determines how many buses can be served at the same time
+    bool has_bay = false;			//!< TRUE if it has a bay so it has an extra dwell time
+    bool can_overtake = true;		//!< 0 - can't overtake, 1 - can overtake freely; TRUE if it is possible for a bus to overtake another bus that stops in front of it (if FALSE - dwell time is subject to the exit time of a blocking bus)
+    double min_DT = 1;
+    int rti = 0;					//!< indicates the level of real-time information at this stop: 0 - none; 1 - for all lines stoping at each stop; 2 - for all lines stoping at all connected stop; 3 - for the entire network.
 
-	double avaliable_length;	//!< length of the busstop minus occupied length
-	double exit_time;
-	double dwelltime;			//!< standard dwell time
+    bool gate_flag = false;		//!< gate flag. If set true, passenger generation subject to timetable of transport services
 
-	int nr_boarding;			//!< pass. boarding
-	int nr_alighting;			//!< pass alighting
-    
+    double avaliable_length = 20;	//!< length of the busstop minus occupied length
+    double exit_time = 0;
+    double dwelltime = 0;			//!< standard dwell time
+
+    int nr_boarding = 0;			//!< pass. boarding
+    int nr_alighting = 0;			//!< pass alighting
+
     list<double> exogenous_arrivals; //!< unordered list of arrival times of exogenous trains
     
-	Random* random;
+	Random* random=nullptr;
 	
 	vector <Busline*> lines;
 	map <double,Bus*> expected_arrivals;					//!< booked arrivals of buses on the link on their way to the stop
@@ -828,8 +828,8 @@ protected:
 	// relevant only for demand format 3
 	ODs_for_stop stop_as_origin;			//!< a map of all the OD's that this busstop is their origin 
 	ODs_for_stop stop_as_destination;		//!< a map of all the OD's that this busstop is their destination
-	bool is_origin;							//!< indicates if this busstop serves as an origin for some passenger demand
-	bool is_destination;					//!< indicates if this busstop serves as an destination for some passenger demand
+	bool is_origin=false;							//!< indicates if this busstop serves as an origin for some passenger demand
+	bool is_destination=false;					//!< indicates if this busstop serves as an destination for some passenger demand
 	map <Busline*, bool> real_time_info;	//!< indicates for each line if it has real-time info. at this stop
 
 	// walking distances between stops (relevant only for demand format 3 and 4)
@@ -842,11 +842,11 @@ protected:
         @{
     */
 	//drt implementation
-	Controlcenter* CC; //!< control center that this stop is associated with @todo change to a collection of possible Controlcenters, currently only assuming one available
-	vector<pair<Bus*,double>> unassigned_bus_arrivals; //!< expected arrivals of transit vehicles to stop that are not assigned to any trip
-	vector<pair<Bus*, double>> unassigned_buses_at_stop; //!< unassigned buses currently at stop along with the time they arrived/were initialized to this stop
-	Origin* origin_node; //!< origin node for generating buses when a trip begins at this stop. Is equal to nullptr if no trip can begin at this stop
-	Destination* dest_node; //!< destination node for processing buses that end a trip at this stop. Is equal to nullptr if no trip can end at this stop
+    Controlcenter* CC = nullptr; //!< control center that this stop is associated with @todo change to a collection of possible Controlcenters, currently only assuming one available
+    vector<pair<Bus*, double>> unassigned_bus_arrivals; //!< expected arrivals of transit vehicles to stop that are not assigned to any trip
+    vector<pair<Bus*, double>> unassigned_buses_at_stop; //!< unassigned buses currently at stop along with the time they arrived/were initialized to this stop
+    Origin* origin_node = nullptr; //!< origin node for generating buses when a trip begins at this stop. Is equal to nullptr if no trip can begin at this stop
+    Destination* dest_node = nullptr; //!< destination node for processing buses that end a trip at this stop. Is equal to nullptr if no trip can end at this stop
     /**@}*/
 
 
@@ -886,9 +886,9 @@ public:
     virtual ~Walking_time_dist(){};
     
     bool time_is_in_range(double);
-    int get_num_quantiles() {return num_quantiles;};
+    int get_num_quantiles() {return num_quantiles;}
     double* get_quantiles();
-    double* get_quantile_values() {return quantile_values;};
+    double* get_quantile_values() {return quantile_values;}
     
 protected:
     Busstop* dest_stop;
@@ -946,28 +946,28 @@ public:
 	int get_id () {return function_id;}
 
 	// dwell time parameters
-	int function_id;
-	int dwell_time_function_form; 
+	int function_id=-1;
+	int dwell_time_function_form=-1; 
 	// 11 - Linear function of boarding and alighting
     // 12 - Linear function of boarding and alighting + non-linear crowding effect (Weidmann) 
     // 13 - Max (boarding, alighting) + non-linear crowding effect (Weidmann) 
     // 21 - TCRP(max doors with crowding, boarding from front door, alighting from both doors) + bay + stop capacity
 	// 22 - TCRP(max doors with crowding, boarding from x doors, alighting from y doors) + bay + stop capacity
 
-	double dwell_constant; 
-	double boarding_coefficient;
-	double alighting_cofficient;
-	double dwell_std_error;
+	double dwell_constant=1; 
+	double boarding_coefficient=1;
+	double alighting_cofficient=1;
+	double dwell_std_error=0;
 
 	// only for TCRP functions
-	int number_boarding_doors;
-	int number_alighting_doors;
-	double share_alighting_front_door;
-	double crowdedness_binary_factor; 
+	int number_boarding_doors=1;
+	int number_alighting_doors=1;
+	double share_alighting_front_door=1;
+	double crowdedness_binary_factor=0; 
 
 	// extra delays
-	double bay_coefficient;
-	double over_stop_capacity_coefficient; 
+	double bay_coefficient=0;
+	double over_stop_capacity_coefficient=0; 
 };
 
 #endif //_BUSLINE

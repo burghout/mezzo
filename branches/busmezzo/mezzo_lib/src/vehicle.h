@@ -83,20 +83,20 @@ public:
 	void report(double time);
   
 protected:
-	int id;
-	Route* route;
-	ODpair * odpair;
-	double start_time;
-	int type;
-	double length;
- 	double entry_time;
-	double exit_time; 	
-	double arrival_time;
-	Link* curr_link;
-	size_t curr_link_route_idx; //!< index position of curr_link on route->links, initialized to 0
-	bool entered;
-	int switched;
-	int meters;
+    int id = -1;
+    Route* route = nullptr;
+    ODpair* odpair = nullptr;
+    double start_time = 0.0;
+    int type = -1;
+    double length = 0;
+    double entry_time = 0.0;
+    double exit_time = 0.0;
+    double arrival_time = 0.0;
+    Link* curr_link = nullptr;
+    size_t curr_link_route_idx = 0; //!< index position of curr_link on route->links, initialized to 0
+    bool entered = false;
+    int switched = 0;
+    int meters = 0;
 };
 #ifdef _BUSES
 class Bustrip;
@@ -114,12 +114,12 @@ public:
 	Dwell_time_function* get_dt_function() {return dwell_time_function;}
 	int get_id () {return type_id;}
 protected:
-	int type_id;	// bus type id
+	int type_id = -1;	// bus type id
 	string bus_type_name;
-	double length;
-	int number_seats;
-	int capacity;
-	Dwell_time_function* dwell_time_function;
+	double length = 0.0;
+	int number_seats = 0;
+	int capacity = 0;
+	Dwell_time_function* dwell_time_function = nullptr;
 };
 
 /** @ingroup DRT
@@ -215,25 +215,25 @@ signals:
 /**@}*/
 
 protected:
-	int	bus_id;
-	Bustype* bus_type;
-	Random* random;
-	int number_seats; // Two added variables for LOS satistics and for dwell time calculations
-	int capacity; // In the future will be determined according to the bus type
-	int occupancy;
-	Bustrip* curr_trip;
+	int	bus_id=-1;
+	Bustype* bus_type = nullptr;
+	Random* random = nullptr;
+	int number_seats = 0; // Two added variables for LOS satistics and for dwell time calculations
+	int capacity = 0; // In the future will be determined according to the bus type
+	int occupancy = 0;
+	Bustrip* curr_trip = nullptr;
 
-	bool on_trip; // is true when bus is on a trip and false when waiting for the next trip
+	bool on_trip = false; // is true when bus is on a trip and false when waiting for the next trip
 	list <Busvehicle_location> output_vehicle; //!< list of output data for buses visiting stops
 	
 /** @ingroup DRT
     @{
 */
-	Busstop* last_stop_visited_; //!< the last busstop (if no stop has been visited then initialized to nullptr) that this transit vehicle has entered (or exited)
-	BusState state_; //!< current BusState of the transit vehicle
-	bool flex_vehicle_; //!< true if vehicle can be assigned trips dynamically, false otherwise
+	Busstop* last_stop_visited_ = nullptr; //!< the last busstop (if no stop has been visited then initialized to nullptr) that this transit vehicle has entered (or exited)
+	BusState state_ = BusState::Null; //!< current BusState of the transit vehicle
+	bool flex_vehicle_ = false; //!< true if vehicle can be assigned trips dynamically, false otherwise
 	set<int> sroute_ids_; //!< ids of service routes (buslines) that this bus can be assigned dynamically generated trips for
-    Controlcenter* CC_; //!< control center that this vehicle is currently connected to. nullptr if not connected to any control center
+    Controlcenter* CC_ = nullptr; //!< control center that this vehicle is currently connected to. nullptr if not connected to any control center
 
 /**@}*/
 };
@@ -274,13 +274,13 @@ public:
 		time = 0;
 	}
 	
-	int line_id;
-	int trip_id;
-    int stop_id;
-	int vehicle_id;
-	int link_id;
-	bool entering_stop;
-	double time;
+	int line_id = 0;
+	int trip_id = 0;
+    int stop_id = 0;
+	int vehicle_id = 0;
+	int link_id = 0;
+	bool entering_stop = false;
+	double time = 0.0;
 };
 
 #endif// BUSES

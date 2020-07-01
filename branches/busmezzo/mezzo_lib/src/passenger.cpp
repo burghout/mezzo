@@ -77,7 +77,7 @@ void Passenger::reset ()
 
 	if (theParameters->drt)
 	{
-		disconnect(this, 0, 0, 0); //disconnect all signals of passenger
+        disconnect(this, nullptr, nullptr, nullptr); //disconnect all signals of passenger
 	}
 }
 
@@ -464,7 +464,7 @@ void Passenger::record_waiting_experience(Bustrip* arriving_bus, double time)
 		}
 		
 		ODstops* passenger_od = original_origin->get_stop_od_as_origin_per_stop(OD_stop->get_destination());
-		passenger_od->record_waiting_experience(this, arriving_bus, time, experienced_WT, curr_stop->get_rti(), this->get_memory_projected_RTI(curr_stop,arriving_bus->get_line()), AWT_first_leg_boarding, waiting_time_due_denied_boarding.size());
+		passenger_od->record_waiting_experience(this, arriving_bus, time, experienced_WT, curr_stop->get_rti(), this->get_memory_projected_RTI(curr_stop,arriving_bus->get_line()), AWT_first_leg_boarding, static_cast<int>(waiting_time_due_denied_boarding.size()));
 		//OD_stop->record_waiting_experience(this, arriving_bus, time, experienced_WT, curr_stop->get_rti(), this->get_memory_projected_RTI(curr_stop,arriving_bus->get_line()), AWT_first_leg_boarding, waiting_time_due_denied_boarding.size());
 		//left_behind_before = false;
 	}
@@ -610,7 +610,7 @@ Busstop* Passenger::make_connection_decision (double time)
             if ( (candidate_connection_stops_u.count(*connected_stop) == 0) && ((*connected_stop)->check_destination_stop(this->get_OD_stop()->get_destination()) == true) )
 				// only if it wasn't done already and there exists an OD for the remaining part
 			{
-				ODstops* left_od_stop;
+				ODstops* left_od_stop = nullptr;
 				if ((*connected_stop)->check_stop_od_as_origin_per_stop(this->get_OD_stop()->get_destination()) == false)
 				{
 					ODstops* left_od_stop = new ODstops ((*connected_stop),this->get_OD_stop()->get_destination());
@@ -630,8 +630,15 @@ Busstop* Passenger::make_connection_decision (double time)
 				else
 				// in case it is an intermediate transfer stop
 				{
-					candidate_connection_stops_u[(*connected_stop)] = left_od_stop->calc_combined_set_utility_for_connection ((*path_iter)->get_walking_distances().front(), time, this);
-					// the utility is combined for all paths from this transfer stop (incl. walking time to the connected stop)
+					if(left_od_stop)
+					{ 
+						candidate_connection_stops_u[(*connected_stop)] = left_od_stop->calc_combined_set_utility_for_connection ((*path_iter)->get_walking_distances().front(), time, this);
+						// the utility is combined for all paths from this transfer stop (incl. walking time to the connected stop)
+					}
+					else
+					{
+						DEBUG_MSG("WARNING Passenger::make_connection_decision - left_od_stop is null");
+					}
 				}
 			}
 		}
@@ -701,7 +708,7 @@ Busstop* Passenger::make_first_stop_decision (double time)
 				{
 					vector<vector<Busstop*> > alt_stops = (*path_iter)->get_alt_transfer_stops();
 					vector<vector<Busstop*> >::iterator stops_iter = alt_stops.begin();
-                    Q_UNUSED (stops_iter);
+                    Q_UNUSED (stops_iter)
 					// taking into account the walking distances from the origin to the origin stop and from the last stop till the final destination
 					candidate_origin_stops_u[(*o_stop_iter).first] += exp(theParameters->walking_time_coefficient * origin_walking_distances[(*o_stop_iter).first]/ theRandomizers[0]->nrandom(theParameters->average_walking_speed, theParameters->average_walking_speed/4) + theParameters->walking_time_coefficient * destination_walking_distances[(*d_stop_iter).first]/ theRandomizers[0]->nrandom(theParameters->average_walking_speed, theParameters->average_walking_speed/4) + possible_od->calc_combined_set_utility_for_connection ((*path_iter)->get_walking_distances().front(), time, this));
 				}
@@ -1138,7 +1145,7 @@ void Passenger::write_selected_path(ostream& out)
 	double total_IVT_crowding = calc_IVT_crowding();
 	double total_walking_time = calc_total_walking_time();
 	double total_waiting_time_due_to_denied_boarding = calc_total_waiting_time_due_to_denied_boarding();
-	int nr_transfers = (selected_path_stops.size() - 4) / 2; // given path definition (direct connection - 4 elements, 1 transfers - 6 elements, 2 transfers - 8 elements, etc.
+	int nr_transfers = (static_cast<int>(selected_path_stops.size()) - 4) / 2; // given path definition (direct connection - 4 elements, 1 transfers - 6 elements, 2 transfers - 8 elements, etc.
 
 	this->set_GTC(theParameters->walking_time_coefficient * total_walking_time + theParameters->waiting_time_coefficient * total_waiting_time + theParameters->waiting_time_coefficient * 3.5 *total_waiting_time_due_to_denied_boarding + theParameters->in_vehicle_time_coefficient * total_IVT_crowding + theParameters->transfer_coefficient * nr_transfers);
 

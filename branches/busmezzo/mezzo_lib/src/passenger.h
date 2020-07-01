@@ -86,7 +86,7 @@ public:
 	void write_passenger_trajectory(ostream& out);
 	void add_to_selected_path_trips (pair<Bustrip*,double> trip_time) {selected_path_trips.push_back(trip_time);}
 	void add_to_selected_path_stop (pair<Busstop*,double> stop_time) {selected_path_stops.push_back(stop_time);}
-	void add_to_experienced_crowding_levels(pair<double,double> riding_coeff) {experienced_crowding_levels.push_back(riding_coeff);};
+    void add_to_experienced_crowding_levels(pair<double,double> riding_coeff) {experienced_crowding_levels.push_back(riding_coeff);}
 	void add_to_denied_boarding (pair<Busstop*,double> denied_time) {waiting_time_due_denied_boarding.push_back(denied_time);}
 	bool check_selected_path_trips_empty () {return selected_path_trips.empty();}
 	int get_selected_path_last_line_id ();
@@ -137,46 +137,46 @@ signals:
 /**@}*/
 
 protected:
-	int passenger_id;
-	double start_time;
-	double end_time;
-	double total_waiting_time;
-	double toal_IVT;
-	double total_IVT_crowding;
-	double total_walking_time;
-	double total_GTC;
-	Busstop* original_origin;
-	ODstops* OD_stop;
-	bool boarding_decision;
-	Random* random;
-	bool already_walked;
-	bool sitting;		//!< 0 - sits; 1 - stands
-	int nr_boardings;	//!< counts the number of times pass boarded a vehicle
-    vector <pair<Busstop*,double> > selected_path_stops;				 //!< stops and corresponding arrival times
-    vector <pair<Bustrip*,double> > selected_path_trips;				 //!< trips and corresponding boarding times
-    vector <pair<double,double> > experienced_crowding_levels;		 //!< IVT and corresponding crowding levels (route segment level)
-    vector <pair<Busstop*,double> > waiting_time_due_denied_boarding; //!< stops at which the pass. experienced denied boarding and the corresponding time at which it was experienced
-	vector<int> rejected_lines; //!< To keep track of the lines that the passenger chose not to board earlier, these should not be regarded next time
-	bool RTI_network_level;
-	double arrival_time_at_stop;
-	//double first_bus_arrival_time; //Used to calculate weighted waiting time in case the first bus is full
-	//bool left_behind_before;
-	map<pair<Busstop*, Busline*>,double> memory_projected_RTI; 
-	double AWT_first_leg_boarding;
-	
-	// relevant only in case of day2day procedures
-	map<pair<Busstop*, Busline*>,double> anticipated_waiting_time;
-	map<pair<Busstop*, Busline*>,double> alpha_RTI;
-	map<pair<Busstop*, Busline*>,double> alpha_exp;
-	map<SLL, double> anticipated_ivtt;
-	map<SLL, double> ivtt_alpha_exp;
+    int passenger_id = -1;
+    double start_time = 0;
+    double end_time = 0;
+    double total_waiting_time = 0;
+    double toal_IVT = 0;
+    double total_IVT_crowding = 0;
+    double total_walking_time = 0;
+    double total_GTC = 0;
+    Busstop* original_origin = nullptr;
+    ODstops* OD_stop = nullptr;
+    bool boarding_decision = false;
+    Random* random = nullptr;
+    bool already_walked = false;
+    bool sitting = false;		//!< 0 - sits; 1 - stands
+    int nr_boardings = 0;	//!< counts the number of times pass boarded a vehicle
+    vector <pair<Busstop*, double> > selected_path_stops;				 //!< stops and corresponding arrival times
+    vector <pair<Bustrip*, double> > selected_path_trips;				 //!< trips and corresponding boarding times
+    vector <pair<double, double> > experienced_crowding_levels;		 //!< IVT and corresponding crowding levels (route segment level)
+    vector <pair<Busstop*, double> > waiting_time_due_denied_boarding; //!< stops at which the pass. experienced denied boarding and the corresponding time at which it was experienced
+    vector<int> rejected_lines; //!< To keep track of the lines that the passenger chose not to board earlier, these should not be regarded next time
+    bool RTI_network_level = false;
+    double arrival_time_at_stop = 0;
+    //double first_bus_arrival_time; //Used to calculate weighted waiting time in case the first bus is full
+    //bool left_behind_before;
+    map<pair<Busstop*, Busline*>, double> memory_projected_RTI;
+    double AWT_first_leg_boarding = 0;
 
-	// relevant only for OD in terms od zones
-	ODzone* o_zone;
-	ODzone* d_zone;
-	map<Busstop*,double> origin_walking_distances;
-	map<Busstop*,double> destination_walking_distances;
-	bool this_is_the_last_stop;
+    // relevant only in case of day2day procedures
+    map<pair<Busstop*, Busline*>, double> anticipated_waiting_time;
+    map<pair<Busstop*, Busline*>, double> alpha_RTI;
+    map<pair<Busstop*, Busline*>, double> alpha_exp;
+    map<SLL, double> anticipated_ivtt;
+    map<SLL, double> ivtt_alpha_exp;
+
+    // relevant only for OD in terms od zones
+    ODzone* o_zone = nullptr;
+    ODzone* d_zone = nullptr;
+    map<Busstop*, double> origin_walking_distances;
+    map<Busstop*, double> destination_walking_distances;
+    bool this_is_the_last_stop = false;
 };
 
 class PassengerRecycler

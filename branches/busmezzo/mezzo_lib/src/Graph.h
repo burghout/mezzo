@@ -71,8 +71,8 @@ class GraphNode
 		 dnLinks_.push_back(dn);
       }
 
-      inline short int nUpLinks() { return upLinks_.size(); }
-      inline short int nDnLinks() { return dnLinks_.size(); }
+      inline size_t nUpLinks() { return upLinks_.size(); }
+      inline size_t nDnLinks() { return dnLinks_.size(); }
 
       inline int predecessor() { return predecessor_; }
       inline T& cost() { return cost_; }
@@ -94,17 +94,17 @@ class GraphLink
 
       // pointers to connected nodes.
 
-      int upNode_;
-      int dnNode_;
+      int upNode_ = -1;
+      int dnNode_ = -1;
 
-      T *penalties_;		// turning penalties to dnLinks
-      char grade_;		// link grade (0=freeway 1=otherwise)
+      T *penalties_ = nullptr;		// turning penalties to dnLinks
+      char grade_{};		// link grade (0=freeway 1=otherwise)
 
-      char dnLegal_;		// is downstream links connected
-      char dnIndex_;		// index as an downstream link
+      char dnLegal_{};		// is downstream links connected
+      char dnIndex_{};		// index as an downstream link
 
       T cost_;			// default cost
-      int predecessor_;		// for storing path
+      int predecessor_{};		// for storing path
 
    public:
 
@@ -158,8 +158,8 @@ class Graph
 			const T p = 0);
       virtual ~Graph() {}
 
-      int nNodes() const { return nodes_.size(); }
-      int nLinks() const { return links_.size(); }
+      size_t nNodes() const { return nodes_.size(); }
+      size_t nLinks() const { return links_.size(); }
   
       // Pointer to the objects in array (in this class)
 
@@ -198,7 +198,7 @@ class Graph
 
       void addLink(int i, int u, int d,
 				   const T w = 1, char grade = 0,
-				   char legal = (char) 0xFF, 
+                   char legal = static_cast<char>(0xFF),
 				   char index = 0);
 
       // Update the link cost

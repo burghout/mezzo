@@ -450,7 +450,7 @@ int BoundaryOut::send_message(PVM* com)
 // BoundaryIn functions
 BoundaryIn::BoundaryIn (int id_):Origin(id_)
 {
-	lastveh=NULL;
+	lastveh=nullptr;
 }
 
 BoundaryIn::~BoundaryIn ()

@@ -26,7 +26,7 @@ class Pass_path
 	int get_id () {return p_id;}
     vector <vector <Busline*> > get_alt_lines () const {return alt_lines;}
     vector <vector <Busstop*> > get_alt_transfer_stops () {return alt_transfer_stops;}
-	vector <double> get_walking_distances () {return walking_distances;};
+    vector <double> get_walking_distances () {return walking_distances;}
 	int get_number_of_transfers () const {return number_of_transfers;}
     void set_alt_transfer_stops (vector <vector <Busstop*> > trans_stops) {alt_transfer_stops = trans_stops;}
 	bool get_arriving_bus_rellevant () {return arriving_bus_rellevant;}
@@ -54,16 +54,16 @@ class Pass_path
     Busstop* get_first_transfer_stop() const; //returns the end stop of the first transit leg for this path if there are transfers. Returns false if there are no transfers in this path
     /**@}*/
 protected:
-	int p_id;
-	Random* random;
+    int p_id = -1;
+    Random* random = nullptr;
     vector <vector <Busline*> > alt_lines;
-	vector <double> IVT;
+    vector <double> IVT;
     vector <vector <Busstop*> > alt_transfer_stops;
-	vector <double> walking_distances;
-	int number_of_transfers;
-	double scheduled_in_vehicle_time;
-	double scheduled_headway;
-	bool arriving_bus_rellevant;
+    vector <double> walking_distances;
+    int number_of_transfers = 0;
+    double scheduled_in_vehicle_time = 0;
+    double scheduled_headway = 0;
+    bool arriving_bus_rellevant = false;
 };
 
 #endif

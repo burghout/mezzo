@@ -200,6 +200,8 @@ public:
 	set<Busstop*> getServiceArea() const;
     vector<Busline*> getServiceRoutes() const;
     bool isInServiceArea(Busstop* stop) const; //!< true if stop is included in service area of Controlcenter, false otherwise
+	bool getGeneratedDirectRoutes();
+	void setGeneratedDirectRoutes(bool generate_direct_routes);
 
 	//methods for connecting passengers, vehicles, stops and lines
 	void connectPassenger(Passenger* pass); //!< connects passenger signals to control center slots
@@ -259,6 +261,8 @@ private:
 	const int ev_strategy_; //<! initial empty vehicle strategy
 	const int tvm_strategy_; //<! initial trip - vehicle matching strategy
 	const int vs_strategy_; //<! initial vehicle scheduling strategy
+
+	bool generated_direct_routes_ = false; //!< true if direct routes have been generated and added as service routes between all stops in the service area of this control center
 	
 	//maps for bookkeeping connected passengers and vehicles
 	map<int, Passenger*> connectedPass_; //!< passengers currently connected to Controlcenter 

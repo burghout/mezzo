@@ -95,10 +95,10 @@ class Node
 #endif // _NO_GUI   
 	virtual bool  process_veh(Vehicle* veh, double time);
  protected:
-	int id;
+	int id = -1;
 	Coord position;
 #ifndef _NO_GUI  
-	NodeIcon* icon;
+	NodeIcon* icon=nullptr;
 #endif // _NO_GUI  
 };
 
@@ -132,7 +132,7 @@ protected:
 	int incident_link;
 	vector <double> incident_parameters;
 	vector <int> v_queue_lengths; // stores the length of the virtual queue for each ass_od time period.
-	int currentperiod;
+	int currentperiod = 0;
 };
 
 class Destination : public Node
@@ -230,12 +230,12 @@ class BoundaryIn : public Origin
 #endif // _MIME	
 
 private:
-	vector <VirtualLink*> vlinks;
-	//vector <Route*> * routes;
-	multimap <odval,Route*> * routemap;
-	vector <Busroute*> * busroutes; 
-	vector <ODpair*> * ods;
-	Vehicle* lastveh;
+    vector <VirtualLink*> vlinks;
+    //vector <Route*> * routes;
+    multimap <odval, Route*>* routemap = nullptr;
+    vector <Busroute*>* busroutes = nullptr;
+    vector <ODpair*>*  = nullptr;
+    Vehicle* lastveh = nullptr;
 };
 
 

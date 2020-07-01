@@ -210,8 +210,8 @@ void Day2day::write_output (string filename, string addition)
 		row->second /= row->second.counter;
 	}
 	
-	double average_nr_of_changes = (double)nr_of_changes  / (double)nr_of_passengers - 1;
-	double average_nr_missed = (double)total_nr_missed  / (double)nr_of_passengers;
+    double average_nr_of_changes = static_cast<double>(nr_of_changes)  / static_cast<double>(nr_of_passengers) - 1;
+    double average_nr_missed = static_cast<double>(total_nr_missed)  / static_cast<double>(nr_of_passengers);
 	double average_waiting_time = total_waiting_time / nr_of_passengers;
 	double average_wt_pk = total_wt_pk / nr_of_passengers;
 	double average_wt_rti = total_wt_rti / nr_of_passengers;

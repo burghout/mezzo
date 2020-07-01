@@ -117,7 +117,7 @@ class OServer : public Server
 		double get_lanes() {return lanes;}
 	protected:
 		double alpha;  // proportion of cars in carfollowing
-		double mu_unbound; // mu for the unbound traffic, calculated from (mu-alpha*cf_hdway)/(1-alpha)
+		double mu_unbound = 1.0; // mu for the unbound traffic, calculated from (mu-alpha*cf_hdway)/(1-alpha)
 		double lanes;
 
 };

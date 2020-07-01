@@ -155,7 +155,7 @@ void ODpair::add_route(Route* route)
    if (rptr !=routes.end())
    		return *rptr;
    else
-   		return NULL;
+        return nullptr;
  }
 
 /**
@@ -228,7 +228,7 @@ vector <Route*> ODpair::delete_spurious_routes(double time)
 	if (maxroutes < routes.size())
 	{	
 		vector<Route*>::iterator r=routes.end();
-		for (unsigned int k = routes.size(); k > maxroutes; k--)
+		for (unsigned int k = static_cast<unsigned int>(routes.size()); k > maxroutes; k--)
 		{
 			r=routes.end();
 			r--;
@@ -253,7 +253,7 @@ Route* ODpair::select_route(double time)          // to be changed
 
 {
 	vector <double> cost;
-	int n=routes.size();
+	int n=static_cast<int>(routes.size());
    if (n==0)
    {
       cout << " No Route from Origin " << this->origin->get_id();
@@ -325,8 +325,8 @@ ODpair::ODpair(Origin* origin_, Destination* destination_, double rate_, Vtypes*
 	oldgrid =new Grid(nr_fields,fields);
 }
 
-ODpair::ODpair(): /*id (-1),*/ odaction (NULL), origin (NULL), destination (NULL),
-                  rate (-1), start_rate(-1), random (NULL), grid(NULL), oldgrid(NULL)
+ODpair::ODpair(): /*id (-1),*/ odaction (nullptr), origin (nullptr), destination (nullptr),
+                  rate (-1), start_rate(-1), random (nullptr), grid(nullptr), oldgrid(nullptr)
 {
 
 }

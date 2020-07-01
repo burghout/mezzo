@@ -25,7 +25,7 @@ int drt_min_occupancy=0;
 long int randseed=0;
 int vid=0;
 int pid=0;
-long pathid=0;
+static long pathid=0;
 VehicleRecycler recycler;    // Global vehicle recycler
 double time_alpha=0.2; // smoothing factor for the output link times (uses hist_time & avg_time),
 // 1 = only new times, 0= only old times.
@@ -172,21 +172,21 @@ Network::~Network()
     // New way
     for (map <int, Origin*>::iterator iter=originmap.begin();iter!=originmap.end();++iter)
     {
-        if (NULL != iter->second) {
+        if (nullptr != iter->second) {
             delete (iter->second); // calls automatically destructor
         }
     }
     originmap.clear();
     for (map <int, Destination*>::iterator iter1=destinationmap.begin();iter1!=destinationmap.end();++iter1)
     {
-        if (NULL != iter1->second) {
+        if (nullptr != iter1->second) {
             delete (iter1->second); // calls automatically destructor
         }
     }
     destinationmap.clear();
     for (map <int, Junction*>::iterator iter2=junctionmap.begin();iter2!=junctionmap.end();++iter2)
     {
-        if (NULL!=iter2->second) {
+        if (nullptr!=iter2->second) {
             delete (iter2->second); // calls automatically destructor
         }
     }
@@ -206,14 +206,14 @@ Network::~Network()
 */
     for (map <int,Link*>::iterator iter4=linkmap.begin();iter4!=linkmap.end();++iter4)
     {
-        if (NULL != iter4->second) {
+        if (nullptr != iter4->second) {
             delete (iter4->second); // calls automatically destructor
         }
     }
     linkmap.clear();
     for (vector <Incident*>::iterator iter5=incidents.begin();iter5<incidents.end();++iter5)
     {
-        if (NULL != *iter5) {
+        if (nullptr != *iter5) {
             delete (*iter5); // calls automatically destructor
         }
     }
@@ -243,28 +243,28 @@ Network::~Network()
     ***********/
     for (vector <ODpair*>::iterator iter6=odpairs.begin();iter6!=odpairs.end();++iter6)
     {
-        if (NULL != *iter6) {
+        if (nullptr != *iter6) {
             delete (*iter6);
         }
     }
     odpairs.clear();
     for (multimap <odval, Route*>::iterator iter7=routemap.begin();iter7!=routemap.end();++iter7)
     {
-        if (NULL != iter7->second) {
+        if (nullptr != iter7->second) {
             delete (iter7->second); // calls automatically destructor
         }
     }
     routemap.clear();
     for (map <int, Sdfunc*>::iterator iter8=sdfuncmap.begin();iter8!=sdfuncmap.end();++iter8)
     {
-        if (NULL != iter8->second) {
+        if (nullptr != iter8->second) {
             delete (iter8->second); // calls automatically destructor
         }
     }
     sdfuncmap.clear();
     for (map <int, Server*>::iterator iter9=servermap.begin();iter9!=servermap.end();++iter9)
     {
-        if (NULL != iter9->second) {
+        if (nullptr != iter9->second) {
             delete (iter9->second); // calls automatically destructor
         }
     }
@@ -289,21 +289,21 @@ Network::~Network()
     ***********/
     for (map <int, Turning*>::iterator iter10=turningmap.begin();iter10!=turningmap.end();++iter10)
     {
-        if (NULL != iter10->second) {
+        if (nullptr != iter10->second) {
             delete (iter10->second); // calls automatically destructor
         }
     }
     turningmap.clear();
     for (vector <Vtype*>::iterator iter11=vehtypes.vtypes.begin();iter11<vehtypes.vtypes.end();++iter11)
     {
-        if (NULL != *iter11) {
+        if (nullptr != *iter11) {
             delete (*iter11); // calls automatically destructor
         }
     }
     vehtypes.vtypes.clear();
     for (vector <TurnPenalty*>::iterator iter12= turnpenalties.begin(); iter12 < turnpenalties.end();++iter12)
     {
-        if (NULL != *iter12) {
+        if (nullptr != *iter12) {
             delete (*iter12);
         }
     }
@@ -451,7 +451,7 @@ unsigned int Network::count_generated_passengers()
     unsigned int count = 0;
     for (const auto& odstop : odstops)
     {
-        count += odstop->get_passengers_during_simulation().size();
+        count += static_cast<unsigned int>(odstop->get_passengers_during_simulation().size());
     }
 
     return count;
@@ -581,7 +581,7 @@ bool Network::readnode(istream& in)
     {
         int sid;
         in >>  sid;
-        Destination* dptr=NULL;
+        Destination* dptr=nullptr;
         if (sid < 0) // why was this clause again? check what server == -1 means...
             dptr=new Destination(nid);
         else
@@ -589,10 +589,10 @@ bool Network::readnode(istream& in)
             assert (servermap.count(sid));
             //Server* sptr=(*(find_if (servers.begin(),servers.end(), compare <Server> (sid)))) ;
             Server* sptr = servermap [sid];
-            if (sptr!=NULL)
+            if (sptr!=nullptr)
                 dptr=new Destination(nid,sptr);
         }
-        if (dptr==NULL)
+        if (dptr==nullptr)
         {
 
             cout << "Read nodes: scanner jammed at destination " << nid << endl;
@@ -1431,7 +1431,7 @@ bool Network::readcontrolcenters(const string& name)
         int ev_strategy; //id of empty vehicle strategy
         int tvm_strategy; //id of trip vehicle matching strategy
         int vs_strategy; //id of vehicle scheduling strategy
-        int generate_direct_paths; // 1 if all direct paths between should be added as service routes to this cc and 0 otherwise
+        int generate_direct_routes; // 1 if all direct routes between should be added as service routes to this cc and 0 otherwise
 
         int nr_stops; //number of stops in the control center's service area
         int nr_lines; //number of lines (given as input) in the control center's service area
@@ -1444,7 +1444,7 @@ bool Network::readcontrolcenters(const string& name)
             in.close();
             return false;
         }
-        in >> id >> tg_strategy >> ev_strategy >> tvm_strategy >> vs_strategy >> generate_direct_paths;
+        in >> id >> tg_strategy >> ev_strategy >> tvm_strategy >> vs_strategy >> generate_direct_routes;
 
         auto* cc = new Controlcenter(eventlist, this, id, tg_strategy, ev_strategy, tvm_strategy, vs_strategy);
 
@@ -1478,14 +1478,16 @@ bool Network::readcontrolcenters(const string& name)
         }
 
         //create and add all direct lines to cc
-        if (generate_direct_paths == 1)
+        if (generate_direct_routes == true)
         {
+            cout << "readcontrolcenters:: generating direct lines for control center " << cc->getID();
             if (!createControlcenterDRTLines(cc))
             {
                 cout << "readcontrolcenters:: problem generating direct lines for control center " << id;
                 in.close();
                 return false;
             }
+            cc->setGeneratedDirectRoutes(generate_direct_routes);
         }
         
         //read lines associated with this cc 
@@ -1973,7 +1975,7 @@ bool Network::readbusline(istream& in) // reads a busline
     in >> bracket;
     if (bracket != '}')
     {
-        cout << "readfile::readsbusline scanner jammed when reading stop point " << stop_id << " at " << bracket << ", expected }";
+        cout << "readfile::readsbusline scanner jammed when reading stop point at " << bracket << ", expected }";
         return false;
     }
 
@@ -2101,7 +2103,7 @@ Busline* Network::create_busline(
     Vtype*                  vtype,                 //!< Vehicle type of this line (TODO 2018-10-23: Currently completely unusued but removing will invalidate all current network inputs)
     ODpair*                 odptr,                 //!< OD pair
     int                     holding_strategy,      //!< indicates the type of holding strategy used for line
-    float                   max_headway_holding,   //!< threshold parameter relevant in case holding strategies 1 or 3 are chosen or max holding time in [sec] in case of holding strategy 6
+    double                  max_headway_holding,   //!< threshold parameter relevant in case holding strategies 1 or 3 are chosen or max holding time in [sec] in case of holding strategy 6
     double                  init_occup_per_stop,   //!< average number of passengers that are on-board per prior upstream stops (scale of a Gamma distribution)
     int                     nr_stops_init_occup,   //!< number of prior upstream stops resulting with initial occupancy (shape of a Gamma distribution)
     bool                    flex_line              //!< true if this line allows for dynamically scheduled trips
@@ -2154,103 +2156,106 @@ bool Network::createControlcenterDRTLines(Controlcenter* cc)
 {
     assert(theParameters->drt);
     assert(cc);
-    cout << "readcontrolcenters:: generating direct lines for control center " << cc->getID();
 
-    set<Busstop*> serviceArea = cc->getServiceArea();
-    vector <Busstop*> stops;
-    vector<Busroute*> routesFound;
-    vector<Busline*>  buslinesFound;
-
-    //*** begin dummy values
-    Vtype* vtype = new Vtype(888, "octobus", 1.0, 20.0);
-    int routeIdCounter = 10000; // TODO: update to find max routeId from busroutes vector
-    int busLineIdCounter = 10000; //  TODO: update later
-   //*** end of dummy values
-
-    ODpair* od_pair = nullptr;
-    Origin* ori = nullptr;
-    Destination* dest = nullptr;
-
-    for (auto startstop : serviceArea)
+    if (cc)
     {
-        ori = nullptr;
-        // find best origin for startstop if it does not exist
-        if (startstop->get_origin_node() == nullptr)
+        set<Busstop*> serviceArea = cc->getServiceArea();
+        vector <Busstop*> stops;
+        vector<Busroute*> routesFound;
+        vector<Busline*>  buslinesFound;
+
+        //*** begin dummy values
+        Vtype* vtype = new Vtype(888, "octobus", 1.0, 20.0);
+        int routeIdCounter = 10000; // TODO: update to find max routeId from busroutes vector
+        int busLineIdCounter = 10000; //  TODO: update later
+       //*** end of dummy values
+
+        ODpair* od_pair = nullptr;
+        Origin* ori = nullptr;
+        Destination* dest = nullptr;
+
+        for (auto startstop : serviceArea)
         {
-            // find  origin node
-            ori = findNearestOriginToStop(startstop);
-            if (ori != nullptr)
-                startstop->set_origin_node(ori);
+            ori = nullptr;
+            // find best origin for startstop if it does not exist
+            if (startstop->get_origin_node() == nullptr)
+            {
+                // find  origin node
+                ori = findNearestOriginToStop(startstop);
+                if (ori != nullptr)
+                    startstop->set_origin_node(ori);
+            }
+            for (auto endstop : serviceArea)
+            {
+                if (endstop->get_dest_node() == nullptr)
+                {
+                    // find  destination node
+                    dest = findNearestDestinationToStop(endstop);
+                    if (dest != nullptr)
+                        endstop->set_dest_node(dest);
+                }
+                if (startstop != endstop)
+                {
+                    // find best odpair
+                    int ori_id = startstop->get_origin_node()->get_id();
+                    int dest_id = endstop->get_dest_node()->get_id();
+                    odval odid(ori_id, dest_id);
+                    auto od_it = find_if(odpairs.begin(), odpairs.end(), compareod(odid));
+                    if (od_it != odpairs.end())
+                        od_pair = *od_it;
+                    else // create new OD pair
+                    {
+                        od_pair = new ODpair(startstop->get_origin_node(), endstop->get_dest_node(), 0.0, &vehtypes);
+                        odpairs.push_back(od_pair);
+                        qDebug() << "----Missing OD pair, creating for Origin " << ori_id <<
+                            ", destination " << dest_id;
+                    }
+
+                    stops.clear();
+                    stops.push_back(startstop);
+                    stops.push_back(endstop);
+
+                    Busroute* newRoute = create_busroute_from_stops(routeIdCounter, od_pair->get_origin(), od_pair->get_destination(), stops);
+                    if (newRoute != nullptr)
+                    {
+                        //do not add busroutes that already exist
+                        auto existing_route_it = find_if(busroutes.begin(), busroutes.end(), [newRoute](Busroute* broute) -> bool { return (Route*)newRoute->equals((Route)*broute); });
+                        if (existing_route_it == busroutes.end())
+                        {
+                            routesFound.push_back(newRoute);
+                            routeIdCounter++;
+                        }
+                        else {
+                            newRoute = *existing_route_it;
+                        }
+
+                        // create busLine
+                        Busline* newLine = create_busline(busLineIdCounter, 0, "DRT Line", newRoute, stops, vtype, od_pair, 0, 0.0, 0.0, 0, true);
+                        if (newLine != nullptr)
+                        {
+                            newLine->set_planned_headway(::drt_first_rep_max_headway); //add a planned headway (associated with CC) for this line. Used when applying dominancy rules in CSGM and for prior knowledge calculations in pass decisions
+                            buslinesFound.push_back(newLine);
+                            busLineIdCounter++;
+                            od_pair->add_route(newRoute); //add route to OD pair so it does not get deleted in Network::init
+                        }
+                    }
+                    else
+                        qDebug() << "DTR create buslines: no route found from stop " << startstop->get_id() << " to " << endstop->get_id();
+
+                }
+            }
         }
-        for (auto endstop : serviceArea)
+        // add the routes found to the busroutes
+        busroutes.insert(busroutes.end(), routesFound.begin(), routesFound.end());
+        // add the buslines
+        buslines.insert(buslines.end(), buslinesFound.begin(), buslinesFound.end());
+
+        //add buslines to cc
+        for (auto line : buslinesFound)
         {
-            if (endstop->get_dest_node() == nullptr)
-            {
-                // find  destination node
-                dest = findNearestDestinationToStop(endstop);
-                if (dest != nullptr)
-                    endstop->set_dest_node(dest);
-            }
-            if (startstop != endstop)
-            {
-                // find best odpair
-                int ori_id = startstop->get_origin_node()->get_id();
-                int dest_id = endstop->get_dest_node()->get_id();
-                odval odid(ori_id, dest_id);
-                auto od_it = find_if(odpairs.begin(), odpairs.end(), compareod(odid));
-                if (od_it != odpairs.end())
-                    od_pair = *od_it;
-                else // create new OD pair
-                {
-                    od_pair = new ODpair(startstop->get_origin_node(), endstop->get_dest_node(), 0.0, &vehtypes);
-                    odpairs.push_back(od_pair);
-                    qDebug() << "----Missing OD pair, creating for Origin " << ori_id <<
-                        ", destination " << dest_id;
-                }
-
-                stops.clear();
-                stops.push_back(startstop);
-                stops.push_back(endstop);
-
-                Busroute* newRoute = create_busroute_from_stops(routeIdCounter, od_pair->get_origin(), od_pair->get_destination(), stops);
-                if (newRoute != nullptr)
-                {
-                    //do not add busroutes that already exist
-                    auto existing_route_it = find_if(busroutes.begin(), busroutes.end(), [newRoute](Busroute* broute) -> bool { return (Route*)newRoute->equals((Route)*broute); });
-                    if (existing_route_it == busroutes.end())
-                    {
-                        routesFound.push_back(newRoute);
-                        routeIdCounter++;
-                    } else {
-                        newRoute = *existing_route_it;
-                    }
-                    
-                    // create busLine
-                    Busline* newLine = create_busline(busLineIdCounter, 0, "DRT Line", newRoute, stops, vtype, od_pair, 0, 0.0, 0.0, 0, true);
-                    if (newLine != nullptr)
-                    {
-                        newLine->set_planned_headway(::drt_first_rep_max_headway); //add a planned headway (associated with CC) for this line. Used when applying dominancy rules in CSGM and for prior knowledge calculations in pass decisions
-                        buslinesFound.push_back(newLine);
-                        busLineIdCounter++;
-                        od_pair->add_route(newRoute); //add route to OD pair so it does not get deleted in Network::init
-                    }
-                }
-                else
-                    qDebug() << "DTR create buslines: no route found from stop " << startstop->get_id() << " to " << endstop->get_id();
-
-            }
+            cc->addServiceRoute(line);
         }
-    }
-    // add the routes found to the busroutes
-    busroutes.insert(busroutes.end(), routesFound.begin(), routesFound.end());
-    // add the buslines
-    buslines.insert(buslines.end(), buslinesFound.begin(), buslinesFound.end());
-
-    //add buslines to cc
-    for (auto line : buslinesFound)
-    {
-        cc->addServiceRoute(line);
-    }
+    } //if cc
 
     return true;
 }
@@ -2432,43 +2437,47 @@ vector<pair<Busstop*,double> > Network::calc_interstop_freeflow_ivt(const Busrou
     //TODO only considers free-flow travel times, adjust for dynamic ones instead that are dependent on histtimes or current simulation time
 	assert(route);
 	vector<pair<Busstop*, double> > deltas_at_stops; //vector of inter stop times, for first stop ivt from origin node of route
-	const vector<Link*> routelinks = route->get_links();
-	if (!stops.empty() && !routelinks.empty())
-	{
-		double total_length; //total length of current link
-		double relative_length; //percentage of current link to calculate IVT for
-		double current_stop_pos; //position of stop on current link in meters from upstream node
-		double time_to_stop = 0.0; //travel time to stop from closest upstream node
 
-        auto current_link = routelinks.cbegin(); //iterator that always points to the next link on the route to be traversed when calculating ivts
+    if (route)
+    {
+        const vector<Link*> routelinks = route->get_links();
+        if (!stops.empty() && !routelinks.empty())
+        {
+            double total_length; //total length of current link
+            double relative_length; //percentage of current link to calculate IVT for
+            double current_stop_pos; //position of stop on current link in meters from upstream node
+            double time_to_stop = 0.0; //travel time to stop from closest upstream node
 
-		for (auto next_stop = stops.cbegin(); next_stop != stops.cend(); ++next_stop)
-		{
-			double expected_ivt = 0.0;
-			auto next_stop_link = find_if(current_link, routelinks.cend(), compare<Link>((*next_stop)->get_link_id())); //find iterator to link of next stop on busroute
-			if (next_stop_link == routelinks.cend()) //stop does not exist on this route
-			{
-				return deltas_at_stops; //return all the stop deltas found so far
-			}
+            auto current_link = routelinks.cbegin(); //iterator that always points to the next link on the route to be traversed when calculating ivts
 
-			//calculate ivt from current position to next stop position
-			for (; current_link != next_stop_link; ++current_link) //iterate through links in route up until link of stop
-			{
-				expected_ivt += (*current_link)->get_freeflow_time();
-			}
+            for (auto next_stop = stops.cbegin(); next_stop != stops.cend(); ++next_stop)
+            {
+                double expected_ivt = 0.0;
+                auto next_stop_link = find_if(current_link, routelinks.cend(), compare<Link>((*next_stop)->get_link_id())); //find iterator to link of next stop on busroute
+                if (next_stop_link == routelinks.cend()) //stop does not exist on this route
+                {
+                    return deltas_at_stops; //return all the stop deltas found so far
+                }
 
-			expected_ivt -= time_to_stop; //subtract the travel time for length of link that has already been traversed
+                //calculate ivt from current position to next stop position
+                for (; current_link != next_stop_link; ++current_link) //iterate through links in route up until link of stop
+                {
+                    expected_ivt += (*current_link)->get_freeflow_time();
+                }
 
-			//current_link now points to the same link of the next stop, add the ivt to the position of the next stop on the link
-			total_length = (*current_link)->get_length();
-			current_stop_pos = (*next_stop)->get_position();
-			relative_length = current_stop_pos / total_length;
-			time_to_stop = round(relative_length * (*current_link)->get_freeflow_time());
+                expected_ivt -= time_to_stop; //subtract the travel time for length of link that has already been traversed
 
-			expected_ivt += time_to_stop;
-			deltas_at_stops.push_back(make_pair((*next_stop), expected_ivt));
-		}
-	}
+                //current_link now points to the same link of the next stop, add the ivt to the position of the next stop on the link
+                total_length = (*current_link)->get_length();
+                current_stop_pos = (*next_stop)->get_position();
+                relative_length = current_stop_pos / total_length;
+                time_to_stop = round(relative_length * (*current_link)->get_freeflow_time());
+
+                expected_ivt += time_to_stop;
+                deltas_at_stops.push_back(make_pair((*next_stop), expected_ivt));
+            }
+        }
+    }
     return deltas_at_stops;
 }
 
@@ -6784,11 +6793,11 @@ bool Network::writeheadways(string name)
 
 bool Network::write_busstop_output(string name1, string name2, string name3, string name4, string name5, string name6, string name7, string name8, string name9, string name10, string name11, string name12, string name13, string name14, string name15, string name16, string name17)
 {
-    Q_UNUSED(name5);
-    Q_UNUSED(name6);
-    Q_UNUSED(name13);
-    Q_UNUSED(name14);
-    Q_UNUSED(name15);
+    Q_UNUSED(name5)
+    Q_UNUSED(name6)
+    Q_UNUSED(name13)
+    Q_UNUSED(name14)
+    Q_UNUSED(name15)
 
     ofstream out1(name1.c_str(),ios_base::app);
     ofstream out2(name2.c_str(),ios_base::app);
@@ -6884,14 +6893,14 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
         if (theParameters->drt)
         {
             //write outputs for objects owned by control centers
-            for (const pair<int, Controlcenter*>& cc : ccmap) //writing trajectory output for each drt vehicle
+            for (const auto& cc : ccmap) //writing trajectory output for each drt vehicle
             {
-                for (const pair<Bus*, Bustrip*>& vehtrip : cc.second->completedVehicleTrips_)
+                for (const auto& vehtrip : cc.second->completedVehicleTrips_)
                 {
                     vehtrip.first->write_output(out4); //write trajectory output for each bus vehicle that completed a trip
                     vehtrip.second->write_assign_segments_output(out7); // writing the assignment results in terms of each segment on individual trips
                 }
-                for (const pair<int, Bus*>& veh : cc.second->connectedVeh_)
+                for (const auto& veh : cc.second->connectedVeh_)
                 {
                     veh.second->write_output(out4); //write trajectory output for each bus vehicle that has not completed a trip
                 }
@@ -7193,7 +7202,7 @@ bool Network::readtime(istream& in)
 {
     char bracket;
     int lid;
-    double linktime;
+    double linktime=-1.0; // default that causes assertion failure if unset
     auto* ltime=new LinkTime();
     ltime->periodlength=periodlength;
     ltime->nrperiods=nrperiods;
@@ -7613,7 +7622,7 @@ bool Network::shortest_paths_all()
     double entrytime=0.0;    // entry time for time-variant shortest path search
     int nr_reruns=static_cast<int> (runtime/theParameters->update_interval_routes)-1; // except for last period
     // determines the number of reruns of the shortest path alg.
-    int routenr=routemap.size();
+    int routenr=static_cast<int>(routemap.size());
     for (int i=0; i<nr_reruns; i++)
     {
         entrytime= i*theParameters->update_interval_routes;
@@ -8825,7 +8834,7 @@ double Network::step(double timestep)
     double tc; // current time
 #endif //_NO_GUI
     double next_an_update=t0+timestep;   // when to exit
-    Q_UNUSED (next_an_update);
+    Q_UNUSED (next_an_update)
 
     if (theParameters->pass_day_to_day_indicator == 0 && theParameters->in_vehicle_d2d_indicator == 0)
     {
@@ -8933,8 +8942,8 @@ void Network::recenter_image()
     // position the drawing in the center of the pixmap
     vector <int> boundaries = drawing->get_boundaries();
 
-    width_x = static_cast<double>(boundaries[2]-boundaries[0]);
-    height_y = static_cast<double>(boundaries[3]-boundaries[1]);
+    width_x = static_cast<double>(boundaries[2]) - static_cast<double>(boundaries[0]);
+    height_y = static_cast<double>(boundaries[3]) - static_cast<double>(boundaries[1]);
     double scale_x = (pm->width()) / width_x;
     double scale_y = (pm->height()) / height_y;
 
@@ -8980,8 +8989,8 @@ QMatrix Network::netgraphview_init()
 
     //scale the image and then centralize the image along
     //the overscaled dimension
-    width_x = static_cast<double>(boundaries[2]-boundaries[0]);
-    height_y = static_cast<double>(boundaries[3]-boundaries[1]);
+    width_x = static_cast<double>(boundaries[2]) - static_cast<double>(boundaries[0]);
+    height_y = static_cast<double>(boundaries[3]) - static_cast<double>(boundaries[1]);
     double scale_x = (pm->width())/width_x;
     double scale_y = (pm->height())/height_y;
 

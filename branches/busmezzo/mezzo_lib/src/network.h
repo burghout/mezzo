@@ -93,7 +93,7 @@ class ODRate
 {
 public:
 	odval odid;
-	int rate;
+	int rate=0;
 };
 
 
@@ -168,20 +168,7 @@ public:
 	//void delete_spurious_routes(); //!< deletes all routes that have no OD pair.
 	void renum_routes (); //!< renumerates the routes, to keep a consecutive series after deletions & additions
     Busroute* create_busroute_from_stops(int id, Origin* origin_node, Destination* destination_node, const vector<Busstop*>& stops, double time = 0.0); //!< creates a busroute beginning at origin node and ending at destination node that visits stops in sequential order. Returns nullptr if busroute is not possible
-    Busline* create_busline(
-        int                     busline_id,            //!< unique identification number
-        int                     opposite_busline_id,   //!< identification number of the line that indicates the opposite direction (relevant only when modeling passenger route choice)
-        string                  name,                  //!< a descriptive name
-        Busroute*               broute,                //!< bus route
-        vector <Busstop*>       stops,                 //!< stops on line
-        Vtype*                  vtype,                 //!< Vehicle type of this line (TODO 2018-10-23: Currently completely unusued but removing will invalidate all current network inputs)
-        ODpair*                 odptr,                 //!< OD pair
-        int                     holding_strategy,      //!< indicates the type of holding strategy used for line
-        float                   max_headway_holding,   //!< threshold parameter relevant in case holding strategies 1 or 3 are chosen or max holding time in [sec] in case of holding strategy 6
-        double                  init_occup_per_stop,   //!< average number of passengers that are on-board per prior upstream stops (scale of a Gamma distribution)
-        int                     nr_stops_init_occup,   //!< number of prior upstream stops resulting with initial occupancy (shape of a Gamma distribution)
-        bool                    flex_line              //!< true if this line allows for dynamically scheduled trips
-    ); //!< creates a busline and adds it to Network::buslines
+    Busline* create_busline(int busline_id, int opposite_busline_id, string name, Busroute* broute, vector <Busstop*> stops, Vtype* vtype, ODpair* odptr, int holding_strategy, double max_headway_holding, double init_occup_per_stop, int nr_stops_init_occup, bool flex_line); //!< creates a busline and adds it to Network::buslines
     bool createAllDRTLines(); //!< creates all the DRT lines between each stop pair that has a viable route between them
     bool createControlcenterDRTLines(Controlcenter* cc); //!< creates all direct DRT lines between each stop pair in the service area of Controlcenter and assigns these lines to Controlcenter
     Origin* findNearestOriginToStop(Busstop* stop); //!< returns the nearest Origin Node to  stop
@@ -253,6 +240,7 @@ public:
 	map <int, Destination*>& get_destinations() {return destinationmap;}
 	map <int, Node*>& get_nodes() {return nodemap;}
 	map <int,Link*>& get_links() {return linkmap;}
+	map<int, Controlcenter*> get_controlcenters() { return ccmap; }
 
 	map <int, Busstop*>& get_stopsmap() { return busstopsmap; }
     vector <Busroute*>&  get_busroutes() { return busroutes; } // bad idea, but consistent with the other get_*
@@ -436,10 +424,10 @@ protected:
 //	map<int,map<int, vector<Busline*> > > direct_lines; // contains all direct lines between a couple of stops
 	map<Busstop*,vector<Busstop*> > consecutive_stops; // contains all the stops that can be reached within no transfer per stop
 
-	Day2day* day2day;
+	Day2day* day2day=nullptr;
 	map<ODSL, Travel_time> wt_rec; //the record of waiting time data
 	map<ODSLL, Travel_time> ivt_rec; //the record of in-vehicle time data
-	int day;
+	int day=0;
 
 /** @ingroup DRT
     @{
@@ -454,20 +442,20 @@ protected:
 #ifndef _USE_VAR_TIMES
 	Graph<double, GraphNoInfo<double> > * graph;
 #else
-	Graph<double, LinkTimeInfo > * graph;
+	Graph<double, LinkTimeInfo>* graph=nullptr;
 #endif
 	// Random stream
-	Random* random;
+	Random* random=nullptr;
 
 	//GUI
 #ifndef _NO_GUI
-	Drawing* drawing; //!< the place where all the Icons live
-	QPixmap* pm; //!< the place where the drawing is drawn
-	QMatrix* wm; //!< worldmatrix that contains all the transformations of the drawing (scaling, translation, rotation, &c)
+	Drawing* drawing=nullptr; //!< the place where all the Icons live
+	QPixmap* pm=nullptr; //!< the place where the drawing is drawn
+	QMatrix* wm=nullptr; //!< worldmatrix that contains all the transformations of the drawing (scaling, translation, rotation, &c)
 	QMatrix initview_wm; //!< world matrix that transform the drawing to the inital view
-	double scale; //!< contains the scale of the drawing
-	double width_x; //!< width of boundaries of drawing in original coordinate system
-	double height_y; //!< height of boundaries of drawing in org. coord. sys.
+	double scale=100.0; //!< contains the scale of the drawing
+	double width_x=100.0; //!< width of boundaries of drawing in original coordinate system
+	double height_y=100.0; //!< height of boundaries of drawing in org. coord. sys.
 #endif // _NO_GUI
 	// Eventlist
 	Eventlist* eventlist;
@@ -506,16 +494,16 @@ protected:
 	// end of read functions
 	vector <string> filenames; //!< filenames for input/output as read in the master file
 	string workingdir;
-	unsigned int replication;
-	int runtime; //!< == stoptime
-	int starttime;
-	bool calc_paths; //!< if true new shortest paths are calculated and new paths added to the route file
-	double time;
-	int no_ass_links; //!< number of links observed in assignment matrix
+	unsigned int replication=0;
+	int runtime=0; //!< == stoptime
+	int starttime=0;
+	bool calc_paths=false; //!< if true new shortest paths are calculated and new paths added to the route file
+	double time=0.0;
+	int no_ass_links=0; //!< number of links observed in assignment matrix
 	// Linktimes
-	int nrperiods; //!< number of linktime periods
-	double periodlength; //!< length of each period in seconds.
-	LinkTimeInfo* linkinfo;
+	int nrperiods=0; //!< number of linktime periods
+	double periodlength=0; //!< length of each period in seconds.
+	LinkTimeInfo* linkinfo=nullptr;
 	// PVM communicator
 #ifdef _PVM   
 	PVM * communicator;
@@ -567,7 +555,7 @@ private:
 	bool blocked;
 	vector <double> incident_parameters; 
 #ifndef _NO_GUI
-	IncidentIcon* icon;
+	IncidentIcon* icon=nullptr;
 #endif
 };
 
@@ -633,7 +621,7 @@ private:
     long int seed_;
 
     Network* theNetwork;
-    double runtime_;
+    double runtime_=0.0;
 
 };
 

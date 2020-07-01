@@ -58,7 +58,7 @@ Output_Summary_Line::~Output_Summary_Line ()
 Busline_travel_times::~Busline_travel_times ()
 {}
 
-Busline::Busline (int id_, int opposite_id_, string name_, Busroute* busroute_, vector<Busstop*> stops_, Vtype* vtype_, ODpair* odpair_, int holding_strategy_, float max_headway_holding_, double init_occup_per_stop_, int nr_stops_init_occup_, bool flex_line_):
+Busline::Busline (int id_, int opposite_id_, string name_, Busroute* busroute_, vector<Busstop*> stops_, Vtype* vtype_, ODpair* odpair_, int holding_strategy_, double max_headway_holding_, double init_occup_per_stop_, int nr_stops_init_occup_, bool flex_line_):
 	stops(stops_), id(id_), opposite_id(opposite_id_), name(name_), busroute(busroute_), odpair(odpair_), vtype(vtype_), max_headway_holding(max_headway_holding_), holding_strategy(holding_strategy_), init_occup_per_stop(init_occup_per_stop_), nr_stops_init_occup(nr_stops_init_occup_), flex_line(flex_line_)
 {
 	active=false;
@@ -378,18 +378,20 @@ double Busline::time_till_next_arrival_at_stop_after_time (Busstop* stop, double
 	}
 	Bustrip* last_trip = find_next_expected_trip_at_stop(stop); 
     assert(last_trip);//TODO: is it possible for nullptr to be returned here?
-	Busstop* last_stop_visited = last_trip->get_last_stop_visited();
-	double time_last_stop_visited = last_trip->get_last_stop_exit_time();
-	if (check_first_stop(last_stop_visited) == true && time_last_stop_visited == 0) // next trip has not started yet
-	{
-		time_till_next_visit = find_time_till_next_scheduled_trip_at_stop(stop,time); // time till starting time plus time to stop
-	}
-	else
-	{
-		time_till_next_visit = last_trip->stops_map[stop] - last_trip->stops_map[last_stop_visited]; // additional scheduled time
-	}
-	int min_display = Round((time_till_next_visit + check_subline_disruption(last_stop_visited, stop, time))/60);
-	return  max(min_display*60,0);
+
+    Busstop* last_stop_visited = last_trip->get_last_stop_visited();
+    double time_last_stop_visited = last_trip->get_last_stop_exit_time();
+    if (check_first_stop(last_stop_visited) == true && time_last_stop_visited == 0) // next trip has not started yet
+    {
+        time_till_next_visit = find_time_till_next_scheduled_trip_at_stop(stop, time); // time till starting time plus time to stop
+    }
+    else
+    {
+        time_till_next_visit = last_trip->stops_map[stop] - last_trip->stops_map[last_stop_visited]; // additional scheduled time
+    }
+    int min_display = Round((time_till_next_visit + check_subline_disruption(last_stop_visited, stop, time)) / 60);
+
+	return  max(min_display * 60, 0);
 }
 
 
@@ -1207,10 +1209,14 @@ pair<double, double> Bustrip::crowding_dt_factor (double nr_boarding, double nr_
 	}
 	else
 	{
+		
 		double nr_standees_alighting = max(0.0, busv->get_occupancy() - (nr_boarding + nr_alighting) - busv->get_number_seats());
 		double nr_standees_boarding = max(0.0, busv->get_occupancy() - (nr_boarding + nr_alighting)/2 - busv->get_number_seats());
-		double crowdedness_ratio_alighting = nr_standees_alighting / (busv->get_capacity()- busv->get_number_seats());
-		double crowdedness_ratio_boarding = nr_standees_boarding / (busv->get_capacity()- busv->get_number_seats());
+
+		double capacity = static_cast<double>(busv->get_capacity());
+		double nr_seats = static_cast<double>(busv->get_number_seats());
+		double crowdedness_ratio_alighting = nr_standees_alighting / (capacity - nr_seats);
+		double crowdedness_ratio_boarding = nr_standees_boarding / (capacity - nr_seats);
 		crowding_factor.second = 1 + 0.75 * pow(crowdedness_ratio_alighting, 2);
 		crowding_factor.first = 1 + 0.75 * pow(crowdedness_ratio_boarding, 2);
 	}
@@ -1701,7 +1707,9 @@ void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, d
 			} 
 			if (theParameters->demand_format == 2)
 			{
-				double ratio = double(nr_waiting [trip->get_line()])/(trip->get_busv()->get_capacity() - (starting_occupancy + get_nr_boarding() - get_nr_alighting()));
+				double capacity = static_cast<double>(trip->get_busv()->get_capacity());
+				double new_occupancy = static_cast<double>(starting_occupancy) + static_cast<double>(get_nr_boarding()) - static_cast<double>(get_nr_alighting());
+				double ratio = static_cast<double>((nr_waiting [trip->get_line()]))/(capacity - new_occupancy);
 				for (vector <Busstop*>::iterator destination_stop = trip->get_line()->stops.begin(); destination_stop < trip->get_line()->stops.end(); destination_stop++)
 				 // allow only the ratio between supply and demand for boarding equally for all destination stops
 				{
@@ -2410,7 +2418,8 @@ double Busstop::calc_holding_departure_time (Bustrip* trip, double time)
 						else
 						{
 							sum_arrival_rate_next_stops = sum_arrival_rate_next_stops / 3600;
-							pass_ratio = (trip->get_busv()->get_occupancy() - nr_alighting + nr_boarding) / (2 * 2 * sum_arrival_rate_next_stops); 
+							double new_occupancy = static_cast<double>(trip->get_busv()->get_occupancy()) - static_cast<double>(nr_alighting) + static_cast<double>(nr_boarding);
+							pass_ratio = new_occupancy / (2.0 * 2.0 * sum_arrival_rate_next_stops); 
 						}
 						double holding_departure_time = min(last_departures[trip->get_line()].second + average_curr_headway - (pass_ratio), last_departures[trip->get_line()].second + (trip->get_line()->calc_curr_line_headway() * trip->get_line()->get_max_headway_holding())); // headway ratio means here how tolerant we are to exceed the gap (1+(1-ratio)) -> 2-ratio
 
@@ -2450,20 +2459,23 @@ return total_nr_waiting;
 void Busstop::book_unassigned_bus_arrival(Eventlist* eventlist, Bus* bus, double expected_arrival_time)
 {
 	assert(bus);
-	DEBUG_MSG("Adding bus " << bus->get_bus_id() << " to unassigned bus arrivals at stop " << name);
-	assert(bus->get_occupancy() == 0); //unassigned buses should be empty
-	assert(expected_arrival_time >= 0);
-    if (!origin_node) //if no origin node then the bus will not be able to begin trips starting from this stop
-        DEBUG_MSG("WARNING Busstop::book_unassigned_bus_arrival - unassigned bus " << bus->get_bus_id() << " is scheduled to arrive at stop " << id << " with no origin node associated with it");
+    if (bus)
+    {
+        DEBUG_MSG("Adding bus " << bus->get_bus_id() << " to unassigned bus arrivals at stop " << name);
+        assert(bus->get_occupancy() == 0); //unassigned buses should be empty
+        assert(expected_arrival_time >= 0);
+        if (!origin_node) //if no origin node then the bus will not be able to begin trips starting from this stop
+            DEBUG_MSG("WARNING Busstop::book_unassigned_bus_arrival - unassigned bus " << bus->get_bus_id() << " is scheduled to arrive at stop " << id << " with no origin node associated with it");
 
-	unassigned_bus_arrivals.push_back(make_pair(bus, expected_arrival_time));
-	sort(unassigned_bus_arrivals.begin(), unassigned_bus_arrivals.end(),
-		[](const pair<Bus*,double>& left, const pair<Bus*, double>& right) -> bool
-		{
-			return left.second < right.second;	//keep vector sorted by arrival time (smallest at the front of the vector)
-		}
-	); 
-	eventlist->add_event(expected_arrival_time, this);	//add a Busstop event scheduled for the arrival time of vehicle to switch state of bus to IdleEmpty from Null and add to unassigned_buses_at_stop
+        unassigned_bus_arrivals.push_back(make_pair(bus, expected_arrival_time));
+        sort(unassigned_bus_arrivals.begin(), unassigned_bus_arrivals.end(),
+            [](const pair<Bus*, double>& left, const pair<Bus*, double>& right) -> bool
+            {
+                return left.second < right.second;	//keep vector sorted by arrival time (smallest at the front of the vector)
+            }
+        );
+        eventlist->add_event(expected_arrival_time, this);	//add a Busstop event scheduled for the arrival time of vehicle to switch state of bus to IdleEmpty from Null and add to unassigned_buses_at_stop
+    }
 }
 
 void Busstop::add_unassigned_bus(Bus* bus, double arrival_time)
@@ -2634,22 +2646,23 @@ void Busstop::calculate_sum_output_stop_per_line(int line_id)
 			}
 	}
 	// dividing all the average measures by the number of records	
+    double dbcounter = static_cast<double>(counter); //convert to double for division (and to suppress type conversion warnings)
 	if (trips.size()>2)	
 	{
-		output_summary[line_id].stop_avg_headway = output_summary[line_id].stop_avg_headway/(counter-2);
+        output_summary[line_id].stop_avg_headway = output_summary[line_id].stop_avg_headway/(dbcounter-2.0);
 	}
 	else
 	{
-		output_summary[line_id].stop_avg_headway = output_summary[line_id].stop_avg_headway/(counter);
+        output_summary[line_id].stop_avg_headway = output_summary[line_id].stop_avg_headway/(dbcounter);
 	}
-	output_summary[line_id].stop_avg_DT = output_summary[line_id].stop_avg_DT/counter;
-	output_summary[line_id].stop_avg_abs_deviation = output_summary[line_id].stop_avg_abs_deviation/counter;
-	output_summary[line_id].stop_total_boarding = output_summary[line_id].stop_total_boarding/counter;
-	output_summary[line_id].stop_avg_waiting_per_stop = output_summary[line_id].stop_avg_waiting_per_stop/counter;
-	output_summary[line_id].stop_on_time = output_summary[line_id].stop_on_time/counter;
-	output_summary[line_id].stop_early = output_summary[line_id].stop_early/counter;
-	output_summary[line_id].stop_late = output_summary[line_id].stop_late/counter;
-	output_summary[line_id].stop_avg_holding_time = output_summary[line_id].stop_avg_holding_time/counter;
+    output_summary[line_id].stop_avg_DT = output_summary[line_id].stop_avg_DT/dbcounter;
+    output_summary[line_id].stop_avg_abs_deviation = output_summary[line_id].stop_avg_abs_deviation/dbcounter;
+    output_summary[line_id].stop_total_boarding = output_summary[line_id].stop_total_boarding/dbcounter;
+    output_summary[line_id].stop_avg_waiting_per_stop = output_summary[line_id].stop_avg_waiting_per_stop/dbcounter;
+    output_summary[line_id].stop_on_time = output_summary[line_id].stop_on_time/dbcounter;
+    output_summary[line_id].stop_early = output_summary[line_id].stop_early/dbcounter;
+    output_summary[line_id].stop_late = output_summary[line_id].stop_late/dbcounter;
+    output_summary[line_id].stop_avg_holding_time = output_summary[line_id].stop_avg_holding_time/dbcounter;
 
 	// now go over again for SD calculations
 	for (list <Busstop_Visit>::iterator iter1 = output_stop_visits.begin(); iter1!=output_stop_visits.end();iter1++)
@@ -2678,13 +2691,13 @@ void Busstop::calculate_sum_output_stop_per_line(int line_id)
 	// finish calculating all the SD measures 
 	if (trips.size()>2)	
 	{
-		output_summary[line_id].stop_sd_headway = sqrt(output_summary[line_id].stop_sd_headway/(counter-3));
+        output_summary[line_id].stop_sd_headway = sqrt(output_summary[line_id].stop_sd_headway/(dbcounter-3.0));
 	}
 	else
 	{
-		output_summary[line_id].stop_sd_headway = sqrt(output_summary[line_id].stop_sd_headway/(counter-1));
+        output_summary[line_id].stop_sd_headway = sqrt(output_summary[line_id].stop_sd_headway/(dbcounter-1.0));
 	}
-	output_summary[line_id].stop_sd_DT = sqrt(output_summary[line_id].stop_sd_DT/(counter-1));
+    output_summary[line_id].stop_sd_DT = sqrt(output_summary[line_id].stop_sd_DT/(dbcounter-1.0));
 }
 
 bool Busstop::check_walkable_stop ( Busstop* const & stop)

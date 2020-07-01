@@ -272,7 +272,7 @@ public:
 	int leg_id;
 	double expected_ivt;
 	pair<double, double> experienced_ivt;
-	double crowding;
+	double crowding = 0;
 };
 
 struct SLL
@@ -371,18 +371,18 @@ public:
 	map<SLL, double> get_ivtt_alpha_exp () {return ivtt_alpha_exp;}
 
 protected:
-	Busstop* origin_stop;
-	Busstop* destination_stop;
-	double arrival_rate; 
+	Busstop* origin_stop = nullptr;
+	Busstop* destination_stop = nullptr;
+	double arrival_rate = 0; 
 	passengers waiting_passengers; // a list of passengers with this OD that wait at the origin
-	int min_transfers; // the minimum number of trnasfers possible for getting from O to D
-	int nr_pass_completed;
-	double avg_tt;
-	double avg_nr_boardings;
+	int min_transfers = 0; // the minimum number of trnasfers possible for getting from O to D
+	int nr_pass_completed = 0;
+	double avg_tt = 0;
+	double avg_nr_boardings = 0;
     
 	vector <Pass_path*> path_set;
-	double boarding_utility;
-	double staying_utility;
+	double boarding_utility = 0;
+	double staying_utility = 0;
 
 	// output structures and measures (all output stored by origin zone)
     map <Passenger*,list<Pass_boarding_decision> > output_pass_boarding_decision;
@@ -394,9 +394,9 @@ protected:
 	
     vector <pair<vector<Busstop*>, pair <int,double> > > paths_tt;
 
-	Random* random;
-	Eventlist* eventlist; //!< to book passenger generation events
-	bool active; // indicator for non-initialization call
+	Random* random = nullptr;
+	Eventlist* eventlist = nullptr; //!< to book passenger generation events
+	bool active = false; // indicator for non-initialization call
 
 	// relevant only in case of day2day procedures
 	map<pair<Busstop*, Busline*>,double> anticipated_waiting_time;
@@ -482,23 +482,23 @@ public:
     map <Passenger*,list<Pass_alighting_decision_zone> > get_alighting_output_zone () {return output_pass_alighting_decision_zone;}
 
 protected:
-	int id;
-	double boarding_utility;
-	double staying_utility;
+	int id = -1;
+	double boarding_utility = 0;
+	double staying_utility = 0;
     map <Busstop*,pair<double,double> > stops_distances; // the mean and SD of the distances to busstops included in the zone
 	map <ODzone*,double> arrival_rates; // hourly arrival rate from this origin zone to the specified destination zone 
-	Random* random;
-	Eventlist* eventlist; //!< to book passenger generation events
-	bool active; // indicator for non-initialization call
+	Random* random = nullptr;
+	Eventlist* eventlist = nullptr; //!< to book passenger generation events
+	bool active = false; // indicator for non-initialization call
 
 	
 	// output structures and measures
     map <Passenger*,list<Pass_boarding_decision_zone> > output_pass_boarding_decision_zone;
     map <Passenger*,list<Pass_alighting_decision_zone> > output_pass_alighting_decision_zone;
 	vector <Passenger*> passengers_during_simulation;
-	int nr_pass_completed;
-	double avg_tt;
-	double avg_nr_boardings;
+	int nr_pass_completed = 0;
+	double avg_tt = 0;
+	double avg_nr_boardings = 0;
     vector <pair<vector<Busstop*>, pair <int,double> > > paths_tt;
 };
 

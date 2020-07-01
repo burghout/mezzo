@@ -6,8 +6,8 @@ Vehicle::Vehicle()
 {
  id=-1;
  type=-1;
- route=NULL;
- odpair=NULL;
+ route=nullptr;
+ odpair=nullptr;
  start_time=0.0;
  length=0;
  exit_time=0.0;
@@ -206,7 +206,7 @@ void Bus::reset ()
 	//Controlcenter
     if (theParameters->drt && flex_vehicle_)
     {
-        disconnect(this, 0, 0, 0); //disconnect all signal slots (will reconnect to control center in Network::init if initially a DRT vehicle)
+        disconnect(this, nullptr, nullptr, nullptr); //disconnect all signal slots (will reconnect to control center in Network::init if initially a DRT vehicle)
         CC_ = nullptr; //re-added in Network::init if drt vehicle
         last_stop_visited_ = nullptr;
         state_ = BusState::Null;
@@ -406,9 +406,9 @@ void Bus::print_state()
 	case BusState::Null:
 		cout << "NullBusState";
 		break;
-	default:
-		DEBUG_MSG_V("Something went very wrong");
-		abort();
+//	default:
+//		DEBUG_MSG_V("Something went very wrong");
+//		abort();
 	}
 	cout << endl;
 	cout << "\t" << "- last stop visited: " << last_stop_visited_->get_id() << endl;

@@ -72,13 +72,13 @@ class Route
 	double utility (double time);
 	int computeRouteLength();
   protected:
-	int id;
-	Origin* origin;
-	Destination* destination;
+	int id = -1;
+	Origin* origin = nullptr;
+	Destination* destination = nullptr;
 	vector <Link*> links; // ordered sequence of the links in the route
 	map <int, Link*> linkmap; // in addition to the 'links' vector, to enable fast lookup
-	double sumcost; // the cached route cost.
-	double last_calc_time; // last time the route cost was updated
+	double sumcost = 0.0; // the cached route cost.
+	double last_calc_time = 0.0; // last time the route cost was updated
 };
 
 

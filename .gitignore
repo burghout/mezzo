@@ -47,3 +47,4 @@ Doxyfile
 tests.pro.user.*
 *.rej
 .vs/
+*.dat.*
