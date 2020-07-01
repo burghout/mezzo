@@ -113,7 +113,7 @@ public:
 		int end_stop_id_,	
 		string end_stop_name_,
 		int passenger_load_
-		): line_id(line_id_), start_stop_id(start_stop_id_), start_stop_name(start_stop_name_),end_stop_id(end_stop_id_), end_stop_name(end_stop_name_),passenger_load(passenger_load_) {}
+        ): line_id(line_id_), start_stop_id(start_stop_id_), end_stop_id(end_stop_id_), start_stop_name(start_stop_name_), end_stop_name(end_stop_name_),passenger_load(passenger_load_) {}
 
 	Busline_assign();			//!< simple constructor
 	virtual ~Busline_assign();  //!< destructor
@@ -176,7 +176,7 @@ public:
         Vtype*                  vtype_,                 //!< Vehicle type of this line (TODO 2018-10-23: Currently completely unusued but removing will invalidate all current network inputs)
         ODpair*                 odpair_,                //!< OD pair
         int                     holding_strategy_,      //!< indicates the type of holding strategy used for line
-        float                   max_headway_holding_,   //!< threshold parameter relevant in case holding strategies 1 or 3 are chosen or max holding time in [sec] in case of holding strategy 6
+        double					max_headway_holding_,   //!< threshold parameter relevant in case holding strategies 1 or 3 are chosen or max holding time in [sec] in case of holding strategy 6
         double                  init_occup_per_stop_,   //!< average number of passengers that are on-board per prior upstream stops (scale of a Gamma distribution)
         int                     nr_stops_init_occup_,   //!< number of prior upstream stops resulting with initial occupancy (shape of a Gamma distribution)
         bool                    flex_line_ = false      //!< true if this line allows for dynamically scheduled trips
@@ -284,7 +284,7 @@ protected:
 
     Vtype* vtype = nullptr;							//!< the type of vehicle for the buses to be generated.
 
-    float max_headway_holding = 0;
+    double max_headway_holding = 0;
 
     int holding_strategy = 0;
     double init_occup_per_stop = 0;
@@ -698,7 +698,7 @@ public:
 	void save_previous_alighting_fractions () {previous_alighting_fractions.swap(alighting_fractions);}
 	bool check_walkable_stop ( Busstop* const & stop);
 	bool check_destination_stop (Busstop* stop);
-    bool get_gate_flag () {return gate_flag;};
+    bool get_gate_flag () {return gate_flag;}
 
 	//transfer related checks
 	bool is_awaiting_transfers(Bustrip* trip); //David added 2016-05-30: returns true if trip is currently awaiting transfers at stop
@@ -886,9 +886,9 @@ public:
     virtual ~Walking_time_dist(){};
     
     bool time_is_in_range(double);
-    int get_num_quantiles() {return num_quantiles;};
+    int get_num_quantiles() {return num_quantiles;}
     double* get_quantiles();
-    double* get_quantile_values() {return quantile_values;};
+    double* get_quantile_values() {return quantile_values;}
     
 protected:
     Busstop* dest_stop;

@@ -312,7 +312,7 @@ void Graph<T, I>::labelSetting(int s, const T scp)
 template <class T, class I>
 void Graph<T, I>::labelCorrecting(int s, double entry, I *info)
 {
-   int nlinks = nLinks();
+   int nlinks = static_cast<int>(nLinks());
 
    // label: an array that holds label from the root link (upstream
    // end) to every link (downstream end)
@@ -335,7 +335,7 @@ void Graph<T, I>::labelCorrecting(int s, double entry, I *info)
 
    int front;			// current first link in list
    int rear;			// current last link in list
-    int i;
+   int i;
    int num, u, v;
    T newlabel, *penalties;
    GraphLink<T, I> *s_link, *p_link;
@@ -370,7 +370,7 @@ void Graph<T, I>::labelCorrecting(int s, double entry, I *info)
       s_link = link(u);
       pivot =  node(s_link->dnNode_);
       penalties = s_link->penalties_;
-      num = pivot->nDnLinks();
+      num = static_cast<int>(pivot->nDnLinks());
       for (i = 0; i < num; i ++) {
 
 		 v = pivot->dnLinks_[i];
@@ -468,7 +468,7 @@ void Graph<T, I>::calcCostToNodes(T *label)
 
       newlabel = infinity_;
       p = SP_UNSET;
-      num = pivot->nUpLinks();
+      num = static_cast<int>(pivot->nUpLinks());
 
       for (i = 0; i < num; i ++) {
 		 u = pivot->upLinks_[i];

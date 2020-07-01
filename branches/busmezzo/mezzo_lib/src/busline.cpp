@@ -58,7 +58,7 @@ Output_Summary_Line::~Output_Summary_Line ()
 Busline_travel_times::~Busline_travel_times ()
 {}
 
-Busline::Busline (int id_, int opposite_id_, string name_, Busroute* busroute_, vector<Busstop*> stops_, Vtype* vtype_, ODpair* odpair_, int holding_strategy_, float max_headway_holding_, double init_occup_per_stop_, int nr_stops_init_occup_, bool flex_line_):
+Busline::Busline (int id_, int opposite_id_, string name_, Busroute* busroute_, vector<Busstop*> stops_, Vtype* vtype_, ODpair* odpair_, int holding_strategy_, double max_headway_holding_, double init_occup_per_stop_, int nr_stops_init_occup_, bool flex_line_):
 	stops(stops_), id(id_), opposite_id(opposite_id_), name(name_), busroute(busroute_), odpair(odpair_), vtype(vtype_), max_headway_holding(max_headway_holding_), holding_strategy(holding_strategy_), init_occup_per_stop(init_occup_per_stop_), nr_stops_init_occup(nr_stops_init_occup_), flex_line(flex_line_)
 {
 	active=false;
@@ -2646,23 +2646,23 @@ void Busstop::calculate_sum_output_stop_per_line(int line_id)
 			}
 	}
 	// dividing all the average measures by the number of records	
-	counter = static_cast<double>(counter);
+    double dbcounter = static_cast<double>(counter); //convert to double for division (and to suppress type conversion warnings)
 	if (trips.size()>2)	
 	{
-		output_summary[line_id].stop_avg_headway = output_summary[line_id].stop_avg_headway/(counter-2.0);
+        output_summary[line_id].stop_avg_headway = output_summary[line_id].stop_avg_headway/(dbcounter-2.0);
 	}
 	else
 	{
-		output_summary[line_id].stop_avg_headway = output_summary[line_id].stop_avg_headway/(counter);
+        output_summary[line_id].stop_avg_headway = output_summary[line_id].stop_avg_headway/(dbcounter);
 	}
-	output_summary[line_id].stop_avg_DT = output_summary[line_id].stop_avg_DT/counter;
-	output_summary[line_id].stop_avg_abs_deviation = output_summary[line_id].stop_avg_abs_deviation/counter;
-	output_summary[line_id].stop_total_boarding = output_summary[line_id].stop_total_boarding/counter;
-	output_summary[line_id].stop_avg_waiting_per_stop = output_summary[line_id].stop_avg_waiting_per_stop/counter;
-	output_summary[line_id].stop_on_time = output_summary[line_id].stop_on_time/counter;
-	output_summary[line_id].stop_early = output_summary[line_id].stop_early/counter;
-	output_summary[line_id].stop_late = output_summary[line_id].stop_late/counter;
-	output_summary[line_id].stop_avg_holding_time = output_summary[line_id].stop_avg_holding_time/counter;
+    output_summary[line_id].stop_avg_DT = output_summary[line_id].stop_avg_DT/dbcounter;
+    output_summary[line_id].stop_avg_abs_deviation = output_summary[line_id].stop_avg_abs_deviation/dbcounter;
+    output_summary[line_id].stop_total_boarding = output_summary[line_id].stop_total_boarding/dbcounter;
+    output_summary[line_id].stop_avg_waiting_per_stop = output_summary[line_id].stop_avg_waiting_per_stop/dbcounter;
+    output_summary[line_id].stop_on_time = output_summary[line_id].stop_on_time/dbcounter;
+    output_summary[line_id].stop_early = output_summary[line_id].stop_early/dbcounter;
+    output_summary[line_id].stop_late = output_summary[line_id].stop_late/dbcounter;
+    output_summary[line_id].stop_avg_holding_time = output_summary[line_id].stop_avg_holding_time/dbcounter;
 
 	// now go over again for SD calculations
 	for (list <Busstop_Visit>::iterator iter1 = output_stop_visits.begin(); iter1!=output_stop_visits.end();iter1++)
@@ -2691,13 +2691,13 @@ void Busstop::calculate_sum_output_stop_per_line(int line_id)
 	// finish calculating all the SD measures 
 	if (trips.size()>2)	
 	{
-		output_summary[line_id].stop_sd_headway = sqrt(output_summary[line_id].stop_sd_headway/(counter-3.0));
+        output_summary[line_id].stop_sd_headway = sqrt(output_summary[line_id].stop_sd_headway/(dbcounter-3.0));
 	}
 	else
 	{
-		output_summary[line_id].stop_sd_headway = sqrt(output_summary[line_id].stop_sd_headway/(counter-1.0));
+        output_summary[line_id].stop_sd_headway = sqrt(output_summary[line_id].stop_sd_headway/(dbcounter-1.0));
 	}
-	output_summary[line_id].stop_sd_DT = sqrt(output_summary[line_id].stop_sd_DT/(counter-1.0));
+    output_summary[line_id].stop_sd_DT = sqrt(output_summary[line_id].stop_sd_DT/(dbcounter-1.0));
 }
 
 bool Busstop::check_walkable_stop ( Busstop* const & stop)

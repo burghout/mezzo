@@ -25,7 +25,7 @@ int drt_min_occupancy=0;
 long int randseed=0;
 int vid=0;
 int pid=0;
-long pathid=0;
+static long pathid=0;
 VehicleRecycler recycler;    // Global vehicle recycler
 double time_alpha=0.2; // smoothing factor for the output link times (uses hist_time & avg_time),
 // 1 = only new times, 0= only old times.
@@ -172,21 +172,21 @@ Network::~Network()
     // New way
     for (map <int, Origin*>::iterator iter=originmap.begin();iter!=originmap.end();++iter)
     {
-        if (NULL != iter->second) {
+        if (nullptr != iter->second) {
             delete (iter->second); // calls automatically destructor
         }
     }
     originmap.clear();
     for (map <int, Destination*>::iterator iter1=destinationmap.begin();iter1!=destinationmap.end();++iter1)
     {
-        if (NULL != iter1->second) {
+        if (nullptr != iter1->second) {
             delete (iter1->second); // calls automatically destructor
         }
     }
     destinationmap.clear();
     for (map <int, Junction*>::iterator iter2=junctionmap.begin();iter2!=junctionmap.end();++iter2)
     {
-        if (NULL!=iter2->second) {
+        if (nullptr!=iter2->second) {
             delete (iter2->second); // calls automatically destructor
         }
     }
@@ -206,14 +206,14 @@ Network::~Network()
 */
     for (map <int,Link*>::iterator iter4=linkmap.begin();iter4!=linkmap.end();++iter4)
     {
-        if (NULL != iter4->second) {
+        if (nullptr != iter4->second) {
             delete (iter4->second); // calls automatically destructor
         }
     }
     linkmap.clear();
     for (vector <Incident*>::iterator iter5=incidents.begin();iter5<incidents.end();++iter5)
     {
-        if (NULL != *iter5) {
+        if (nullptr != *iter5) {
             delete (*iter5); // calls automatically destructor
         }
     }
@@ -243,28 +243,28 @@ Network::~Network()
     ***********/
     for (vector <ODpair*>::iterator iter6=odpairs.begin();iter6!=odpairs.end();++iter6)
     {
-        if (NULL != *iter6) {
+        if (nullptr != *iter6) {
             delete (*iter6);
         }
     }
     odpairs.clear();
     for (multimap <odval, Route*>::iterator iter7=routemap.begin();iter7!=routemap.end();++iter7)
     {
-        if (NULL != iter7->second) {
+        if (nullptr != iter7->second) {
             delete (iter7->second); // calls automatically destructor
         }
     }
     routemap.clear();
     for (map <int, Sdfunc*>::iterator iter8=sdfuncmap.begin();iter8!=sdfuncmap.end();++iter8)
     {
-        if (NULL != iter8->second) {
+        if (nullptr != iter8->second) {
             delete (iter8->second); // calls automatically destructor
         }
     }
     sdfuncmap.clear();
     for (map <int, Server*>::iterator iter9=servermap.begin();iter9!=servermap.end();++iter9)
     {
-        if (NULL != iter9->second) {
+        if (nullptr != iter9->second) {
             delete (iter9->second); // calls automatically destructor
         }
     }
@@ -289,21 +289,21 @@ Network::~Network()
     ***********/
     for (map <int, Turning*>::iterator iter10=turningmap.begin();iter10!=turningmap.end();++iter10)
     {
-        if (NULL != iter10->second) {
+        if (nullptr != iter10->second) {
             delete (iter10->second); // calls automatically destructor
         }
     }
     turningmap.clear();
     for (vector <Vtype*>::iterator iter11=vehtypes.vtypes.begin();iter11<vehtypes.vtypes.end();++iter11)
     {
-        if (NULL != *iter11) {
+        if (nullptr != *iter11) {
             delete (*iter11); // calls automatically destructor
         }
     }
     vehtypes.vtypes.clear();
     for (vector <TurnPenalty*>::iterator iter12= turnpenalties.begin(); iter12 < turnpenalties.end();++iter12)
     {
-        if (NULL != *iter12) {
+        if (nullptr != *iter12) {
             delete (*iter12);
         }
     }
@@ -581,7 +581,7 @@ bool Network::readnode(istream& in)
     {
         int sid;
         in >>  sid;
-        Destination* dptr=NULL;
+        Destination* dptr=nullptr;
         if (sid < 0) // why was this clause again? check what server == -1 means...
             dptr=new Destination(nid);
         else
@@ -589,10 +589,10 @@ bool Network::readnode(istream& in)
             assert (servermap.count(sid));
             //Server* sptr=(*(find_if (servers.begin(),servers.end(), compare <Server> (sid)))) ;
             Server* sptr = servermap [sid];
-            if (sptr!=NULL)
+            if (sptr!=nullptr)
                 dptr=new Destination(nid,sptr);
         }
-        if (dptr==NULL)
+        if (dptr==nullptr)
         {
 
             cout << "Read nodes: scanner jammed at destination " << nid << endl;
@@ -2103,7 +2103,7 @@ Busline* Network::create_busline(
     Vtype*                  vtype,                 //!< Vehicle type of this line (TODO 2018-10-23: Currently completely unusued but removing will invalidate all current network inputs)
     ODpair*                 odptr,                 //!< OD pair
     int                     holding_strategy,      //!< indicates the type of holding strategy used for line
-    float                   max_headway_holding,   //!< threshold parameter relevant in case holding strategies 1 or 3 are chosen or max holding time in [sec] in case of holding strategy 6
+    double                  max_headway_holding,   //!< threshold parameter relevant in case holding strategies 1 or 3 are chosen or max holding time in [sec] in case of holding strategy 6
     double                  init_occup_per_stop,   //!< average number of passengers that are on-board per prior upstream stops (scale of a Gamma distribution)
     int                     nr_stops_init_occup,   //!< number of prior upstream stops resulting with initial occupancy (shape of a Gamma distribution)
     bool                    flex_line              //!< true if this line allows for dynamically scheduled trips
@@ -8834,7 +8834,7 @@ double Network::step(double timestep)
     double tc; // current time
 #endif //_NO_GUI
     double next_an_update=t0+timestep;   // when to exit
-    Q_UNUSED (next_an_update);
+    Q_UNUSED (next_an_update)
 
     if (theParameters->pass_day_to_day_indicator == 0 && theParameters->in_vehicle_d2d_indicator == 0)
     {
