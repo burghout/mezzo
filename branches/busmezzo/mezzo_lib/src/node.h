@@ -234,7 +234,7 @@ private:
     //vector <Route*> * routes;
     multimap <odval, Route*>* routemap = nullptr;
     vector <Busroute*>* busroutes = nullptr;
-    vector <ODpair*>*  = nullptr;
+    vector <ODpair*>* ods = nullptr;
     Vehicle* lastveh = nullptr;
 };
 
