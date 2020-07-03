@@ -245,6 +245,7 @@ public:
 	map <int, Busstop*>& get_stopsmap() { return busstopsmap; }
     vector <Busroute*>&  get_busroutes() { return busroutes; } // bad idea, but consistent with the other get_*
     vector <Busline*>& get_buslines() {return buslines;}
+	vector <ODstops*> get_odstops_demand() { return odstops_demand; }
 	
 	multimap<odval, Route*>::iterator find_route (int id, odval val);
 	bool exists_route (int id, odval val); // checks if route with this ID exists for OD pair val

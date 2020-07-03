@@ -48,3 +48,6 @@ tests.pro.user.*
 *.rej
 .vs/
 *.dat.*
+branches/busmezzo/tests/networks/PentaFeeder2/backup/*
+branches/busmezzo/tests/pentafeeder_integrationtest/backup/*
+branches/busmezzo/tests/networks/FWF_testnetwork2/backup/*

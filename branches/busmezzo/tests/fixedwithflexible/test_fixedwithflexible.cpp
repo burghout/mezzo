@@ -1,6 +1,7 @@
 #include <QString>
 #include <QtTest/QtTest>
 #include "network.h"
+#include "MMath.h"
 #include <algorithm>
 #ifdef Q_OS_WIN
     #include <direct.h>
@@ -15,11 +16,10 @@
 //! Contains tests for testing fixed with flexible choice model implementation
 
 
-const std::string network_path = "../networks/FixedWithFlexible/";
-
+const std::string network_path = "../networks/FWF_testnetwork2/";
 const std::string network_name = "masterfile.mezzo";
 
-const QString expected_outputs_path = "://networks/FixedWithFlexible/ExpectedOutputs/";
+const QString expected_outputs_path = "://networks/FWF_testnetwork2/ExpectedOutputs/";
 const QString path_set_generation_filename = "o_path_set_generation.dat";
 const vector<QString> output_filenames =
 {
@@ -44,11 +44,6 @@ const vector<QString> skip_output_filenames =
 }; //!< Files skipped in testSaveResults. @todo Get different results for certain files on identical runs, not sure if differences are significant enough to dig into at the moment
 
 const long int seed = 42;
-
-bool AreSame(double a, double b)
-{
-    return fabs(a - b) < DBL_EPSILON;
-}
 
 class TestFixedWithFlexible : public QObject
 {
@@ -93,21 +88,38 @@ void TestFixedWithFlexible::testInitNetwork()
     nt->init();
  // Test here various properties that should be true after reading the network
     // Test if the network is properly read and initialized
-    QVERIFY2(net->get_links().size() == 46, "Failure, network should have 46 links ");
-    QVERIFY2(net->get_nodes().size() == 24, "Failure, network should have 24 nodes ");
-    QVERIFY2(net->get_odpairs().size() == 36, "Failure, network should have 36 od pairs ");
-    QVERIFY2 (net->get_busstop_from_name("A")->get_id() == 1, "Failure, bus stop A should be id 1 ");
-    QVERIFY2 (net->get_busstop_from_name("B")->get_id() == 2, "Failure, bus stop B should be id 2 ");
-    QVERIFY2 (net->get_busstop_from_name("C")->get_id() == 3, "Failure, bus stop C should be id 3 ");
-    QVERIFY2 (net->get_busstop_from_name("D")->get_id() == 4, "Failure, bus stop D should be id 4 ");
-    QVERIFY2 (net->get_busstop_from_name("E")->get_id() == 5, "Failure, bus stop E should be id 5 ");
+    QVERIFY2(net->get_links().size() == 28, "Failure, network should have 28 links ");
+    QVERIFY2(net->get_nodes().size() == 16, "Failure, network should have 16 nodes ");
+    QVERIFY2(net->get_destinations().size() == 4, "Failure, network should have 4 destination nodes ");
+    QVERIFY2(net->get_origins().size() == 4, "Failure, network should have 4 origin nodes ");
+    QVERIFY2(net->get_odpairs().size() == 12, "Failure, network should have 12 od pairs ");
+    QVERIFY2(net->get_stopsmap().size() == 8, "Failure, network should have 8 stops defined ");
+
+    //QVERIFY2 (net->get_busstop_from_name("A")->get_id() == 1, "Failure, bus stop A should be id 1 ");
+    //QVERIFY2 (net->get_busstop_from_name("B")->get_id() == 2, "Failure, bus stop B should be id 2 ");
+    //QVERIFY2 (net->get_busstop_from_name("C")->get_id() == 3, "Failure, bus stop C should be id 3 ");
+    //QVERIFY2 (net->get_busstop_from_name("D")->get_id() == 4, "Failure, bus stop D should be id 4 ");
+    //QVERIFY2 (net->get_busstop_from_name("E")->get_id() == 5, "Failure, bus stop E should be id 5 ");
     //QVERIFY2 (net->get_busstop_from_name("F")->get_id() == 6, "Failure, bus stop F should be id 6 ");
 
+    vector<ODstops*> odstops_demand = net->get_odstops_demand();
+    QVERIFY2(odstops_demand.size() == 12, "Failure, network should have 8 od stop pairs (non-zero or defined in transit_demand) ");
+
+    auto stop_1to4_it = find_if(odstops_demand.begin(),odstops_demand.end(),[](ODstops* odstop)
+    {
+        return (odstop->get_origin()->get_id() == 1 && odstop->get_destination()->get_id() == 4);
+    });
+
+    if(stop_1to4_it != odstops_demand.end())
+        QVERIFY2(AproxEqual((*stop_1to4_it)->get_arrivalrate(),300.0),"Failure, ODstops stop 1 to stop 4 should have 300 arrival rate");
+    else
+        QVERIFY2(stop_1to4_it != odstops_demand.end(),"Failure, OD stop 1 to 4 is undefined ");
+
     QVERIFY2 (theParameters->drt == true, "Failure, DRT not activated in parameters for PentaFeeder_OnlyDRT");
-    QVERIFY2 (AreSame(net->get_currenttime(),0), "Failure, currenttime should be 0 at start of simulation");
+    QVERIFY2 (AproxEqual(net->get_currenttime(),0.0), "Failure, currenttime should be 0 at start of simulation");
 
     //TODO: add tests for path_set_generation file. Check to see if the most important paths are included when generating path set for this network. Currently passenger choice sets are read from input file
-    QVERIFY2(theParameters->choice_set_indicator == 1, "Failure, choice set indicator is not set to 1");
+    QVERIFY2(theParameters->choice_set_indicator == 0, "Failure, choice set indicator is not set to 1");
 
     map<int,Controlcenter*> ccmap = net->get_controlcenters();
     QVERIFY2(ccmap.size() == 1, "Failure, network should have 1 controlcenter");
@@ -135,7 +147,7 @@ void TestFixedWithFlexible::testRunNetwork()
 
     // test here the properties that should be true after running the simulation
     QString msg = "Failure current time " + QString::number(net->get_currenttime()) + " should be 10800.1 after running the simulation";
-    QVERIFY2 (AreSame(net->get_currenttime(),10800.1), qPrintable(msg));
+    QVERIFY2 (AproxEqual(net->get_currenttime(),10800.1), qPrintable(msg));
 
     // Example: way to check typical value for e.g. number of last departures from stop A:
    // qDebug() << net->get_busstop_from_name("A")->get_last_departures().size();

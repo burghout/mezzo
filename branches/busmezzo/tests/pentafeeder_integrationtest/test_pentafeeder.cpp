@@ -1,6 +1,7 @@
 #include <QString>
 #include <QtTest/QtTest>
 #include "network.h"
+#include "MMath.h"
 #include <algorithm>
 #ifdef Q_OS_WIN
     #include <direct.h>
@@ -57,11 +58,6 @@ const vector<QString> skip_output_filenames =
 }; //!< Files skipped in testSaveResults. @todo Get different results for certain files on identical runs, not sure if differences are significant enough to dig into at the moment
 
 const long int seed = 42;
-
-bool AreSame(double a, double b)
-{
-    return fabs(a - b) < DBL_EPSILON;
-}
 
 class TestPentaFeeder : public QObject
 {
@@ -123,7 +119,7 @@ void TestPentaFeeder::testInitNetwork()
     QVERIFY2 (net->get_busstop_from_name("F")->get_id() == 6, "Failure, bus stop F should be id 6 ");
 
     QVERIFY2 (theParameters->drt == true, "Failure, DRT not activated in parameters for PentaFeeder_OnlyDRT");
-    QVERIFY2 (AreSame(net->get_currenttime(),0), "Failure, currenttime should be 0 at start of simulation");
+    QVERIFY2 (AproxEqual(net->get_currenttime(),0.0), "Failure, currenttime should be 0 at start of simulation");
 
     //TODO: add tests for path_set_generation file. Check to see if the most important paths are included when generating path set for this network. Currently passenger choice sets are read from input file
     QVERIFY(theParameters->choice_set_indicator == 1);
@@ -154,7 +150,7 @@ void TestPentaFeeder::testRunNetwork()
 
     // test here the properties that should be true after running the simulation
     QString msg = "Failure current time " + QString::number(net->get_currenttime()) + " should be 10800.1 after running the simulation";
-    QVERIFY2 (AreSame(net->get_currenttime(),10800.1), qPrintable(msg));
+    QVERIFY2 (AproxEqual(net->get_currenttime(),10800.1), qPrintable(msg));
 
     // Example: way to check typical value for e.g. number of last departures from stop A:
    // qDebug() << net->get_busstop_from_name("A")->get_last_departures().size();
