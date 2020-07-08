@@ -89,6 +89,42 @@ class Incident;
 
 //static Random* r1;
 
+//!< @brief passenger output data for a fixed with flexible run/iteration. Can create for total, for fixed only and for drt only.
+struct FWF_passdata 
+{ 
+	//Passengers
+	int pass_completed=0; // pass completed trips (that reached their final destination)
+	double total_wt=0; // total waiting time
+	double avg_total_wt=0; // avg. total waiting time
+	double total_denied_wt=0; // total denied waiting time
+	double avg_denied_wt=0; // avg. denied waiting time
+	double min_wt=0; // min. max waiting time
+	double max_wt=0; // max. waiting time
+	double median_wt=0; // median waiting time
+	double total_ivt=0; // total ivt time
+};
+
+//!< @brief vehicle output data for fixed with flexible implementation. 
+struct FWF_vehdata
+{
+	// Vehicles
+	double total_occupied_vkt = 0; // total occupied VKT
+	double total_empty_vkt = 0; // total empty VKT
+
+	// @todo calc_VKT, maybe use total driving time (empty), total driving time (full) - dwelltime * avgSpeed?
+	// alt could grab the distance traversed while driving in different states?
+};
+
+//!< @brief controlcenter output data for fixed with flexible implementation. 
+// @todo Note, probably only one cc will be used, but still this is implemented as if there could be several. Not tested for this case.
+struct FWF_ccdata
+{
+	int total_requests_recieved=0;
+	int total_requests_rejected=0;
+	int total_requests_accepted=0;
+	int total_requests_served=0;
+};
+
 class ODRate
 {
 public:
@@ -188,6 +224,9 @@ public:
 	bool writepathfile (string name); //!< appends the routes found to the route file
 	bool writeoutput(string name); //!< writes detailed output, at this time theOD output!
 	bool writesummary(string name); //!< writes the summary of the OD output
+
+	bool writeFWFsummary(ostream& out, const FWF_passdata& total_passdata, const FWF_passdata& fix_passdata, const FWF_passdata& drt_passdata, const FWF_vehdata& total_vehdata, const FWF_vehdata& fix_vehdata, const FWF_vehdata& drt_vehdata, const FWF_ccdata& cc_data); //!< summary of output for debugging fixed with flexible implementation	
+
 	bool writelinktimes(string name); //!<writes average link traversal times.
 	bool writeheadways(string name); //!< writes the timestamps of vehicles entering a Virtual Link (i e Mitsim).
 	//!<same format as historical times read by readlinktimes(string name)
@@ -267,7 +306,7 @@ public:
 
 	// Public transport
 	
-	bool write_busstop_output(string name1, string name2, string name3, string name4, string name5, string name6, string name7, string name8, string name9, string name10, string name11, string name12, string name13, string name14, string name15, string name16, string name17); //<! writes all the bus-related output 
+	bool write_busstop_output(string name1, string name2, string name3, string name4, string name5, string name6, string name7, string name8, string name9, string name10, string name11, string name12, string name13, string name14, string name15, string name16, string name17, string name18); //<! writes all the bus-related output 
 	void write_passenger_welfare_summary(ostream& out, double total_gtc, int total_pass);
 	bool write_path_set (string name1); //!< writes the path-set generated at the initialization process (aimed to be used as an input file for other runs with the same network)
 	bool write_path_set_per_stop (string name1, Busstop* stop);

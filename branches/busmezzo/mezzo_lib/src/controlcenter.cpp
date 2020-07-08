@@ -6,6 +6,16 @@
 #include <algorithm>
 #include <cassert>
 
+
+void Controlcenter_SummaryData::reset()
+{
+	requests_recieved = 0;
+	requests_accepted = 0;
+	requests_served = 0;
+	requests_rejected = 0;
+}
+
+
 //RequestHandler
 RequestHandler::RequestHandler()
 {
@@ -423,6 +433,8 @@ void Controlcenter::reset()
 	connectedVeh_.clear();
 	connectedPass_.clear();
 	fleetState_.clear();
+	
+	summarydata_.reset(); //TODO: either aggregate over resets or save between them.
 }
 
 void Controlcenter::connectInternal()
@@ -463,6 +475,11 @@ void Controlcenter::connectInternal()
 int Controlcenter::getID() const
 {
 	return id_;
+}
+
+Controlcenter_SummaryData Controlcenter::getSummaryData() const
+{
+	return summarydata_;
 }
 
 set<Busstop*> Controlcenter::getServiceArea() const { return serviceArea_; }
@@ -618,6 +635,7 @@ void Controlcenter::addCompletedVehicleTrip(Bus* transitveh, Bustrip * trip)
 void Controlcenter::receiveRequest(Request req, double time)
 {
 	assert(req.desired_departure_time >= 0 && req.time >= 0 && req.load > 0); //assert that request is valid
+	summarydata_.requests_recieved += 1;
 	rh_.addRequest(req, serviceArea_) ? emit requestAccepted(time) : emit requestRejected(time);
 }
 
@@ -625,15 +643,18 @@ void Controlcenter::removeRequest(int pass_id)
 {
 	DEBUG_MSG(Q_FUNC_INFO);
 	rh_.removeRequest(pass_id);
+	summarydata_.requests_served += 1;
 }
 
 void Controlcenter::on_requestAccepted(double time)
 {
-	DEBUG_MSG(Q_FUNC_INFO << ": Request Accepted at time " << time);
+	DEBUG_MSG(Q_FUNC_INFO << ": Request Accepted at time " << time);	
+	summarydata_.requests_accepted += 1;
 }
 void Controlcenter::on_requestRejected(double time)
 {
 	DEBUG_MSG(Q_FUNC_INFO << ": Request Rejected at time " << time);
+	summarydata_.requests_rejected += 1;
 }
 
 void Controlcenter::on_tripGenerated(double time)

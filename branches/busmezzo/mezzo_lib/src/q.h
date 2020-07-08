@@ -1,6 +1,6 @@
 /*
-	Mezzo Mesoscopic Traffic Simulation 
-	Copyright (C) 2008  Wilco Burghout
+    Mezzo Mesoscopic Traffic Simulation
+    Copyright (C) 2008  Wilco Burghout
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@
 #include "parameters.h"
 
 
- 
+
 //#define _DEBUG_Q
 
 class Route;
@@ -34,19 +34,19 @@ class Busroute;
 class Vehicle;
 class Link;
 
-typedef pair <int , vector<Link*> > alternativetype   ;
+typedef pair <int, vector<Link*> > alternativetype;
 
-typedef pair <double , Vehicle*> Veh_in_Q;
+typedef pair <double, Vehicle*> Veh_in_Q;
 
 
 struct compare_time
 {
- compare_time(double time_):time(time_) {}
- bool operator () (Veh_in_Q value)
- 	{
- 	 return (value.first>time);
- 	}
- double time;
+    compare_time(double time_) :time(time_) {}
+    bool operator () (Veh_in_Q value)
+    {
+        return (value.first > time);
+    }
+    double time;
 };
 
 
@@ -60,6 +60,7 @@ public:
    // Accessors -> made inline so they are faster....
   //  inline const bool full() {return (calc_total_space() >= maxcap);}           // for some reason this doesnt work. check later...
     inline bool full() { return (vehicles.size() >= maxcap); }
+    double get_maxcap() const { return maxcap; }
     inline bool empty() { return vehicles.empty(); }
     inline bool exit_ok() { return ok; }
     int size() { return static_cast<int>(vehicles.size()); }

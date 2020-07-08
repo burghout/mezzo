@@ -26,6 +26,16 @@ class SchedulingStrategy;
 class Eventlist;
 class Passenger;
 
+struct Controlcenter_SummaryData
+{
+	void reset();
+	unsigned int requests_recieved = 0;
+	unsigned int requests_accepted = 0;
+	unsigned int requests_served = 0;
+	unsigned int requests_rejected = 0;
+};
+
+
 //! @brief responsible for adding and removing a passenger Request to/from a requestSet as well as sorting and distributing requests in the requestSet to process classes of a Controlcenter
 /*!
     groups the request handling processes of a Controlcenter. The responsibilities of the RequestHandler are to
@@ -197,6 +207,7 @@ private:
 
 public:
 	int getID() const;
+	Controlcenter_SummaryData getSummaryData() const;
 	set<Busstop*> getServiceArea() const;
     vector<Busline*> getServiceRoutes() const;
     bool isInServiceArea(Busstop* stop) const; //!< true if stop is included in service area of Controlcenter, false otherwise
@@ -278,6 +289,8 @@ private:
     set<Busstop*> serviceArea_; //!< set of stops in the service area of this control center's fleet of vehicles. In other words the stops for which this control center can generate trips between
 	set<Bus*> initialVehicles_; //!< vehicles assigned to this control center on input (that should be preserved between resets)
 	vector<pair<Bus*, Bustrip*>> completedVehicleTrips_; //!< used for bookkeeping dynamically generated buses and bustrips (similar to busvehicles and bustrips in network) for writing output and deleting between resets
+
+	Controlcenter_SummaryData summarydata_; //!< collection of data for summarizing Controlcenter performance.
 };
 
 #endif

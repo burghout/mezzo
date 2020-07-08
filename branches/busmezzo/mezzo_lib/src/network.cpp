@@ -6775,6 +6775,76 @@ bool Network::writesummary(string name)
     return ok;
 }
 
+bool Network::writeFWFsummary(ostream& out, 
+    const FWF_passdata& total_passdata, const FWF_passdata& fix_passdata, const FWF_passdata& drt_passdata, 
+    const FWF_vehdata& total_vehdata, const FWF_vehdata& fix_vehdata, const FWF_vehdata& drt_vehdata,
+    const FWF_ccdata& cc_data)
+{
+    assert(theParameters->drt);
+    assert(out);
+    //ofstream out(filename.c_str());
+    /*
+    Collect statistics from other output files relevant for fixed with flexible implementation output
+
+    @todo Calculate unoccupied and occupied VKT and PKT somewhere
+
+    */
+        out << "### Total passenger summary ###";
+        out << "\nPassenger journeys completed: " << total_passdata.pass_completed;
+
+        out << "\n\nTotal waiting time          : " << total_passdata.total_wt;
+        out << "\nAverage total waiting time  : " << total_passdata.avg_total_wt;
+        out << "\nTotal denied waiting time   : " << total_passdata.total_denied_wt;
+        out << "\nAverage denied waiting time : " << total_passdata.avg_total_wt;
+        out << "\nMinimum waiting time        : " << total_passdata.min_wt;
+        out << "\nMaximum waiting time        : " << total_passdata.max_wt;
+        out << "\nMedian waiting time         : " << total_passdata.median_wt;
+        out << "\nTotal in-vehicle time       : " << total_passdata.total_ivt;
+        
+        out << "\n\n### Fixed passenger summary ###";
+        out << "\nPassenger journeys completed: " << fix_passdata.pass_completed;
+        out << "\nTotal waiting time          : " << fix_passdata.total_wt;
+        out << "\nAverage total waiting time  : " << fix_passdata.avg_total_wt;
+        out << "\nTotal denied waiting time   : " << fix_passdata.total_denied_wt;
+        out << "\nAverage denied waiting time : " << fix_passdata.avg_total_wt;
+        out << "\nMinimum waiting time        : " << fix_passdata.min_wt;
+        out << "\nMaximum waiting time        : " << fix_passdata.max_wt;
+        out << "\nMedian waiting time         : " << fix_passdata.median_wt;
+        out << "\nTotal in-vehicle time       : " << fix_passdata.total_ivt;
+
+        out << "\n\n### DRT passenger summary ###";
+        out << "\nPassenger journeys completed: " << drt_passdata.pass_completed;
+        out << "\nTotal waiting time          : " << drt_passdata.total_wt;
+        out << "\nAverage total waiting time  : " << drt_passdata.avg_total_wt;
+        out << "\nTotal denied waiting time   : " << drt_passdata.total_denied_wt;
+        out << "\nAverage denied waiting time : " << drt_passdata.avg_total_wt;
+        out << "\nMinimum waiting time        : " << drt_passdata.min_wt;
+        out << "\nMaximum waiting time        : " << drt_passdata.max_wt;
+        out << "\nMedian waiting time         : " << drt_passdata.median_wt;
+        out << "\nTotal in-vehicle time       : " << drt_passdata.total_ivt;
+
+        out << "\n\n### Total vehicle summary ###";
+        out << "\nTotal occupied VKT          : " << total_vehdata.total_occupied_vkt;
+        out << "\nTotal empty VKT             : " << total_vehdata.total_empty_vkt;
+        
+        out << "\n\n### Fixed vehicle summmary ###";
+        out << "\nFixed occupied VKT          : " << fix_vehdata.total_occupied_vkt;
+        out << "\nFixed empty VKT             : " << fix_vehdata.total_empty_vkt;
+
+        out << "\n\n### DRT vehicle summmary ###";
+        out << "\nFixed occupied VKT          : " << drt_vehdata.total_occupied_vkt;
+        out << "\nFixed empty VKT             : " << drt_vehdata.total_empty_vkt;
+
+        out << "\n\n### ControlCenter summmary ###";
+        out << "\nRequests recieved           : " << cc_data.total_requests_recieved;
+        out << "\nRequests rejected           : " << cc_data.total_requests_rejected;
+        out << "\nRequests accepted           : " << cc_data.total_requests_accepted;
+        out << "\nRequests served             : " << cc_data.total_requests_served;
+        out << "\n\n------------------------------------------------------------------\n\n";
+
+        return true;
+}
+
 bool Network::writeheadways(string name)
 // writes the time headways for the virtual links. to compare with the arrival process in Mitsim
 {
@@ -6791,7 +6861,7 @@ bool Network::writeheadways(string name)
 
 }
 
-bool Network::write_busstop_output(string name1, string name2, string name3, string name4, string name5, string name6, string name7, string name8, string name9, string name10, string name11, string name12, string name13, string name14, string name15, string name16, string name17)
+bool Network::write_busstop_output(string name1, string name2, string name3, string name4, string name5, string name6, string name7, string name8, string name9, string name10, string name11, string name12, string name13, string name14, string name15, string name16, string name17, string name18)
 {
     Q_UNUSED(name5)
     Q_UNUSED(name6)
@@ -6889,12 +6959,35 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
             }
         }
         write_passenger_welfare_summary(out17, total_pass_GTC, pass_counter);
-
+        
+        
         if (theParameters->drt)
         {
+            ofstream out18(name18.c_str(), ios_base::app); // drt+fwf summary filestream
+
+            /*FWF/DRT related outputs
+            @todo Need to either create a calc function for each one of these or fill it in in a different way.
+            */
+            FWF_passdata total_passdata;
+            FWF_passdata fix_passdata;
+            FWF_passdata drt_passdata;
+            FWF_vehdata  total_vehdata;
+            FWF_vehdata  fix_vehdata;
+            FWF_vehdata  drt_vehdata;
+
+            FWF_ccdata cc_summarydata;
+
+            //fill in the fwf summary containers
+            total_passdata.pass_completed = pass_counter;
+
             //write outputs for objects owned by control centers
             for (const auto& cc : ccmap) //writing trajectory output for each drt vehicle
             {
+                cc_summarydata.total_requests_recieved += cc.second->summarydata_.requests_recieved;
+                cc_summarydata.total_requests_rejected += cc.second->summarydata_.requests_rejected;
+                cc_summarydata.total_requests_accepted += cc.second->summarydata_.requests_accepted;
+                cc_summarydata.total_requests_served += cc.second->summarydata_.requests_served;
+
                 for (const auto& vehtrip : cc.second->completedVehicleTrips_)
                 {
                     vehtrip.first->write_output(out4); //write trajectory output for each bus vehicle that completed a trip
@@ -6905,6 +6998,12 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
                     veh.second->write_output(out4); //write trajectory output for each bus vehicle that has not completed a trip
                 }
             }
+
+            //place the write to out18 here
+            // 1. collect all total, fixed only vs drt only passenger and vehicle data in structs. 
+            // 2. Pass to writeFWFSummary function. Or writeDRTSummary dependent on where feels most relevant
+            writeFWFsummary(out18, total_passdata, fix_passdata, drt_passdata, total_vehdata, fix_vehdata, drt_vehdata,cc_summarydata);
+
         }
         /* deactivated - unneccessary files in most cases
         for (vector<Busstop*>::iterator stop_iter = busstops.begin(); stop_iter < busstops.end(); stop_iter++)
@@ -7085,10 +7184,12 @@ void Network::write_od_summary_header(ostream& out)
 
 void Network::write_passenger_welfare_summary(ostream& out, double total_gtc, int total_pass)
 {
+    unsigned int total_pass_gen = count_generated_passengers();
     out << "Total generalized travel cost:" << '\t' << total_gtc << endl
         << "Average generalized travel cost per passenger:" << '\t' << total_gtc / total_pass << endl
-        << "Number of generated passengers: " << '\t' << count_generated_passengers() << endl
-        << "Number of completed passenger journeys:" << '\t' << total_pass << endl;
+        << "Number of generated passengers: " << '\t' << total_pass_gen << endl
+        << "Number of completed passenger journeys:" << '\t' << total_pass << endl
+        << "Number of unserved passengers: " << '\t' << total_pass_gen - total_pass << endl;
 }
 
 bool Network::set_freeflow_linktimes()
@@ -8460,7 +8561,8 @@ bool Network::writeall(unsigned int repl)
                 workingdir + "o_passenger_onboard_experience.dat",
                 workingdir + "o_passenger_connection.dat",
                 workingdir + "o_passenger_trajectory.dat",
-                workingdir + "o_passenger_welfare_summary.dat"
+                workingdir + "o_passenger_welfare_summary.dat",
+                workingdir + "o_fwf_summary.dat"
                 );
     write_transitroutes(workingdir + "o_transit_routes.dat");
     return true;
