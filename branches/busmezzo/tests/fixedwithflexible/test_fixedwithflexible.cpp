@@ -84,7 +84,8 @@ void TestFixedWithFlexible::testCreateNetwork()
 
 void TestFixedWithFlexible::testInitNetwork()
 {
-    //QFile::remove(path_set_generation_filename); //remove old passenger path sets
+    qDebug() << "Removing file " + path_set_generation_filename + ": " << QFile::remove(path_set_generation_filename); //remove old passenger path sets
+    qDebug() << "Initializing network in " + QString::fromStdString(network_path);
 
     nt->init();
  // Test here various properties that should be true after reading the network
@@ -96,48 +97,44 @@ void TestFixedWithFlexible::testInitNetwork()
     QVERIFY2(net->get_odpairs().size() == 12, "Failure, network should have 12 od pairs ");
     QVERIFY2(net->get_stopsmap().size() == 8, "Failure, network should have 8 stops defined ");
 
-    //QVERIFY2 (net->get_busstop_from_name("A")->get_id() == 1, "Failure, bus stop A should be id 1 ");
-    //QVERIFY2 (net->get_busstop_from_name("B")->get_id() == 2, "Failure, bus stop B should be id 2 ");
-    //QVERIFY2 (net->get_busstop_from_name("C")->get_id() == 3, "Failure, bus stop C should be id 3 ");
-    //QVERIFY2 (net->get_busstop_from_name("D")->get_id() == 4, "Failure, bus stop D should be id 4 ");
-    //QVERIFY2 (net->get_busstop_from_name("E")->get_id() == 5, "Failure, bus stop E should be id 5 ");
-    //QVERIFY2 (net->get_busstop_from_name("F")->get_id() == 6, "Failure, bus stop F should be id 6 ");
+    QVERIFY2 (AproxEqual(net->get_currenttime(),0.0), "Failure, currenttime should be 0 at start of simulation");
 
     vector<ODstops*> odstops_demand = net->get_odstops_demand();
     QVERIFY2(odstops_demand.size() == 12, "Failure, network should have 8 od stop pairs (non-zero or defined in transit_demand) ");
 
+    //Check OD stop demand rate between stop 1 and 4
     auto stop_1to4_it = find_if(odstops_demand.begin(),odstops_demand.end(),[](ODstops* odstop)
     {
         return (odstop->get_origin()->get_id() == 1 && odstop->get_destination()->get_id() == 4);
     });
-
     if(stop_1to4_it != odstops_demand.end())
         QVERIFY2(AproxEqual((*stop_1to4_it)->get_arrivalrate(),300.0),"Failure, ODstops stop 1 to stop 4 should have 300 arrival rate");
     else
         QVERIFY2(stop_1to4_it != odstops_demand.end(),"Failure, OD stop 1 to 4 is undefined ");
 
-    QVERIFY2 (theParameters->drt == true, "Failure, DRT not activated in parameters for PentaFeeder_OnlyDRT");
-    QVERIFY2 (AproxEqual(net->get_currenttime(),0.0), "Failure, currenttime should be 0 at start of simulation");
+    //Parameters
+    QVERIFY2(theParameters->drt == true, "Failure, DRT is not set to true in parameters");
+    QVERIFY2(theParameters->real_time_info == 3, "Failure, real time info is not set to 3 in parameters");
+    QVERIFY2(theParameters->choice_set_indicator == 0, "Failure, choice set indicator is not set to 0 in parameters");
 
-    //TODO: add tests for path_set_generation file. Check to see if the most important paths are included when generating path set for this network. Currently passenger choice sets are read from input file
-    QVERIFY2(theParameters->choice_set_indicator == 0, "Failure, choice set indicator is not set to 0");
-
+    //Control center
     map<int,Controlcenter*> ccmap = net->get_controlcenters();
     QVERIFY2(ccmap.size() == 1, "Failure, network should have 1 controlcenter");
     QVERIFY2(ccmap.begin()->second->getGeneratedDirectRoutes() == false, "Failure, generate direct routes of controlcenter is not set to false");
 
     //Test if newly generated passenger path sets match expected output
-//	QString ex_path_set_fullpath = expected_outputs_path + path_set_generation_filename;
-//	QFile ex_path_set_file(ex_path_set_fullpath); //expected o_path_set_generation.dat
-//	QVERIFY2(ex_path_set_file.open(QIODevice::ReadOnly | QIODevice::Text), "Failure, cannot open ExpectedOutputs/o_path_set_generation.dat");
+    qDebug() << "Comparing " + path_set_generation_filename + " with ExpectedOutputs/" + path_set_generation_filename;
+    QString ex_path_set_fullpath = expected_outputs_path + path_set_generation_filename;
+    QFile ex_path_set_file(ex_path_set_fullpath); //expected o_path_set_generation.dat
+    QVERIFY2(ex_path_set_file.open(QIODevice::ReadOnly | QIODevice::Text), "Failure, cannot open ExpectedOutputs/o_path_set_generation.dat");
 
-//	QFile path_set_file(path_set_generation_filename); //generated o_path_set_generation.dat
-//	QVERIFY2(path_set_file.open(QIODevice::ReadOnly | QIODevice::Text), "Failure, cannot open o_path_set_generation.dat");
+    QFile path_set_file(path_set_generation_filename); //generated o_path_set_generation.dat
+    QVERIFY2(path_set_file.open(QIODevice::ReadOnly | QIODevice::Text), "Failure, cannot open o_path_set_generation.dat");
 
-//	QVERIFY2(path_set_file.readAll() == ex_path_set_file.readAll(), "Failure, o_path_set_generation.dat differs from ExpectedOutputs/o_path_set_generation.dat");
+    QVERIFY2(path_set_file.readAll() == ex_path_set_file.readAll(), "Failure, o_path_set_generation.dat differs from ExpectedOutputs/o_path_set_generation.dat");
 
-//	ex_path_set_file.close();
-//	path_set_file.close();
+    ex_path_set_file.close();
+    path_set_file.close();
 }
 
 void TestFixedWithFlexible::testRunNetwork()
@@ -161,7 +158,7 @@ void TestFixedWithFlexible::testSaveResults()
     // remove old files:
     for (const QString& filename : output_filenames)
     {
-        qDebug() << QFile::remove(filename);
+        qDebug() << "Removing file " + filename + ": " << QFile::remove(filename);
     }
 
     // save results:
@@ -173,6 +170,8 @@ void TestFixedWithFlexible::testSaveResults()
     {
         if (find(skip_output_filenames.begin(), skip_output_filenames.end(), o_filename) != skip_output_filenames.end())
             continue;
+
+        qDebug() << "Comparing " + o_filename + " with ExpectedOutputs/" + o_filename;
 
         QString ex_o_fullpath = expected_outputs_path + o_filename;
         QFile ex_outputfile(ex_o_fullpath);

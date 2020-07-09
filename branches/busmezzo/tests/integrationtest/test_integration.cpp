@@ -1,6 +1,7 @@
 #include <QString>
 #include <QtTest/QtTest>
 #include "network.h"
+#include "MMath.h"
 #ifdef Q_OS_WIN
     #include <direct.h>
     #define chdir _chdir
@@ -77,7 +78,8 @@ void TestIntegration::testCreateNetwork()
 
 void TestIntegration::testInitNetwork()
 {
-	qDebug() << QFile::remove(path_set_generation_filename); //remove old passenger path sets
+    qDebug() << "Removing file " + path_set_generation_filename + ": " << QFile::remove(path_set_generation_filename); //remove old passenger path sets
+    qDebug() << "Initializing network in " + QString::fromStdString(network_path_1);
 
     nt->init();
  // Test here various properties that should be true after reading the network
@@ -90,10 +92,14 @@ void TestIntegration::testInitNetwork()
     QVERIFY2 (net->get_busstop_from_name("C")->get_id() == 3, "Failure, bus stop C should be id 3 ");
     QVERIFY2 (net->get_busstop_from_name("D")->get_id() == 4, "Failure, bus stop D should be id 4 ");
 
-    QVERIFY2 (net->get_currenttime() == 0, "Failure, currenttime should be 0 at start of simulation");
+    QVERIFY2 (AproxEqual(net->get_currenttime(),0.0), "Failure, currenttime should be 0 at start of simulation");
 
+    QVERIFY2(theParameters->drt == false, "Failure, DRT is not set to false in parameters");
+    QVERIFY2(theParameters->real_time_info == 2, "Failure, real time info is not set to 2 in parameters");
+    QVERIFY2(theParameters->choice_set_indicator == 0, "Failure, choice set indicator is not set to 0 in parameters");
 
 	//Test if newly generated passenger path sets match expected output
+    qDebug() << "Comparing " + path_set_generation_filename + " with ExpectedOutputs/" + path_set_generation_filename;
 	QString ex_path_set_fullpath = expected_outputs_path + path_set_generation_filename;
 	QFile ex_path_set_file(ex_path_set_fullpath); //expected o_path_set_generation.dat
 	QVERIFY2(ex_path_set_file.open(QIODevice::ReadOnly | QIODevice::Text), "Failure, cannot open ExpectedOutputs/o_path_set_generation.dat");
@@ -128,7 +134,7 @@ void TestIntegration::testSaveResults()
     // remove old files:
 	for (const QString& filename : output_filenames)
 	{
-		qDebug() << QFile::remove(filename);
+        qDebug() << "Removing file " + filename + ": " << QFile::remove(filename);
 	}
 
     // save results:
@@ -138,6 +144,8 @@ void TestIntegration::testSaveResults()
 	//test if output files match the expected output files
     for (const QString& o_filename : output_filenames)
 	{
+        qDebug() << "Comparing " + o_filename + " with ExpectedOutputs/" + o_filename;
+
 		QString ex_o_fullpath = expected_outputs_path + o_filename;
 		QFile ex_outputfile(ex_o_fullpath);
 

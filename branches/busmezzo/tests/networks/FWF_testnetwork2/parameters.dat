@@ -65,7 +65,7 @@
    max_waiting_time= 1800.0
    dominancy_perception_threshold= 1.5
    choice_model= 1
-   real_time_info= 0
+   real_time_info= 3
    share_RTI_network= 0.000000
    start_pass_generation= 1800.000000
    stop_pass_generation= 5400.000000

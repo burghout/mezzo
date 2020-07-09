@@ -105,6 +105,7 @@ void TestPentaFeeder::testCreateNetwork()
 void TestPentaFeeder::testInitNetwork()
 {
     //QFile::remove(path_set_generation_filename); //remove old passenger path sets
+    qDebug() << "Initializing network in " + QString::fromStdString(network_path_3);
 
     nt->init();
  // Test here various properties that should be true after reading the network
@@ -164,7 +165,7 @@ void TestPentaFeeder::testSaveResults()
     // remove old files:
     for (const QString& filename : output_filenames)
     {
-        qDebug() << QFile::remove(filename);
+        qDebug() << "Removing file " + filename + ": " << QFile::remove(filename);
     }
 
     // save results:
@@ -176,6 +177,8 @@ void TestPentaFeeder::testSaveResults()
     {
         if (find(skip_output_filenames.begin(), skip_output_filenames.end(), o_filename) != skip_output_filenames.end())
             continue;
+
+        qDebug() << "Comparing " + o_filename + " with ExpectedOutputs/" + o_filename;
 
         QString ex_o_fullpath = expected_outputs_path + o_filename;
         QFile ex_outputfile(ex_o_fullpath);

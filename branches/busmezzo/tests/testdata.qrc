@@ -57,5 +57,6 @@
         <file>networks/FWF_testnetwork2/ExpectedOutputs/o_trip_total_travel_time.dat</file>
         <file>networks/FWF_testnetwork2/ExpectedOutputs/o_fwf_summary.dat</file>
         <file>networks/PentaFeeder/ExpectedOutputs/o_fwf_summary.dat</file>
+        <file>networks/FWF_testnetwork2/ExpectedOutputs/o_path_set_generation.dat</file>
     </qresource>
 </RCC>
