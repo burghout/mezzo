@@ -5096,6 +5096,24 @@ bool Network::check_path_no_opposing_lines (vector<vector<Busline*> > lines)
     return true;
 }
 
+unsigned int Network::count_transit_paths()
+{
+    unsigned int pathcounter = 0;
+    for (auto stop_iter = busstops.begin(); stop_iter < busstops.end(); stop_iter++)
+    {
+        ODs_for_stop odstops = (*stop_iter)->get_stop_as_origin();
+        for (const auto& odstop : odstops)
+        {
+            vector <Pass_path*> path_set = odstop.second->get_path_set();
+            for (auto path_iter = path_set.begin(); path_iter < path_set.end(); path_iter++)
+            {
+                pathcounter++;
+            }
+        }
+    }
+    return pathcounter;
+}
+
 bool Network::write_path_set (string name1)
 {
     ofstream out1(name1.c_str(),ios_base::app);
