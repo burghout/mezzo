@@ -57,6 +57,7 @@ public:
 private Q_SLOTS:
     void testCreateNetwork(); //!< test loading a network
     void testInitNetwork(); //!< test generating passenger path sets & loading a network
+    void testPathSetUtilities(); //!< test navigating generated path-sets, calculating utilities under different circumstances (e.g. access to RTI for different legs)
     void testRunNetwork();
     void testSaveResults();
     void testDelete(); //!< tests correct deletion
@@ -84,7 +85,7 @@ void TestFixedWithFlexible::testCreateNetwork()
 
 void TestFixedWithFlexible::testInitNetwork()
 {
-    qDebug() << "Removing file " + path_set_generation_filename + ": " << QFile::remove(path_set_generation_filename); //remove old passenger path sets
+    //qDebug() << "Removing file " + path_set_generation_filename + ": " << QFile::remove(path_set_generation_filename); //remove old passenger path sets
     qDebug() << "Initializing network in " + QString::fromStdString(network_path);
 
     nt->init();
@@ -100,7 +101,7 @@ void TestFixedWithFlexible::testInitNetwork()
     QVERIFY2 (AproxEqual(net->get_currenttime(),0.0), "Failure, currenttime should be 0 at start of simulation");
 
     vector<ODstops*> odstops_demand = net->get_odstops_demand();
-    QVERIFY2(odstops_demand.size() == 12, "Failure, network should have 8 od stop pairs (non-zero or defined in transit_demand) ");
+    QVERIFY2(odstops_demand.size() == 6, "Failure, network should have 6 od stop pairs (non-zero or defined in transit_demand) ");
 
     //Check OD stop demand rate between stop 1 and 4
     auto stop_1to4_it = find_if(odstops_demand.begin(),odstops_demand.end(),[](ODstops* odstop)
@@ -115,7 +116,9 @@ void TestFixedWithFlexible::testInitNetwork()
     //Parameters
     QVERIFY2(theParameters->drt == true, "Failure, DRT is not set to true in parameters");
     QVERIFY2(theParameters->real_time_info == 3, "Failure, real time info is not set to 3 in parameters");
-    QVERIFY2(theParameters->choice_set_indicator == 0, "Failure, choice set indicator is not set to 0 in parameters");
+    QVERIFY2(AproxEqual(theParameters->share_RTI_network, 1.0), "Failure, share RTI network is not 1 in parameters");
+    QVERIFY2(theParameters->choice_set_indicator == 1, "Failure, choice set indicator is not set to 1 in parameters");
+    QVERIFY2(net->count_transit_paths() == 14, "Failure, network should have 14 transit paths defined");
 
     //Control center
     map<int,Controlcenter*> ccmap = net->get_controlcenters();
@@ -123,18 +126,40 @@ void TestFixedWithFlexible::testInitNetwork()
     QVERIFY2(ccmap.begin()->second->getGeneratedDirectRoutes() == false, "Failure, generate direct routes of controlcenter is not set to false");
 
     //Test if newly generated passenger path sets match expected output
-    qDebug() << "Comparing " + path_set_generation_filename + " with ExpectedOutputs/" + path_set_generation_filename;
-    QString ex_path_set_fullpath = expected_outputs_path + path_set_generation_filename;
-    QFile ex_path_set_file(ex_path_set_fullpath); //expected o_path_set_generation.dat
-    QVERIFY2(ex_path_set_file.open(QIODevice::ReadOnly | QIODevice::Text), "Failure, cannot open ExpectedOutputs/o_path_set_generation.dat");
+//    qDebug() << "Comparing " + path_set_generation_filename + " with ExpectedOutputs/" + path_set_generation_filename;
+//    QString ex_path_set_fullpath = expected_outputs_path + path_set_generation_filename;
+//    QFile ex_path_set_file(ex_path_set_fullpath); //expected o_path_set_generation.dat
+//    QVERIFY2(ex_path_set_file.open(QIODevice::ReadOnly | QIODevice::Text), "Failure, cannot open ExpectedOutputs/o_path_set_generation.dat");
 
-    QFile path_set_file(path_set_generation_filename); //generated o_path_set_generation.dat
-    QVERIFY2(path_set_file.open(QIODevice::ReadOnly | QIODevice::Text), "Failure, cannot open o_path_set_generation.dat");
+//    QFile path_set_file(path_set_generation_filename); //generated o_path_set_generation.dat
+//    QVERIFY2(path_set_file.open(QIODevice::ReadOnly | QIODevice::Text), "Failure, cannot open o_path_set_generation.dat");
 
-    QVERIFY2(path_set_file.readAll() == ex_path_set_file.readAll(), "Failure, o_path_set_generation.dat differs from ExpectedOutputs/o_path_set_generation.dat");
+//    QVERIFY2(path_set_file.readAll() == ex_path_set_file.readAll(), "Failure, o_path_set_generation.dat differs from ExpectedOutputs/o_path_set_generation.dat");
 
-    ex_path_set_file.close();
-    path_set_file.close();
+//    ex_path_set_file.close();
+//    path_set_file.close();
+}
+
+void TestFixedWithFlexible::testPathSetUtilities()
+{
+    /* Test for paths between stop 1 to 4 */
+    qDebug() << "Checking path-set for ODstops 1 to 4";
+    vector<ODstops*> odstops_demand = net->get_odstops_demand();
+    ODstops* stop1to4 = nullptr;
+    auto stop1to4_it = find_if(odstops_demand.begin(),odstops_demand.end(),[](ODstops* odstop)
+    {
+        return (odstop->get_origin()->get_id() == 1 && odstop->get_destination()->get_id() == 4);
+    });
+    if(stop1to4_it != odstops_demand.end())
+        stop1to4 = *stop1to4_it;
+    QVERIFY2(stop1to4 != nullptr,"Failure, OD stop 1 to 4 is undefined");
+
+    //create a passenger to with ODstop 1 to 4 and navigate through paths from the travelers perspective
+    Passenger* pass = new Passenger(1,0,stop1to4,nullptr); //Passenger(id,start_time,ODstop,QObject)
+    QVERIFY2(stop1to4->check_path_set(), "Failure, no paths defined for stop 1 to 4");
+    qDebug() << "Number of paths available to traveler: " << stop1to4->get_path_set().size();
+
+    delete pass;
 }
 
 void TestFixedWithFlexible::testRunNetwork()
