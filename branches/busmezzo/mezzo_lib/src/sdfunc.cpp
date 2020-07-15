@@ -28,6 +28,11 @@ double Sdfunc::get_romax()
  	return romax;
 }
 
+double Sdfunc::get_vfree()
+{
+	return vfree;
+}
+
 
 // DynamitSdfunc functions
 /*	DynamitSdfunc, models the speed-density as in DYNAMIT. It is basically a GenSdfunc, with the addition of a kmin, a minimum

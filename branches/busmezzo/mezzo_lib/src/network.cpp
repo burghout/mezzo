@@ -855,6 +855,20 @@ bool Network::readlink(istream& in)
 #ifdef _DEBUG_NETWORK
     cout << " read a link"<<endl;
 #endif //_DEBUG_NETWORK
+
+
+    /** @ingroup DRT
+        @brief Quick and dirty labelling of dummylinks for calculating e.g. VKT outputs correctly. 
+        @todo Remove this section of code later. Mostly used for debugging/specific scenarios
+        @{
+    */
+    //check if this link should be marked as a dummy link
+    if (sdptr->get_vfree() > 1000) //assumes that dummy links have a free-flow speed of greater than 1000 m/s (3600 km/h)
+    {
+        link->set_dummylink(true);
+    }
+    /**@}*/
+
     return true;
 }
 
