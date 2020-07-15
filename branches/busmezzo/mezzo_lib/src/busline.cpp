@@ -422,12 +422,13 @@ double Busline::extra_disruption_on_segment (Busstop* next_stop, double time)
         - Sometimes the headway returned here is used to represent the waiting time for a single line. Sometimes the line headways are collected to give the expected frequency of a specific stop. Need
         to first decide if DRT lines vs fixed lines should be represented as either separate paths in the same path set or as alternative lines within the same path. Once this has been decided I will need
         to adjust these headway calculations again.
+		-
 */
 double Busline::calc_curr_line_headway ()
 {
     if (theParameters->drt && flex_line)
     {
-        assert(theParameters->real_time_info == 0);
+        //assert(theParameters->real_time_info == 0);
         return planned_headway;
     }
     //if (theParameters->drt) //Note: current busmezzo implementation without DRT still assumes at least 2 scheduled trips per line, will cause out of bounds iterator violation otherwise

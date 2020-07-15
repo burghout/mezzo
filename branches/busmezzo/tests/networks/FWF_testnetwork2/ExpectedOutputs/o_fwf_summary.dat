@@ -1,5 +1,5 @@
 ### Total passenger summary ###
-Passenger journeys completed: 255
+Passenger journeys completed: 180
 
 Total waiting time          : 0
 Average total waiting time  : 0
@@ -48,7 +48,7 @@ Fixed empty VKT             : 0
 Requests recieved           : 300
 Requests rejected           : 0
 Requests accepted           : 300
-Requests served             : 280
+Requests served             : 180
 
 ------------------------------------------------------------------
 

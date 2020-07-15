@@ -1,9 +1,9 @@
 Stop_ID	Stop_name	Line_ID	Average_headway	Average_dwell_time	Average_abs_schedule_deviation	Average_waiting_time_per_stop	Total_pass_boarding	Standard_deviation_headway	Standard_deviation_dwell_time	Share_on_time	Share_early	Share_late	Total_pass_riding_time	Total_pass_dwell_time	Total_pass_waiting_time	Total_pass_holding_time	Total_pass_weighted_in_vehicle_time	
-1	Stop_1	1	360	2	0.600015	81.1429	0	1.01685e-13	0	1	0	0	0	0	0	0	0	0	
+1	Stop_1	1	360	2	0.600015	111.5	0	1.01685e-13	0	1	0	0	0	0	0	0	0	0	
 1	Stop_1	8001	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	-0	-0	-nan(ind)	-nan(ind)	-nan(ind)	0	0	0	0	-nan(ind)	0	
-1	Stop_1	8021	1112.81	2	6.76915	14	0	1344.64	0	1	0	0	0	0	0	0	0	0	
-1	Stop_1	8002	723.917	21	608.402	61.3571	20	370.917	9.17354	0.357143	0	0.642857	0	6974	106508	0	0	0	
-1	Stop_1	8022	813.625	2	7.36739	110.9	0	327.238	0	1	0	0	0	0	0	0	0	0	
+1	Stop_1	8021	1112.81	2	6.76915	14.5	0	1344.64	0	1	0	0	0	0	0	0	0	0	
+1	Stop_1	8002	862.222	17.5455	526.014	75	16.3636	682.699	11.0577	0.454545	0	0.545455	0	4412	83581.5	0	0	0	
+1	Stop_1	8022	1116.4	2	7.31038	139.143	0	779.231	0	1	0	0	0	0	0	0	0	0	
 21	Stop_21	21	360	2	4.10019	0	0	4.64125e-14	0	1	0	0	0	0	0	0	0	0	
 2	Stop_2	1	360	2	4.10012	0	0	4.64125e-14	0	1	0	0	0	0	0	0	0	0	
 2	Stop_2	2	360	2	0.600145	0	0	1.87497e-13	0	1	0	0	0	0	0	0	0	0	
@@ -18,8 +18,8 @@ Stop_ID	Stop_name	Line_ID	Average_headway	Average_dwell_time	Average_abs_schedul
 23	Stop_23	22	360	2	0.600425	0	0	2.2278e-13	0	1	0	0	0	0	0	0	0	0	
 23	Stop_23	23	360	2	4.10051	0	0	1.91363e-13	0	1	0	0	0	0	0	0	0	0	
 4	Stop_4	3	360	2	4.10048	0	0	4.64125e-14	0	1	0	0	0	0	0	0	0	0	
-4	Stop_4	8002	707.636	20.6154	607.28	0	0	383.204	9.4299	0.384615	0	0.615385	229883	0	0	0	0	260984	
-4	Stop_4	8022	827.333	2	2.36946	0	0	308.854	0	1	0	0	0	0	0	0	0	0	
+4	Stop_4	8002	864.889	17.5455	545.06	0	0	682.454	11.0577	0.454545	0	0.545455	162270	0	0	0	0	182554	
+4	Stop_4	8022	1241	2	2.32411	0	0	760.862	0	1	0	0	0	0	0	0	0	0	
 4	Stop_4	8003	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	-0	-0	-nan(ind)	-nan(ind)	-nan(ind)	0	0	0	0	-nan(ind)	0	
 4	Stop_4	8023	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	-0	-0	-nan(ind)	-nan(ind)	-nan(ind)	0	0	0	0	-nan(ind)	0	
 24	Stop_24	23	360	2	0.600595	0	0	1.01685e-13	0	1	0	0	0	0	0	0	0	0	

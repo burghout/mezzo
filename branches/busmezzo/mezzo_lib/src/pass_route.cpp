@@ -443,7 +443,7 @@ double Pass_path::calc_waiting_utility (vector <vector <Busstop*> >::iterator st
         
         if (theParameters->drt && (*iter_lines)->is_flex_line()) 
         {
-            DEBUG_MSG_V("Pass_path::calc_waiting_utility returning " << drt_first_rep_waiting_utility << " for path set with flex_line");
+            //DEBUG_MSG_V("Pass_path::calc_waiting_utility returning " << drt_first_rep_waiting_utility << " for path set with flex_line");
             return ::drt_first_rep_waiting_utility; // PassengerDecisionParameters: basically this if condition means that if ANY DRT line is included in the path set of any waiting decision for a passenger then the passenger is heavily incentivized to wait
         }
 
@@ -486,7 +486,9 @@ double Pass_path::calc_waiting_utility (vector <vector <Busstop*> >::iterator st
     IVT(1) + H (1) < IVT (2) then line 2 is not worthwhile to wait for
     if it fails
 
-    For Max H(1) we now always return the drt_first_rep_max_headway via calc_max_headway for flex lines and for H(1) we always return the planned_headway via calc_curr_line_headway
+    @todo For Max H(1) we now always return the drt_first_rep_max_headway via calc_max_headway for flex lines and for H(1) we always return the planned_headway via calc_curr_line_headway
+		OBS: Since this only seems to be called in CSGM, statically, we will here implement the rule that if line 1 or line 2 that are being compared are dynamically scheduled (we do not know the actual waiting time yet)
+		  then we do not eliminate either of them as an alternative. If both line 1 and line 2 are fixed, then we implement this traveler strategy/rule the same as usual.
 */
 map<Busline*, bool> Pass_path::check_maybe_worthwhile_to_wait (vector<Busline*> leg_lines, vector <vector <Busstop*> >::iterator stop_iter, bool dynamic_indicator)
 {
@@ -508,6 +510,12 @@ map<Busline*, bool> Pass_path::check_maybe_worthwhile_to_wait (vector<Busline*> 
 		{
 			for (vector<Busline*>::iterator iter1_leg_lines = iter_leg_lines+1; iter1_leg_lines < leg_lines.end(); iter1_leg_lines++)
 			{
+				DEBUG_MSG("INFO::Pass_path::check_maybe_worthwhile_to_wait - comparing lines " << (*iter_leg_lines)->get_id() << " and " << (*iter1_leg_lines)->get_id());
+				if ((*iter_leg_lines)->is_flex_line() || (*iter1_leg_lines)->is_flex_line()) // ignore flex lines for this filtering rule since WT and IVT expectations are learned instead
+				{
+					assert(theParameters->drt);
+					continue;
+				}
 				if ((*iter_leg_lines)->calc_curr_line_ivt((*stop_iter).front(),(*(stop_iter+1)).front(), rti,0.0) + (*iter_leg_lines)->calc_max_headway() < (*iter1_leg_lines)->calc_curr_line_ivt((*stop_iter).front(),(*(stop_iter+1)).front(), rti,0.0))		
 				{
 					// if IVT(1) + Max H (1) < IVT (2) then line 2 is not worthwhile to wait for

@@ -155,11 +155,29 @@ void TestFixedWithFlexible::testPathSetUtilities()
     QVERIFY2(stop1to4 != nullptr,"Failure, OD stop 1 to 4 is undefined");
 
     //create a passenger to with ODstop 1 to 4 and navigate through paths from the travelers perspective
-    Passenger* pass = new Passenger(1,0,stop1to4,nullptr); //Passenger(id,start_time,ODstop,QObject)
+    Passenger* pass1 = new Passenger(1,0,stop1to4,nullptr); //Passenger(id,start_time,ODstop*,QObject* parent)
+
     QVERIFY2(stop1to4->check_path_set(), "Failure, no paths defined for stop 1 to 4");
     qDebug() << "Number of paths available to traveler: " << stop1to4->get_path_set().size();
+    QVERIFY2(stop1to4->get_path_set().size() == 5, "Failure, there should be 5 paths defined for stop 1 to 4");
 
-    delete pass;
+    //Test initialization of passenger with RTI at a network level
+    QVERIFY2(pass1->get_pass_RTI_network_level() == false, "Failure, default initilization of passenger network-level RTI should be false");
+    pass1->init(); //note this both sets the network level RTI for the traveler as well as the anticipated WT and IVT of the traveler if day2day is active
+    QVERIFY2(pass1->get_pass_RTI_network_level() == true,"Failure, passenger should have network-level RTI after init with real_time_info=3 and share_RTI_network=1 in parameters");
+
+    //Test creation of passenger with no RTI (should be default)
+    Passenger* pass2 = new Passenger(2,0,stop1to4,nullptr);
+    QVERIFY(pass2->get_pass_RTI_network_level() == false);
+
+    //Connection decision for passenger with RTI
+    Busstop* connection_stop = nullptr;
+    connection_stop = pass1->make_connection_decision(0.0); //make connection decision with starttime = 0.0
+
+    //Connection decision for passenger without RTI
+
+    delete pass1;
+    delete pass2;
 }
 
 void TestFixedWithFlexible::testRunNetwork()
