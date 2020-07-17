@@ -13,13 +13,13 @@
 #include <QFileInfo>
 
 //! DRT Tests BusMezzo
-//! Contains tests for testing fixed with flexible choice model implementation
+//! Contains tests for testing fixed with flexible choice model implementation with walking links
 
 
-const std::string network_path = "../networks/FWF_testnetwork2/";
+const std::string network_path = "../networks/FWF_testnetwork1/";
 const std::string network_name = "masterfile.mezzo";
 
-const QString expected_outputs_path = "://networks/FWF_testnetwork2/ExpectedOutputs/";
+const QString expected_outputs_path = "://networks/FWF_testnetwork1/ExpectedOutputs/";
 const QString path_set_generation_filename = "o_path_set_generation.dat";
 const vector<QString> output_filenames =
 {
@@ -46,12 +46,12 @@ const vector<QString> skip_output_filenames =
 
 const long int seed = 42;
 
-class TestFixedWithFlexible : public QObject
+class TestFixedWithFlexible_walking : public QObject
 {
     Q_OBJECT
 
 public:
-    TestFixedWithFlexible(){}
+    TestFixedWithFlexible_walking(){}
 
 
 private Q_SLOTS:
@@ -68,7 +68,7 @@ private:
     Network* net;
 };
 
-void TestFixedWithFlexible::testCreateNetwork()
+void TestFixedWithFlexible_walking::testCreateNetwork()
 {
     nt = nullptr;
     net = nullptr;
@@ -84,7 +84,7 @@ void TestFixedWithFlexible::testCreateNetwork()
     QVERIFY2(net != nullptr, "Failure, could not create network");
 }
 
-void TestFixedWithFlexible::testInitNetwork()
+void TestFixedWithFlexible_walking::testInitNetwork()
 {
     //qDebug() << "Removing file " + path_set_generation_filename + ": " << QFile::remove(path_set_generation_filename); //remove old passenger path sets
     qDebug() << "Initializing network in " + QString::fromStdString(network_path);
@@ -92,29 +92,33 @@ void TestFixedWithFlexible::testInitNetwork()
     nt->init();
  // Test here various properties that should be true after reading the network
     // Test if the network is properly read and initialized
-    QVERIFY2(net->get_links().size() == 28, "Failure, network should have 28 links ");
-    QVERIFY2(net->get_nodes().size() == 16, "Failure, network should have 16 nodes ");
-    QVERIFY2(net->get_destinations().size() == 4, "Failure, network should have 4 destination nodes ");
-    QVERIFY2(net->get_origins().size() == 4, "Failure, network should have 4 origin nodes ");
-    QVERIFY2(net->get_odpairs().size() == 12, "Failure, network should have 12 od pairs ");
-    QVERIFY2(net->get_stopsmap().size() == 8, "Failure, network should have 8 stops defined ");
+    QVERIFY2(net->get_links().size() == 34, "Failure, network should have 34 links ");
+    QVERIFY2(net->get_nodes().size() == 20, "Failure, network should have 20 nodes ");
+    QVERIFY2(net->get_destinations().size() == 5, "Failure, network should have 5 destination nodes ");
+    QVERIFY2(net->get_origins().size() == 5, "Failure, network should have 5 origin nodes ");
+    QVERIFY2(net->get_odpairs().size() == 14, "Failure, network should have 14 od pairs ");
+    QVERIFY2(net->get_stopsmap().size() == 10, "Failure, network should have 10 stops defined ");
 
     QVERIFY2 (AproxEqual(net->get_currenttime(),0.0), "Failure, currenttime should be 0 at start of simulation");
 
     vector<ODstops*> odstops_demand = net->get_odstops_demand();
-    QVERIFY2(odstops_demand.size() == 6, "Failure, network should have 6 od stop pairs (non-zero or defined in transit_demand) ");
+    QVERIFY2(odstops_demand.size() == 7, "Failure, network should have 7 od stop pairs (non-zero or defined in transit_demand) ");
 
     //Check OD stop demand rate between stop 1 and 4
     ODstops* stop_1to4 = net->get_ODstop_from_odstops_demand(1,4);
     QVERIFY2(AproxEqual(stop_1to4->get_arrivalrate(),300.0),"Failure, ODstops stop 1 to stop 4 should have 300 arrival rate");
     QVERIFY2(stop_1to4 != nullptr,"Failure, OD stop 1 to 4 is undefined ");
 
+    ODstops* stop_5to4 = net->get_ODstop_from_odstops_demand(5,4);
+    QVERIFY2(AproxEqual(stop_5to4->get_arrivalrate(),300.0),"Failure, ODstops stop 5 to stop 4 should have 300 arrival rate");
+    QVERIFY2(stop_5to4 != nullptr,"Failure, OD stop 5 to 4 is undefined ");
+
     //Parameters
     QVERIFY2(theParameters->drt == true, "Failure, DRT is not set to true in parameters");
     QVERIFY2(theParameters->real_time_info == 3, "Failure, real time info is not set to 3 in parameters");
     QVERIFY2(AproxEqual(theParameters->share_RTI_network, 1.0), "Failure, share RTI network is not 1 in parameters");
     QVERIFY2(theParameters->choice_set_indicator == 1, "Failure, choice set indicator is not set to 1 in parameters");
-    QVERIFY2(net->count_transit_paths() == 14, "Failure, network should have 14 transit paths defined");
+    QVERIFY2(net->count_transit_paths() == 27, "Failure, network should have 14 transit paths defined");
 
     //Control center
     map<int,Controlcenter*> ccmap = net->get_controlcenters();
@@ -136,7 +140,7 @@ void TestFixedWithFlexible::testInitNetwork()
 //    path_set_file.close();
 }
 
-void TestFixedWithFlexible::testPathSetUtilities()
+void TestFixedWithFlexible_walking::testPathSetUtilities()
 {
     /* Test for paths between stop 1 to 4 */
     qDebug() << "Checking path-set for ODstops 1 to 4";
@@ -158,15 +162,13 @@ void TestFixedWithFlexible::testPathSetUtilities()
 
     QVERIFY2(stop1to4->check_path_set(), "Failure, no paths defined for stop 1 to 4");
     qDebug() << "Number of paths available to traveler: " << stop1to4->get_path_set().size();
-    QVERIFY2(stop1to4->get_path_set().size() == 5, "Failure, there should be 5 paths defined for stop 1 to 4");
-    QVERIFY2(path_set.size() == 5, "Failure, traveler with ODstops 1 to 4 should have 5 paths available to them");
+    QVERIFY2(stop1to4->get_path_set().size() == 7, "Failure, there should be 7 paths defined for stop 1 to 4");
+    QVERIFY2(path_set.size() == 7, "Failure, traveler with ODstops 1 to 4 should have 7 paths available to them");
 
     /*Test for building path (sub)sets in connection decision choice tree */
-    Busstop* candidate_connection_stops = nullptr;
+    //Busstop* candidate_connection_stops = nullptr;
     // make_connection_decision //stop to walk to
     // make_mode_decision //given available paths from chosen stop,
-
-
 
     for(auto path : path_set) // check so that all flexible transit legs
     {
@@ -195,7 +197,7 @@ void TestFixedWithFlexible::testPathSetUtilities()
     delete pass2;
 }
 
-void TestFixedWithFlexible::testRunNetwork()
+void TestFixedWithFlexible_walking::testRunNetwork()
 {
 
     nt->start(QThread::HighestPriority);
@@ -211,7 +213,7 @@ void TestFixedWithFlexible::testRunNetwork()
     //QVERIFY2 ( net->get_busstop_from_name("A")->get_last_departures().size() == 2, "Failure, get_last_departures().size() for stop A should be 2");
 }
 
-void TestFixedWithFlexible::testSaveResults()
+void TestFixedWithFlexible_walking::testSaveResults()
 {
     // remove old files:
     for (const QString& filename : output_filenames)
@@ -250,16 +252,12 @@ void TestFixedWithFlexible::testSaveResults()
 }
 
 
-void TestFixedWithFlexible::testDelete()
+void TestFixedWithFlexible_walking::testDelete()
 {
     delete nt;
     QVERIFY2(true, "Failure ");
 }
 
+QTEST_APPLESS_MAIN(TestFixedWithFlexible_walking)
 
-QTEST_APPLESS_MAIN(TestFixedWithFlexible)
-
-#include "test_fixedwithflexible.moc"
-
-
-
+#include "test_fixedwithflexible_walking.moc"

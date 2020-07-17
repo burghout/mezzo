@@ -6041,6 +6041,16 @@ bool Network::read_unassignedvehicle(istream& in) //reads a bus vehicles that ar
     return true;
 }
 
+ODstops* Network::get_ODstop_from_odstops_demand(int os_id, int ds_id)
+{
+    auto odstop_it = find_if(odstops_demand.begin(), odstops_demand.end(), [=](ODstops* odstop) -> bool {
+        return (odstop->get_origin()->get_id() == os_id && odstop->get_destination()->get_id() == ds_id); 
+        });
+    ODstops* target_odstop = odstop_it != odstops_demand.end() ? (*odstop_it) : nullptr;
+
+    return target_odstop;
+}
+
 // read traffic control
 bool Network::readsignalcontrols(string name)
 {

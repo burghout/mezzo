@@ -84,6 +84,12 @@ void Passenger::reset ()
 void Passenger::init ()
 {
 	RTI_network_level = theRandomizers[0]->brandom(theParameters->share_RTI_network);
+
+	if (theParameters->drt && RTI_network_level == true)
+	{
+		set_access_to_flexible(true); //!< only travelers with network level RTI can use flexible transit services
+	}
+
 	if (theParameters->pass_day_to_day_indicator == 1)
 	{
 		anticipated_waiting_time = OD_stop->get_anticipated_waiting_time(); //Changed by Jens 2014-06-27, here a local object with the same name was initialized, so the Passenger object was not updated

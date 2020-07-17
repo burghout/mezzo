@@ -536,6 +536,33 @@ map<Busline*, bool> Pass_path::check_maybe_worthwhile_to_wait (vector<Busline*> 
 	return worth_to_wait;
 }
 
+bool Pass_path::all_flexible_lines(const vector<Busline*>& line_vec) const
+{
+	if (line_vec.empty()) //empty vector of lines is not a set of flexible transit lines
+		return false;
+
+	for(auto line : line_vec)	
+	{
+		if(!line->is_flex_line())
+			return false;
+	}
+	return true;
+}
+
+
+bool Pass_path::first_transit_leg_flexible() const
+{
+	if (alt_lines.empty()) //path with no transit legs (e.g. walking only)
+		return false;
+
+	vector<Busline*> first_transit_leg = alt_lines.front();
+	if(!all_flexible_lines(first_transit_leg))
+		return false;
+
+	assert(first_transit_leg.size() == 1); //!< @todo currently, flexible transit lines should always be considered distinct from one another as well as fixed lines in paths. 
+	return true;
+}
+
 Busstop* Pass_path::get_first_transfer_stop() const
 {
     Busstop* firsttransfer = nullptr;

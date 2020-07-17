@@ -131,6 +131,16 @@ public:
                                                                                                    then attempts to create a request to travel to the first transfer stop found within the service area instead. 
                                                                                                    Returns TRUE and the request if successful, FALSE and an invalid request otherwise (Note: uses protected members of Passenger) */
 
+protected:
+	bool waiting_for_flexible_ = false; /**!< true if this traveler has committed to a decision to wait for a flexible service for their next transit leg. Will ignore boarding any non-flexible transit vehicle if this is the case. 
+										 Will be switched to false when the traveler has boarded a flexible vehicle. Travelers do not currently re-make a choice of fixed or flexible mode. */
+	bool access_to_flexible_ = false; //!< true if traveler can send requests/recieve offers for a flexible schedule/route service. Currently assumed to be tied to RTI availability at a network level (e.g. owning a smartphone)
+
+public:
+	bool is_waiting_for_flexible() { return waiting_for_flexible_; }
+	void set_waiting_for_flexible(bool waiting_for_flexible) { waiting_for_flexible_ = waiting_for_flexible; }
+    bool get_access_to_flexible() { return access_to_flexible_; }
+	void set_access_to_flexible(bool access_to_flexible) { access_to_flexible_ = access_to_flexible; }
 signals:
 	void sendRequest(Request req, double time); //!< signal to send Request message to Controlcenter along with time in which signal is sent
 	void boardedBus(int pass_id); //!< signal that a passenger with pass_id (this passenger's id) has just boarded a bus

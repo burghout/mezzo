@@ -895,6 +895,8 @@ void ODzone::add_arrival_rates (ODzone* d_zone, double arrival_rate)
 
 bool ODzone::execute (Eventlist* eventlist, double curr_time)
 {
+	assert(!theParameters->drt); //completely untested branch of code with drt
+
 	if (curr_time < theParameters->start_pass_generation)
 	{
 		eventlist->add_event(theParameters->start_pass_generation, this);

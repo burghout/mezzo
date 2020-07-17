@@ -51,7 +51,11 @@ class Pass_path
     /** @ingroup DRT
         @{
     */
-    Busstop* get_first_transfer_stop() const; //returns the end stop of the first transit leg for this path if there are transfers. Returns false if there are no transfers in this path
+    
+    bool    all_flexible_lines(const vector<Busline*>& line_vec) const; //!< returns true if all lines in vector are not flagged as flexible (i.e. dynamically scheduled or routed)
+    bool    first_transit_leg_flexible() const; //!< returns true if the first set of lines in alt_lines are all fixed
+    Busstop* get_first_transfer_stop() const; //!< returns the end stop of the first transit leg for this path if there are transfers. Returns false if there are no transfers in this path
+    
     /**@}*/
 protected:
     int p_id = -1;

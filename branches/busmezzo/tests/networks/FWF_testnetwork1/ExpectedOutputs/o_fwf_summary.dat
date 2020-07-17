@@ -1,0 +1,54 @@
+### Total passenger summary ###
+Passenger journeys completed: 259
+
+Total waiting time          : 0
+Average total waiting time  : 0
+Total denied waiting time   : 0
+Average denied waiting time : 0
+Minimum waiting time        : 0
+Maximum waiting time        : 0
+Median waiting time         : 0
+Total in-vehicle time       : 0
+
+### Fixed passenger summary ###
+Passenger journeys completed: 0
+Total waiting time          : 0
+Average total waiting time  : 0
+Total denied waiting time   : 0
+Average denied waiting time : 0
+Minimum waiting time        : 0
+Maximum waiting time        : 0
+Median waiting time         : 0
+Total in-vehicle time       : 0
+
+### DRT passenger summary ###
+Passenger journeys completed: 0
+Total waiting time          : 0
+Average total waiting time  : 0
+Total denied waiting time   : 0
+Average denied waiting time : 0
+Minimum waiting time        : 0
+Maximum waiting time        : 0
+Median waiting time         : 0
+Total in-vehicle time       : 0
+
+### Total vehicle summary ###
+Total occupied VKT          : 0
+Total empty VKT             : 0
+
+### Fixed vehicle summmary ###
+Fixed occupied VKT          : 0
+Fixed empty VKT             : 0
+
+### DRT vehicle summmary ###
+Fixed occupied VKT          : 0
+Fixed empty VKT             : 0
+
+### ControlCenter summmary ###
+Requests recieved           : 300
+Requests rejected           : 0
+Requests accepted           : 300
+Requests served             : 284
+
+------------------------------------------------------------------
+
