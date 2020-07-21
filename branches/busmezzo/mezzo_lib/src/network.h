@@ -108,6 +108,7 @@ struct FWF_passdata
 struct FWF_vehdata
 {
 	// Vehicles
+	double total_vkt = 0; // total empty + occupied VKT
 	double total_empty_vkt = 0; // total empty VKT
 	double total_occupied_vkt = 0; // total occupied VKT
 
@@ -122,14 +123,17 @@ struct FWF_vehdata
 
 	FWF_vehdata& operator+=(const FWF_vehdata& rhs)
 	{
+		total_vkt += rhs.total_vkt;
 		total_occupied_vkt += rhs.total_occupied_vkt; // total occupied VKT
 		total_empty_vkt += rhs.total_empty_vkt; // total empty VKT
 
 		total_empty_time = rhs.total_empty_time;
 		total_occupied_time = rhs.total_occupied_time;
+
 		total_driving_time = rhs.total_driving_time;
 		total_idle_time = rhs.total_idle_time;
 		total_oncall_time = rhs.total_oncall_time;
+
 		return *this;
 	}
 

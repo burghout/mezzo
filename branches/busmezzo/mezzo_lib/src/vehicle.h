@@ -93,7 +93,11 @@ protected:
     double exit_time = 0.0;
     double arrival_time = 0.0;
     Link* curr_link = nullptr;
+	/** @ingroup DRT
+	@{
+	*/
     size_t curr_link_route_idx = 0; //!< index position of curr_link on route->links, initialized to 0
+	/**@}*/
     bool entered = false;
     int switched = 0;
     int meters = 0;
@@ -199,12 +203,17 @@ public:
 	double get_total_time_driving();
 	double get_total_time_idle();
 	double get_total_time_oncall();
+	void update_meters_traveled(int meters_, bool is_empty);
+	double get_total_vkt() const;
+	double get_total_empty_vkt() const;
+	double get_total_occupied_vkt() const;
 	void set_state(const BusState newstate, const double time); //!< sets current state_ to newstate and emits stateChanged if newstate differs from current state_
 	void print_state(); //!< prints current BusState for debugging purposes
 
 	bool is_idle() const;	//!< returns true if bus is idle/waiting at a stop
 	bool is_driving() const; //!< returns true if bus is driving between stops
 	bool is_oncall() const; //!< returns true if bus is unassigned to any trip and is available for assignment
+	bool is_empty() const; //!< returns true if bus occupancy is currently 0 and false otherwise
 
 	Busstop* get_last_stop_visited() const { return last_stop_visited_; }
 	void set_last_stop_visited(Busstop* last_stop_visited) { last_stop_visited_ = last_stop_visited; } 
@@ -241,9 +250,12 @@ protected:
 	set<int> sroute_ids_; //!< ids of service routes (buslines) that this bus can be assigned dynamically generated trips for
     Controlcenter* CC_ = nullptr; //!< control center that this vehicle is currently connected to. nullptr if not connected to any control center
 
+	// output attributes
 	map<BusState, double> total_time_spent_in_state; //!< maps each busstate to the total time spent in this busstate by this vehicle for each simulation replication. Currently used for output
 	map<BusState, double> time_state_last_entered; //!< maps each busstate (if entered previously) to the latest time this vehicle entered this state
-	double total_meters_traveled = 0.0; //!< total meters traveled (excluding dummy links)
+	int total_meters_traveled = 0; //!< cumulative meters traveled (excluding dummy links)
+	int total_empty_meters_traveled = 0; //!< cumulative meters traveled without any passengers onboard
+	int total_occupied_meters_traveled = 0; //!< cumulative meters traveled with at least one passenger onboard
 /**@}*/
 };
 

@@ -120,6 +120,7 @@ string To_String(T val)
 FWF_vehdata operator+(const FWF_vehdata& lhs, const FWF_vehdata& rhs)
 {
     FWF_vehdata sum;
+    sum.total_vkt = lhs.total_vkt + rhs.total_vkt;
     sum.total_empty_vkt = lhs.total_empty_vkt + rhs.total_empty_vkt;
     sum.total_occupied_vkt = lhs.total_occupied_vkt + rhs.total_occupied_vkt;
 
@@ -6884,6 +6885,7 @@ bool Network::writeFWFsummary(ostream& out,
         out << "\nTotal in-vehicle time       : " << drt_passdata.total_ivt;
 
         out << "\n\n### Total vehicle summary ###";
+        out << "\nTotal VKT                   : " << total_vehdata.total_vkt;
         out << "\nTotal occupied VKT          : " << total_vehdata.total_occupied_vkt;
         out << "\nTotal empty VKT             : " << total_vehdata.total_empty_vkt;
         out << "\nTotal occupied time         : " << total_vehdata.total_occupied_time;
@@ -6893,6 +6895,7 @@ bool Network::writeFWFsummary(ostream& out,
         out << "\nTotal oncall time           : " << total_vehdata.total_oncall_time;
         
         out << "\n\n### Fixed vehicle summmary ###";
+        out << "\nFixed VKT                   : " << fix_vehdata.total_vkt;
         out << "\nFixed occupied VKT          : " << fix_vehdata.total_occupied_vkt;
         out << "\nFixed empty VKT             : " << fix_vehdata.total_empty_vkt;
         out << "\nFixed occupied time         : " << fix_vehdata.total_occupied_time;
@@ -6902,13 +6905,14 @@ bool Network::writeFWFsummary(ostream& out,
         out << "\nFixed oncall time           : " << fix_vehdata.total_oncall_time; //should always be zero...fixed schedule buses are currently always assigned a trip
 
         out << "\n\n### DRT vehicle summmary ###";
-        out << "\nDRT occupied VKT          : " << drt_vehdata.total_occupied_vkt;
-        out << "\nDRT empty VKT             : " << drt_vehdata.total_empty_vkt;
-        out << "\nDRT occupied time         : " << drt_vehdata.total_occupied_time;
-        out << "\nDRT empty time            : " << drt_vehdata.total_empty_time;
-        out << "\nDRT driving time          : " << drt_vehdata.total_driving_time;
-        out << "\nDRT idle time             : " << drt_vehdata.total_idle_time;
-        out << "\nDRT oncall time           : " << drt_vehdata.total_oncall_time;
+        out << "\nDRT VKT                     : " << drt_vehdata.total_vkt;
+        out << "\nDRT occupied VKT            : " << drt_vehdata.total_occupied_vkt;
+        out << "\nDRT empty VKT               : " << drt_vehdata.total_empty_vkt;
+        out << "\nDRT occupied time           : " << drt_vehdata.total_occupied_time;
+        out << "\nDRT empty time              : " << drt_vehdata.total_empty_time;
+        out << "\nDRT driving time            : " << drt_vehdata.total_driving_time;
+        out << "\nDRT idle time               : " << drt_vehdata.total_idle_time;
+        out << "\nDRT oncall time             : " << drt_vehdata.total_oncall_time;
 
         out << "\n\n### ControlCenter summmary ###";
         out << "\nRequests recieved           : " << cc_data.total_requests_recieved;
@@ -7009,6 +7013,10 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
         fix_vehdata.total_oncall_time += busvehicle->get_total_time_oncall();
         fix_vehdata.total_empty_time += busvehicle->get_total_time_empty();
         fix_vehdata.total_occupied_time += busvehicle->get_total_time_occupied();
+
+        fix_vehdata.total_vkt += busvehicle->get_total_vkt();
+        fix_vehdata.total_empty_vkt += busvehicle->get_total_empty_vkt();
+        fix_vehdata.total_occupied_vkt += busvehicle->get_total_occupied_vkt();
     }
 
     // writing the aggregate summary output for each bus line
@@ -7080,6 +7088,10 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
                     drt_vehdata.total_empty_time += drtveh->get_total_time_empty();
                     drt_vehdata.total_occupied_time += drtveh->get_total_time_occupied();
 
+                    drt_vehdata.total_vkt += drtveh->get_total_vkt();
+                    drt_vehdata.total_empty_vkt += drtveh->get_total_empty_vkt();
+                    drt_vehdata.total_occupied_vkt += drtveh->get_total_occupied_vkt();
+
                     vehtrip.first->write_output(out4); //write trajectory output for each bus vehicle that completed a trip
                     vehtrip.second->write_assign_segments_output(out7); // writing the assignment results in terms of each segment on individual trips
                 }
@@ -7091,6 +7103,10 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
                     drt_vehdata.total_oncall_time += drtveh->get_total_time_oncall();
                     drt_vehdata.total_empty_time += drtveh->get_total_time_empty();
                     drt_vehdata.total_occupied_time += drtveh->get_total_time_occupied();
+
+                    drt_vehdata.total_vkt += drtveh->get_total_vkt();
+                    drt_vehdata.total_empty_vkt += drtveh->get_total_empty_vkt();
+                    drt_vehdata.total_occupied_vkt += drtveh->get_total_occupied_vkt();
 
                     veh.second->write_output(out4); //write trajectory output for each bus vehicle that has not completed a trip
                 }

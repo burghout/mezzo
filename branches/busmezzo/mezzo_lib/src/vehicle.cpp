@@ -215,6 +215,9 @@ void Bus::reset ()
 
 	total_time_spent_in_state.clear();
 	time_state_last_entered.clear();
+	total_meters_traveled = 0;
+	total_empty_meters_traveled = 0;
+	total_occupied_meters_traveled = 0;
 }
 
 Bus::~Bus()
@@ -471,6 +474,28 @@ double Bus::get_total_time_oncall()
 	return total_time_oncall;
 }
 
+void Bus::update_meters_traveled(int meters_, bool is_empty)
+{
+	total_meters_traveled += meters_;
+	if (is_empty)
+		total_empty_meters_traveled += meters_;
+	else
+		total_occupied_meters_traveled += meters_;
+}
+
+double Bus::get_total_vkt() const
+{
+	return static_cast<double>(total_meters_traveled) / 1000.0;
+}
+double Bus::get_total_empty_vkt() const
+{
+	return static_cast<double>(total_empty_meters_traveled) / 1000.0;
+}
+double Bus::get_total_occupied_vkt() const
+{
+	return static_cast<double>(total_occupied_meters_traveled) / 1000.0;
+}
+
 
 void Bus::set_state(const BusState newstate, const double time)
 {
@@ -560,6 +585,11 @@ bool Bus::is_oncall() const
 	if (state_ == BusState::OnCall)
 		return true;
 	return false;
+}
+
+bool Bus::is_empty() const
+{
+	return occupancy == 0;
 }
 
 Busstop* Bus::get_next_stop() const

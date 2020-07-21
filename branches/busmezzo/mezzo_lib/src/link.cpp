@@ -531,131 +531,152 @@ bool Link::veh_exiting(double time, Link* nextlink, int lookback)
 
 Vehicle* Link::exit_veh(double time, Link* nextlink, int lookback)
 {
-	ok=false;
-	if (!empty())
-	{
-		Vehicle* veh=queue->exit_veh(time, nextlink, lookback);
-		if (queue->exit_ok())
-		{
-			double entrytime=veh->get_entry_time();
-			double traveltime=(time-entrytime);
-			avg_time=(nr_passed*avg_time + traveltime)/(nr_passed+1); // update of the average
-			if ((curr_period+1)*(avgtimes->periodlength) < entrytime )
-			{			 	
-			 	if (tmp_avg==0.0)
-					tmp_avg = histtimes->times [curr_period];
-					//tmp_avg=freeflowtime;
-			 	//avgtimes->times.push_back(tmp_avg);
-				avgtimes->times [curr_period] = tmp_avg;
-			 	curr_period++;
-			 	tmp_avg=0.0;
-			 	tmp_passed=0;
+    ok = false;
+    if (!empty())
+    {
+        Vehicle* veh = queue->exit_veh(time, nextlink, lookback);
+        if (queue->exit_ok())
+        {
+            double entrytime = veh->get_entry_time();
+            double traveltime = (time - entrytime);
+            avg_time = (nr_passed * avg_time + traveltime) / (nr_passed + 1); // update of the average
+            if ((curr_period + 1) * (avgtimes->periodlength) < entrytime)
+            {
+                if (tmp_avg == 0.0)
+                    tmp_avg = histtimes->times[curr_period];
+                //tmp_avg=freeflowtime;
+            //avgtimes->times.push_back(tmp_avg);
+                avgtimes->times[curr_period] = tmp_avg;
+                curr_period++;
+                tmp_avg = 0.0;
+                tmp_passed = 0;
 
-			}
-			else
-			{
-				tmp_avg=(tmp_passed*tmp_avg + traveltime)/(tmp_passed+1); // update of the average			
-				tmp_passed++;
-			}
-			nr_passed++;
-          list <double> collector;
+            }
+            else
+            {
+                tmp_avg = (tmp_passed * tmp_avg + traveltime) / (tmp_passed + 1); // update of the average			
+                tmp_passed++;
+            }
+            nr_passed++;
+            list <double> collector;
 #ifdef _COLLECT_ALL
-			double speed=sdfunc->speed(density());
-          double exit_time=veh->get_exit_time();				
-			collector.push_back(time);
-			collector.push_back(id);
-			collector.push_back(0.0);
-			collector.push_back(density());
-			collector.push_back((queue->size()));
-			collector.push_back(speed);	
-      		collector.push_back(exit_time);
-      		grid->insert_row(collector);
+            double speed = sdfunc->speed(density());
+            double exit_time = veh->get_exit_time();
+            collector.push_back(time);
+            collector.push_back(id);
+            collector.push_back(0.0);
+            collector.push_back(density());
+            collector.push_back((queue->size()));
+            collector.push_back(speed);
+            collector.push_back(exit_time);
+            grid->insert_row(collector);
 #else
-	#ifdef _COLLECT_TRAVELTIMES
-			collector.push_back(id);
-			collector.push_back(time);			
-			collector.push_back(traveltime);			
-      		grid->insert_row(collector);
-	#endif // _COLLECT_TRAVELTIMES
+#ifdef _COLLECT_TRAVELTIMES
+            collector.push_back(id);
+            collector.push_back(time);
+            collector.push_back(traveltime);
+            grid->insert_row(collector);
+#endif // _COLLECT_TRAVELTIMES
 #endif // _COLLECT_ALL     		
-	      update_icon(time);
-	      ok=true;
-	      veh->add_meters(length);
-	      moe_outflow->report_value(time);
-	      moe_speed->report_value((length/traveltime),time);
-			return veh;
-		}
+            update_icon(time);
+            ok = true;
 
-	}
-  else
-  	return NULL;
-  return NULL; 
+            veh->add_meters(length);
+            moe_outflow->report_value(time);
+            moe_speed->report_value((length / traveltime), time);
+
+			if (theParameters->drt && veh->get_type() == 4) // currently only used for fwf_summary.dat output file
+			{
+				if (!is_dummylink()) // do not count the length on dummy-links
+				{
+					Bus* bus = static_cast<Bus*>(veh);
+					bus->update_meters_traveled(length, bus->is_empty()); // hopefully this will keep track of VKT per vehicle (used for total VKT output)
+				}
+			}
+
+            return veh;
+        }
+
+    }
+    else
+        return NULL;
+    return NULL;
 }
 
 
 
 Vehicle* Link::exit_veh(double time)
 {
-	ok=false;
-	if (!empty())
-	{
-		Vehicle* veh=queue->exit_veh(time);
-		if (queue->exit_ok())
-		{
-			double entrytime=veh->get_entry_time();
-			double traveltime=(time-entrytime);
-			avg_time=(nr_passed*avg_time + traveltime)/(nr_passed+1); // update of the average
-			if ((curr_period+1)*(avgtimes->periodlength) < entrytime )
-			{		
-				if (tmp_avg==0.0)
-					tmp_avg = histtimes->times [curr_period];
-				//	tmp_avg=freeflowtime;
-			 	//avgtimes->times.push_back(tmp_avg);
-				avgtimes->times [curr_period] = tmp_avg;
-			 	curr_period++;
-			 	tmp_avg=0.0;
+    ok = false;
+    if (!empty())
+    {
+        Vehicle* veh = queue->exit_veh(time);
+        if (queue->exit_ok())
+        {
+            double entrytime = veh->get_entry_time();
+            double traveltime = (time - entrytime);
+            avg_time = (nr_passed * avg_time + traveltime) / (nr_passed + 1); // update of the average
+            if ((curr_period + 1) * (avgtimes->periodlength) < entrytime)
+            {
+                if (tmp_avg == 0.0)
+                    tmp_avg = histtimes->times[curr_period];
+                //	tmp_avg=freeflowtime;
+                //avgtimes->times.push_back(tmp_avg);
+                avgtimes->times[curr_period] = tmp_avg;
+                curr_period++;
+                tmp_avg = 0.0;
 
-			 	tmp_passed=0;
-			}
-			else
-			{
+                tmp_passed = 0;
+            }
+            else
+            {
 
-				tmp_avg=(tmp_passed*tmp_avg + traveltime)/(tmp_passed+1); // update of the average			
-				tmp_passed++;
-			}			
-			nr_passed++;
-			list <double> collector;
+                tmp_avg = (tmp_passed * tmp_avg + traveltime) / (tmp_passed + 1); // update of the average			
+                tmp_passed++;
+            }
+            nr_passed++;
+            list <double> collector;
 #ifdef _COLLECT_ALL
-			collector.push_back(time);
-			collector.push_back(id);
-			collector.push_back(0.0);
-			collector.push_back(density());
-			collector.push_back((queue->size()));
-			double speed=sdfunc->speed(density());
- 	   		collector.push_back(speed);
-	   		double exit_time=veh->get_exit_time();
-      		collector.push_back(exit_time);
-	  		grid->insert_row(collector);
+            collector.push_back(time);
+            collector.push_back(id);
+            collector.push_back(0.0);
+            collector.push_back(density());
+            collector.push_back((queue->size()));
+            double speed = sdfunc->speed(density());
+            collector.push_back(speed);
+            double exit_time = veh->get_exit_time();
+            collector.push_back(exit_time);
+            grid->insert_row(collector);
 #else
-	#ifdef _COLLECT_TRAVELTIMES
-			collector.push_back(id);
-			collector.push_back(time);
-			
-			collector.push_back(traveltime);
-	   		grid->insert_row(collector);  		
-	#endif //_COLLECT_TRAVELTIMES
+#ifdef _COLLECT_TRAVELTIMES
+            collector.push_back(id);
+            collector.push_back(time);
+
+            collector.push_back(traveltime);
+            grid->insert_row(collector);
+#endif //_COLLECT_TRAVELTIMES
 #endif //_COLLECT_ALL	
-	   		update_icon(time); // update the icon's queue length
-	   		ok=true;
-	   		veh->add_meters(length);
-	   		 moe_outflow->report_value(time);
-	   		 moe_speed->report_value((length/traveltime),time);
-			return veh;
-		}
-	}
-	else
-		return NULL;
-	return NULL;
+            update_icon(time); // update the icon's queue length
+            ok = true;
+            veh->add_meters(length);
+            moe_outflow->report_value(time);
+            moe_speed->report_value((length / traveltime), time);
+			
+			if (theParameters->drt && veh->get_type() == 4) // currently only used for fwf_summary.dat output file
+			{
+				if (!is_dummylink()) // do not count the length on dummy-links
+				{
+					Bus* bus = static_cast<Bus*>(veh);
+					bus->update_meters_traveled(length,bus->is_empty()); // hopefully this will keep track of VKT per vehicle (used for total VKT output)
+				}
+			}
+
+            return veh;
+        }
+    }
+    else
+        return NULL;
+    return NULL;
 }
 
  double Link::density()
