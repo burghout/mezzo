@@ -445,25 +445,25 @@ public:
 /**@}*/
 
 protected:
-	int id;										  //!< course nr
-	Bus* busv;									  //!< pointer to the bus vehicle
-	Bustype* btype;
-	Busline* line;								  //!< pointer to the line it serves
-	double init_occup_per_stop;					  //!< initial occupancy, usually 0
-	int nr_stops_init_occup;
-	bool complying_bustrip;						  //!< indicates whether this trip complies with the control strategy in place or not  
-	double starttime;							  //!< when the trip is schedule to departure from the origin
-	double actual_dispatching_time;
-	vector <Visit_stop*> :: iterator next_stop; 
-	Random* random;
-	list <Bustrip_assign> output_passenger_load;  //!< contains the information on traveling on the segment starting at stop
-	double enter_time;							  //!< the time it entered the most recently bus stop
-	double last_stop_exit_time;					  //!< the time stamp of the exit time from the last stop that had been visited by this trip
-	double last_stop_enter_time; 
-	Busstop* last_stop_visited;
-	bool holding_at_stop;						 //!< David added 2016-05-26: true if the trip is currently holding at a stop, false otherwise (used for progressing passengers in case of holding for demand format 3, should always be false for other formats)
-	//	map <Busstop*,bool> trips_timepoint;	 //!< will be relevant only when time points are trip-specific. binary map with time point indicatons for stops on route only (according to the schedule input file)  
-	Eventlist* eventlist;						 //!< for use by busstops etc to book themselves.
+    int id = -1;									//!< course nr
+    Bus* busv = nullptr;							//!< pointer to the bus vehicle
+    Bustype* btype = nullptr;
+    Busline* line = nullptr;						//!< pointer to the line it serves
+    double init_occup_per_stop = 0.0;				//!< initial occupancy, usually 0
+    int nr_stops_init_occup = 0;
+    bool complying_bustrip = true;					//!< indicates whether this trip complies with the control strategy in place or not  
+    double starttime = 0.0;							//!< when the trip is schedule to departure from the origin
+    double actual_dispatching_time = 0.0;
+    vector <Visit_stop*> ::iterator next_stop;
+    Random* random = nullptr;
+    list <Bustrip_assign> output_passenger_load;	//!< contains the information on traveling on the segment starting at stop
+    double enter_time = 0.0;						//!< the time it entered the most recently bus stop
+    double last_stop_exit_time = 0.0;				//!< the time stamp of the exit time from the last stop that had been visited by this trip
+    double last_stop_enter_time = 0.0;
+    Busstop* last_stop_visited = nullptr;
+    bool holding_at_stop = false;					//!< David added 2016-05-26: true if the trip is currently holding at a stop, false otherwise (used for progressing passengers in case of holding for demand format 3, should always be false for other formats)
+    //	map <Busstop*,bool> trips_timepoint;		//!< will be relevant only when time points are trip-specific. binary map with time point indicatons for stops on route only (according to the schedule input file)  
+    Eventlist* eventlist = nullptr;					//!< for use by busstops etc to book themselves.
 	
 	/** @ingroup DRT
         @{

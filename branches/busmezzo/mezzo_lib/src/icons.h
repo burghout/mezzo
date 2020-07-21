@@ -79,7 +79,7 @@ class Icon
 	  const QColor get_selected_color () {return selected_color;}
   protected:
       QString text;
-      int startx, starty; // the icon's position
+      int startx=0, starty=0; // the icon's position
 	  bool selected;
 	  QColor selected_color; // local selected color, default is taken from Parameters object 
 };

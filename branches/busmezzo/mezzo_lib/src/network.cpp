@@ -3571,9 +3571,10 @@ Busroute* Network::create_busroute_from_stops(int id, Origin* origin_node, Desti
 {
     assert(origin_node);
     assert(destination_node);
-    if (stops.empty()) {
+    if (stops.empty()) 
+    {
         return nullptr;
-}
+    }
 
     // get path from origin to first stop ... to last stop; to destination
     vector <Link*> rlinks;
@@ -3589,9 +3590,10 @@ Busroute* Network::create_busroute_from_stops(int id, Origin* origin_node, Desti
             int usnode = linkmap[s->get_link_id()]->get_in_node_id(); //id of closest node upstream from stop
             segment = shortest_path_to_node(rootlink, usnode, time);
 
-            if (segment.empty()) { // if one of the stops in the sequence is not reachable, return nullptr
+            if (segment.empty()) // if one of the stops in the sequence is not reachable, return nullptr
+            { 
                 return nullptr;
-}
+            }
             rlinks.insert(rlinks.end(), segment.begin() + 1, segment.end()); // add segment to rlinks, always exclude rootlink
             rootlink = s->get_link_id();
             rlinks.push_back(linkmap[rootlink]); //add link that stop is located on to the end of route links
@@ -3601,9 +3603,10 @@ Busroute* Network::create_busroute_from_stops(int id, Origin* origin_node, Desti
     if (linkmap[rootlink]->get_out_node_id() != destination_node->get_id())
     {
         segment = shortest_path_to_node(rootlink, destination_node->get_id(), time);
-        if (segment.empty()) { // if one of the stops in the sequence is not reachable, return nullptr
+        if (segment.empty()) // if one of the stops in the sequence is not reachable, return nullptr
+        { 
             return nullptr;
-}
+        }
         rlinks.insert(rlinks.end(), segment.begin() + 1, segment.end()); // add segment to rlinks excluding rootlink for last stop
     }
 
