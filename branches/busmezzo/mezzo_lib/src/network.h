@@ -108,11 +108,36 @@ struct FWF_passdata
 struct FWF_vehdata
 {
 	// Vehicles
-	double total_occupied_vkt = 0; // total occupied VKT
 	double total_empty_vkt = 0; // total empty VKT
+	double total_occupied_vkt = 0; // total occupied VKT
+
+	double total_empty_time = 0;
+	double total_occupied_time = 0;
+
+	double total_driving_time = 0;
+	double total_idle_time = 0;
+	double total_oncall_time = 0;
+
+	friend FWF_vehdata operator+(const FWF_vehdata& lhs, const FWF_vehdata& rhs);
+
+	FWF_vehdata& operator+=(const FWF_vehdata& rhs)
+	{
+		total_occupied_vkt += rhs.total_occupied_vkt; // total occupied VKT
+		total_empty_vkt += rhs.total_empty_vkt; // total empty VKT
+
+		total_empty_time = rhs.total_empty_time;
+		total_occupied_time = rhs.total_occupied_time;
+		total_driving_time = rhs.total_driving_time;
+		total_idle_time = rhs.total_idle_time;
+		total_oncall_time = rhs.total_oncall_time;
+		return *this;
+	}
 
 	// @todo calc_VKT, maybe use total driving time (empty), total driving time (full) - dwelltime * avgSpeed?
 	// alt could grab the distance traversed while driving in different states?
+	// NOTE: Turns out this is kindof tricky. Recall that bus instances represent the same bus but there are several of these instances being copied and destroyed over a run....
+	// Instead.....things tend to revolve around trips again?
+
 };
 
 //!< @brief controlcenter output data for fixed with flexible implementation. 

@@ -1,6 +1,5 @@
 ### Total passenger summary ###
 Passenger journeys completed: 258
-Passenger journeys completed: 258
 
 Total waiting time          : 0
 Average total waiting time  : 0
@@ -36,14 +35,29 @@ Total in-vehicle time       : 0
 ### Total vehicle summary ###
 Total occupied VKT          : 0
 Total empty VKT             : 0
+Total occupied time         : 26413.5
+Total empty time            : 45268.5
+Total driving time          : 57539.8
+Total idle time             : 795.426
+Total oncall time           : 13346.9
 
 ### Fixed vehicle summmary ###
 Fixed occupied VKT          : 0
 Fixed empty VKT             : 0
+Fixed occupied time         : 8448.54
+Fixed empty time            : 23110
+Fixed driving time          : 31326.6
+Fixed idle time             : 232
+Fixed oncall time           : 0
 
 ### DRT vehicle summmary ###
-Fixed occupied VKT          : 0
-Fixed empty VKT             : 0
+DRT occupied VKT          : 0
+DRT empty VKT             : 0
+DRT occupied time         : 17965
+DRT empty time            : 22158.5
+DRT driving time          : 26213.2
+DRT idle time             : 563.426
+DRT oncall time           : 13346.9
 
 ### ControlCenter summmary ###
 Requests recieved           : 237

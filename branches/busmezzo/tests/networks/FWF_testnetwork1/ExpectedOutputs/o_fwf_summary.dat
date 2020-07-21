@@ -35,14 +35,29 @@ Total in-vehicle time       : 0
 ### Total vehicle summary ###
 Total occupied VKT          : 0
 Total empty VKT             : 0
+Total occupied time         : 10212.5
+Total empty time            : 93768.6
+Total driving time          : 64627.6
+Total idle time             : 1335.74
+Total oncall time           : 38017.8
 
 ### Fixed vehicle summmary ###
 Fixed occupied VKT          : 0
 Fixed empty VKT             : 0
+Fixed occupied time         : 0
+Fixed empty time            : 46056.5
+Fixed driving time          : 45376.5
+Fixed idle time             : 680
+Fixed oncall time           : 0
 
 ### DRT vehicle summmary ###
-Fixed occupied VKT          : 0
-Fixed empty VKT             : 0
+DRT occupied VKT          : 0
+DRT empty VKT             : 0
+DRT occupied time         : 10212.5
+DRT empty time            : 47712.1
+DRT driving time          : 19251.1
+DRT idle time             : 655.739
+DRT oncall time           : 38017.8
 
 ### ControlCenter summmary ###
 Requests recieved           : 300

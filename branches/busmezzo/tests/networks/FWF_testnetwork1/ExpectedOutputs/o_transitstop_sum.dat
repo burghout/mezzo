@@ -1,5 +1,5 @@
 Stop_ID	Stop_name	Line_ID	Average_headway	Average_dwell_time	Average_abs_schedule_deviation	Average_waiting_time_per_stop	Total_pass_boarding	Standard_deviation_headway	Standard_deviation_dwell_time	Share_on_time	Share_early	Share_late	Total_pass_riding_time	Total_pass_dwell_time	Total_pass_waiting_time	Total_pass_holding_time	Total_pass_weighted_in_vehicle_time	
-1	Stop_1	1	360	2	0.600015	279.536	0	1.01685e-13	0	1	0	0	0	0	0	0	0	0	
+1	Stop_1	1	360	2	0.600015	284.778	0	1.03781e-13	0	1	0	0	0	0	0	0	0	0	
 1	Stop_1	8001	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	-0	-0	-nan(ind)	-nan(ind)	-nan(ind)	0	0	0	0	-nan(ind)	0	
 1	Stop_1	8021	1112.81	2	6.76915	32	0	1344.64	0	1	0	0	0	0	0	0	0	0	
 1	Stop_1	8002	789.182	22.9231	654.941	228.385	21.8462	303.955	7.68615	0.307692	0	0.692308	0	7240	108213	0	0	0	
@@ -9,21 +9,21 @@ Stop_ID	Stop_name	Line_ID	Average_headway	Average_dwell_time	Average_abs_schedul
 25	Stop_25	25	-0	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	-0	-0	-nan(ind)	-nan(ind)	-nan(ind)	0	0	0	0	-nan(ind)	0	
 2	Stop_2	1	360	2	4.10012	0	0	4.64125e-14	0	1	0	0	0	0	0	0	0	0	
 2	Stop_2	5	-0	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	-0	-0	-nan(ind)	-nan(ind)	-nan(ind)	0	0	0	0	-nan(ind)	0	
-2	Stop_2	2	360	2	0.600145	0	0	1.87497e-13	0	1	0	0	0	0	0	0	0	0	
+2	Stop_2	2	360	2	0.600145	0	0	1.91363e-13	0	1	0	0	0	0	0	0	0	0	
 2	Stop_2	8001	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	-0	-0	-nan(ind)	-nan(ind)	-nan(ind)	0	0	0	0	-nan(ind)	0	
 2	Stop_2	8021	1881	2	1.75914	0	0	2431.03	0	1	0	0	0	0	0	0	0	0	
-22	Stop_22	21	360	2	0.600245	0	0	1.28622e-13	0	1	0	0	0	0	0	0	0	0	
-22	Stop_22	25	360	2	0.600245	0	0	1.28622e-13	0	1	0	0	0	0	0	0	0	0	
-22	Stop_22	22	360	2	4.10037	0	0	1.95479e-13	0	1	0	0	0	0	0	0	0	0	
-3	Stop_3	2	360	2	4.1003	0	0	1.95479e-13	0	1	0	0	0	0	0	0	0	0	
-3	Stop_3	3	360	2	0.600325	0	0	4.54747e-14	0	1	0	0	0	0	0	0	0	0	
+22	Stop_22	21	360	2	0.600245	0	0	1.31274e-13	0	1	0	0	0	0	0	0	0	0	
+22	Stop_22	25	360	2	0.600245	0	0	1.31274e-13	0	1	0	0	0	0	0	0	0	0	
+22	Stop_22	22	360	2	4.10037	0	0	1.93905e-13	0	1	0	0	0	0	0	0	0	0	
+3	Stop_3	2	360	2	4.1003	0	0	1.93905e-13	0	1	0	0	0	0	0	0	0	0	
+3	Stop_3	3	360	2	0.600325	0	0	4.64125e-14	0	1	0	0	0	0	0	0	0	0	
 3	Stop_3	8003	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	-0	-0	-nan(ind)	-nan(ind)	-nan(ind)	0	0	0	0	-nan(ind)	0	
 3	Stop_3	8023	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	-0	-0	-nan(ind)	-nan(ind)	-nan(ind)	0	0	0	0	-nan(ind)	0	
-23	Stop_23	22	360	2	0.600425	0	0	2.2278e-13	0	1	0	0	0	0	0	0	0	0	
+23	Stop_23	22	360	2	0.600425	0	0	2.27374e-13	0	1	0	0	0	0	0	0	0	0	
 23	Stop_23	23	360	2	4.10051	0	0	1.91363e-13	0	1	0	0	0	0	0	0	0	0	
 4	Stop_4	3	360	2	4.10048	0	0	4.64125e-14	0	1	0	0	0	0	0	0	0	0	
 4	Stop_4	8002	778.4	22.6667	657.812	0	0	312.173	7.96964	0.333333	0	0.666667	233489	0	0	0	0	269143	
 4	Stop_4	8022	930.75	2	2.3496	0	0	13.4987	0	1	0	0	0	0	0	0	0	0	
 4	Stop_4	8003	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	-0	-0	-nan(ind)	-nan(ind)	-nan(ind)	0	0	0	0	-nan(ind)	0	
 4	Stop_4	8023	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	-0	-0	-nan(ind)	-nan(ind)	-nan(ind)	0	0	0	0	-nan(ind)	0	
-24	Stop_24	23	360	2	0.600595	0	0	1.01685e-13	0	1	0	0	0	0	0	0	0	0	
+24	Stop_24	23	360	2	0.600595	0	0	1.03781e-13	0	1	0	0	0	0	0	0	0	0	

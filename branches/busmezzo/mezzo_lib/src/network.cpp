@@ -117,6 +117,21 @@ string To_String(T val)
     return stream.str();
 }
 
+FWF_vehdata operator+(const FWF_vehdata& lhs, const FWF_vehdata& rhs)
+{
+    FWF_vehdata sum;
+    sum.total_empty_vkt = lhs.total_empty_vkt + rhs.total_empty_vkt;
+    sum.total_occupied_vkt = lhs.total_occupied_vkt + rhs.total_occupied_vkt;
+
+    sum.total_empty_time = lhs.total_empty_time + rhs.total_empty_time;
+    sum.total_occupied_time = lhs.total_occupied_time + rhs.total_occupied_time;
+
+    sum.total_driving_time = lhs.total_driving_time + rhs.total_driving_time;
+    sum.total_idle_time = lhs.total_idle_time + rhs.total_idle_time;
+    sum.total_oncall_time = lhs.total_oncall_time + rhs.total_oncall_time;
+    
+    return sum;
+}
 
 // End of helper functions
 
@@ -6868,14 +6883,29 @@ bool Network::writeFWFsummary(ostream& out,
         out << "\n\n### Total vehicle summary ###";
         out << "\nTotal occupied VKT          : " << total_vehdata.total_occupied_vkt;
         out << "\nTotal empty VKT             : " << total_vehdata.total_empty_vkt;
+        out << "\nTotal occupied time         : " << total_vehdata.total_occupied_time;
+        out << "\nTotal empty time            : " << total_vehdata.total_empty_time;
+        out << "\nTotal driving time          : " << total_vehdata.total_driving_time;
+        out << "\nTotal idle time             : " << total_vehdata.total_idle_time;
+        out << "\nTotal oncall time           : " << total_vehdata.total_oncall_time;
         
         out << "\n\n### Fixed vehicle summmary ###";
         out << "\nFixed occupied VKT          : " << fix_vehdata.total_occupied_vkt;
         out << "\nFixed empty VKT             : " << fix_vehdata.total_empty_vkt;
+        out << "\nFixed occupied time         : " << fix_vehdata.total_occupied_time;
+        out << "\nFixed empty time            : " << fix_vehdata.total_empty_time;
+        out << "\nFixed driving time          : " << fix_vehdata.total_driving_time;
+        out << "\nFixed idle time             : " << fix_vehdata.total_idle_time;
+        out << "\nFixed oncall time           : " << fix_vehdata.total_oncall_time; //should always be zero...fixed schedule buses are currently always assigned a trip
 
         out << "\n\n### DRT vehicle summmary ###";
-        out << "\nFixed occupied VKT          : " << drt_vehdata.total_occupied_vkt;
-        out << "\nFixed empty VKT             : " << drt_vehdata.total_empty_vkt;
+        out << "\nDRT occupied VKT          : " << drt_vehdata.total_occupied_vkt;
+        out << "\nDRT empty VKT             : " << drt_vehdata.total_empty_vkt;
+        out << "\nDRT occupied time         : " << drt_vehdata.total_occupied_time;
+        out << "\nDRT empty time            : " << drt_vehdata.total_empty_time;
+        out << "\nDRT driving time          : " << drt_vehdata.total_driving_time;
+        out << "\nDRT idle time             : " << drt_vehdata.total_idle_time;
+        out << "\nDRT oncall time           : " << drt_vehdata.total_oncall_time;
 
         out << "\n\n### ControlCenter summmary ###";
         out << "\nRequests recieved           : " << cc_data.total_requests_recieved;
@@ -6932,6 +6962,19 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
     ofstream out15(name15.c_str(),ios_base::app);
     */
 
+    /*FWF/DRT related outputs
+@todo Need to either create a calc function for each one of these or fill it in in a different way.
+*/
+    FWF_passdata total_passdata;
+    FWF_passdata fix_passdata;
+    FWF_passdata drt_passdata;
+    FWF_vehdata  total_vehdata;
+    FWF_vehdata  fix_vehdata;
+    FWF_vehdata  drt_vehdata;
+
+    FWF_ccdata cc_summarydata;
+
+
     // writing the crude data and summary outputs for each bus stop
     write_transitlogout_header(out1);
     write_transitstopsum_header(out2);
@@ -6957,6 +7000,12 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
     for (auto & busvehicle : busvehicles)
     {
         busvehicle->write_output(out4);
+
+        fix_vehdata.total_driving_time += busvehicle->get_total_time_driving();
+        fix_vehdata.total_idle_time += busvehicle->get_total_time_idle(); 
+        fix_vehdata.total_oncall_time += busvehicle->get_total_time_oncall();
+        fix_vehdata.total_empty_time += busvehicle->get_total_time_empty();
+        fix_vehdata.total_occupied_time += busvehicle->get_total_time_occupied();
     }
 
     // writing the aggregate summary output for each bus line
@@ -7007,18 +7056,6 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
         {
             ofstream out18(name18.c_str(), ios_base::app); // drt+fwf summary filestream
 
-            /*FWF/DRT related outputs
-            @todo Need to either create a calc function for each one of these or fill it in in a different way.
-            */
-            FWF_passdata total_passdata;
-            FWF_passdata fix_passdata;
-            FWF_passdata drt_passdata;
-            FWF_vehdata  total_vehdata;
-            FWF_vehdata  fix_vehdata;
-            FWF_vehdata  drt_vehdata;
-
-            FWF_ccdata cc_summarydata;
-
             //fill in the fwf summary containers
             total_passdata.pass_completed = pass_counter;
 
@@ -7032,11 +7069,26 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
 
                 for (const auto& vehtrip : cc.second->completedVehicleTrips_)
                 {
+                    Bus* drtveh = vehtrip.first;
+
+                    drt_vehdata.total_driving_time += drtveh->get_total_time_driving();
+                    drt_vehdata.total_idle_time += drtveh->get_total_time_idle();
+                    drt_vehdata.total_oncall_time += drtveh->get_total_time_oncall();
+                    drt_vehdata.total_empty_time += drtveh->get_total_time_empty();
+                    drt_vehdata.total_occupied_time += drtveh->get_total_time_occupied();
+
                     vehtrip.first->write_output(out4); //write trajectory output for each bus vehicle that completed a trip
                     vehtrip.second->write_assign_segments_output(out7); // writing the assignment results in terms of each segment on individual trips
                 }
                 for (const auto& veh : cc.second->connectedVeh_)
                 {
+                    Bus* drtveh = veh.second;
+                    drt_vehdata.total_driving_time += drtveh->get_total_time_driving();
+                    drt_vehdata.total_idle_time += drtveh->get_total_time_idle();
+                    drt_vehdata.total_oncall_time += drtveh->get_total_time_oncall();
+                    drt_vehdata.total_empty_time += drtveh->get_total_time_empty();
+                    drt_vehdata.total_occupied_time += drtveh->get_total_time_occupied();
+
                     veh.second->write_output(out4); //write trajectory output for each bus vehicle that has not completed a trip
                 }
             }
@@ -7044,6 +7096,7 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
             //place the write to out18 here
             // 1. collect all total, fixed only vs drt only passenger and vehicle data in structs. 
             // 2. Pass to writeFWFSummary function. Or writeDRTSummary dependent on where feels most relevant
+            total_vehdata = fix_vehdata + drt_vehdata;
             writeFWFsummary(out18, total_passdata, fix_passdata, drt_passdata, total_vehdata, fix_vehdata, drt_vehdata,cc_summarydata);
 
         }

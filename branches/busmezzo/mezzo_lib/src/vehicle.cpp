@@ -212,6 +212,9 @@ void Bus::reset ()
         state_ = BusState::Null;
         sroute_ids_.clear(); //initial service routes re-added in Network::init
     }
+
+	total_time_spent_in_state.clear();
+	time_state_last_entered.clear();
 }
 
 Bus::~Bus()
@@ -361,6 +364,114 @@ BusState Bus::calc_state(const bool assigned_to_trip, const bool bus_exiting_sto
 	return BusState::Null;
 }
 
+double Bus::get_total_time_in_state(BusState state) const
+{
+	if (total_time_spent_in_state.count(state) != 0)
+		return total_time_spent_in_state.at(state);
+	else
+		return 0.0;
+}
+
+double Bus::get_total_time_empty()
+{
+	double total_time_empty = 0.0;
+	for (const auto& state_time : total_time_spent_in_state)
+	{
+		switch (state_time.first)
+		{
+		case BusState::DrivingEmpty:
+		case BusState::IdleEmpty:
+		case BusState::OnCall:
+			total_time_empty += state_time.second;
+			break;
+		default:
+			break;
+		}
+	}
+
+	return total_time_empty;
+}
+
+double Bus::get_total_time_occupied()
+{
+	double total_time_occupied = 0.0;
+	for (const auto& state_time : total_time_spent_in_state)
+	{
+		switch (state_time.first)
+		{
+		case BusState::DrivingPartiallyFull:
+		case BusState::DrivingFull:
+		case BusState::IdlePartiallyFull:
+		case BusState::IdleFull:
+			total_time_occupied += state_time.second;
+			break;
+		default:
+			break;
+		}
+	}
+
+	return total_time_occupied;
+}
+
+double Bus::get_total_time_driving()
+{
+	double total_time_driving = 0.0;
+	for (const auto& state_time : total_time_spent_in_state)
+	{
+		switch (state_time.first)
+		{
+		case BusState::DrivingEmpty:
+		case BusState::DrivingPartiallyFull:
+		case BusState::DrivingFull:
+			total_time_driving += state_time.second;
+			break;
+		default:
+			break;
+		}
+	}
+
+	return total_time_driving;
+}
+
+double Bus::get_total_time_idle()
+{
+	double total_time_idle = 0.0;
+	for (const auto& state_time : total_time_spent_in_state)
+	{
+		switch (state_time.first)
+		{
+		case BusState::IdleEmpty:
+		case BusState::IdlePartiallyFull:
+		case BusState::IdleFull:
+			total_time_idle += state_time.second;
+			break;
+		default:
+			break;
+		}
+	}
+
+	return total_time_idle;
+}
+
+double Bus::get_total_time_oncall()
+{
+	double total_time_oncall = 0.0;
+	for (const auto& state_time : total_time_spent_in_state)
+	{
+		switch (state_time.first)
+		{
+		case BusState::OnCall:
+			total_time_oncall += state_time.second;
+			break;
+		default:
+			break;
+		}
+	}
+
+	return total_time_oncall;
+}
+
+
 void Bus::set_state(const BusState newstate, const double time)
 {
 	if (newstate == BusState::OnCall || newstate == BusState::IdleEmpty || newstate == BusState::DrivingEmpty)
@@ -370,6 +481,10 @@ void Bus::set_state(const BusState newstate, const double time)
 	{
 		BusState oldstate = state_;
 		state_ = newstate;
+
+		total_time_spent_in_state[oldstate] += time - time_state_last_entered[oldstate]; // update cumulative time in each busstate (used for outputs)
+		time_state_last_entered[newstate] = time; // start timer for newstate
+
 #ifdef  _DRTDEBUG
         print_state();
 #endif //  DRTDEBUG_
