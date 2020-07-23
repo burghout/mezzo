@@ -58,6 +58,7 @@ private Q_SLOTS:
     void testCreateNetwork(); //!< test loading a network
     void testInitNetwork(); //!< test generating passenger path sets & loading a network
     //void testPassengerStates(); //!< test that passengers are being initialized properly,
+    void testStateDependentPassengerPassPath(); //!< tests support methods in Passenger and Pass_path for sorting, filtering path-sets dependent on traveler state (RTI level, current OD...)
     void testPathSetUtilities(); //!< test navigating generated path-sets, calculating utilities under different circumstances (e.g. access to RTI for different legs)
     void testRunNetwork();
     void testSaveResults();
@@ -90,14 +91,56 @@ void TestFixedWithFlexible_walking::testInitNetwork()
     qDebug() << "Initializing network in " + QString::fromStdString(network_path);
 
     nt->init();
- // Test here various properties that should be true after reading the network
+
     // Test if the network is properly read and initialized
     QVERIFY2(net->get_links().size() == 34, "Failure, network should have 34 links ");
+
+    //count number of 'dummy links' to see that these are not being mislabeled
+    int count = 0;
+    auto links = net->get_links();
+    for(const auto& link : links)
+    {
+        if(link.second->is_dummylink())
+            count++;
+    }
+    QVERIFY2(count == 24, "Failure network should have 24 dummy links ");
+
     QVERIFY2(net->get_nodes().size() == 20, "Failure, network should have 20 nodes ");
     QVERIFY2(net->get_destinations().size() == 5, "Failure, network should have 5 destination nodes ");
     QVERIFY2(net->get_origins().size() == 5, "Failure, network should have 5 origin nodes ");
     QVERIFY2(net->get_odpairs().size() == 14, "Failure, network should have 14 od pairs ");
     QVERIFY2(net->get_stopsmap().size() == 10, "Failure, network should have 10 stops defined ");
+
+    //check that there are walking links between stops 1 and 5 and no other stops
+    for(auto stop1 : net->get_stopsmap())
+    {
+        for(auto stop2 : net->get_stopsmap())
+        {
+            QString stops_str = QString("stops %1 -> %2").arg(stop1.first).arg(stop2.first);
+            qDebug() << "Checking walking links between " + stops_str;
+            QString nolink_failmsg = "Failure, no walking link defined for " + stops_str;
+            if(stop1.first == stop2.first) // recall, key in stopsmap is id of stop
+            {
+                QVERIFY2(stop1.second->is_within_walking_distance_of(stop2.second),qPrintable(nolink_failmsg));// all stops should have a walking distance of 0 with themselves I think
+                QVERIFY2(AproxEqual(stop1.second->get_walking_time(stop2.second,0.0),0.0), qPrintable("Failure, non-zero walking time between " + stops_str));
+            }
+            else if(stop1.first == 1 && stop2.first == 5) // walking distances are always symmetric, so if 1->5 is defined so is 5->1
+            {
+                QVERIFY2(stop1.second->is_within_walking_distance_of(stop2.second),qPrintable(nolink_failmsg));
+                QVERIFY2(AproxEqual(stop1.second->get_walking_distance_stop(stop2.second),330.0), qPrintable("Failure, walking distance between " + stops_str + " should be 330 meters"));
+            }
+            else if(stop1.first == 5 && stop2.first == 1)
+            {
+                QVERIFY2(stop1.second->is_within_walking_distance_of(stop2.second),qPrintable(nolink_failmsg));
+                QVERIFY2(AproxEqual(stop1.second->get_walking_distance_stop(stop2.second),330.0), qPrintable("Failure, walking distance between " + stops_str + " should be 330 meters"));
+            }
+            else  // all other stops should not be connected via walking links
+            {
+                QVERIFY2(!stop1.second->is_within_walking_distance_of(stop2.second),qPrintable("Failure, there should be no walking link for " + stops_str));
+            }
+        }
+    }
+
 
     QVERIFY2 (AproxEqual(net->get_currenttime(),0.0), "Failure, currenttime should be 0 at start of simulation");
 
@@ -137,7 +180,56 @@ void TestFixedWithFlexible_walking::testInitNetwork()
 //    QVERIFY2(path_set_file.readAll() == ex_path_set_file.readAll(), "Failure, o_path_set_generation.dat differs from ExpectedOutputs/o_path_set_generation.dat");
 
 //    ex_path_set_file.close();
-//    path_set_file.close();
+    //    path_set_file.close();
+}
+
+void TestFixedWithFlexible_walking::testStateDependentPassengerPassPath()
+{
+    /* Test for paths between stop 5 to 4 (also via 1) with traveler located at stop 5 */
+    qDebug() << "Creating passenger at stop 5 with destination 4";
+    ODstops* stop5to4 = net->get_ODstop_from_odstops_demand(5,4);
+    QVERIFY2(stop5to4 != nullptr,"Failure, OD stop 1 to 4 is undefined ");
+
+    Passenger* pass1 = new Passenger(888,0,stop5to4);
+
+    //get all paths available to traveler
+    Busstop* bs_o = pass1->get_OD_stop()->get_origin();
+    Busstop* bs_d = pass1->get_OD_stop()->get_destination();
+    vector<Pass_path*> path_set = bs_o->get_stop_od_as_origin_per_stop(bs_d)->get_path_set();
+    vector<Pass_path*> path_set2 = pass1->get_OD_stop()->get_path_set();
+    QVERIFY(path_set == path_set2); // isnt this equivalent to pass1->get_OD_stop()->get_path_set()? Any reason for this roundabout way?
+
+    vector<Pass_path*> drt_first_paths = pass1->get_first_leg_flexible_paths(path_set); //paths with first leg flexible
+    vector<Pass_path*> fix_first_paths = pass1->get_first_leg_fixed_paths(path_set); //paths with first leg fixed
+
+    QVERIFY2(path_set.size() == 7,"Failure, there should be a total of 7 paths available from stop 5->4");
+    QVERIFY2(drt_first_paths.size() == 3,"Failure, there should be 3 paths available stop 5->4 where the first leg is flexible");
+    QVERIFY2(fix_first_paths.size() == 4, "Failure, there should be 4 paths available stop 5->4 where the first leg is fixed");
+
+    //test pass functions here for extracting walking, waiting, in-vehicle and transfers for a given available path
+    //first see what you get
+    /* New connection/request-sending decisions
+     *
+        1. make_connection_decision -> Busstop*
+        2. make_mode_decision -> set waiting for fixed or waiting for flex
+        3. make_dropoff_decision -> create a request for OD
+
+        ODstops functions that may be used, tend to be focused on calculating utilities of path-sets between OD pairs
+        calc_combined_set_utility_for_connection...
+
+        Busline functions that may be used:
+        calc_curr_line_ivt ...
+
+    */
+    // expected path attributes without day2day
+    double wkt=0; // walk time
+    double wt=0; // wait time
+    double ivt; // in-vehicle time
+    int n_trans; // number of transfers
+
+    //start with the drt first paths
+
+    delete pass1;
 }
 
 void TestFixedWithFlexible_walking::testPathSetUtilities()
@@ -145,14 +237,8 @@ void TestFixedWithFlexible_walking::testPathSetUtilities()
     /* Test for paths between stop 1 to 4 */
     qDebug() << "Checking path-set for ODstops 1 to 4";
     vector<ODstops*> odstops_demand = net->get_odstops_demand();
-    ODstops* stop1to4 = nullptr;
-    auto stop1to4_it = find_if(odstops_demand.begin(),odstops_demand.end(),[](ODstops* odstop)
-    {
-        return (odstop->get_origin()->get_id() == 1 && odstop->get_destination()->get_id() == 4);
-    });
-    if(stop1to4_it != odstops_demand.end())
-        stop1to4 = *stop1to4_it;
-    QVERIFY2(stop1to4 != nullptr,"Failure, OD stop 1 to 4 is undefined");
+    ODstops* stop1to4 = net->get_ODstop_from_odstops_demand(1,4);
+    QVERIFY2(stop1to4 != nullptr,"Failure, OD stop 1 to 4 is undefined ");
 
     //create a passenger to with ODstop 1 to 4 and navigate through paths from the travelers perspective
     Passenger* pass1 = new Passenger(1,0,stop1to4,nullptr); //Passenger(id,start_time,ODstop*,QObject* parent)
@@ -170,10 +256,10 @@ void TestFixedWithFlexible_walking::testPathSetUtilities()
     // make_connection_decision //stop to walk to
     // make_mode_decision //given available paths from chosen stop,
 
-    for(auto path : path_set) // check so that all flexible transit legs
-    {
-        path->first_transit_leg_flexible();
-    }
+//    for(auto path : path_set) // check so that all flexible transit legs
+//    {
+//        path->is_first_transit_leg_flexible();
+//    }
 
     /* TEST PASSENGER INIT */
     //Test initialization of passenger with RTI at a network level

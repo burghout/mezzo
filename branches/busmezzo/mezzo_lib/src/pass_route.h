@@ -52,8 +52,10 @@ class Pass_path
         @{
     */
     
-    bool    all_flexible_lines(const vector<Busline*>& line_vec) const; //!< returns true if all lines in vector are not flagged as flexible (i.e. dynamically scheduled or routed)
-    bool    first_transit_leg_flexible() const; //!< returns true if the first set of lines in alt_lines are all fixed
+    bool check_all_flexible_lines(const vector<Busline*>& line_vec) const; //!< returns true if all lines in vector are flagged as flexible (i.e. dynamically scheduled or routed) and is non-empty
+    bool check_all_fixed_lines(const vector<Busline*>& line_vec) const; //!< returns true if all lines in vector are not flagged as flexible and is non-empty
+    bool is_first_transit_leg_fixed() const; //!< returns true if the first set of lines in alt_lines are all fixed
+    bool is_first_transit_leg_flexible() const; //!< returns true if the first set of lines in alt_lines are all flexible
     Busstop* get_first_transfer_stop() const; //!< returns the end stop of the first transit leg for this path if there are transfers. Returns false if there are no transfers in this path
     
     /**@}*/

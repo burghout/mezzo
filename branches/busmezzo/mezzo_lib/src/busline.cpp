@@ -1348,6 +1348,17 @@ void Busstop::book_bus_arrival(Eventlist* eventlist, double time, Bustrip* trip)
 }
 
 
+bool Busstop::is_within_walking_distance_of(Busstop* target_stop)
+{
+	assert(target_stop);
+	assert(theParameters->demand_format == 3);
+
+	if (distances.count(target_stop) == 0) //no distances have been defined
+		return false;
+	else
+		return true;
+}
+
 void Busstop::add_walking_time_quantiles(Busstop* dest_stop_ptr, vector<double> quantiles, vector<double> quantile_values, int num_quantiles, double interval_start, double interval_end){
     
     Walking_time_dist* time_dist = new Walking_time_dist(dest_stop_ptr, quantiles, quantile_values, num_quantiles, interval_start, interval_end);

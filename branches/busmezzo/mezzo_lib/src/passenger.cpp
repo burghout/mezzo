@@ -56,6 +56,7 @@ void Passenger::reset ()
 {
 	boarding_decision = false;
 	already_walked = false;
+	waiting_for_flexible_ = false;
 
 	double new_start_time = 0; 
 	while (new_start_time <= theParameters->start_pass_generation || new_start_time > theParameters->stop_pass_generation)
@@ -407,6 +408,32 @@ pair<bool,Request> Passenger::createRequest(Busstop* origin_stop, Busstop* dest_
         }
     }
     return make_pair(connection_found, req);
+}
+
+vector<Pass_path*> Passenger::get_first_leg_flexible_paths(const vector<Pass_path*>& path_set) const
+{
+	vector<Pass_path*> flex_paths; //paths where the first leg is flexible
+	for (Pass_path* path : path_set)
+	{
+		if (path->is_first_transit_leg_flexible())
+		{
+			flex_paths.push_back(path);
+		}
+	}
+	return flex_paths;
+}
+
+vector<Pass_path*> Passenger::get_first_leg_fixed_paths(const vector<Pass_path*>& path_set) const
+{
+	vector<Pass_path*> fix_paths; //paths where the first leg is fixed
+	for (Pass_path* path : path_set)
+	{
+		if (path->is_first_transit_leg_fixed())
+		{
+			fix_paths.push_back(path);
+		}
+	}
+	return fix_paths;
 }
 
 bool Passenger:: make_boarding_decision (Bustrip* arriving_bus, double time) 

@@ -120,7 +120,7 @@ public:
 	bool line_is_rejected(int id); //If the passenger has rejected line with id the function returns true
     
     //walking time
-    double get_walking_time(Busstop*,double);
+    double get_walking_time(Busstop* target_stop, double curr_time);
 
 /** @ingroup DRT
     @{
@@ -141,6 +141,8 @@ public:
 	void set_waiting_for_flexible(bool waiting_for_flexible) { waiting_for_flexible_ = waiting_for_flexible; }
     bool get_access_to_flexible() { return access_to_flexible_; }
 	void set_access_to_flexible(bool access_to_flexible) { access_to_flexible_ = access_to_flexible; }
+	vector<Pass_path*> get_first_leg_flexible_paths(const vector<Pass_path*>& path_set) const; //!< returns all paths in path_set that have a flexible first transit leg (that a traveler would need to send a request for to ride with)
+	vector<Pass_path*> get_first_leg_fixed_paths(const vector<Pass_path*>& path_set) const; //!< returns all paths in path_set that have a fixed first transit leg
 signals:
 	void sendRequest(Request req, double time); //!< signal to send Request message to Controlcenter along with time in which signal is sent
 	void boardedBus(int pass_id); //!< signal that a passenger with pass_id (this passenger's id) has just boarded a bus

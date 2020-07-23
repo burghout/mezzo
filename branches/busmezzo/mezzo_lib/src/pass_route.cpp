@@ -536,7 +536,7 @@ map<Busline*, bool> Pass_path::check_maybe_worthwhile_to_wait (vector<Busline*> 
 	return worth_to_wait;
 }
 
-bool Pass_path::all_flexible_lines(const vector<Busline*>& line_vec) const
+bool Pass_path::check_all_flexible_lines(const vector<Busline*>& line_vec) const
 {
 	if (line_vec.empty()) //empty vector of lines is not a set of flexible transit lines
 		return false;
@@ -549,14 +549,39 @@ bool Pass_path::all_flexible_lines(const vector<Busline*>& line_vec) const
 	return true;
 }
 
+bool Pass_path::check_all_fixed_lines(const vector<Busline*>& line_vec) const
+{
+	if (line_vec.empty()) //empty vector of lines is not a set of fixed transit lines
+		return false;
 
-bool Pass_path::first_transit_leg_flexible() const
+	for (auto line : line_vec)
+	{
+		if (line->is_flex_line())
+			return false;
+	}
+	return true;
+}
+
+bool Pass_path::is_first_transit_leg_fixed() const
 {
 	if (alt_lines.empty()) //path with no transit legs (e.g. walking only)
 		return false;
 
 	vector<Busline*> first_transit_leg = alt_lines.front();
-	if(!all_flexible_lines(first_transit_leg))
+	if (!check_all_fixed_lines(first_transit_leg))
+		return false;
+
+	return true;
+}
+
+
+bool Pass_path::is_first_transit_leg_flexible() const
+{
+	if (alt_lines.empty()) //path with no transit legs (e.g. walking only)
+		return false;
+
+	vector<Busline*> first_transit_leg = alt_lines.front();
+	if(!check_all_flexible_lines(first_transit_leg))
 		return false;
 
 	assert(first_transit_leg.size() == 1); //!< @todo currently, flexible transit lines should always be considered distinct from one another as well as fixed lines in paths. 

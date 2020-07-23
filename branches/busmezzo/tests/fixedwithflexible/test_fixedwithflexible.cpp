@@ -93,6 +93,18 @@ void TestFixedWithFlexible::testInitNetwork()
  // Test here various properties that should be true after reading the network
     // Test if the network is properly read and initialized
     QVERIFY2(net->get_links().size() == 28, "Failure, network should have 28 links ");
+
+    //count number of 'dummy links' to see that these are not being mislabeled
+    //qDebug("Counting dummy links...")
+    int count = 0;
+    auto links = net->get_links();
+    for(const auto& link : links)
+    {
+        if(link.second->is_dummylink())
+            count++;
+    }
+    QVERIFY2(count == 20, "Failure network should have 20 dummy links ");
+
     QVERIFY2(net->get_nodes().size() == 16, "Failure, network should have 16 nodes ");
     QVERIFY2(net->get_destinations().size() == 4, "Failure, network should have 4 destination nodes ");
     QVERIFY2(net->get_origins().size() == 4, "Failure, network should have 4 origin nodes ");
@@ -168,10 +180,10 @@ void TestFixedWithFlexible::testPathSetUtilities()
 
 
 
-    for(auto path : path_set) // check so that all flexible transit legs
-    {
-        path->first_transit_leg_flexible();
-    }
+//    for(auto path : path_set) // check so that all flexible transit legs
+//    {
+//        path->first_transit_leg_flexible();
+//    }
 
     /* TEST PASSENGER INIT */
     //Test initialization of passenger with RTI at a network level

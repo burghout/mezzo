@@ -768,6 +768,8 @@ public:
 	Destination* get_dest_node() const { return dest_node; } 
 	void set_origin_node(Origin* origin_node_) { origin_node = origin_node_; }
 	void set_dest_node(Destination* dest_node_) { dest_node = dest_node_; }
+
+	bool is_within_walking_distance_of(Busstop* target_stop); //!< check to see which stops are connected by walking links from this stop
 /**@}*/
 
 // relevant only for demand format 2
