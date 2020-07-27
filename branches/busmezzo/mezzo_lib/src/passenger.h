@@ -15,6 +15,7 @@ class ODstops;
 class ODzone;
 struct SLL;
 struct Request;
+class Pass_path;
 
 class Passenger : public QObject, public Action
 {
