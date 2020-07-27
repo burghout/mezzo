@@ -1,36 +1,23 @@
 ### Total passenger summary ###
 Passenger journeys completed: 259
 
-Total waiting time          : 0
-Average total waiting time  : 0
-Total denied waiting time   : 0
-Average denied waiting time : 0
-Minimum waiting time        : 0
-Maximum waiting time        : 0
-Median waiting time         : 0
-Total in-vehicle time       : 0
+Total walking time             : 0
+Average walking time           : 0
 
-### Fixed passenger summary ###
-Passenger journeys completed: 0
-Total waiting time          : 0
-Average total waiting time  : 0
-Total denied waiting time   : 0
-Average denied waiting time : 0
-Minimum waiting time        : 0
-Maximum waiting time        : 0
-Median waiting time         : 0
-Total in-vehicle time       : 0
+Total waiting time             : 2.74234e+06
+Average total waiting time     : 10588.2
+Minimum waiting time           : 1.01633
+Maximum waiting time           : 6426.73
+Median waiting time            : 6272.09
 
-### DRT passenger summary ###
-Passenger journeys completed: 0
-Total waiting time          : 0
-Average total waiting time  : 0
-Total denied waiting time   : 0
-Average denied waiting time : 0
-Minimum waiting time        : 0
-Maximum waiting time        : 0
-Median waiting time         : 0
-Total in-vehicle time       : 0
+Total denied waiting time      : 2.41357e+06
+Average denied waiting time    : 9318.79
+
+Total in-vehicle time          : 537806
+Average in-vehicle time        : 2076.47
+
+Total crowded in-vehicle time  : 622132
+Average crowded in-vehicle time: 2402.06
 
 ### Total vehicle summary ###
 Total VKT                   : 643.5

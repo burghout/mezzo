@@ -94,14 +94,22 @@ struct FWF_passdata
 { 
 	//Passengers
 	int pass_completed=0; // pass completed trips (that reached their final destination)
+	double total_wlkt = 0; //total walking time
+	double avg_total_wlkt = 0; //avg walking time
 	double total_wt=0; // total waiting time
 	double avg_total_wt=0; // avg. total waiting time
 	double total_denied_wt=0; // total denied waiting time
 	double avg_denied_wt=0; // avg. denied waiting time
-	double min_wt=0; // min. max waiting time
+	double min_wt=DBL_INF; // min. max waiting time
 	double max_wt=0; // max. waiting time
 	double median_wt=0; // median waiting time
 	double total_ivt=0; // total ivt time
+	double avg_total_ivt = 0;
+	double total_crowded_ivt = 0;
+	double avg_total_crowded_ivt = 0;
+	size_t npass = 0; //number of passengers statistics have been calculated for
+
+	void calc_pass_statistics(const vector<Passenger*>& passengers); //fill in aggregate passengers statistics based on whatever vector of passengers
 };
 
 //!< @brief vehicle output data for fixed with flexible implementation. 
@@ -219,6 +227,7 @@ public:
 	int reset(); //!< resets the simulation to 0, clears all the state variables. returns runtime
 	void delete_passengers(); //Delete all passengers
 	unsigned int count_generated_passengers(); // !< returns the total number of passengers generated for this replication
+	vector<Passenger*> get_all_generated_passengers(); //!< returns a vector of all passengers generated for each ODstop pair
 	unsigned int count_transit_paths(); //!< returns the total number of paths that are currently defined between stop pairs
 	void end_of_simulation(); //!< finalise all the temp values into containers (linktimes)
 	double step(double timestep); //!< executes one step of simulation, called by the gui, returns current value of time

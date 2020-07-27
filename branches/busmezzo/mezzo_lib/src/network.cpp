@@ -473,6 +473,18 @@ unsigned int Network::count_generated_passengers()
     return count;
 }
 
+vector<Passenger*> Network::get_all_generated_passengers() 
+{
+    vector<Passenger*> passengers;
+    for (const auto& odstop : odstops)
+    {
+        vector<Passenger*> odpass = odstop->get_passengers_during_simulation();
+        passengers.insert(passengers.end(), odpass.begin(), odpass.end());
+    }
+
+    return passengers;
+}
+
 void Network::end_of_simulation()
 {
     for (map<int,Link*>::iterator iter=linkmap.begin();iter != linkmap.end();iter++)
@@ -6853,36 +6865,61 @@ bool Network::writeFWFsummary(ostream& out,
         out << "### Total passenger summary ###";
         out << "\nPassenger journeys completed: " << total_passdata.pass_completed;
 
-        out << "\n\nTotal waiting time          : " << total_passdata.total_wt;
-        out << "\nAverage total waiting time  : " << total_passdata.avg_total_wt;
-        out << "\nTotal denied waiting time   : " << total_passdata.total_denied_wt;
-        out << "\nAverage denied waiting time : " << total_passdata.avg_total_wt;
-        out << "\nMinimum waiting time        : " << total_passdata.min_wt;
-        out << "\nMaximum waiting time        : " << total_passdata.max_wt;
-        out << "\nMedian waiting time         : " << total_passdata.median_wt;
-        out << "\nTotal in-vehicle time       : " << total_passdata.total_ivt;
-        
-        out << "\n\n### Fixed passenger summary ###";
-        out << "\nPassenger journeys completed: " << fix_passdata.pass_completed;
-        out << "\nTotal waiting time          : " << fix_passdata.total_wt;
-        out << "\nAverage total waiting time  : " << fix_passdata.avg_total_wt;
-        out << "\nTotal denied waiting time   : " << fix_passdata.total_denied_wt;
-        out << "\nAverage denied waiting time : " << fix_passdata.avg_total_wt;
-        out << "\nMinimum waiting time        : " << fix_passdata.min_wt;
-        out << "\nMaximum waiting time        : " << fix_passdata.max_wt;
-        out << "\nMedian waiting time         : " << fix_passdata.median_wt;
-        out << "\nTotal in-vehicle time       : " << fix_passdata.total_ivt;
+        out << "\n\nTotal walking time             : " << total_passdata.total_wlkt;
+        out << "\nAverage walking time           : " << total_passdata.avg_total_wlkt;
 
+        out << "\n\nTotal waiting time             : " << total_passdata.total_wt;
+        out << "\nAverage total waiting time     : " << total_passdata.avg_total_wt;
+        out << "\nMinimum waiting time           : " << total_passdata.min_wt;
+        out << "\nMaximum waiting time           : " << total_passdata.max_wt;
+        out << "\nMedian waiting time            : " << total_passdata.median_wt;
+
+        out << "\n\nTotal denied waiting time      : " << total_passdata.total_denied_wt;
+        out << "\nAverage denied waiting time    : " << total_passdata.avg_denied_wt;
+        
+        out << "\n\nTotal in-vehicle time          : " << total_passdata.total_ivt;
+        out << "\nAverage in-vehicle time        : " << total_passdata.avg_total_ivt;
+
+        out << "\n\nTotal crowded in-vehicle time  : " << total_passdata.total_crowded_ivt;
+        out << "\nAverage crowded in-vehicle time: " << total_passdata.avg_total_crowded_ivt;
+        
+ /*       out << "\n\n### Fixed passenger summary ###";
+        out << "\n\nTotal walking time             : " << fix_passdata.total_wlkt;
+        out << "\nAverage walking time           : " << fix_passdata.avg_total_wlkt;
+
+        out << "\n\nTotal waiting time             : " << fix_passdata.total_wt;
+        out << "\nAverage total waiting time     : " << fix_passdata.avg_total_wt;
+        out << "\nMinimum waiting time           : " << fix_passdata.min_wt;
+        out << "\nMaximum waiting time           : " << fix_passdata.max_wt;
+        out << "\nMedian waiting time            : " << fix_passdata.median_wt;
+
+        out << "\n\nTotal denied waiting time      : " << fix_passdata.total_denied_wt;
+        out << "\nAverage denied waiting time    : " << fix_passdata.avg_denied_wt;
+        
+        out << "\n\nTotal in-vehicle time          : " << fix_passdata.total_ivt;
+        out << "\nAverage in-vehicle time        : " << fix_passdata.avg_total_ivt;
+
+        out << "\n\nTotal crowded in-vehicle time  : " << fix_passdata.total_crowded_ivt;
+        out << "\nAverage crowded in-vehicle time: " << fix_passdata.avg_total_crowded_ivt;
+        
         out << "\n\n### DRT passenger summary ###";
-        out << "\nPassenger journeys completed: " << drt_passdata.pass_completed;
-        out << "\nTotal waiting time          : " << drt_passdata.total_wt;
-        out << "\nAverage total waiting time  : " << drt_passdata.avg_total_wt;
-        out << "\nTotal denied waiting time   : " << drt_passdata.total_denied_wt;
-        out << "\nAverage denied waiting time : " << drt_passdata.avg_total_wt;
-        out << "\nMinimum waiting time        : " << drt_passdata.min_wt;
-        out << "\nMaximum waiting time        : " << drt_passdata.max_wt;
-        out << "\nMedian waiting time         : " << drt_passdata.median_wt;
-        out << "\nTotal in-vehicle time       : " << drt_passdata.total_ivt;
+        out << "\n\nTotal walking time             : " << drt_passdata.total_wlkt;
+        out << "\nAverage walking time           : " << drt_passdata.avg_total_wlkt;
+
+        out << "\n\nTotal waiting time             : " << drt_passdata.total_wt;
+        out << "\nAverage total waiting time     : " << drt_passdata.avg_total_wt;
+        out << "\nMinimum waiting time           : " << drt_passdata.min_wt;
+        out << "\nMaximum waiting time           : " << drt_passdata.max_wt;
+        out << "\nMedian waiting time            : " << drt_passdata.median_wt;
+
+        out << "\n\nTotal denied waiting time      : " << drt_passdata.total_denied_wt;
+        out << "\nAverage denied waiting time    : " << drt_passdata.avg_denied_wt;
+
+        out << "\n\nTotal in-vehicle time          : " << drt_passdata.total_ivt;
+        out << "\nAverage in-vehicle time        : " << drt_passdata.avg_total_ivt;
+
+        out << "\n\nTotal crowded in-vehicle time  : " << drt_passdata.total_crowded_ivt;
+        out << "\nAverage crowded in-vehicle time: " << drt_passdata.avg_total_crowded_ivt;*/
 
         out << "\n\n### Total vehicle summary ###";
         out << "\nTotal VKT                   : " << total_vehdata.total_vkt;
@@ -7068,7 +7105,11 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
             ofstream out18(name18.c_str(), ios_base::app); // drt+fwf summary filestream
 
             //fill in the fwf summary containers
-            total_passdata.pass_completed = pass_counter;
+            total_passdata.pass_completed = pass_counter; //passengers that completed trips
+            
+            // FWF passenger output
+            vector<Passenger*> all_pass = get_all_generated_passengers(); //should include all passengers, even those that did not complete their trip?
+            total_passdata.calc_pass_statistics(all_pass);
 
             //write outputs for objects owned by control centers
             for (const auto& cc : ccmap) //writing trajectory output for each drt vehicle
@@ -9484,3 +9525,52 @@ bool MatrixAction::execute(Eventlist* eventlist, double   /*time*/)
     }
     return true;
 }
+
+/* Experienced passenger LoS based on output collectors of passengers */
+void FWF_passdata::calc_pass_statistics(const vector<Passenger*>& passengers)
+{
+    vector<double> waiting_times;
+    
+    double wlkt = 0.0;
+    double wt = 0.0;
+    double ivt = 0.0;
+    double d_wt = 0.0;
+    double c_ivt = 0.0;
+
+    for(Passenger* pass : passengers)
+    {
+        if (pass->get_end_time() > 0) //crash otherwise
+        {
+            npass++;
+            wlkt = pass->calc_total_walking_time();
+
+            wt = pass->calc_total_waiting_time();
+            d_wt = pass->calc_total_waiting_time_due_to_denied_boarding();
+
+            ivt = pass->calc_total_IVT();
+            c_ivt = pass->calc_IVT_crowding();
+        }
+
+        total_wlkt = wlkt;
+        total_wt += wt;
+        total_denied_wt += d_wt;
+        total_ivt += ivt;
+        total_crowded_ivt += c_ivt;
+
+        min_wt = Min(min_wt, wt);
+        max_wt = Max(max_wt, wt);
+
+        waiting_times.push_back(wt);
+    }
+    if (npass != 0)
+    {
+        median_wt = findMedian(waiting_times);
+        avg_total_wlkt = total_wlkt / static_cast<double>(npass);
+        avg_total_wt = total_wt / static_cast<double>(npass);
+        avg_denied_wt = total_denied_wt / static_cast<double>(npass);
+        avg_total_ivt = total_ivt / static_cast<double>(npass);
+        avg_total_crowded_ivt = total_crowded_ivt / static_cast<double>(npass);
+    }
+    
+}
+
