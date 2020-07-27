@@ -169,6 +169,9 @@ double Pass_path::calc_total_waiting_time (double time, bool without_first_waiti
 		first_line = false;
 	}
 	vector<double>::iterator iter_IVT = IVT.begin();
+    if(iter_IVT == IVT.end()) // if this is a walking only path, or no IVTs are defined
+        return 0.0;
+
 	vector<double>::iterator iter_walk = walking_distances.begin();
 	double pass_arrival_time_at_next_stop;
 	double sum_IVT = 0.0;

@@ -58,6 +58,7 @@ private Q_SLOTS:
     void testCreateNetwork(); //!< test loading a network
     void testInitNetwork(); //!< test generating passenger path sets & loading a network
     //void testPassengerStates(); //!< test that passengers are being initialized properly,
+    void testPassPath(); //!< test the reading and methods of a specific Pass_path instance
     void testStateDependentPassengerPassPath(); //!< tests support methods in Passenger and Pass_path for sorting, filtering path-sets dependent on traveler state (RTI level, current OD...)
     void testPathSetUtilities(); //!< test navigating generated path-sets, calculating utilities under different circumstances (e.g. access to RTI for different legs)
     void testRunNetwork();
@@ -183,13 +184,73 @@ void TestFixedWithFlexible_walking::testInitNetwork()
     //    path_set_file.close();
 }
 
+void TestFixedWithFlexible_walking::testPassPath()
+{
+    ODstops* stop5to4 = net->get_ODstop_from_odstops_demand(5,4);
+    QVERIFY2(stop5to4 != nullptr,"Failure, OD stop 1 to 4 is undefined ");
+    vector<Pass_path*> path_set = stop5to4->get_path_set();
+    QVERIFY(!path_set.empty());
+
+    vector<Pass_path*> drt_first_paths = stop5to4->get_flex_first_paths(); //retrieving this directly from OD membership instead
+    vector<Pass_path*> fix_first_paths = stop5to4->get_fix_first_paths();
+    QVERIFY2(path_set.size() == 7,"Failure, there should be a total of 7 paths available from stop 5->4");
+    QVERIFY2(drt_first_paths.size() == 3,"Failure, there should be 3 paths available stop 5->4 where the first leg is flexible");
+    QVERIFY2(fix_first_paths.size() == 4, "Failure, there should be 4 paths available stop 5->4 where the first leg is fixed");
+
+    // Test path 17 (18 in input file but reader relabels starting from id = 0):
+    // Path 17 route: 5->4 with S5 -> Walk(330) -> S1 -> DRT_1 -> S2 -> FIX_2 -> S3 -> DRT_3 -> S4
+    auto path18_it = find_if(drt_first_paths.begin(),drt_first_paths.end(),[](Pass_path* path)->bool{return path->get_id() == 17;});
+    Pass_path* path18 = nullptr;
+    qDebug() << "Testing reading and utility calculations for path 18 (17):";
+    if(path18_it != drt_first_paths.end())
+        path18 = *path18_it;
+    else
+        QVERIFY(path18_it != drt_first_paths.end());
+
+    //Check path 18 5->4 attributes: 8 alt stops, 3 alt lines all of size 1, 2 transfers, 1 non-zero walking link
+    QVERIFY(path18->get_alt_transfer_stops().size() == 8);
+    QVERIFY(path18->get_alt_lines().size() == 3);
+    vector<vector<Busline*> > path18_lines = path18->get_alt_lines();
+    for(auto linevec : path18->get_alt_lines())
+    {
+        QVERIFY(linevec.size() == 1);
+    }
+    QVERIFY(path18->get_number_of_transfers() == 2);
+    QVERIFY(AproxEqual(path18->get_walking_distances()[0],330.0));
+
+    //check sequence of lines in path
+    QVERIFY(path18_lines[0][0]->get_id()==8001);
+    QVERIFY(path18_lines[1][0]->get_id()==2);
+    QVERIFY(path18_lines[2][0]->get_id()==8003);
+
+    vector<vector<Busstop*> > path18_stops = path18->get_alt_transfer_stops();
+    //check sequence of stops in path
+    QVERIFY(path18_stops[0][0]->get_id()==5);
+    QVERIFY(path18_stops[1][0]->get_id()==1);
+    QVERIFY(path18_stops[2][0]->get_id()==2);
+    QVERIFY(path18_stops[3][0]->get_id()==2);
+    QVERIFY(path18_stops[4][0]->get_id()==3);
+    QVERIFY(path18_stops[5][0]->get_id()==3);
+    QVERIFY(path18_stops[6][0]->get_id()==4);
+    QVERIFY(path18_stops[7][0]->get_id()==4);
+
+    //test extracting an expected waiting time for each leg....
+
+
+    /* Check the parameters that have been set that are used in calculating utilities */
+    QVERIFY(AproxEqual(theParameters->walking_time_coefficient,-0.00308)); // SEK per second?, same as WT anyways 2*IVT
+    QVERIFY(AproxEqual(theParameters->average_walking_speed,66.66)); // meters per minute, prob need conversion
+    QVERIFY(AproxEqual(theParameters->waiting_time_coefficient,-0.00308));
+    QVERIFY(AproxEqual(theParameters->in_vehicle_time_coefficient,-0.00154));
+    QVERIFY(AproxEqual(theParameters->transfer_coefficient,-0.334)); // SEK per transfer?
+
+}
+
 void TestFixedWithFlexible_walking::testStateDependentPassengerPassPath()
 {
     /* Test for paths between stop 5 to 4 (also via 1) with traveler located at stop 5 */
     qDebug() << "Creating passenger at stop 5 with destination 4";
     ODstops* stop5to4 = net->get_ODstop_from_odstops_demand(5,4);
-    QVERIFY2(stop5to4 != nullptr,"Failure, OD stop 1 to 4 is undefined ");
-
     Passenger* pass1 = new Passenger(888,0,stop5to4);
 
     //get all paths available to traveler
@@ -197,14 +258,15 @@ void TestFixedWithFlexible_walking::testStateDependentPassengerPassPath()
     Busstop* bs_d = pass1->get_OD_stop()->get_destination();
     vector<Pass_path*> path_set = bs_o->get_stop_od_as_origin_per_stop(bs_d)->get_path_set();
     vector<Pass_path*> path_set2 = pass1->get_OD_stop()->get_path_set();
+    QVERIFY(!path_set.empty());
     QVERIFY(path_set == path_set2); // isnt this equivalent to pass1->get_OD_stop()->get_path_set()? Any reason for this roundabout way?
 
     vector<Pass_path*> drt_first_paths = pass1->get_first_leg_flexible_paths(path_set); //paths with first leg flexible
     vector<Pass_path*> fix_first_paths = pass1->get_first_leg_fixed_paths(path_set); //paths with first leg fixed
-
-    QVERIFY2(path_set.size() == 7,"Failure, there should be a total of 7 paths available from stop 5->4");
-    QVERIFY2(drt_first_paths.size() == 3,"Failure, there should be 3 paths available stop 5->4 where the first leg is flexible");
-    QVERIFY2(fix_first_paths.size() == 4, "Failure, there should be 4 paths available stop 5->4 where the first leg is fixed");
+    vector<Pass_path*> drt_first_paths2 = stop5to4->get_flex_first_paths(); //retrieving this directly from OD membership instead
+    vector<Pass_path*> fix_first_paths2 = stop5to4->get_fix_first_paths();
+    QVERIFY(drt_first_paths == drt_first_paths2);
+    QVERIFY(fix_first_paths == fix_first_paths2);
 
     //test pass functions here for extracting walking, waiting, in-vehicle and transfers for a given available path
     //first see what you get
@@ -222,12 +284,45 @@ void TestFixedWithFlexible_walking::testStateDependentPassengerPassPath()
 
     */
     // expected path attributes without day2day
+
+    /* 1. Get a path
+     * 2. Calculate the trip attributes for individual legs...Choose a path that includes each component we want (walking transfers a drt etc.)
+     * 3. Calculate the resulting utilites for a connection decision (path-sets)
+    */
+
+
+    //walking times should be the same
+    Pass_path* path = path_set.front();
+    vector<vector<Busline*>> line_legs = path->get_alt_lines(); //for this network all alt_line sets are of size one
+    vector<vector<Busstop*>> stop_sets = path->get_alt_transfer_stops(); //all stop sets are also size one for this network
+    vector<double> walking_distances = path->get_walking_distances();
+
+//    msg
     double wkt=0; // walk time
+
+    //implement separate functions for WT for DRT and for fixed
     double wt=0; // wait time
+
+    //implement a separate function for IVT for DRT and a separate one for fixed....
     double ivt; // in-vehicle time
+
+    //number of transfers the same
     int n_trans; // number of transfers
 
-    //start with the drt first paths
+    /* see Pass_path functions:
+     * calc_total_walking_distance
+     * calc_total_waiting_time(double time, bool without_first_waiting, bool alighting_decision, double avg_walking_speed, Passenger* pass)
+     * calc_total_in_vehicle_time(double time, Passenger* pass)
+     * calc_total_scheduled_in_vehicle_time
+    */
+    for(auto path : path_set)
+    {
+        qDebug() << "Calculating attributes for path " << path->get_id();
+        wkt = path->calc_total_walking_distance() / theParameters->average_walking_speed;
+        wt = path->calc_total_waiting_time(0.0, false, false, theParameters->average_walking_speed, pass1); //note should never be called for walking only links. This is a special case.
+        ivt = path->calc_total_in_vehicle_time(0.0, pass1);
+        n_trans = path->get_number_of_transfers();
+    }
 
     delete pass1;
 }
@@ -266,12 +361,12 @@ void TestFixedWithFlexible_walking::testPathSetUtilities()
     QVERIFY2(pass1->get_pass_RTI_network_level() == false, "Failure, default initilization of passenger network-level RTI should be false");
     pass1->init(); //note this both sets the network level RTI for the traveler as well as the anticipated WT and IVT of the traveler if day2day is active
     QVERIFY2(pass1->get_pass_RTI_network_level() == true,"Failure, passenger should have network-level RTI after init with real_time_info=3 and share_RTI_network=1 in parameters");
-    QVERIFY2(pass1->get_access_to_flexible() == true, "Failure, passenger with network-level RTI should have access to flexible services");
+    QVERIFY2(pass1->has_access_to_flexible() == true, "Failure, passenger with network-level RTI should have access to flexible services");
 
     //Test creation of passenger with no RTI (should be default)
     Passenger* pass2 = new Passenger(2,0,stop1to4,nullptr);
     QVERIFY(pass2->get_pass_RTI_network_level() == false);
-    QVERIFY2(pass2->get_access_to_flexible() == false, "Failure, passenger without network-level RTI should not have access to flexible services");
+    QVERIFY2(pass2->has_access_to_flexible() == false, "Failure, passenger without network-level RTI should not have access to flexible services");
 
     //Connection decision for passenger with RTI
     Busstop* connection_stop = nullptr;

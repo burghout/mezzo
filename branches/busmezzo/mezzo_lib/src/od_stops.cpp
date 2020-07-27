@@ -386,8 +386,32 @@ bool ODstops::check_path_set ()
 	{
 		return true;
 	}
-} 
+}
+vector<Pass_path*> ODstops::get_flex_first_paths()
+{
+	vector<Pass_path*> flex_paths; //paths where the first leg is flexible
+	for (Pass_path* path : path_set)
+	{
+		if (path->is_first_transit_leg_flexible())
+		{
+			flex_paths.push_back(path);
+		}
+	}
+	return flex_paths;
+}
 
+vector<Pass_path*> ODstops::get_fix_first_paths()
+{
+	vector<Pass_path*> fix_paths; //paths where the first leg is flexible
+	for (Pass_path* path : path_set)
+	{
+		if (path->is_first_transit_leg_fixed())
+		{
+			fix_paths.push_back(path);
+		}
+	}
+	return fix_paths;
+}
 
 double ODstops::calc_multinomial_logit (double utility_i, double utility_sum)
 {

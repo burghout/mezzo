@@ -190,12 +190,12 @@ void TestFixedWithFlexible::testPathSetUtilities()
     QVERIFY2(pass1->get_pass_RTI_network_level() == false, "Failure, default initilization of passenger network-level RTI should be false");
     pass1->init(); //note this both sets the network level RTI for the traveler as well as the anticipated WT and IVT of the traveler if day2day is active
     QVERIFY2(pass1->get_pass_RTI_network_level() == true,"Failure, passenger should have network-level RTI after init with real_time_info=3 and share_RTI_network=1 in parameters");
-    QVERIFY2(pass1->get_access_to_flexible() == true, "Failure, passenger with network-level RTI should have access to flexible services");
+    QVERIFY2(pass1->has_access_to_flexible() == true, "Failure, passenger with network-level RTI should have access to flexible services");
 
     //Test creation of passenger with no RTI (should be default)
     Passenger* pass2 = new Passenger(2,0,stop1to4,nullptr);
     QVERIFY(pass2->get_pass_RTI_network_level() == false);
-    QVERIFY2(pass2->get_access_to_flexible() == false, "Failure, passenger without network-level RTI should not have access to flexible services");
+    QVERIFY2(pass2->has_access_to_flexible() == false, "Failure, passenger without network-level RTI should not have access to flexible services");
 
     //Connection decision for passenger with RTI
     Busstop* connection_stop = nullptr;

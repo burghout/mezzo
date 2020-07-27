@@ -309,6 +309,14 @@ public:
 	vector <Pass_path*> get_path_set () {return path_set;}
 	void set_path_set (vector <Pass_path*> path_set_) {path_set = path_set_;}
 	bool check_path_set ();
+
+	/** @ingroup DRT
+	 	@{
+	 */
+	vector<Pass_path*> get_flex_first_paths(); //!< returns all paths for this OD that have a flexible first transit leg (empty if none exist)
+	vector<Pass_path*> get_fix_first_paths(); //!< returns all paths for this OD that have a fixed first transit leg (empty if none exist)
+	/**@}*/
+
 	double get_arrivalrate () {return arrival_rate;}
 	vector<Passenger*> get_waiting_passengers() {return waiting_passengers;}
 	int get_min_transfers () {return min_transfers;}

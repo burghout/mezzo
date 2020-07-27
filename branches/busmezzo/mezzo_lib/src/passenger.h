@@ -139,7 +139,7 @@ protected:
 public:
 	bool is_waiting_for_flexible() { return waiting_for_flexible_; }
 	void set_waiting_for_flexible(bool waiting_for_flexible) { waiting_for_flexible_ = waiting_for_flexible; }
-    bool get_access_to_flexible() { return access_to_flexible_; }
+    bool has_access_to_flexible() { return access_to_flexible_; }
 	void set_access_to_flexible(bool access_to_flexible) { access_to_flexible_ = access_to_flexible; }
 	vector<Pass_path*> get_first_leg_flexible_paths(const vector<Pass_path*>& path_set) const; //!< returns all paths in path_set that have a flexible first transit leg (that a traveler would need to send a request for to ride with)
 	vector<Pass_path*> get_first_leg_fixed_paths(const vector<Pass_path*>& path_set) const; //!< returns all paths in path_set that have a fixed first transit leg
