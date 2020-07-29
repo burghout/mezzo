@@ -197,42 +197,42 @@ void TestFixedWithFlexible_walking::testPassPath()
     QVERIFY2(drt_first_paths.size() == 3,"Failure, there should be 3 paths available stop 5->4 where the first leg is flexible");
     QVERIFY2(fix_first_paths.size() == 4, "Failure, there should be 4 paths available stop 5->4 where the first leg is fixed");
 
-    // Test path 17 (18 in input file but reader relabels starting from id = 0):
+    // Test path 17 (should also be 17 in input file even though reader relabels paths starting from id = 0):
     // Path 17 route: 5->4 with S5 -> Walk(330) -> S1 -> DRT_1 -> S2 -> FIX_2 -> S3 -> DRT_3 -> S4
-    auto path18_it = find_if(drt_first_paths.begin(),drt_first_paths.end(),[](Pass_path* path)->bool{return path->get_id() == 17;});
-    Pass_path* path18 = nullptr;
-    qDebug() << "Testing reading and utility calculations for path 18 (17):";
-    if(path18_it != drt_first_paths.end())
-        path18 = *path18_it;
+    auto path17_it = find_if(drt_first_paths.begin(),drt_first_paths.end(),[](Pass_path* path)->bool{return path->get_id() == 17;});
+    Pass_path* path17 = nullptr;
+    qDebug() << "Testing reading and utility calculations for path 17:";
+    if(path17_it != drt_first_paths.end())
+        path17 = *path17_it;
     else
-        QVERIFY(path18_it != drt_first_paths.end());
+        QVERIFY(path17_it != drt_first_paths.end());
 
-    //Check path 18 5->4 attributes: 8 alt stops, 3 alt lines all of size 1, 2 transfers, 1 non-zero walking link
-    QVERIFY(path18->get_alt_transfer_stops().size() == 8);
-    QVERIFY(path18->get_alt_lines().size() == 3);
-    vector<vector<Busline*> > path18_lines = path18->get_alt_lines();
-    for(auto linevec : path18->get_alt_lines())
+    //Check path 17 5->4 attributes: 8 alt stops, 3 alt lines all of size 1, 2 transfers, 1 non-zero walking link
+    QVERIFY(path17->get_alt_transfer_stops().size() == 8);
+    QVERIFY(path17->get_alt_lines().size() == 3);
+    vector<vector<Busline*> > path17_lines = path17->get_alt_lines();
+    for(auto linevec : path17->get_alt_lines())
     {
         QVERIFY(linevec.size() == 1);
     }
-    QVERIFY(path18->get_number_of_transfers() == 2);
-    QVERIFY(AproxEqual(path18->get_walking_distances()[0],330.0));
+    QVERIFY(path17->get_number_of_transfers() == 2);
+    QVERIFY(AproxEqual(path17->get_walking_distances()[0],330.0));
 
     //check sequence of lines in path
-    QVERIFY(path18_lines[0][0]->get_id()==8001);
-    QVERIFY(path18_lines[1][0]->get_id()==2);
-    QVERIFY(path18_lines[2][0]->get_id()==8003);
+    QVERIFY(path17_lines[0][0]->get_id()==8001);
+    QVERIFY(path17_lines[1][0]->get_id()==2);
+    QVERIFY(path17_lines[2][0]->get_id()==8003);
 
-    vector<vector<Busstop*> > path18_stops = path18->get_alt_transfer_stops();
+    vector<vector<Busstop*> > path17_stops = path17->get_alt_transfer_stops();
     //check sequence of stops in path
-    QVERIFY(path18_stops[0][0]->get_id()==5);
-    QVERIFY(path18_stops[1][0]->get_id()==1);
-    QVERIFY(path18_stops[2][0]->get_id()==2);
-    QVERIFY(path18_stops[3][0]->get_id()==2);
-    QVERIFY(path18_stops[4][0]->get_id()==3);
-    QVERIFY(path18_stops[5][0]->get_id()==3);
-    QVERIFY(path18_stops[6][0]->get_id()==4);
-    QVERIFY(path18_stops[7][0]->get_id()==4);
+    QVERIFY(path17_stops[0][0]->get_id()==5);
+    QVERIFY(path17_stops[1][0]->get_id()==1);
+    QVERIFY(path17_stops[2][0]->get_id()==2);
+    QVERIFY(path17_stops[3][0]->get_id()==2);
+    QVERIFY(path17_stops[4][0]->get_id()==3);
+    QVERIFY(path17_stops[5][0]->get_id()==3);
+    QVERIFY(path17_stops[6][0]->get_id()==4);
+    QVERIFY(path17_stops[7][0]->get_id()==4);
 
     //test extracting an expected waiting time for each leg....
 
