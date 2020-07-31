@@ -586,6 +586,9 @@ void Controlcenter::addServiceRoute(Busline* line)
 {
 	assert(line->is_flex_line()); //only flex lines should be added to control center for now
 	tg_.addServiceRoute(line);
+
+	//whenever a line is added as a service route to a CC, the line also knows of the CC it is a service route for...
+	line->add_CC(this); // may create a tight coupling between Controlcenter's and Busline, but added so that Pass_path can ask specific buslines for LoS estimates. 
 }
 
 void Controlcenter::addVehicleToAllServiceRoutes(Bus* transitveh)
@@ -629,6 +632,63 @@ void Controlcenter::addCompletedVehicleTrip(Bus* transitveh, Bustrip * trip)
 	if(trip)
 		assert(trip->get_next_stop() == trip->stops.end()); //currently a trip is considered completed via Bustrip::advance_next_stop -> Bus::advance_curr_trip
 	completedVehicleTrips_.emplace_back(transitveh, trip);
+}
+
+double Controlcenter::calc_expected_ivt(Busline* service_route, Busstop* start_stop, Busstop* end_stop, bool exploration, double time)
+{
+	assert(theParameters->drt); //trips list should never be empty for a non-drt scenario, this was a very widespread assumption in many different places of the code
+	assert(service_route->is_flex_line()); //if trips list for this busline is empty then it should be a line that allows for dynamically generated trips
+	assert(service_route->get_CC()->getID() == id_);
+
+	if (exploration)
+		return calc_exploration_ivt(service_route,start_stop,end_stop);
+
+	auto delta_at_stops = service_route->get_delta_at_stops();
+
+	bool found_board = false;
+	bool found_alight = false;
+
+	vector<pair<Busstop*, double>>::iterator board_stop;
+	vector<pair<Busstop*, double>>::iterator alight_stop;
+	double earliest_time_ostop = 0.0;
+	double cumulative_arrival_time = 0.0; //arrival times starting from zero for initial stop
+
+	// Always use default ivt between stops for the line
+	for (vector<pair<Busstop*, double>>::iterator stop = delta_at_stops.begin(); stop != delta_at_stops.end(); ++stop)
+	{
+		cumulative_arrival_time += (*stop).second;
+		if ((*stop).first->get_id() == start_stop->get_id() || (*stop).first->get_name() == start_stop->get_name())
+		{
+			earliest_time_ostop = cumulative_arrival_time;
+			board_stop = stop;
+			found_board = true;
+		}
+		if ((*stop).first->get_id() == end_stop->get_id() || (*stop).first->get_name() == end_stop->get_name())
+		{
+			alight_stop = stop;
+			found_alight = true;
+			break;
+		}
+	}
+	if (found_board == false || found_alight == false)
+		return 10000; //default in case of no matching
+
+	return cumulative_arrival_time - earliest_time_ostop;
+}
+
+double Controlcenter::calc_expected_wt(Busline* service_route, Busstop* start_stop, Busstop* end_stop, bool exploration, double time)
+{
+	return 0.0;
+}
+
+double Controlcenter::calc_exploration_ivt(Busline* service_route, Busstop* start_stop, Busstop* end_stop)
+{
+	return 0.0;
+}
+
+double Controlcenter::calc_exploration_wt(Busline* service_route, Busstop* start_stop, Busstop* end_stop)
+{
+	return 0.0;
 }
 
 //Slot implementations

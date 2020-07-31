@@ -268,6 +268,8 @@ public:
 	void set_static_trips(const list <Start_trip>& static_trips_) { static_trips = static_trips_; } //!< ugly solution, sole purpose is to save the initial (non-dynamically generated) trips vector between resets
     void set_planned_headway(double planned_headway_) { planned_headway = planned_headway_; }
     double get_planned_headway() const { return planned_headway; }
+	void add_CC(Controlcenter* CC) { CC_ = CC; }
+	Controlcenter* get_CC() { return CC_; }
 	/**@}*/
 
 protected:
@@ -304,6 +306,7 @@ protected:
     int trip_count = 0; //!< the number of trips created for this line
     list <Start_trip> static_trips; //!< trips that were created from input files (i.e. were not created dynamically for this line), to be saved between resets
     double planned_headway = 0; //!< planned headway in seconds of this line, set to zero by default in constructor. If this is a DRT line then the planned headway is not based on pre-scheduled trips but on expectations given service design (@todo DRT currently only valid with trip format 3 now!)
+	Controlcenter* CC_ = nullptr; //!< controlcenter that can dynamically generate trips for this line
     /**@}*/
 
     map <Busstop*, pair<Busstop*, pair<double, double> > > disruption_times; //!< contains the expected travel times between a pair of stops in case of disruption (does not affect actual travel time, only passenger information provision). Strat and end times

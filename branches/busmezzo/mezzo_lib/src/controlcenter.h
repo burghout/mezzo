@@ -25,6 +25,10 @@ class MatchingStrategy;
 class SchedulingStrategy;
 class Eventlist;
 class Passenger;
+class Network;
+class Busline;
+class Busstop;
+class Bustrip;
 
 struct Controlcenter_SummaryData
 {
@@ -229,6 +233,12 @@ public:
 
 	void addInitialVehicle(Bus* transitveh); //!< add vehicle assigned to this control center on input (that should be preserved between resets)
 	void addCompletedVehicleTrip(Bus* transitveh, Bustrip* trip); //!< add vehicle - trip pair to vector of completed trips
+
+	// Methods to retrieve level of service attributes for an individual 'line' or trip
+	double calc_expected_ivt(Busline* service_route, Busstop* start_stop, Busstop* end_stop, bool exploration, double time); //!< exploration = true if the exploration estimate should be returned and false if calculated based on fleet state/rti etc..
+	double calc_expected_wt(Busline* service_route, Busstop* start_stop, Busstop* end_stop, bool exploration, double time); //!< exploration = true if the exploration estimate should be returned and false if calculated based on fleet state/rti etc..
+	double calc_exploration_ivt(Busline* service_route, Busstop* start_stop, Busstop* end_stop); //!< returns an optimistic exploration estimate of IVT for a given line leg (shortest IVT between the stops), independent of time or RTI level
+	double calc_exploration_wt(Busline* service_route=nullptr, Busstop* start_stop=nullptr, Busstop* end_stop=nullptr); //!< returns an optimistic exploration estimate of WT (currently zero seconds, immediate service) for a given line leg, independent of time or RTI level
 
 signals:
 	void requestAccepted(double time); //!< emitted when request has been recieved by RequestHandler

@@ -319,8 +319,8 @@ void TestFixedWithFlexible_walking::testStateDependentPassengerPassPath()
     {
         qDebug() << "Calculating attributes for path " << path->get_id();
         wkt = path->calc_total_walking_distance() / theParameters->average_walking_speed;
-        wt = path->calc_total_waiting_time(0.0, false, false, theParameters->average_walking_speed, pass1); //note should never be called for walking only links. This is a special case.
         ivt = path->calc_total_in_vehicle_time(0.0, pass1);
+        wt = path->calc_total_waiting_time(0.0, false, false, theParameters->average_walking_speed, pass1); //note should never be called for walking only links? Also dependent on IVT attribute of path which is cleared and set in calc_total_in_vehicle_time
         n_trans = path->get_number_of_transfers();
     }
 

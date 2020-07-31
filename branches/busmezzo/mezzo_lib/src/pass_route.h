@@ -6,6 +6,7 @@
 #include "od_stops.h"
 #include "Random.h"
 #include "passenger.h"
+#include "controlcenter.h"
 
 class Busline;
 class Busstop;

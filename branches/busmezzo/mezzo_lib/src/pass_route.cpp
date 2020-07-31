@@ -88,23 +88,34 @@ double Pass_path::calc_total_scheduled_in_vehicle_time (double time)
 	return (sum_in_vehicle_time/60); // minutes
 }
 
+/**
+ * @ingroup DRT
+ * 
+ * Whenever ODstops asks each of its Pass_paths for a total IVT, or total WT estimate...Pass_path will either ask a Busline itself for an estimate for a given leg...or ask a CC for an estimate for a given leg.
+ * If a set of lines....is all DRT (or all flex lines)
+ * 
+ * - Delegates the calculation of IVT for a given line leg to Controlcenter if the leg is flexible. 
+ * - For the first leg of this path, the 'exploration' argument will be set to false, meaning the non-default IVT (based on whatever method of the Control center) should be used
+ * 
+ */
 double Pass_path::calc_total_in_vehicle_time (double time, Passenger* pass)
 {
-	IVT.clear();
+	IVT.clear(); //expected IVT for each transit leg in path..
 	double sum_in_vehicle_time = 0.0;
 	vector<vector <Busstop*> >::iterator iter_alt_transfer_stops = alt_transfer_stops.begin();
 	iter_alt_transfer_stops++; // starting from the second stop
-	for (vector<vector <Busline*> >::iterator iter_alt_lines = alt_lines.begin(); iter_alt_lines < alt_lines.end(); iter_alt_lines++)
+	for (vector<vector <Busline*> >::iterator iter_alt_lines = alt_lines.begin(); iter_alt_lines < alt_lines.end(); iter_alt_lines++) //iterator over all transit legs in path
 	{
+		bool exploration = iter_alt_lines == alt_lines.begin() ? false : true; // should be true for all legs except the first one
 		double ivtt = 0;
 		
-		if (theParameters->in_vehicle_d2d_indicator)
+		if (theParameters->in_vehicle_d2d_indicator) // indicates a memory of IVT and crowding experiences
 		{
-			bool has_reached_boarding_stop = false;
+			bool has_reached_boarding_stop = false; 
 
-			for (vector<Busstop*>::iterator iter_leg_stops = iter_alt_lines->front()->stops.begin(); iter_leg_stops < iter_alt_lines->front()->stops.end(); iter_leg_stops++)
+			for (vector<Busstop*>::iterator iter_leg_stops = iter_alt_lines->front()->stops.begin(); iter_leg_stops < iter_alt_lines->front()->stops.end(); iter_leg_stops++) // iterates through the stops of the first line in the set of available legs
 			{ //the anticipated in vehicle travel time is specific for each leg of the trip
-				if (has_reached_boarding_stop)
+				if (has_reached_boarding_stop) //once we have found the boarding stop we're searching for
 				{
 					double leg_ivtt;
 					if (pass->any_previous_exp_ivtt(iter_alt_transfer_stops->front(), iter_alt_lines->front(), *iter_leg_stops))
@@ -113,14 +124,26 @@ double Pass_path::calc_total_in_vehicle_time (double time, Passenger* pass)
 					}
 					else
 					{
-						leg_ivtt = iter_alt_lines->front()->calc_curr_line_ivt(*(iter_leg_stops-1), *iter_leg_stops, alt_transfer_stops.front().front()->get_rti(), time);
+						if (check_all_flexible_lines((*iter_alt_lines))) // if this is a flexible line leg grab leg_ivtt from CC instead
+						{
+							assert(theParameters->drt);
+							assert(pass->has_access_to_flexible());
+
+							Busline* line = (*iter_alt_lines).front();
+							Controlcenter* CC = line->get_CC();
+							leg_ivtt = CC->calc_expected_ivt(line, *(iter_leg_stops - 1), *iter_leg_stops, exploration, time);
+						}
+						else
+						{
+							leg_ivtt = iter_alt_lines->front()->calc_curr_line_ivt(*(iter_leg_stops - 1), *iter_leg_stops, alt_transfer_stops.front().front()->get_rti(), time);
+						}
 					}
 					
 					ivtt += leg_ivtt;
 
 					if ((*iter_leg_stops)->get_id() == (iter_alt_transfer_stops+1)->front()->get_id()) break; //Break if the alighting stop is reached
 				}
-				else if ((*iter_leg_stops)->get_id() == iter_alt_transfer_stops->front()->get_id())
+				else if ((*iter_leg_stops)->get_id() == iter_alt_transfer_stops->front()->get_id()) // here we search for the potential boarding stop of the traveler....
 				{
 					has_reached_boarding_stop = true;
 				}
@@ -128,7 +151,19 @@ double Pass_path::calc_total_in_vehicle_time (double time, Passenger* pass)
 		}
 		else
 		{
-			ivtt = iter_alt_lines->front()->calc_curr_line_ivt(iter_alt_transfer_stops->front(), (iter_alt_transfer_stops+1)->front(), alt_transfer_stops.front().front()->get_rti(), time);
+			if (check_all_flexible_lines((*iter_alt_lines))) // if this is a flexible line leg grab leg_ivtt from CC instead
+			{
+				assert(theParameters->drt);
+				assert(pass->has_access_to_flexible());
+
+				Busline* line = (*iter_alt_lines).front();
+				Controlcenter* CC = line->get_CC();
+				ivtt = CC->calc_expected_ivt(line, iter_alt_transfer_stops->front(), (iter_alt_transfer_stops + 1)->front(), exploration, time);
+			}
+			else
+			{
+				ivtt = iter_alt_lines->front()->calc_curr_line_ivt(iter_alt_transfer_stops->front(), (iter_alt_transfer_stops + 1)->front(), alt_transfer_stops.front().front()->get_rti(), time);
+			}
 		}
 		IVT.push_back(ivtt);
 		sum_in_vehicle_time += IVT.back();
@@ -428,35 +463,40 @@ double Pass_path::calc_arriving_utility (double time, Passenger* pass)
     The find_next_expected_trip_at_stop check seems to be useless. Before I changed the trips vector to a list this returned an iterator to a vector<Start_trip>, where Start_trip is a typedef of pair<Bustrip*,double>.
     It seems that the iterator was never used as an iterator, also the method would by default return either the next scheduled trip, the begin iterator or the end-1 iterator. So checking if the iterator is null seems pointless?
     
+	Basically calc_waiting_utility refers to the utility of waiting for a particular path
+
     @todo
         - Ask Oded about how this function works in greater detail. Are all alt_lines for a given path considered equivalent by the passenger? It seems arbitrary to loop through the alt_lines and 
         return the first time any of them matches a condition
+
+		- When called for a connection decision:
+			@param time: time that the traveler is expected to arrive to the origin stop of the path, 
+			@param alighting_decision: always false for connection decision
+			@param stop_iter: always points to the second set of stops in the alt_stops vector of this path...
         
 */
 double Pass_path::calc_waiting_utility (vector <vector <Busstop*> >::iterator stop_iter, double time, bool alighting_decision, Passenger* pass)
 {	
-	stop_iter++;
+	DEBUG_MSG("INFO::Pass_path::calc_waiting_utility - calculating utility of waiting for path " << this->get_id() << " for passenger " << pass->get_id() << " at time " << time);
+	stop_iter++; // not sure why we always increment this... Why doesn't the caller decide instead where the iterator should point? Moves into to next vector of stops anyways
 	if (alt_transfer_stops.size() == 2) // in case is is walking-only path
 	{
 		return (random->nrandom(theParameters->walking_time_coefficient, theParameters->walking_time_coefficient/4) * calc_total_walking_distance()/ random->nrandom(theParameters->average_walking_speed, theParameters->average_walking_speed/4));
 	}
-	vector<vector <Busline*> >::iterator iter_alt_lines = alt_lines.begin();
+
+	vector<vector <Busline*> >::iterator iter_alt_lines = alt_lines.begin(); // only look at the first set of alt_lines in this path
+
+	// looping through the possible lines in the first line leg...
 	for (vector <Busline*>::iterator iter_lines = (*iter_alt_lines).begin(); iter_lines < (*iter_alt_lines).end(); iter_lines++)
 	{
-        
-        if (theParameters->drt && (*iter_lines)->is_flex_line()) 
-        {
-            //DEBUG_MSG_V("Pass_path::calc_waiting_utility returning " << drt_first_rep_waiting_utility << " for path set with flex_line");
-            return ::drt_first_rep_waiting_utility; // PassengerDecisionParameters: basically this if condition means that if ANY DRT line is included in the path set of any waiting decision for a passenger then the passenger is heavily incentivized to wait
-        }
-
-		Bustrip* next_trip = (*iter_lines)->find_next_expected_trip_at_stop((*stop_iter).front());
+		// @todo Want to add some conditions for flex line legs here...
+		Bustrip* next_trip = (*iter_lines)->find_next_expected_trip_at_stop((*stop_iter).front()); // if a trip is already en-route to stop
 		if (pass->line_is_rejected((*iter_lines)->get_id())) // in case the line was already rejected once before, added by Jens 2014-10-16
 		{
-			return -10.0;
+			return -10.0; // why is this here? Only reject a line once?
 		}
 		
-		if (next_trip)
+		if (next_trip || (*iter_lines)->is_flex_line()) // basically if this waiting path is relevant....some first leg line needs to be en-route, in the case of flexible lines it doesnt
 		// a dynamic filtering rule - if there is at least one line in the first leg which is available - then this waiting alternative is relevant
 		{
 			double ivt = calc_total_in_vehicle_time(time, pass); //minutes
@@ -468,14 +508,6 @@ double Pass_path::calc_waiting_utility (vector <vector <Busstop*> >::iterator st
 				return (random->nrandom(theParameters->transfer_coefficient, theParameters->transfer_coefficient / 4) * number_of_transfers + random->nrandom(theParameters->in_vehicle_time_coefficient, theParameters->in_vehicle_time_coefficient / 4 ) * ivt + random->nrandom(theParameters->waiting_time_coefficient, theParameters->waiting_time_coefficient / 4) * wt + random->nrandom(theParameters->walking_time_coefficient, theParameters->walking_time_coefficient/4) * calc_total_walking_distance()/ avg_walking_speed);
 			}
 		}
-		//else 
-		//{
-  //          if (theParameters->drt && (*iter_lines)->is_flex_line())
-  //          {
-  //              DEBUG_MSG_V("Pass_path::calc_waiting_utility returning " << drt_first_rep_waiting_utility << " for line with no scheduled trips");
-  //              return ::drt_first_rep_waiting_utility; //return a waiting utility parameter for lines with no trips
-  //          }
-		//}
 	} 
 	// if none of the lines in the first leg is available - then the waiting alternative is irrelevant
 	return -10.0;

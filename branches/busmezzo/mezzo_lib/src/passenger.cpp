@@ -609,12 +609,16 @@ Busstop* Passenger::make_alighting_decision (Bustrip* boarding_bus, double time)
 
 Busstop* Passenger::make_connection_decision (double time)
 {
+	assert(waiting_for_flexible_ == false); // traveler should not be waiting for fixed nor flexible yet
+
 	map <Busstop*, double> candidate_connection_stops_u; // the double value is the utility associated with the respective stop
 	map <Busstop*, double> candidate_connection_stops_p; // the double value is the probability associated with the respective stop
-	Busstop* bs_o = OD_stop->get_origin();
-	Busstop* bs_d = OD_stop->get_destination();
-	vector<Pass_path*> path_set = bs_o->get_stop_od_as_origin_per_stop(bs_d)->get_path_set();
-	//	OD_stop->get_path_set();
+	//Busstop* bs_o = OD_stop->get_origin();
+	//Busstop* bs_d = OD_stop->get_destination();
+	//vector<Pass_path*> path_set = bs_o->get_stop_od_as_origin_per_stop(bs_d)->get_path_set();
+	vector<Pass_path*> path_set = OD_stop->get_path_set();
+
+	// 1. if the path set is empty, passenger moves to an arbitrary walkable stop (first in map of distances for walkable stops)? If no distances are available then the traveler stays at this stop and moves nowhere?
 	if (path_set.empty() == true) // move to a nearby stop in case needed
 	{
 		map<Busstop*,double> & stops = OD_stop->get_origin()->get_walking_distances();
@@ -632,40 +636,45 @@ Busstop* Passenger::make_connection_decision (double time)
 		{
 			return stops.begin()->first;
 		}
-	}
+	}	
+
+	// 2. loops through each path for the current OD of the traveler and all stops within the second pair of alt stops (the connection stop set)
 	for (vector <Pass_path*>::iterator path_iter = path_set.begin(); path_iter < path_set.end(); path_iter++)
 	{
 		vector<vector<Busstop*> > alt_stops = (*path_iter)->get_alt_transfer_stops();
-		vector<vector<Busstop*> >::iterator stops_iter = alt_stops.begin()+1;
-		for (vector<Busstop*>::iterator connected_stop = (*stops_iter).begin(); connected_stop < (*stops_iter).end(); connected_stop++)
+		vector<vector<Busstop*> >::iterator stops_iter = alt_stops.begin()+1; //start from the set of stops for this path that we can connect to
+
+		for (vector<Busstop*>::iterator connected_stop = (*stops_iter).begin(); connected_stop < (*stops_iter).end(); connected_stop++) // loop through all the potential connection stops of a specific path
 		// going over all the stops at the second (connected) set
 		{
             if ( (candidate_connection_stops_u.count(*connected_stop) == 0) && ((*connected_stop)->check_destination_stop(this->get_OD_stop()->get_destination()) == true) )
-				// only if it wasn't done already and there exists an OD for the remaining part
+				// only if it wasn't done already and there exists an OD for the remaining part (i.e. the utility has not been calculated already for this connection stop, and their are paths available to the final destination via the connection stop)
 			{
 				ODstops* left_od_stop = nullptr;
-				if ((*connected_stop)->check_stop_od_as_origin_per_stop(this->get_OD_stop()->get_destination()) == false)
+				if ((*connected_stop)->check_stop_od_as_origin_per_stop(this->get_OD_stop()->get_destination()) == false) // need to register each stop as a destination stop if not done previously for some reason, isnt this equivalent to the previous check_destination_stop????
 				{
 					ODstops* left_od_stop = new ODstops ((*connected_stop),this->get_OD_stop()->get_destination());
 					(*connected_stop)->add_odstops_as_origin(this->get_OD_stop()->get_destination(), left_od_stop);
-					this->get_OD_stop()->get_destination()->add_odstops_as_destination((*connected_stop), left_od_stop);
+					this->get_OD_stop()->get_destination()->add_odstops_as_destination((*connected_stop), left_od_stop); // added to both the origin stop and the destination stop....
 				}
 				else
 				{
-					left_od_stop = (*connected_stop)->get_stop_od_as_origin_per_stop(this->get_OD_stop()->get_destination());
+					left_od_stop = (*connected_stop)->get_stop_od_as_origin_per_stop(this->get_OD_stop()->get_destination()); // get the OD between the connection stop and the final destination
 				}
-				if ((*connected_stop)->get_id() == OD_stop->get_destination()->get_id())
+				if ((*connected_stop)->get_id() == OD_stop->get_destination()->get_id()) // if the final destination of the passenger is within walking distance, then the utility is based only on walking (also no choice will be made)
 				// in case it is the final destination for this passeneger
 				{
 					candidate_connection_stops_u[(*connected_stop)] = theParameters->walking_time_coefficient * (*path_iter)->get_walking_distances().front() / theRandomizers[0]->nrandom(theParameters->average_walking_speed, theParameters->average_walking_speed/4);
 					// the only utility component is the CT (walking time) till the destination
 				}	 
 				else
-				// in case it is an intermediate transfer stop
+				// in case it is an intermediate transfer stop, basically anything that isnt the final destination
 				{
+					assert(left_od_stop); // want to actually see what case we are checking for when/if a nullptr is being returned here... There seems to be a great deal of code attempting to ensure this earlier in this function...
 					if(left_od_stop)
 					{ 
-						candidate_connection_stops_u[(*connected_stop)] = left_od_stop->calc_combined_set_utility_for_connection ((*path_iter)->get_walking_distances().front(), time, this);
+						candidate_connection_stops_u[(*connected_stop)] = left_od_stop->calc_combined_set_utility_for_connection ((*path_iter)->get_walking_distances().front(), time, this); 
+						// walking distances front taken since this is the amount of time it takes to reach the connection stop via walking, so to access the 'set utility'
 						// the utility is combined for all paths from this transfer stop (incl. walking time to the connected stop)
 					}
 					else

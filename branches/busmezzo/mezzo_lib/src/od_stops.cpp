@@ -615,21 +615,51 @@ double ODstops::calc_combined_set_utility_for_alighting_zone (Passenger* pass, B
 	return log(staying_utility);
 }
 
-double ODstops::calc_combined_set_utility_for_connection (double walking_distance, double time,Passenger* pass)
+/** @ingroup DRT
+ *	
+ * 
+ * @param walking_distance: initial walking distance required to access 'this' OD
+ * @param time: current simulation time
+ * @param pass: passenger for which this decision is being made
+ * @return utility of pathset for this particular OD stop pair when a traveler is making a connection decision
+ * 
+ * 
+ * Called in:
+ *  -	ODzone::execute->make_first_stop_decision
+ *  -	Passenger::make_connection_decision only in the case when utilities are being calculated for an intermediate stop, so this ODstops refers to all paths starting from the connection stop
+ * 
+ * Changes:
+ * 
+ * - Only return the combined set utility of the fixed or walk only portion of this ODs path-set if pass does not have access to flex
+ * - calc_waiting_utility should return a different utility of a path. Expected LoS for fixed and flexible services are calculated in different ways.
+ * 
+ */
+double ODstops::calc_combined_set_utility_for_connection (double walking_distance, double time, Passenger* pass)
 {
 	// calc logsum over all the paths from this origin stop
 	double connection_utility = 0.0;
-	if (check_path_set() == false)
+	if (check_path_set() == false) //return strong negative utility for empty path set
 	{
 		return -10000;
 	}
-	for (vector <Pass_path*>::iterator paths = path_set.begin(); paths < path_set.end(); paths++)
+
+	vector<Pass_path*> pass_path_set;
+	if (!pass->has_access_to_flexible()) // if passenger does not have access to flexible transit then only fully fixed paths are considered
 	{
-		bool without_walking_first = false;
+		pass_path_set = get_nonflex_paths();
+	}
+	else
+	{
+		pass_path_set = path_set;
+	}
+
+	for (vector <Pass_path*>::iterator path = pass_path_set.begin(); path < pass_path_set.end(); path++)
+	{
+		bool without_walking_first = false; // implementation of the 'no double walking' rule. Skip paths from this OD that include a (now second) walking link initially
 		// go only through paths that does not include walking to another stop from this connection stop
-		vector<vector<Busstop*> > alt_stops = (*paths)->get_alt_transfer_stops();
+		vector<vector<Busstop*> > alt_stops = (*path)->get_alt_transfer_stops();
 		vector<vector<Busstop*> >::iterator alt_stops_iter = alt_stops.begin();
-		alt_stops_iter++;
+		alt_stops_iter++; //second vector of stops is the 'connection stop' for this ODstops path-set
 		// check if the first (connected) stop is also included in the second element (no further walking)
 		for (vector<Busstop*>::iterator stop_iter = (*alt_stops_iter).begin(); stop_iter < (*alt_stops_iter).end(); stop_iter++)
 		{
