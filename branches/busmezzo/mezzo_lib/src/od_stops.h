@@ -313,8 +313,10 @@ public:
 	/** @ingroup DRT
 	 	@{
 	 */
+	// methods for filtering the path set of this OD stop pair
 	vector<Pass_path*> get_flex_first_paths(); //!< returns all paths for this OD that have a flexible first transit leg (empty if none exist)
 	vector<Pass_path*> get_fix_first_paths(); //!< returns all paths for this OD that have a fixed first transit leg (empty if none exist)
+	vector<Pass_path*> get_nonflex_paths(); //!< returns all paths for this OD that do not contain a flexible transit leg (including walk only paths)
 	/**@}*/
 
 	double get_arrivalrate () {return arrival_rate;}

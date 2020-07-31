@@ -549,7 +549,21 @@ bool Pass_path::check_all_flexible_lines(const vector<Busline*>& line_vec) const
 		if(!line->is_flex_line())
 			return false;
 	}
+
+	assert(line_vec.size() == 1); // currently all flexible lines are considered distinct from one another, i.e. never merged into a set of lines a traveler will board opportunisticly.
 	return true;
+}
+
+bool Pass_path::check_any_flexible_lines() const
+{
+	for (auto line_leg : alt_lines)
+	{
+		if (check_all_flexible_lines(line_leg)) // recall fixed and flexible lines are currently never mixed within the same vector of alt_lines
+		{
+			return true;
+		}
+	}
+	return false;
 }
 
 bool Pass_path::check_all_fixed_lines(const vector<Busline*>& line_vec) const

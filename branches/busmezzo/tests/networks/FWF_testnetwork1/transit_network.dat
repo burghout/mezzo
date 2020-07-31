@@ -10,10 +10,9 @@ stops: 10
 { 4 Stop_4 4142 5 200 0 1 1 0 0 }
 { 24 Stop_24 4241 5 200 0 1 1 0 0 }
 
-stops_distances: 2
+stops_distances: 1
 format: 1
 { 1 1 { 5 330 } }
-{ 5 1 { 1 330 } }
 
 stops_walking_times: 0
 

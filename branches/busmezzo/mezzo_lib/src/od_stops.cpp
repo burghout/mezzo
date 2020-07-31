@@ -413,6 +413,17 @@ vector<Pass_path*> ODstops::get_fix_first_paths()
 	return fix_paths;
 }
 
+vector<Pass_path*> ODstops::get_nonflex_paths()
+{
+	vector<Pass_path*> nonflex_paths;
+	for (Pass_path* path : path_set)
+	{
+		if(!path->check_any_flexible_lines()) // if path contains no flexible transit lines
+			nonflex_paths.push_back(path);
+	}
+	return nonflex_paths;
+}
+
 double ODstops::calc_multinomial_logit (double utility_i, double utility_sum)
 {
 	return ((exp(utility_i)) / utility_sum);

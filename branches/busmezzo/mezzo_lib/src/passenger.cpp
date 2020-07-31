@@ -717,6 +717,7 @@ Busstop* Passenger::make_connection_decision (double time)
 	return candidate_connection_stops_p.begin()->first; // arbitary choice in case something failed
 }
 
+//OBS: Called only in ODzone->execute, the whole zone thing doesnt seem to be used anymore
 Busstop* Passenger::make_first_stop_decision (double time)
 {
 	map <Busstop*, double> candidate_origin_stops_u; // the double value is the utility associated with the respective stop

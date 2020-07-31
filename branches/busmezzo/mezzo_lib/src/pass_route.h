@@ -34,10 +34,10 @@ class Pass_path
 
 	// Attributes of path alternative
 	int find_number_of_transfers ();
-	double calc_total_scheduled_in_vehicle_time (double time);
-	double calc_total_in_vehicle_time (double time, Passenger* pass);
+    double calc_total_scheduled_in_vehicle_time (double time); //!< @note resets and sets IVT attribute used in other methods, used both for static dominancy rules in CSGM as well as dynamic dominancy rules in boarding decision (ODstops::check_if_path_is_dominated)
+    double calc_total_in_vehicle_time (double time, Passenger* pass); //!< @note resets and sets IVT attribute used in other methods
 	double calc_total_walking_distance ();
-	double calc_total_waiting_time (double time, bool without_first_waiting, bool alighting_decision, double avg_walking_speed, Passenger* pass);
+    double calc_total_waiting_time (double time, bool without_first_waiting, bool alighting_decision, double avg_walking_speed, Passenger* pass);
 //	double calc_total_scheduled_waiting_time (double time, bool without_first_waiting);
     double calc_curr_leg_headway (vector<Busline*> leg_lines, vector <vector <Busstop*> >::iterator stop_iter, double time);
 //	double calc_curr_leg_waiting_schedule (vector<Busline*> leg_lines, vector <vector <Busstop*> >::iterator stop_iter, double arriving_time);
@@ -53,6 +53,7 @@ class Pass_path
     */
     
     bool check_all_flexible_lines(const vector<Busline*>& line_vec) const; //!< returns true if all lines in vector are flagged as flexible (i.e. dynamically scheduled or routed) and is non-empty
+    bool check_any_flexible_lines() const; //!< returns true if ANY transit leg of this path is flexible, will e.g. return false if all line legs are fixed, and for walking only paths
     bool check_all_fixed_lines(const vector<Busline*>& line_vec) const; //!< returns true if all lines in vector are not flagged as flexible and is non-empty
     bool is_first_transit_leg_fixed() const; //!< returns true if the first set of lines in alt_lines are all fixed
     bool is_first_transit_leg_flexible() const; //!< returns true if the first set of lines in alt_lines are all flexible

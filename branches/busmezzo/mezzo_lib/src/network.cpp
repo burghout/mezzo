@@ -9539,7 +9539,7 @@ void FWF_passdata::calc_pass_statistics(const vector<Passenger*>& passengers)
 
     for(Passenger* pass : passengers)
     {
-        if (pass->get_end_time() > 0) //crash otherwise
+        if (pass->get_end_time() > 0) // will cause a crash otherwise when searching through incomplete output rows, so for now only passengers that completed their trip will count
         {
             npass++;
             wlkt = pass->calc_total_walking_time();
