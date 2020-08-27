@@ -86,7 +86,8 @@ void Passenger::init ()
 {
 	RTI_network_level = theRandomizers[0]->brandom(theParameters->share_RTI_network);
 
-	if (theParameters->drt && RTI_network_level == true)
+	//if (theParameters->drt && RTI_network_level == true) //!< @todo Can use this to control which travelers have access to DRT, just assume they all have access for now...
+	if(theParameters->drt)
 	{
 		set_access_to_flexible(true); //!< only travelers with network level RTI can use flexible transit services
 	}
