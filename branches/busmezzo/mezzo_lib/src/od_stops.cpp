@@ -671,7 +671,8 @@ double ODstops::calc_combined_set_utility_for_connection (double walking_distanc
 		if (without_walking_first == true) // considering only no multi-walking alternatives
 		{
 			double time_till_connected_stop = walking_distance / random->nrandom(theParameters->average_walking_speed, theParameters->average_walking_speed / 4); // in minutes
-			connection_utility += exp(random->nrandom(theParameters->walking_time_coefficient, theParameters->walking_time_coefficient/4) * time_till_connected_stop + (*paths)->calc_waiting_utility(alt_stops_iter, time + (time_till_connected_stop * 60), false, pass));
+			connection_utility += exp(random->nrandom(theParameters->walking_time_coefficient, theParameters->walking_time_coefficient/4) * time_till_connected_stop + 
+				(*path)->calc_waiting_utility(alt_stops_iter, time + (time_till_connected_stop * 60), false, pass)); 
 			// taking into account CT (walking time) till this connected stop and the utility of the path from this connected stop till the final destination
 		}
 	}
