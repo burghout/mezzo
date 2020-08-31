@@ -2,8 +2,11 @@
 #include "passenger.h"
 #include "vehicle.h"
 #include "controlcenter.h"
+#include "network.h"
+#include "MMath.h"
 
 #include <algorithm>
+#include <iterator>
 #include <cassert>
 
 
@@ -379,6 +382,8 @@ Controlcenter::Controlcenter(Eventlist* eventlist, Network* theNetwork, int id, 
 	this->setObjectName(qname); //name of control center does not really matter but useful for debugging purposes
 	DEBUG_MSG("Constructing CC" << id_);
 
+	theNetwork_ = theNetwork;
+
 	tg_.setTripGenerationStrategy(tg_strategy); //set the initial generation strategy of BustripGenerator
 	tg_.setEmptyVehicleStrategy(ev_strategy); //set the initial empty vehicle strategy of BustripGenerator
 	tvm_.setMatchingStrategy(tvm_strategy);	//set initial matching strategy of BustripVehicleMatcher
@@ -472,6 +477,160 @@ void Controlcenter::connectInternal()
 	assert(ok);
 }
 
+set<Bus*> Controlcenter::getAllVehicles()
+{
+	set<Bus*> vehs;
+	for (auto veh : connectedVeh_)
+	{
+		vehs.insert(veh.second);
+	}
+	return vehs;
+}
+
+set<Bus*> Controlcenter::getVehiclesDrivingToStop(Busstop* end_stop)
+{
+	assert(end_stop);
+	set<Bus*> vehs_driving;
+	set<Bus*> vehs_enroute;
+
+	//get driving vehicles
+	for (auto state : { BusState::DrivingEmpty, BusState::DrivingPartiallyFull, BusState::DrivingFull })
+	{
+		vehs_driving.insert(fleetState_[state].begin(), fleetState_[state].end());
+	}
+	
+	//see which ones are currently headed to end_stop
+	for (auto veh : vehs_driving)
+	{
+		assert(veh->is_driving());
+		assert(veh->get_on_trip());
+		assert(veh->get_curr_trip() != nullptr);
+
+		Busstop* next_stop = veh->get_next_stop(); //note assumes that all driving vehicles have a trip and a next stop....
+		if (next_stop != nullptr && next_stop->get_id() == end_stop->get_id())
+			vehs_enroute.insert(veh);
+	}
+
+	return vehs_enroute;
+}
+
+set<Bus*> Controlcenter::getOnCallVehiclesAtStop(Busstop* stop)
+{
+	assert(stop);
+	set<Bus*> vehs_atstop;
+
+	for (auto veh : fleetState_[BusState::OnCall])
+	{
+		Busstop* curr_stop = veh->get_last_stop_visited();
+		if (curr_stop != nullptr && curr_stop->get_id() == stop->get_id())
+			vehs_atstop.insert(veh);
+	}
+
+	return vehs_atstop;
+}
+
+double Controlcenter::calc_route_travel_time(const vector<Link*>& routelinks, double time)
+{
+	double expected_travel_time = 0;
+	for (const Link* link : routelinks)
+	{
+		expected_travel_time += link->get_cost(time);
+	}
+
+	return expected_travel_time;
+}
+
+vector<Link*> Controlcenter::find_shortest_path_between_stops(const Busstop* origin_stop, const Busstop* destination_stop, const double start_time) const
+{
+	assert(origin_stop);
+	assert(destination_stop);
+	assert(theNetwork_);
+	assert(start_time >= 0);
+
+	vector<Link*> rlinks;
+	if (origin_stop && destination_stop)
+	{
+		int rootlink_id = origin_stop->get_link_id();
+		int dest_node_id = destination_stop->get_dest_node()->get_id(); //!< @todo can change these to look between upstream and downstream junction nodes as well
+
+		rlinks = theNetwork_->shortest_path_to_node(rootlink_id, dest_node_id, start_time);
+	}
+	return rlinks;
+}
+
+pair<Bus*,double> Controlcenter::getClosestVehicleToStop(Busstop* stop, double time)
+{
+	assert(stop);
+	assert(isInServiceArea(stop));
+	pair<Bus*,double> closest = make_pair(nullptr, DBL_INF);
+	
+	//check on-call vehicles
+	set<Bus*> oncall = getOnCallVehiclesAtStop(stop);
+	if (!oncall.empty())
+		return make_pair(*oncall.begin(), 0.0);
+
+	//check en-route vehicles
+	set<Bus*> enroute = getVehiclesDrivingToStop(stop);
+	double shortest_tt = DBL_INF;
+
+	for (auto veh : enroute)
+	{
+		Busstop* laststop = veh->get_last_stop_visited();
+		vector<Link*> shortestpath = find_shortest_path_between_stops(laststop, stop, time);
+		double expected_tt = calc_route_travel_time(shortestpath, time);
+		double departuretime = veh->get_curr_trip()->get_last_stop_exit_time();
+		double time_to_stop = expected_tt - (time - departuretime); // expected time it will take for vehicle to arrive at stop
+
+		if (time_to_stop < shortest_tt)
+		{
+			closest = make_pair(veh, time_to_stop);
+			shortest_tt = time_to_stop;
+		}
+	}
+
+	//check remaining vehicles
+	set<Bus*> allvehs = getAllVehicles();
+	set<Bus*> remaining;
+	set_difference(allvehs.begin(), allvehs.end(), oncall.begin(), oncall.end(), inserter(remaining, remaining.begin()));
+	set_difference(remaining.begin(), remaining.end(), enroute.begin(), enroute.end(), inserter(remaining, remaining.begin()));
+
+	for (auto veh : remaining)
+	{
+		double expected_tt = DBL_INF;
+		double time_to_stop = DBL_INF;
+		vector<Link*> shortestpath;
+
+		if (veh->is_driving())
+		{
+			double departuretime = veh->get_curr_trip()->get_last_stop_exit_time();
+			Busstop* nextstop = veh->get_next_stop();
+		
+			//to next stop
+			expected_tt = calc_route_travel_time(veh->get_curr_trip()->get_line()->get_busroute()->get_links(),time); // @todo assumes direct 'service routes' only
+			time_to_stop = expected_tt - (time - departuretime);
+			
+			//from next stop to target stop
+			shortestpath = find_shortest_path_between_stops(nextstop, stop, time);
+			time_to_stop += calc_route_travel_time(shortestpath, time);
+		}
+		else
+		{
+			Busstop* laststop = veh->get_last_stop_visited(); //current stop if not driving
+			vector<Link*> shortestpath = find_shortest_path_between_stops(laststop, stop, time);
+			expected_tt = calc_route_travel_time(shortestpath, time);
+			time_to_stop = expected_tt;
+		}
+
+		if (time_to_stop < shortest_tt)
+		{
+			closest = make_pair(veh, time_to_stop);
+			shortest_tt = time_to_stop;
+		}
+	}
+
+	return closest;
+}
+
 int Controlcenter::getID() const
 {
 	return id_;
@@ -484,6 +643,11 @@ Controlcenter_SummaryData Controlcenter::getSummaryData() const
 
 set<Busstop*> Controlcenter::getServiceArea() const { return serviceArea_; }
 vector<Busline*> Controlcenter::getServiceRoutes() const { return tg_.getServiceRoutes(); }
+
+map<BusState, set<Bus*>> Controlcenter::getFleetState() const
+{
+	return fleetState_;
+}
 
 bool Controlcenter::isInServiceArea(Busstop* stop) const
 {
@@ -634,14 +798,30 @@ void Controlcenter::addCompletedVehicleTrip(Bus* transitveh, Bustrip * trip)
 	completedVehicleTrips_.emplace_back(transitveh, trip);
 }
 
-double Controlcenter::calc_expected_ivt(Busline* service_route, Busstop* start_stop, Busstop* end_stop, bool exploration, double time)
+double Controlcenter::calc_expected_ivt(Busline* service_route, Busstop* start_stop, Busstop* end_stop, bool first_line_leg, double time)
 {
-	assert(theParameters->drt); //trips list should never be empty for a non-drt scenario, this was a very widespread assumption in many different places of the code
-	assert(service_route->is_flex_line()); //if trips list for this busline is empty then it should be a line that allows for dynamically generated trips
+	assert(service_route->is_flex_line()); //otherwise kindof pointless to ask the CC about ivt
 	assert(service_route->get_CC()->getID() == id_);
 
-	if (exploration)
-		return calc_exploration_ivt(service_route,start_stop,end_stop);
+	if (!first_line_leg)
+		return calc_exploration_ivt(service_route, start_stop, end_stop); // if no 'RTI' or estimate is available
+
+	vector<Link*> shortestpath = find_shortest_path_between_stops(start_stop, end_stop, time);
+	double expected_ivt = calc_route_travel_time(shortestpath, time); // travel time calculated based on link->cost(time)
+	
+	return expected_ivt;
+}
+
+/**
+ * @ingroup DRT
+ * 
+ * @todo Currently the exploration ivt is simply the direct path between the two stops based on delta_at_stops (time-independent scheduled IVT)
+ * 
+ */
+double Controlcenter::calc_exploration_ivt(Busline* service_route, Busstop* start_stop, Busstop* end_stop)
+{
+	assert(service_route->is_flex_line()); //otherwise kindof pointless to ask the CC about ivt
+	assert(service_route->get_CC()->getID() == id_);
 
 	auto delta_at_stops = service_route->get_delta_at_stops();
 
@@ -676,17 +856,30 @@ double Controlcenter::calc_expected_ivt(Busline* service_route, Busstop* start_s
 	return cumulative_arrival_time - earliest_time_ostop;
 }
 
-double Controlcenter::calc_expected_wt(Busline* service_route, Busstop* start_stop, Busstop* end_stop, bool exploration, double time)
+double Controlcenter::calc_expected_wt(Busline* service_route, Busstop* start_stop, Busstop* end_stop, bool first_line_leg, double time)
 {
-	return 0.0;
+	assert(service_route->is_flex_line()); //otherwise kindof pointless to ask the CC about wt
+	assert(service_route->get_CC()->getID() == id_);
+	double wt = 0.0;
+
+	if (!first_line_leg) 
+		return calc_exploration_wt(); //no 'RTI' or better estimate is available
+
+	pair<Bus*,double> closest = getClosestVehicleToStop(start_stop, time);
+	//DEBUG_MSG("Bus " << closest.first->get_bus_id() << " is closest to stop " << start_stop->get_id() << " with time_to_stop " << closest.second);
+	//closest.first->print_state();
+	
+	return closest.second;
 }
 
-double Controlcenter::calc_exploration_ivt(Busline* service_route, Busstop* start_stop, Busstop* end_stop)
-{
-	return 0.0;
-}
-
-double Controlcenter::calc_exploration_wt(Busline* service_route, Busstop* start_stop, Busstop* end_stop)
+/**
+ * @ingroup DRT
+ * 
+ * @todo currently just returns 0.0 waiting time
+ * 
+ * @return exploration waiting time
+ */
+double Controlcenter::calc_exploration_wt()
 {
 	return 0.0;
 }
@@ -736,10 +929,10 @@ void Controlcenter::updateFleetState(Bus* bus, BusState oldstate, BusState newst
 	//update the fleet state map, vehicles should be null before they are available, and null when they finish a trip and are copied
 	if(oldstate != BusState::Null) {
 		fleetState_[oldstate].erase(bus);
-}
+    }
 	if(newstate != BusState::Null) {
 		fleetState_[newstate].insert(bus);
-}
+    }
 
 	if (newstate == BusState::OnCall)
 	{

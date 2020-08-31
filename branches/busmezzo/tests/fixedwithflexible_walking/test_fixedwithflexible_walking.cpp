@@ -59,6 +59,7 @@ private Q_SLOTS:
     void testInitNetwork(); //!< test generating passenger path sets & loading a network
     //void testPassengerStates(); //!< test that passengers are being initialized properly,
     void testPassPath(); //!< test the reading and methods of a specific Pass_path instance
+    void testFleetState(); //!< test methods for filtering vehicles dependent on fleetState in Controlcenter
     void testStateDependentPassengerPassPath(); //!< tests support methods in Passenger and Pass_path for sorting, filtering path-sets dependent on traveler state (RTI level, current OD...)
     void testPathSetUtilities(); //!< test navigating generated path-sets, calculating utilities under different circumstances (e.g. access to RTI for different legs)
     void testRunNetwork();
@@ -66,14 +67,12 @@ private Q_SLOTS:
     void testDelete(); //!< tests correct deletion
 
 private:
-    NetworkThread* nt; //!< contains the network thread
-    Network* net;
+    NetworkThread* nt = nullptr; //!< contains the network thread
+    Network* net = nullptr;
 };
 
 void TestFixedWithFlexible_walking::testCreateNetwork()
 {
-    nt = nullptr;
-    net = nullptr;
     chdir(network_path.c_str());
 
     QFileInfo check_file(network_name.c_str());
@@ -246,6 +245,86 @@ void TestFixedWithFlexible_walking::testPassPath()
 
 }
 
+void TestFixedWithFlexible_walking::testFleetState()
+{
+    //tests for
+    //Controlcenter::getVehiclesDrivingTo(Busstop* stop);
+    //Controlcenter::getOnCallVehiclesAt(Busstop* stop);
+
+    //create a vehicles with certain state and add to controlcenter
+    Controlcenter* CC = net->get_controlcenters().begin()->second;
+    vector<Busline*> serviceRoutes = CC->getServiceRoutes();
+    set<Busstop*> serviceArea = CC->getServiceArea();
+    map<BusState,set<Bus*> > fleetState = CC->getFleetState();
+    NaiveTripGeneration* tgs = new NaiveTripGeneration(); // borrowed to use helper functions to build trips
+
+    QVERIFY(serviceRoutes.size() == 6);
+    QVERIFY(fleetState.size() == 0);
+    size_t count = 0;
+    for(auto state : fleetState)
+    {
+        count += state.second.size();
+    }
+    QVERIFY(count == 0); // 8 vehicles given as input to CC should all be Null
+    QVERIFY(CC->connectedVeh_.size() == 8);
+
+    //get stop 1 and 4 in service area
+    QVERIFY(serviceArea.size() == 4);
+    Busstop* stop1 = net->get_stopsmap()[1];
+    Busstop* stop2 = net->get_stopsmap()[2];
+    QVERIFY(CC->isInServiceArea(stop1));
+    QVERIFY(CC->isInServiceArea(stop2));
+
+    QVERIFY(CC->getOnCallVehiclesAtStop(stop1).size() == 0); //there are 8 vehicles from input files, however these have not been initialized yet are are thus not in an onCall state yet
+    QVERIFY(CC->getVehiclesDrivingToStop(stop1).size() == 0);
+
+    //Busline* drt1 = (*find_if(serviceRoutes.begin(),serviceRoutes.end(),[](const Busline* line){return line->get_id() == 8001;}));
+    auto drt1_opp_it = find_if(serviceRoutes.begin(),serviceRoutes.end(),[](const Busline* line){return line->get_id() == 8021;});
+    QVERIFY(drt1_opp_it != serviceRoutes.end());
+    Busline* drt1_opp = *drt1_opp_it;
+
+    vector<Visit_stop*> schedule = tgs->create_schedule(0.0,drt1_opp->get_delta_at_stops());
+    Bustrip* trip = tgs->create_unassigned_trip(drt1_opp,0.0,schedule);
+
+    // bus oncall at stop 1
+    Bus* bus1 = new Bus(1,4,4,nullptr,nullptr,0.0,true,nullptr);
+    Bustype* bustype = CC->connectedVeh_.begin()->second->get_bus_type();
+    bus1->set_bustype_attributes(bustype);
+    bus1->set_bus_id(1); //vehicle id and bus id mumbojumbo
+    CC->connectVehicle(bus1); //connect vehicle to a control center
+    CC->addVehicleToAllServiceRoutes(bus1);
+    bus1->set_last_stop_visited(stop1); // need to do this before setting state always
+    stop1->add_unassigned_bus(bus1,0.0); //should change the buses stat to OnCall and update connected Controlcenter
+    QVERIFY(CC->getOnCallVehiclesAtStop(stop1).size() == 1);
+
+    // bus driving from stop 4 to stop 1 on drt1_opp
+    Bus* bus2 = new Bus(2,4,4,nullptr,nullptr,0.0,true,nullptr);
+    bus2->set_bus_id(2);
+    bus2->set_bustype_attributes(bustype);
+    CC->connectVehicle(bus2); //connect vehicle to a control center
+    CC->addVehicleToAllServiceRoutes(bus2);
+    trip->set_busv(bus2);
+    bus2->set_curr_trip(trip);
+    bus2->set_on_trip(true);
+    bus2->set_last_stop_visited(stop2);
+    bus2->get_curr_trip()->advance_next_stop(0.0,nullptr);
+    bus2->set_state(BusState::DrivingEmpty,0.0);
+
+    QVERIFY(bus2->is_driving() && bus2->get_on_trip());
+    QVERIFY(CC->getVehiclesDrivingToStop(stop1).size() == 1);
+
+    CC->disconnectVehicle(bus1);
+    CC->disconnectVehicle(bus2);
+
+    stop1->remove_unassigned_bus(bus1,0.0); //remove bus from queue of stop, does not update CC after disconnected signal
+    CC->fleetState_.clear();
+
+    delete bus1;
+    delete bus2;
+    delete trip;
+    delete tgs;
+}
+
 void TestFixedWithFlexible_walking::testStateDependentPassengerPassPath()
 {
     /* Test for paths between stop 5 to 4 (also via 1) with traveler located at stop 5 */
@@ -293,8 +372,8 @@ void TestFixedWithFlexible_walking::testStateDependentPassengerPassPath()
 
     //walking times should be the same
     Pass_path* path = path_set.front();
-    vector<vector<Busline*>> line_legs = path->get_alt_lines(); //for this network all alt_line sets are of size one
-    vector<vector<Busstop*>> stop_sets = path->get_alt_transfer_stops(); //all stop sets are also size one for this network
+    vector<vector<Busline*> > line_legs = path->get_alt_lines(); //for this network all alt_line sets are of size one
+    vector<vector<Busstop*> > stop_sets = path->get_alt_transfer_stops(); //all stop sets are also size one for this network
     vector<double> walking_distances = path->get_walking_distances();
 
 //    msg
@@ -361,12 +440,12 @@ void TestFixedWithFlexible_walking::testPathSetUtilities()
     QVERIFY2(pass1->get_pass_RTI_network_level() == false, "Failure, default initilization of passenger network-level RTI should be false");
     pass1->init(); //note this both sets the network level RTI for the traveler as well as the anticipated WT and IVT of the traveler if day2day is active
     QVERIFY2(pass1->get_pass_RTI_network_level() == true,"Failure, passenger should have network-level RTI after init with real_time_info=3 and share_RTI_network=1 in parameters");
-    QVERIFY2(pass1->has_access_to_flexible() == true, "Failure, passenger with network-level RTI should have access to flexible services");
+    //QVERIFY2(pass1->has_access_to_flexible() == true, "Failure, passenger with network-level RTI should have access to flexible services");
 
     //Test creation of passenger with no RTI (should be default)
     Passenger* pass2 = new Passenger(2,0,stop1to4,nullptr);
     QVERIFY(pass2->get_pass_RTI_network_level() == false);
-    QVERIFY2(pass2->has_access_to_flexible() == false, "Failure, passenger without network-level RTI should not have access to flexible services");
+    //QVERIFY2(pass2->has_access_to_flexible() == false, "Failure, passenger without network-level RTI should not have access to flexible services");
 
     //Connection decision for passenger with RTI
     Busstop* connection_stop = nullptr;

@@ -186,6 +186,7 @@ class Controlcenter : public QObject
 {
 	Q_OBJECT
     friend class TestControlcenter; //!< for writing unit tests for Controlcenter
+	friend class TestFixedWithFlexible_walking; //!< for writing integration tests for FWF network
 	friend class Network; //!< for writing results of completed trips to output files, and for generating direct lines between connectedStops_
 
 public:
@@ -214,6 +215,16 @@ public:
 	Controlcenter_SummaryData getSummaryData() const;
 	set<Busstop*> getServiceArea() const;
     vector<Busline*> getServiceRoutes() const;
+
+	map<BusState, set<Bus*> > getFleetState() const;
+	set<Bus*> getAllVehicles();
+	set<Bus*> getVehiclesDrivingToStop(Busstop* end_stop); //!< get connected vehicles that are driving to target end_stop
+	set<Bus*> getOnCallVehiclesAtStop(Busstop* stop); //!< get connected vehicles that are currently on-call at target stop
+	pair<Bus*,double> getClosestVehicleToStop(Busstop* stop, double time); //returns closest vehicle to stop and shortest expected time to get there
+	
+	double calc_route_travel_time(const vector<Link*>& routelinks, double time);
+	vector<Link*> find_shortest_path_between_stops(const Busstop* origin_stop, const Busstop* destination_stop, const double start_time) const;
+
     bool isInServiceArea(Busstop* stop) const; //!< true if stop is included in service area of Controlcenter, false otherwise
 	bool getGeneratedDirectRoutes();
 	void setGeneratedDirectRoutes(bool generate_direct_routes);
@@ -235,10 +246,11 @@ public:
 	void addCompletedVehicleTrip(Bus* transitveh, Bustrip* trip); //!< add vehicle - trip pair to vector of completed trips
 
 	// Methods to retrieve level of service attributes for an individual 'line' or trip
-	double calc_expected_ivt(Busline* service_route, Busstop* start_stop, Busstop* end_stop, bool exploration, double time); //!< exploration = true if the exploration estimate should be returned and false if calculated based on fleet state/rti etc..
-	double calc_expected_wt(Busline* service_route, Busstop* start_stop, Busstop* end_stop, bool exploration, double time); //!< exploration = true if the exploration estimate should be returned and false if calculated based on fleet state/rti etc..
+	double calc_expected_ivt(Busline* service_route, Busstop* start_stop, Busstop* end_stop, bool first_line_leg, double time); //!< first_line_leg = false if the exploration estimate should be returned and true if calculated based on fleet state/rti etc..
 	double calc_exploration_ivt(Busline* service_route, Busstop* start_stop, Busstop* end_stop); //!< returns an optimistic exploration estimate of IVT for a given line leg (shortest IVT between the stops), independent of time or RTI level
-	double calc_exploration_wt(Busline* service_route=nullptr, Busstop* start_stop=nullptr, Busstop* end_stop=nullptr); //!< returns an optimistic exploration estimate of WT (currently zero seconds, immediate service) for a given line leg, independent of time or RTI level
+	double calc_expected_wt(Busline* service_route, Busstop* start_stop, Busstop* end_stop, bool first_line_leg, double time); //!< first_line_leg = false if the exploration estimate should be returned and true if calculated based on fleet state/rti etc..
+	double calc_exploration_wt(); //!< returns an optimistic exploration estimate of WT (currently zero seconds, immediate service) for a given line leg, independent of time or RTI level
+
 
 signals:
 	void requestAccepted(double time); //!< emitted when request has been recieved by RequestHandler
@@ -301,6 +313,7 @@ private:
 	vector<pair<Bus*, Bustrip*>> completedVehicleTrips_; //!< used for bookkeeping dynamically generated buses and bustrips (similar to busvehicles and bustrips in network) for writing output and deleting between resets
 
 	Controlcenter_SummaryData summarydata_; //!< collection of data for summarizing Controlcenter performance.
+	Network* theNetwork_=nullptr; //!< again, ugly way of bringing in shortest path methods from the network to Controlcenter
 };
 
 #endif

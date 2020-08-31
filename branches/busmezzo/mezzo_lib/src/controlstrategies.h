@@ -69,7 +69,7 @@ public:
         set<Bustrip*>&                  unmatchedTripSet        //!< set of trips that have been generated to serve requests that have not been assigned to a vehicle yet
     ) const = 0; //!< returns true if a trip was generated and added to the unmatchedTripSet and false otherwise
 
-protected:
+public:
     //supporting methods for generating trips with whatever TripGenerationStrategy
     map<pair<int, int>, int> countRequestsPerOD(const set<Request>& requestSet) const; //!< counts the number of requests with a particular od
     bool line_exists_in_tripset(const set<Bustrip*>& tripSet, const Busline* line) const; //!< returns true if a trip exists in trip set for the given bus line

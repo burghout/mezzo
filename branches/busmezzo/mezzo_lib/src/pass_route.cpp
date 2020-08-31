@@ -106,7 +106,7 @@ double Pass_path::calc_total_in_vehicle_time (double time, Passenger* pass)
 	iter_alt_transfer_stops++; // starting from the second stop
 	for (vector<vector <Busline*> >::iterator iter_alt_lines = alt_lines.begin(); iter_alt_lines < alt_lines.end(); iter_alt_lines++) //iterator over all transit legs in path
 	{
-		bool exploration = iter_alt_lines == alt_lines.begin() ? false : true; // should be true for all legs except the first one
+		bool first_line_leg = iter_alt_lines == alt_lines.begin() ? true : false; // should be false for all legs except the first one
 		double ivtt = 0;
 		
 		if (theParameters->in_vehicle_d2d_indicator) // indicates a memory of IVT and crowding experiences
@@ -131,7 +131,7 @@ double Pass_path::calc_total_in_vehicle_time (double time, Passenger* pass)
 
 							Busline* line = (*iter_alt_lines).front();
 							Controlcenter* CC = line->get_CC();
-							leg_ivtt = CC->calc_expected_ivt(line, *(iter_leg_stops - 1), *iter_leg_stops, exploration, time);
+							leg_ivtt = CC->calc_expected_ivt(line, *(iter_leg_stops - 1), *iter_leg_stops, first_line_leg, time);
 						}
 						else
 						{
@@ -158,7 +158,7 @@ double Pass_path::calc_total_in_vehicle_time (double time, Passenger* pass)
 
 				Busline* line = (*iter_alt_lines).front();
 				Controlcenter* CC = line->get_CC();
-				ivtt = CC->calc_expected_ivt(line, iter_alt_transfer_stops->front(), (iter_alt_transfer_stops + 1)->front(), exploration, time);
+				ivtt = CC->calc_expected_ivt(line, iter_alt_transfer_stops->front(), (iter_alt_transfer_stops + 1)->front(), first_line_leg, time);
 			}
 			else
 			{

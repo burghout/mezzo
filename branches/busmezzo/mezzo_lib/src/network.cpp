@@ -6855,6 +6855,9 @@ bool Network::writeFWFsummary(ostream& out,
 {
     assert(theParameters->drt);
     assert(out);
+
+    Q_UNUSED(drt_passdata);
+    Q_UNUSED(fix_passdata);
     //ofstream out(filename.c_str());
     /*
     Collect statistics from other output files relevant for fixed with flexible implementation output
