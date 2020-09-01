@@ -482,7 +482,8 @@ set<Bus*> Controlcenter::getAllVehicles()
 	set<Bus*> vehs;
 	for (auto veh : connectedVeh_)
 	{
-		vehs.insert(veh.second);
+		if(!veh.second->is_null())
+			vehs.insert(veh.second);
 	}
 	return vehs;
 }
@@ -496,7 +497,8 @@ set<Bus*> Controlcenter::getVehiclesDrivingToStop(Busstop* end_stop)
 	//get driving vehicles
 	for (auto state : { BusState::DrivingEmpty, BusState::DrivingPartiallyFull, BusState::DrivingFull })
 	{
-		vehs_driving.insert(fleetState_[state].begin(), fleetState_[state].end());
+		if(fleetState_.count(state) != 0)
+			vehs_driving.insert(fleetState_[state].begin(), fleetState_[state].end());
 	}
 	
 	//see which ones are currently headed to end_stop
@@ -519,11 +521,14 @@ set<Bus*> Controlcenter::getOnCallVehiclesAtStop(Busstop* stop)
 	assert(stop);
 	set<Bus*> vehs_atstop;
 
-	for (auto veh : fleetState_[BusState::OnCall])
+	if (fleetState_.count(BusState::OnCall) != 0)
 	{
-		Busstop* curr_stop = veh->get_last_stop_visited();
-		if (curr_stop != nullptr && curr_stop->get_id() == stop->get_id())
-			vehs_atstop.insert(veh);
+		for (auto veh : fleetState_[BusState::OnCall])
+		{
+			Busstop* curr_stop = veh->get_last_stop_visited();
+			if (curr_stop != nullptr && curr_stop->get_id() == stop->get_id())
+				vehs_atstop.insert(veh);
+		}
 	}
 
 	return vehs_atstop;
@@ -590,9 +595,10 @@ pair<Bus*,double> Controlcenter::getClosestVehicleToStop(Busstop* stop, double t
 
 	//check remaining vehicles
 	set<Bus*> allvehs = getAllVehicles();
+	set<Bus*> checked;
 	set<Bus*> remaining;
-	set_difference(allvehs.begin(), allvehs.end(), oncall.begin(), oncall.end(), inserter(remaining, remaining.begin()));
-	set_difference(remaining.begin(), remaining.end(), enroute.begin(), enroute.end(), inserter(remaining, remaining.begin()));
+	set_union(oncall.begin(), oncall.end(), enroute.begin(), enroute.end(), inserter(checked, checked.begin()));
+	set_difference(allvehs.begin(), allvehs.end(), checked.begin(), checked.end(), inserter(remaining, remaining.begin()));
 
 	for (auto veh : remaining)
 	{

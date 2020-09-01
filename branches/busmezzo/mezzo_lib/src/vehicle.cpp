@@ -592,6 +592,13 @@ bool Bus::is_empty() const
 	return occupancy == 0;
 }
 
+bool Bus::is_null() const
+{
+	if (state_ == BusState::Null)
+		return true;
+	return false;
+}
+
 Busstop* Bus::get_next_stop() const
 {
 	Busstop* next_stop = nullptr;

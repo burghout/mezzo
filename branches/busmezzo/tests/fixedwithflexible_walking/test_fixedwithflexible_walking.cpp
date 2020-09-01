@@ -277,6 +277,7 @@ void TestFixedWithFlexible_walking::testFleetState()
 
     QVERIFY(CC->getOnCallVehiclesAtStop(stop1).size() == 0); //there are 8 vehicles from input files, however these have not been initialized yet are are thus not in an onCall state yet
     QVERIFY(CC->getVehiclesDrivingToStop(stop1).size() == 0);
+    QVERIFY(CC->getAllVehicles().size() == 0); // all vehicles should skip those that are in 'Null' state
 
     //Busline* drt1 = (*find_if(serviceRoutes.begin(),serviceRoutes.end(),[](const Busline* line){return line->get_id() == 8001;}));
     auto drt1_opp_it = find_if(serviceRoutes.begin(),serviceRoutes.end(),[](const Busline* line){return line->get_id() == 8021;});
@@ -285,6 +286,13 @@ void TestFixedWithFlexible_walking::testFleetState()
 
     vector<Visit_stop*> schedule = tgs->create_schedule(0.0,drt1_opp->get_delta_at_stops());
     Bustrip* trip = tgs->create_unassigned_trip(drt1_opp,0.0,schedule);
+
+    pair<Bus*,double> closest; // closest bus to a stop with expected time until arrival
+
+    //no vehicles activated yet
+    closest = CC->getClosestVehicleToStop(stop1,0.0);
+    QVERIFY(closest.first == nullptr); // nullptr returned if no vehicle found
+    QVERIFY(AproxEqual(closest.second,DBL_INF)); // default time until arrival if no vehicle found
 
     // bus oncall at stop 1
     Bus* bus1 = new Bus(1,4,4,nullptr,nullptr,0.0,true,nullptr);
@@ -296,6 +304,10 @@ void TestFixedWithFlexible_walking::testFleetState()
     bus1->set_last_stop_visited(stop1); // need to do this before setting state always
     stop1->add_unassigned_bus(bus1,0.0); //should change the buses stat to OnCall and update connected Controlcenter
     QVERIFY(CC->getOnCallVehiclesAtStop(stop1).size() == 1);
+
+    closest = CC->getClosestVehicleToStop(stop1,0.0);
+    QVERIFY(closest.first != nullptr);
+    QVERIFY(AproxEqual(closest.second,0.0));
 
     // bus driving from stop 4 to stop 1 on drt1_opp
     Bus* bus2 = new Bus(2,4,4,nullptr,nullptr,0.0,true,nullptr);

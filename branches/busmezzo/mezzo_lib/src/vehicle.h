@@ -214,6 +214,7 @@ public:
 	bool is_driving() const; //!< returns true if bus is driving between stops
 	bool is_oncall() const; //!< returns true if bus is unassigned to any trip and is available for assignment
 	bool is_empty() const; //!< returns true if bus occupancy is currently 0 and false otherwise
+	bool is_null() const;
 
 	Busstop* get_last_stop_visited() const { return last_stop_visited_; }
 	void set_last_stop_visited(Busstop* last_stop_visited) { last_stop_visited_ = last_stop_visited; } 
