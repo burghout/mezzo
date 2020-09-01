@@ -307,7 +307,8 @@ void TestFixedWithFlexible_walking::testFleetState()
 
     closest = CC->getClosestVehicleToStop(stop1,0.0);
     QVERIFY(closest.first != nullptr);
-    QVERIFY(AproxEqual(closest.second,0.0));
+    QVERIFY(closest.first == bus1); // bus1 should be oncall at stop 1
+    QVERIFY(AproxEqual(closest.second,0.0)); // should have 0.0s expected time until arrival
 
     // bus driving from stop 4 to stop 1 on drt1_opp
     Bus* bus2 = new Bus(2,4,4,nullptr,nullptr,0.0,true,nullptr);
