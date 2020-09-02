@@ -58,8 +58,8 @@ private Q_SLOTS:
     void testCreateNetwork(); //!< test loading a network
     void testInitNetwork(); //!< test generating passenger path sets & loading a network
     //void testPassengerStates(); //!< test that passengers are being initialized properly,
-    void testPassPath(); //!< test the reading and methods of a specific Pass_path instance
     void testFleetState(); //!< test methods for filtering vehicles dependent on fleetState in Controlcenter
+    void testFlexiblePathExpectedLoS(); //!< test the reading and methods of a specific Pass_path instance, tests calculation of path attributes (ivt, wt, etc. via Controlcenter for flexible legs)
     void testStateDependentPassengerPassPath(); //!< tests support methods in Passenger and Pass_path for sorting, filtering path-sets dependent on traveler state (RTI level, current OD...)
     void testPathSetUtilities(); //!< test navigating generated path-sets, calculating utilities under different circumstances (e.g. access to RTI for different legs)
     void testRunNetwork();
@@ -183,68 +183,6 @@ void TestFixedWithFlexible_walking::testInitNetwork()
     //    path_set_file.close();
 }
 
-void TestFixedWithFlexible_walking::testPassPath()
-{
-    ODstops* stop5to4 = net->get_ODstop_from_odstops_demand(5,4);
-    QVERIFY2(stop5to4 != nullptr,"Failure, OD stop 1 to 4 is undefined ");
-    vector<Pass_path*> path_set = stop5to4->get_path_set();
-    QVERIFY(!path_set.empty());
-
-    vector<Pass_path*> drt_first_paths = stop5to4->get_flex_first_paths(); //retrieving this directly from OD membership instead
-    vector<Pass_path*> fix_first_paths = stop5to4->get_fix_first_paths();
-    QVERIFY2(path_set.size() == 7,"Failure, there should be a total of 7 paths available from stop 5->4");
-    QVERIFY2(drt_first_paths.size() == 3,"Failure, there should be 3 paths available stop 5->4 where the first leg is flexible");
-    QVERIFY2(fix_first_paths.size() == 4, "Failure, there should be 4 paths available stop 5->4 where the first leg is fixed");
-
-    // Test path 17 (should also be 17 in input file even though reader relabels paths starting from id = 0):
-    // Path 17 route: 5->4 with S5 -> Walk(330) -> S1 -> DRT_1 -> S2 -> FIX_2 -> S3 -> DRT_3 -> S4
-    auto path17_it = find_if(drt_first_paths.begin(),drt_first_paths.end(),[](Pass_path* path)->bool{return path->get_id() == 17;});
-    Pass_path* path17 = nullptr;
-    qDebug() << "Testing reading and utility calculations for path 17:";
-    if(path17_it != drt_first_paths.end())
-        path17 = *path17_it;
-    else
-        QVERIFY(path17_it != drt_first_paths.end());
-
-    //Check path 17 5->4 attributes: 8 alt stops, 3 alt lines all of size 1, 2 transfers, 1 non-zero walking link
-    QVERIFY(path17->get_alt_transfer_stops().size() == 8);
-    QVERIFY(path17->get_alt_lines().size() == 3);
-    vector<vector<Busline*> > path17_lines = path17->get_alt_lines();
-    for(auto linevec : path17->get_alt_lines())
-    {
-        QVERIFY(linevec.size() == 1);
-    }
-    QVERIFY(path17->get_number_of_transfers() == 2);
-    QVERIFY(AproxEqual(path17->get_walking_distances()[0],330.0));
-
-    //check sequence of lines in path
-    QVERIFY(path17_lines[0][0]->get_id()==8001);
-    QVERIFY(path17_lines[1][0]->get_id()==2);
-    QVERIFY(path17_lines[2][0]->get_id()==8003);
-
-    vector<vector<Busstop*> > path17_stops = path17->get_alt_transfer_stops();
-    //check sequence of stops in path
-    QVERIFY(path17_stops[0][0]->get_id()==5);
-    QVERIFY(path17_stops[1][0]->get_id()==1);
-    QVERIFY(path17_stops[2][0]->get_id()==2);
-    QVERIFY(path17_stops[3][0]->get_id()==2);
-    QVERIFY(path17_stops[4][0]->get_id()==3);
-    QVERIFY(path17_stops[5][0]->get_id()==3);
-    QVERIFY(path17_stops[6][0]->get_id()==4);
-    QVERIFY(path17_stops[7][0]->get_id()==4);
-
-    //test extracting an expected waiting time for each leg....
-
-
-    /* Check the parameters that have been set that are used in calculating utilities */
-    QVERIFY(AproxEqual(theParameters->walking_time_coefficient,-0.00308)); // SEK per second?, same as WT anyways 2*IVT
-    QVERIFY(AproxEqual(theParameters->average_walking_speed,66.66)); // meters per minute, prob need conversion
-    QVERIFY(AproxEqual(theParameters->waiting_time_coefficient,-0.00308));
-    QVERIFY(AproxEqual(theParameters->in_vehicle_time_coefficient,-0.00154));
-    QVERIFY(AproxEqual(theParameters->transfer_coefficient,-0.334)); // SEK per transfer?
-
-}
-
 void TestFixedWithFlexible_walking::testFleetState()
 {
     //tests for
@@ -336,6 +274,127 @@ void TestFixedWithFlexible_walking::testFleetState()
     delete bus2;
     delete trip;
     delete tgs;
+}
+
+void TestFixedWithFlexible_walking::testFlexiblePathExpectedLoS()
+{
+    ODstops* stop5to4 = net->get_ODstop_from_odstops_demand(5,4);
+    QVERIFY2(stop5to4 != nullptr,"Failure, OD stop 5 to 4 is undefined ");
+    vector<Pass_path*> path_set = stop5to4->get_path_set();
+    QVERIFY(!path_set.empty());
+
+    vector<Pass_path*> drt_first_paths = stop5to4->get_flex_first_paths(); //retrieving this directly from OD membership instead
+    vector<Pass_path*> fix_first_paths = stop5to4->get_fix_first_paths();
+    QVERIFY2(path_set.size() == 7,"Failure, there should be a total of 7 paths available from stop 5->4");
+    QVERIFY2(drt_first_paths.size() == 3,"Failure, there should be 3 paths available stop 5->4 where the first leg is flexible");
+    QVERIFY2(fix_first_paths.size() == 4, "Failure, there should be 4 paths available stop 5->4 where the first leg is fixed");
+
+    // Test path 17 (should also be 17 in input file even though reader relabels paths starting from id = 0):
+    // Path 17 route: 5->4 with S5 -> Walk(330m) -> S1 -> DRT_1 -> S2 -> FIX_2 -> S3 -> DRT_3 -> S4
+    auto path17_it = find_if(drt_first_paths.begin(),drt_first_paths.end(),[](Pass_path* path)->bool{return path->get_id() == 17;});
+    Pass_path* path17 = nullptr;
+    qDebug() << "Testing reading and utility calculations for path 17:";
+    if(path17_it != drt_first_paths.end())
+        path17 = *path17_it;
+    else
+        QVERIFY(path17_it != drt_first_paths.end());
+
+    //Check path 17 5->4 attributes: 8 alt stops, 3 alt lines all of size 1, 2 transfers, 1 non-zero walking link
+    QVERIFY(path17->get_alt_transfer_stops().size() == 8);
+    QVERIFY(path17->get_alt_lines().size() == 3);
+    vector<vector<Busline*> > path17_lines = path17->get_alt_lines();
+    for(auto linevec : path17->get_alt_lines())
+    {
+        QVERIFY(linevec.size() == 1);
+    }
+    QVERIFY(path17->get_number_of_transfers() == 2);
+    QVERIFY(AproxEqual(path17->get_walking_distances()[0], 330.0));
+
+    //check sequence of lines in path
+    QVERIFY(path17_lines[0][0]->get_id()==8001);
+    QVERIFY(path17_lines[1][0]->get_id()==2);
+    QVERIFY(path17_lines[2][0]->get_id()==8003);
+
+    vector<vector<Busstop*> > path17_stops = path17->get_alt_transfer_stops();
+    //check sequence of stops in path
+    QVERIFY(path17_stops[0][0]->get_id()==5);
+    QVERIFY(path17_stops[1][0]->get_id()==1);
+    QVERIFY(path17_stops[2][0]->get_id()==2);
+    QVERIFY(path17_stops[3][0]->get_id()==2);
+    QVERIFY(path17_stops[4][0]->get_id()==3);
+    QVERIFY(path17_stops[5][0]->get_id()==3);
+    QVERIFY(path17_stops[6][0]->get_id()==4);
+    QVERIFY(path17_stops[7][0]->get_id()==4);
+
+    //test getting path attributes via Controlcenter instead
+    /** Recall that Pass_path::calc_total_... methods convert return values to minutes
+     * Buslines::calc_expected or Controlcenter::calc_expected methods return values in seconds
+     *
+    */
+
+    //!< TEST IVTs of Path 17
+    //First line leg is drt1, should return the 'RTI' based expected IVT
+    QVERIFY(path17->check_all_flexible_lines(path17_lines[0]));
+    Busline* drt1 = path17_lines[0][0];
+    QVERIFY(drt1->is_flex_line());
+    Controlcenter* cc = drt1->get_CC();
+
+    //rti based (should be roughly 152 seconds based on shortest path call)
+    double leg1_ivt_rti = cc->calc_expected_ivt(drt1,drt1->stops.front(),drt1->stops.back(),true,0.0);
+    qDebug() << "drt1 rti ivt     : " << leg1_ivt_rti;
+    QVERIFY(AproxEqual(leg1_ivt_rti, 152.0));
+
+    //schedule based (should match whatever estimate is placed into input files)
+    double leg1_ivt_explore = cc->calc_expected_ivt(drt1,drt1->stops.front(),drt1->stops.back(),false,0.0);
+    qDebug() << "drt1 explore ivt  : " << leg1_ivt_explore;
+    qDebug() << "drt1 scheduled ivt: " << drt1->get_delta_at_stops().back().second;
+    double drt1_sched_ivt = drt1->get_delta_at_stops().back().second;
+    QVERIFY(AproxEqual(leg1_ivt_explore,drt1_sched_ivt));
+    QVERIFY(AproxEqual(leg1_ivt_explore, 150.0));
+
+    //Second line leg is fixed2, should not go via Controlcenter
+    Busline* fixed2 = path17_lines[1][0];
+    //qDebug() << fixed2->calc_curr_line_ivt(fixed2->stops.front(),fixed2->stops.back(),1,0.0);
+    //qDebug() << fixed2->calc_curr_line_ivt(fixed2->stops.front(),fixed2->stops.back(),2,0.0);
+    qDebug() << "fixed2 scheduled ivt: " << fixed2->calc_curr_line_ivt(fixed2->stops.front(),fixed2->stops.back(),3,0.0);
+    double leg2_rti_ivt = fixed2->calc_curr_line_ivt(fixed2->stops.front(),fixed2->stops.back(),3,0.0);
+    double leg2_sched_ivt = fixed2->get_delta_at_stops().back().second;
+    QVERIFY(AproxEqual(leg2_rti_ivt, leg2_sched_ivt));
+    QVERIFY(AproxEqual(leg2_rti_ivt, 600.0));
+
+    //Third line leg is drt3, should return the 'exploration' or 'scheduled' IVT defined statically in input files
+    Busline* drt3 = path17_lines[2][0];
+    double leg3_ivt_rti = cc->calc_expected_ivt(drt3,drt3->stops.front(),drt3->stops.back(),true,0.0);
+    qDebug() << "drt3 rti ivt: " << leg3_ivt_rti;
+    QVERIFY(AproxEqual(leg3_ivt_rti,153.0));
+
+    double leg3_ivt_explore = cc->calc_expected_ivt(drt3,drt3->stops.front(),drt3->stops.back(),false,0.0);
+    qDebug() << "drt1 explore ivt  : " << leg3_ivt_explore;
+    double leg3_ivt_sched = drt3->get_delta_at_stops().back().second;
+    qDebug() << "drt1 scheduled ivt: " << leg3_ivt_sched;
+    QVERIFY(AproxEqual(leg3_ivt_explore,leg3_ivt_sched));
+    QVERIFY(AproxEqual(leg3_ivt_explore,150.0));
+
+    //Test total IVT of path from perspective of passenger with OD 5 to 4
+    Passenger* pass =  new Passenger(888,0.0,stop5to4);
+    pass->init();
+    double total_ivt = path17->calc_total_in_vehicle_time(0.0,pass);
+    qDebug() << "path 17 total ivt         : " << total_ivt;
+    double expected_total_ivt = (leg1_ivt_rti + leg2_rti_ivt + leg3_ivt_explore) / 60.0; //convert to minutes
+    qDebug() << "path 17 expected total ivt: " << expected_total_ivt;
+    QVERIFY(AproxEqual(total_ivt,expected_total_ivt));
+
+    //!< TEST Waiting Times of Path 17
+    //!
+
+    /* Check the parameters that have been set that are used in calculating utilities */
+    QVERIFY(AproxEqual(theParameters->walking_time_coefficient,-0.00308)); // SEK per second?, same as WT anyways 2*IVT
+    QVERIFY(AproxEqual(theParameters->average_walking_speed,66.66)); // meters per minute, prob need conversion
+    QVERIFY(AproxEqual(theParameters->waiting_time_coefficient,-0.00308));
+    QVERIFY(AproxEqual(theParameters->in_vehicle_time_coefficient,-0.00154));
+    QVERIFY(AproxEqual(theParameters->transfer_coefficient,-0.334)); // SEK per transfer?
+
+    delete pass;
 }
 
 void TestFixedWithFlexible_walking::testStateDependentPassengerPassPath()

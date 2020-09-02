@@ -644,14 +644,15 @@ double ODstops::calc_combined_set_utility_for_connection (double walking_distanc
 	}
 
 	vector<Pass_path*> pass_path_set;
-	if (!pass->has_access_to_flexible()) // if passenger does not have access to flexible transit then only fully fixed paths are considered
-	{
-		pass_path_set = get_nonflex_paths();
-	}
-	else
-	{
-		pass_path_set = path_set;
-	}
+	//if (!pass->has_access_to_flexible()) // if passenger does not have access to flexible transit then only fully fixed paths are considered
+	//{
+	//	pass_path_set = get_nonflex_paths();
+	//}
+	//else
+	//{
+	//	pass_path_set = path_set;
+	//}
+	pass_path_set = path_set;
 
 	for (vector <Pass_path*>::iterator path = pass_path_set.begin(); path < pass_path_set.end(); path++)
 	{

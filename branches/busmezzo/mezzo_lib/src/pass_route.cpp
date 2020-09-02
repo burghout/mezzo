@@ -127,7 +127,7 @@ double Pass_path::calc_total_in_vehicle_time (double time, Passenger* pass)
 						if (check_all_flexible_lines((*iter_alt_lines))) // if this is a flexible line leg grab leg_ivtt from CC instead
 						{
 							assert(theParameters->drt);
-							assert(pass->has_access_to_flexible());
+							//assert(pass->has_access_to_flexible());
 
 							Busline* line = (*iter_alt_lines).front();
 							Controlcenter* CC = line->get_CC();
@@ -154,7 +154,7 @@ double Pass_path::calc_total_in_vehicle_time (double time, Passenger* pass)
 			if (check_all_flexible_lines((*iter_alt_lines))) // if this is a flexible line leg grab leg_ivtt from CC instead
 			{
 				assert(theParameters->drt);
-				assert(pass->has_access_to_flexible());
+				//assert(pass->has_access_to_flexible());
 
 				Busline* line = (*iter_alt_lines).front();
 				Controlcenter* CC = line->get_CC();
@@ -477,7 +477,7 @@ double Pass_path::calc_arriving_utility (double time, Passenger* pass)
 */
 double Pass_path::calc_waiting_utility (vector <vector <Busstop*> >::iterator stop_iter, double time, bool alighting_decision, Passenger* pass)
 {	
-	DEBUG_MSG("INFO::Pass_path::calc_waiting_utility - calculating utility of waiting for path " << this->get_id() << " for passenger " << pass->get_id() << " at time " << time);
+	//DEBUG_MSG("INFO::Pass_path::calc_waiting_utility - calculating utility of waiting for path " << this->get_id() << " for passenger " << pass->get_id() << " at time " << time);
 	stop_iter++; // not sure why we always increment this... Why doesn't the caller decide instead where the iterator should point? Moves into to next vector of stops anyways
 	if (alt_transfer_stops.size() == 2) // in case is is walking-only path
 	{

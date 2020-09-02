@@ -265,7 +265,7 @@ double Busline::find_time_till_next_scheduled_trip_at_stop (Busstop* stop, doubl
 {
     if (theParameters->drt && flex_line) //if this line can have dynamically generated trips, then a trip may still arrive within the planned headway
     {
-        DEBUG_MSG_V("Busline::find_time_till_next_scheduled_trip_at_stop returning planned headway " << planned_headway << " for flex line " << id);
+        //DEBUG_MSG_V("Busline::find_time_till_next_scheduled_trip_at_stop returning planned headway " << planned_headway << " for flex line " << id);
         return planned_headway;
         //return ::drt_first_rep_max_headway;
     }
@@ -299,7 +299,7 @@ Bustrip* Busline::find_next_expected_trip_at_stop (Busstop* stop)
 	if (trips.empty()) //there are no expected trips from this line for this stop
 	{
         assert(theParameters->drt);
-		DEBUG_MSG_V("Find next expected trip at stop returning nullptr for busline " << id);
+		//DEBUG_MSG_V("Find next expected trip at stop returning nullptr for busline " << id);
 		return next_expected_trip;
 	}
 	if (stop->get_had_been_visited(this) == false)
@@ -655,7 +655,7 @@ double Busline::calc_curr_line_ivt (Busstop* start_stop, Busstop* end_stop, int 
 			return 10000; //default in case of no matching
 
 		double ivt = cumulative_arrival_time - earliest_time_ostop + extra_travel_time;
-		DEBUG_MSG_V("Busline::calc_curr_line_ivt returning IVT " << ivt << " for line " << id << " with no trips assigned to it yet between stop " << start_stop->get_name() << " and stop " << end_stop->get_name() << endl );
+		//DEBUG_MSG_V("Busline::calc_curr_line_ivt returning IVT " << ivt << " for line " << id << " with no trips assigned to it yet between stop " << start_stop->get_name() << " and stop " << end_stop->get_name() << endl );
 		return cumulative_arrival_time - earliest_time_ostop + extra_travel_time;
 	}
 }
