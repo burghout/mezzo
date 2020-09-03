@@ -248,7 +248,11 @@ void TestFixedWithFlexible_walking::testFleetState()
     QVERIFY(closest.first == bus1); // bus1 should be oncall at stop 1
     QVERIFY(AproxEqual(closest.second,0.0)); // should have 0.0s expected time until arrival
 
-    // bus driving from stop 4 to stop 1 on drt1_opp
+    stop1->remove_unassigned_bus(bus1,0.0); //remove bus from queue of stop, updates state to Idle, also in fleetState
+    bus1->set_state(BusState::Null,0.0); //change from Idle to Null should remove bus from fleetState
+    CC->disconnectVehicle(bus1); //should remove bus from Controlcenter
+
+    // bus driving from stop 2 to stop 1 on drt1_opp
     Bus* bus2 = new Bus(2,4,4,nullptr,nullptr,0.0,true,nullptr);
     bus2->set_bus_id(2);
     bus2->set_bustype_attributes(bustype);
@@ -263,11 +267,15 @@ void TestFixedWithFlexible_walking::testFleetState()
 
     QVERIFY(bus2->is_driving() && bus2->get_on_trip());
     QVERIFY(CC->getVehiclesDrivingToStop(stop1).size() == 1);
+    closest = CC->getClosestVehicleToStop(stop1,0.0);
+    QVERIFY(closest.first == bus2);
+    QVERIFY(AproxEqual(closest.second,154.0));
+    trip->set_last_stop_exit_time(0.0);
+    closest = CC->getClosestVehicleToStop(stop1,100.0); //time is now 100, so bus2 has been driving for 100 seconds
+    QVERIFY(closest.first == bus2);
+    QVERIFY(AproxEqual(closest.second,54.0));
 
-    CC->disconnectVehicle(bus1);
     CC->disconnectVehicle(bus2);
-
-    stop1->remove_unassigned_bus(bus1,0.0); //remove bus from queue of stop, does not update CC after disconnected signal
     CC->fleetState_.clear();
 
     delete bus1;
