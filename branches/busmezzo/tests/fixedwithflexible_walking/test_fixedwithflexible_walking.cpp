@@ -331,6 +331,16 @@ void TestFixedWithFlexible_walking::testFlexiblePathExpectedLoS()
      * Buslines::calc_expected or Controlcenter::calc_expected methods return values in seconds
      *
     */
+    //!< TEST Walking distances of Path 17
+    QVERIFY(AproxEqual(theParameters->average_walking_speed,66.66)); // meters per minute
+    QVERIFY(AproxEqual(path17->calc_total_walking_distance(),330.0));
+    qDebug() << "path 17 total walking distance      : " << path17->calc_total_walking_distance();
+    double walking_time = path17->calc_total_walking_distance() / theParameters->average_walking_speed;
+    qDebug() << "path 17 total walking time (minutes): " << walking_time;
+    QVERIFY(AproxEqual(walking_time,4.9505));
+
+    //!< TEST number of transfers of Path 17
+    QVERIFY(path17->get_number_of_transfers() == 2);
 
     //!< TEST IVTs of Path 17
     //First line leg is drt1, should return the 'RTI' based expected IVT
@@ -385,11 +395,24 @@ void TestFixedWithFlexible_walking::testFlexiblePathExpectedLoS()
     QVERIFY(AproxEqual(total_ivt,expected_total_ivt));
 
     //!< TEST Waiting Times of Path 17
+    //! //double Pass_path::calc_total_waiting_time (double time, bool without_first_waiting, bool alighting_decision, double avg_walking_speed, Passenger* pass)
+    //! //call for connection decision is:  calc_total_waiting_time(time, false, false, avg_walking_speed, pass); //minutes
+    //! figure out where to insert the CC->calc_expected_wt in this methods
     //!
+    //! Cases to check:
+    //!     No vehicles available
+
+
+    //!     Oncall vehicle at origin stop
+    //!     Vehicle enroute to origin stop
+    //!     Vehicle on-call at adjacent stop
+    //!     Vehicle enroute to adjacent stop
+    // First leg is drt1, need to walk first....
+    // Second leg is fixed 2,
+    // Third leg is drt 3
 
     /* Check the parameters that have been set that are used in calculating utilities */
     QVERIFY(AproxEqual(theParameters->walking_time_coefficient,-0.00308)); // SEK per second?, same as WT anyways 2*IVT
-    QVERIFY(AproxEqual(theParameters->average_walking_speed,66.66)); // meters per minute, prob need conversion
     QVERIFY(AproxEqual(theParameters->waiting_time_coefficient,-0.00308));
     QVERIFY(AproxEqual(theParameters->in_vehicle_time_coefficient,-0.00154));
     QVERIFY(AproxEqual(theParameters->transfer_coefficient,-0.334)); // SEK per transfer?
