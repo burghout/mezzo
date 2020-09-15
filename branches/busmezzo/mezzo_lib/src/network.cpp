@@ -6082,6 +6082,23 @@ ODstops* Network::get_ODstop_from_odstops_demand(int os_id, int ds_id)
     return target_odstop;
 }
 
+Pass_path* Network::get_pass_path_from_id(int path_id) const
+{
+    Pass_path* target_path = nullptr;
+    for (const auto& odstop : odstops)
+    {
+        vector<Pass_path*> path_set = odstop->get_path_set();
+        auto path_it = find_if(path_set.begin(), path_set.end(), [path_id](Pass_path* path) -> bool { return path->get_id() == path_id; });
+        if (path_it != path_set.end())
+        {
+            target_path = *path_it;
+            break;
+        }
+    }
+    
+    return target_path;
+}
+
 // read traffic control
 bool Network::readsignalcontrols(string name)
 {

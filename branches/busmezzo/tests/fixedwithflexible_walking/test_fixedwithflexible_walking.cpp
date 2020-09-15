@@ -287,26 +287,57 @@ void TestFixedWithFlexible_walking::testFleetState()
 void TestFixedWithFlexible_walking::testFlexiblePathExpectedLoS()
 {
     ODstops* stop5to4 = net->get_ODstop_from_odstops_demand(5,4);
+    ODstops* stop1to4 = net->get_ODstop_from_odstops_demand(1,4);
     QVERIFY2(stop5to4 != nullptr,"Failure, OD stop 5 to 4 is undefined ");
-    vector<Pass_path*> path_set = stop5to4->get_path_set();
-    QVERIFY(!path_set.empty());
+    QVERIFY2(stop1to4 != nullptr,"Failure, OD stop 1 to 4 is undefined ");
+    vector<Pass_path*> path_set_5to4 = stop5to4->get_path_set();
+    vector<Pass_path*> path_set_1to4 = stop1to4->get_path_set();
+    QVERIFY(!path_set_5to4.empty());
+    QVERIFY(!path_set_1to4.empty());
 
     vector<Pass_path*> drt_first_paths = stop5to4->get_flex_first_paths(); //retrieving this directly from OD membership instead
     vector<Pass_path*> fix_first_paths = stop5to4->get_fix_first_paths();
-    QVERIFY2(path_set.size() == 7,"Failure, there should be a total of 7 paths available from stop 5->4");
+    QVERIFY2(path_set_5to4.size() == 7,"Failure, there should be a total of 7 paths available from stop 5->4");
     QVERIFY2(drt_first_paths.size() == 3,"Failure, there should be 3 paths available stop 5->4 where the first leg is flexible");
     QVERIFY2(fix_first_paths.size() == 4, "Failure, there should be 4 paths available stop 5->4 where the first leg is fixed");
 
     // Test path 17 (should also be 17 in input file even though reader relabels paths starting from id = 0):
     // Path 17 route: 5->4 with S5 -> Walk(330m) -> S1 -> DRT_1 -> S2 -> FIX_2 -> S3 -> DRT_3 -> S4
     auto path17_it = find_if(drt_first_paths.begin(),drt_first_paths.end(),[](Pass_path* path)->bool{return path->get_id() == 17;});
+    auto path20_it = find_if(fix_first_paths.begin(),fix_first_paths.end(),[](Pass_path* path)->bool{return path->get_id() == 20;});
+    auto path14_it = find_if(drt_first_paths.begin(),drt_first_paths.end(),[](Pass_path* path)->bool{return path->get_id() == 14;});
+    auto path4_it = find_if(path_set_1to4.begin(),path_set_1to4.end(),[](Pass_path* path)->bool{return path->get_id() == 4;});
     Pass_path* path17 = nullptr;
-    qDebug() << "Testing reading and utility calculations for path 17:";
+    Pass_path* path20 = nullptr;
+    Pass_path* path14 = nullptr;
+    Pass_path* path4 = nullptr;
+
     if(path17_it != drt_first_paths.end())
         path17 = *path17_it;
     else
         QVERIFY(path17_it != drt_first_paths.end());
 
+    if(path20_it != fix_first_paths.end())
+        path20 = *path20_it;
+    else
+        QVERIFY(path20_it != fix_first_paths.end());
+
+    if(path14_it != drt_first_paths.end())
+        path14 = *path14_it;
+    else
+        QVERIFY(path14_it != drt_first_paths.end());
+
+    if(path4_it != path_set_1to4.end())
+        path4 = *path4_it;
+    else
+        QVERIFY(path4_it != path_set_1to4.end());
+
+    Pass_path* test17 = net->get_pass_path_from_id(17);
+    Pass_path* test888 =net->get_pass_path_from_id(888);
+    QVERIFY(test17 == path17);
+    QVERIFY(test888 == nullptr);
+
+    qDebug() << "Testing reading and utility calculations for path 17:";
     //Check path 17 5->4 attributes: 8 alt stops, 3 alt lines all of size 1, 2 transfers, 1 non-zero walking link
     QVERIFY(path17->get_alt_transfer_stops().size() == 8);
     QVERIFY(path17->get_alt_lines().size() == 3);
