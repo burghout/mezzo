@@ -887,7 +887,7 @@ double Controlcenter::calc_expected_wt(Busline* service_route, Busstop* start_st
  */
 double Controlcenter::calc_exploration_wt()
 {
-	return 0.0;
+	return ::drt_exploration_wt;
 }
 
 //Slot implementations
