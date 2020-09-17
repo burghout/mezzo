@@ -429,8 +429,8 @@ bool Link::enter_veh(Vehicle* veh, double time)
 #endif  //_RUNNING
 	double speed=sdfunc->speed(ro);	
 	
-	Bus* debugbus = (Bus*)(veh);
-	DEBUG_MSG("Bus " << debugbus->get_bus_id() << " is entering link " << this->get_id() << " at time " << time << " with speed " << speed << " m/s" << " and density " << ro << " veh/km");
+	//Bus* debugbus = (Bus*)(veh);
+	//DEBUG_MSG("Bus " << debugbus->get_bus_id() << " is entering link " << this->get_id() << " at time " << time << " with speed " << speed << " m/s" << " and density " << ro << " veh/km");
 	
 	//moe_speed->report_value(speed,time);
 	moe_density->report_value(density(),time);

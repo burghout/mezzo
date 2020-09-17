@@ -339,7 +339,10 @@ double Busline::time_till_next_arrival_at_stop_after_time (Busstop* stop, double
 {
     assert(theParameters->real_time_info != 0); //this method at least claims that its based on RTI
     if (theParameters->drt && flex_line)
-        return planned_headway;
+    {
+        DEBUG_MSG_V("Busline::time_till_next_arrival_at_stop_after_time - returning expected arrival for a flexible transit line"); //!< @todo note this should never really be called for a flex_line
+        return CC_->getClosestVehicleToStop(stop,time).second; //return shortest expected ivt to stop
+    }
 
 	double time_till_next_visit;
 	if (stops.front()->get_had_been_visited(this) == false) 
@@ -347,18 +350,7 @@ double Busline::time_till_next_arrival_at_stop_after_time (Busstop* stop, double
 	{
 		if (trips.empty()) //in case no trip has started yet and no trip is scheduled
 		{
-			if (theParameters->drt && flex_line)
-			{
-				//DEBUG_MSG_V("Busline::time_till_next_arrival_at_stop_after_time returning drt planned headway " << drt_first_rep_max_headway << " for line " << id << " with no trips");
-                return planned_headway;
-                //return ::drt_first_rep_max_headway;
-			}
-			else
-			{
-				// currently - in case that there is no additional trip scheduled - return the time till simulation end
-				//DEBUG_MSG_V("Busline::time_till_next_arrival_at_stop_after_time returning time until simulation end " << theParameters->running_time - time << " for line " << id << " with no trips");
-				return theParameters->running_time - time; //return scenario stop time TODO: see how this effects passenger RTI calculations, changed from "return theParameters->running_time" to match description of method
-			}
+            return theParameters->running_time - time; //return scenario stop time TODO: see how this effects passenger RTI calculations, changed from "return theParameters->running_time" to match description of method
 		}
 		else
 		{

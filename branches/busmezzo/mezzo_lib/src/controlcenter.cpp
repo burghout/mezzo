@@ -815,7 +815,7 @@ double Controlcenter::calc_expected_ivt(Busline* service_route, Busstop* start_s
 	vector<Link*> shortestpath = find_shortest_path_between_stops(start_stop, end_stop, time);
 	double expected_ivt = calc_route_travel_time(shortestpath, time); // travel time calculated based on link->cost(time)
 	
-	return expected_ivt;
+	return expected_ivt; //OBS waiting time is returned in seconds
 }
 
 /**
@@ -859,23 +859,26 @@ double Controlcenter::calc_exploration_ivt(Busline* service_route, Busstop* star
 	if (found_board == false || found_alight == false)
 		return 10000; //default in case of no matching
 
-	return cumulative_arrival_time - earliest_time_ostop;
+	return cumulative_arrival_time - earliest_time_ostop; //OBS waiting time is returned in seconds
 }
 
-double Controlcenter::calc_expected_wt(Busline* service_route, Busstop* start_stop, Busstop* end_stop, bool first_line_leg, double time)
+double Controlcenter::calc_expected_wt(Busline* service_route, Busstop* start_stop, Busstop* end_stop, bool first_line_leg, double walking_time_to_start_stop, double arrival_time_to_start_stop)
 {
 	assert(service_route->is_flex_line()); //otherwise kindof pointless to ask the CC about wt
 	assert(service_route->get_CC()->getID() == id_);
-	double wt = 0.0;
 
 	if (!first_line_leg) 
 		return calc_exploration_wt(); //no 'RTI' or better estimate is available
 
-	pair<Bus*,double> closest = getClosestVehicleToStop(start_stop, time);
+	pair<Bus*,double> closest = getClosestVehicleToStop(start_stop, arrival_time_to_start_stop);
 	//DEBUG_MSG("Bus " << closest.first->get_bus_id() << " is closest to stop " << start_stop->get_id() << " with time_to_stop " << closest.second);
 	//closest.first->print_state();
-	
-	return closest.second;
+	if (first_line_leg) // for first transit link traveler can save on waiting time by sending their request for when they expect to arrive
+	{
+		closest.second = Max(0.0, closest.second - walking_time_to_start_stop); // remove walking time to stop from waiting time if this actually saves any time
+	}
+
+	return closest.second; //OBS waiting time is returned in seconds
 }
 
 /**
@@ -887,7 +890,7 @@ double Controlcenter::calc_expected_wt(Busline* service_route, Busstop* start_st
  */
 double Controlcenter::calc_exploration_wt()
 {
-	return ::drt_exploration_wt;
+	return ::drt_exploration_wt; //OBS waiting time is returned in seconds
 }
 
 //Slot implementations

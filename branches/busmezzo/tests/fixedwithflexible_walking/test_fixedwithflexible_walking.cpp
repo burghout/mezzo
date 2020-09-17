@@ -333,7 +333,7 @@ void TestFixedWithFlexible_walking::testFlexiblePathExpectedLoS()
         QVERIFY(path4_it != path_set_1to4.end());
 
     Pass_path* test17 = net->get_pass_path_from_id(17);
-    Pass_path* test888 =net->get_pass_path_from_id(888);
+    Pass_path* test888 = net->get_pass_path_from_id(888);
     QVERIFY(test17 == path17);
     QVERIFY(test888 == nullptr);
 
@@ -376,6 +376,7 @@ void TestFixedWithFlexible_walking::testFlexiblePathExpectedLoS()
     qDebug() << "path 17 total walking distance      : " << path17->calc_total_walking_distance();
     double walking_time = path17->calc_total_walking_distance() / theParameters->average_walking_speed;
     qDebug() << "path 17 total walking time (minutes): " << walking_time;
+    qDebug() << "path 17 total walking time (seconds): " << walking_time*60;
     QVERIFY(AproxEqual(walking_time,4.9505));
 
     //!< TEST number of transfers of Path 17
@@ -425,28 +426,107 @@ void TestFixedWithFlexible_walking::testFlexiblePathExpectedLoS()
     QVERIFY(AproxEqual(leg3_ivt_explore,150.0));
 
     //Test total IVT of path from perspective of passenger with OD 5 to 4
-    Passenger* pass =  new Passenger(888,0.0,stop5to4);
-    pass->init();
-    double total_ivt = path17->calc_total_in_vehicle_time(0.0,pass);
+    Passenger* pass1 =  new Passenger(1,0.0,stop5to4); //create passenger with id 1 at stop 5 with stop 4 as final destination
+    pass1->init();
+
+    double total_ivt = path17->calc_total_in_vehicle_time(0.0,pass1);
     qDebug() << "path 17 total ivt         : " << total_ivt;
     double expected_total_ivt = (leg1_ivt_rti + leg2_rti_ivt + leg3_ivt_explore) / 60.0; //convert to minutes
     qDebug() << "path 17 expected total ivt: " << expected_total_ivt;
     QVERIFY(AproxEqual(total_ivt,expected_total_ivt));
+
+    //Test total walking time from perspective of passenger with OD 5 to 4
+    //double total_walking_time = path17;
 
     //!< TEST Waiting Times of Path 17
     //! //double Pass_path::calc_total_waiting_time (double time, bool without_first_waiting, bool alighting_decision, double avg_walking_speed, Passenger* pass)
     //! //call for connection decision is:  calc_total_waiting_time(time, false, false, avg_walking_speed, pass); //minutes
     //! figure out where to insert the CC->calc_expected_wt in this methods
     //!
-    //! Cases to check:
-    //!     No vehicles available
+    //! Note that avg_walking_speed, as well as utility coefficients seem to be drawn randomly...Check if you are in the right ballpark first and then
+    //! verify repeatability of draws when running a more elaborate integration test on these methods?
+    //!
+    //! Network state to check:
+    //!     DRT vehicle 1 is on-call at stop 4 lets say
+    //!     Passenger 1 at stop 5 going to stop 4
+    //!     Passenger 2 at stop 1 going to stop 4
+    //!
+    //!
+    //!
+    Controlcenter* CC = drt1->get_CC();
+    QVERIFY(CC != nullptr);
+    QVERIFY(CC->getAllVehicles().size() == 0);// no vehicles have been initialized
+    QVERIFY(AproxEqual(CC->calc_exploration_wt(), 0.0)); //exploration parameters initialized to 0.0
+    Busstop* stop1 = net->get_stopsmap()[1];
+    Busstop* stop5 = net->get_stopsmap()[5];
 
+    Busstop* stop4 = net->get_stopsmap()[4];
 
-    //!     Oncall vehicle at origin stop
-    //!     Vehicle enroute to origin stop
-    //!     Vehicle on-call at adjacent stop
-    //!     Vehicle enroute to adjacent stop
-    // First leg is drt1, need to walk first....
+    // Creating DRT vehicle 1 is on-call at stop 4
+    Bus* bus1 = new Bus(1,4,4,nullptr,nullptr,0.0,true,nullptr);
+    Bustype* bustype = CC->connectedVeh_.begin()->second->get_bus_type();
+    bus1->set_bustype_attributes(bustype);
+    bus1->set_bus_id(1); //vehicle id and bus id mumbojumbo
+    CC->connectVehicle(bus1); //connect vehicle to a control center
+    CC->addVehicleToAllServiceRoutes(bus1);
+    bus1->set_last_stop_visited(stop4); // need to do this before setting state always
+    stop4->add_unassigned_bus(bus1,0.0); //should change the buses stat to OnCall and update connected Controlcenter
+    QVERIFY(CC->getOnCallVehiclesAtStop(stop4).size() == 1);
+
+    //Create Passenger 2 at stop 1 going to stop 4
+    Passenger* pass2 =  new Passenger(2,0.0,stop1to4);
+    pass2->init();
+
+    //!
+    //! Paths to check:
+    //!     Check path 17 attributes for pass 1 (includes walking first, first leg flexible (line 8001), second fixed (line 2), third flexible (line 8003))
+    //!     Check path 20 attributes for pass 1 (no walking, first leg fixed (line 5), second fixed (line 2), third flexible (line 8003))
+    //!     Check path 14 attributes for pass 1 (walk, first and only leg flexible (line 8002))
+    //!     Check path 4 direct path for pass 2 (no walking, first and only leg flexible (line 8002))
+    //!
+    //!     Expected total waiting time for path 17 : drt1(908s) + fixed2(180s) + drt3(158s) - walking time for first leg (297.03 s) if less than waiting time
+    //!     Expected total waiting time for path 20 : fixed5(180s) + fixed2(180s) + drt3(158s) - no walking
+    //!     Expected total waiting time for path 14 : drt2(908s) - walking time for first leg (297.03s)
+    //!
+    //!     Passengers can save on walking time (only for first leg) by sending a request for the expected arrival to the stop...So the wt = max(0,expected waiting time of first leg - walking time)
+    //!
+
+    qDebug() << "Checking path " << path17->get_id() << " between stop 5 to 4 attributes for passenger " << pass1->get_id() << ", 1 drt vehicle at stop " << bus1->get_last_stop_visited()->get_id();
+    // Total waiting time
+    double path17_total_wt = path17->calc_total_waiting_time(0.0,false,false,theParameters->average_walking_speed,pass1);
+    qDebug() << "Path 17 total waiting time: " << path17_total_wt*60 << "s";
+
+    // Path 17 first leg
+    Busline* path17_leg1 = path17->get_alt_lines()[0][0];
+    double path17_leg1_wt = CC->calc_expected_wt(path17_leg1,path17_leg1->stops.front(),path17_leg1->stops.back(),true,walking_time*60,0.0);
+    QVERIFY(AproxEqual(path17_leg1_wt,904.0 - walking_time*60));
+
+    // second leg
+    Busline* path17_leg2 = path17->get_alt_lines()[1][0];
+    double path17_leg2_wt_pk = path17_leg2->get_planned_headway() / 2.0; //should be 180 seconds headway = 360 divided by 2;
+    QVERIFY(AproxEqual(path17_leg2_wt_pk,180.0));
+    double arr_time = 0.0 + path17_leg1_wt + walking_time*60 + leg1_ivt_rti;
+    qDebug() << arr_time;
+    double path17_leg2_wt_rti3 = path17_leg2->time_till_next_arrival_at_stop_after_time(path17_leg2->stops.front(),arr_time);
+    QVERIFY(AproxEqual(path17_leg2_wt_rti3,1200.0 - arr_time)); //time until first scheduled trip in this case
+    double path17_leg2_wt = (theParameters->default_alpha_RTI * path17_leg2_wt_rti3 + (1-theParameters->default_alpha_RTI) * path17_leg2_wt_pk);
+    qDebug() << path17_leg2_wt;
+    QVERIFY(AproxEqual(path17_leg2_wt,154.8));
+
+    // third leg, should return exploration parameter
+    Busline* path17_leg3 = path17->get_alt_lines()[2][0];
+    arr_time = 0.0 + path17_leg1_wt + path17_leg2_wt + walking_time*60 + leg1_ivt_rti + leg2_rti_ivt;
+    double path17_leg3_wt = CC->calc_expected_wt(path17_leg3,path17_leg3->stops.front(),path17_leg1->stops.back(),true,walking_time*60,arr_time);
+    QVERIFY(AproxEqual(path17_leg3_wt,::drt_exploration_wt));
+    QVERIFY(AproxEqual(path17_leg1_wt + path17_leg2_wt + path17_leg3_wt, path17_total_wt*60));
+
+    qDebug() << "Checking path " << path20->get_id() << " between stop 5 to 4 attributes for passenger " << pass1->get_id()<< ", 1 drt vehicle at stop " << bus1->get_last_stop_visited()->get_id();
+    qDebug() << "Checking path " << path14->get_id() << " between stop 5 to 4 attributes for passenger " << pass1->get_id()<< ", 1 drt vehicle at stop " << bus1->get_last_stop_visited()->get_id();
+    qDebug() << "Checking path " << path4->get_id() << " between stop 1 to 4 attributes for passenger " << pass2->get_id() << ", 1 drt vehicle at stop " << bus1->get_last_stop_visited()->get_id();
+
+    // create an oncall vehicle at stop 1 and stop 4
+
+    // First leg is drt1, need to walk first....Can save on wait time by sending request before walking....
     // Second leg is fixed 2,
     // Third leg is drt 3
 
@@ -456,7 +536,14 @@ void TestFixedWithFlexible_walking::testFlexiblePathExpectedLoS()
     QVERIFY(AproxEqual(theParameters->in_vehicle_time_coefficient,-0.00154));
     QVERIFY(AproxEqual(theParameters->transfer_coefficient,-0.334)); // SEK per transfer?
 
-    delete pass;
+    //cleanup
+    stop1->remove_unassigned_bus(bus1,0.0); //remove bus from queue of stop, updates state from OnCall to Idle, also in fleetState
+    bus1->set_state(BusState::Null,0.0); //change from Idle to Null should remove bus from fleetState
+    CC->disconnectVehicle(bus1); //should remove bus from Controlcenter
+
+    delete bus1;
+    delete pass1;
+    delete pass2;
 }
 
 void TestFixedWithFlexible_walking::testStateDependentPassengerPassPath()
@@ -547,27 +634,23 @@ void TestFixedWithFlexible_walking::testPathSetUtilities()
     vector<ODstops*> odstops_demand = net->get_odstops_demand();
     ODstops* stop1to4 = net->get_ODstop_from_odstops_demand(1,4);
     QVERIFY2(stop1to4 != nullptr,"Failure, OD stop 1 to 4 is undefined ");
+    ODstops* stop5to4 = net->get_ODstop_from_odstops_demand(5,4);
+    QVERIFY2(stop5to4 != nullptr,"Failure, OD stop 5 to 4 is undefined ");
 
     //create a passenger to with ODstop 1 to 4 and navigate through paths from the travelers perspective
     Passenger* pass1 = new Passenger(1,0,stop1to4,nullptr); //Passenger(id,start_time,ODstop*,QObject* parent)
     Busstop* bs_o = pass1->get_OD_stop()->get_origin();
     Busstop* bs_d = pass1->get_OD_stop()->get_destination();
-    vector<Pass_path*> path_set = bs_o->get_stop_od_as_origin_per_stop(bs_d)->get_path_set(); //no idea why we are accessing the path-set in this roundabout way but there is hopefully a good reason for it
+    vector<Pass_path*> path_set_1to4 = bs_o->get_stop_od_as_origin_per_stop(bs_d)->get_path_set(); //no idea why we are accessing the path-set in this roundabout way but there is hopefully a good reason for it
 
     QVERIFY2(stop1to4->check_path_set(), "Failure, no paths defined for stop 1 to 4");
-    qDebug() << "Number of paths available to traveler: " << stop1to4->get_path_set().size();
+    qDebug() << "Number of paths available to traveler stops 1->4: " << stop1to4->get_path_set().size();
     QVERIFY2(stop1to4->get_path_set().size() == 7, "Failure, there should be 7 paths defined for stop 1 to 4");
-    QVERIFY2(path_set.size() == 7, "Failure, traveler with ODstops 1 to 4 should have 7 paths available to them");
+    QVERIFY2(path_set_1to4.size() == 7, "Failure, traveler with ODstops 1 to 4 should have 7 paths available to them");
 
-    /*Test for building path (sub)sets in connection decision choice tree */
-    //Busstop* candidate_connection_stops = nullptr;
-    // make_connection_decision //stop to walk to
-    // make_mode_decision //given available paths from chosen stop,
-
-//    for(auto path : path_set) // check so that all flexible transit legs
-//    {
-//        path->is_first_transit_leg_flexible();
-//    }
+    QVERIFY2(stop5to4->check_path_set(), "Failure, no paths defined for stop 5 to 4");
+    qDebug() << "Number of paths available to traveler stops 5->4: " << stop5to4->get_path_set().size();
+    QVERIFY2(stop5to4->get_path_set().size() == 7, "Failure, there should be 7 paths defined for stop 5 to 4");
 
     /* TEST PASSENGER INIT */
     //Test initialization of passenger with RTI at a network level
@@ -581,11 +664,13 @@ void TestFixedWithFlexible_walking::testPathSetUtilities()
     QVERIFY(pass2->get_pass_RTI_network_level() == false);
     //QVERIFY2(pass2->has_access_to_flexible() == false, "Failure, passenger without network-level RTI should not have access to flexible services");
 
-    //Connection decision for passenger with RTI
+
+
+
     Busstop* connection_stop = nullptr;
     connection_stop = pass1->make_connection_decision(0.0); //make connection decision with starttime = 0.0
 
-    //Connection decision for passenger without RTI
+
 
     delete pass1;
     delete pass2;

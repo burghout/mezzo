@@ -187,16 +187,16 @@ double Pass_path::calc_total_waiting_time (double time, bool without_first_waiti
 {
 	double sum_waiting_time = 0.0;
 	bool first_line = true;
-	vector <vector <Busstop*> >::iterator alt_transfer_stops_iter = alt_transfer_stops.begin() + 1;
-	vector<Busstop*> first_stops = alt_transfer_stops.front();
-	vector<Busstop*> second_stops = (*alt_transfer_stops_iter);
-	vector<vector <Busline*> >::iterator iter_alt_lines = alt_lines.begin();
+	vector <vector <Busstop*> >::iterator alt_transfer_stops_iter = alt_transfer_stops.begin() + 1; // now pointing to the connection stop for the first leg
+	vector<Busstop*> first_stops = alt_transfer_stops.front(); // 'origin' stops of this path
+	vector<Busstop*> second_stops = (*alt_transfer_stops_iter); // set of connection stops
+	vector<vector <Busline*> >::iterator iter_alt_lines = alt_lines.begin(); // first leg line set
 	if (without_first_waiting == true) // if it is calculated for an arriving vehicle, don't include waiting time for the first leg in the calculations
 	{
 		alt_transfer_stops_iter++;
-		alt_transfer_stops_iter++;
-		iter_alt_lines++;
-		first_line = false;
+		alt_transfer_stops_iter++; //now points to connection stop of second leg set of line legs?
+		iter_alt_lines++; // points to leg for which the waiting time is calculated for
+		first_line = false; // false means we ignore the first
 	}
 	bool first_entrance = true;
 	if (alighting_decision == true) //  besides in case the calculation is for an alighting decision
@@ -207,12 +207,13 @@ double Pass_path::calc_total_waiting_time (double time, bool without_first_waiti
     if(iter_IVT == IVT.end()) // if this is a walking only path, or no IVTs are defined
         return 0.0;
 
-	vector<double>::iterator iter_walk = walking_distances.begin();
+	vector<double>::iterator iter_walk = walking_distances.begin(); //one for each pair of alt stops (walk or stay decision)
 	double pass_arrival_time_at_next_stop;
 	double sum_IVT = 0.0;
 	double sum_walking_times = 0.0;
-	for (; iter_alt_lines < alt_lines.end(); iter_alt_lines++)
+	for (; iter_alt_lines < alt_lines.end(); iter_alt_lines++) //looping over each transit leg set
 	{	
+		double wt_explore = 0.0; // exploration waiting time for flexible legs
 		double wt_pk = 0.0;
 		double wt_rti = 0.0;
 		double leg_waiting_time = 0.0;
@@ -227,10 +228,13 @@ double Pass_path::calc_total_waiting_time (double time, bool without_first_waiti
 		}
 		sum_walking_times += (((*iter_walk) / avg_walking_speed) * 60); // in seconds
 		pass_arrival_time_at_next_stop = time + (sum_waiting_time*60) + sum_walking_times + sum_IVT;
-		wt_pk = (calc_curr_leg_headway((*iter_alt_lines), alt_transfer_stops_iter, pass_arrival_time_at_next_stop) / 2);
+
 		first_entrance = false;
 		bool leg_has_RTI = false; // default RTI is false if RTI_availability value is invalid at this point
 		int RTI_availability = theParameters->real_time_info;
+
+		DEBUG_MSG("INFO::Pass_path::calc_total_waiting_time for path " << this->get_id() << ":");
+		//DEBUG_MSG("\t real_time_info = " << theParameters->real_time_info);
 		if (theParameters->real_time_info == 4)
 		{
 			RTI_availability = first_stops.front()->get_rti();
@@ -239,8 +243,40 @@ double Pass_path::calc_total_waiting_time (double time, bool without_first_waiti
 		{
 			RTI_availability = 3;
 		}
-		switch (RTI_availability) 
+
+		bool flexible_leg = check_all_flexible_lines(*iter_alt_lines); //true if calculating waiting time for a flexible transit leg
+
+		if (check_all_flexible_lines(*iter_alt_lines)) // want flexible transit line specific waiting times instead of fixed
 		{
+			Busline* service_route = (*iter_alt_lines).front();
+			Controlcenter* CC = service_route->get_CC(); //get the control center of this line leg
+
+			DEBUG_MSG("\t Calculating total waiting time for flexible line " << service_route->get_id());
+			//prior knowledge does not exist.... instead we should initialize pk to be 0.0
+			//wt_pk = 0.0; // default is just setting wt_pk to zero, should always have credibility coefficient 0.0 for a flexible transit leg
+			if (first_line)
+			{ 
+				leg_has_RTI = true; //just to stay consistent with the fixed line setup
+				double walking_time = (((*iter_walk) / avg_walking_speed) * 60); //note that this is in seconds
+				wt_rti = CC->calc_expected_wt(service_route, service_route->stops.front(), service_route->stops.back(), first_line, walking_time, pass_arrival_time_at_next_stop); //if first leg, based on real-time, other legs should be exploration param or experience....
+				DEBUG_MSG("\t wt_rti = " << wt_rti);
+				wt_rti /= 60; //sec to minutes
+			}
+			else // no rti for downstream flex legs....
+			{
+				wt_explore = CC->calc_expected_wt(service_route, service_route->stops.front(), service_route->stops.back(), first_line, 0.0, pass_arrival_time_at_next_stop); //if first leg, based on real-time, other legs should be exploration param or experience....
+				DEBUG_MSG("\t wt_explore = " << wt_explore);
+				wt_explore /= 60; //sec to minutes
+			}			
+		}
+		else // treat this set of alt lines as fixed schedule services
+		{
+			DEBUG_MSG("\t Calculating total waiting time for fixed line " << (*iter_alt_lines).front()->get_id());
+			wt_pk = (calc_curr_leg_headway((*iter_alt_lines), alt_transfer_stops_iter, pass_arrival_time_at_next_stop) / 2);
+			DEBUG_MSG("\t wt_pk = " << wt_pk);
+			DEBUG_MSG("\t RTI_availability = " << RTI_availability);
+			switch (RTI_availability)
+			{
 			case 0:
 				// all legs are calculated based on headway or time-table
 				leg_has_RTI = false;
@@ -272,7 +308,7 @@ double Pass_path::calc_total_waiting_time (double time, bool without_first_waiti
 				{
 					leg_has_RTI = true;
 					wt_rti = calc_curr_leg_waiting_RTI((*iter_alt_lines), alt_transfer_stops_iter, pass_arrival_time_at_next_stop);
-					break; 
+					break;
 				}
 				else
 				{
@@ -287,46 +323,83 @@ double Pass_path::calc_total_waiting_time (double time, bool without_first_waiti
 			default:
 				DEBUG_MSG("WARNING Pass_path::calc_total_waiting_time invalid RTI availability parameter");
 				break;
+			}
 		}
 
-		if (theParameters->pass_day_to_day_indicator == false) // only for no previous day operations
-		{
-			if (leg_has_RTI == true)
+		// Note: two different methods of calculating anticipated waiting times of passengers, one for fixed transit legs, the other for flex
+        if (theParameters->pass_day_to_day_indicator == false) // only for no previous day operations
+        {
+			if (flexible_leg)
 			{
-				leg_waiting_time = theParameters->default_alpha_RTI * wt_rti + (1-theParameters->default_alpha_RTI) * wt_pk; 
+				DEBUG_MSG("\t RTI = " << leg_has_RTI);
+				if (leg_has_RTI)
+				{
+					leg_waiting_time = wt_rti; // in this case no day2day is used, so RTI is fully trusted
+				}
+				else
+				{
+					assert(wt_explore == ::drt_exploration_wt); //temporary check, should always be the default we've set at this point
+					leg_waiting_time = wt_explore; //!< @todo this basically means that single-shot runs will always favor using paths with flexible transit legs downstream
+				}
 			}
-			else
+			else 
 			{
-				leg_waiting_time = wt_pk; // VALID only when RTI level is stable over days
+				if (leg_has_RTI == true)
+				{
+					DEBUG_MSG("\t wt_rti = " << wt_rti);
+					leg_waiting_time = theParameters->default_alpha_RTI * wt_rti + (1 - theParameters->default_alpha_RTI) * wt_pk;
+				}
+				else
+				{
+					leg_waiting_time = wt_pk; // VALID only when RTI level is stable over days
+				}
 			}
-		}
-		else //if (theParameters->pass_day_to_day_indicator == true) // only for Day2Day operations
-		{
-			double alpha_exp, alpha_RTI;
-			bool previous_exp_ODSL = pass->any_previous_exp_ODSL((*alt_transfer_stops_iter).front(),(*iter_alt_lines).front());
-			if (previous_exp_ODSL == false)
-			{
-				alpha_exp = 0;
-				alpha_RTI = theParameters->default_alpha_RTI;
-			}
-			else
-			{
-				alpha_exp = pass->get_alpha_exp((*alt_transfer_stops_iter).front(),(*iter_alt_lines).front());
-				alpha_RTI = pass->get_alpha_RTI((*alt_transfer_stops_iter).front(),(*iter_alt_lines).front());
-			}
+        }
+        else //if (theParameters->pass_day_to_day_indicator == true) // only for Day2Day operations
+        {
+            double alpha_exp, alpha_RTI;
+            //DEBUG_MSG(output all the alphas you wish to update here....);
+            bool previous_exp_ODSL = pass->any_previous_exp_ODSL((*alt_transfer_stops_iter).front(), (*iter_alt_lines).front());
+            if (previous_exp_ODSL == false)
+            {
+                alpha_exp = 0;
+                alpha_RTI = theParameters->default_alpha_RTI;
+            }
+            else
+            {
+                alpha_exp = pass->get_alpha_exp((*alt_transfer_stops_iter).front(), (*iter_alt_lines).front());
+                alpha_RTI = pass->get_alpha_RTI((*alt_transfer_stops_iter).front(), (*iter_alt_lines).front());
+            }
 
-			if (leg_has_RTI == true)
+			if (flexible_leg) // prior knowledge (pk) does not exist for flexible legs, use exploration waiting time instead...
 			{
-				leg_waiting_time = alpha_exp * pass->get_anticipated_waiting_time((*alt_transfer_stops_iter).front(),(*iter_alt_lines).front()) + alpha_RTI * wt_rti + (1-alpha_RTI-alpha_exp)*wt_pk; 	
+				if (leg_has_RTI)
+				{
+					leg_waiting_time = alpha_exp * pass->get_anticipated_waiting_time((*alt_transfer_stops_iter).front(), (*iter_alt_lines).front()) + alpha_RTI * wt_rti; //+ (1 - alpha_RTI - alpha_exp) * wt_pk;
+				}
+				else
+				{
+					leg_waiting_time = alpha_exp / (1 - alpha_RTI) * pass->get_anticipated_waiting_time((*alt_transfer_stops_iter).front(), (*iter_alt_lines).front()) + wt_explore;  // alpha_exp initialized to zero, so wt_explore will be used first, with 100% 'credibility'
+					//leg_waiting_time = alpha_exp / (1 - alpha_RTI) * pass->get_anticipated_waiting_time((*alt_transfer_stops_iter).front(), (*iter_alt_lines).front()) + (1 - alpha_exp - alpha_RTI) / (1 - alpha_RTI) * wt_pk; //Changed by Jens 2014-06-24
+				}
 			}
-			else
+			else //fixed leg
 			{
-				//leg_waiting_time = alpha_exp * pass->get_anticipated_waiting_time((*alt_transfer_stops_iter).front(),(*iter_alt_lines).front()) + (1-alpha_exp)*wt_pk; // VALID only when RTI level is stable over days
-				leg_waiting_time = alpha_exp / (1 - alpha_RTI) * pass->get_anticipated_waiting_time((*alt_transfer_stops_iter).front(),(*iter_alt_lines).front()) + (1 - alpha_exp - alpha_RTI) / (1 - alpha_RTI) * wt_pk; //Changed by Jens 2014-06-24
+				if (leg_has_RTI == true)
+				{
+					leg_waiting_time = alpha_exp * pass->get_anticipated_waiting_time((*alt_transfer_stops_iter).front(), (*iter_alt_lines).front()) + alpha_RTI * wt_rti + (1 - alpha_RTI - alpha_exp) * wt_pk;
+				}
+				else
+				{
+					//leg_waiting_time = alpha_exp * pass->get_anticipated_waiting_time((*alt_transfer_stops_iter).front(),(*iter_alt_lines).front()) + (1-alpha_exp)*wt_pk; // VALID only when RTI level is stable over days
+					leg_waiting_time = alpha_exp / (1 - alpha_RTI) * pass->get_anticipated_waiting_time((*alt_transfer_stops_iter).front(), (*iter_alt_lines).front()) + (1 - alpha_exp - alpha_RTI) / (1 - alpha_RTI) * wt_pk; //Changed by Jens 2014-06-24
+				}
 			}
-		}
+        }
+		DEBUG_MSG("\t transit leg " << (*iter_alt_lines).front()->get_id() << " final leg_waiting_time: " << leg_waiting_time*60);
 		sum_waiting_time += leg_waiting_time;
 	}
+	DEBUG_MSG("\t Path " << this->get_id() << " final sum_waiting_time: " << sum_waiting_time*60);
 	return sum_waiting_time; // minutes
 }
 
@@ -359,19 +432,23 @@ double Pass_path::calc_total_scheduled_waiting_time (double time, bool without_f
 
 /** @ingroup PassengerDecisionParameters
     Returns the accumulated headway of a given transit leg in minutes (sum of all vehicle frequencies for all lines that can serve the line leg of this trip). Used to calculate
-    the prior-knowledge expected waiting time in calc_total_waiting_time. To deal with the problem of double counting frequencies for drt lines, the accumulated frequency of all DRT lines
-    is considered to be a result of the average planned_headway over all DRT lines serving this transit leg.
+    the prior-knowledge expected waiting time in calc_total_waiting_time. 
 
     @todo
         - For a scenario without walking and a bi-directional line, it may not matter what the prior knowledge expected waiting time is. It may screw up the outputs of day2day potentially.
         Problem for the future however is that the alternative lines for this leg includes ALL DRT lines, each with their own individual headway. When calculating the accumulated frequency
         then we are double, triple...etc. count the frequency of a given ODstop path that includes multiple DRT lines of the same service.
+
+		- Update 2020-09-03: Removed calculating the average 'planned frequency' over all drt lines serving a given stop. Instead we now assume that DRT and fixed line legs are always distinct,
+		and leg 'headway' is never calculated for a flexible (i.e. DRT) line leg.
 */
 double Pass_path::calc_curr_leg_headway (vector<Busline*> leg_lines, vector <vector <Busstop*> >::iterator stop_iter, double time)
 {
+	assert(check_all_fixed_lines(leg_lines)); // combining frequencies in this way only makes sense now for fixed lines
+
 	double accumlated_frequency = 0.0;
-    double drt_sum_frequency = 0.0; //sum of all planned frequencies for all drt lines included in leg_lines for this path, used for calculating average between them
-    int drt_line_count = 0; //for calculating the drt average frequency
+    //double drt_sum_frequency = 0.0; //sum of all planned frequencies for all drt lines included in leg_lines for this path, used for calculating average between them
+    //int drt_line_count = 0; //for calculating the drt average frequency
 
 	//map<Busline*, bool> worth_to_wait = check_maybe_worthwhile_to_wait(leg_lines, stop_iter, 1);
 	for (vector<Busline*>::iterator iter_leg_lines = leg_lines.begin(); iter_leg_lines < leg_lines.end(); iter_leg_lines++)
@@ -381,12 +458,12 @@ double Pass_path::calc_curr_leg_headway (vector<Busline*> leg_lines, vector <vec
 		if (time_till_next_trip < theParameters->max_waiting_time) 
 			// dynamic filtering rules - consider only if it is available in a pre-defined time frame and it is maybe worthwhile to wait for it
 		{
-            if ((*iter_leg_lines)->is_flex_line())
-            {
-                drt_sum_frequency += 3600.0 / (*iter_leg_lines)->get_planned_headway();
-                ++drt_line_count;
-                continue;
-            }
+            //if ((*iter_leg_lines)->is_flex_line())
+            //{
+            //    drt_sum_frequency += 3600.0 / (*iter_leg_lines)->get_planned_headway();
+            //    ++drt_line_count;
+            //    continue;
+            //}
 
 			accumlated_frequency += 3600.0 / ((*iter_leg_lines)->calc_curr_line_headway ());
 		}
@@ -396,11 +473,11 @@ double Pass_path::calc_curr_leg_headway (vector<Busline*> leg_lines, vector <vec
 		return 0.0;
 	}
     
-    if (drt_line_count > 0)
-    {
-        accumlated_frequency += drt_sum_frequency / drt_line_count; //add avg frequency of drt lines (assumes all drt lines are part of the same service)
-        DEBUG_MSG_V("Pass_path::calc_curr_leg_headway returning drt adjusted accumulated frequency " << accumlated_frequency << " at time " << time);
-    }
+    //if (drt_line_count > 0)
+    //{
+    //    accumlated_frequency += drt_sum_frequency / drt_line_count; //add avg frequency of drt lines (assumes all drt lines are part of the same service)
+    //    DEBUG_MSG_V("Pass_path::calc_curr_leg_headway returning drt adjusted accumulated frequency " << accumlated_frequency << " at time " << time);
+    //}
 
 	return (60/accumlated_frequency); // minutes
 }
@@ -452,7 +529,10 @@ double Pass_path::calc_arriving_utility (double time, Passenger* pass)
 // taking into account: transfer penalty + future waiting times + in-vehicle time + walking times
 { 
 	double avg_walking_speed = random->nrandom(theParameters->average_walking_speed, theParameters->average_walking_speed/4);
-	return (random->nrandom(theParameters->transfer_coefficient, theParameters->transfer_coefficient / 4) * number_of_transfers + random->nrandom(theParameters->in_vehicle_time_coefficient, theParameters->in_vehicle_time_coefficient / 4 ) * calc_total_in_vehicle_time(time, pass) + random->nrandom(theParameters->waiting_time_coefficient, theParameters->waiting_time_coefficient / 4) * calc_total_waiting_time (time, true, false, avg_walking_speed, pass) + random->nrandom(theParameters->walking_time_coefficient, theParameters->walking_time_coefficient/4) * (calc_total_walking_distance() / avg_walking_speed));
+	return (random->nrandom(theParameters->transfer_coefficient, theParameters->transfer_coefficient / 4) * number_of_transfers 
+		+ random->nrandom(theParameters->in_vehicle_time_coefficient, theParameters->in_vehicle_time_coefficient / 4 ) * calc_total_in_vehicle_time(time, pass) 
+		+ random->nrandom(theParameters->waiting_time_coefficient, theParameters->waiting_time_coefficient / 4) * calc_total_waiting_time (time, true, false, avg_walking_speed, pass) 
+		+ random->nrandom(theParameters->walking_time_coefficient, theParameters->walking_time_coefficient/4) * (calc_total_walking_distance() / avg_walking_speed));
 }
 
 /** @ingroup PassengerDecisionParameters
