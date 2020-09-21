@@ -126,6 +126,10 @@ void TestFixedWithFlexible::testInitNetwork()
     QVERIFY2(theParameters->choice_set_indicator == 1, "Failure, choice set indicator is not set to 1 in parameters");
     QVERIFY2(net->count_transit_paths() == 14, "Failure, network should have 14 transit paths defined");
 
+    //try setting real_time info param from here
+    theParameters->real_time_info = 0;
+    theParameters->share_RTI_network = 0.0;
+
     //Control center
     map<int,Controlcenter*> ccmap = net->get_controlcenters();
     QVERIFY2(ccmap.size() == 1, "Failure, network should have 1 controlcenter");
@@ -185,9 +189,9 @@ void TestFixedWithFlexible::testPathSetUtilities()
 
     /* TEST PASSENGER INIT */
     //Test initialization of passenger with RTI at a network level
-    QVERIFY2(pass1->get_pass_RTI_network_level() == false, "Failure, default initilization of passenger network-level RTI should be false");
+    //QVERIFY2(pass1->get_pass_RTI_network_level() == false, "Failure, default initilization of passenger network-level RTI should be false");
     pass1->init(); //note this both sets the network level RTI for the traveler as well as the anticipated WT and IVT of the traveler if day2day is active
-    QVERIFY2(pass1->get_pass_RTI_network_level() == true,"Failure, passenger should have network-level RTI after init with real_time_info=3 and share_RTI_network=1 in parameters");
+    //QVERIFY2(pass1->get_pass_RTI_network_level() == true,"Failure, passenger should have network-level RTI after init with real_time_info=3 and share_RTI_network=1 in parameters");
     //QVERIFY2(pass1->has_access_to_flexible() == true, "Failure, passenger with network-level RTI should have access to flexible services");
 
     //Test creation of passenger with no RTI (should be default)
