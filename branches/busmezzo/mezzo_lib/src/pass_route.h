@@ -15,6 +15,8 @@ class Passenger;
 
 class Pass_path
 {
+    friend class TestFixedWithFlexible_walking; //!< for writing integration tests with FWF network
+
 	public:
 	Pass_path ();
     Pass_path (int path_id, vector<vector<Busline*> > alt_lines_);

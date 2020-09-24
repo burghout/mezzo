@@ -646,7 +646,7 @@ double Busline::calc_curr_line_ivt (Busstop* start_stop, Busstop* end_stop, int 
 		if (found_board == false || found_alight == false)
 			return 10000; //default in case of no matching
 
-		double ivt = cumulative_arrival_time - earliest_time_ostop + extra_travel_time;
+        // double ivt = cumulative_arrival_time - earliest_time_ostop + extra_travel_time;
 		//DEBUG_MSG_V("Busline::calc_curr_line_ivt returning IVT " << ivt << " for line " << id << " with no trips assigned to it yet between stop " << start_stop->get_name() << " and stop " << end_stop->get_name() << endl );
 		return cumulative_arrival_time - earliest_time_ostop + extra_travel_time;
 	}

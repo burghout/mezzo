@@ -17,6 +17,7 @@ struct SLL;
 struct Request;
 class Pass_path;
 
+enum class TransitModeType { Null = 0, Fixed, Flexible };
 class Passenger : public QObject, public Action
 {
 	Q_OBJECT
@@ -73,6 +74,13 @@ public:
 	bool	 make_boarding_decision (Bustrip* arriving_bus, double time);	//!< boarding decision making 
 	Busstop* make_alighting_decision (Bustrip* boarding_bus, double time);	//!< alighting decision making 
 	Busstop* make_connection_decision (double time);						//!< connection link decision (walking between stops)
+
+/** @ingroup DRT
+	@{
+*/
+	TransitModeType make_transitmode_decision(Busstop* connection_stop, double time); //!< choice of fixed or flexible mode for the nextmost transit leg of a trip. Follows immediately after a connection decision
+	Busstop* make_dropoff_decision(Busstop* connection_stop, double time); //!< if chosen mode is flexible, choice of which drop-off stop (transfer or final destination) to send a request for. Follows immediately after transitmode decision
+/** @} */
 
 	// Demand in terms of zones
 	map<Busstop*,double> sample_walking_distances (ODzone* zone);
@@ -133,13 +141,13 @@ public:
                                                                                                    Returns TRUE and the request if successful, FALSE and an invalid request otherwise (Note: uses protected members of Passenger) */
 
 protected:
-	bool waiting_for_flexible_ = false; /**!< true if this traveler has committed to a decision to wait for a flexible service for their next transit leg. Will ignore boarding any non-flexible transit vehicle if this is the case. 
-										 Will be switched to false when the traveler has boarded a flexible vehicle. Travelers do not currently re-make a choice of fixed or flexible mode. */
+	TransitModeType chosen_mode_ = TransitModeType::Null; /**!< Null if no choice has been made yet, otherwise the result of a mode choice decision. Travelers do not currently re-make a choice of fixed or flexible mode and are commited to this mode for the next leg of their trip once this choice is made. */
 	bool access_to_flexible_ = false; //!< true if traveler can send requests/recieve offers for a flexible schedule/route service. Currently assumed to be tied to RTI availability at a network level (e.g. owning a smartphone)
 
 public:
-	bool is_waiting_for_flexible() { return waiting_for_flexible_; }
-	void set_waiting_for_flexible(bool waiting_for_flexible) { waiting_for_flexible_ = waiting_for_flexible; }
+	TransitModeType get_chosen_mode() { return chosen_mode_; }
+	bool is_flexible_user() { return chosen_mode_ == TransitModeType::Flexible; }
+	void set_chosen_mode(TransitModeType chosen_mode) { chosen_mode_ = chosen_mode; }
     bool has_access_to_flexible() { return access_to_flexible_; }
 	void set_access_to_flexible(bool access_to_flexible) { access_to_flexible_ = access_to_flexible; }
 	vector<Pass_path*> get_first_leg_flexible_paths(const vector<Pass_path*>& path_set) const; //!< returns all paths in path_set that have a flexible first transit leg (that a traveler would need to send a request for to ride with)

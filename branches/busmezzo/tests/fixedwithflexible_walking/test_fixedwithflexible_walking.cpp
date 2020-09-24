@@ -62,6 +62,7 @@ private Q_SLOTS:
     void testFlexiblePathExpectedLoS(); //!< test the reading and methods of a specific Pass_path instance, tests calculation of path attributes (ivt, wt, etc. via Controlcenter for flexible legs)
     //void testStateDependentPassengerPassPath(); //!< tests support methods in Passenger and Pass_path for sorting, filtering path-sets dependent on traveler state (RTI level, current OD...)
     void testPathSetUtilities(); //!< test navigating generated path-sets, calculating utilities under different circumstances (e.g. access to RTI for different legs)
+    void testPassArrivedToWaitingDecisions(); //!< test decisions that move a passenger from a state of having just arrived to a stop (either by being generated there or alighting there) to a state of waiting for fixed or flexible transit service
     void testRunNetwork();
     void testSaveResults();
     void testDelete(); //!< tests correct deletion
@@ -696,6 +697,7 @@ void TestFixedWithFlexible_walking::testPathSetUtilities()
     QVERIFY(AproxEqual(theParameters->waiting_time_coefficient,-2.0));
     QVERIFY(AproxEqual(theParameters->in_vehicle_time_coefficient,-1.0));
     QVERIFY(AproxEqual(theParameters->transfer_coefficient,-6.0)); // SEK per transfer?
+    QVERIFY(AproxEqual(theParameters->max_waiting_time,1800.0));
 
     /* Grab path sets for 5to4 and 1to4 */
     vector<ODstops*> odstops_demand = net->get_odstops_demand();
@@ -771,6 +773,11 @@ void TestFixedWithFlexible_walking::testPathSetUtilities()
                  << "\t transfers      : " << n_trans << endl
                  << "\t utility        : " << path_utility << endl;
 
+        if(twt*60 > theParameters->max_waiting_time) //dynamic filtering rule
+        {
+            path_utility = -10;
+        }
+
         sum_pathsetutil += exp(path_utility);
     }
     double logsum_5to4 = log(sum_pathsetutil);
@@ -795,13 +802,17 @@ void TestFixedWithFlexible_walking::testPathSetUtilities()
                  << "\t transfers      : " << n_trans << endl
                  << "\t utility        : " << path_utility << endl;
 
+        if(twt*60 > theParameters->max_waiting_time) //dynamic filtering rule
+        {
+            path_utility = -10;
+        }
+
         sum_pathsetutil += exp(path_utility);
     }
     double logsum_1to4 = log(sum_pathsetutil);
     qDebug() << "Logsum pathset 1->4: " << logsum_1to4 << endl;
     double MNL_denom = exp(logsum_1to4) + exp(logsum_5to4);
     double prob_5to4 = exp(logsum_5to4) / MNL_denom;
-
 
     qDebug() << "Pass1 at stop " << pass1->get_original_origin()->get_id() << " chooses to stay at stop 5 with probability: " << Round(100*prob_5to4) << "%";
     qDebug() << "Pass1 at stop " << pass1->get_original_origin()->get_id() << " chooses to walk to stop 1 with probability: " << Round(100*(1-prob_5to4)) << "%";
@@ -810,6 +821,11 @@ void TestFixedWithFlexible_walking::testPathSetUtilities()
     connection_stop = pass1->make_connection_decision(0.0); //make connection decision with starttime = 0.0
     qDebug() << "make_connection_decision (with random draws): " << endl
              << "\t Pass1 at stop " << pass1->get_original_origin()->get_id() << " chooses to connect at stop " << connection_stop->get_id();
+
+//    pathset_1to4.front()->random->randomize(); //experiment with changing the random seed, see how big of a difference this makes... @note seems to make a pretty big difference!
+//    connection_stop = pass1->make_connection_decision(0.0); //make connection decision with starttime = 0.0
+//    qDebug() << "make_connection_decision (with random draws): " << endl
+//             << "\t Pass1 at stop " << pass1->get_original_origin()->get_id() << " chooses to connect at stop " << connection_stop->get_id();
 
     //cleanup
     stop4->remove_unassigned_bus(bus1,0.0); //remove bus from queue of stop, updates state from OnCall to Idle, also in fleetState
@@ -820,6 +836,23 @@ void TestFixedWithFlexible_walking::testPathSetUtilities()
 
     delete pass1;
     delete pass2;
+}
+
+void TestFixedWithFlexible_walking::testPassArrivedToWaitingDecisions()
+{
+    //Basically mimic what is supposed to happen in Passenger::start and Busstop::pass_activity_at_stop
+
+    ODstops* stop1to4 = net->get_ODstop_from_odstops_demand(1,4);
+    Passenger* pass1 = new Passenger(2,0,stop1to4,nullptr); //create a passenger at stop 1 going to stop 4
+    pass1->init();
+
+    // make a connection decision
+    double t_now = 0.0; //fake current simulation clocktime
+    Busstop* connection_stop = pass1->make_connection_decision(t_now);
+    double expected_arrival_at_stop; //expected arrival at stop after walking...
+    TransitModeType chosen_mode = pass1->make_transitmode_decision(connection_stop,t_now);
+    Busstop* dropoff_stop = pass1->make_dropoff_decision(connection_stop,t_now);
+    //pass1->createRequest(connection_stop,dropoff_stop,1,expected_arrival_at_stop,t_now); //pickup stop, dropoff stop, load, desired departure time, time request is sent
 }
 
 void TestFixedWithFlexible_walking::testRunNetwork()

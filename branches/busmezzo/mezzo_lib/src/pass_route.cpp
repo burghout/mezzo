@@ -713,7 +713,6 @@ bool Pass_path::is_first_transit_leg_flexible() const
 	if(!check_all_flexible_lines(first_transit_leg))
 		return false;
 
-	assert(first_transit_leg.size() == 1); //!< @todo currently, flexible transit lines should always be considered distinct from one another as well as fixed lines in paths. 
 	return true;
 }
 

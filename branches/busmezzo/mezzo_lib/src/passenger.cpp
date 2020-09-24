@@ -56,7 +56,7 @@ void Passenger::reset ()
 {
 	boarding_decision = false;
 	already_walked = false;
-	waiting_for_flexible_ = false;
+	chosen_mode_ = TransitModeType::Null;
 
 	double new_start_time = 0; 
 	while (new_start_time <= theParameters->start_pass_generation || new_start_time > theParameters->stop_pass_generation)
@@ -310,6 +310,24 @@ void Passenger::walk (double time)
 	}
 }
 
+
+/**
+ * Notes:
+ *	start_time is different from time function is called (via Passenger::execute), think for the most part it should be identical however (Eventlist->add_event(Pass*, time)) is always the same as start time in ODstops
+*		-> Just use start_time everywhere...
+*	already_walked has been set to true when this is called
+* 
+ *	Passenger makes a connection decision
+ *  Connected stop is set as new origin
+ *  Calculates expected arrival to stop, adds a passenger event to walk to the next stop
+ *  Passenger output collectors collect decision data
+ *    
+ *  @todo
+ *		Need to connect the traveler to the Controlcenter of their new origin directly after the transitmode decision, rather than when added to waiting queue....check that this makes 
+ *		Need to move request sending to before the traveler walks (i.e. directly after the event has been added)
+ *		
+ * 
+ */
 void Passenger::start (Eventlist* eventlist, double time)
 {
 		pair<Busstop*,double> stop_time;
@@ -317,6 +335,8 @@ void Passenger::start (Eventlist* eventlist, double time)
 		stop_time.second = start_time;
 		add_to_selected_path_stop(stop_time);
 		Busstop* connection_stop = make_connection_decision(start_time);
+		//TransitModeType chosen_mode = make_transitmode_decision(connection_stop, start_time);
+		//set_chosen_mode(chosen_mode);
 		stop_time.first = connection_stop;
 		if (connection_stop->get_id() != OD_stop->get_origin()->get_id()) // if the pass. walks to another stop
 		{
@@ -610,7 +630,7 @@ Busstop* Passenger::make_alighting_decision (Bustrip* boarding_bus, double time)
 
 Busstop* Passenger::make_connection_decision (double time)
 {
-	assert(waiting_for_flexible_ == false); // traveler should not be waiting for fixed nor flexible yet
+	assert(chosen_mode_ == TransitModeType::Null); // traveler should not be waiting for fixed nor flexible yet, should be set to Null before making a connection decision
 
 	map <Busstop*, double> candidate_connection_stops_u; // the double value is the utility associated with the respective stop
 	map <Busstop*, double> candidate_connection_stops_p; // the double value is the probability associated with the respective stop
@@ -701,6 +721,7 @@ Busstop* Passenger::make_connection_decision (double time)
 	vector<double> connecting_probs;
 	for (map <Busstop*, double>::iterator stops_probs = candidate_connection_stops_p.begin(); stops_probs != candidate_connection_stops_p.end(); stops_probs++)
 	{
+        //qDebug() << "stop " << stops_probs->first->get_id() << "prob: " << Round(100*stops_probs->second) << "%";
 		connecting_probs.push_back((*stops_probs).second);
 	}
 	int transfer_stop_position = theRandomizers[0]->mrandom(connecting_probs);
@@ -799,6 +820,31 @@ Busstop* Passenger::make_first_stop_decision (double time)
 	}
 	return candidate_origin_stops_p.begin()->first; // arbitary choice in case something failed
 
+}
+
+TransitModeType Passenger::make_transitmode_decision(Busstop* connection_stop, double time)
+{
+	/**
+	* @todo
+	*	Need this passengers origin (for walking distance?) and destination again, + chosen connection stop
+	*	
+	*/
+	TransitModeType chosen_mode = TransitModeType::Null;
+	
+
+	return chosen_mode;
+}
+
+Busstop* Passenger::make_dropoff_decision(Busstop* connection_stop, double time)
+{
+	/**
+	 * @todo
+	 *	 
+	 * 
+	 */
+	assert(chosen_mode_ == TransitModeType::Flexible); //dropoff decision only makes sense for on-demand modes
+	Busstop* dropoff_stop = nullptr;
+	return dropoff_stop;
 }
 
 map<Busstop*,double> Passenger::sample_walking_distances (ODzone* zone)

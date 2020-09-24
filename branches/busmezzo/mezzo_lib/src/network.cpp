@@ -1520,7 +1520,7 @@ bool Network::readcontrolcenters(const string& name)
         }
 
         //create and add all direct lines to cc
-        if (generate_direct_routes == true)
+        if (generate_direct_routes == 1)
         {
             cout << "readcontrolcenters:: generating direct lines for control center " << cc->getID();
             if (!createControlcenterDRTLines(cc))
