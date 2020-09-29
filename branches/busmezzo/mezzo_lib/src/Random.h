@@ -20,6 +20,7 @@
 #define RANDOM_HEADER
 
 #include <vector>
+#include <cassert>
 using namespace std;
 
 class Random
@@ -115,7 +116,47 @@ public:
   // randomly permute an array
 
   void permute(int n, int* perm);
+
+  template<class T>
+  T randomchoice(const vector<T>& objs, vector<double> probs); // return randomly selected object in object vector with probability at the same index in probs. Probs vector should sum to 1
 };
+
+template<class T>
+T Random::randomchoice(const vector<T>& objs, vector<double> probs)
+{
+	assert(objs.size() == probs.size());
+	assert(!probs.empty());
+    assert(AproxEqual(accumulate(probs.begin(), probs.end(), decltype(probs)::value_type(0)), 1.0));
+
+	double cdf = 0.0;
+	vector<double> accumlated_probs;
+	accumlated_probs.push_back(0.0);
+	double value = urandom();
+	int position = 0;
+	for (vector<double>::iterator iter = probs.begin(); iter < probs.end(); iter++)
+	{
+		cdf += (*iter);
+		accumlated_probs.push_back(cdf);
+	}
+	for (vector<double>::iterator iter1 = accumlated_probs.begin(); iter1 < accumlated_probs.end(); iter1++)
+	{
+		if (value == 1.0)
+		{
+			return objs.back();
+		}
+		double lb = (*iter1);
+		double ub = 1.0;
+		if ((iter1 + 1) != accumlated_probs.end())
+			ub = *(iter1 + 1);
+
+		if (value > lb && value < ub)
+		{
+			return objs[position];
+		}
+		position++;
+	}
+	return objs.front();
+}
 
 extern vector<Random*> theRandomizers;
 
