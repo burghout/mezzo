@@ -17,7 +17,9 @@ struct SLL;
 struct Request;
 class Pass_path;
 
-enum class TransitModeType { Null = 0, Fixed, Flexible };
+enum class TransitModeType { Null = 0, Fixed, Flexible }; //!< used mainly for transitmode decision
+ostream& operator << (ostream& os, const TransitModeType& obj); 
+
 class Passenger : public QObject, public Action
 {
 	Q_OBJECT

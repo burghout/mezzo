@@ -2,6 +2,13 @@
 #include "passenger.h"
 #include "controlcenter.h"
 
+ostream& operator<<(ostream& os, const TransitModeType& obj)
+{
+	os << static_cast<underlying_type<TransitModeType>::type>(obj);
+	return os;
+}
+
+
 Passenger::Passenger ()
 {
 	boarding_decision = false;
