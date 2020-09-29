@@ -15,6 +15,7 @@ class Bustrip;
 class Passenger;
 class Pass_path;
 class ODzone;
+enum class TransitModeType;
 
 typedef vector <Passenger*> passengers;
 
@@ -123,6 +124,80 @@ public:
 	double generation_time;
 	int chosen_alighting_stop;
     map<Busstop*,pair<double,double> > alighting_MNL;
+};
+
+class Pass_transitmode_decision // container object holding output data for passenger connection decision
+{
+public:
+	Pass_transitmode_decision(
+		int pass_id_,
+		int original_origin_,
+		int destination_stop_,
+		int pickupstop_id_,
+		double time_,
+		double generation_time_,
+		TransitModeType chosen_transitmode_,
+		map<TransitModeType, pair<double,double> > mode_MNL_
+	) : pass_id(pass_id_), original_origin(original_origin_), destination_stop(destination_stop_), pickupstop_id(pickupstop_id_), time(time_), generation_time(generation_time_), chosen_transitmode(chosen_transitmode_), mode_MNL(mode_MNL_) {}
+
+	virtual ~Pass_transitmode_decision() = default; //!< destructor
+
+	void write(ostream& out);
+
+	void reset() {
+		pass_id = 0;
+		original_origin = 0;
+		destination_stop = 0;
+		pickupstop_id = 0;
+		time = 0;
+		generation_time = 0;
+	}
+
+	int pass_id;
+	int original_origin; //original origin
+	int destination_stop; //final destination
+	int pickupstop_id; //current stop, or connection/pickup stop that the mode choice decision was made for
+	double time; //simtime of decision
+	double generation_time; //generation time of pass
+	TransitModeType chosen_transitmode; //chosen mode
+	map < TransitModeType, pair<double, double> > mode_MNL; //mode alternative -> (utility, probability)
+};
+
+class Pass_dropoff_decision // container object holding output data for passenger connection decision
+{
+public:
+	Pass_dropoff_decision(
+		int pass_id_,
+		int original_origin_,
+		int destination_stop_,
+		int pickupstop_id_,
+		double time_,
+		double generation_time_,
+		int chosen_dropoff_stop_,
+		map <Busstop*, pair<double, double> > dropoff_MNL_
+	) : pass_id(pass_id_), original_origin(original_origin_), destination_stop(destination_stop_), pickupstop_id(pickupstop_id_), time(time_), generation_time(generation_time_), chosen_dropoff_stop(chosen_dropoff_stop_), dropoff_MNL(dropoff_MNL_) {}
+
+	virtual ~Pass_dropoff_decision() = default; //!< destructor
+
+	void write(ostream& out);
+
+	void reset() {
+		pass_id = 0;
+		original_origin = 0;
+		destination_stop = 0;
+		pickupstop_id = 0;
+		time = 0;
+		generation_time = 0;
+	}
+
+	int pass_id;
+	int original_origin; //original origin
+	int destination_stop; //final destination
+	int pickupstop_id; //current stop
+	double time; //simtime of decision
+	double generation_time; //generation time of pass
+	int chosen_dropoff_stop; //chosen dropoff stop id
+	map < Busstop*, pair<double, double> > dropoff_MNL; //dropoff stop alternative -> (utility, probability)
 };
 
 class Pass_connection_decision // container object holding output data for passenger connection decision
@@ -357,11 +432,15 @@ public:
 	void record_passenger_boarding_decision (Passenger* pass, Bustrip* trip, double time, double boarding_probability, bool boarding_decision); //!< creates a log-file for boarding decision related info
     void record_passenger_alighting_decision (Passenger* pass, Bustrip* trip, double time, Busstop* chosen_alighting_stop, map<Busstop*,pair<double,double> > alighting_MNL); // !< creates a log-file for alighting decision related info
     void record_passenger_connection_decision (Passenger* pass, double time, Busstop* chosen_alighting_stop, map<Busstop*,pair<double,double> > connecting_MNL_);
+	void record_passenger_transitmode_decision(Passenger* pass, double time, Busstop* pickup_stop, TransitModeType chosen_mode, map<TransitModeType, pair<double, double>> mode_MNL_);
+	void record_passenger_dropoff_decision(Passenger* pass, double time, Busstop* pickup_stop, Busstop* chosen_dropoff_stop, map<Busstop*, pair<double, double>> dropoff_MNL_);
 	void record_waiting_experience (Passenger* pass, Bustrip* trip, double time, double experienced_WT, int level_of_rti_upon_decision, double projected_RTI, double AWT, int nr_missed); // !< creates a log-file for a decision and related waiting time components
 	void record_onboard_experience(Passenger* pass, Bustrip* trip, Busstop* stop, pair<double,double> riding_coeff);
 	void write_boarding_output(ostream & out, Passenger* pass);
 	void write_alighting_output(ostream & out, Passenger* pass);
 	void write_connection_output(ostream & out, Passenger* pass);
+	void write_transitmode_output(ostream& out, Passenger* pass);
+	void write_dropoff_output(ostream& out, Passenger* pass);
 	void write_waiting_exp_output(ostream & out, Passenger* pass);
 	void write_onboard_exp_output(ostream & out, Passenger* pass);
 	void write_od_summary(ostream & out);
@@ -398,6 +477,14 @@ protected:
     map <Passenger*,list<Pass_boarding_decision> > output_pass_boarding_decision;
     map <Passenger*,list<Pass_alighting_decision> > output_pass_alighting_decision;
     map <Passenger*,list<Pass_connection_decision> > output_pass_connection_decision;
+
+/** @ingroup DRT
+	@{
+*/
+	map <Passenger*, list<Pass_transitmode_decision> > output_pass_transitmode_decision;
+	map <Passenger*, list<Pass_dropoff_decision> > output_pass_dropoff_decision;
+/** @} */
+
     map <Passenger*,list<Pass_waiting_experience> > output_pass_waiting_experience;
     map <Passenger*,list<Pass_onboard_experience> > output_pass_onboard_experience;
 	vector <Passenger*> passengers_during_simulation;

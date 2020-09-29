@@ -123,6 +123,8 @@ void ODstops::reset()
 	output_pass_boarding_decision.clear();
 	output_pass_alighting_decision.clear();
 	output_pass_connection_decision.clear();
+	output_pass_transitmode_decision.clear();
+	output_pass_dropoff_decision.clear();
 	output_pass_waiting_experience.clear();
 	output_pass_onboard_experience.clear();
 	paths_tt.clear();
@@ -644,14 +646,6 @@ double ODstops::calc_combined_set_utility_for_connection (double walking_distanc
 	}
 
 	vector<Pass_path*> pass_path_set;
-	//if (!pass->has_access_to_flexible()) // if passenger does not have access to flexible transit then only fully fixed paths are considered
-	//{
-	//	pass_path_set = get_nonflex_paths();
-	//}
-	//else
-	//{
-	//	pass_path_set = path_set;
-	//}
 	pass_path_set = path_set;
 
 	for (vector <Pass_path*>::iterator path = pass_path_set.begin(); path < pass_path_set.end(); path++)
@@ -672,9 +666,14 @@ double ODstops::calc_combined_set_utility_for_connection (double walking_distanc
 		if (without_walking_first == true) // considering only no multi-walking alternatives
 		{
 			double time_till_connected_stop = walking_distance / random->nrandom(theParameters->average_walking_speed, theParameters->average_walking_speed / 4); // in minutes
-			connection_utility += exp(random->nrandom(theParameters->walking_time_coefficient, theParameters->walking_time_coefficient/4) * time_till_connected_stop + 
-				(*path)->calc_waiting_utility(alt_stops_iter, time + (time_till_connected_stop * 60), false, pass)); 
+			double path_utility = exp(random->nrandom(theParameters->walking_time_coefficient, theParameters->walking_time_coefficient / 4) * time_till_connected_stop +
+				(*path)->calc_waiting_utility(alt_stops_iter, time + (time_till_connected_stop * 60), false, pass));
+			connection_utility += path_utility;
+			// waiting utility of this path is the 'utility' of walking to the origin stop of this path and 'using' it to the final destination
+			// 
 			// taking into account CT (walking time) till this connected stop and the utility of the path from this connected stop till the final destination
+			DEBUG_MSG("ODstops::calc_combined_set_utility_for_connection() - storing utility of path " << (*path)->get_id() << " for passenger " << pass->get_id());
+			pass->temp_connection_path_utilities[this][(*path)] = path_utility; //cache the connection_utility of each path for use in transitmode and dropoff decisions
 		}
 	}
 	return log(connection_utility);
@@ -730,6 +729,16 @@ void ODstops::record_passenger_alighting_decision (Passenger* pass, Bustrip* tri
 void ODstops::record_passenger_connection_decision (Passenger* pass, double time, Busstop* chosen_alighting_stop, map<Busstop*,pair<double,double> > connecting_MNL_)  //  add to output structure connection decision info
 {
 	output_pass_connection_decision[pass].push_back(Pass_connection_decision(pass->get_id(), pass->get_original_origin()->get_id(), pass->get_OD_stop()->get_destination()->get_id(), pass->get_OD_stop()->get_origin()->get_id() , time, pass->get_start_time(), chosen_alighting_stop->get_id(), connecting_MNL_)); 
+}
+
+void ODstops::record_passenger_transitmode_decision(Passenger* pass, double time, Busstop* pickup_stop, TransitModeType chosen_mode, map<TransitModeType, pair<double, double> > mode_MNL_)  //  add to output structure connection decision info
+{
+	output_pass_transitmode_decision[pass].push_back(Pass_transitmode_decision(pass->get_id(), pass->get_original_origin()->get_id(), pass->get_OD_stop()->get_destination()->get_id(), pickup_stop->get_id(), time, pass->get_start_time(), chosen_mode, mode_MNL_));
+}
+
+void ODstops::record_passenger_dropoff_decision(Passenger* pass, double time, Busstop* pickup_stop, Busstop* chosen_dropoff_stop, map<Busstop*, pair<double, double> > dropoff_MNL_)  //  add to output structure connection decision info
+{
+	output_pass_dropoff_decision[pass].push_back(Pass_dropoff_decision(pass->get_id(), pass->get_original_origin()->get_id(), pass->get_OD_stop()->get_destination()->get_id(), pickup_stop->get_id(), time, pass->get_start_time(), chosen_dropoff_stop->get_id(), dropoff_MNL_));
 }
 
 void ODstops::record_waiting_experience(Passenger* pass, Bustrip* trip, double time, double experienced_WT, int level_of_rti_upon_decision, double projected_RTI, double AWT, int nr_missed)  //  add to output structure action info
@@ -797,6 +806,23 @@ void ODstops::write_connection_output(ostream & out, Passenger* pass)
 		iter->write(out);
 	}
 }
+
+void ODstops::write_transitmode_output(ostream& out, Passenger* pass)
+{
+	for (list <Pass_transitmode_decision>::iterator iter = output_pass_transitmode_decision[pass].begin(); iter != output_pass_transitmode_decision[pass].end(); iter++)
+	{
+		iter->write(out);
+	}
+}
+
+void ODstops::write_dropoff_output(ostream& out, Passenger* pass)
+{
+	for (list <Pass_dropoff_decision>::iterator iter = output_pass_dropoff_decision[pass].begin(); iter != output_pass_dropoff_decision[pass].end(); iter++)
+	{
+		iter->write(out);
+	}
+}
+
 
 void ODstops::write_od_summary(ostream & out)
 {
@@ -1061,4 +1087,40 @@ void Pass_alighting_decision_zone::write (ostream& out)
 		out<< (*iter).second.second << '\t';
 	}
 	out << endl; 
+}
+
+void Pass_dropoff_decision::write(ostream& out)
+{
+	out << pass_id << '\t'
+		<< original_origin << '\t'
+		<< destination_stop << '\t'
+		<< pickupstop_id << '\t'
+		<< time << '\t'
+		<< generation_time << '\t'
+		<< chosen_dropoff_stop << '\t';
+	for (map<Busstop*, pair<double, double> >::iterator iter = dropoff_MNL.begin(); iter != dropoff_MNL.end(); iter++)
+	{
+		out << (*iter).first->get_id() << '\t';
+		out << (*iter).second.first << '\t';
+		out << (*iter).second.second << '\t';
+	}
+	out << endl;
+}
+
+void Pass_transitmode_decision::write(ostream& out)
+{
+	out << pass_id << '\t'
+		<< original_origin << '\t'
+		<< destination_stop << '\t'
+		<< pickupstop_id << '\t'
+		<< time << '\t'
+		<< generation_time << '\t'
+		<< chosen_transitmode << '\t';
+	for (map<TransitModeType, pair<double, double> >::iterator iter = mode_MNL.begin(); iter != mode_MNL.end(); iter++)
+	{
+		out << (*iter).first << '\t';
+		out << (*iter).second.first << '\t';
+		out << (*iter).second.second << '\t';
+	}
+	out << endl;
 }
