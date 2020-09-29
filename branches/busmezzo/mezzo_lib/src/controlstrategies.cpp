@@ -30,19 +30,18 @@ bool Request::operator==(const Request & rhs) const
 
 bool Request::operator<(const Request & rhs) const
 {
-    if (desired_departure_time != rhs.desired_departure_time) {
+    if (desired_departure_time != rhs.desired_departure_time)
         return desired_departure_time < rhs.desired_departure_time;
-	} if (time != rhs.time) {
-		return time < rhs.time;
-	} else if (load != rhs.load) {
-		return load < rhs.load;
-	} else if (ostop_id != rhs.ostop_id) {
-		return ostop_id < rhs.ostop_id;
-	} else if (dstop_id != rhs.dstop_id) {
-		return dstop_id < rhs.dstop_id;
-	} else {
-		return pass_id < rhs.pass_id;
-}
+    else if (time != rhs.time)
+        return time < rhs.time;
+    else if (load != rhs.load)
+        return load < rhs.load;
+    else if (ostop_id != rhs.ostop_id)
+        return ostop_id < rhs.ostop_id;
+    else if (dstop_id != rhs.dstop_id)
+        return dstop_id < rhs.dstop_id;
+    else
+        return pass_id < rhs.pass_id;
 }
 
 //TripGenerationStrategy
@@ -337,13 +336,12 @@ NaiveEmptyVehicleTripGeneration::NaiveEmptyVehicleTripGeneration(Network* theNet
 bool NaiveEmptyVehicleTripGeneration::calc_trip_generation(const set<Request>& requestSet, const vector<Busline*>& candidateServiceRoutes, const map<BusState, set<Bus*>>& fleetState, const double time, set<Bustrip*>& unmatchedTripSet) const
 {
 	if (!requestSet.empty() && !candidateServiceRoutes.empty()) //Reactive strategy so only when requests exist
-	{
-		if (fleetState.find(BusState::OnCall) == fleetState.end()) { //a drt vehicle must have been initialized
-			return false;
-}
-		if (fleetState.at(BusState::OnCall).empty()) { //a drt vehicle must be available
-			return false;
-}
+    {
+        if (fleetState.find(BusState::OnCall) == fleetState.end())  //a drt vehicle must have been initialized
+            return false;
+
+        if (fleetState.at(BusState::OnCall).empty())  //a drt vehicle must be available
+            return false;
 
 		DEBUG_MSG(endl << "INFO::NaiveEmptyVehicleTripGeneration::calc_trip_generation - finding possible rebalancing trip at time " << time);
 		//find od pair with the highest frequency in requestSet (highest source of shareable demand)
@@ -475,17 +473,17 @@ void MatchingStrategy::assign_oncall_vehicle_to_trip(Busstop* currentStop, Bus* 
 Bustrip* MatchingStrategy::find_earliest_planned_trip(const set<Bustrip*>& trips) const
 {
 	Bustrip* latest = nullptr;
-	if (!trips.empty())
-	{
-		auto maxit = max_element(trips.begin(), trips.end(),
-			[](const Bustrip* t1, const Bustrip* t2)->bool
-		{
-			return t1->get_starttime() < t2->get_starttime();
-		}
-		);
-		latest = *maxit;
-	}
-	return latest;
+    if (!trips.empty())
+    {
+        auto maxit = max_element(trips.begin(), trips.end(),
+            [](const Bustrip* t1, const Bustrip* t2)->bool
+            {
+                return t1->get_starttime() < t2->get_starttime();
+            }
+        );
+        latest = *maxit;
+    }
+    return latest;
 }
 
 
@@ -613,22 +611,19 @@ bool NaiveScheduling::schedule_trips(Eventlist* eventlist, set<Bustrip*>& unsche
 		Bustrip* trip = (*unscheduledTrips.begin()); 
 		Bus* bus = trip->get_busv();
         DEBUG_MSG(endl << "INFO::NaiveScheduling::schedule_trips - scheduling matched trips for dispatch at time " << time);
-		//check if the bus associated with this trip is available
-		if (bus->get_last_stop_visited()->get_id() == trip->get_last_stop_visited()->get_id()) //vehicle should already be located at the first stop of the trip
-		{
-			if (trip->get_starttime() < time) { //if scheduling call was made after the original planned dispatch of the trip
-				update_schedule(trip, time); //update schedule for dispatch and stop visits according to new starttime
-}
+        //check if the bus associated with this trip is available
+        if (bus->get_last_stop_visited()->get_id() == trip->get_last_stop_visited()->get_id()) //vehicle should already be located at the first stop of the trip
+        {
+            if (trip->get_starttime() < time)  //if scheduling call was made after the original planned dispatch of the trip
+                update_schedule(trip, time); //update schedule for dispatch and stop visits according to new starttime
 
-			if (!book_trip_dispatch(eventlist, trip)) {
-				return false;
-			} 
-			
-				unscheduledTrips.erase(trip); //trip is now scheduled for dispatch
-				return true;
-			
-		}
-		else
+            if (!book_trip_dispatch(eventlist, trip))
+                return false;
+
+            unscheduledTrips.erase(trip); //trip is now scheduled for dispatch
+            return true;
+        }
+        else
 		{
 			DEBUG_MSG_V("ERROR::NaiveScheduling::schedule_trips - Bus is unavailable for matched trip! Figure out why! Aborting...");
 			abort();

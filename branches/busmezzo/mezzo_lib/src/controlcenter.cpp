@@ -20,14 +20,8 @@ void Controlcenter_SummaryData::reset()
 
 
 //RequestHandler
-RequestHandler::RequestHandler()
-{
-	DEBUG_MSG("Constructing RH");
-}
-RequestHandler::~RequestHandler()
-{
-	DEBUG_MSG("Destroying RH");
-}
+RequestHandler::RequestHandler(){}
+RequestHandler::~RequestHandler(){}
 
 void RequestHandler::reset()
 {
@@ -54,51 +48,46 @@ bool RequestHandler::addRequest(const Request req, const set<Busstop*>& serviceA
 
 void RequestHandler::removeRequest(const int pass_id)
 {
-	set<Request>::iterator it;
-	it = find_if(requestSet_.begin(), requestSet_.end(),
-			[pass_id](const Request& req) -> bool
-			{
-				return req.pass_id == pass_id;
-			}
-		);
+    set<Request>::iterator it;
+    it = find_if(requestSet_.begin(), requestSet_.end(),
+        [pass_id](const Request& req) -> bool
+        {
+            return req.pass_id == pass_id;
+        }
+    );
 
-	if (it != requestSet_.end()) {
-		requestSet_.erase(it);
-	} else {
-		DEBUG_MSG_V("DEBUG: RequestHandler::removeRequest : Passenger id " << pass_id << " not found in requestSet.");
-}
+    if (it != requestSet_.end())
+        requestSet_.erase(it);
+    else
+        DEBUG_MSG_V("DEBUG: RequestHandler::removeRequest : Passenger id " << pass_id << " not found in requestSet.");
 }
 
 bool RequestHandler::isFeasibleRequest(const Request& req, const set<Busstop*>& serviceArea) const
 {    
     //check if origin stop and destination stop are the same
-    if (req.ostop_id == req.dstop_id) {
+    if (req.ostop_id == req.dstop_id) 
         return false;
-}
+
     //check if destination stop of request is within serviceArea
     auto it = find_if(serviceArea.begin(), serviceArea.end(), [req](const Busstop* stop) -> bool {return stop->get_id() == req.dstop_id; });
-    if (it == serviceArea.end()) {
+    if (it == serviceArea.end()) 
         return false;
-}
+
     //check if origin stop of request is within serviceArea
     it = find_if(serviceArea.begin(), serviceArea.end(), [req](const Busstop* stop) -> bool {return stop->get_id() == req.ostop_id; });
-    if (it == serviceArea.end()) {
+    if (it == serviceArea.end()) 
         return false;
-}
 
     return true;
-
 }
 
 //BustripGenerator
 BustripGenerator::BustripGenerator(Network* theNetwork, TripGenerationStrategy* generationStrategy, TripGenerationStrategy* emptyVehicleStrategy) :
                                   generationStrategy_(generationStrategy), emptyVehicleStrategy_(emptyVehicleStrategy), theNetwork_(theNetwork)
-{
-	DEBUG_MSG("Constructing TG");
-}
+{}
+
 BustripGenerator::~BustripGenerator()
 {
-	DEBUG_MSG("Destroying TG");
 	if(generationStrategy_)
 		delete generationStrategy_;
 	if (emptyVehicleStrategy_)
@@ -149,17 +138,18 @@ void BustripGenerator::cancelRebalancingTrip(Bustrip* trip)
 
 bool BustripGenerator::requestTrip(const RequestHandler& rh, const map<BusState, set<Bus*>>& fleetState, double time)
 {
-	if (generationStrategy_ != nullptr)
-	{
+    if (generationStrategy_ != nullptr)
+    {
         bool trip_found = generationStrategy_->calc_trip_generation(rh.requestSet_, serviceRoutes_, fleetState, time, unmatchedTrips_); //returns true if trip has been generated and added to the unmatchedTrips_
 
-        if (!trip_found && !unmatchedTrips_.empty()) { //if no trip was found but an unmatched trip remains in the unmatchedTrips set
+        if (!trip_found && !unmatchedTrips_.empty()) //if no trip was found but an unmatched trip remains in the unmatchedTrips set
+		{ 
             trip_found = true;
-}
+        }
 
         return trip_found;
-	}
-	return false;
+    }
+    return false;
 }
 
 bool BustripGenerator::requestRebalancingTrip(const RequestHandler& rh, const map<BusState, set<Bus*>>& fleetState, double time)
@@ -177,11 +167,15 @@ void BustripGenerator::setTripGenerationStrategy(int type)
 		delete generationStrategy_;
 
 	DEBUG_MSG("Changing trip generation strategy to " << type);
-	if (type == generationStrategyType::Null) {
+	if (type == generationStrategyType::Null) 
+	{
 		generationStrategy_ = new NullTripGeneration();
-	} else if (type == generationStrategyType::Naive) {
+	} 
+	else if (type == generationStrategyType::Naive) 
+	{
 		generationStrategy_ = new NaiveTripGeneration();
-	} else
+	} 
+	else
 	{
 		DEBUG_MSG("This generation strategy is not recognized!");
 		generationStrategy_ = nullptr;
@@ -194,32 +188,30 @@ void BustripGenerator::setEmptyVehicleStrategy(int type)
 		delete emptyVehicleStrategy_;
 
 	DEBUG_MSG("Changing empty vehicle strategy to " << type);
-	if (type == emptyVehicleStrategyType::EVNull) {
+	if (type == emptyVehicleStrategyType::EVNull) 
+	{
 		emptyVehicleStrategy_ = new NullTripGeneration();
-	} else if (type == emptyVehicleStrategyType::EVNaive)
+	} 
+	else if (type == emptyVehicleStrategyType::EVNaive)
 	{
 		if (theNetwork_ == nullptr)
 		{
-			DEBUG_MSG_V("Problem with BustripGenerator::setEmptyVehicleStrategy - switching to NearestLongestQueue strategy failed due to theNetwork nullptr. Aborting...");
+			DEBUG_MSG_V("Problem with BustripGenerator::setEmptyVehicleStrategy - switching to " << type << " strategy failed due to theNetwork nullptr. Aborting...");
 			abort();
 		}
 		emptyVehicleStrategy_ = new NaiveEmptyVehicleTripGeneration(theNetwork_);
 	}
 	else
 	{
-		DEBUG_MSG("This empty vehicle strategy is not recognized!");
+		DEBUG_MSG("Empty vehicle strategy " << type << " is not recognized! Setting strategy to nullptr. ");
 		emptyVehicleStrategy_ = nullptr;
 	}
 }
 
 //BustripVehicleMatcher
-BustripVehicleMatcher::BustripVehicleMatcher(MatchingStrategy* matchingStrategy): matchingStrategy_(matchingStrategy)
-{
-	DEBUG_MSG("Constructing TVM");
-}
+BustripVehicleMatcher::BustripVehicleMatcher(MatchingStrategy* matchingStrategy): matchingStrategy_(matchingStrategy){}
 BustripVehicleMatcher::~BustripVehicleMatcher()
 {
-	DEBUG_MSG("Destroying TVM");
 	if(matchingStrategy_)
 		delete matchingStrategy_;
 }
@@ -271,16 +263,20 @@ void BustripVehicleMatcher::setMatchingStrategy(int type)
 	if (matchingStrategy_)
 		delete matchingStrategy_;
 
-	DEBUG_MSG("Changing trip - vehicle matching strategy to " << type);
-	if (type == matchingStrategyType::Null) {
-		matchingStrategy_ = new NullMatching();
-	} else if (type == matchingStrategyType::Naive) {
-		matchingStrategy_ = new NaiveMatching();
-	} else
+    DEBUG_MSG("Changing trip - vehicle matching strategy to " << type);
+    if (type == matchingStrategyType::Null) 
 	{
-		DEBUG_MSG("This matching strategy is not recognized!");
-		matchingStrategy_ = nullptr;
-	}
+        matchingStrategy_ = new NullMatching();
+    }
+    else if (type == matchingStrategyType::Naive) 
+	{
+        matchingStrategy_ = new NaiveMatching();
+    }
+    else
+    {
+        DEBUG_MSG("This matching strategy is not recognized!");
+        matchingStrategy_ = nullptr;
+    }
 }
 
 bool BustripVehicleMatcher::matchVehiclesToTrips(BustripGenerator& tg, double time)
@@ -297,9 +293,10 @@ bool BustripVehicleMatcher::matchVehiclesToTrips(BustripGenerator& tg, double ti
 				it = tg.unmatchedTrips_.erase(it);
 				matchedTrips_.insert(trip);
 			}
-			else {
+			else 
+			{
 				++it;
-}
+			}
 		}
 		return matchfound;
 	}
@@ -321,9 +318,10 @@ bool BustripVehicleMatcher::matchVehiclesToEmptyVehicleTrips(BustripGenerator& t
 				it = tg.unmatchedRebalancingTrips_.erase(it);
 				matchedTrips_.insert(trip);
 			}
-			else {
+			else 
+			{
 				++it;
-}
+			}
 		}
 		return matchfound;
 	}
@@ -331,13 +329,9 @@ bool BustripVehicleMatcher::matchVehiclesToEmptyVehicleTrips(BustripGenerator& t
 }
 
 //VehicleScheduler
-VehicleScheduler::VehicleScheduler(Eventlist* eventlist, SchedulingStrategy* schedulingStrategy) : eventlist_(eventlist), schedulingStrategy_(schedulingStrategy)
-{
-	DEBUG_MSG("Constructing VS");
-}
+VehicleScheduler::VehicleScheduler(Eventlist* eventlist, SchedulingStrategy* schedulingStrategy) : eventlist_(eventlist), schedulingStrategy_(schedulingStrategy){}
 VehicleScheduler::~VehicleScheduler()
 {
-	DEBUG_MSG("Destroying VS");
 	if(schedulingStrategy_)
 		delete schedulingStrategy_;
 }
@@ -363,13 +357,17 @@ void VehicleScheduler::setSchedulingStrategy(int scheduling_strategy_type)
 		delete schedulingStrategy_;
 
 	DEBUG_MSG("Changing scheduling strategy to " << scheduling_strategy_type);
-	if (scheduling_strategy_type == schedulingStrategyType::Null) {
-		schedulingStrategy_ = new NullScheduling();
-	} else if (scheduling_strategy_type == schedulingStrategyType::Naive) {
-		schedulingStrategy_ = new NaiveScheduling();
-	} else
+	if (scheduling_strategy_type == schedulingStrategyType::Null) 
 	{
-		DEBUG_MSG("This scheduling strategy is not recognized!");
+		schedulingStrategy_ = new NullScheduling();
+	} 
+	else if (scheduling_strategy_type == schedulingStrategyType::Naive) 
+	{
+		schedulingStrategy_ = new NaiveScheduling();
+	} 
+	else
+	{
+		DEBUG_MSG("Scheduling strategy " << scheduling_strategy_type << " is not recognized! Setting strategy to nullptr. ");
 		schedulingStrategy_ = nullptr;
 	}
 }
@@ -380,7 +378,6 @@ Controlcenter::Controlcenter(Eventlist* eventlist, Network* theNetwork, int id, 
 {
 	QString qname = QString::fromStdString(to_string(id));
 	this->setObjectName(qname); //name of control center does not really matter but useful for debugging purposes
-	DEBUG_MSG("Constructing CC" << id_);
 
 	theNetwork_ = theNetwork;
 
@@ -390,10 +387,7 @@ Controlcenter::Controlcenter(Eventlist* eventlist, Network* theNetwork, int id, 
 	vs_.setSchedulingStrategy(vs_strategy); //set initial scheduling strategy of VehicleScheduler
 	connectInternal(); //connect internal signal slots
 }
-Controlcenter::~Controlcenter()
-{
-	DEBUG_MSG("Destroying CC" << id_);
-}
+Controlcenter::~Controlcenter(){}
 
 void Controlcenter::reset()
 {
@@ -721,10 +715,6 @@ void Controlcenter::connectVehicle(Bus* transitveh)
 
 		transitveh->set_control_center(this);
 	}
-	else
-	{
-		DEBUG_MSG("WARNING::Controlcenter::connectVehicle - null transit vehicle passed as argument");
-	}
 }
 void Controlcenter::disconnectVehicle(Bus* transitveh)
 {
@@ -739,10 +729,6 @@ void Controlcenter::disconnectVehicle(Bus* transitveh)
 		assert(ok);
 
 		transitveh->set_control_center(nullptr);
-	}
-	else
-	{
-		DEBUG_MSG("WARNING::Controlcenter::disconnectVehicle - null transit vehicle passed as argument");
 	}
 }
 
@@ -788,10 +774,6 @@ void Controlcenter::addInitialVehicle(Bus* transitveh)
 		{
 			initialVehicles_.insert(transitveh);
 		}
-	}
-	else
-	{
-		DEBUG_MSG("WARNING::Controlcenter::addInitialVehicle - null transit vehicle passed as argument");
 	}
 }
 
@@ -936,10 +918,12 @@ void Controlcenter::updateFleetState(Bus* bus, BusState oldstate, BusState newst
 	assert(connectedVeh_.count(bus->get_bus_id()) != 0); //assert that bus is connected to this control center (otherwise state change signal should have never been heard)
 
 	//update the fleet state map, vehicles should be null before they are available, and null when they finish a trip and are copied
-	if(oldstate != BusState::Null) {
+	if(oldstate != BusState::Null) 
+	{
 		fleetState_[oldstate].erase(bus);
     }
-	if(newstate != BusState::Null) {
+	if(newstate != BusState::Null) 
+	{
 		fleetState_[newstate].insert(bus);
     }
 
@@ -951,16 +935,18 @@ void Controlcenter::updateFleetState(Bus* bus, BusState oldstate, BusState newst
 
 void Controlcenter::requestTrip(double time)
 {
-	if (tg_.requestTrip(rh_, fleetState_, time)) {
+	if (tg_.requestTrip(rh_, fleetState_, time)) 
+	{
 		emit tripGenerated(time);
-}
+	}
 }
 
 void Controlcenter::requestRebalancingTrip(double time)
 {
-	if (tg_.requestRebalancingTrip(rh_, fleetState_, time)) {
+	if (tg_.requestRebalancingTrip(rh_, fleetState_, time)) 
+	{
 		emit emptyVehicleTripGenerated(time);
-}
+	}
 }
 
 void Controlcenter::matchVehiclesToTrips(double time)
@@ -970,9 +956,10 @@ void Controlcenter::matchVehiclesToTrips(double time)
 
 void Controlcenter::matchEmptyVehiclesToTrips(double time)
 {
-	if (tvm_.matchVehiclesToEmptyVehicleTrips(tg_, time)) {
+	if (tvm_.matchVehiclesToEmptyVehicleTrips(tg_, time)) 
+	{
 		emit tripVehicleMatchFound(time);
-}
+	}
 }
 
 void Controlcenter::scheduleMatchedTrips(double time)
