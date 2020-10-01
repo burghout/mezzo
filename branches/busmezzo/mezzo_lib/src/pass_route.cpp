@@ -569,7 +569,7 @@ double Pass_path::calc_waiting_utility (vector <vector <Busstop*> >::iterator st
 	// looping through the possible lines in the first line leg...
 	for (vector <Busline*>::iterator iter_lines = (*iter_alt_lines).begin(); iter_lines < (*iter_alt_lines).end(); iter_lines++)
 	{
-		// @todo Want to add some conditions for flex line legs here...
+        // @todo Why do we try and find a next expected trip at stop at all here? An optimization to skip any paths that contain fixed legs with no trips scheduled to them?
 		Bustrip* next_trip = (*iter_lines)->find_next_expected_trip_at_stop((*stop_iter).front()); // if a trip is already en-route to stop
 		if (pass->line_is_rejected((*iter_lines)->get_id())) // in case the line was already rejected once before, added by Jens 2014-10-16
 		{
@@ -722,4 +722,9 @@ Busstop* Pass_path::get_first_transfer_stop() const
     if (number_of_transfers != 0)
         firsttransfer = alt_lines.front().front()->stops.back(); //end stop of first transit leg
     return firsttransfer;
-}
+}
+
+Busstop* Pass_path::get_first_dropoff_stop() const
+{
+	return alt_lines.front().front()->stops.back(); //end stop of first transit leg
+}

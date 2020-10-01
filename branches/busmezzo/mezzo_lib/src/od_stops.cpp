@@ -623,7 +623,7 @@ double ODstops::calc_combined_set_utility_for_alighting_zone (Passenger* pass, B
  * @param walking_distance: initial walking distance required to access 'this' OD
  * @param time: current simulation time
  * @param pass: passenger for which this decision is being made
- * @return utility of pathset for this particular OD stop pair when a traveler is making a connection decision
+ * @return utility of pathset for this particular OD stop pair when a traveler is making a connection decision, so all paths without walking first for this OD
  * 
  * 
  * Called in:
@@ -632,7 +632,6 @@ double ODstops::calc_combined_set_utility_for_alighting_zone (Passenger* pass, B
  * 
  * Changes:
  * 
- * - Only return the combined set utility of the fixed or walk only portion of this ODs path-set if pass does not have access to flex
  * - calc_waiting_utility should return a different utility of a path. Expected LoS for fixed and flexible services are calculated in different ways.
  * 
  */

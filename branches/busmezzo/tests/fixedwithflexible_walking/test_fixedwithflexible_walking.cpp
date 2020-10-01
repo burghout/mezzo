@@ -840,19 +840,161 @@ void TestFixedWithFlexible_walking::testPathSetUtilities()
 
 void TestFixedWithFlexible_walking::testPassArrivedToWaitingDecisions()
 {
-    //Basically mimic what is supposed to happen in Passenger::start and Busstop::pass_activity_at_stop
+    //create a DRT vehicle at stop 4
+    Busstop* stop4 = net->get_stopsmap()[4];
+    Controlcenter* CC = stop4->get_CC();
 
-    ODstops* stop1to4 = net->get_ODstop_from_odstops_demand(1,4);
-    Passenger* pass1 = new Passenger(2,0,stop1to4,nullptr); //create a passenger at stop 1 going to stop 4
+    // Creating DRT vehicle 1 is on-call at stop 4
+    Bus* bus1 = new Bus(1,4,4,nullptr,nullptr,0.0,true,nullptr);
+    Bustype* bustype = CC->connectedVeh_.begin()->second->get_bus_type();
+    bus1->set_bustype_attributes(bustype);
+    bus1->set_bus_id(1); //vehicle id and bus id mumbojumbo
+    CC->connectVehicle(bus1); //connect vehicle to a control center
+    CC->addVehicleToAllServiceRoutes(bus1);
+    bus1->set_last_stop_visited(stop4); // need to do this before setting state always
+    stop4->add_unassigned_bus(bus1,0.0); //should change the buses stat to OnCall and update connected Controlcenter
+    QVERIFY(CC->getOnCallVehiclesAtStop(stop4).size() == 1);
+
+    //Basically mimic what is supposed to happen in Passenger::start and Busstop::pass_activity_at_stop
+    ODstops* stop5to4 = net->get_ODstop_from_odstops_demand(5,4);
+    Passenger* pass1 = new Passenger(1,0,stop5to4,nullptr); //create a passenger at stop 1 going to stop 4
     pass1->init();
 
-    // make a connection decision
+//Try out other parameters, Value of IVT (for bus, from 2006 Australian National Guidelines, conversion rate 0.63EUR/AUS) :
+    qDebug() << "Changing VoT coefficients to 2006 Australian National Guideline values";
+    theParameters->in_vehicle_time_coefficient= -0.001540; //EUR/s
+    theParameters->transfer_coefficient= -0.0077; // 5xIVT
+    theParameters->waiting_time_coefficient= -0.003080; //2xIVT, remember that the denied boarding coefficient is 3.5x whatever this is internal to BM
+    theParameters->walking_time_coefficient= -0.003080; //2xIVT
+
+    //!< Recall, the utility of a path set for a given OD pair is given by all the paths at this OD that
+    //! do NOT include walking distances (no double walking rule and walking to access this path-set calculated separately)
+    //! For a traveler at stop 5 going to stop 4 we should have 2 paths available from stop 5->4 without walking
+    //!     Both paths at stop 5->4 without walking are fixed paths, so 100% chance to choose this in make_transitmode_decision
+    //! 5 paths availabe from stop 1->4 without walking
+    //!     3 paths are flex first, 2 are fixed first
+    //!     Calculate expected utilities for these
+    ODstops* stop1to4 = net->get_ODstop_from_odstops_demand(1,4);
+    vector<Pass_path*> paths1to4 = stop1to4->get_path_set();
+
+    //calculate average utilities and expected probabilities, mimics a passenger walking to stop 1 to choose between fixed and flexible
+    double fixed_u = 0.0;
+    double flex_u = 0.0;
+    int pathcount=0;
+    for(const auto& path : paths1to4)
+    {
+        //double twkt = path->calc_total_walking_distance() / theParameters->average_walking_speed;
+        if(path->calc_total_walking_distance() != 0) //no double walking
+            continue;
+
+        ++pathcount;
+        double tivt = path->calc_total_in_vehicle_time(0.0, pass1);
+        double twt = path->calc_total_waiting_time(0.0, false, false, theParameters->average_walking_speed, pass1);
+        double n_trans = path->get_number_of_transfers();
+
+        double path_utility = tivt * theParameters->in_vehicle_time_coefficient
+                            + twt  * theParameters->waiting_time_coefficient
+                            + n_trans * theParameters->transfer_coefficient;
+
+        qDebug() << "Path " << path->get_id()  << ": " << endl
+                 << "\t total IVT      : " << tivt << endl
+                 << "\t total WT       : " << twt << endl
+                 << "\t transfers      : " << n_trans << endl
+                 << "\t utility        : " << path_utility << endl;
+
+        if(twt*60 > theParameters->max_waiting_time) //dynamic filtering rule
+        {
+            path_utility = -10;
+        }
+
+        if(path->is_first_transit_leg_fixed())
+            fixed_u += exp(path_utility);
+        if(path->is_first_transit_leg_flexible())
+            flex_u += exp(path_utility);
+    }
+    QVERIFY(pathcount==5);
+    fixed_u = (fixed_u == 0.0) ? -DBL_INF : log(fixed_u);
+    flex_u = (flex_u == 0.0) ? -DBL_INF : log(flex_u);
+
+    double MNL_denom = exp(fixed_u) + exp(flex_u);
+    double fixed_p = exp(fixed_u) / MNL_denom;
+    double flex_p = exp(flex_u) / MNL_denom;
+    QVERIFY(AproxEqual(fixed_p + flex_p, 1.0));
+
+    qDebug() << "\t Fixed prob with average utilities: " << fixed_p*100 << "%";
+    qDebug() << "\t Flex prob with average utilities: " << flex_p*100 << "%";
+
+    //!< Make a sequence of connection->transitmode->dropoff decisions and reset
     double t_now = 0.0; //fake current simulation clocktime
-    Busstop* connection_stop = pass1->make_connection_decision(t_now);
-    double expected_arrival_at_stop; //expected arrival at stop after walking...
-    TransitModeType chosen_mode = pass1->make_transitmode_decision(connection_stop,t_now);
-    Busstop* dropoff_stop = pass1->make_dropoff_decision(connection_stop,t_now);
-    //pass1->createRequest(connection_stop,dropoff_stop,1,expected_arrival_at_stop,t_now); //pickup stop, dropoff stop, load, desired departure time, time request is sent
+    map<Busstop*,int> connection_counts;
+    map<TransitModeType,int> mode_counts;
+    map<Busstop*,int> dropoff_counts;
+    int draws = 100;
+    for(int i = 0; i < draws; i++)
+    {
+        cout << endl;
+        Busstop* connection_stop = pass1->make_connection_decision(t_now);
+        cout << "\tChosen pickup: " << connection_stop->get_id() << endl;
+        ++connection_counts[connection_stop];
+
+        TransitModeType chosen_mode = pass1->make_transitmode_decision(connection_stop,t_now);
+        cout << "\tChosen mode: " << chosen_mode << endl;
+        ++mode_counts[chosen_mode];
+        cout << endl;
+
+        if(connection_stop->get_id() == 5)
+            QVERIFY(chosen_mode==TransitModeType::Fixed); // only fixed first legs available from stop 5->4 without walking
+
+        pass1->set_chosen_mode(chosen_mode);
+        Busstop* dropoff_stop = nullptr;
+        if(chosen_mode==TransitModeType::Flexible)
+        {
+            dropoff_stop = pass1->make_dropoff_decision(connection_stop,t_now);
+            cout << "\tChosen dropoff: " << dropoff_stop->get_id() << endl;
+            ++dropoff_counts[dropoff_stop];
+            cout << endl;
+        }
+
+        pass1->set_chosen_mode(TransitModeType::Null); //reset chosen mode
+        pass1->temp_connection_path_utilities.clear();
+    }
+    Busstop* stop5 = net->get_stopsmap()[5];
+    Busstop* stop1 = net->get_stopsmap()[1];
+    Busstop* stop2 = net->get_stopsmap()[2];
+
+    if(connection_counts.count(stop5)!=0)
+        cout << "Pickup stop 5 (%): " << 100 * connection_counts[stop5] / static_cast<double>(draws) << endl;
+    if(connection_counts.count(stop1)!=0)
+        cout << "Pickup stop 1 (%): " << 100 * connection_counts[stop1] / static_cast<double>(draws) << endl;
+
+    cout << endl;
+    if(mode_counts.count(TransitModeType::Null)!=0)
+        cout << "Null  (%): " << 100 * mode_counts[TransitModeType::Null] / static_cast<double>(draws) << endl;
+    if(mode_counts.count(TransitModeType::Fixed)!=0)
+        cout << "Fixed (%): " << 100 * mode_counts[TransitModeType::Fixed] / static_cast<double>(draws) << endl;
+    if(mode_counts.count(TransitModeType::Flexible)!=0)
+        cout << "Flex  (%): " << 100 * mode_counts[TransitModeType::Flexible] / static_cast<double>(draws) << endl;
+
+    cout << endl;
+    if(dropoff_counts.count(stop2)!=0)
+        cout << "Dropoff stop 2 (%): " << 100 * dropoff_counts[stop2] / static_cast<double>(draws) << endl;
+    if(dropoff_counts.count(stop4)!=0)
+        cout << "Dropoff stop 4 (%): " << 100 * dropoff_counts[stop4] / static_cast<double>(draws) << endl;
+
+
+    //!< @todo
+    //! Tests for the sequencing of traveler decisions, changes of traveler states, connection to Controlcenter
+    //! Tests for messaging between traveler and Controlcenter when flexible mode + dropoff chosen
+    //! Debugging, integration testing
+    //! Cleanup of debug messaging
+
+    //cleanup
+    stop4->remove_unassigned_bus(bus1,0.0); //remove bus from queue of stop, updates state from OnCall to Idle, also in fleetState
+    bus1->set_state(BusState::Null,0.0); //change from Idle to Null should remove bus from fleetState
+    CC->disconnectVehicle(bus1); //should remove bus from Controlcenter
+
+    delete bus1;
+    delete pass1;
 }
 
 void TestFixedWithFlexible_walking::testRunNetwork()
