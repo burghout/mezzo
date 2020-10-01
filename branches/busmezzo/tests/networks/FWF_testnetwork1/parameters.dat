@@ -53,7 +53,7 @@
    pass_day_to_day_indicator= 0
    in_vehicle_d2d_indicator= 0
    break_criterium= 0.1
-   transfer_coefficient= -6
+   transfer_coefficient= -5
    in_vehicle_time_coefficient= -1
    waiting_time_coefficient= -2
    walking_time_coefficient= -2

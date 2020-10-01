@@ -693,10 +693,10 @@ void TestFixedWithFlexible_walking::testPathSetUtilities()
 {
     //!< Check pathset of a given ODstop pair (5to4 or 1to4), verify that utilities are being calculated as expected and the highest utility alternative is chosen
     /* Check the parameters that have been set that are used in calculating utilities */
-    QVERIFY(AproxEqual(theParameters->walking_time_coefficient,-2.0)); // SEK per second?, same as WT anyways 2*IVT
+    QVERIFY(AproxEqual(theParameters->walking_time_coefficient,-2.0));
     QVERIFY(AproxEqual(theParameters->waiting_time_coefficient,-2.0));
     QVERIFY(AproxEqual(theParameters->in_vehicle_time_coefficient,-1.0));
-    QVERIFY(AproxEqual(theParameters->transfer_coefficient,-6.0)); // SEK per transfer?
+    QVERIFY(AproxEqual(theParameters->transfer_coefficient,-5.0));
     QVERIFY(AproxEqual(theParameters->max_waiting_time,1800.0));
 
     /* Grab path sets for 5to4 and 1to4 */
