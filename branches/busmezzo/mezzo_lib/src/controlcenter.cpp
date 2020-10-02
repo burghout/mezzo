@@ -166,7 +166,7 @@ void BustripGenerator::setTripGenerationStrategy(int type)
 	if (generationStrategy_)
 		delete generationStrategy_;
 
-	DEBUG_MSG("Changing trip generation strategy to " << type);
+	//DEBUG_MSG("Changing trip generation strategy to " << type);
 	if (type == generationStrategyType::Null) 
 	{
 		generationStrategy_ = new NullTripGeneration();
@@ -177,7 +177,7 @@ void BustripGenerator::setTripGenerationStrategy(int type)
 	} 
 	else
 	{
-		DEBUG_MSG("This generation strategy is not recognized!");
+		DEBUG_MSG("BustripGenerator::setTripGenerationStrategy() - strategy " << type << " is not recognized! Setting strategy to nullptr. ");
 		generationStrategy_ = nullptr;
 	}
 }
@@ -187,7 +187,7 @@ void BustripGenerator::setEmptyVehicleStrategy(int type)
 	if (emptyVehicleStrategy_)
 		delete emptyVehicleStrategy_;
 
-	DEBUG_MSG("Changing empty vehicle strategy to " << type);
+	//DEBUG_MSG("Changing empty vehicle strategy to " << type);
 	if (type == emptyVehicleStrategyType::EVNull) 
 	{
 		emptyVehicleStrategy_ = new NullTripGeneration();
@@ -203,7 +203,7 @@ void BustripGenerator::setEmptyVehicleStrategy(int type)
 	}
 	else
 	{
-		DEBUG_MSG("Empty vehicle strategy " << type << " is not recognized! Setting strategy to nullptr. ");
+		DEBUG_MSG("BustripGenerator::setEmptyVehicleStrategy() - strategy " << type << " is not recognized! Setting strategy to nullptr. ");
 		emptyVehicleStrategy_ = nullptr;
 	}
 }
@@ -263,7 +263,7 @@ void BustripVehicleMatcher::setMatchingStrategy(int type)
 	if (matchingStrategy_)
 		delete matchingStrategy_;
 
-    DEBUG_MSG("Changing trip - vehicle matching strategy to " << type);
+    //DEBUG_MSG("Changing trip - vehicle matching strategy to " << type);
     if (type == matchingStrategyType::Null) 
 	{
         matchingStrategy_ = new NullMatching();
@@ -274,7 +274,7 @@ void BustripVehicleMatcher::setMatchingStrategy(int type)
     }
     else
     {
-        DEBUG_MSG("This matching strategy is not recognized!");
+		DEBUG_MSG("BustripVehicleMatcher::setMatchingStrategy() - strategy " << type << " is not recognized! Setting strategy to nullptr. ");
         matchingStrategy_ = nullptr;
     }
 }
@@ -305,7 +305,7 @@ bool BustripVehicleMatcher::matchVehiclesToTrips(BustripGenerator& tg, double ti
 
 bool BustripVehicleMatcher::matchVehiclesToEmptyVehicleTrips(BustripGenerator& tg, double time)
 {
-	DEBUG_MSG("BustripVehicleMatcher is matching empty vehicle trips to vehicles at time " << time);
+	//DEBUG_MSG("BustripVehicleMatcher is matching empty vehicle trips to vehicles at time " << time);
 	if (matchingStrategy_ != nullptr)
 	{
 		bool matchfound = false;
@@ -351,23 +351,23 @@ bool VehicleScheduler::scheduleMatchedTrips(BustripVehicleMatcher& tvm, double t
 	return false;
 }
 
-void VehicleScheduler::setSchedulingStrategy(int scheduling_strategy_type)
+void VehicleScheduler::setSchedulingStrategy(int type)
 {
 	if (schedulingStrategy_)
 		delete schedulingStrategy_;
 
-	DEBUG_MSG("Changing scheduling strategy to " << scheduling_strategy_type);
-	if (scheduling_strategy_type == schedulingStrategyType::Null) 
+	//DEBUG_MSG("Changing scheduling strategy to " << type);
+	if (type == schedulingStrategyType::Null) 
 	{
 		schedulingStrategy_ = new NullScheduling();
 	} 
-	else if (scheduling_strategy_type == schedulingStrategyType::Naive) 
+	else if (type == schedulingStrategyType::Naive) 
 	{
 		schedulingStrategy_ = new NaiveScheduling();
 	} 
 	else
 	{
-		DEBUG_MSG("Scheduling strategy " << scheduling_strategy_type << " is not recognized! Setting strategy to nullptr. ");
+		DEBUG_MSG("VehicleScheduler::setSchedulingStrategy() - strategy " << type << " is not recognized! Setting strategy to nullptr. ");
 		schedulingStrategy_ = nullptr;
 	}
 }
@@ -848,6 +848,7 @@ double Controlcenter::calc_expected_wt(Busline* service_route, Busstop* start_st
 {
 	assert(service_route->is_flex_line()); //otherwise kindof pointless to ask the CC about wt
 	assert(service_route->get_CC()->getID() == id_);
+    Q_UNUSED(end_stop)
 
 	if (!first_line_leg) 
 		return calc_exploration_wt(); //no 'RTI' or better estimate is available
@@ -885,30 +886,34 @@ void Controlcenter::receiveRequest(Request req, double time)
 
 void Controlcenter::removeRequest(int pass_id)
 {
-	DEBUG_MSG(Q_FUNC_INFO);
+	//DEBUG_MSG(Q_FUNC_INFO);
 	rh_.removeRequest(pass_id);
 	summarydata_.requests_served += 1;
 }
 
 void Controlcenter::on_requestAccepted(double time)
 {
-	DEBUG_MSG(Q_FUNC_INFO << ": Request Accepted at time " << time);	
+	//DEBUG_MSG(Q_FUNC_INFO << ": Request Accepted at time " << time);	
+    Q_UNUSED(time)
 	summarydata_.requests_accepted += 1;
 }
 void Controlcenter::on_requestRejected(double time)
 {
-	DEBUG_MSG(Q_FUNC_INFO << ": Request Rejected at time " << time);
+	//DEBUG_MSG(Q_FUNC_INFO << ": Request Rejected at time " << time);
+    Q_UNUSED(time)
 	summarydata_.requests_rejected += 1;
 }
 
 void Controlcenter::on_tripGenerated(double time)
 {
-	DEBUG_MSG(Q_FUNC_INFO << ": Trip Generated at time " << time);
+	//DEBUG_MSG(Q_FUNC_INFO << ": Trip Generated at time " << time);
+    Q_UNUSED(time)
 }
 
 void Controlcenter::on_tripVehicleMatchFound(double time)
 {
-	DEBUG_MSG(Q_FUNC_INFO << ": Vehicle - Trip match found at time " << time);
+	//DEBUG_MSG(Q_FUNC_INFO << ": Vehicle - Trip match found at time " << time);
+    Q_UNUSED(time)
 }
 
 void Controlcenter::updateFleetState(Bus* bus, BusState oldstate, BusState newstate, double time)

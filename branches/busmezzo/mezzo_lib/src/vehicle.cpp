@@ -240,8 +240,8 @@ void Bus::advance_curr_trip (double time, Eventlist* eventlist) // progresses tr
 {
     if (theParameters->drt)
     {
-        if (flex_vehicle_)
-            DEBUG_MSG("----------Bus " << id << " finishing trip " << curr_trip->get_id() << " at time " << time);
+        //if (flex_vehicle_)
+        //    DEBUG_MSG("----------Bus " << id << " finishing trip " << curr_trip->get_id() << " at time " << time);
 
         if (flex_vehicle_ && curr_trip->is_flex_trip()) //if the trip that just finished was dynamically scheduled then the controlcenter is in charge of bookkeeping the completed trip and bus for writing outputs
         {
@@ -252,7 +252,7 @@ void Bus::advance_curr_trip (double time, Eventlist* eventlist) // progresses tr
             }
 
             double trip_time = curr_trip->get_enter_time() - curr_trip->get_starttime();
-            DEBUG_MSG("\t Total trip time: " << trip_time);
+            //DEBUG_MSG("\t Total trip time: " << trip_time);
             
             curr_trip->get_line()->remove_flex_trip(curr_trip); //remove from set of uncompleted flex trips in busline, control center takes ownership of the trip for deletion
             CC_->addCompletedVehicleTrip(this, curr_trip); //save bus - bustrip pair in control center of last stop 
@@ -511,7 +511,7 @@ void Bus::set_state(const BusState newstate, const double time)
 		time_state_last_entered[newstate] = time; // start timer for newstate
 
 #ifdef  _DRTDEBUG
-        print_state();
+        //print_state();
 #endif //  DRTDEBUG_
 		emit stateChanged(this, oldstate, state_, time);
 	}

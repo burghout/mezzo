@@ -507,7 +507,7 @@ bool Link::enter_veh(Vehicle* veh, double time)
 				double time_to_stop = time + ((exit_time - time) * (stop_position / length)) + trip->get_line()->extra_disruption_on_segment(next_stop1->first, time + ((exit_time - time) * (stop_position / length)));
 
 				// book  stop visit
-				DEBUG_MSG("Booking arrival for bus " << bus->get_bus_id() << " to stop " << next_stop1->first->get_name() << " with position " << stop_position << " with time to stop " << time_to_stop);
+				//DEBUG_MSG("Booking arrival for bus " << bus->get_bus_id() << " to stop " << next_stop1->first->get_name() << " with position " << stop_position << " with time to stop " << time_to_stop);
 				trip->book_stop_visit (time_to_stop);
 				return true;
 			}

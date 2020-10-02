@@ -711,6 +711,7 @@ Busstop* Passenger::make_connection_decision (double time)
 					assert(left_od_stop); // want to actually see what case we are checking for when/if a nullptr is being returned here... There seems to be a great deal of code attempting to ensure this earlier in this function...
 					if(left_od_stop)
 					{ 
+						//DEBUG_MSG("Passenger::make_connection_decision - Passenger " << this->get_id() << " at stop " << left_od_stop->get_origin()->get_id() << " checking utility for path " << (*path_iter)->get_id());
 						candidate_connection_stops_u[(*connected_stop)] = left_od_stop->calc_combined_set_utility_for_connection ((*path_iter)->get_walking_distances().front(), time, this); 
 						// walking distances front taken since this is the amount of time it takes to reach the connection stop via walking, so to access the 'set utility'
 						// the utility is combined for all paths from this transfer stop (incl. walking time to the connected stop)
@@ -733,12 +734,12 @@ Busstop* Passenger::make_connection_decision (double time)
 	for (map <Busstop*, double>::iterator transfer_stops = candidate_connection_stops_u.begin(); transfer_stops != candidate_connection_stops_u.end(); transfer_stops++)
 	{
 		candidate_connection_stops_p[(*transfer_stops).first] = exp(candidate_connection_stops_u[(*transfer_stops).first]) / MNL_denominator;
+		//DEBUG_MSG("\t Stop "<< (*transfer_stops).first->get_id() << " prob: " << 100 * candidate_connection_stops_p[(*transfer_stops).first] << "%");
 	}
 	// perform choice
 	vector<double> connecting_probs;
 	for (map <Busstop*, double>::iterator stops_probs = candidate_connection_stops_p.begin(); stops_probs != candidate_connection_stops_p.end(); stops_probs++)
 	{
-        //qDebug() << "stop " << stops_probs->first->get_id() << "prob: " << Round(100*stops_probs->second) << "%";
 		connecting_probs.push_back((*stops_probs).second);
 	}
 	int transfer_stop_position = theRandomizers[0]->mrandom(connecting_probs);
@@ -1487,5 +1488,3 @@ double Passenger::get_walking_time(Busstop* busstop_dest_ptr, double curr_time)
 
     return busstop_orig_ptr->get_walking_time(busstop_dest_ptr, curr_time);
 }
-
-

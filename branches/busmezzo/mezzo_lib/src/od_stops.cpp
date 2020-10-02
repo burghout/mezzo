@@ -671,7 +671,7 @@ double ODstops::calc_combined_set_utility_for_connection (double walking_distanc
 			// waiting utility of this path is the 'utility' of walking to the origin stop of this path and 'using' it to the final destination
 			// 
 			// taking into account CT (walking time) till this connected stop and the utility of the path from this connected stop till the final destination
-			DEBUG_MSG("ODstops::calc_combined_set_utility_for_connection() - storing utility of path " << (*path)->get_id() << " for passenger " << pass->get_id());
+			//DEBUG_MSG("ODstops::calc_combined_set_utility_for_connection() - storing utility of path " << (*path)->get_id() << " for passenger " << pass->get_id());
 			pass->temp_connection_path_utilities[this][(*path)] = path_utility; //cache the connection_utility of each path for use in transitmode and dropoff decisions
 		}
 	}

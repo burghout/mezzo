@@ -114,9 +114,9 @@ bool Busline::execute(Eventlist* eventlist, double time)
 	}
 	else // if the Busline is active
 	{
-		int busid = curr_trip->first->get_busv()->get_bus_id();
-		if(curr_trip->first->is_flex_trip())
-			DEBUG_MSG("Busline " << id << " activating trip " << curr_trip->first->get_id() << " for bus " << busid);
+		//int busid = curr_trip->first->get_busv()->get_bus_id();
+		//if(curr_trip->first->is_flex_trip())
+		//	DEBUG_MSG("Busline " << id << " activating trip " << curr_trip->first->get_id() << " for bus " << busid);
 
 		curr_trip->first->activate(time, busroute, odpair, eventlist); // activates the trip, generates bus etc.
 		curr_trip++; // now points to next trip
@@ -340,7 +340,7 @@ double Busline::time_till_next_arrival_at_stop_after_time (Busstop* stop, double
     assert(theParameters->real_time_info != 0); //this method at least claims that its based on RTI
     if (theParameters->drt && flex_line)
     {
-        DEBUG_MSG_V("Busline::time_till_next_arrival_at_stop_after_time - returning expected arrival for a flexible transit line"); //!< @todo note this should never really be called for a flex_line
+        //DEBUG_MSG_V("Busline::time_till_next_arrival_at_stop_after_time - returning expected arrival for a flexible transit line"); //!< @todo note this should never really be called for a flex_line
         return CC_->getClosestVehicleToStop(stop,time).second; //return shortest expected ivt to stop
     }
 
@@ -1584,7 +1584,7 @@ bool Busstop::execute(Eventlist* eventlist, double time) // is executed by the e
 		if ((*ua_bus_it).second == time)
 		{
 			Bus* ua_bus = (*ua_bus_it).first;
-			DEBUG_MSG(endl << "Activating unassigned bus " << ua_bus->get_bus_id() << " at time " << time << " at stop " << name);
+			//DEBUG_MSG("Activating unassigned bus " << ua_bus->get_bus_id() << " at time " << time << " at stop " << name);
 			ua_bus->set_last_stop_visited(this); //update this here before setting state
 			unassigned_bus_arrivals.erase(ua_bus_it); //vehicle is no longer arriving 
 			add_unassigned_bus(ua_bus, time); //add vehicle to vector of unassigned buses at this stop with current time as arrival time
@@ -2465,7 +2465,7 @@ void Busstop::book_unassigned_bus_arrival(Eventlist* eventlist, Bus* bus, double
 	assert(bus);
     if (bus)
     {
-        DEBUG_MSG("Adding bus " << bus->get_bus_id() << " to unassigned bus arrivals at stop " << name);
+        //DEBUG_MSG("Adding bus " << bus->get_bus_id() << " to unassigned bus arrivals at stop " << name);
         assert(bus->get_occupancy() == 0); //unassigned buses should be empty
         assert(expected_arrival_time >= 0);
         if (!origin_node) //if no origin node then the bus will not be able to begin trips starting from this stop
