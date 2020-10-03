@@ -58,7 +58,7 @@ private Q_SLOTS:
     void testCreateNetwork(); //!< test loading a network
     void testInitNetwork(); //!< test generating passenger path sets & loading a network
     //void testPassengerStates(); //!< test that passengers are being initialized properly,
-    void testPathSetUtilities(); //!< test navigating generated path-sets, calculating utilities under different circumstances (e.g. access to RTI for different legs)
+    //void testPathSetUtilities(); //!< test navigating generated path-sets, calculating utilities under different circumstances (e.g. access to RTI for different legs)
     void testRunNetwork();
     void testSaveResults();
     void testDelete(); //!< tests correct deletion
@@ -127,8 +127,8 @@ void TestFixedWithFlexible::testInitNetwork()
     QVERIFY2(net->count_transit_paths() == 14, "Failure, network should have 14 transit paths defined");
 
     //try setting real_time info param from here
-    theParameters->real_time_info = 0;
-    theParameters->share_RTI_network = 0.0;
+//    theParameters->real_time_info = 0;
+//    theParameters->share_RTI_network = 0.0;
 
     //Control center
     map<int,Controlcenter*> ccmap = net->get_controlcenters();
@@ -150,64 +150,64 @@ void TestFixedWithFlexible::testInitNetwork()
 //    path_set_file.close();
 }
 
-void TestFixedWithFlexible::testPathSetUtilities()
-{
-    /* Test for paths between stop 1 to 4 */
-    qDebug() << "Checking path-set for ODstops 1 to 4";
-    vector<ODstops*> odstops_demand = net->get_odstops_demand();
-    ODstops* stop1to4 = nullptr;
-    auto stop1to4_it = find_if(odstops_demand.begin(),odstops_demand.end(),[](ODstops* odstop)
-    {
-        return (odstop->get_origin()->get_id() == 1 && odstop->get_destination()->get_id() == 4);
-    });
-    if(stop1to4_it != odstops_demand.end())
-        stop1to4 = *stop1to4_it;
-    QVERIFY2(stop1to4 != nullptr,"Failure, OD stop 1 to 4 is undefined");
-
-    //create a passenger to with ODstop 1 to 4 and navigate through paths from the travelers perspective
-    Passenger* pass1 = new Passenger(1,0,stop1to4,nullptr); //Passenger(id,start_time,ODstop*,QObject* parent)
-    Busstop* bs_o = pass1->get_OD_stop()->get_origin();
-    Busstop* bs_d = pass1->get_OD_stop()->get_destination();
-    vector<Pass_path*> path_set = bs_o->get_stop_od_as_origin_per_stop(bs_d)->get_path_set(); //no idea why we are accessing the path-set in this roundabout way but there is hopefully a good reason for it
-
-    QVERIFY2(stop1to4->check_path_set(), "Failure, no paths defined for stop 1 to 4");
-    qDebug() << "Number of paths available to traveler: " << stop1to4->get_path_set().size();
-    QVERIFY2(stop1to4->get_path_set().size() == 5, "Failure, there should be 5 paths defined for stop 1 to 4");
-    QVERIFY2(path_set.size() == 5, "Failure, traveler with ODstops 1 to 4 should have 5 paths available to them");
-
-    /*Test for building path (sub)sets in connection decision choice tree */
-    Busstop* candidate_connection_stops = nullptr;
-    // make_connection_decision //stop to walk to
-    // make_mode_decision //given available paths from chosen stop,
-
-
-
-//    for(auto path : path_set) // check so that all flexible transit legs
+//void TestFixedWithFlexible::testPathSetUtilities()
+//{
+//    /* Test for paths between stop 1 to 4 */
+//    qDebug() << "Checking path-set for ODstops 1 to 4";
+//    vector<ODstops*> odstops_demand = net->get_odstops_demand();
+//    ODstops* stop1to4 = nullptr;
+//    auto stop1to4_it = find_if(odstops_demand.begin(),odstops_demand.end(),[](ODstops* odstop)
 //    {
-//        path->first_transit_leg_flexible();
-//    }
+//        return (odstop->get_origin()->get_id() == 1 && odstop->get_destination()->get_id() == 4);
+//    });
+//    if(stop1to4_it != odstops_demand.end())
+//        stop1to4 = *stop1to4_it;
+//    QVERIFY2(stop1to4 != nullptr,"Failure, OD stop 1 to 4 is undefined");
 
-    /* TEST PASSENGER INIT */
-    //Test initialization of passenger with RTI at a network level
-    //QVERIFY2(pass1->get_pass_RTI_network_level() == false, "Failure, default initilization of passenger network-level RTI should be false");
-    pass1->init(); //note this both sets the network level RTI for the traveler as well as the anticipated WT and IVT of the traveler if day2day is active
-    //QVERIFY2(pass1->get_pass_RTI_network_level() == true,"Failure, passenger should have network-level RTI after init with real_time_info=3 and share_RTI_network=1 in parameters");
-    //QVERIFY2(pass1->has_access_to_flexible() == true, "Failure, passenger with network-level RTI should have access to flexible services");
+//    //create a passenger to with ODstop 1 to 4 and navigate through paths from the travelers perspective
+//    Passenger* pass1 = new Passenger(1,0,stop1to4,nullptr); //Passenger(id,start_time,ODstop*,QObject* parent)
+//    Busstop* bs_o = pass1->get_OD_stop()->get_origin();
+//    Busstop* bs_d = pass1->get_OD_stop()->get_destination();
+//    vector<Pass_path*> path_set = bs_o->get_stop_od_as_origin_per_stop(bs_d)->get_path_set(); //no idea why we are accessing the path-set in this roundabout way but there is hopefully a good reason for it
 
-    //Test creation of passenger with no RTI (should be default)
-    Passenger* pass2 = new Passenger(2,0,stop1to4,nullptr);
-    QVERIFY(pass2->get_pass_RTI_network_level() == false);
-    //QVERIFY2(pass2->has_access_to_flexible() == false, "Failure, passenger without network-level RTI should not have access to flexible services");
+//    QVERIFY2(stop1to4->check_path_set(), "Failure, no paths defined for stop 1 to 4");
+//    qDebug() << "Number of paths available to traveler: " << stop1to4->get_path_set().size();
+//    QVERIFY2(stop1to4->get_path_set().size() == 5, "Failure, there should be 5 paths defined for stop 1 to 4");
+//    QVERIFY2(path_set.size() == 5, "Failure, traveler with ODstops 1 to 4 should have 5 paths available to them");
 
-    //Connection decision for passenger with RTI
-    Busstop* connection_stop = nullptr;
-    connection_stop = pass1->make_connection_decision(0.0); //make connection decision with starttime = 0.0
+//    /*Test for building path (sub)sets in connection decision choice tree */
+//    Busstop* candidate_connection_stops = nullptr;
+//    // make_connection_decision //stop to walk to
+//    // make_mode_decision //given available paths from chosen stop,
 
-    //Connection decision for passenger without RTI
 
-    delete pass1;
-    delete pass2;
-}
+
+////    for(auto path : path_set) // check so that all flexible transit legs
+////    {
+////        path->first_transit_leg_flexible();
+////    }
+
+//    /* TEST PASSENGER INIT */
+//    //Test initialization of passenger with RTI at a network level
+//    //QVERIFY2(pass1->get_pass_RTI_network_level() == false, "Failure, default initilization of passenger network-level RTI should be false");
+//    pass1->init(); //note this both sets the network level RTI for the traveler as well as the anticipated WT and IVT of the traveler if day2day is active
+//    //QVERIFY2(pass1->get_pass_RTI_network_level() == true,"Failure, passenger should have network-level RTI after init with real_time_info=3 and share_RTI_network=1 in parameters");
+//    //QVERIFY2(pass1->has_access_to_flexible() == true, "Failure, passenger with network-level RTI should have access to flexible services");
+
+//    //Test creation of passenger with no RTI (should be default)
+//    Passenger* pass2 = new Passenger(2,0,stop1to4,nullptr);
+//    QVERIFY(pass2->get_pass_RTI_network_level() == false);
+//    //QVERIFY2(pass2->has_access_to_flexible() == false, "Failure, passenger without network-level RTI should not have access to flexible services");
+
+//    //Connection decision for passenger with RTI
+//    Busstop* connection_stop = nullptr;
+//    connection_stop = pass1->make_connection_decision(0.0); //make connection decision with starttime = 0.0
+
+//    //Connection decision for passenger without RTI
+
+//    delete pass1;
+//    delete pass2;
+//}
 
 void TestFixedWithFlexible::testRunNetwork()
 {
