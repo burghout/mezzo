@@ -346,6 +346,7 @@ void Passenger::start (Eventlist* eventlist, double time)
 		if (theParameters->drt)
 		{
 			TransitModeType chosen_mode = make_transitmode_decision(connection_stop, start_time); //also sets chosen mode...
+            Q_UNUSED(chosen_mode);
 		   /*if (chosen_mode == TransitModeType::Null)
 			 if (chosen_mode == TransitModeType::Flexible)
 				   Busstop* dropoff_stop = make_dropoff_decision(connection_stop, start_time);

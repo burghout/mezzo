@@ -766,12 +766,12 @@ void TestFixedWithFlexible_walking::testPathSetUtilities()
                        + twt  * theParameters->waiting_time_coefficient
                        + n_trans * theParameters->transfer_coefficient;
 
-        qDebug() << "Path " << path->get_id()  << ": " << endl
-                 << "\t total walk time: " << twkt << endl
-                 << "\t total IVT      : " << tivt << endl
-                 << "\t total WT       : " << twt << endl
-                 << "\t transfers      : " << n_trans << endl
-                 << "\t utility        : " << path_utility << endl;
+        qDebug() << "Path " << path->get_id()  << ": " << Qt::endl
+                 << "\t total walk time: " << twkt << Qt::endl
+                 << "\t total IVT      : " << tivt << Qt::endl
+                 << "\t total WT       : " << twt << Qt::endl
+                 << "\t transfers      : " << n_trans << Qt::endl
+                 << "\t utility        : " << path_utility << Qt::endl;
 
         if(twt*60 > theParameters->max_waiting_time) //dynamic filtering rule
         {
@@ -781,7 +781,7 @@ void TestFixedWithFlexible_walking::testPathSetUtilities()
         sum_pathsetutil += exp(path_utility);
     }
     double logsum_5to4 = log(sum_pathsetutil);
-    qDebug() << "Logsum pathset 5->4: " << logsum_5to4 << endl;
+    qDebug() << "Logsum pathset 5->4: " << logsum_5to4 << Qt::endl;
 
     for(const auto& path : pathset_1to4)
     {
@@ -795,12 +795,12 @@ void TestFixedWithFlexible_walking::testPathSetUtilities()
                        + twt  * theParameters->waiting_time_coefficient
                        + n_trans * theParameters->transfer_coefficient;
 
-        qDebug() << "Path " << path->get_id()  << ": " << endl
-                 << "\t total walk time: " << twkt << endl
-                 << "\t total IVT      : " << tivt << endl
-                 << "\t total WT       : " << twt << endl
-                 << "\t transfers      : " << n_trans << endl
-                 << "\t utility        : " << path_utility << endl;
+        qDebug() << "Path " << path->get_id()  << ": " << Qt::endl
+                 << "\t total walk time: " << twkt << Qt::endl
+                 << "\t total IVT      : " << tivt << Qt::endl
+                 << "\t total WT       : " << twt << Qt::endl
+                 << "\t transfers      : " << n_trans << Qt::endl
+                 << "\t utility        : " << path_utility << Qt::endl;
 
         if(twt*60 > theParameters->max_waiting_time) //dynamic filtering rule
         {
@@ -810,7 +810,7 @@ void TestFixedWithFlexible_walking::testPathSetUtilities()
         sum_pathsetutil += exp(path_utility);
     }
     double logsum_1to4 = log(sum_pathsetutil);
-    qDebug() << "Logsum pathset 1->4: " << logsum_1to4 << endl;
+    qDebug() << "Logsum pathset 1->4: " << logsum_1to4 << Qt::endl;
     double MNL_denom = exp(logsum_1to4) + exp(logsum_5to4);
     double prob_5to4 = exp(logsum_5to4) / MNL_denom;
 
@@ -819,12 +819,12 @@ void TestFixedWithFlexible_walking::testPathSetUtilities()
 
     Busstop* connection_stop = nullptr;
     connection_stop = pass1->make_connection_decision(0.0); //make connection decision with starttime = 0.0
-    qDebug() << "make_connection_decision (with random draws): " << endl
+    qDebug() << "make_connection_decision (with random draws): " << Qt::endl
              << "\t Pass1 at stop " << pass1->get_original_origin()->get_id() << " chooses to connect at stop " << connection_stop->get_id();
 
 //    pathset_1to4.front()->random->randomize(); //experiment with changing the random seed, see how big of a difference this makes... @note seems to make a pretty big difference!
 //    connection_stop = pass1->make_connection_decision(0.0); //make connection decision with starttime = 0.0
-//    qDebug() << "make_connection_decision (with random draws): " << endl
+//    qDebug() << "make_connection_decision (with random draws): " << Qt::endl
 //             << "\t Pass1 at stop " << pass1->get_original_origin()->get_id() << " chooses to connect at stop " << connection_stop->get_id();
 
     //cleanup
@@ -896,11 +896,11 @@ void TestFixedWithFlexible_walking::testPassArrivedToWaitingDecisions()
                             + twt  * theParameters->waiting_time_coefficient
                             + n_trans * theParameters->transfer_coefficient;
 
-        qDebug() << "Path " << path->get_id()  << ": " << endl
-                 << "\t total IVT      : " << tivt << endl
-                 << "\t total WT       : " << twt << endl
-                 << "\t transfers      : " << n_trans << endl
-                 << "\t utility        : " << path_utility << endl;
+        qDebug() << "Path " << path->get_id()  << ": " << Qt::endl
+                 << "\t total IVT      : " << tivt << Qt::endl
+                 << "\t total WT       : " << twt << Qt::endl
+                 << "\t transfers      : " << n_trans << Qt::endl
+                 << "\t utility        : " << path_utility << Qt::endl;
 
         if(twt*60 > theParameters->max_waiting_time) //dynamic filtering rule
         {

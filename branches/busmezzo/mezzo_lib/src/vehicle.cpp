@@ -252,6 +252,7 @@ void Bus::advance_curr_trip (double time, Eventlist* eventlist) // progresses tr
             }
 
             double trip_time = curr_trip->get_enter_time() - curr_trip->get_starttime();
+            Q_UNUSED(trip_time);
             //DEBUG_MSG("\t Total trip time: " << trip_time);
             
             curr_trip->get_line()->remove_flex_trip(curr_trip); //remove from set of uncompleted flex trips in busline, control center takes ownership of the trip for deletion

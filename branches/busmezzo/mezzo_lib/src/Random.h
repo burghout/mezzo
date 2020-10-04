@@ -21,6 +21,9 @@
 
 #include <vector>
 #include <cassert>
+#include <numeric>
+#include "MMath.h"
+
 using namespace std;
 
 class Random

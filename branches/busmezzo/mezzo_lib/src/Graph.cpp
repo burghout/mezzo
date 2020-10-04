@@ -461,7 +461,7 @@ void Graph<T, I>::calcCostToNodes(T *label)
    T newlabel;
    int p, u, v, i, num;
 
-   for (v = 0; v < nNodes(); v ++) {
+   for (v = 0; v < static_cast<int>(nNodes()); v ++) {
       pivot = node(v);
 
       // find which path to node has the minimum label
@@ -604,7 +604,7 @@ void Graph<T, I>::printNodePathTree
    os << "\tTo" << "\tPredecessor"
       << "\tTotal label" << endl;
    GraphNode<T, I> *v;
-   for (i = 0; i < nNodes(); i ++) {
+   for (i = 0; i < static_cast<int>(nNodes()); i ++) {
       v = node(i);
       p = v->predecessor_;
       if (p == SP_UNSET && reachable_only) continue;
