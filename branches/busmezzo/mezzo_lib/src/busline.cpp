@@ -114,9 +114,9 @@ bool Busline::execute(Eventlist* eventlist, double time)
 	}
 	else // if the Busline is active
 	{
-		int busid = curr_trip->first->get_busv()->get_bus_id();
-		if(curr_trip->first->is_flex_trip())
-			DEBUG_MSG("Busline " << id << " activating trip " << curr_trip->first->get_id() << " for bus " << busid);
+		//int busid = curr_trip->first->get_busv()->get_bus_id();
+		//if(curr_trip->first->is_flex_trip())
+		//	DEBUG_MSG("Busline " << id << " activating trip " << curr_trip->first->get_id() << " for bus " << busid);
 
 		curr_trip->first->activate(time, busroute, odpair, eventlist); // activates the trip, generates bus etc.
 		curr_trip++; // now points to next trip
@@ -265,7 +265,7 @@ double Busline::find_time_till_next_scheduled_trip_at_stop (Busstop* stop, doubl
 {
     if (theParameters->drt && flex_line) //if this line can have dynamically generated trips, then a trip may still arrive within the planned headway
     {
-        DEBUG_MSG_V("Busline::find_time_till_next_scheduled_trip_at_stop returning planned headway " << planned_headway << " for flex line " << id);
+        //DEBUG_MSG_V("Busline::find_time_till_next_scheduled_trip_at_stop returning planned headway " << planned_headway << " for flex line " << id);
         return planned_headway;
         //return ::drt_first_rep_max_headway;
     }
@@ -299,7 +299,7 @@ Bustrip* Busline::find_next_expected_trip_at_stop (Busstop* stop)
 	if (trips.empty()) //there are no expected trips from this line for this stop
 	{
         assert(theParameters->drt);
-		DEBUG_MSG_V("Find next expected trip at stop returning nullptr for busline " << id);
+		//DEBUG_MSG_V("Find next expected trip at stop returning nullptr for busline " << id);
 		return next_expected_trip;
 	}
 	if (stop->get_had_been_visited(this) == false)
@@ -339,7 +339,10 @@ double Busline::time_till_next_arrival_at_stop_after_time (Busstop* stop, double
 {
     assert(theParameters->real_time_info != 0); //this method at least claims that its based on RTI
     if (theParameters->drt && flex_line)
-        return planned_headway;
+    {
+        //DEBUG_MSG_V("Busline::time_till_next_arrival_at_stop_after_time - returning expected arrival for a flexible transit line"); //!< @todo note this should never really be called for a flex_line
+        return CC_->getClosestVehicleToStop(stop,time).second; //return shortest expected ivt to stop
+    }
 
 	double time_till_next_visit;
 	if (stops.front()->get_had_been_visited(this) == false) 
@@ -347,18 +350,7 @@ double Busline::time_till_next_arrival_at_stop_after_time (Busstop* stop, double
 	{
 		if (trips.empty()) //in case no trip has started yet and no trip is scheduled
 		{
-			if (theParameters->drt && flex_line)
-			{
-				//DEBUG_MSG_V("Busline::time_till_next_arrival_at_stop_after_time returning drt planned headway " << drt_first_rep_max_headway << " for line " << id << " with no trips");
-                return planned_headway;
-                //return ::drt_first_rep_max_headway;
-			}
-			else
-			{
-				// currently - in case that there is no additional trip scheduled - return the time till simulation end
-				//DEBUG_MSG_V("Busline::time_till_next_arrival_at_stop_after_time returning time until simulation end " << theParameters->running_time - time << " for line " << id << " with no trips");
-				return theParameters->running_time - time; //return scenario stop time TODO: see how this effects passenger RTI calculations, changed from "return theParameters->running_time" to match description of method
-			}
+            return theParameters->running_time - time; //return scenario stop time TODO: see how this effects passenger RTI calculations, changed from "return theParameters->running_time" to match description of method
 		}
 		else
 		{
@@ -654,8 +646,8 @@ double Busline::calc_curr_line_ivt (Busstop* start_stop, Busstop* end_stop, int 
 		if (found_board == false || found_alight == false)
 			return 10000; //default in case of no matching
 
-		double ivt = cumulative_arrival_time - earliest_time_ostop + extra_travel_time;
-		DEBUG_MSG_V("Busline::calc_curr_line_ivt returning IVT " << ivt << " for line " << id << " with no trips assigned to it yet between stop " << start_stop->get_name() << " and stop " << end_stop->get_name() << endl );
+        // double ivt = cumulative_arrival_time - earliest_time_ostop + extra_travel_time;
+		//DEBUG_MSG_V("Busline::calc_curr_line_ivt returning IVT " << ivt << " for line " << id << " with no trips assigned to it yet between stop " << start_stop->get_name() << " and stop " << end_stop->get_name() << endl );
 		return cumulative_arrival_time - earliest_time_ostop + extra_travel_time;
 	}
 }
@@ -1348,6 +1340,17 @@ void Busstop::book_bus_arrival(Eventlist* eventlist, double time, Bustrip* trip)
 }
 
 
+bool Busstop::is_within_walking_distance_of(Busstop* target_stop)
+{
+	assert(target_stop);
+	assert(theParameters->demand_format == 3);
+
+	if (distances.count(target_stop) == 0) //no distances have been defined
+		return false;
+	else
+		return true;
+}
+
 void Busstop::add_walking_time_quantiles(Busstop* dest_stop_ptr, vector<double> quantiles, vector<double> quantile_values, int num_quantiles, double interval_start, double interval_end){
     
     Walking_time_dist* time_dist = new Walking_time_dist(dest_stop_ptr, quantiles, quantile_values, num_quantiles, interval_start, interval_end);
@@ -1581,7 +1584,7 @@ bool Busstop::execute(Eventlist* eventlist, double time) // is executed by the e
 		if ((*ua_bus_it).second == time)
 		{
 			Bus* ua_bus = (*ua_bus_it).first;
-			DEBUG_MSG(endl << "Activating unassigned bus " << ua_bus->get_bus_id() << " at time " << time << " at stop " << name);
+			//DEBUG_MSG("Activating unassigned bus " << ua_bus->get_bus_id() << " at time " << time << " at stop " << name);
 			ua_bus->set_last_stop_visited(this); //update this here before setting state
 			unassigned_bus_arrivals.erase(ua_bus_it); //vehicle is no longer arriving 
 			add_unassigned_bus(ua_bus, time); //add vehicle to vector of unassigned buses at this stop with current time as arrival time
@@ -2462,7 +2465,7 @@ void Busstop::book_unassigned_bus_arrival(Eventlist* eventlist, Bus* bus, double
 	assert(bus);
     if (bus)
     {
-        DEBUG_MSG("Adding bus " << bus->get_bus_id() << " to unassigned bus arrivals at stop " << name);
+        //DEBUG_MSG("Adding bus " << bus->get_bus_id() << " to unassigned bus arrivals at stop " << name);
         assert(bus->get_occupancy() == 0); //unassigned buses should be empty
         assert(expected_arrival_time >= 0);
         if (!origin_node) //if no origin node then the bus will not be able to begin trips starting from this stop
@@ -2745,8 +2748,8 @@ void Change_arrival_rate::book_update_arrival_rates (Eventlist* eventlist, doubl
 
 bool Change_arrival_rate::execute(Eventlist* eventlist, double time) //variables are not used, but kept for auto-completion 
 {
-    Q_UNUSED (eventlist);
-    Q_UNUSED (time);
+    Q_UNUSED (eventlist)
+    Q_UNUSED (time)
 	for (TD_demand::iterator stop_iter = arrival_rates_TD.begin(); stop_iter != arrival_rates_TD.end(); stop_iter++)
 	{
 		map<Busline*,double> td_line = (*stop_iter).second;

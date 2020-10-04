@@ -123,6 +123,8 @@ void ODstops::reset()
 	output_pass_boarding_decision.clear();
 	output_pass_alighting_decision.clear();
 	output_pass_connection_decision.clear();
+	output_pass_transitmode_decision.clear();
+	output_pass_dropoff_decision.clear();
 	output_pass_waiting_experience.clear();
 	output_pass_onboard_experience.clear();
 	paths_tt.clear();
@@ -386,8 +388,43 @@ bool ODstops::check_path_set ()
 	{
 		return true;
 	}
-} 
+}
+vector<Pass_path*> ODstops::get_flex_first_paths()
+{
+	vector<Pass_path*> flex_paths; //paths where the first leg is flexible
+	for (Pass_path* path : path_set)
+	{
+		if (path->is_first_transit_leg_flexible())
+		{
+			flex_paths.push_back(path);
+		}
+	}
+	return flex_paths;
+}
 
+vector<Pass_path*> ODstops::get_fix_first_paths()
+{
+	vector<Pass_path*> fix_paths; //paths where the first leg is flexible
+	for (Pass_path* path : path_set)
+	{
+		if (path->is_first_transit_leg_fixed())
+		{
+			fix_paths.push_back(path);
+		}
+	}
+	return fix_paths;
+}
+
+vector<Pass_path*> ODstops::get_nonflex_paths()
+{
+	vector<Pass_path*> nonflex_paths;
+	for (Pass_path* path : path_set)
+	{
+		if(!path->check_any_flexible_lines()) // if path contains no flexible transit lines
+			nonflex_paths.push_back(path);
+	}
+	return nonflex_paths;
+}
 
 double ODstops::calc_multinomial_logit (double utility_i, double utility_sum)
 {
@@ -580,21 +617,43 @@ double ODstops::calc_combined_set_utility_for_alighting_zone (Passenger* pass, B
 	return log(staying_utility);
 }
 
-double ODstops::calc_combined_set_utility_for_connection (double walking_distance, double time,Passenger* pass)
+/** @ingroup DRT
+ *	
+ * 
+ * @param walking_distance: initial walking distance required to access 'this' OD
+ * @param time: current simulation time
+ * @param pass: passenger for which this decision is being made
+ * @return utility of pathset for this particular OD stop pair when a traveler is making a connection decision, so all paths without walking first for this OD
+ * 
+ * 
+ * Called in:
+ *  -	ODzone::execute->make_first_stop_decision
+ *  -	Passenger::make_connection_decision only in the case when utilities are being calculated for an intermediate stop, so this ODstops refers to all paths starting from the connection stop
+ * 
+ * Changes:
+ * 
+ * - calc_waiting_utility should return a different utility of a path. Expected LoS for fixed and flexible services are calculated in different ways.
+ * 
+ */
+double ODstops::calc_combined_set_utility_for_connection (double walking_distance, double time, Passenger* pass)
 {
 	// calc logsum over all the paths from this origin stop
 	double connection_utility = 0.0;
-	if (check_path_set() == false)
+	if (check_path_set() == false) //return strong negative utility for empty path set
 	{
 		return -10000;
 	}
-	for (vector <Pass_path*>::iterator paths = path_set.begin(); paths < path_set.end(); paths++)
+
+	vector<Pass_path*> pass_path_set;
+	pass_path_set = path_set;
+
+	for (vector <Pass_path*>::iterator path = pass_path_set.begin(); path < pass_path_set.end(); path++)
 	{
-		bool without_walking_first = false;
+		bool without_walking_first = false; // implementation of the 'no double walking' rule. Skip paths from this OD that include a (now second) walking link initially
 		// go only through paths that does not include walking to another stop from this connection stop
-		vector<vector<Busstop*> > alt_stops = (*paths)->get_alt_transfer_stops();
+		vector<vector<Busstop*> > alt_stops = (*path)->get_alt_transfer_stops();
 		vector<vector<Busstop*> >::iterator alt_stops_iter = alt_stops.begin();
-		alt_stops_iter++;
+		alt_stops_iter++; //second vector of stops is the 'connection stop' for this ODstops path-set
 		// check if the first (connected) stop is also included in the second element (no further walking)
 		for (vector<Busstop*>::iterator stop_iter = (*alt_stops_iter).begin(); stop_iter < (*alt_stops_iter).end(); stop_iter++)
 		{
@@ -606,8 +665,14 @@ double ODstops::calc_combined_set_utility_for_connection (double walking_distanc
 		if (without_walking_first == true) // considering only no multi-walking alternatives
 		{
 			double time_till_connected_stop = walking_distance / random->nrandom(theParameters->average_walking_speed, theParameters->average_walking_speed / 4); // in minutes
-			connection_utility += exp(random->nrandom(theParameters->walking_time_coefficient, theParameters->walking_time_coefficient/4) * time_till_connected_stop + (*paths)->calc_waiting_utility(alt_stops_iter, time + (time_till_connected_stop * 60), false, pass));
+			double path_utility = exp(random->nrandom(theParameters->walking_time_coefficient, theParameters->walking_time_coefficient / 4) * time_till_connected_stop +
+				(*path)->calc_waiting_utility(alt_stops_iter, time + (time_till_connected_stop * 60), false, pass));
+			connection_utility += path_utility;
+			// waiting utility of this path is the 'utility' of walking to the origin stop of this path and 'using' it to the final destination
+			// 
 			// taking into account CT (walking time) till this connected stop and the utility of the path from this connected stop till the final destination
+			//DEBUG_MSG("ODstops::calc_combined_set_utility_for_connection() - storing utility of path " << (*path)->get_id() << " for passenger " << pass->get_id());
+			pass->temp_connection_path_utilities[this][(*path)] = path_utility; //cache the connection_utility of each path for use in transitmode and dropoff decisions
 		}
 	}
 	return log(connection_utility);
@@ -663,6 +728,16 @@ void ODstops::record_passenger_alighting_decision (Passenger* pass, Bustrip* tri
 void ODstops::record_passenger_connection_decision (Passenger* pass, double time, Busstop* chosen_alighting_stop, map<Busstop*,pair<double,double> > connecting_MNL_)  //  add to output structure connection decision info
 {
 	output_pass_connection_decision[pass].push_back(Pass_connection_decision(pass->get_id(), pass->get_original_origin()->get_id(), pass->get_OD_stop()->get_destination()->get_id(), pass->get_OD_stop()->get_origin()->get_id() , time, pass->get_start_time(), chosen_alighting_stop->get_id(), connecting_MNL_)); 
+}
+
+void ODstops::record_passenger_transitmode_decision(Passenger* pass, double time, Busstop* pickup_stop, TransitModeType chosen_mode, map<TransitModeType, pair<double, double> > mode_MNL_)  //  add to output structure connection decision info
+{
+	output_pass_transitmode_decision[pass].push_back(Pass_transitmode_decision(pass->get_id(), pass->get_original_origin()->get_id(), pass->get_OD_stop()->get_destination()->get_id(), pickup_stop->get_id(), time, pass->get_start_time(), chosen_mode, mode_MNL_));
+}
+
+void ODstops::record_passenger_dropoff_decision(Passenger* pass, double time, Busstop* pickup_stop, Busstop* chosen_dropoff_stop, map<Busstop*, pair<double, double> > dropoff_MNL_)  //  add to output structure connection decision info
+{
+	output_pass_dropoff_decision[pass].push_back(Pass_dropoff_decision(pass->get_id(), pass->get_original_origin()->get_id(), pass->get_OD_stop()->get_destination()->get_id(), pickup_stop->get_id(), time, pass->get_start_time(), chosen_dropoff_stop->get_id(), dropoff_MNL_));
 }
 
 void ODstops::record_waiting_experience(Passenger* pass, Bustrip* trip, double time, double experienced_WT, int level_of_rti_upon_decision, double projected_RTI, double AWT, int nr_missed)  //  add to output structure action info
@@ -730,6 +805,23 @@ void ODstops::write_connection_output(ostream & out, Passenger* pass)
 		iter->write(out);
 	}
 }
+
+void ODstops::write_transitmode_output(ostream& out, Passenger* pass)
+{
+	for (list <Pass_transitmode_decision>::iterator iter = output_pass_transitmode_decision[pass].begin(); iter != output_pass_transitmode_decision[pass].end(); iter++)
+	{
+		iter->write(out);
+	}
+}
+
+void ODstops::write_dropoff_output(ostream& out, Passenger* pass)
+{
+	for (list <Pass_dropoff_decision>::iterator iter = output_pass_dropoff_decision[pass].begin(); iter != output_pass_dropoff_decision[pass].end(); iter++)
+	{
+		iter->write(out);
+	}
+}
+
 
 void ODstops::write_od_summary(ostream & out)
 {
@@ -895,6 +987,8 @@ void ODzone::add_arrival_rates (ODzone* d_zone, double arrival_rate)
 
 bool ODzone::execute (Eventlist* eventlist, double curr_time)
 {
+	assert(!theParameters->drt); //completely untested branch of code with drt
+
 	if (curr_time < theParameters->start_pass_generation)
 	{
 		eventlist->add_event(theParameters->start_pass_generation, this);
@@ -992,4 +1086,40 @@ void Pass_alighting_decision_zone::write (ostream& out)
 		out<< (*iter).second.second << '\t';
 	}
 	out << endl; 
+}
+
+void Pass_dropoff_decision::write(ostream& out)
+{
+	out << pass_id << '\t'
+		<< original_origin << '\t'
+		<< destination_stop << '\t'
+		<< pickupstop_id << '\t'
+		<< time << '\t'
+		<< generation_time << '\t'
+		<< chosen_dropoff_stop << '\t';
+	for (map<Busstop*, pair<double, double> >::iterator iter = dropoff_MNL.begin(); iter != dropoff_MNL.end(); iter++)
+	{
+		out << (*iter).first->get_id() << '\t';
+		out << (*iter).second.first << '\t';
+		out << (*iter).second.second << '\t';
+	}
+	out << endl;
+}
+
+void Pass_transitmode_decision::write(ostream& out)
+{
+	out << pass_id << '\t'
+		<< original_origin << '\t'
+		<< destination_stop << '\t'
+		<< pickupstop_id << '\t'
+		<< time << '\t'
+		<< generation_time << '\t'
+		<< chosen_transitmode << '\t';
+	for (map<TransitModeType, pair<double, double> >::iterator iter = mode_MNL.begin(); iter != mode_MNL.end(); iter++)
+	{
+		out << (*iter).first << '\t';
+		out << (*iter).second.first << '\t';
+		out << (*iter).second.second << '\t';
+	}
+	out << endl;
 }

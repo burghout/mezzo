@@ -2,8 +2,11 @@
 #include "passenger.h"
 #include "vehicle.h"
 #include "controlcenter.h"
+#include "network.h"
+#include "MMath.h"
 
 #include <algorithm>
+#include <iterator>
 #include <cassert>
 
 
@@ -17,14 +20,8 @@ void Controlcenter_SummaryData::reset()
 
 
 //RequestHandler
-RequestHandler::RequestHandler()
-{
-	DEBUG_MSG("Constructing RH");
-}
-RequestHandler::~RequestHandler()
-{
-	DEBUG_MSG("Destroying RH");
-}
+RequestHandler::RequestHandler(){}
+RequestHandler::~RequestHandler(){}
 
 void RequestHandler::reset()
 {
@@ -51,51 +48,46 @@ bool RequestHandler::addRequest(const Request req, const set<Busstop*>& serviceA
 
 void RequestHandler::removeRequest(const int pass_id)
 {
-	set<Request>::iterator it;
-	it = find_if(requestSet_.begin(), requestSet_.end(),
-			[pass_id](const Request& req) -> bool
-			{
-				return req.pass_id == pass_id;
-			}
-		);
+    set<Request>::iterator it;
+    it = find_if(requestSet_.begin(), requestSet_.end(),
+        [pass_id](const Request& req) -> bool
+        {
+            return req.pass_id == pass_id;
+        }
+    );
 
-	if (it != requestSet_.end()) {
-		requestSet_.erase(it);
-	} else {
-		DEBUG_MSG_V("DEBUG: RequestHandler::removeRequest : Passenger id " << pass_id << " not found in requestSet.");
-}
+    if (it != requestSet_.end())
+        requestSet_.erase(it);
+    else
+        DEBUG_MSG_V("DEBUG: RequestHandler::removeRequest : Passenger id " << pass_id << " not found in requestSet.");
 }
 
 bool RequestHandler::isFeasibleRequest(const Request& req, const set<Busstop*>& serviceArea) const
 {    
     //check if origin stop and destination stop are the same
-    if (req.ostop_id == req.dstop_id) {
+    if (req.ostop_id == req.dstop_id) 
         return false;
-}
+
     //check if destination stop of request is within serviceArea
     auto it = find_if(serviceArea.begin(), serviceArea.end(), [req](const Busstop* stop) -> bool {return stop->get_id() == req.dstop_id; });
-    if (it == serviceArea.end()) {
+    if (it == serviceArea.end()) 
         return false;
-}
+
     //check if origin stop of request is within serviceArea
     it = find_if(serviceArea.begin(), serviceArea.end(), [req](const Busstop* stop) -> bool {return stop->get_id() == req.ostop_id; });
-    if (it == serviceArea.end()) {
+    if (it == serviceArea.end()) 
         return false;
-}
 
     return true;
-
 }
 
 //BustripGenerator
 BustripGenerator::BustripGenerator(Network* theNetwork, TripGenerationStrategy* generationStrategy, TripGenerationStrategy* emptyVehicleStrategy) :
                                   generationStrategy_(generationStrategy), emptyVehicleStrategy_(emptyVehicleStrategy), theNetwork_(theNetwork)
-{
-	DEBUG_MSG("Constructing TG");
-}
+{}
+
 BustripGenerator::~BustripGenerator()
 {
-	DEBUG_MSG("Destroying TG");
 	if(generationStrategy_)
 		delete generationStrategy_;
 	if (emptyVehicleStrategy_)
@@ -146,17 +138,18 @@ void BustripGenerator::cancelRebalancingTrip(Bustrip* trip)
 
 bool BustripGenerator::requestTrip(const RequestHandler& rh, const map<BusState, set<Bus*>>& fleetState, double time)
 {
-	if (generationStrategy_ != nullptr)
-	{
+    if (generationStrategy_ != nullptr)
+    {
         bool trip_found = generationStrategy_->calc_trip_generation(rh.requestSet_, serviceRoutes_, fleetState, time, unmatchedTrips_); //returns true if trip has been generated and added to the unmatchedTrips_
 
-        if (!trip_found && !unmatchedTrips_.empty()) { //if no trip was found but an unmatched trip remains in the unmatchedTrips set
+        if (!trip_found && !unmatchedTrips_.empty()) //if no trip was found but an unmatched trip remains in the unmatchedTrips set
+		{ 
             trip_found = true;
-}
+        }
 
         return trip_found;
-	}
-	return false;
+    }
+    return false;
 }
 
 bool BustripGenerator::requestRebalancingTrip(const RequestHandler& rh, const map<BusState, set<Bus*>>& fleetState, double time)
@@ -173,14 +166,18 @@ void BustripGenerator::setTripGenerationStrategy(int type)
 	if (generationStrategy_)
 		delete generationStrategy_;
 
-	DEBUG_MSG("Changing trip generation strategy to " << type);
-	if (type == generationStrategyType::Null) {
-		generationStrategy_ = new NullTripGeneration();
-	} else if (type == generationStrategyType::Naive) {
-		generationStrategy_ = new NaiveTripGeneration();
-	} else
+	//DEBUG_MSG("Changing trip generation strategy to " << type);
+	if (type == generationStrategyType::Null) 
 	{
-		DEBUG_MSG("This generation strategy is not recognized!");
+		generationStrategy_ = new NullTripGeneration();
+	} 
+	else if (type == generationStrategyType::Naive) 
+	{
+		generationStrategy_ = new NaiveTripGeneration();
+	} 
+	else
+	{
+		DEBUG_MSG("BustripGenerator::setTripGenerationStrategy() - strategy " << type << " is not recognized! Setting strategy to nullptr. ");
 		generationStrategy_ = nullptr;
 	}
 }
@@ -190,33 +187,31 @@ void BustripGenerator::setEmptyVehicleStrategy(int type)
 	if (emptyVehicleStrategy_)
 		delete emptyVehicleStrategy_;
 
-	DEBUG_MSG("Changing empty vehicle strategy to " << type);
-	if (type == emptyVehicleStrategyType::EVNull) {
+	//DEBUG_MSG("Changing empty vehicle strategy to " << type);
+	if (type == emptyVehicleStrategyType::EVNull) 
+	{
 		emptyVehicleStrategy_ = new NullTripGeneration();
-	} else if (type == emptyVehicleStrategyType::EVNaive)
+	} 
+	else if (type == emptyVehicleStrategyType::EVNaive)
 	{
 		if (theNetwork_ == nullptr)
 		{
-			DEBUG_MSG_V("Problem with BustripGenerator::setEmptyVehicleStrategy - switching to NearestLongestQueue strategy failed due to theNetwork nullptr. Aborting...");
+			DEBUG_MSG_V("Problem with BustripGenerator::setEmptyVehicleStrategy - switching to " << type << " strategy failed due to theNetwork nullptr. Aborting...");
 			abort();
 		}
 		emptyVehicleStrategy_ = new NaiveEmptyVehicleTripGeneration(theNetwork_);
 	}
 	else
 	{
-		DEBUG_MSG("This empty vehicle strategy is not recognized!");
+		DEBUG_MSG("BustripGenerator::setEmptyVehicleStrategy() - strategy " << type << " is not recognized! Setting strategy to nullptr. ");
 		emptyVehicleStrategy_ = nullptr;
 	}
 }
 
 //BustripVehicleMatcher
-BustripVehicleMatcher::BustripVehicleMatcher(MatchingStrategy* matchingStrategy): matchingStrategy_(matchingStrategy)
-{
-	DEBUG_MSG("Constructing TVM");
-}
+BustripVehicleMatcher::BustripVehicleMatcher(MatchingStrategy* matchingStrategy): matchingStrategy_(matchingStrategy){}
 BustripVehicleMatcher::~BustripVehicleMatcher()
 {
-	DEBUG_MSG("Destroying TVM");
 	if(matchingStrategy_)
 		delete matchingStrategy_;
 }
@@ -268,16 +263,20 @@ void BustripVehicleMatcher::setMatchingStrategy(int type)
 	if (matchingStrategy_)
 		delete matchingStrategy_;
 
-	DEBUG_MSG("Changing trip - vehicle matching strategy to " << type);
-	if (type == matchingStrategyType::Null) {
-		matchingStrategy_ = new NullMatching();
-	} else if (type == matchingStrategyType::Naive) {
-		matchingStrategy_ = new NaiveMatching();
-	} else
+    //DEBUG_MSG("Changing trip - vehicle matching strategy to " << type);
+    if (type == matchingStrategyType::Null) 
 	{
-		DEBUG_MSG("This matching strategy is not recognized!");
-		matchingStrategy_ = nullptr;
-	}
+        matchingStrategy_ = new NullMatching();
+    }
+    else if (type == matchingStrategyType::Naive) 
+	{
+        matchingStrategy_ = new NaiveMatching();
+    }
+    else
+    {
+		DEBUG_MSG("BustripVehicleMatcher::setMatchingStrategy() - strategy " << type << " is not recognized! Setting strategy to nullptr. ");
+        matchingStrategy_ = nullptr;
+    }
 }
 
 bool BustripVehicleMatcher::matchVehiclesToTrips(BustripGenerator& tg, double time)
@@ -294,9 +293,10 @@ bool BustripVehicleMatcher::matchVehiclesToTrips(BustripGenerator& tg, double ti
 				it = tg.unmatchedTrips_.erase(it);
 				matchedTrips_.insert(trip);
 			}
-			else {
+			else 
+			{
 				++it;
-}
+			}
 		}
 		return matchfound;
 	}
@@ -305,7 +305,7 @@ bool BustripVehicleMatcher::matchVehiclesToTrips(BustripGenerator& tg, double ti
 
 bool BustripVehicleMatcher::matchVehiclesToEmptyVehicleTrips(BustripGenerator& tg, double time)
 {
-	DEBUG_MSG("BustripVehicleMatcher is matching empty vehicle trips to vehicles at time " << time);
+	//DEBUG_MSG("BustripVehicleMatcher is matching empty vehicle trips to vehicles at time " << time);
 	if (matchingStrategy_ != nullptr)
 	{
 		bool matchfound = false;
@@ -318,9 +318,10 @@ bool BustripVehicleMatcher::matchVehiclesToEmptyVehicleTrips(BustripGenerator& t
 				it = tg.unmatchedRebalancingTrips_.erase(it);
 				matchedTrips_.insert(trip);
 			}
-			else {
+			else 
+			{
 				++it;
-}
+			}
 		}
 		return matchfound;
 	}
@@ -328,13 +329,9 @@ bool BustripVehicleMatcher::matchVehiclesToEmptyVehicleTrips(BustripGenerator& t
 }
 
 //VehicleScheduler
-VehicleScheduler::VehicleScheduler(Eventlist* eventlist, SchedulingStrategy* schedulingStrategy) : eventlist_(eventlist), schedulingStrategy_(schedulingStrategy)
-{
-	DEBUG_MSG("Constructing VS");
-}
+VehicleScheduler::VehicleScheduler(Eventlist* eventlist, SchedulingStrategy* schedulingStrategy) : eventlist_(eventlist), schedulingStrategy_(schedulingStrategy){}
 VehicleScheduler::~VehicleScheduler()
 {
-	DEBUG_MSG("Destroying VS");
 	if(schedulingStrategy_)
 		delete schedulingStrategy_;
 }
@@ -354,19 +351,23 @@ bool VehicleScheduler::scheduleMatchedTrips(BustripVehicleMatcher& tvm, double t
 	return false;
 }
 
-void VehicleScheduler::setSchedulingStrategy(int scheduling_strategy_type)
+void VehicleScheduler::setSchedulingStrategy(int type)
 {
 	if (schedulingStrategy_)
 		delete schedulingStrategy_;
 
-	DEBUG_MSG("Changing scheduling strategy to " << scheduling_strategy_type);
-	if (scheduling_strategy_type == schedulingStrategyType::Null) {
-		schedulingStrategy_ = new NullScheduling();
-	} else if (scheduling_strategy_type == schedulingStrategyType::Naive) {
-		schedulingStrategy_ = new NaiveScheduling();
-	} else
+	//DEBUG_MSG("Changing scheduling strategy to " << type);
+	if (type == schedulingStrategyType::Null) 
 	{
-		DEBUG_MSG("This scheduling strategy is not recognized!");
+		schedulingStrategy_ = new NullScheduling();
+	} 
+	else if (type == schedulingStrategyType::Naive) 
+	{
+		schedulingStrategy_ = new NaiveScheduling();
+	} 
+	else
+	{
+		DEBUG_MSG("VehicleScheduler::setSchedulingStrategy() - strategy " << type << " is not recognized! Setting strategy to nullptr. ");
 		schedulingStrategy_ = nullptr;
 	}
 }
@@ -377,7 +378,8 @@ Controlcenter::Controlcenter(Eventlist* eventlist, Network* theNetwork, int id, 
 {
 	QString qname = QString::fromStdString(to_string(id));
 	this->setObjectName(qname); //name of control center does not really matter but useful for debugging purposes
-	DEBUG_MSG("Constructing CC" << id_);
+
+	theNetwork_ = theNetwork;
 
 	tg_.setTripGenerationStrategy(tg_strategy); //set the initial generation strategy of BustripGenerator
 	tg_.setEmptyVehicleStrategy(ev_strategy); //set the initial empty vehicle strategy of BustripGenerator
@@ -385,10 +387,7 @@ Controlcenter::Controlcenter(Eventlist* eventlist, Network* theNetwork, int id, 
 	vs_.setSchedulingStrategy(vs_strategy); //set initial scheduling strategy of VehicleScheduler
 	connectInternal(); //connect internal signal slots
 }
-Controlcenter::~Controlcenter()
-{
-	DEBUG_MSG("Destroying CC" << id_);
-}
+Controlcenter::~Controlcenter(){}
 
 void Controlcenter::reset()
 {
@@ -472,6 +471,166 @@ void Controlcenter::connectInternal()
 	assert(ok);
 }
 
+set<Bus*> Controlcenter::getAllVehicles()
+{
+	set<Bus*> vehs;
+	for (auto veh : connectedVeh_)
+	{
+		if(!veh.second->is_null())
+			vehs.insert(veh.second);
+	}
+	return vehs;
+}
+
+set<Bus*> Controlcenter::getVehiclesDrivingToStop(Busstop* end_stop)
+{
+	assert(end_stop);
+	set<Bus*> vehs_driving;
+	set<Bus*> vehs_enroute;
+
+	//get driving vehicles
+	for (auto state : { BusState::DrivingEmpty, BusState::DrivingPartiallyFull, BusState::DrivingFull })
+	{
+		if(fleetState_.count(state) != 0)
+			vehs_driving.insert(fleetState_[state].begin(), fleetState_[state].end());
+	}
+	
+	//see which ones are currently headed to end_stop
+	for (auto veh : vehs_driving)
+	{
+		assert(veh->is_driving());
+		assert(veh->get_on_trip());
+		assert(veh->get_curr_trip() != nullptr);
+
+		Busstop* next_stop = veh->get_next_stop(); //note assumes that all driving vehicles have a trip and a next stop....
+		if (next_stop != nullptr && next_stop->get_id() == end_stop->get_id())
+			vehs_enroute.insert(veh);
+	}
+
+	return vehs_enroute;
+}
+
+set<Bus*> Controlcenter::getOnCallVehiclesAtStop(Busstop* stop)
+{
+	assert(stop);
+	set<Bus*> vehs_atstop;
+
+	if (fleetState_.count(BusState::OnCall) != 0)
+	{
+		for (auto veh : fleetState_[BusState::OnCall])
+		{
+			Busstop* curr_stop = veh->get_last_stop_visited();
+			if (curr_stop != nullptr && curr_stop->get_id() == stop->get_id())
+				vehs_atstop.insert(veh);
+		}
+	}
+
+	return vehs_atstop;
+}
+
+double Controlcenter::calc_route_travel_time(const vector<Link*>& routelinks, double time)
+{
+	double expected_travel_time = 0;
+	for (const Link* link : routelinks)
+	{
+		expected_travel_time += link->get_cost(time);
+	}
+
+	return expected_travel_time;
+}
+
+vector<Link*> Controlcenter::find_shortest_path_between_stops(const Busstop* origin_stop, const Busstop* destination_stop, const double start_time) const
+{
+	assert(origin_stop);
+	assert(destination_stop);
+	assert(theNetwork_);
+	assert(start_time >= 0);
+
+	vector<Link*> rlinks;
+	if (origin_stop && destination_stop)
+	{
+		int rootlink_id = origin_stop->get_link_id();
+		int dest_node_id = destination_stop->get_dest_node()->get_id(); //!< @todo can change these to look between upstream and downstream junction nodes as well
+
+		rlinks = theNetwork_->shortest_path_to_node(rootlink_id, dest_node_id, start_time);
+	}
+	return rlinks;
+}
+
+pair<Bus*,double> Controlcenter::getClosestVehicleToStop(Busstop* stop, double time)
+{
+	assert(stop);
+	assert(isInServiceArea(stop));
+	pair<Bus*,double> closest = make_pair(nullptr, DBL_INF);
+	
+	//check on-call vehicles
+	set<Bus*> oncall = getOnCallVehiclesAtStop(stop);
+	if (!oncall.empty())
+		return make_pair(*oncall.begin(), 0.0);
+
+	//check en-route vehicles
+	set<Bus*> enroute = getVehiclesDrivingToStop(stop);
+	double shortest_tt = DBL_INF;
+
+	for (auto veh : enroute)
+	{
+		Busstop* laststop = veh->get_last_stop_visited();
+		vector<Link*> shortestpath = find_shortest_path_between_stops(laststop, stop, time);
+		double expected_tt = calc_route_travel_time(shortestpath, time);
+		double departuretime = veh->get_curr_trip()->get_last_stop_exit_time();
+		double time_to_stop = expected_tt - (time - departuretime); // expected time it will take for vehicle to arrive at stop
+
+		if (time_to_stop < shortest_tt)
+		{
+			closest = make_pair(veh, time_to_stop);
+			shortest_tt = time_to_stop;
+		}
+	}
+
+	//check remaining vehicles
+	set<Bus*> allvehs = getAllVehicles();
+	set<Bus*> checked;
+	set<Bus*> remaining;
+	set_union(oncall.begin(), oncall.end(), enroute.begin(), enroute.end(), inserter(checked, checked.begin()));
+	set_difference(allvehs.begin(), allvehs.end(), checked.begin(), checked.end(), inserter(remaining, remaining.begin()));
+
+	for (auto veh : remaining)
+	{
+		double expected_tt = DBL_INF;
+		double time_to_stop = DBL_INF;
+		vector<Link*> shortestpath;
+
+		if (veh->is_driving())
+		{
+			double departuretime = veh->get_curr_trip()->get_last_stop_exit_time();
+			Busstop* nextstop = veh->get_next_stop();
+		
+			//to next stop
+			expected_tt = calc_route_travel_time(veh->get_curr_trip()->get_line()->get_busroute()->get_links(),time); // @todo assumes direct 'service routes' only
+			time_to_stop = expected_tt - (time - departuretime);
+			
+			//from next stop to target stop
+			shortestpath = find_shortest_path_between_stops(nextstop, stop, time);
+			time_to_stop += calc_route_travel_time(shortestpath, time);
+		}
+		else
+		{
+			Busstop* laststop = veh->get_last_stop_visited(); //current stop if not driving
+			vector<Link*> shortestpath = find_shortest_path_between_stops(laststop, stop, time);
+			expected_tt = calc_route_travel_time(shortestpath, time);
+			time_to_stop = expected_tt;
+		}
+
+		if (time_to_stop < shortest_tt)
+		{
+			closest = make_pair(veh, time_to_stop);
+			shortest_tt = time_to_stop;
+		}
+	}
+
+	return closest;
+}
+
 int Controlcenter::getID() const
 {
 	return id_;
@@ -484,6 +643,11 @@ Controlcenter_SummaryData Controlcenter::getSummaryData() const
 
 set<Busstop*> Controlcenter::getServiceArea() const { return serviceArea_; }
 vector<Busline*> Controlcenter::getServiceRoutes() const { return tg_.getServiceRoutes(); }
+
+map<BusState, set<Bus*>> Controlcenter::getFleetState() const
+{
+	return fleetState_;
+}
 
 bool Controlcenter::isInServiceArea(Busstop* stop) const
 {
@@ -551,10 +715,6 @@ void Controlcenter::connectVehicle(Bus* transitveh)
 
 		transitveh->set_control_center(this);
 	}
-	else
-	{
-		DEBUG_MSG("WARNING::Controlcenter::connectVehicle - null transit vehicle passed as argument");
-	}
 }
 void Controlcenter::disconnectVehicle(Bus* transitveh)
 {
@@ -570,10 +730,6 @@ void Controlcenter::disconnectVehicle(Bus* transitveh)
 
 		transitveh->set_control_center(nullptr);
 	}
-	else
-	{
-		DEBUG_MSG("WARNING::Controlcenter::disconnectVehicle - null transit vehicle passed as argument");
-	}
 }
 
 void Controlcenter::addStopToServiceArea(Busstop* stop)
@@ -586,6 +742,9 @@ void Controlcenter::addServiceRoute(Busline* line)
 {
 	assert(line->is_flex_line()); //only flex lines should be added to control center for now
 	tg_.addServiceRoute(line);
+
+	//whenever a line is added as a service route to a CC, the line also knows of the CC it is a service route for...
+	line->add_CC(this); // may create a tight coupling between Controlcenter's and Busline, but added so that Pass_path can ask specific buslines for LoS estimates. 
 }
 
 void Controlcenter::addVehicleToAllServiceRoutes(Bus* transitveh)
@@ -616,10 +775,6 @@ void Controlcenter::addInitialVehicle(Bus* transitveh)
 			initialVehicles_.insert(transitveh);
 		}
 	}
-	else
-	{
-		DEBUG_MSG("WARNING::Controlcenter::addInitialVehicle - null transit vehicle passed as argument");
-	}
 }
 
 void Controlcenter::addCompletedVehicleTrip(Bus* transitveh, Bustrip * trip)
@@ -629,6 +784,96 @@ void Controlcenter::addCompletedVehicleTrip(Bus* transitveh, Bustrip * trip)
 	if(trip)
 		assert(trip->get_next_stop() == trip->stops.end()); //currently a trip is considered completed via Bustrip::advance_next_stop -> Bus::advance_curr_trip
 	completedVehicleTrips_.emplace_back(transitveh, trip);
+}
+
+double Controlcenter::calc_expected_ivt(Busline* service_route, Busstop* start_stop, Busstop* end_stop, bool first_line_leg, double time)
+{
+	assert(service_route->is_flex_line()); //otherwise kindof pointless to ask the CC about ivt
+	assert(service_route->get_CC()->getID() == id_);
+
+	if (!first_line_leg)
+		return calc_exploration_ivt(service_route, start_stop, end_stop); // if no 'RTI' or estimate is available
+
+	vector<Link*> shortestpath = find_shortest_path_between_stops(start_stop, end_stop, time);
+	double expected_ivt = calc_route_travel_time(shortestpath, time); // travel time calculated based on link->cost(time)
+	
+	return expected_ivt; //OBS waiting time is returned in seconds
+}
+
+/**
+ * @ingroup DRT
+ * 
+ * @todo Currently the exploration ivt is simply the direct path between the two stops based on delta_at_stops (time-independent scheduled IVT)
+ * 
+ */
+double Controlcenter::calc_exploration_ivt(Busline* service_route, Busstop* start_stop, Busstop* end_stop)
+{
+	assert(service_route->is_flex_line()); //otherwise kindof pointless to ask the CC about ivt
+	assert(service_route->get_CC()->getID() == id_);
+
+	auto delta_at_stops = service_route->get_delta_at_stops();
+
+	bool found_board = false;
+	bool found_alight = false;
+
+	vector<pair<Busstop*, double>>::iterator board_stop;
+	vector<pair<Busstop*, double>>::iterator alight_stop;
+	double earliest_time_ostop = 0.0;
+	double cumulative_arrival_time = 0.0; //arrival times starting from zero for initial stop
+
+	// Always use default ivt between stops for the line
+	for (vector<pair<Busstop*, double>>::iterator stop = delta_at_stops.begin(); stop != delta_at_stops.end(); ++stop)
+	{
+		cumulative_arrival_time += (*stop).second;
+		if ((*stop).first->get_id() == start_stop->get_id() || (*stop).first->get_name() == start_stop->get_name())
+		{
+			earliest_time_ostop = cumulative_arrival_time;
+			board_stop = stop;
+			found_board = true;
+		}
+		if ((*stop).first->get_id() == end_stop->get_id() || (*stop).first->get_name() == end_stop->get_name())
+		{
+			alight_stop = stop;
+			found_alight = true;
+			break;
+		}
+	}
+	if (found_board == false || found_alight == false)
+		return 10000; //default in case of no matching
+
+	return cumulative_arrival_time - earliest_time_ostop; //OBS waiting time is returned in seconds
+}
+
+double Controlcenter::calc_expected_wt(Busline* service_route, Busstop* start_stop, Busstop* end_stop, bool first_line_leg, double walking_time_to_start_stop, double arrival_time_to_start_stop)
+{
+	assert(service_route->is_flex_line()); //otherwise kindof pointless to ask the CC about wt
+	assert(service_route->get_CC()->getID() == id_);
+    Q_UNUSED(end_stop)
+
+	if (!first_line_leg) 
+		return calc_exploration_wt(); //no 'RTI' or better estimate is available
+
+	pair<Bus*,double> closest = getClosestVehicleToStop(start_stop, arrival_time_to_start_stop);
+	//DEBUG_MSG("Bus " << closest.first->get_bus_id() << " is closest to stop " << start_stop->get_id() << " with time_to_stop " << closest.second);
+	//closest.first->print_state();
+	if (first_line_leg) // for first transit link traveler can save on waiting time by sending their request for when they expect to arrive
+	{
+		closest.second = Max(0.0, closest.second - walking_time_to_start_stop); // remove walking time to stop from waiting time if this actually saves any time
+	}
+
+	return closest.second; //OBS waiting time is returned in seconds
+}
+
+/**
+ * @ingroup DRT
+ * 
+ * @todo currently just returns 0.0 waiting time
+ * 
+ * @return exploration waiting time
+ */
+double Controlcenter::calc_exploration_wt()
+{
+	return ::drt_exploration_wt; //OBS waiting time is returned in seconds
 }
 
 //Slot implementations
@@ -641,30 +886,34 @@ void Controlcenter::receiveRequest(Request req, double time)
 
 void Controlcenter::removeRequest(int pass_id)
 {
-	DEBUG_MSG(Q_FUNC_INFO);
+	//DEBUG_MSG(Q_FUNC_INFO);
 	rh_.removeRequest(pass_id);
 	summarydata_.requests_served += 1;
 }
 
 void Controlcenter::on_requestAccepted(double time)
 {
-	DEBUG_MSG(Q_FUNC_INFO << ": Request Accepted at time " << time);	
+	//DEBUG_MSG(Q_FUNC_INFO << ": Request Accepted at time " << time);	
+    Q_UNUSED(time)
 	summarydata_.requests_accepted += 1;
 }
 void Controlcenter::on_requestRejected(double time)
 {
-	DEBUG_MSG(Q_FUNC_INFO << ": Request Rejected at time " << time);
+	//DEBUG_MSG(Q_FUNC_INFO << ": Request Rejected at time " << time);
+    Q_UNUSED(time)
 	summarydata_.requests_rejected += 1;
 }
 
 void Controlcenter::on_tripGenerated(double time)
 {
-	DEBUG_MSG(Q_FUNC_INFO << ": Trip Generated at time " << time);
+	//DEBUG_MSG(Q_FUNC_INFO << ": Trip Generated at time " << time);
+    Q_UNUSED(time)
 }
 
 void Controlcenter::on_tripVehicleMatchFound(double time)
 {
-	DEBUG_MSG(Q_FUNC_INFO << ": Vehicle - Trip match found at time " << time);
+	//DEBUG_MSG(Q_FUNC_INFO << ": Vehicle - Trip match found at time " << time);
+    Q_UNUSED(time)
 }
 
 void Controlcenter::updateFleetState(Bus* bus, BusState oldstate, BusState newstate, double time)
@@ -674,12 +923,14 @@ void Controlcenter::updateFleetState(Bus* bus, BusState oldstate, BusState newst
 	assert(connectedVeh_.count(bus->get_bus_id()) != 0); //assert that bus is connected to this control center (otherwise state change signal should have never been heard)
 
 	//update the fleet state map, vehicles should be null before they are available, and null when they finish a trip and are copied
-	if(oldstate != BusState::Null) {
+	if(oldstate != BusState::Null) 
+	{
 		fleetState_[oldstate].erase(bus);
-}
-	if(newstate != BusState::Null) {
+    }
+	if(newstate != BusState::Null) 
+	{
 		fleetState_[newstate].insert(bus);
-}
+    }
 
 	if (newstate == BusState::OnCall)
 	{
@@ -689,16 +940,18 @@ void Controlcenter::updateFleetState(Bus* bus, BusState oldstate, BusState newst
 
 void Controlcenter::requestTrip(double time)
 {
-	if (tg_.requestTrip(rh_, fleetState_, time)) {
+	if (tg_.requestTrip(rh_, fleetState_, time)) 
+	{
 		emit tripGenerated(time);
-}
+	}
 }
 
 void Controlcenter::requestRebalancingTrip(double time)
 {
-	if (tg_.requestRebalancingTrip(rh_, fleetState_, time)) {
+	if (tg_.requestRebalancingTrip(rh_, fleetState_, time)) 
+	{
 		emit emptyVehicleTripGenerated(time);
-}
+	}
 }
 
 void Controlcenter::matchVehiclesToTrips(double time)
@@ -708,9 +961,10 @@ void Controlcenter::matchVehiclesToTrips(double time)
 
 void Controlcenter::matchEmptyVehiclesToTrips(double time)
 {
-	if (tvm_.matchVehiclesToEmptyVehicleTrips(tg_, time)) {
+	if (tvm_.matchVehiclesToEmptyVehicleTrips(tg_, time)) 
+	{
 		emit tripVehicleMatchFound(time);
-}
+	}
 }
 
 void Controlcenter::scheduleMatchedTrips(double time)

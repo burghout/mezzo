@@ -117,6 +117,22 @@ string To_String(T val)
     return stream.str();
 }
 
+FWF_vehdata operator+(const FWF_vehdata& lhs, const FWF_vehdata& rhs)
+{
+    FWF_vehdata sum;
+    sum.total_vkt = lhs.total_vkt + rhs.total_vkt;
+    sum.total_empty_vkt = lhs.total_empty_vkt + rhs.total_empty_vkt;
+    sum.total_occupied_vkt = lhs.total_occupied_vkt + rhs.total_occupied_vkt;
+
+    sum.total_empty_time = lhs.total_empty_time + rhs.total_empty_time;
+    sum.total_occupied_time = lhs.total_occupied_time + rhs.total_occupied_time;
+
+    sum.total_driving_time = lhs.total_driving_time + rhs.total_driving_time;
+    sum.total_idle_time = lhs.total_idle_time + rhs.total_idle_time;
+    sum.total_oncall_time = lhs.total_oncall_time + rhs.total_oncall_time;
+    
+    return sum;
+}
 
 // End of helper functions
 
@@ -455,6 +471,18 @@ unsigned int Network::count_generated_passengers()
     }
 
     return count;
+}
+
+vector<Passenger*> Network::get_all_generated_passengers() 
+{
+    vector<Passenger*> passengers;
+    for (const auto& odstop : odstops)
+    {
+        vector<Passenger*> odpass = odstop->get_passengers_during_simulation();
+        passengers.insert(passengers.end(), odpass.begin(), odpass.end());
+    }
+
+    return passengers;
 }
 
 void Network::end_of_simulation()
@@ -855,6 +883,20 @@ bool Network::readlink(istream& in)
 #ifdef _DEBUG_NETWORK
     cout << " read a link"<<endl;
 #endif //_DEBUG_NETWORK
+
+
+    /** @ingroup DRT
+        @brief Quick and dirty labelling of dummylinks for calculating e.g. VKT outputs correctly. 
+        @todo Remove this section of code later. Mostly used for debugging/specific scenarios
+        @{
+    */
+    //check if this link should be marked as a dummy link
+    if (sdptr->get_vfree() > 1000) //assumes that dummy links have a free-flow speed of greater than 1000 m/s (3600 km/h)
+    {
+        link->set_dummylink(true);
+    }
+    /**@}*/
+
     return true;
 }
 
@@ -1478,7 +1520,7 @@ bool Network::readcontrolcenters(const string& name)
         }
 
         //create and add all direct lines to cc
-        if (generate_direct_routes == true)
+        if (generate_direct_routes == 1)
         {
             cout << "readcontrolcenters:: generating direct lines for control center " << cc->getID();
             if (!createControlcenterDRTLines(cc))
@@ -3542,9 +3584,10 @@ Busroute* Network::create_busroute_from_stops(int id, Origin* origin_node, Desti
 {
     assert(origin_node);
     assert(destination_node);
-    if (stops.empty()) {
+    if (stops.empty()) 
+    {
         return nullptr;
-}
+    }
 
     // get path from origin to first stop ... to last stop; to destination
     vector <Link*> rlinks;
@@ -3560,9 +3603,10 @@ Busroute* Network::create_busroute_from_stops(int id, Origin* origin_node, Desti
             int usnode = linkmap[s->get_link_id()]->get_in_node_id(); //id of closest node upstream from stop
             segment = shortest_path_to_node(rootlink, usnode, time);
 
-            if (segment.empty()) { // if one of the stops in the sequence is not reachable, return nullptr
+            if (segment.empty()) // if one of the stops in the sequence is not reachable, return nullptr
+            { 
                 return nullptr;
-}
+            }
             rlinks.insert(rlinks.end(), segment.begin() + 1, segment.end()); // add segment to rlinks, always exclude rootlink
             rootlink = s->get_link_id();
             rlinks.push_back(linkmap[rootlink]); //add link that stop is located on to the end of route links
@@ -3572,9 +3616,10 @@ Busroute* Network::create_busroute_from_stops(int id, Origin* origin_node, Desti
     if (linkmap[rootlink]->get_out_node_id() != destination_node->get_id())
     {
         segment = shortest_path_to_node(rootlink, destination_node->get_id(), time);
-        if (segment.empty()) { // if one of the stops in the sequence is not reachable, return nullptr
+        if (segment.empty()) // if one of the stops in the sequence is not reachable, return nullptr
+        { 
             return nullptr;
-}
+        }
         rlinks.insert(rlinks.end(), segment.begin() + 1, segment.end()); // add segment to rlinks excluding rootlink for last stop
     }
 
@@ -6027,6 +6072,33 @@ bool Network::read_unassignedvehicle(istream& in) //reads a bus vehicles that ar
     return true;
 }
 
+ODstops* Network::get_ODstop_from_odstops_demand(int os_id, int ds_id)
+{
+    auto odstop_it = find_if(odstops_demand.begin(), odstops_demand.end(), [=](ODstops* odstop) -> bool {
+        return (odstop->get_origin()->get_id() == os_id && odstop->get_destination()->get_id() == ds_id); 
+        });
+    ODstops* target_odstop = odstop_it != odstops_demand.end() ? (*odstop_it) : nullptr;
+
+    return target_odstop;
+}
+
+Pass_path* Network::get_pass_path_from_id(int path_id) const
+{
+    Pass_path* target_path = nullptr;
+    for (const auto& odstop : odstops)
+    {
+        vector<Pass_path*> path_set = odstop->get_path_set();
+        auto path_it = find_if(path_set.begin(), path_set.end(), [path_id](Pass_path* path) -> bool { return path->get_id() == path_id; });
+        if (path_it != path_set.end())
+        {
+            target_path = *path_it;
+            break;
+        }
+    }
+    
+    return target_path;
+}
+
 // read traffic control
 bool Network::readsignalcontrols(string name)
 {
@@ -6800,6 +6872,9 @@ bool Network::writeFWFsummary(ostream& out,
 {
     assert(theParameters->drt);
     assert(out);
+
+    Q_UNUSED(drt_passdata);
+    Q_UNUSED(fix_passdata);
     //ofstream out(filename.c_str());
     /*
     Collect statistics from other output files relevant for fixed with flexible implementation output
@@ -6810,48 +6885,91 @@ bool Network::writeFWFsummary(ostream& out,
         out << "### Total passenger summary ###";
         out << "\nPassenger journeys completed: " << total_passdata.pass_completed;
 
-        out << "\n\nTotal waiting time          : " << total_passdata.total_wt;
-        out << "\nAverage total waiting time  : " << total_passdata.avg_total_wt;
-        out << "\nTotal denied waiting time   : " << total_passdata.total_denied_wt;
-        out << "\nAverage denied waiting time : " << total_passdata.avg_total_wt;
-        out << "\nMinimum waiting time        : " << total_passdata.min_wt;
-        out << "\nMaximum waiting time        : " << total_passdata.max_wt;
-        out << "\nMedian waiting time         : " << total_passdata.median_wt;
-        out << "\nTotal in-vehicle time       : " << total_passdata.total_ivt;
-        
-        out << "\n\n### Fixed passenger summary ###";
-        out << "\nPassenger journeys completed: " << fix_passdata.pass_completed;
-        out << "\nTotal waiting time          : " << fix_passdata.total_wt;
-        out << "\nAverage total waiting time  : " << fix_passdata.avg_total_wt;
-        out << "\nTotal denied waiting time   : " << fix_passdata.total_denied_wt;
-        out << "\nAverage denied waiting time : " << fix_passdata.avg_total_wt;
-        out << "\nMinimum waiting time        : " << fix_passdata.min_wt;
-        out << "\nMaximum waiting time        : " << fix_passdata.max_wt;
-        out << "\nMedian waiting time         : " << fix_passdata.median_wt;
-        out << "\nTotal in-vehicle time       : " << fix_passdata.total_ivt;
+        out << "\n\nTotal walking time             : " << total_passdata.total_wlkt;
+        out << "\nAverage walking time           : " << total_passdata.avg_total_wlkt;
 
+        out << "\n\nTotal waiting time             : " << total_passdata.total_wt;
+        out << "\nAverage total waiting time     : " << total_passdata.avg_total_wt;
+        out << "\nMinimum waiting time           : " << total_passdata.min_wt;
+        out << "\nMaximum waiting time           : " << total_passdata.max_wt;
+        out << "\nMedian waiting time            : " << total_passdata.median_wt;
+
+        out << "\n\nTotal denied waiting time      : " << total_passdata.total_denied_wt;
+        out << "\nAverage denied waiting time    : " << total_passdata.avg_denied_wt;
+        
+        out << "\n\nTotal in-vehicle time          : " << total_passdata.total_ivt;
+        out << "\nAverage in-vehicle time        : " << total_passdata.avg_total_ivt;
+
+        out << "\n\nTotal crowded in-vehicle time  : " << total_passdata.total_crowded_ivt;
+        out << "\nAverage crowded in-vehicle time: " << total_passdata.avg_total_crowded_ivt;
+        
+ /*       out << "\n\n### Fixed passenger summary ###";
+        out << "\n\nTotal walking time             : " << fix_passdata.total_wlkt;
+        out << "\nAverage walking time           : " << fix_passdata.avg_total_wlkt;
+
+        out << "\n\nTotal waiting time             : " << fix_passdata.total_wt;
+        out << "\nAverage total waiting time     : " << fix_passdata.avg_total_wt;
+        out << "\nMinimum waiting time           : " << fix_passdata.min_wt;
+        out << "\nMaximum waiting time           : " << fix_passdata.max_wt;
+        out << "\nMedian waiting time            : " << fix_passdata.median_wt;
+
+        out << "\n\nTotal denied waiting time      : " << fix_passdata.total_denied_wt;
+        out << "\nAverage denied waiting time    : " << fix_passdata.avg_denied_wt;
+        
+        out << "\n\nTotal in-vehicle time          : " << fix_passdata.total_ivt;
+        out << "\nAverage in-vehicle time        : " << fix_passdata.avg_total_ivt;
+
+        out << "\n\nTotal crowded in-vehicle time  : " << fix_passdata.total_crowded_ivt;
+        out << "\nAverage crowded in-vehicle time: " << fix_passdata.avg_total_crowded_ivt;
+        
         out << "\n\n### DRT passenger summary ###";
-        out << "\nPassenger journeys completed: " << drt_passdata.pass_completed;
-        out << "\nTotal waiting time          : " << drt_passdata.total_wt;
-        out << "\nAverage total waiting time  : " << drt_passdata.avg_total_wt;
-        out << "\nTotal denied waiting time   : " << drt_passdata.total_denied_wt;
-        out << "\nAverage denied waiting time : " << drt_passdata.avg_total_wt;
-        out << "\nMinimum waiting time        : " << drt_passdata.min_wt;
-        out << "\nMaximum waiting time        : " << drt_passdata.max_wt;
-        out << "\nMedian waiting time         : " << drt_passdata.median_wt;
-        out << "\nTotal in-vehicle time       : " << drt_passdata.total_ivt;
+        out << "\n\nTotal walking time             : " << drt_passdata.total_wlkt;
+        out << "\nAverage walking time           : " << drt_passdata.avg_total_wlkt;
+
+        out << "\n\nTotal waiting time             : " << drt_passdata.total_wt;
+        out << "\nAverage total waiting time     : " << drt_passdata.avg_total_wt;
+        out << "\nMinimum waiting time           : " << drt_passdata.min_wt;
+        out << "\nMaximum waiting time           : " << drt_passdata.max_wt;
+        out << "\nMedian waiting time            : " << drt_passdata.median_wt;
+
+        out << "\n\nTotal denied waiting time      : " << drt_passdata.total_denied_wt;
+        out << "\nAverage denied waiting time    : " << drt_passdata.avg_denied_wt;
+
+        out << "\n\nTotal in-vehicle time          : " << drt_passdata.total_ivt;
+        out << "\nAverage in-vehicle time        : " << drt_passdata.avg_total_ivt;
+
+        out << "\n\nTotal crowded in-vehicle time  : " << drt_passdata.total_crowded_ivt;
+        out << "\nAverage crowded in-vehicle time: " << drt_passdata.avg_total_crowded_ivt;*/
 
         out << "\n\n### Total vehicle summary ###";
+        out << "\nTotal VKT                   : " << total_vehdata.total_vkt;
         out << "\nTotal occupied VKT          : " << total_vehdata.total_occupied_vkt;
         out << "\nTotal empty VKT             : " << total_vehdata.total_empty_vkt;
+        out << "\nTotal occupied time         : " << total_vehdata.total_occupied_time;
+        out << "\nTotal empty time            : " << total_vehdata.total_empty_time;
+        out << "\nTotal driving time          : " << total_vehdata.total_driving_time;
+        out << "\nTotal idle time             : " << total_vehdata.total_idle_time;
+        out << "\nTotal oncall time           : " << total_vehdata.total_oncall_time;
         
         out << "\n\n### Fixed vehicle summmary ###";
+        out << "\nFixed VKT                   : " << fix_vehdata.total_vkt;
         out << "\nFixed occupied VKT          : " << fix_vehdata.total_occupied_vkt;
         out << "\nFixed empty VKT             : " << fix_vehdata.total_empty_vkt;
+        out << "\nFixed occupied time         : " << fix_vehdata.total_occupied_time;
+        out << "\nFixed empty time            : " << fix_vehdata.total_empty_time;
+        out << "\nFixed driving time          : " << fix_vehdata.total_driving_time;
+        out << "\nFixed idle time             : " << fix_vehdata.total_idle_time;
+        out << "\nFixed oncall time           : " << fix_vehdata.total_oncall_time; //should always be zero...fixed schedule buses are currently always assigned a trip
 
         out << "\n\n### DRT vehicle summmary ###";
-        out << "\nFixed occupied VKT          : " << drt_vehdata.total_occupied_vkt;
-        out << "\nFixed empty VKT             : " << drt_vehdata.total_empty_vkt;
+        out << "\nDRT VKT                     : " << drt_vehdata.total_vkt;
+        out << "\nDRT occupied VKT            : " << drt_vehdata.total_occupied_vkt;
+        out << "\nDRT empty VKT               : " << drt_vehdata.total_empty_vkt;
+        out << "\nDRT occupied time           : " << drt_vehdata.total_occupied_time;
+        out << "\nDRT empty time              : " << drt_vehdata.total_empty_time;
+        out << "\nDRT driving time            : " << drt_vehdata.total_driving_time;
+        out << "\nDRT idle time               : " << drt_vehdata.total_idle_time;
+        out << "\nDRT oncall time             : " << drt_vehdata.total_oncall_time;
 
         out << "\n\n### ControlCenter summmary ###";
         out << "\nRequests recieved           : " << cc_data.total_requests_recieved;
@@ -6908,6 +7026,19 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
     ofstream out15(name15.c_str(),ios_base::app);
     */
 
+    /*FWF/DRT related outputs
+@todo Need to either create a calc function for each one of these or fill it in in a different way.
+*/
+    FWF_passdata total_passdata;
+    FWF_passdata fix_passdata;
+    FWF_passdata drt_passdata;
+    FWF_vehdata  total_vehdata;
+    FWF_vehdata  fix_vehdata;
+    FWF_vehdata  drt_vehdata;
+
+    FWF_ccdata cc_summarydata;
+
+
     // writing the crude data and summary outputs for each bus stop
     write_transitlogout_header(out1);
     write_transitstopsum_header(out2);
@@ -6933,6 +7064,16 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
     for (auto & busvehicle : busvehicles)
     {
         busvehicle->write_output(out4);
+
+        fix_vehdata.total_driving_time += busvehicle->get_total_time_driving();
+        fix_vehdata.total_idle_time += busvehicle->get_total_time_idle(); 
+        fix_vehdata.total_oncall_time += busvehicle->get_total_time_oncall();
+        fix_vehdata.total_empty_time += busvehicle->get_total_time_empty();
+        fix_vehdata.total_occupied_time += busvehicle->get_total_time_occupied();
+
+        fix_vehdata.total_vkt += busvehicle->get_total_vkt();
+        fix_vehdata.total_empty_vkt += busvehicle->get_total_empty_vkt();
+        fix_vehdata.total_occupied_vkt += busvehicle->get_total_occupied_vkt();
     }
 
     // writing the aggregate summary output for each bus line
@@ -6983,20 +7124,12 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
         {
             ofstream out18(name18.c_str(), ios_base::app); // drt+fwf summary filestream
 
-            /*FWF/DRT related outputs
-            @todo Need to either create a calc function for each one of these or fill it in in a different way.
-            */
-            FWF_passdata total_passdata;
-            FWF_passdata fix_passdata;
-            FWF_passdata drt_passdata;
-            FWF_vehdata  total_vehdata;
-            FWF_vehdata  fix_vehdata;
-            FWF_vehdata  drt_vehdata;
-
-            FWF_ccdata cc_summarydata;
-
             //fill in the fwf summary containers
-            total_passdata.pass_completed = pass_counter;
+            total_passdata.pass_completed = pass_counter; //passengers that completed trips
+            
+            // FWF passenger output
+            vector<Passenger*> all_pass = get_all_generated_passengers(); //should include all passengers, even those that did not complete their trip?
+            total_passdata.calc_pass_statistics(all_pass);
 
             //write outputs for objects owned by control centers
             for (const auto& cc : ccmap) //writing trajectory output for each drt vehicle
@@ -7008,11 +7141,34 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
 
                 for (const auto& vehtrip : cc.second->completedVehicleTrips_)
                 {
+                    Bus* drtveh = vehtrip.first;
+
+                    drt_vehdata.total_driving_time += drtveh->get_total_time_driving();
+                    drt_vehdata.total_idle_time += drtveh->get_total_time_idle();
+                    drt_vehdata.total_oncall_time += drtveh->get_total_time_oncall();
+                    drt_vehdata.total_empty_time += drtveh->get_total_time_empty();
+                    drt_vehdata.total_occupied_time += drtveh->get_total_time_occupied();
+
+                    drt_vehdata.total_vkt += drtveh->get_total_vkt();
+                    drt_vehdata.total_empty_vkt += drtveh->get_total_empty_vkt();
+                    drt_vehdata.total_occupied_vkt += drtveh->get_total_occupied_vkt();
+
                     vehtrip.first->write_output(out4); //write trajectory output for each bus vehicle that completed a trip
                     vehtrip.second->write_assign_segments_output(out7); // writing the assignment results in terms of each segment on individual trips
                 }
                 for (const auto& veh : cc.second->connectedVeh_)
                 {
+                    Bus* drtveh = veh.second;
+                    drt_vehdata.total_driving_time += drtveh->get_total_time_driving();
+                    drt_vehdata.total_idle_time += drtveh->get_total_time_idle();
+                    drt_vehdata.total_oncall_time += drtveh->get_total_time_oncall();
+                    drt_vehdata.total_empty_time += drtveh->get_total_time_empty();
+                    drt_vehdata.total_occupied_time += drtveh->get_total_time_occupied();
+
+                    drt_vehdata.total_vkt += drtveh->get_total_vkt();
+                    drt_vehdata.total_empty_vkt += drtveh->get_total_empty_vkt();
+                    drt_vehdata.total_occupied_vkt += drtveh->get_total_occupied_vkt();
+
                     veh.second->write_output(out4); //write trajectory output for each bus vehicle that has not completed a trip
                 }
             }
@@ -7020,6 +7176,7 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
             //place the write to out18 here
             // 1. collect all total, fixed only vs drt only passenger and vehicle data in structs. 
             // 2. Pass to writeFWFSummary function. Or writeDRTSummary dependent on where feels most relevant
+            total_vehdata = fix_vehdata + drt_vehdata;
             writeFWFsummary(out18, total_passdata, fix_passdata, drt_passdata, total_vehdata, fix_vehdata, drt_vehdata,cc_summarydata);
 
         }
@@ -9388,3 +9545,52 @@ bool MatrixAction::execute(Eventlist* eventlist, double   /*time*/)
     }
     return true;
 }
+
+/* Experienced passenger LoS based on output collectors of passengers */
+void FWF_passdata::calc_pass_statistics(const vector<Passenger*>& passengers)
+{
+    vector<double> waiting_times;
+    
+    double wlkt = 0.0;
+    double wt = 0.0;
+    double ivt = 0.0;
+    double d_wt = 0.0;
+    double c_ivt = 0.0;
+
+    for(Passenger* pass : passengers)
+    {
+        if (pass->get_end_time() > 0) // will cause a crash otherwise when searching through incomplete output rows, so for now only passengers that completed their trip will count
+        {
+            npass++;
+            wlkt = pass->calc_total_walking_time();
+
+            wt = pass->calc_total_waiting_time();
+            d_wt = pass->calc_total_waiting_time_due_to_denied_boarding();
+
+            ivt = pass->calc_total_IVT();
+            c_ivt = pass->calc_IVT_crowding();
+        }
+
+        total_wlkt = wlkt;
+        total_wt += wt;
+        total_denied_wt += d_wt;
+        total_ivt += ivt;
+        total_crowded_ivt += c_ivt;
+
+        min_wt = Min(min_wt, wt);
+        max_wt = Max(max_wt, wt);
+
+        waiting_times.push_back(wt);
+    }
+    if (npass != 0)
+    {
+        median_wt = findMedian(waiting_times);
+        avg_total_wlkt = total_wlkt / static_cast<double>(npass);
+        avg_total_wt = total_wt / static_cast<double>(npass);
+        avg_denied_wt = total_denied_wt / static_cast<double>(npass);
+        avg_total_ivt = total_ivt / static_cast<double>(npass);
+        avg_total_crowded_ivt = total_crowded_ivt / static_cast<double>(npass);
+    }
+    
+}
+

@@ -31,6 +31,12 @@ class Sdfunc
 	 virtual double speed(double ro);     // speed in m/s everywhere...
 	 int get_id();
 	 double get_romax();
+     /** @ingroup DRT
+         @todo used just for fixed with flexible paper outputs, can remove later should not be used for anything else
+         @{
+     */
+     double get_vfree(); //!< get free-flow speed of sdfunc
+     /**@}*/
   protected:
   	 int id;
  	 double vfree;

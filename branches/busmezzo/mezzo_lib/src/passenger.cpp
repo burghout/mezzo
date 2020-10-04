@@ -2,6 +2,13 @@
 #include "passenger.h"
 #include "controlcenter.h"
 
+ostream& operator<<(ostream& os, const TransitModeType& obj)
+{
+	os << static_cast<underlying_type<TransitModeType>::type>(obj);
+	return os;
+}
+
+
 Passenger::Passenger ()
 {
 	boarding_decision = false;
@@ -56,6 +63,8 @@ void Passenger::reset ()
 {
 	boarding_decision = false;
 	already_walked = false;
+	chosen_mode_ = TransitModeType::Null;
+	temp_connection_path_utilities.clear();
 
 	double new_start_time = 0; 
 	while (new_start_time <= theParameters->start_pass_generation || new_start_time > theParameters->stop_pass_generation)
@@ -84,6 +93,13 @@ void Passenger::reset ()
 void Passenger::init ()
 {
 	RTI_network_level = theRandomizers[0]->brandom(theParameters->share_RTI_network);
+
+	//if (theParameters->drt && RTI_network_level == true) //!< @todo Can use this to control which travelers have access to DRT, just assume they all have access for now...
+	if(theParameters->drt)
+	{
+		set_access_to_flexible(true); //!< only travelers with network level RTI can use flexible transit services
+	}
+
 	if (theParameters->pass_day_to_day_indicator == 1)
 	{
 		anticipated_waiting_time = OD_stop->get_anticipated_waiting_time(); //Changed by Jens 2014-06-27, here a local object with the same name was initialized, so the Passenger object was not updated
@@ -302,6 +318,24 @@ void Passenger::walk (double time)
 	}
 }
 
+
+/**
+ * Notes:
+ *	start_time is different from time function is called (via Passenger::execute), think for the most part it should be identical however (Eventlist->add_event(Pass*, time)) is always the same as start time in ODstops
+*		-> Just use start_time everywhere...
+*	already_walked has been set to true when this is called
+* 
+ *	Passenger makes a connection decision
+ *  Connected stop is set as new origin
+ *  Calculates expected arrival to stop, adds a passenger event to walk to the next stop
+ *  Passenger output collectors collect decision data
+ *    
+ *  @todo
+ *		Need to connect the traveler to the Controlcenter of their new origin directly after the transitmode decision, rather than when added to waiting queue....check that this makes 
+ *		Need to move request sending to before the traveler walks (i.e. directly after the event has been added)
+ *		
+ * 
+ */
 void Passenger::start (Eventlist* eventlist, double time)
 {
 		pair<Busstop*,double> stop_time;
@@ -309,6 +343,18 @@ void Passenger::start (Eventlist* eventlist, double time)
 		stop_time.second = start_time;
 		add_to_selected_path_stop(stop_time);
 		Busstop* connection_stop = make_connection_decision(start_time);
+		if (theParameters->drt)
+		{
+			TransitModeType chosen_mode = make_transitmode_decision(connection_stop, start_time); //also sets chosen mode...
+            Q_UNUSED(chosen_mode);
+		   /*if (chosen_mode == TransitModeType::Null)
+			 if (chosen_mode == TransitModeType::Flexible)
+				   Busstop* dropoff_stop = make_dropoff_decision(connection_stop, start_time);
+
+		   set_chosen_mode(chosen_mode);*/
+		}
+		temp_connection_path_utilities.clear(); //clear for next decision sequence
+
 		stop_time.first = connection_stop;
 		if (connection_stop->get_id() != OD_stop->get_origin()->get_id()) // if the pass. walks to another stop
 		{
@@ -401,6 +447,32 @@ pair<bool,Request> Passenger::createRequest(Busstop* origin_stop, Busstop* dest_
         }
     }
     return make_pair(connection_found, req);
+}
+
+vector<Pass_path*> Passenger::get_first_leg_flexible_paths(const vector<Pass_path*>& path_set) const
+{
+	vector<Pass_path*> flex_paths; //paths where the first leg is flexible
+	for (Pass_path* path : path_set)
+	{
+		if (path->is_first_transit_leg_flexible())
+		{
+			flex_paths.push_back(path);
+		}
+	}
+	return flex_paths;
+}
+
+vector<Pass_path*> Passenger::get_first_leg_fixed_paths(const vector<Pass_path*>& path_set) const
+{
+	vector<Pass_path*> fix_paths; //paths where the first leg is fixed
+	for (Pass_path* path : path_set)
+	{
+		if (path->is_first_transit_leg_fixed())
+		{
+			fix_paths.push_back(path);
+		}
+	}
+	return fix_paths;
 }
 
 bool Passenger:: make_boarding_decision (Bustrip* arriving_bus, double time) 
@@ -576,12 +648,16 @@ Busstop* Passenger::make_alighting_decision (Bustrip* boarding_bus, double time)
 
 Busstop* Passenger::make_connection_decision (double time)
 {
+	assert(chosen_mode_ == TransitModeType::Null); // traveler should not be waiting for fixed nor flexible yet, should be set to Null before making a connection decision
+
 	map <Busstop*, double> candidate_connection_stops_u; // the double value is the utility associated with the respective stop
 	map <Busstop*, double> candidate_connection_stops_p; // the double value is the probability associated with the respective stop
-	Busstop* bs_o = OD_stop->get_origin();
-	Busstop* bs_d = OD_stop->get_destination();
-	vector<Pass_path*> path_set = bs_o->get_stop_od_as_origin_per_stop(bs_d)->get_path_set();
-	//	OD_stop->get_path_set();
+	//Busstop* bs_o = OD_stop->get_origin();
+	//Busstop* bs_d = OD_stop->get_destination();
+	//vector<Pass_path*> path_set = bs_o->get_stop_od_as_origin_per_stop(bs_d)->get_path_set();
+	vector<Pass_path*> path_set = OD_stop->get_path_set();
+
+	// 1. if the path set is empty, passenger moves to an arbitrary walkable stop (first in map of distances for walkable stops)? If no distances are available then the traveler stays at this stop and moves nowhere?
 	if (path_set.empty() == true) // move to a nearby stop in case needed
 	{
 		map<Busstop*,double> & stops = OD_stop->get_origin()->get_walking_distances();
@@ -599,40 +675,46 @@ Busstop* Passenger::make_connection_decision (double time)
 		{
 			return stops.begin()->first;
 		}
-	}
+	}	
+
+	// 2. loops through each path for the current OD of the traveler and all stops within the second pair of alt stops (the connection stop set)
 	for (vector <Pass_path*>::iterator path_iter = path_set.begin(); path_iter < path_set.end(); path_iter++)
 	{
 		vector<vector<Busstop*> > alt_stops = (*path_iter)->get_alt_transfer_stops();
-		vector<vector<Busstop*> >::iterator stops_iter = alt_stops.begin()+1;
-		for (vector<Busstop*>::iterator connected_stop = (*stops_iter).begin(); connected_stop < (*stops_iter).end(); connected_stop++)
+		vector<vector<Busstop*> >::iterator stops_iter = alt_stops.begin()+1; //start from the set of stops for this path that we can connect to
+
+		for (vector<Busstop*>::iterator connected_stop = (*stops_iter).begin(); connected_stop < (*stops_iter).end(); connected_stop++) // loop through all the potential connection stops of a specific path
 		// going over all the stops at the second (connected) set
 		{
             if ( (candidate_connection_stops_u.count(*connected_stop) == 0) && ((*connected_stop)->check_destination_stop(this->get_OD_stop()->get_destination()) == true) )
-				// only if it wasn't done already and there exists an OD for the remaining part
+				// only if it wasn't done already and there exists an OD for the remaining part (i.e. the utility has not been calculated already for this connection stop, and their are paths available to the final destination via the connection stop)
 			{
 				ODstops* left_od_stop = nullptr;
-				if ((*connected_stop)->check_stop_od_as_origin_per_stop(this->get_OD_stop()->get_destination()) == false)
+				if ((*connected_stop)->check_stop_od_as_origin_per_stop(this->get_OD_stop()->get_destination()) == false) // need to register each stop as a destination stop if not done previously for some reason, isnt this equivalent to the previous check_destination_stop????
 				{
 					ODstops* left_od_stop = new ODstops ((*connected_stop),this->get_OD_stop()->get_destination());
 					(*connected_stop)->add_odstops_as_origin(this->get_OD_stop()->get_destination(), left_od_stop);
-					this->get_OD_stop()->get_destination()->add_odstops_as_destination((*connected_stop), left_od_stop);
+					this->get_OD_stop()->get_destination()->add_odstops_as_destination((*connected_stop), left_od_stop); // added to both the origin stop and the destination stop....
 				}
 				else
 				{
-					left_od_stop = (*connected_stop)->get_stop_od_as_origin_per_stop(this->get_OD_stop()->get_destination());
+					left_od_stop = (*connected_stop)->get_stop_od_as_origin_per_stop(this->get_OD_stop()->get_destination()); // get the OD between the connection stop and the final destination
 				}
-				if ((*connected_stop)->get_id() == OD_stop->get_destination()->get_id())
+				if ((*connected_stop)->get_id() == OD_stop->get_destination()->get_id()) // if the final destination of the passenger is within walking distance, then the utility is based only on walking (also no choice will be made)
 				// in case it is the final destination for this passeneger
 				{
 					candidate_connection_stops_u[(*connected_stop)] = theParameters->walking_time_coefficient * (*path_iter)->get_walking_distances().front() / theRandomizers[0]->nrandom(theParameters->average_walking_speed, theParameters->average_walking_speed/4);
 					// the only utility component is the CT (walking time) till the destination
 				}	 
 				else
-				// in case it is an intermediate transfer stop
+				// in case it is an intermediate transfer stop, basically anything that isnt the final destination
 				{
+					assert(left_od_stop); // want to actually see what case we are checking for when/if a nullptr is being returned here... There seems to be a great deal of code attempting to ensure this earlier in this function...
 					if(left_od_stop)
 					{ 
-						candidate_connection_stops_u[(*connected_stop)] = left_od_stop->calc_combined_set_utility_for_connection ((*path_iter)->get_walking_distances().front(), time, this);
+						//DEBUG_MSG("Passenger::make_connection_decision - Passenger " << this->get_id() << " at stop " << left_od_stop->get_origin()->get_id() << " checking utility for path " << (*path_iter)->get_id());
+						candidate_connection_stops_u[(*connected_stop)] = left_od_stop->calc_combined_set_utility_for_connection ((*path_iter)->get_walking_distances().front(), time, this); 
+						// walking distances front taken since this is the amount of time it takes to reach the connection stop via walking, so to access the 'set utility'
 						// the utility is combined for all paths from this transfer stop (incl. walking time to the connected stop)
 					}
 					else
@@ -653,6 +735,7 @@ Busstop* Passenger::make_connection_decision (double time)
 	for (map <Busstop*, double>::iterator transfer_stops = candidate_connection_stops_u.begin(); transfer_stops != candidate_connection_stops_u.end(); transfer_stops++)
 	{
 		candidate_connection_stops_p[(*transfer_stops).first] = exp(candidate_connection_stops_u[(*transfer_stops).first]) / MNL_denominator;
+		//DEBUG_MSG("\t Stop "<< (*transfer_stops).first->get_id() << " prob: " << 100 * candidate_connection_stops_p[(*transfer_stops).first] << "%");
 	}
 	// perform choice
 	vector<double> connecting_probs;
@@ -684,6 +767,7 @@ Busstop* Passenger::make_connection_decision (double time)
 	return candidate_connection_stops_p.begin()->first; // arbitary choice in case something failed
 }
 
+//OBS: Called only in ODzone->execute, the whole zone thing doesnt seem to be used anymore
 Busstop* Passenger::make_first_stop_decision (double time)
 {
 	map <Busstop*, double> candidate_origin_stops_u; // the double value is the utility associated with the respective stop
@@ -755,6 +839,164 @@ Busstop* Passenger::make_first_stop_decision (double time)
 	}
 	return candidate_origin_stops_p.begin()->first; // arbitary choice in case something failed
 
+}
+
+TransitModeType Passenger::make_transitmode_decision(Busstop* pickup_stop, double time)
+{
+	/**
+	* @todo
+	*	Add output collectors to ODstop (e.g. Passenger_transitmode_decision)
+	*   Add writer for transitmode decisions to Network
+	*/
+	assert(pickup_stop->check_stop_od_as_origin_per_stop(OD_stop->get_destination()) != false); //!< checked already in make_connection_decision which should always be called
+    //DEBUG_MSG("Passenger::make_transitmode_decision() - pass " << this->get_id() << " choosing mode for pickup stop " << pickup_stop->get_id() << " at time " << time);
+
+	//Q_UNUSED(time);
+	TransitModeType chosen_mode = TransitModeType::Null;
+
+	if (pickup_stop != OD_stop->get_destination()) // the walking only case.., default is to return TransitModeType::Null then, no decision made
+	{
+		map<TransitModeType, pair<double, double> > mode_MNL; //!< for output collector at ODstops level
+        
+//		if (pickup_stop->check_stop_od_as_origin_per_stop(OD_stop->get_destination()) == false)
+//		{
+//			ODstops* od_stop = new ODstops(pickup_stop, OD_stop->get_destination());
+//			pickup_stop->add_odstops_as_origin(OD_stop->get_destination(), od_stop);
+//			OD_stop->get_destination()->add_odstops_as_destination(pickup_stop, od_stop);
+//		}
+		ODstops* targetOD = pickup_stop->get_stop_od_as_origin_per_stop(OD_stop->get_destination());
+
+		double fixed_u = 0.0; //utility of choosing fixed
+		double fixed_p = 0.0; //probability of fixed
+		double flex_u = 0.0; //utility of choosing flexible
+		double flex_p = 0.0; //probability of flex
+
+		vector<Pass_path*> paths = targetOD->get_path_set();
+		if (temp_connection_path_utilities.count(targetOD) == 0) //should be at least one path, unless traveler walked to an arbitrary stop due to no paths being available
+			return TransitModeType::Null;
+
+		for (const auto& path : paths) //utilities of accessing the pickup stop should already be included in temp_connection_path_utilities
+		{
+			if (path->is_first_transit_leg_fixed()) 
+			{
+				if (temp_connection_path_utilities[targetOD].count(path) != 0) //should ignore paths that include walking to access targetOD, access to pickup stop set utility already included
+				{
+					//DEBUG_MSG("\t getting utilities for fixed path " << path->get_id());
+					fixed_u += temp_connection_path_utilities[targetOD][path];
+				}
+			}
+			else if (path->is_first_transit_leg_flexible())
+			{
+				if(temp_connection_path_utilities[targetOD].count(path) != 0) //should ignore paths that include walking to access targetOD, access to pickup stop set utility already included
+				{
+					//DEBUG_MSG("\t getting utilities for flex path " << path->get_id());
+					flex_u += temp_connection_path_utilities[targetOD][path];
+				}
+			}
+		}
+
+		fixed_u = (fixed_u == 0.0) ? -DBL_INF : log(fixed_u);
+		flex_u = (flex_u == 0.0) ? -DBL_INF : log(flex_u);
+
+		double MNL_denom = exp(fixed_u) + exp(flex_u);
+		fixed_p = exp(fixed_u) / MNL_denom;
+		flex_p = exp(flex_u) / MNL_denom;
+		assert(AproxEqual(fixed_p + flex_p, 1.0));
+
+		mode_MNL[TransitModeType::Fixed].first = fixed_u; 
+		mode_MNL[TransitModeType::Fixed].second = fixed_p;
+		mode_MNL[TransitModeType::Flexible].first = flex_u; 
+		mode_MNL[TransitModeType::Flexible].second = flex_p;
+		//DEBUG_MSG("\t Fixed prob: " << fixed_p*100 << "%");
+		//DEBUG_MSG("\t Flex prob : " << flex_p*100 << "%");
+
+		vector<double> mode_probs = {fixed_p, flex_p};
+		vector<TransitModeType> modes = {TransitModeType::Fixed, TransitModeType::Flexible};
+
+		chosen_mode = theRandomizers[0]->randomchoice(modes, mode_probs); // make choice
+		targetOD->record_passenger_transitmode_decision(this, time, pickup_stop, chosen_mode, mode_MNL); // store decision result at ODstop level
+    }
+	
+	/*if (chosen_mode == TransitModeType::Null)
+		DEBUG_MSG_V("Passenger::make_transitmode_decision() - " << "returning TransitModeType::Null" << " at time " << time);
+	else
+		DEBUG_MSG("\t Chose mode " << chosen_mode);*/
+
+	return chosen_mode;
+}
+
+Busstop* Passenger::make_dropoff_decision(Busstop* pickup_stop, double time)
+{
+    /**
+     * @todo
+     *	 Only called after set_chosen_mode(TransitModeType::Flexible)
+     *  Want to loop through the paths starting from the chosen pickup stop with first leg flexible
+     *  and look at each of the first leg dropoff stops and the path set utility for this
+     */
+    assert(chosen_mode_ == TransitModeType::Flexible); //dropoff decision really only makes sense for on-demand/flexible modes
+    Busstop* dropoff_stop = nullptr;
+
+    /**
+* @todo
+*	Add output collectors to ODstop (e.g. Passenger_transitmode_decision)
+*   Add writer for transitmode decisions to Network
+*/
+    assert(pickup_stop->check_stop_od_as_origin_per_stop(OD_stop->get_destination()) != false); //!< checked already in make_connection_decision which should always be called
+    DEBUG_MSG("Passenger::make_dropoff_decision() - pass " << this->get_id() << " choosing dropoff stop for pickup stop " << pickup_stop->get_id() << " at time " << time);
+
+    if (pickup_stop != OD_stop->get_destination() || chosen_mode_ != TransitModeType::Flexible) // the walking only case or called for a traveler using a non-flexible mode, default is to return nullptr
+    {
+        ODstops* targetOD = pickup_stop->get_stop_od_as_origin_per_stop(OD_stop->get_destination());
+        if (temp_connection_path_utilities.count(targetOD) == 0) //should be at least one path, unless traveler walked to an arbitrary stop due to no paths being available
+            return nullptr;
+
+        map <Busstop*, double> accum_dropoff_stops_u; // accumulated utilities before calculating logsum per stop
+        vector<Pass_path*> flex_paths = targetOD->get_flex_first_paths(); // only care about paths with first leg flexible, flexible mode chosen for next leg already
+
+        for (const auto& path : flex_paths) //utilities of accessing the pickup stop should already be included in temp_connection_path_utilities
+        {
+            if (temp_connection_path_utilities[targetOD].count(path) != 0) //should ignore paths that include walking to access targetOD, access to pickup stop set utility already included
+            {
+                Busstop* candidate_stop = path->get_first_dropoff_stop();
+                DEBUG_MSG("\t getting utilities for path " << path->get_id() << " with next leg dropoff stop " << candidate_stop->get_id());
+                accum_dropoff_stops_u[candidate_stop] += temp_connection_path_utilities[targetOD][path]; 	//sort the path utilities by dropoff stop
+            }
+        }
+        assert(!accum_dropoff_stops_u.empty()); // if empty, a flexible first transit leg was chosen with no available destination stops or no flexible paths available from the target OD (i.e. should never happen)
+
+        map <Busstop*, double> dropoff_stops_u; // the double value is the utility associated with the respective stop
+        map <Busstop*, double> dropoff_stops_p; // the double value is the probability associated with the respective stop
+        vector<double> stop_probs; // probability distribution of dropoff stops
+        vector<Busstop*> candidate_stops; // dropoff stops to choose from
+
+        map<Busstop*, pair<double, double> > dropoff_MNL; //!< for output collector at ODstops level, first double utility of choosing dropoff stop, second probability
+        double MNL_denom = 0.0;
+        //calculate probabilities
+        for (const auto& stop_u : accum_dropoff_stops_u) //calculate the MNL denominator
+        {
+            dropoff_stops_u[stop_u.first] = (stop_u.second == 0.0) ? -DBL_INF : log(stop_u.second);
+            MNL_denom += exp(dropoff_stops_u[stop_u.first]); //maybe redundant directly after log but to stay consistent with logit formulation
+        }
+        assert(!AproxEqual(MNL_denom, 0.0));
+
+        for (const auto& stop_u : dropoff_stops_u) //calculate probabilities
+        {
+            Busstop* candidate_dropoff_stop = stop_u.first;
+            double stop_prob = exp(stop_u.second) / MNL_denom; //probability of choosing stop as dropoff point
+
+            dropoff_stops_p[candidate_dropoff_stop] = stop_prob;
+            candidate_stops.push_back(candidate_dropoff_stop);
+            stop_probs.push_back(stop_prob);
+
+            dropoff_MNL[candidate_dropoff_stop] = make_pair(stop_u.second, stop_prob); // fill in output structure
+            DEBUG_MSG("\t Stop " << candidate_dropoff_stop->get_id() << " prob: " << 100 * stop_prob << "%");
+        }
+
+        dropoff_stop = theRandomizers[0]->randomchoice(candidate_stops, stop_probs); // make choice
+        targetOD->record_passenger_dropoff_decision(this, time, pickup_stop, dropoff_stop, dropoff_MNL);
+    }
+
+    return dropoff_stop;
 }
 
 map<Busstop*,double> Passenger::sample_walking_distances (ODzone* zone)
@@ -1247,5 +1489,3 @@ double Passenger::get_walking_time(Busstop* busstop_dest_ptr, double curr_time)
 
     return busstop_orig_ptr->get_walking_time(busstop_dest_ptr, curr_time);
 }
-
-

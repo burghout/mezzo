@@ -268,6 +268,8 @@ public:
 	void set_static_trips(const list <Start_trip>& static_trips_) { static_trips = static_trips_; } //!< ugly solution, sole purpose is to save the initial (non-dynamically generated) trips vector between resets
     void set_planned_headway(double planned_headway_) { planned_headway = planned_headway_; }
     double get_planned_headway() const { return planned_headway; }
+	void add_CC(Controlcenter* CC) { CC_ = CC; }
+	Controlcenter* get_CC() { return CC_; }
 	/**@}*/
 
 protected:
@@ -304,6 +306,7 @@ protected:
     int trip_count = 0; //!< the number of trips created for this line
     list <Start_trip> static_trips; //!< trips that were created from input files (i.e. were not created dynamically for this line), to be saved between resets
     double planned_headway = 0; //!< planned headway in seconds of this line, set to zero by default in constructor. If this is a DRT line then the planned headway is not based on pre-scheduled trips but on expectations given service design (@todo DRT currently only valid with trip format 3 now!)
+	Controlcenter* CC_ = nullptr; //!< controlcenter that can dynamically generate trips for this line
     /**@}*/
 
     map <Busstop*, pair<Busstop*, pair<double, double> > > disruption_times; //!< contains the expected travel times between a pair of stops in case of disruption (does not affect actual travel time, only passenger information provision). Strat and end times
@@ -445,31 +448,31 @@ public:
 /**@}*/
 
 protected:
-	int id;										  //!< course nr
-	Bus* busv;									  //!< pointer to the bus vehicle
-	Bustype* btype;
-	Busline* line;								  //!< pointer to the line it serves
-	double init_occup_per_stop;					  //!< initial occupancy, usually 0
-	int nr_stops_init_occup;
-	bool complying_bustrip;						  //!< indicates whether this trip complies with the control strategy in place or not  
-	double starttime;							  //!< when the trip is schedule to departure from the origin
-	double actual_dispatching_time;
-	vector <Visit_stop*> :: iterator next_stop; 
-	Random* random;
-	list <Bustrip_assign> output_passenger_load;  //!< contains the information on traveling on the segment starting at stop
-	double enter_time;							  //!< the time it entered the most recently bus stop
-	double last_stop_exit_time;					  //!< the time stamp of the exit time from the last stop that had been visited by this trip
-	double last_stop_enter_time; 
-	Busstop* last_stop_visited;
-	bool holding_at_stop;						 //!< David added 2016-05-26: true if the trip is currently holding at a stop, false otherwise (used for progressing passengers in case of holding for demand format 3, should always be false for other formats)
-	//	map <Busstop*,bool> trips_timepoint;	 //!< will be relevant only when time points are trip-specific. binary map with time point indicatons for stops on route only (according to the schedule input file)  
-	Eventlist* eventlist;						 //!< for use by busstops etc to book themselves.
+    int id = -1;									//!< course nr
+    Bus* busv = nullptr;							//!< pointer to the bus vehicle
+    Bustype* btype = nullptr;
+    Busline* line = nullptr;						//!< pointer to the line it serves
+    double init_occup_per_stop = 0.0;				//!< initial occupancy, usually 0
+    int nr_stops_init_occup = 0;
+    bool complying_bustrip = true;					//!< indicates whether this trip complies with the control strategy in place or not  
+    double starttime = 0.0;							//!< when the trip is schedule to departure from the origin
+    double actual_dispatching_time = 0.0;
+    vector <Visit_stop*> ::iterator next_stop;
+    Random* random = nullptr;
+    list <Bustrip_assign> output_passenger_load;	//!< contains the information on traveling on the segment starting at stop
+    double enter_time = 0.0;						//!< the time it entered the most recently bus stop
+    double last_stop_exit_time = 0.0;				//!< the time stamp of the exit time from the last stop that had been visited by this trip
+    double last_stop_enter_time = 0.0;
+    Busstop* last_stop_visited = nullptr;
+    bool holding_at_stop = false;					//!< David added 2016-05-26: true if the trip is currently holding at a stop, false otherwise (used for progressing passengers in case of holding for demand format 3, should always be false for other formats)
+    //	map <Busstop*,bool> trips_timepoint;		//!< will be relevant only when time points are trip-specific. binary map with time point indicatons for stops on route only (according to the schedule input file)  
+    Eventlist* eventlist = nullptr;					//!< for use by busstops etc to book themselves.
 	
 	/** @ingroup DRT
         @{
     */
-	bool scheduled_for_dispatch; //!< true if this trip has been scheduled for dispatch (i.e. a busline event has been created with for the starttime of this trip) for its respective line, false otherwise
-	bool flex_trip; //!< true if this trip was generated dynamically
+	bool scheduled_for_dispatch = false; //!< true if this trip has been scheduled for dispatch (i.e. a busline event has been created with for the starttime of this trip) for its respective line, false otherwise
+	bool flex_trip = false; //!< true if this trip was generated dynamically
     /**@}*/
 };
 
@@ -768,6 +771,8 @@ public:
 	Destination* get_dest_node() const { return dest_node; } 
 	void set_origin_node(Origin* origin_node_) { origin_node = origin_node_; }
 	void set_dest_node(Destination* dest_node_) { dest_node = dest_node_; }
+
+	bool is_within_walking_distance_of(Busstop* target_stop); //!< check to see which stops are connected by walking links from this stop
 /**@}*/
 
 // relevant only for demand format 2

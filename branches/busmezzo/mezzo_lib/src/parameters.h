@@ -64,6 +64,7 @@
 extern double drt_first_rep_max_headway; //!< currently corresponds to a global maximum headway for a DRT service. Sometimes returned by calc_headway... functions when a Busline currently has no Bustrips in its trips list yet
 extern double drt_first_rep_waiting_utility; //!< sometimes returned in calc_waiting_utility functions when a Busline currently has no Bustrips in its trips list yet
 extern int drt_min_occupancy; //!< currently used in controlstrategies to put different minimum size of the set of passenger requests to consider generating trips
+const double drt_exploration_wt = 0.0; //!< default value returns by Controlcenter if RTI or experience is unavailable for passenger anticipated waiting time calculations for decisions
 /**@}*/
 
 // GLOBAL VARIABLES

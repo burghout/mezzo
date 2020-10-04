@@ -212,6 +212,12 @@ void Bus::reset ()
         state_ = BusState::Null;
         sroute_ids_.clear(); //initial service routes re-added in Network::init
     }
+
+	total_time_spent_in_state.clear();
+	time_state_last_entered.clear();
+	total_meters_traveled = 0;
+	total_empty_meters_traveled = 0;
+	total_occupied_meters_traveled = 0;
 }
 
 Bus::~Bus()
@@ -234,8 +240,8 @@ void Bus::advance_curr_trip (double time, Eventlist* eventlist) // progresses tr
 {
     if (theParameters->drt)
     {
-        if (flex_vehicle_)
-            DEBUG_MSG("----------Bus " << id << " finishing trip " << curr_trip->get_id() << " at time " << time);
+        //if (flex_vehicle_)
+        //    DEBUG_MSG("----------Bus " << id << " finishing trip " << curr_trip->get_id() << " at time " << time);
 
         if (flex_vehicle_ && curr_trip->is_flex_trip()) //if the trip that just finished was dynamically scheduled then the controlcenter is in charge of bookkeeping the completed trip and bus for writing outputs
         {
@@ -246,7 +252,8 @@ void Bus::advance_curr_trip (double time, Eventlist* eventlist) // progresses tr
             }
 
             double trip_time = curr_trip->get_enter_time() - curr_trip->get_starttime();
-            DEBUG_MSG("\t Total trip time: " << trip_time);
+            Q_UNUSED(trip_time);
+            //DEBUG_MSG("\t Total trip time: " << trip_time);
             
             curr_trip->get_line()->remove_flex_trip(curr_trip); //remove from set of uncompleted flex trips in busline, control center takes ownership of the trip for deletion
             CC_->addCompletedVehicleTrip(this, curr_trip); //save bus - bustrip pair in control center of last stop 
@@ -361,6 +368,136 @@ BusState Bus::calc_state(const bool assigned_to_trip, const bool bus_exiting_sto
 	return BusState::Null;
 }
 
+double Bus::get_total_time_in_state(BusState state) const
+{
+	if (total_time_spent_in_state.count(state) != 0)
+		return total_time_spent_in_state.at(state);
+	else
+		return 0.0;
+}
+
+double Bus::get_total_time_empty()
+{
+	double total_time_empty = 0.0;
+	for (const auto& state_time : total_time_spent_in_state)
+	{
+		switch (state_time.first)
+		{
+		case BusState::DrivingEmpty:
+		case BusState::IdleEmpty:
+		case BusState::OnCall:
+			total_time_empty += state_time.second;
+			break;
+		default:
+			break;
+		}
+	}
+
+	return total_time_empty;
+}
+
+double Bus::get_total_time_occupied()
+{
+	double total_time_occupied = 0.0;
+	for (const auto& state_time : total_time_spent_in_state)
+	{
+		switch (state_time.first)
+		{
+		case BusState::DrivingPartiallyFull:
+		case BusState::DrivingFull:
+		case BusState::IdlePartiallyFull:
+		case BusState::IdleFull:
+			total_time_occupied += state_time.second;
+			break;
+		default:
+			break;
+		}
+	}
+
+	return total_time_occupied;
+}
+
+double Bus::get_total_time_driving()
+{
+	double total_time_driving = 0.0;
+	for (const auto& state_time : total_time_spent_in_state)
+	{
+		switch (state_time.first)
+		{
+		case BusState::DrivingEmpty:
+		case BusState::DrivingPartiallyFull:
+		case BusState::DrivingFull:
+			total_time_driving += state_time.second;
+			break;
+		default:
+			break;
+		}
+	}
+
+	return total_time_driving;
+}
+
+double Bus::get_total_time_idle()
+{
+	double total_time_idle = 0.0;
+	for (const auto& state_time : total_time_spent_in_state)
+	{
+		switch (state_time.first)
+		{
+		case BusState::IdleEmpty:
+		case BusState::IdlePartiallyFull:
+		case BusState::IdleFull:
+			total_time_idle += state_time.second;
+			break;
+		default:
+			break;
+		}
+	}
+
+	return total_time_idle;
+}
+
+double Bus::get_total_time_oncall()
+{
+	double total_time_oncall = 0.0;
+	for (const auto& state_time : total_time_spent_in_state)
+	{
+		switch (state_time.first)
+		{
+		case BusState::OnCall:
+			total_time_oncall += state_time.second;
+			break;
+		default:
+			break;
+		}
+	}
+
+	return total_time_oncall;
+}
+
+void Bus::update_meters_traveled(int meters_, bool is_empty)
+{
+	total_meters_traveled += meters_;
+	if (is_empty)
+		total_empty_meters_traveled += meters_;
+	else
+		total_occupied_meters_traveled += meters_;
+}
+
+double Bus::get_total_vkt() const
+{
+	return static_cast<double>(total_meters_traveled) / 1000.0;
+}
+double Bus::get_total_empty_vkt() const
+{
+	return static_cast<double>(total_empty_meters_traveled) / 1000.0;
+}
+double Bus::get_total_occupied_vkt() const
+{
+	return static_cast<double>(total_occupied_meters_traveled) / 1000.0;
+}
+
+
 void Bus::set_state(const BusState newstate, const double time)
 {
 	if (newstate == BusState::OnCall || newstate == BusState::IdleEmpty || newstate == BusState::DrivingEmpty)
@@ -370,8 +507,12 @@ void Bus::set_state(const BusState newstate, const double time)
 	{
 		BusState oldstate = state_;
 		state_ = newstate;
+
+		total_time_spent_in_state[oldstate] += time - time_state_last_entered[oldstate]; // update cumulative time in each busstate (used for outputs)
+		time_state_last_entered[newstate] = time; // start timer for newstate
+
 #ifdef  _DRTDEBUG
-        print_state();
+        //print_state();
 #endif //  DRTDEBUG_
 		emit stateChanged(this, oldstate, state_, time);
 	}
@@ -443,6 +584,18 @@ bool Bus::is_driving() const
 bool Bus::is_oncall() const
 {
 	if (state_ == BusState::OnCall)
+		return true;
+	return false;
+}
+
+bool Bus::is_empty() const
+{
+	return occupancy == 0;
+}
+
+bool Bus::is_null() const
+{
+	if (state_ == BusState::Null)
 		return true;
 	return false;
 }

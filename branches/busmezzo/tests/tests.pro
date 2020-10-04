@@ -3,6 +3,7 @@
 TEMPLATE = subdirs
 
 SUBDIRS += \
+    fixedwithflexible_walking \
     integrationtest \
     controlcenter \
     routestest \

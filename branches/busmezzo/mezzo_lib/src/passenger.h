@@ -15,6 +15,10 @@ class ODstops;
 class ODzone;
 struct SLL;
 struct Request;
+class Pass_path;
+
+enum class TransitModeType { Null = 0, Fixed, Flexible }; //!< used mainly for transitmode decision
+ostream& operator << (ostream& os, const TransitModeType& obj); 
 
 class Passenger : public QObject, public Action
 {
@@ -73,6 +77,13 @@ public:
 	Busstop* make_alighting_decision (Bustrip* boarding_bus, double time);	//!< alighting decision making 
 	Busstop* make_connection_decision (double time);						//!< connection link decision (walking between stops)
 
+/** @ingroup DRT
+	@{
+*/
+	TransitModeType make_transitmode_decision(Busstop* pickup_stop, double time); //!< choice of fixed or flexible mode for the nextmost transit leg of a trip. Follows immediately after a connection decision
+	Busstop* make_dropoff_decision(Busstop* pickup_stop, double time); //!< if chosen mode is flexible, choice of which drop-off stop (transfer or final destination) to send a request for. Follows immediately after transitmode decision
+/** @} */
+
 	// Demand in terms of zones
 	map<Busstop*,double> sample_walking_distances (ODzone* zone);
 	Busstop* make_first_stop_decision (double time); // deciding at which stop to initiate the trip
@@ -120,7 +131,7 @@ public:
 	bool line_is_rejected(int id); //If the passenger has rejected line with id the function returns true
     
     //walking time
-    double get_walking_time(Busstop*,double);
+    double get_walking_time(Busstop* target_stop, double curr_time);
 
 /** @ingroup DRT
     @{
@@ -131,6 +142,20 @@ public:
                                                                                                    then attempts to create a request to travel to the first transfer stop found within the service area instead. 
                                                                                                    Returns TRUE and the request if successful, FALSE and an invalid request otherwise (Note: uses protected members of Passenger) */
 
+protected:
+	TransitModeType chosen_mode_ = TransitModeType::Null; /**!< Null if no choice has been made yet, otherwise the result of a mode choice decision. Travelers do not currently re-make a choice of fixed or flexible mode and are commited to this mode for the next leg of their trip once this choice is made. */
+	bool access_to_flexible_ = false; //!< true if traveler can send requests/recieve offers for a flexible schedule/route service. Currently assumed to be tied to RTI availability at a network level (e.g. owning a smartphone)
+	
+
+public:
+	map<ODstops*, map<Pass_path*, double> > temp_connection_path_utilities; //!< cached exp(path utilities) calculated for a given connection/transitmode/dropoff decision. Cleared between make_connection_decision calls
+	void set_chosen_mode(TransitModeType chosen_mode) { chosen_mode_ = chosen_mode; }
+	TransitModeType get_chosen_mode() { return chosen_mode_; }
+	bool is_flexible_user() { return chosen_mode_ == TransitModeType::Flexible; }
+    bool has_access_to_flexible() { return access_to_flexible_; }
+	void set_access_to_flexible(bool access_to_flexible) { access_to_flexible_ = access_to_flexible; }
+	vector<Pass_path*> get_first_leg_flexible_paths(const vector<Pass_path*>& path_set) const; //!< returns all paths in path_set that have a flexible first transit leg (that a traveler would need to send a request for to ride with)
+	vector<Pass_path*> get_first_leg_fixed_paths(const vector<Pass_path*>& path_set) const; //!< returns all paths in path_set that have a fixed first transit leg
 signals:
 	void sendRequest(Request req, double time); //!< signal to send Request message to Controlcenter along with time in which signal is sent
 	void boardedBus(int pass_id); //!< signal that a passenger with pass_id (this passenger's id) has just boarded a bus

@@ -266,6 +266,17 @@ protected:
 	multimap <int, Route*> routemap; // map storing routes by Destination_id
 	bool use_ass_matrix; // boolean set to true if this link collects assignment matrix data
 	bool selected; //true if link is 'selected'
+
+	/** @ingroup DRT
+		@todo remove later specific to 'dummy link' scenarios
+		@{
+	*/
+public:
+	bool is_dummylink() { return dummylink; } //!< returns true if this link is a dummy link, and false otherwise
+	void set_dummylink(bool dummylink_) { dummylink = dummylink_; }
+protected:
+	bool dummylink=false; //!< true if this link is a dummy link (i.e. used purely for implementation/nefarious hacky purposes), false otherwise
+	/**@}*/
 };
 
 

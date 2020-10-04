@@ -93,7 +93,11 @@ protected:
     double exit_time = 0.0;
     double arrival_time = 0.0;
     Link* curr_link = nullptr;
+	/** @ingroup DRT
+	@{
+	*/
     size_t curr_link_route_idx = 0; //!< index position of curr_link on route->links, initialized to 0
+	/**@}*/
     bool entered = false;
     int switched = 0;
     int meters = 0;
@@ -127,16 +131,16 @@ protected:
 */
 enum class BusState
 { 
-	Null = 0, 
-	IdleEmpty, 
+	Null = 0, //!< vehicles should be null before they are available, and null when they finish a trip and are copied (e.g. when they are driving on a dummy-link)
+	IdleEmpty, //!< 'idle' in this context refers to the vehicle being on a trip but not driving (e.g. boarding/alighting/dwelling)
 	IdlePartiallyFull, 
 	IdleFull, 
-	DrivingEmpty, 
+	DrivingEmpty, //!< 'driving' here refers to when the vehicle is moving between two stops
 	DrivingPartiallyFull, 
 	DrivingFull,
 	//Loading/Unloading
 	//Refeuling
-	OnCall
+	OnCall //!< 'oncall' refers to if the vehicle is not currently assigned any trip and is standing still
 }; 
 class Bus : public QObject, public Vehicle
 {
@@ -193,12 +197,24 @@ public:
 //Control Center
 	BusState get_state() const { return state_; }
 	BusState calc_state(const bool assigned_to_trip, const bool bus_exiting_stop, const int occupancy) const; //!< returns the BusState of bus depending whether a bus is assigned to a trip, has just entered or exited a stop, and the occupancy of the bus. Other states for when a bus is not on a trip (e.g. onCall are set elsewhere)
+	double get_total_time_in_state(BusState state) const;
+	double get_total_time_empty();
+	double get_total_time_occupied();
+	double get_total_time_driving();
+	double get_total_time_idle();
+	double get_total_time_oncall();
+	void update_meters_traveled(int meters_, bool is_empty);
+	double get_total_vkt() const;
+	double get_total_empty_vkt() const;
+	double get_total_occupied_vkt() const;
 	void set_state(const BusState newstate, const double time); //!< sets current state_ to newstate and emits stateChanged if newstate differs from current state_
 	void print_state(); //!< prints current BusState for debugging purposes
 
 	bool is_idle() const;	//!< returns true if bus is idle/waiting at a stop
 	bool is_driving() const; //!< returns true if bus is driving between stops
 	bool is_oncall() const; //!< returns true if bus is unassigned to any trip and is available for assignment
+	bool is_empty() const; //!< returns true if bus occupancy is currently 0 and false otherwise
+	bool is_null() const;
 
 	Busstop* get_last_stop_visited() const { return last_stop_visited_; }
 	void set_last_stop_visited(Busstop* last_stop_visited) { last_stop_visited_ = last_stop_visited; } 
@@ -235,6 +251,12 @@ protected:
 	set<int> sroute_ids_; //!< ids of service routes (buslines) that this bus can be assigned dynamically generated trips for
     Controlcenter* CC_ = nullptr; //!< control center that this vehicle is currently connected to. nullptr if not connected to any control center
 
+	// output attributes
+	map<BusState, double> total_time_spent_in_state; //!< maps each busstate to the total time spent in this busstate by this vehicle for each simulation replication. Currently used for output
+	map<BusState, double> time_state_last_entered; //!< maps each busstate (if entered previously) to the latest time this vehicle entered this state
+	int total_meters_traveled = 0; //!< cumulative meters traveled (excluding dummy links)
+	int total_empty_meters_traveled = 0; //!< cumulative meters traveled without any passengers onboard
+	int total_occupied_meters_traveled = 0; //!< cumulative meters traveled with at least one passenger onboard
 /**@}*/
 };
 

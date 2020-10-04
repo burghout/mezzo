@@ -21,6 +21,8 @@
 #define MATH_HEADER
 
 #include <climits>
+#include <algorithm>
+#include <vector>
 
 #ifdef RogueWave
 #include <rw/math.h>
@@ -54,6 +56,18 @@ const double	DBL_EPSILON = 1.0 / DBL_INF;
 #endif
 
 #ifndef MACRO
+
+template<class T>
+T findMedian(std::vector<T> v)
+{
+    size_t n = v.size();
+    sort(v.begin(), v.end());
+    
+    if (n % 2 != 0)
+        return v[n / 2];
+    else
+        return (v[(n - 1) / 2] + v[n / 2]) / 2.0;
+}
 
 template <class T>
 inline T Sign(T e)
