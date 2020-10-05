@@ -324,6 +324,7 @@ public:
     vector <Busroute*>&  get_busroutes() { return busroutes; } // bad idea, but consistent with the other get_*
     vector <Busline*>& get_buslines() {return buslines;}
 	vector <ODstops*> get_odstops_demand() { return odstops_demand; }
+	vector<Bus*> get_busvehicles() { return busvehicles; }
 	
 	multimap<odval, Route*>::iterator find_route (int id, odval val);
 	bool exists_route (int id, odval val); // checks if route with this ID exists for OD pair val
@@ -518,7 +519,10 @@ protected:
     typedef std::tuple<Bus*, Busstop*, Controlcenter*, double> DrtVehicleInit; //!< un-scheduled vehicle, initial busstop, initial controlcenter, initial time
 	map<int, Controlcenter*> ccmap; //!< map of all control centers with id as key
 	vector <DrtVehicleInit> drtvehicles; //!<  vector of all initially unassigned vehicles that are not assigned a schedule and line on input, along with values used for their initialization (used in Network::init())
+public:
+	vector<DrtVehicleInit> get_drtvehicles_init() { return drtvehicles; }
 /**@}*/
+protected:
 	//Shortest path graph
 #ifndef _USE_VAR_TIMES
 	Graph<double, GraphNoInfo<double> > * graph;

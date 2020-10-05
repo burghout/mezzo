@@ -12,17 +12,13 @@
 //#include <unistd.h>
 #include <QFileInfo>
 
-//! DRT Tests BusMezzo
-//! Contains tests of parts of the DRT framework
 
-
-//const std::string network_path_1 = "../networks/SFnetwork/"; // Spiess Florian network
-//const std::string network_path_2 = "../networks/DRTFeeder/"; // DRT feeder network
-const std::string network_path_3 = "../networks/PentaFeeder/"; //Pentagon feeder network
+//!< Pentagon feeder network, both fixed and DRT services are available.
+//!< Some fixed-schedule vehicles defined with chained trips, some not (i.e. 1 vehicle generated per trip).
+const std::string network_path = "../networks/PentaFeeder/";
 
 const std::string network_name = "masterfile.mezzo";
 
-//const QString expected_outputs_path = "://networks/SFnetwork/ExpectedOutputs/";
 const QString expected_outputs_path = ":/networks/PentaFeeder/ExpectedOutputs/";
 const QString path_set_generation_filename = "o_path_set_generation.dat";
 const vector<QString> output_filenames =
@@ -82,15 +78,13 @@ private Q_SLOTS:
     void testDelete(); //!< tests correct deletion
 
 private:
-    NetworkThread* nt; //!< contains the network thread
-    Network* net;
+    NetworkThread* nt = nullptr; //!< contains the network thread
+    Network* net = nullptr;
 };
 
 void TestPentaFeeder::testCreateNetwork()
 {
-    nt = nullptr;
-    net = nullptr;
-    chdir(network_path_3.c_str());
+    chdir(network_path.c_str());
 
     QFileInfo check_file(network_name.c_str());
     QVERIFY2 (check_file.exists(), "Failure, masterfile cannot be found");
@@ -105,14 +99,14 @@ void TestPentaFeeder::testCreateNetwork()
 void TestPentaFeeder::testInitNetwork()
 {
     //QFile::remove(path_set_generation_filename); //remove old passenger path sets
-    qDebug() << "Initializing network in " + QString::fromStdString(network_path_3);
+    qDebug() << "Initializing network in " + QString::fromStdString(network_path);
 
     nt->init();
- // Test here various properties that should be true after reading the network
-    // Test if the network is properly read and initialized
+
     QVERIFY2(net->get_links().size() == 46, "Failure, network should have 46 links ");
     QVERIFY2(net->get_nodes().size() == 24, "Failure, network should have 24 nodes ");
     QVERIFY2(net->get_odpairs().size() == 36, "Failure, network should have 36 od pairs ");
+    QVERIFY(net->get_stopsmap().size() == 6);
     QVERIFY2 (net->get_busstop_from_name("A")->get_id() == 1, "Failure, bus stop A should be id 1 ");
     QVERIFY2 (net->get_busstop_from_name("B")->get_id() == 2, "Failure, bus stop B should be id 2 ");
     QVERIFY2 (net->get_busstop_from_name("C")->get_id() == 3, "Failure, bus stop C should be id 3 ");
@@ -120,10 +114,9 @@ void TestPentaFeeder::testInitNetwork()
     QVERIFY2 (net->get_busstop_from_name("E")->get_id() == 5, "Failure, bus stop E should be id 5 ");
     QVERIFY2 (net->get_busstop_from_name("F")->get_id() == 6, "Failure, bus stop F should be id 6 ");
 
-    QVERIFY2 (theParameters->drt == true, "Failure, DRT not activated in parameters for PentaFeeder_OnlyDRT");
+    QVERIFY2 (theParameters->drt == true, "Failure, DRT not activated in parameters in ../networks/PentaFeeder");
     QVERIFY2 (AproxEqual(net->get_currenttime(),0.0), "Failure, currenttime should be 0 at start of simulation");
 
-    //TODO: add tests for path_set_generation file. Check to see if the most important paths are included when generating path set for this network. Currently passenger choice sets are read from input file
     QVERIFY(theParameters->choice_set_indicator == 1);
 
     map<int,Controlcenter*> ccmap = net->get_controlcenters();
@@ -150,27 +143,19 @@ void TestPentaFeeder::testRunNetwork()
     nt->start(QThread::HighestPriority);
     nt->wait();
 
-    // test here the properties that should be true after running the simulation
     QString msg = "Failure current time " + QString::number(net->get_currenttime()) + " should be 10800.1 after running the simulation";
     QVERIFY2 (AproxEqual(net->get_currenttime(),10800.1), qPrintable(msg));
-
-    // Example: way to check typical value for e.g. number of last departures from stop A:
-   // qDebug() << net->get_busstop_from_name("A")->get_last_departures().size();
-    // and here you turn it into a test
-    //QVERIFY2 ( net->get_busstop_from_name("A")->get_last_departures().size() == 2, "Failure, get_last_departures().size() for stop A should be 2");
 }
 
 void TestPentaFeeder::testSaveResults()
 {
-    // remove old files:
+    // remove old output files:
     for (const QString& filename : output_filenames)
     {
         qDebug() << "Removing file " + filename + ": " << QFile::remove(filename);
     }
 
-    // save results:
     nt->saveresults();
-     // test here the properties that should be true after saving the results
 
     //test if output files match the expected output files
     for (const QString& o_filename : output_filenames)

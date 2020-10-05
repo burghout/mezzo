@@ -57,10 +57,8 @@ public:
 private Q_SLOTS:
     void testCreateNetwork(); //!< test loading a network
     void testInitNetwork(); //!< test generating passenger path sets & loading a network
-    //void testPassengerStates(); //!< test that passengers are being initialized properly,
     void testFleetState(); //!< test methods for filtering vehicles dependent on fleetState in Controlcenter
     void testFlexiblePathExpectedLoS(); //!< test the reading and methods of a specific Pass_path instance, tests calculation of path attributes (ivt, wt, etc. via Controlcenter for flexible legs)
-    //void testStateDependentPassengerPassPath(); //!< tests support methods in Passenger and Pass_path for sorting, filtering path-sets dependent on traveler state (RTI level, current OD...)
     void testPathSetUtilities(); //!< test navigating generated path-sets, calculating utilities under different circumstances (e.g. access to RTI for different legs)
     void testPassArrivedToWaitingDecisions(); //!< test decisions that move a passenger from a state of having just arrived to a stop (either by being generated there or alighting there) to a state of waiting for fixed or flexible transit service
     void testRunNetwork();
@@ -585,110 +583,6 @@ void TestFixedWithFlexible_walking::testFlexiblePathExpectedLoS()
     delete pass2;
 }
 
-//void TestFixedWithFlexible_walking::testStateDependentPassengerPassPath()
-//{
-//    /* Test for paths between stop 5 to 4 (also via 1) with traveler located at stop 5 */
-//    qDebug() << "Creating passenger at stop 5 with destination 4";
-//    ODstops* stop5to4 = net->get_ODstop_from_odstops_demand(5,4);
-//    Passenger* pass1 = new Passenger(888,0,stop5to4);
-
-//    //get all paths available to traveler
-//    Busstop* bs_o = pass1->get_OD_stop()->get_origin();
-//    Busstop* bs_d = pass1->get_OD_stop()->get_destination();
-//    vector<Pass_path*> path_set = bs_o->get_stop_od_as_origin_per_stop(bs_d)->get_path_set();
-//    vector<Pass_path*> path_set2 = pass1->get_OD_stop()->get_path_set();
-//    QVERIFY(!path_set.empty());
-//    QVERIFY(path_set == path_set2); // isnt this equivalent to pass1->get_OD_stop()->get_path_set()? Any reason for this roundabout way?
-
-//    vector<Pass_path*> drt_first_paths = pass1->get_first_leg_flexible_paths(path_set); //paths with first leg flexible
-//    vector<Pass_path*> fix_first_paths = pass1->get_first_leg_fixed_paths(path_set); //paths with first leg fixed
-//    vector<Pass_path*> drt_first_paths2 = stop5to4->get_flex_first_paths(); //retrieving this directly from OD membership instead
-//    vector<Pass_path*> fix_first_paths2 = stop5to4->get_fix_first_paths();
-//    QVERIFY(drt_first_paths == drt_first_paths2);
-//    QVERIFY(fix_first_paths == fix_first_paths2);
-
-//    //Pass init
-//    //Pass execute
-//    //Pass start
-//        // connection decision
-
-//    //test pass functions here for extracting walking, waiting, in-vehicle and transfers for a given available path
-//    //first see what you get. Called from Passenger::start (traveler is at origin) and from Busstop::passenger_activity_at_stop (passenger has alighted at stop)
-//    //No distinction between path-sets just yet.....
-//    /* New connection/request-sending decisions
-//     *
-//        1. make_connection_decision -> Busstop*
-//        2. make_mode_decision -> set waiting for fixed or waiting for flex, if waiting for flex connect passenger to CC of connection stop
-//        3. make_dropoff_decision -> create a request for OD
-
-//        ODstops functions that may be used, tend to be focused on calculating utilities of path-sets between OD pairs
-//        calc_combined_set_utility_for_connection...
-
-//        Busline functions that may be used:
-//        calc_curr_line_ivt ...
-
-//    */
-//    // expected path attributes without day2day
-
-//    /* 1. Get a path
-//     * 2. Calculate the trip attributes for individual legs...Choose a path that includes each component we want (walking transfers a drt etc.)
-//     * 3. Calculate the resulting utilites for a connection decision (path-sets)
-//    */
-
-
-//    //walking times should be the same
-//    Pass_path* path = path_set.front();
-//    vector<vector<Busline*> > line_legs = path->get_alt_lines(); //for this network all alt_line sets are of size one
-//    vector<vector<Busstop*> > stop_sets = path->get_alt_transfer_stops(); //all stop sets are also size one for this network
-//    vector<double> walking_distances = path->get_walking_distances();
-
-////    msg
-//    double twkt=0; // walk time
-
-//    //implement separate functions for WT for DRT and for fixed
-//    double twt=0; // wait time
-
-//    //implement a separate function for IVT for DRT and a separate one for fixed....
-//    double tivt; // in-vehicle time
-
-//    //number of transfers the same
-//    int n_trans; // number of transfers
-
-//    /* see Pass_path functions:
-//     * calc_total_walking_distance
-//     * calc_total_waiting_time(double time, bool without_first_waiting, bool alighting_decision, double avg_walking_speed, Passenger* pass)
-//     * calc_total_in_vehicle_time(double time, Passenger* pass)
-//     * calc_total_scheduled_in_vehicle_time
-//    */
-
-//    //Tests for utility calculations for a connection decision. Work our way backwards....
-//    /* Function call path:
-//     * Passenger::make_connection_decision ->
-//     * ODstops::calc_combined_set_utility_for_connection ->
-//     * Pass_path::calc_waiting_utility ->
-//     * Pass_path::calc_total_in_vehicle_time ->
-//     * Busline::calc_in_vehicle_time
-//     *
-//     * New:
-//     * Controlcenter::calc_ivt
-//     * Controlcenter::calc_wt
-//     * Controlcenter::calc_ivt_exploration
-//     * Controlcenter::calc_wt
-//    */
-
-//    qDebug() << "Calculating path attributes" << endl;
-//    for(auto path : path_set)
-//    {
-//        twkt = path->calc_total_walking_distance() / theParameters->average_walking_speed;
-//        tivt = path->calc_total_in_vehicle_time(0.0, pass1);
-//        twt = path->calc_total_waiting_time(0.0, false, false, theParameters->average_walking_speed, pass1); //note should never be called for walking only links? Also dependent on IVT attribute of path which is cleared and set in calc_total_in_vehicle_time
-//        n_trans = path->get_number_of_transfers();
-//        qDebug() << "\t Path " << path->get_id() << " - total walk time: " << twkt << ", total IVT: " << tivt <<  ", total WT " << twt << " transfers: " << n_trans << endl;
-//    }
-
-//    delete pass1;
-//}
-
 void TestFixedWithFlexible_walking::testPathSetUtilities()
 {
     //!< Check pathset of a given ODstop pair (5to4 or 1to4), verify that utilities are being calculated as expected and the highest utility alternative is chosen
@@ -981,13 +875,6 @@ void TestFixedWithFlexible_walking::testPassArrivedToWaitingDecisions()
     if(dropoff_counts.count(stop4)!=0)
         cout << "Dropoff stop 4 (%): " << 100 * dropoff_counts[stop4] / static_cast<double>(draws) << endl;
 
-
-    //!< @todo
-    //! Tests for the sequencing of traveler decisions, changes of traveler states, connection to Controlcenter
-    //! Tests for messaging between traveler and Controlcenter when flexible mode + dropoff chosen
-    //! Debugging, integration testing
-    //! Cleanup of debug messaging
-
     //cleanup
     stop4->remove_unassigned_bus(bus1,0.0); //remove bus from queue of stop, updates state from OnCall to Idle, also in fleetState
     bus1->set_state(BusState::Null,0.0); //change from Idle to Null should remove bus from fleetState
@@ -1006,24 +893,17 @@ void TestFixedWithFlexible_walking::testRunNetwork()
     // test here the properties that should be true after running the simulation
     QString msg = "Failure current time " + QString::number(net->get_currenttime()) + " should be 10800.1 after running the simulation";
     QVERIFY2 (AproxEqual(net->get_currenttime(),10800.1), qPrintable(msg));
-
-    // Example: way to check typical value for e.g. number of last departures from stop A:
-   // qDebug() << net->get_busstop_from_name("A")->get_last_departures().size();
-    // and here you turn it into a test
-    //QVERIFY2 ( net->get_busstop_from_name("A")->get_last_departures().size() == 2, "Failure, get_last_departures().size() for stop A should be 2");
 }
 
 void TestFixedWithFlexible_walking::testSaveResults()
 {
-    // remove old files:
+    // remove old output files:
     for (const QString& filename : output_filenames)
     {
         qDebug() << "Removing file " + filename + ": " << QFile::remove(filename);
     }
 
-    // save results:
     nt->saveresults();
-     // test here the properties that should be true after saving the results
 
     //test if output files match the expected output files
     for (const QString& o_filename : output_filenames)

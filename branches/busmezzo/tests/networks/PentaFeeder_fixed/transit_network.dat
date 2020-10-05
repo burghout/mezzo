@@ -1,0 +1,30 @@
+stops:	5
+{1   	A	12		1	19	0	1	1	0	0}
+{2   	B	34	    1	19	0	1	1	0	0}
+{3   	C	56		1	19	0	1	1	0	0}
+{4		D 	78		1	19	0	1	1	0	0}
+{5   	E	910		1	19	0	1	1	0	0}
+
+stops_distances:	0
+format: 1
+
+stops_walking_times:	0
+
+lines:	2
+
+{2  20 	FixedCircularAtoE 	  100	1010	2	4	0	0	0	0	
+	5	{1  2  3  4  5}
+	5	{1  2  3  4  5}
+}
+
+{20 2	FixedCircularEtoA 	  900	22	20	4	0	0	0	0	
+	2	{5  1}
+	2	{5  1}
+}
+
+trips:	2
+format:	3
+{	2	5	{0	180	180	180	180 }	0	720	15	}
+{	20	2	{0	180 }				270	720	15	}
+
+travel_time_disruptions: 0

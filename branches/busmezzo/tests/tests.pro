@@ -3,10 +3,13 @@
 TEMPLATE = subdirs
 
 SUBDIRS += \
-    fixedwithflexible_walking \
     integrationtest \
     controlcenter \
     routestest \
     drttest \
     pentafeeder_integrationtest \
-    fixedwithflexible
+    pentafeeder_fixed \
+    pentafeeder_drt \
+    fixedwithflexible_walking \
+	fixedwithflexible
+	
