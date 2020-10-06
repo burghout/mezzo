@@ -1,0 +1,6 @@
+Line_ID	Upstream_stop_ID	Upstream_stop_name	Downstream_stop_ID	Downstream_stop_name	Passenger_load	
+2	1	A	2	B	42	
+2	2	B	3	C	89	
+2	3	C	4	D	142	
+2	4	D	5	E	195	
+20	5	E	1	A	0	
