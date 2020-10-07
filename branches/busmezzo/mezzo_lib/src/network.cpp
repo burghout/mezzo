@@ -6997,7 +6997,7 @@ bool Network::writeheadways(string name)
 
 }
 
-bool Network::write_busstop_output(string name1, string name2, string name3, string name4, string name5, string name6, string name7, string name8, string name9, string name10, string name11, string name12, string name13, string name14, string name15, string name16, string name17, string name18)
+bool Network::write_busstop_output(string name1, string name2, string name3, string name4, string name5, string name6, string name7, string name8, string name9, string name10, string name11, string name12, string name13, string name14, string name15, string name16, string name17, string name18, string name19, string name20)
 {
     Q_UNUSED(name5)
     Q_UNUSED(name6)
@@ -7016,7 +7016,7 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
     ofstream out11(name11.c_str(),ios_base::app);
     ofstream out12(name12.c_str(),ios_base::app);
     ofstream out16(name16.c_str(), ios_base::app);
-    ofstream out17(name17.c_str(), ios_base::app);
+    ofstream out17(name17.c_str(), ios_base::app); 
 
     /* passenger decision related, deactivated
     ofstream out5(name5.c_str(),ios_base::app);
@@ -7122,7 +7122,25 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
         
         if (theParameters->drt)
         {
-            ofstream out18(name18.c_str(), ios_base::app); // drt+fwf summary filestream
+            ofstream out18(name18.c_str(), ios_base::app); // drt+fwf summary filestream, o_fwf_summary.dat
+
+            Q_UNUSED(name19)
+            Q_UNUSED(name20)
+            //ofstream out19(name19.c_str(), ios_base::app); //o_passenger_transitmode_choices.dat
+            //ofstream out20(name20.c_str(), ios_base::app); //o_passenger_dropoff_choices.dat
+
+            //for (const auto& od : odstops_demand)
+            //{
+            //    vector<Passenger*> pass_vec = od->get_passengers_during_simulation();
+            //    for (const auto& pass : pass_vec)
+            //    {
+            //        /*if (pass->get_end_time() > 0)
+            //        {*/
+            //        od->write_transitmode_output(out19, pass);
+            //        od->write_dropoff_output(out20, pass);
+            //        /*}*/
+            //    }
+            //}
 
             //fill in the fwf summary containers
             total_passdata.pass_completed = pass_counter; //passengers that completed trips
@@ -8737,7 +8755,9 @@ bool Network::writeall(unsigned int repl)
                 workingdir + "o_passenger_connection.dat",
                 workingdir + "o_passenger_trajectory.dat",
                 workingdir + "o_passenger_welfare_summary.dat",
-                workingdir + "o_fwf_summary.dat"
+                workingdir + "o_fwf_summary.dat",
+                workingdir + "o_passenger_transitmode.dat",
+                workingdir + "o_passenger_dropoff.dat"
                 );
     write_transitroutes(workingdir + "o_transit_routes.dat");
     return true;
