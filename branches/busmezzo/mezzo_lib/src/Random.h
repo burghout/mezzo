@@ -129,7 +129,7 @@ T Random::randomchoice(const vector<T>& objs, vector<double> probs)
 {
 	assert(objs.size() == probs.size());
 	assert(!probs.empty());
-    assert(AproxEqual(accumulate(probs.begin(), probs.end(), decltype(probs)::value_type(0)), 1.0));
+    assert(AproxEqual(accumulate(probs.begin(), probs.end(), 0.0), 1.0));
 
 	double cdf = 0.0;
 	vector<double> accumlated_probs;

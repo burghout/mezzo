@@ -94,12 +94,6 @@ void Passenger::init ()
 {
 	RTI_network_level = theRandomizers[0]->brandom(theParameters->share_RTI_network);
 
-	//if (theParameters->drt && RTI_network_level == true) //!< @todo Can use this to control which travelers have access to DRT, just assume they all have access for now...
-	if(theParameters->drt)
-	{
-		set_access_to_flexible(true); //!< only travelers with network level RTI can use flexible transit services
-	}
-
 	if (theParameters->pass_day_to_day_indicator == 1)
 	{
 		anticipated_waiting_time = OD_stop->get_anticipated_waiting_time(); //Changed by Jens 2014-06-27, here a local object with the same name was initialized, so the Passenger object was not updated
@@ -409,7 +403,7 @@ pair<bool,Request> Passenger::createRequest(Busstop* origin_stop, Busstop* dest_
     assert(desired_departure_time >= 0);
 	assert(time >= 0);
 
-    bool connection_found = false;
+    bool success = false;
     Request req = Request(this->get_id(), -1, -1, -1, -1, -1); //TODO: ugly default return value for impossible request
 
     Controlcenter* cc = origin_stop->get_CC();
@@ -436,17 +430,17 @@ pair<bool,Request> Passenger::createRequest(Busstop* origin_stop, Busstop* dest_
             if (transferstop != nullptr) //create request for transfer stop of first path instead of final destination TODO: what to do when there are several transfer stops i.e. several paths
             {
                 DEBUG_MSG("DEBUG: Passenger::start : Transfer stop found! Sending request to travel to transfer stop " << transferstop->get_id());
-                connection_found = true;
+                success = true;
                 req = Request(this->get_id(), OD_stop->get_origin()->get_id(), transferstop->get_id(), load, desired_departure_time, time);
             }
         }
         else
         {
-            connection_found = true;
+            success = true;
             req = Request(this->get_id(), OD_stop->get_origin()->get_id(), OD_stop->get_destination()->get_id(), load, desired_departure_time, time); //create request with load 1 at current time 
         }
     }
-    return make_pair(connection_found, req);
+    return make_pair(success, req);
 }
 
 vector<Pass_path*> Passenger::get_first_leg_flexible_paths(const vector<Pass_path*>& path_set) const
@@ -843,11 +837,7 @@ Busstop* Passenger::make_first_stop_decision (double time)
 
 TransitModeType Passenger::make_transitmode_decision(Busstop* pickup_stop, double time)
 {
-	/**
-	* @todo
-	*	Add output collectors to ODstop (e.g. Passenger_transitmode_decision)
-	*   Add writer for transitmode decisions to Network
-	*/
+	assert(chosen_mode_ == TransitModeType::Null); //!< The chosen mode of the traveler should be Null before a decision has been made
 	assert(pickup_stop->check_stop_od_as_origin_per_stop(OD_stop->get_destination()) != false); //!< checked already in make_connection_decision which should always be called
     //DEBUG_MSG("Passenger::make_transitmode_decision() - pass " << this->get_id() << " choosing mode for pickup stop " << pickup_stop->get_id() << " at time " << time);
 
@@ -936,11 +926,6 @@ Busstop* Passenger::make_dropoff_decision(Busstop* pickup_stop, double time)
     assert(chosen_mode_ == TransitModeType::Flexible); //dropoff decision really only makes sense for on-demand/flexible modes
     Busstop* dropoff_stop = nullptr;
 
-    /**
-* @todo
-*	Add output collectors to ODstop (e.g. Passenger_transitmode_decision)
-*   Add writer for transitmode decisions to Network
-*/
     assert(pickup_stop->check_stop_od_as_origin_per_stop(OD_stop->get_destination()) != false); //!< checked already in make_connection_decision which should always be called
     DEBUG_MSG("Passenger::make_dropoff_decision() - pass " << this->get_id() << " choosing dropoff stop for pickup stop " << pickup_stop->get_id() << " at time " << time);
 

@@ -144,16 +144,13 @@ public:
 
 protected:
 	TransitModeType chosen_mode_ = TransitModeType::Null; /**!< Null if no choice has been made yet, otherwise the result of a mode choice decision. Travelers do not currently re-make a choice of fixed or flexible mode and are commited to this mode for the next leg of their trip once this choice is made. */
-	bool access_to_flexible_ = false; //!< true if traveler can send requests/recieve offers for a flexible schedule/route service. Currently assumed to be tied to RTI availability at a network level (e.g. owning a smartphone)
 	
 
 public:
-	map<ODstops*, map<Pass_path*, double> > temp_connection_path_utilities; //!< cached exp(path utilities) calculated for a given connection/transitmode/dropoff decision. Cleared between make_connection_decision calls
+	map<ODstops*, map<Pass_path*, double> > temp_connection_path_utilities; //!< cached exp(path utilities) calculated for a given connection/transitmode/dropoff decision. Cleared at the beginning of each make_connection_decision call and filled via calls from this method
 	void set_chosen_mode(TransitModeType chosen_mode) { chosen_mode_ = chosen_mode; }
 	TransitModeType get_chosen_mode() { return chosen_mode_; }
 	bool is_flexible_user() { return chosen_mode_ == TransitModeType::Flexible; }
-    bool has_access_to_flexible() { return access_to_flexible_; }
-	void set_access_to_flexible(bool access_to_flexible) { access_to_flexible_ = access_to_flexible; }
 	vector<Pass_path*> get_first_leg_flexible_paths(const vector<Pass_path*>& path_set) const; //!< returns all paths in path_set that have a flexible first transit leg (that a traveler would need to send a request for to ride with)
 	vector<Pass_path*> get_first_leg_fixed_paths(const vector<Pass_path*>& path_set) const; //!< returns all paths in path_set that have a fixed first transit leg
 signals:
