@@ -669,8 +669,10 @@ void Controlcenter::setGeneratedDirectRoutes(bool generate_direct_routes)
 
 void Controlcenter::connectPassenger(Passenger* pass)
 {
+	assert(pass->is_flexible_user()); // passenger should only be connected to a CC if they have chosen a flexible, or on-demand mode
 	int pid = pass->get_id();
 	assert(connectedPass_.count(pid) == 0); //passenger should only be added once
+	
 	connectedPass_[pid] = pass;
 
 	if (QObject::connect(pass, &Passenger::sendRequest, this, &Controlcenter::receiveRequest, Qt::DirectConnection) == nullptr)
@@ -887,6 +889,10 @@ void Controlcenter::receiveRequest(Request req, double time)
 void Controlcenter::removeRequest(int pass_id)
 {
 	//DEBUG_MSG(Q_FUNC_INFO);
+	assert(connectedPass_.count(pass_id) != 0); // remove request should only be called for connected travelers
+	if(connectedPass_.count(pass_id) != 0)
+		assert(connectedPass_[pass_id]->is_flexible_user()); // connected travelers should all be flexible transit users
+
 	rh_.removeRequest(pass_id);
 	summarydata_.requests_served += 1;
 }

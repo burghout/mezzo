@@ -1797,74 +1797,88 @@ void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, d
 				(*alighting_passenger)->set_end_time(time);
 				//pass_recycler.addPassenger(*alighting_passenger); // terminate passenger
 			}		
-			if (final_stop == false)
-			{
-				next_stop =(*alighting_passenger)->make_connection_decision(time);
-				// set connected_stop as the new origin
-				ODstops* new_od;
-				if (next_stop->check_stop_od_as_origin_per_stop((*alighting_passenger)->get_OD_stop()->get_destination()) == false)
-				{
-					new_od = new ODstops (next_stop,(*alighting_passenger)->get_OD_stop()->get_destination());
-					next_stop->add_odstops_as_origin((*alighting_passenger)->get_OD_stop()->get_destination(), new_od);
-					(*alighting_passenger)->get_OD_stop()->get_destination()->add_odstops_as_destination(next_stop, new_od);
-				}
-				else
-				{
-					new_od = next_stop->get_stop_od_as_origin_per_stop((*alighting_passenger)->get_OD_stop()->get_destination());
-				}
-				(*alighting_passenger)->set_ODstop(new_od); // set the connected stop as passenger's new origin (new OD)
-				ODstops* odstop = (*alighting_passenger)->get_OD_stop();
-				//if (odstop->get_waiting_passengers().size() != 0) //Why was it like this??
-				if (true)  //Changed by Jens 2014-06-23
-				{
-					if (next_stop->get_id() == this->get_id())  // pass stays at the same stop
-					{
-						odstop->add_pass_waiting((*alighting_passenger));
+            if (final_stop == false)
+            {
+                next_stop = (*alighting_passenger)->make_connection_decision(time);
+                // set connected_stop as the new origin
+                ODstops* new_od;
+                if (next_stop->check_stop_od_as_origin_per_stop((*alighting_passenger)->get_OD_stop()->get_destination()) == false)
+                {
+                    new_od = new ODstops(next_stop, (*alighting_passenger)->get_OD_stop()->get_destination());
+                    next_stop->add_odstops_as_origin((*alighting_passenger)->get_OD_stop()->get_destination(), new_od);
+                    (*alighting_passenger)->get_OD_stop()->get_destination()->add_odstops_as_destination(next_stop, new_od);
+                }
+                else
+                {
+                    new_od = next_stop->get_stop_od_as_origin_per_stop((*alighting_passenger)->get_OD_stop()->get_destination());
+                }
+                (*alighting_passenger)->set_ODstop(new_od); // set the connected stop as passenger's new origin (new OD)
+                ODstops* odstop = (*alighting_passenger)->get_OD_stop();
+				double arrival_time_connected_stop = time;
+                //if (odstop->get_waiting_passengers().size() != 0) //Why was it like this??
+                if (next_stop->get_id() == this->get_id())  // pass stays at the same stop
+                {
+                    odstop->add_pass_waiting((*alighting_passenger));
 
-						(*alighting_passenger)->set_arrival_time_at_stop(time);
-						pair<Busstop*,double> stop_time;
-						stop_time.first = this;
-						stop_time.second = time;
-						(*alighting_passenger)->add_to_selected_path_stop(stop_time);
-						if ((*alighting_passenger)->get_pass_RTI_network_level()==true || this->get_rti() > 0)
-						{
-							vector<Busline*> lines_at_stop = this->get_lines();
-							for (vector <Busline*>::iterator line_iter = lines_at_stop.begin(); line_iter < lines_at_stop.end(); line_iter++)
-							{
-								pair<Busstop*, Busline*> stopline;
-								stopline.first = this;
-								stopline.second = (*line_iter);
-								(*alighting_passenger)->set_memory_projected_RTI(this,(*line_iter),(*line_iter)->time_till_next_arrival_at_stop_after_time(this,time));
-								//(*alighting_passenger)->set_AWT_first_leg_boarding();
-							}
-						}
-						
-                        if(theParameters->drt && CC != nullptr)
+                    (*alighting_passenger)->set_arrival_time_at_stop(arrival_time_connected_stop);
+                    pair<Busstop*, double> stop_time;
+                    stop_time.first = this;
+                    stop_time.second = arrival_time_connected_stop;
+                    (*alighting_passenger)->add_to_selected_path_stop(stop_time);
+                    if ((*alighting_passenger)->get_pass_RTI_network_level() == true || this->get_rti() > 0)
+                    {
+                        vector<Busline*> lines_at_stop = this->get_lines();
+                        for (vector <Busline*>::iterator line_iter = lines_at_stop.begin(); line_iter < lines_at_stop.end(); line_iter++)
                         {
-                            ODstops* odstops = (*alighting_passenger)->get_OD_stop();
-                            pair<bool, Request> req = (*alighting_passenger)->createRequest(odstops->get_origin(),odstops->get_destination(), 1, time, time); //create a request with load of 1 to be picked up as soon as possible
-                            if(req.first == true) //if connection or partial connection to destination was found within CC service area of origin stop
-                                emit(*alighting_passenger)->sendRequest(req.second, time); //send this request to the control center of this stop
+                            pair<Busstop*, Busline*> stopline;
+                            stopline.first = this;
+                            stopline.second = (*line_iter);
+                            (*alighting_passenger)->set_memory_projected_RTI(this, (*line_iter), (*line_iter)->time_till_next_arrival_at_stop_after_time(this, time));
+                            //(*alighting_passenger)->set_AWT_first_leg_boarding();
                         }
-					}
-					else  // pass walks to another stop
-					{
-						// booking an event to the arrival time at the new stop
-                    
-						double arrival_time_connected_stop = time + get_walking_time(next_stop,time);
-						//(*alighting_passenger)->execute(eventlist,arrival_time_connected_stop);
-						eventlist->add_event(arrival_time_connected_stop, *alighting_passenger);
-						pair<Busstop*,double> stop_time;
-						stop_time.first = next_stop;
-						stop_time.second = arrival_time_connected_stop;
-						(*alighting_passenger)->add_to_selected_path_stop(stop_time);
-					}
-				}
-				else
-				{
-					odstop->add_pass_waiting(*alighting_passenger);
-					(*alighting_passenger)->add_to_selected_path_stop(stop_time);
-				}
+                    }
+
+                    //if(theParameters->drt && CC != nullptr)
+                    //{
+                    //    ODstops* odstops = (*alighting_passenger)->get_OD_stop();
+                    //    pair<bool, Request> req = (*alighting_passenger)->createRequest(odstops->get_origin(),odstops->get_destination(), 1, time, time); //create a request with load of 1 to be picked up as soon as possible
+                    //    if(req.first == true) //if connection or partial connection to destination was found within CC service area of origin stop
+                    //        emit(*alighting_passenger)->sendRequest(req.second, time); //send this request to the control center of this stop
+                    //}
+                }
+                else  // pass walks to another stop
+                {
+                    // booking an event to the arrival time at the new stop
+
+                    arrival_time_connected_stop += get_walking_time(next_stop, time);
+                    //(*alighting_passenger)->execute(eventlist,arrival_time_connected_stop);
+                    eventlist->add_event(arrival_time_connected_stop, *alighting_passenger);
+                    pair<Busstop*, double> stop_time;
+                    stop_time.first = next_stop;
+                    stop_time.second = arrival_time_connected_stop;
+                    (*alighting_passenger)->add_to_selected_path_stop(stop_time);
+                }
+
+                if (theParameters->drt)
+                {
+                    TransitModeType chosen_mode = (*alighting_passenger)->make_transitmode_decision(next_stop, time); //also sets chosen mode...
+					(*alighting_passenger)->set_chosen_mode(chosen_mode); //important that this is set before dropoff_decision call
+
+                    if (chosen_mode == TransitModeType::Flexible)
+                    {
+                        Busstop* dropoff_stop = (*alighting_passenger)->make_dropoff_decision(next_stop, time);
+
+                        Controlcenter* CC = next_stop->get_CC();
+                        assert(CC != nullptr);
+                        CC->connectPassenger((*alighting_passenger)); //connect passenger to the CC of the stop they decided to stay at/walk to, send a request to this CC	
+
+                        pair<bool, Request> req = (*alighting_passenger)->createRequest(next_stop, dropoff_stop, 1, arrival_time_connected_stop, time); //create request with load 1 at current time 
+                        if (req.first == true) //if a connection, or partial connection was found within the CC service of origin stop
+                            emit(*alighting_passenger)->sendRequest(req.second, time); //send request to any controlcenter that is connected
+                        else
+                            DEBUG_MSG_V("WARNING - Busstop::passenger_activity_at_stop() - failed request creation for stops " << next_stop->get_id() << "->" << dropoff_stop->get_id() << " with desired departure time " << arrival_time_connected_stop << " at time " << time);
+                    }
+                }
 			}
 		}
 		trip->passengers_on_board[this].clear(); // clear passengers with this stop as their alighting stop
@@ -1958,8 +1972,12 @@ void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, d
 							
 							if (theParameters->drt && CC != nullptr)
 							{
-								emit(*check_pass)->boardedBus((*check_pass)->get_id()); //boarding passenger signals control center that they have just boarded
-								CC->disconnectPassenger((*check_pass)); //now disconnect this passenger from the control center of this stop
+								emit(*check_pass)->boardedBus((*check_pass)->get_id()); //boarding passenger signals control center that they have just boarded, should be ignored if pass is not a flexible user
+								if((*check_pass)->is_flexible_user()) //!< @todo boarded bus signal currently removes the request of the passenger from the request set of the Controlcenter. Travelers are currently always disconnected directly afterwards
+								{
+									CC->disconnectPassenger((*check_pass)); //now disconnect this passenger from the control center of this stop
+								}
+								(*check_pass)->set_chosen_mode(TransitModeType::Null); // reset travelers chosen mode. A new mode will be chosen when the traveler has chosen to alight
 							}
 
 							if (check_pass < pass_waiting_od.end()-1)

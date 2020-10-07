@@ -160,10 +160,11 @@ void ODstops::delete_passengers()
 void ODstops::add_pass_waiting(Passenger* add_pass)
 {
 	assert(add_pass);
-	if (theParameters->drt && origin_stop->get_CC() != nullptr)
-	{
-		origin_stop->get_CC()->connectPassenger(add_pass); //connect passenger to the control center of their current stop if one exists
-	}
+	//if (theParameters->drt && origin_stop->get_CC() != nullptr)
+	//{
+	//	if(add_pass->is_flexible_user())
+	//		origin_stop->get_CC()->connectPassenger(add_pass); //connect passenger to the control center of their current stop if one exists
+	//}
 	waiting_passengers.push_back(add_pass);
 }
 
