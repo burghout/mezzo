@@ -114,7 +114,7 @@ void TestPentaFeeder_drt::testInitNetwork()
     QVERIFY2(ccmap.size() == 1, "Failure, network should have 1 controlcenter");
     QVERIFY2(ccmap.begin()->second->getGeneratedDirectRoutes() == true, "Failure, generate direct routes of controlcenter is not set to 1");
 
-    QVERIFY2(net->get_buslines().size() == 20, "Failure, network should have 2 bus lines defined");
+    QVERIFY2(net->get_buslines().size() == 20, "Failure, network should have 20 bus lines defined");
     QVERIFY2(net->get_busvehicles().size() == 0, "Failure, network should have 0 scheduled vehicles");
     QVERIFY2(net->get_drtvehicles_init().size() == 4, "Failure, network should have 4 unassigned vehicles");
     QVERIFY2(get<0>(net->get_drtvehicles_init()[0])->get_capacity() == 25, "Failure, vehicles should have capacity 25");

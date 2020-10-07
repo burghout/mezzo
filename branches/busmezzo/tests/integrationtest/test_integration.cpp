@@ -51,6 +51,7 @@ public:
 private Q_SLOTS:
     void testCreateNetwork(); //!< test loading a network
     void testInitNetwork(); //!< test generating passenger path sets & loading a network
+    //void testPathProbabilities(); //!< @todo add sanity checks of resulting probabilities of SF network, match this to original paper
     void testRunNetwork(); //!< test running the network
     void testSaveResults(); //!< tests saving results
     void testDelete(); //!< tests correct deletion
