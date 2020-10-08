@@ -481,29 +481,57 @@ bool Passenger:: make_boarding_decision (Bustrip* arriving_bus, double time)
 	/*Busstop* curr_stop = selected_path_stops.back().first;
 	ODstops* od = curr_stop->get_stop_od_as_origin_per_stop(OD_stop->get_destination());*/
 //	Busstop* curr_stop = OD_stop->get_origin(); //2014-04-14 Jens West changed this, because otherwise the passengers would board lines and then not know what to do
-	ODstops* od = OD_stop;
 	double boarding_prob;
 
-	// use the od based on last stop on record (in case of connections)
-	boarding_prob = od->calc_boarding_probability(arriving_bus->get_line(), time, this);
-	boarding_decision = theRandomizers[0]->brandom(boarding_prob);
-	OD_stop->record_passenger_boarding_decision(this, arriving_bus, time, boarding_prob, boarding_decision);
-	if (boarding_decision == 1)
+	if (theParameters->drt && chosen_mode_ == TransitModeType::Flexible) // if passenger is a flexible transit user
 	{
-		rejected_lines.clear();
-		//int level_of_rti_upon_decision = curr_stop->get_rti(); //Everything moved to other places by Jens
-		//if (RTI_network_level == 1)
-		//{
-		//	level_of_rti_upon_decision = 3;
-		//}
-		////ODstops* passenger_od = original_origin->get_stop_od_as_origin_per_stop(OD_stop->get_destination()); //Jens changed this 2014-06-24, this enables remembering waiting time not only for the first stop of trip
-		////passenger_od->record_waiting_experience(this, arriving_bus, time, level_of_rti_upon_decision,this->get_memory_projected_RTI(curr_stop,arriving_bus->get_line()),AWT_first_leg_boarding);
-		////OD_stop->record_waiting_experience(this, arriving_bus, time, level_of_rti_upon_decision,this->get_memory_projected_RTI(curr_stop,arriving_bus->get_line()),AWT_first_leg_boarding);
+		if (curr_request_->assigned_veh == nullptr) // if we are not associating requests with specific vehicles
+		{
+			Busstop* dest_stop = arriving_bus->stops.back()->first; // get final destination of arriving bus
+			if (arriving_bus->is_flex_trip() && curr_request_->dstop_id == dest_stop->get_id()) // @todo for now passenger always boards the first available flexible trip that is finishing trip at passengers destination
+			{
+				//always attempt to board flexible buses with destination of the passenger
+				OD_stop->set_staying_utility(::large_negative_utility); //we set these utilities just to record boarding output
+				OD_stop->set_boarding_utility(::large_positive_utility);
+				boarding_prob = 1.0;
+				boarding_decision = true;
+			}
+			else // always stay and wait otherwise
+			{
+				OD_stop->set_staying_utility(::large_positive_utility);
+				OD_stop->set_boarding_utility(::large_negative_utility);
+				boarding_prob = 0.0;
+				boarding_decision = false;
+			}
+		}
+		else
+			abort(); //should never happen at the moment, not assigning vehicles anything
 	}
 	else
 	{
-		rejected_lines.push_back(arriving_bus->get_line()->get_id());
+		// use the od based on last stop on record (in case of connections)
+		boarding_prob = OD_stop->calc_boarding_probability(arriving_bus->get_line(), time, this);
+		boarding_decision = theRandomizers[0]->brandom(boarding_prob);
+
+		if (boarding_decision == true)
+		{
+			rejected_lines.clear();
+			//int level_of_rti_upon_decision = curr_stop->get_rti(); //Everything moved to other places by Jens
+			//if (RTI_network_level == 1)
+			//{
+			//	level_of_rti_upon_decision = 3;
+			//}
+			////ODstops* passenger_od = original_origin->get_stop_od_as_origin_per_stop(OD_stop->get_destination()); //Jens changed this 2014-06-24, this enables remembering waiting time not only for the first stop of trip
+			////passenger_od->record_waiting_experience(this, arriving_bus, time, level_of_rti_upon_decision,this->get_memory_projected_RTI(curr_stop,arriving_bus->get_line()),AWT_first_leg_boarding);
+			////OD_stop->record_waiting_experience(this, arriving_bus, time, level_of_rti_upon_decision,this->get_memory_projected_RTI(curr_stop,arriving_bus->get_line()),AWT_first_leg_boarding);
+		}
+		else
+		{
+			rejected_lines.push_back(arriving_bus->get_line()->get_id());
+		}
 	}
+
+	OD_stop->record_passenger_boarding_decision(this, arriving_bus, time, boarding_prob, boarding_decision);
 
 	if (boarding_decision == true)
 	{
@@ -545,6 +573,18 @@ void Passenger::record_waiting_experience(Bustrip* arriving_bus, double time)
 
 Busstop* Passenger::make_alighting_decision (Bustrip* boarding_bus, double time) // assuming that all passenger paths involve only direct trips
 {
+	if (theParameters->drt && chosen_mode_ == TransitModeType::Flexible)
+	{
+		Busstop* final_stop = boarding_bus->stops.back()->first;
+		assert(curr_request_->dstop_id == final_stop->get_id()); //otherwise the traveler has boarded a bus they should not have boarded, final stop of boarded bus should be guarantee match chosen dropoff stop of traveler
+
+		map<Busstop*, pair<double, double> > alighting_MNL; // utility followed by probability per stop
+		alighting_MNL[final_stop].first = ::large_positive_utility;
+		alighting_MNL[final_stop].second = 1.0;
+		OD_stop->record_passenger_alighting_decision(this, boarding_bus, time, final_stop, alighting_MNL);
+		return final_stop;
+	}
+
 	// assuming that a pass. boards only paths from his path set
 	map <Busstop*, double> candidate_transfer_stops_u; // the double value is the utility associated with the respective stop
 	map <Busstop*, double> candidate_transfer_stops_p; // the double value is the probability associated with the respective stop
@@ -949,7 +989,7 @@ Busstop* Passenger::make_dropoff_decision(Busstop* pickup_stop, double time)
     Busstop* dropoff_stop = nullptr;
 
     assert(pickup_stop->check_stop_od_as_origin_per_stop(OD_stop->get_destination()) != false); //!< checked already in make_connection_decision which should always be called
-    DEBUG_MSG("Passenger::make_dropoff_decision() - pass " << this->get_id() << " choosing dropoff stop for pickup stop " << pickup_stop->get_id() << " at time " << time);
+    //DEBUG_MSG("Passenger::make_dropoff_decision() - pass " << this->get_id() << " choosing dropoff stop for pickup stop " << pickup_stop->get_id() << " at time " << time);
 
     if (pickup_stop != OD_stop->get_destination() || chosen_mode_ != TransitModeType::Flexible) // the walking only case or called for a traveler using a non-flexible mode, default is to return nullptr
     {
@@ -965,7 +1005,7 @@ Busstop* Passenger::make_dropoff_decision(Busstop* pickup_stop, double time)
             if (temp_connection_path_utilities[targetOD].count(path) != 0) //should ignore paths that include walking to access targetOD, access to pickup stop set utility already included
             {
                 Busstop* candidate_stop = path->get_first_dropoff_stop();
-                DEBUG_MSG("\t getting utilities for path " << path->get_id() << " with next leg dropoff stop " << candidate_stop->get_id());
+                //DEBUG_MSG("\t getting utilities for path " << path->get_id() << " with next leg dropoff stop " << candidate_stop->get_id());
                 accum_dropoff_stops_u[candidate_stop] += temp_connection_path_utilities[targetOD][path]; 	//sort the path utilities by dropoff stop
             }
         }
@@ -996,7 +1036,7 @@ Busstop* Passenger::make_dropoff_decision(Busstop* pickup_stop, double time)
             stop_probs.push_back(stop_prob);
 
             dropoff_MNL[candidate_dropoff_stop] = make_pair(stop_u.second, stop_prob); // fill in output structure
-            DEBUG_MSG("\t Stop " << candidate_dropoff_stop->get_id() << " prob: " << 100 * stop_prob << "%");
+            //DEBUG_MSG("\t Stop " << candidate_dropoff_stop->get_id() << " prob: " << 100 * stop_prob << "%");
         }
 
 		assert(AproxEqual(accumulate(stop_probs.begin(), stop_probs.end(), 0.0),1.0));

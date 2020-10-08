@@ -66,6 +66,7 @@ extern double drt_first_rep_waiting_utility; //!< sometimes returned in calc_wai
 extern int drt_min_occupancy; //!< currently used in controlstrategies to put different minimum size of the set of passenger requests to consider generating trips
 const double drt_exploration_wt = 0.0; //!< default value returns by Controlcenter if RTI or experience is unavailable for passenger anticipated waiting time calculations for decisions
 const double large_negative_utility = -10000.0;
+const double large_positive_utility = 10000.0;
 /**@}*/
 
 // GLOBAL VARIABLES
