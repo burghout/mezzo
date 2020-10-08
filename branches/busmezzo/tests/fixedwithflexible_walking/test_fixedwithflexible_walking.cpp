@@ -159,6 +159,9 @@ void TestFixedWithFlexible_walking::testInitNetwork()
     QVERIFY2(theParameters->choice_set_indicator == 1, "Failure, choice set indicator is not set to 1 in parameters");
     QVERIFY2(net->count_transit_paths() == 27, "Failure, network should have 14 transit paths defined");
 
+    //Static fixed service design
+    QVERIFY2(AproxEqual(net->get_buslines()[0]->get_planned_headway(),360.0), "Failure, buslines should have a 360 second (6 min) planned headway");
+
     //Control center
     map<int,Controlcenter*> ccmap = net->get_controlcenters();
     QVERIFY2(ccmap.size() == 1, "Failure, network should have 1 controlcenter");
@@ -575,13 +578,17 @@ void TestFixedWithFlexible_walking::testPathSetUtilities()
 //    QVERIFY(AproxEqual(theParameters->waiting_time_coefficient,-2.0));
 //    QVERIFY(AproxEqual(theParameters->in_vehicle_time_coefficient,-1.0));
 //    QVERIFY(AproxEqual(theParameters->transfer_coefficient,-5.0));
-//    QVERIFY(AproxEqual(theParameters->max_waiting_time,1800.0));
+
 
     /* Parameters taken from SF network */
     QVERIFY(AproxEqual(theParameters->transfer_coefficient,-0.334));
     QVERIFY(AproxEqual(theParameters->in_vehicle_time_coefficient,-0.04));
     QVERIFY(AproxEqual(theParameters->waiting_time_coefficient,-0.07));
     QVERIFY(AproxEqual(theParameters->walking_time_coefficient,-0.07));
+
+    /* Other parameters that effect pass decisions*/
+    QVERIFY(AproxEqual(theParameters->max_waiting_time,1800.0));
+    QVERIFY(AproxEqual(theParameters->default_alpha_RTI,0.7)); // In case of RTI,
 
     /* Grab path sets for 5to4 and 1to4 */
     ODstops* stop1to4 = net->get_ODstop_from_odstops_demand(1,4);
@@ -655,11 +662,12 @@ void TestFixedWithFlexible_walking::testPathSetUtilities()
                  << "\t total IVT      : " << tivt << Qt::endl
                  << "\t total WT       : " << twt << Qt::endl
                  << "\t transfers      : " << n_trans << Qt::endl
+                 << "\t num flex legs  : " << path->count_flexible_legs() << Qt::endl
                  << "\t utility        : " << path_utility << Qt::endl;
 
         if(twt*60 > theParameters->max_waiting_time) //dynamic filtering rule
         {
-            path_utility = -10;
+            path_utility = ::large_negative_utility;
         }
 
         sum_pathsetutil += exp(path_utility);
@@ -688,7 +696,7 @@ void TestFixedWithFlexible_walking::testPathSetUtilities()
 
         if(twt*60 > theParameters->max_waiting_time) //dynamic filtering rule
         {
-            path_utility = -10;
+            path_utility = ::large_negative_utility;
         }
 
         sum_pathsetutil += exp(path_utility);
@@ -808,6 +816,10 @@ void TestFixedWithFlexible_walking::testPassArrivedToWaitingDecisions()
 
     qDebug() << "\t Fixed prob with average utilities: " << fixed_p*100 << "%";
     qDebug() << "\t Flex prob with average utilities: " << flex_p*100 << "%";
+
+    //!< @todo
+    //!     Add another test if the resulting probabilities are close to those without random draws
+    //!     Make sure coefficients are in EUR/min instead...or doublecheck this
 
     //!< Make a sequence of connection->transitmode->dropoff decisions and reset
     double t_now = 0.0; //fake current simulation clocktime

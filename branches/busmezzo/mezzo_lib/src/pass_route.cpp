@@ -651,6 +651,20 @@ map<Busline*, bool> Pass_path::check_maybe_worthwhile_to_wait (vector<Busline*> 
 	return worth_to_wait;
 }
 
+size_t Pass_path::count_flexible_legs() const
+{
+	size_t num_flex_legs = 0;
+	for (auto line_leg : alt_lines)
+	{
+		if (check_all_flexible_lines(line_leg)) // recall fixed and flexible lines are currently never mixed within the same vector of alt_lines
+		{
+			++num_flex_legs;
+		}
+	}
+
+	return num_flex_legs;
+}
+
 bool Pass_path::check_all_flexible_lines(const vector<Busline*>& line_vec) const
 {
 	if (line_vec.empty()) //empty vector of lines is not a set of flexible transit lines
