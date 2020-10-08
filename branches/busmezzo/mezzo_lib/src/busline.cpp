@@ -255,17 +255,19 @@ bool Busline::check_last_trip (Bustrip* trip)
 return false;
 }
 
-/*! @ingroup PassengerDecisionParameters
+/*! @ingroup DRT
     
     Returns time, according to schedule, until the next trip is expected to arrive at stop. If no trip is scheduled to arrive, and no dynamically generated trips can be assigned to this line, then time to end of simulation is returned.
     Currently, if the busline is a flex line, the planned headway for this line is ALWAYS returned. Used in Pass_path::calc_curr_leg_headway both for day2day calculation of prior knowledge
     as well as for CSGM filtering rule as well as connection decision calculation of waiting time due to prior knowledge
+
+	@todo this should never be called anymore for a flexible leg I think, doublecheck that this is the case
 */
 double Busline::find_time_till_next_scheduled_trip_at_stop (Busstop* stop, double time)
 {
     if (theParameters->drt && flex_line) //if this line can have dynamically generated trips, then a trip may still arrive within the planned headway
     {
-        //DEBUG_MSG_V("Busline::find_time_till_next_scheduled_trip_at_stop returning planned headway " << planned_headway << " for flex line " << id);
+        DEBUG_MSG_V("Busline::find_time_till_next_scheduled_trip_at_stop returning planned headway " << planned_headway << " for flex line " << id);
         return planned_headway;
         //return ::drt_first_rep_max_headway;
     }
@@ -275,10 +277,10 @@ double Busline::find_time_till_next_scheduled_trip_at_stop (Busstop* stop, doubl
 		for (list <Start_trip>::iterator trip_iter = trips.begin(); trip_iter != trips.end(); trip_iter++)
 		{
 			map <Busstop*, double> stop_time = (*trip_iter).first->stops_map;
-			if (stop_time[stop] > time)
+			if (stop_time.count(stop) != 0 && stop_time[stop] > time)
 				// assuming that trips are stored according to their chronological order
 			{
-				return ((*trip_iter).first->stops_map[stop] - time);
+				return stop_time[stop] - time;
 			}
 		}
 	}
@@ -326,14 +328,11 @@ Bustrip* Busline::find_next_expected_trip_at_stop (Busstop* stop)
 	return trips.back().first; //default is to return the last trip to visit the stop if no other trip from this line is scheduled to visit the stop
 }
 
-/** @ingroup PassengerDecisionParameters
+/** @ingroup DRT
     According to method description this is supposed to be a estimation of waiting time based on real-time calculations. If no trip is scheduled for a DRT
-    route we return the collective planned headway for the DRT service, regardless of distance between stops. Kindof like a pizza delivery guarantee. Should replace this
-    with a real time prediction of next arrival based on en-route DRT vehicles as well or closest oncall vehicles or both.
+    route we return a real time prediction of next arrival based on current locations and trips of DRT vehicles.
 
-    @todo
-        - What to return here? Planned headway here certainly does not make sense. Want to return an expected WT based on real-time calculations, maybe add a method to control center to return the expected IVT of the closest on_call or incoming vehicle to this stop
-        - If RTI = 0 is this method never accessed?
+	@note this method can also be called with time = expected arrival of a passenger to stop, (e.g. via Pass_path::calc_total_waiting_time) i.e. not the current simulation time. Want to thus find trip that is scheduled to arrive closest after any time.
 */
 double Busline::time_till_next_arrival_at_stop_after_time (Busstop* stop, double time)
 {
@@ -348,26 +347,19 @@ double Busline::time_till_next_arrival_at_stop_after_time (Busstop* stop, double
 	if (stops.front()->get_had_been_visited(this) == false) 
 	// in case no trip started yet - according to time table of the first trip
 	{
-		if (trips.empty()) //in case no trip has started yet and no trip is scheduled
+		if (trips.empty() || trips.back().first->stops_map[stop] < time) //in case no trip has started yet or no trip is scheduled, or the last scheduled trip for Busline to arrive to the stop arrives early than 'time'
+			// assumes chronological order of Busline::trips, should be guaranteed by Busline::add_trip
 		{
-            return theParameters->running_time - time; //return scenario stop time TODO: see how this effects passenger RTI calculations, changed from "return theParameters->running_time" to match description of method
+            return theParameters->running_time; //return scenario stop time
 		}
 		else
 		{
-			time_till_next_visit = trips.front().first->stops_map[stop] - time;
+			time_till_next_visit = find_time_till_next_scheduled_trip_at_stop(stop, time); //search for the closest scheduled trip that arrives after time
+            DEBUG_MSG("Busline::time_till_next_arrival_at_stop_after_time - returning expected arrival for fixed line " << this->get_id() << ":" << time_till_next_visit);
 			return time_till_next_visit;
 		}
 	}
-	// find the iterator for this pass stop
-	vector<Busstop*>::iterator this_stop;
-	for (vector <Busstop*>::iterator stop_iter = stops.begin(); stop_iter < stops.end(); stop_iter++)
-	{
-		if ((*stop_iter)->get_id() == stop->get_id())
-		{
-			this_stop = stop_iter;
-			break;
-		}
-	}
+
 	Bustrip* last_trip = find_next_expected_trip_at_stop(stop); 
     assert(last_trip);//TODO: is it possible for nullptr to be returned here?
 
