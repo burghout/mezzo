@@ -62,12 +62,17 @@ public:
 
 	void reset(); //!< resets members between simulation replications
 
-	bool addRequest(Request req, const set<Busstop*>& serviceArea); //!< adds request passenger Request to the requestSet
+	bool addRequest(Request* req, const set<Busstop*>& serviceArea); //!< adds request passenger Request to the requestSet
 	void removeRequest(int pass_id); //!< removes requests with pass_id from the requestSet if it exists
-    bool isFeasibleRequest(const Request& req, const set<Busstop*>& serviceArea) const; //!< returns true if request is feasible for a given service area, false otherwise
+    bool isFeasibleRequest(const Request* req, const set<Busstop*>& serviceArea) const; //!< returns true if request is feasible for a given service area, false otherwise
 
 private:
-	set<Request> requestSet_; //!< set of received requests sorted by desired departure time
+	set<Request*> requestSet_; //!< set of received requests sorted by desired departure time
+	//	Filtering methods for:
+	// unmatchedRequestSet
+	// matchedRequestSet that havent been served
+	// servedRequests unfinished (enroute)
+	// servedRequests finished
 };
 
 //! @brief responsible for generating an unassigned trip for any Busline (in this context a line is equivalent a sequence of scheduled Busstops along a Busroute) within a given service area
@@ -266,7 +271,7 @@ signals:
 
 private slots:
 	//request related
-	void receiveRequest(Request req, double time); //<! delegates to RequestHandler to add the request to its requestSet
+	void receiveRequest(Request* req, double time); //<! delegates to RequestHandler to add the request to its requestSet
 	void removeRequest(int pass_id); //!< remove request with pass_id from requestSet in RequestHandler
 
 	//fleet related
@@ -301,6 +306,15 @@ private:
 	map<int, Passenger*> connectedPass_; //!< passengers currently connected to Controlcenter 
 	map<int, Bus*> connectedVeh_; //!< transit vehicles currently connected to Controlcenter
 	map<BusState, set<Bus*>> fleetState_; //!< holds set of connected transit vehicles per transit vehicle state 
+
+	/**
+	 * Functions for askng RequestHandler for unserved Requests to map to passengers etc... matched Requests 
+	 * @todo
+	 *	Double-mapping between connected Vehicles and Passengers
+	 *  Which connected passengers are assigned to a vehicle and which vehicle a passenger has been assigned
+	 *  
+	 *  Vehicle-trips & passenger-trips...
+	 */
 
     //process classes of control center
 	RequestHandler rh_;

@@ -25,56 +25,73 @@ RequestHandler::~RequestHandler(){}
 
 void RequestHandler::reset()
 {
+	for (auto req : requestSet_)
+		delete req;
 	requestSet_.clear();
 }
 
-bool RequestHandler::addRequest(const Request req, const set<Busstop*>& serviceArea)
+bool RequestHandler::addRequest(Request* req, const set<Busstop*>& serviceArea)
 {
     if (!isFeasibleRequest(req, serviceArea))
     {
-        DEBUG_MSG("INFO::RequestHandler::addRequest : rejecting request to travel between origin stop " << req.ostop_id << 
-                    " and destination stop " << req.dstop_id << ", destination stop not reachable within service area");
-        return false;
+        DEBUG_MSG("INFO::RequestHandler::addRequest : rejecting request to travel between origin stop " << req->ostop_id << 
+                    " and destination stop " << req->dstop_id << ", destination stop not reachable within service area");
+		
+		// Currently if a request is rejected it is deleted, and passengers pointer to it is reset to nullptr @todo Perhaps move this to a different owner
+		req->pass_owner->set_curr_request(nullptr);
+		delete req;
+        
+		return false;
     }
 
 	if (find(requestSet_.begin(), requestSet_.end(), req) == requestSet_.end()) //if request does not already exist in set (which it shouldn't)
 	{
 		requestSet_.insert(req);
+		req->set_state(RequestState::Unmatched);
 		return true;
 	}
-	DEBUG_MSG("DEBUG: RequestHandler::addRequest : passenger request " << req.pass_id << " at time " << req.time << " already exists in request set!");
+
+	DEBUG_MSG("DEBUG: RequestHandler::addRequest : passenger request " << req->pass_id << " at time " << req->time << " already exists in request set!");
+	req->pass_owner->set_curr_request(nullptr);
+	delete req;
+	
 	return false;
 }
 
 void RequestHandler::removeRequest(const int pass_id)
 {
-    set<Request>::iterator it;
+    set<Request*>::iterator it;
     it = find_if(requestSet_.begin(), requestSet_.end(),
-        [pass_id](const Request& req) -> bool
+        [pass_id](const Request* req) -> bool
         {
-            return req.pass_id == pass_id;
+            return req->pass_id == pass_id;
         }
     );
 
     if (it != requestSet_.end())
-        requestSet_.erase(it);
+	{
+		Request* req = *it;
+		req->pass_owner->set_curr_request(nullptr);
+        requestSet_.erase(req);
+		delete req;
+	}
     else
         DEBUG_MSG_V("DEBUG: RequestHandler::removeRequest : Passenger id " << pass_id << " not found in requestSet.");
 }
 
-bool RequestHandler::isFeasibleRequest(const Request& req, const set<Busstop*>& serviceArea) const
+bool RequestHandler::isFeasibleRequest(const Request* req, const set<Busstop*>& serviceArea) const
 {    
     //check if origin stop and destination stop are the same
-    if (req.ostop_id == req.dstop_id) 
+    if (req->ostop_id == req->dstop_id) 
         return false;
 
     //check if destination stop of request is within serviceArea
-    auto it = find_if(serviceArea.begin(), serviceArea.end(), [req](const Busstop* stop) -> bool {return stop->get_id() == req.dstop_id; });
+    auto it = find_if(serviceArea.begin(), serviceArea.end(), [req](const Busstop* stop) -> bool {return stop->get_id() == req->dstop_id; });
     if (it == serviceArea.end()) 
         return false;
 
     //check if origin stop of request is within serviceArea
-    it = find_if(serviceArea.begin(), serviceArea.end(), [req](const Busstop* stop) -> bool {return stop->get_id() == req.ostop_id; });
+    it = find_if(serviceArea.begin(), serviceArea.end(), [req](const Busstop* stop) -> bool {return stop->get_id() == req->ostop_id; });
     if (it == serviceArea.end()) 
         return false;
 
@@ -879,9 +896,9 @@ double Controlcenter::calc_exploration_wt()
 }
 
 //Slot implementations
-void Controlcenter::receiveRequest(Request req, double time)
+void Controlcenter::receiveRequest(Request* req, double time)
 {
-	assert(req.desired_departure_time >= 0 && req.time >= 0 && req.load > 0); //assert that request is valid
+	assert(req->desired_departure_time >= 0 && req->time >= 0 && req->load > 0); //assert that request is valid
 	summarydata_.requests_recieved += 1;
 	rh_.addRequest(req, serviceArea_) ? emit requestAccepted(time) : emit requestRejected(time);
 }

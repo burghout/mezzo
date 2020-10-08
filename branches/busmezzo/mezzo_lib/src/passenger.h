@@ -137,24 +137,26 @@ public:
     @{
 */
 	//Controlcenter
-	pair<bool,Request> createRequest(Busstop* origin_stop, Busstop* dest_stop, int load = 1, double desired_departure_time = -1, double time = -1); /*!< creates a request for this passenger between origin stop and destination stop
+	Request* createRequest(Busstop* origin_stop, Busstop* dest_stop, int load = 1, double desired_departure_time = -1, double time = -1); /*!< creates a request for this passenger between origin stop and destination stop
                                                                                                    with a given load and a given time. If origin stop and destination stop are not within the same service area
                                                                                                    then attempts to create a request to travel to the first transfer stop found within the service area instead. 
                                                                                                    Returns TRUE and the request if successful, FALSE and an invalid request otherwise (Note: uses protected members of Passenger) */
 
 protected:
 	TransitModeType chosen_mode_ = TransitModeType::Null; /**!< Null if no choice has been made yet, otherwise the result of a mode choice decision. Travelers do not currently re-make a choice of fixed or flexible mode and are commited to this mode for the next leg of their trip once this choice is made. */
-	
+	Request* curr_request_ = nullptr; //!< should point to the current request of the traveler, nullptr if none is active
 
 public:
 	map<ODstops*, map<Pass_path*, double> > temp_connection_path_utilities; //!< cached exp(path utilities) calculated for a given connection/transitmode/dropoff decision. Cleared at the beginning of each make_connection_decision call and filled via calls from this method
 	void set_chosen_mode(TransitModeType chosen_mode) { chosen_mode_ = chosen_mode; }
 	TransitModeType get_chosen_mode() { return chosen_mode_; }
+	void set_curr_request(Request* curr_request) { curr_request_ = curr_request; }
+	Request* get_curr_request() { return curr_request_; }
 	bool is_flexible_user() { return chosen_mode_ == TransitModeType::Flexible; }
 	vector<Pass_path*> get_first_leg_flexible_paths(const vector<Pass_path*>& path_set) const; //!< returns all paths in path_set that have a flexible first transit leg (that a traveler would need to send a request for to ride with)
 	vector<Pass_path*> get_first_leg_fixed_paths(const vector<Pass_path*>& path_set) const; //!< returns all paths in path_set that have a fixed first transit leg
 signals:
-	void sendRequest(Request req, double time); //!< signal to send Request message to Controlcenter along with time in which signal is sent
+	void sendRequest(Request* req, double time); //!< signal to send Request message to Controlcenter along with time in which signal is sent
 	void boardedBus(int pass_id); //!< signal that a passenger with pass_id (this passenger's id) has just boarded a bus
 /**@}*/
 

@@ -355,7 +355,7 @@ double Busline::time_till_next_arrival_at_stop_after_time (Busstop* stop, double
 		else
 		{
 			time_till_next_visit = find_time_till_next_scheduled_trip_at_stop(stop, time); //search for the closest scheduled trip that arrives after time
-            DEBUG_MSG("Busline::time_till_next_arrival_at_stop_after_time - returning expected arrival for fixed line " << this->get_id() << ":" << time_till_next_visit);
+            //DEBUG_MSG("Busline::time_till_next_arrival_at_stop_after_time - returning expected arrival for fixed line " << this->get_id() << ":" << time_till_next_visit);
 			return time_till_next_visit;
 		}
 	}
@@ -1829,14 +1829,6 @@ void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, d
                             //(*alighting_passenger)->set_AWT_first_leg_boarding();
                         }
                     }
-
-                    //if(theParameters->drt && CC != nullptr)
-                    //{
-                    //    ODstops* odstops = (*alighting_passenger)->get_OD_stop();
-                    //    pair<bool, Request> req = (*alighting_passenger)->createRequest(odstops->get_origin(),odstops->get_destination(), 1, time, time); //create a request with load of 1 to be picked up as soon as possible
-                    //    if(req.first == true) //if connection or partial connection to destination was found within CC service area of origin stop
-                    //        emit(*alighting_passenger)->sendRequest(req.second, time); //send this request to the control center of this stop
-                    //}
                 }
                 else  // pass walks to another stop
                 {
@@ -1864,9 +1856,13 @@ void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, d
                         assert(CC != nullptr);
                         CC->connectPassenger((*alighting_passenger)); //connect passenger to the CC of the stop they decided to stay at/walk to, send a request to this CC	
 
-                        pair<bool, Request> req = (*alighting_passenger)->createRequest(next_stop, dropoff_stop, 1, arrival_time_connected_stop, time); //create request with load 1 at current time 
-                        if (req.first == true) //if a connection, or partial connection was found within the CC service of origin stop
-                            emit(*alighting_passenger)->sendRequest(req.second, time); //send request to any controlcenter that is connected
+                        Request* req = (*alighting_passenger)->createRequest(next_stop, dropoff_stop, 1, arrival_time_connected_stop, time); //create request with load 1 at current time 
+						if (req != nullptr) //if a connection, or partial connection was found within the CC service of origin stop
+						{
+							assert((*alighting_passenger)->get_curr_request() == nullptr); // @note RequestHandler responsible for resetting this to nullptr if request is rejected or after a pass has boarded a bus and request is removed
+							(*alighting_passenger)->set_curr_request(req);
+							emit(*alighting_passenger)->sendRequest(req, time); //send request to any controlcenter that is connected
+						}
                         else
                             DEBUG_MSG_V("WARNING - Busstop::passenger_activity_at_stop() - failed request creation for stops " << next_stop->get_id() << "->" << dropoff_stop->get_id() << " with desired departure time " << arrival_time_connected_stop << " at time " << time);
                     }
@@ -1964,9 +1960,9 @@ void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, d
 							
 							if (theParameters->drt && CC != nullptr)
 							{
-								emit(*check_pass)->boardedBus((*check_pass)->get_id()); //boarding passenger signals control center that they have just boarded, should be ignored if pass is not a flexible user
 								if((*check_pass)->is_flexible_user()) //!< @todo boarded bus signal currently removes the request of the passenger from the request set of the Controlcenter. Travelers are currently always disconnected directly afterwards
 								{
+									emit(*check_pass)->boardedBus((*check_pass)->get_id()); //boarding passenger signals control center that they have just boarded, should be ignored if pass is not a flexible user
 									CC->disconnectPassenger((*check_pass)); //now disconnect this passenger from the control center of this stop
 								}
 								(*check_pass)->set_chosen_mode(TransitModeType::Null); // reset travelers chosen mode. A new mode will be chosen when the traveler has chosen to alight

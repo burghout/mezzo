@@ -18,14 +18,46 @@ struct compare
 };
 
 // Request
-Request::Request(int pid, int oid, int did, int l, double dt, double t) : pass_id(pid), ostop_id(oid), dstop_id(did), load(l), desired_departure_time(dt), time(t)
+Request::Request(Passenger* pass, int pid, int oid, int did, int l, double dt, double t) : pass_owner(pass), pass_id(pid), ostop_id(oid), dstop_id(did), load(l), desired_departure_time(dt), time(t)
 {
 	qRegisterMetaType<Request>(); //register Request as a metatype for QT signal arguments
 }
 
+void Request::set_state(RequestState newstate)
+{
+	if (state != newstate)
+	{
+		//RequestState oldstate = state;
+		state = newstate;
+
+		//total_time_spent_in_state[oldstate] += time - time_state_last_entered[oldstate]; // update cumulative time in each state
+		//time_state_last_entered[newstate] = time; // start timer for newstate
+
+		// emit stateChanged(this, oldstate, state_, time);
+	}
+}
+
+void Request::print_state()
+{
+	cout << endl << "Request " << pass_id << " is ";
+	switch (state)
+	{
+	case RequestState::Unmatched:
+		cout << "Unmatched";
+		break;
+	case RequestState::Null:
+		cout << "Null";
+		break;
+		//	default:
+		//		DEBUG_MSG_V("Something went very wrong");
+		//		abort();
+	}
+	cout << endl;
+}
+
 bool Request::operator==(const Request & rhs) const
 {
-    return (pass_id == rhs.pass_id && ostop_id == rhs.ostop_id && dstop_id == rhs.dstop_id && load == rhs.load && AproxEqual(desired_departure_time,rhs.desired_departure_time) && AproxEqual(time,rhs.time));
+    return (pass_owner == rhs.pass_owner && pass_id == rhs.pass_id && ostop_id == rhs.ostop_id && dstop_id == rhs.dstop_id && load == rhs.load && AproxEqual(desired_departure_time,rhs.desired_departure_time) && AproxEqual(time,rhs.time));
 }
 
 bool Request::operator<(const Request & rhs) const
@@ -45,14 +77,14 @@ bool Request::operator<(const Request & rhs) const
 }
 
 //TripGenerationStrategy
-map<pair<int, int>, int> TripGenerationStrategy::countRequestsPerOD(const set<Request>& requestSet) const
+map<pair<int, int>, int> TripGenerationStrategy::countRequestsPerOD(const set<Request*>& requestSet) const
 {
 	map<pair<int, int>, int> odcounts;
 
-	for (const Request& req : requestSet)
+	for (const Request* req : requestSet)
 	{
-		int oid = req.ostop_id;
-		int did = req.dstop_id;
+		int oid = req->ostop_id;
+		int did = req->dstop_id;
 
 		++odcounts[make_pair(oid, did)];
 	}
@@ -228,7 +260,7 @@ Busline* TripGenerationStrategy::find_shortest_busline(const vector<Busline*>& l
 	return shortestline;
 }
 
-bool NullTripGeneration::calc_trip_generation(const set<Request>& requestSet, const vector<Busline*>& candidateServiceRoutes, const map<BusState, set<Bus*>>& fleetState, const double time, set<Bustrip*>& unmatchedTripSet) const
+bool NullTripGeneration::calc_trip_generation(const set<Request*>& requestSet, const vector<Busline*>& candidateServiceRoutes, const map<BusState, set<Bus*>>& fleetState, const double time, set<Bustrip*>& unmatchedTripSet) const
 {
     Q_UNUSED(requestSet)
     Q_UNUSED(candidateServiceRoutes)
@@ -239,7 +271,7 @@ bool NullTripGeneration::calc_trip_generation(const set<Request>& requestSet, co
 	return false;
 }
 
-bool NaiveTripGeneration::calc_trip_generation(const set<Request>& requestSet, const vector<Busline*>& candidateServiceRoutes, const map<BusState, set<Bus*>>& fleetState, const double time, set<Bustrip*>& unmatchedTripSet) const
+bool NaiveTripGeneration::calc_trip_generation(const set<Request*>& requestSet, const vector<Busline*>& candidateServiceRoutes, const map<BusState, set<Bus*>>& fleetState, const double time, set<Bustrip*>& unmatchedTripSet) const
 {
     Q_UNUSED(fleetState)
 
@@ -333,7 +365,7 @@ bool NaiveTripGeneration::calc_trip_generation(const set<Request>& requestSet, c
 
 //Empty vehicle trip generation
 NaiveEmptyVehicleTripGeneration::NaiveEmptyVehicleTripGeneration(Network* theNetwork) : theNetwork_(theNetwork){}
-bool NaiveEmptyVehicleTripGeneration::calc_trip_generation(const set<Request>& requestSet, const vector<Busline*>& candidateServiceRoutes, const map<BusState, set<Bus*>>& fleetState, const double time, set<Bustrip*>& unmatchedTripSet) const
+bool NaiveEmptyVehicleTripGeneration::calc_trip_generation(const set<Request*>& requestSet, const vector<Busline*>& candidateServiceRoutes, const map<BusState, set<Bus*>>& fleetState, const double time, set<Bustrip*>& unmatchedTripSet) const
 {
 	if (!requestSet.empty() && !candidateServiceRoutes.empty()) //Reactive strategy so only when requests exist
     {

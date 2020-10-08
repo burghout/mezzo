@@ -64,6 +64,7 @@ void Passenger::reset ()
 	boarding_decision = false;
 	already_walked = false;
 	chosen_mode_ = TransitModeType::Null;
+    curr_request_ = nullptr;
 	temp_connection_path_utilities.clear();
 
 	double new_start_time = 0; 
@@ -393,23 +394,26 @@ void Passenger::start (Eventlist* eventlist, double time)
 				assert(CC != nullptr);
 				CC->connectPassenger(this); //connect passenger to the CC of the stop they decided to stay at/walk to, send a request to this CC	
 
-				pair<bool, Request> req = createRequest(connection_stop, dropoff_stop, 1, arrival_time_to_connected_stop, start_time); //create request with load 1 at current time 
-				if (req.first == true) //if a connection, or partial connection was found within the CC service of origin stop
-					emit sendRequest(req.second, time); //send request to any controlcenter that is connected
+				Request* req = createRequest(connection_stop, dropoff_stop, 1, arrival_time_to_connected_stop, start_time); //create request with load 1 at current time 
+				if (req != nullptr) //if a connection, or partial connection was found within the CC service of origin stop
+				{
+					assert(this->get_curr_request() == nullptr); // @note RequestHandler responsible for resetting this to nullptr if request is rejected or after a pass has boarded a bus and request is removed
+					set_curr_request(req); 
+					emit sendRequest(req, time); //send request to any controlcenter that is connected
+				}
 				else
 					DEBUG_MSG_V("WARNING - Passenger::start() - failed request creation for stops "<< connection_stop->get_id() << "->" << dropoff_stop->get_id() << " with desired departure time " << arrival_time_to_connected_stop << " at time " << time);
 			}
 		}
 }
 
-pair<bool,Request> Passenger::createRequest(Busstop* origin_stop, Busstop* dest_stop, int load, double desired_departure_time, double time)
+Request* Passenger::createRequest(Busstop* origin_stop, Busstop* dest_stop, int load, double desired_departure_time, double time)
 {
 	assert(load > 0);
     assert(desired_departure_time >= 0);
 	assert(time >= 0);
 
-    bool success = false;
-    Request req = Request(this->get_id(), -1, -1, -1, -1, -1); //TODO: ugly default return value for impossible request
+	Request* req = nullptr;
 
     Controlcenter* cc = origin_stop->get_CC();
     if (cc)
@@ -435,17 +439,15 @@ pair<bool,Request> Passenger::createRequest(Busstop* origin_stop, Busstop* dest_
             if (transferstop != nullptr) //create request for transfer stop of first path instead of final destination TODO: what to do when there are several transfer stops i.e. several paths
             {
                 DEBUG_MSG("DEBUG: Passenger::start : Transfer stop found! Sending request to travel to transfer stop " << transferstop->get_id());
-                success = true;
-                req = Request(this->get_id(), OD_stop->get_origin()->get_id(), transferstop->get_id(), load, desired_departure_time, time);
+                req = new Request(this, this->get_id(), OD_stop->get_origin()->get_id(), transferstop->get_id(), load, desired_departure_time, time);
             }
         }
         else
         {
-            success = true;
-            req = Request(this->get_id(), OD_stop->get_origin()->get_id(), OD_stop->get_destination()->get_id(), load, desired_departure_time, time); //create request with load 1 at current time 
+            req = new Request(this, this->get_id(), OD_stop->get_origin()->get_id(), OD_stop->get_destination()->get_id(), load, desired_departure_time, time); //create request with load 1 at current time 
         }
     }
-    return make_pair(success, req);
+	return req;
 }
 
 vector<Pass_path*> Passenger::get_first_leg_flexible_paths(const vector<Pass_path*>& path_set) const

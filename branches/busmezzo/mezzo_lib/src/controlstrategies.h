@@ -27,19 +27,43 @@ class Bus;
 enum class BusState;
 class Network;
 class Link;
+class Passenger;
+
+/**
+ * @ingroup DRT
+ * 
+ * Enumerates possible states of a Request:
+ *  Null - default uninitialized request
+ *  Unmatched - request not matched to any vehicle trip
+ *  Matched - request is matched but not picked-up yet
+ *  ServedUnfinished - request has been picked-up but not dropped off
+ *  ServedFinished - request has been picked-up and dropped off
+ * 
+ * @todo currently not all states used besides Null and Unmatched. Requests are currently removed upon passenger boarding a vehicle
+ *       1. Add bookeeping methods to update RequestState, associated vehicles to requests, requests to vehicles...
+ *       2. Maybe use pointers to Requests rather than copies in Passenger-Controlcenter communication. Need to doublecheck how qt default signal-slots connections work with multiple threads this is however (even if we are only creating one other thread from main)
+ *       3. Replace ostop_id and dstop_id with pointers to the actual stops maybe
+ */
+enum class RequestState { Null = 0, Unmatched }; // Matched, ServedUnfinished, ServedFinished };
 
 //! @brief structure representing a passenger message to a control center requesting transport between an origin stop and a destination stop with a desired time of departure
 struct Request
 {
-    int pass_id;    //!< id of passenger that created request
-    int ostop_id;   //!< id of origin stop
-    int dstop_id;   //!< id of destination stop
-    int load;       //!< number of passengers in request
-    double desired_departure_time;  //!< desired/earliest departure time for passenger
-    double time;                    //!< time request was generated
+    int pass_id = -1;    //!< id of passenger that created request
+    int ostop_id = -1;   //!< id of origin stop
+    int dstop_id = -1;   //!< id of destination stop
+    int load = -1;       //!< number of passengers in request
+    double desired_departure_time = -1.0;  //!< desired/earliest departure time for passenger
+    double time = -1.0;                    //!< time request was generated
+    RequestState state = RequestState::Null; //!< current state of the request
+    Passenger* pass_owner = nullptr; //!< passenger who sent this request
+    Bus* assigned_veh = nullptr; //!< vehicle that has been assigned to this request, nullptr if none has been assigned
 
     Request() = default;
-    Request(int pid, int oid, int did, int l, double dt, double t);
+    Request(Passenger* pass, int pid, int oid, int did, int l, double dt, double t);
+
+    void set_state(RequestState);
+    void print_state();
 
     bool operator == (const Request& rhs) const; //!< default equality comparison of Requests
     bool operator < (const Request& rhs) const; //!< default less-than comparison of Requests in the order of smallest departure time, smallest time, smallest load, smallest origin stop id, smallest destination stop id and finally smallest passenger id
@@ -62,16 +86,16 @@ class TripGenerationStrategy
 public:
     virtual ~TripGenerationStrategy() = default;
     virtual bool calc_trip_generation(
-        const set<Request>&             requestSet,             //!< set of requests that motivate the potential generation of a trip
-        const vector<Busline*>&         candidateServiceRoutes, //!< service routes available to potentially serve the requests
+        const set<Request*>&             requestSet,             //!< set of requests that motivate the potential generation of a trip
+        const vector<Busline*>&          candidateServiceRoutes, //!< service routes available to potentially serve the requests
         const map<BusState, set<Bus*> >& fleetState,             //!< state of all vehicles that are potentially available to serve the requests
-        const double                    time,                   //!< time for which calc_trip_generation is called
-        set<Bustrip*>&                  unmatchedTripSet        //!< set of trips that have been generated to serve requests that have not been assigned to a vehicle yet
+        const double                     time,                   //!< time for which calc_trip_generation is called
+        set<Bustrip*>&                   unmatchedTripSet        //!< set of trips that have been generated to serve requests that have not been assigned to a vehicle yet
     ) const = 0; //!< returns true if a trip was generated and added to the unmatchedTripSet and false otherwise
 
 public:
     //supporting methods for generating trips with whatever TripGenerationStrategy
-    map<pair<int, int>, int> countRequestsPerOD(const set<Request>& requestSet) const; //!< counts the number of requests with a particular od
+    map<pair<int, int>, int> countRequestsPerOD(const set<Request*>& requestSet) const; //!< counts the number of requests with a particular od
     bool line_exists_in_tripset(const set<Bustrip*>& tripSet, const Busline* line) const; //!< returns true if a trip exists in trip set for the given bus line
     vector<Busline*> find_lines_connecting_stops(const vector<Busline*>& lines, int ostop_id, int dstop_id) const; //!< returns buslines among lines given as input that run from a given origin stop to a given destination stop (Note: assumes lines are unidirectional and that bus line stops are ordered, which they currently are in BusMezzo)
 	vector<Visit_stop*> create_schedule(double init_dispatch_time, const vector<pair<Busstop*, double>>& time_between_stops) const; //!< creates a vector of scheduled visits to stops starting from the preliminary start time of the trip and given the scheduled in-vehicle time for the trip
@@ -90,7 +114,7 @@ class NullTripGeneration : public TripGenerationStrategy
 {
 public:
 	~NullTripGeneration() override = default;
-	bool calc_trip_generation(const set<Request>& requestSet, const vector<Busline*>& candidateServiceRoutes, const map<BusState, set<Bus*>>& fleetState, double time, set<Bustrip*>& unmatchedTripSet) const override;
+	bool calc_trip_generation(const set<Request*>& requestSet, const vector<Busline*>& candidateServiceRoutes, const map<BusState, set<Bus*>>& fleetState, double time, set<Bustrip*>& unmatchedTripSet) const override;
 };
 
 //! @brief prioritizes generating trips for OD stop pair with the highest demand and most direct (in terms of scheduled in-vehicle time) service route
@@ -103,7 +127,7 @@ class NaiveTripGeneration : public TripGenerationStrategy
 {
 public:
 	~NaiveTripGeneration() override = default;
-	bool calc_trip_generation(const set<Request>& requestSet, const vector<Busline*>& candidateServiceRoutes, const map<BusState, set<Bus*>>& fleetState, double time, set<Bustrip*>& unmatchedTripSet) const override;
+	bool calc_trip_generation(const set<Request*>& requestSet, const vector<Busline*>& candidateServiceRoutes, const map<BusState, set<Bus*>>& fleetState, double time, set<Bustrip*>& unmatchedTripSet) const override;
 };
 
 
@@ -119,7 +143,7 @@ class NaiveEmptyVehicleTripGeneration : public TripGenerationStrategy
 public:
 	explicit NaiveEmptyVehicleTripGeneration(Network* theNetwork = nullptr);
 	~NaiveEmptyVehicleTripGeneration() override = default;
-	bool calc_trip_generation(const set<Request>& requestSet, const vector<Busline*>& candidateServiceRoutes, const map<BusState, set<Bus*>>& fleetState, double time, set<Bustrip*>& unmatchedTripSet) const override;
+	bool calc_trip_generation(const set<Request*>& requestSet, const vector<Busline*>& candidateServiceRoutes, const map<BusState, set<Bus*>>& fleetState, double time, set<Bustrip*>& unmatchedTripSet) const override;
 
 private:
 	Network* theNetwork_; //!< currently needs access to the network to find the closest on-call Bus to origin stop of highest OD demand
@@ -141,7 +165,7 @@ public:
     virtual bool find_tripvehicle_match(
         Bustrip*                unmatchedTrip,  //!< planned trip that has not yet been assigned to any transit vehicle
         map<int, set<Bus*>>&    veh_per_sroute, //!< set of candidate vehicles assigned with different service routes
-        double            time,           //!< time find_tripvehicle_match is called
+        double                  time,           //!< time find_tripvehicle_match is called
         const set<Bustrip*>&    matchedTrips    //!< set of dynamically generated trips that already have a vehicle assigned to them, Note: the idea here is to use these in the future for e.g. dynamic trip-chaining
     ) = 0; //!< returns true if unmatchedTrip was assigned to a transit vehicle from veh_per_sroute
 
