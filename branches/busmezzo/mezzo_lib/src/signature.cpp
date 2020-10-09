@@ -18,20 +18,20 @@ Signature();
 
 bool Signature::read (PVM_Service* com)
 {
- 	(*com) > >  id;
- 	(*com) > > speed;
- 	(*com) > > timestamp;
- 	(*com) > > entrytime;
- 	(*com) > > starttime;
- 	(*com) > > meters;
- 	(*com) > > origin;
- 	(*com) > > destination;
- 	(*com) > > type;
- 	(*com) > > length;
- 	(*com) > > path;
-  (*com) > > tmppath;
- 	(*com) > > tmporigin;
- 	(*com) > > tmpdestination;
+ 	(*com) >>  id;
+ 	(*com) >> speed;
+ 	(*com) >> timestamp;
+ 	(*com) >> entrytime;
+ 	(*com) >> starttime;
+ 	(*com) >> meters;
+ 	(*com) >> origin;
+ 	(*com) >> destination;
+ 	(*com) >> type;
+ 	(*com) >> length;
+ 	(*com) >> path;
+    (*com) >> tmppath;
+ 	(*com) >> tmporigin;
+ 	(*com) >> tmpdestination;
  	return true;
 }
 
