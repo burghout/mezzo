@@ -50,12 +50,15 @@ bool RequestHandler::addRequest(Request* req, const set<Busstop*>& serviceArea)
 		req->set_state(RequestState::Unmatched);
 		return true;
 	}
+    else
+    {
+        // Currently just ignore addRequest call if request already exists in request set
+        DEBUG_MSG("DEBUG: RequestHandler::addRequest : passenger request " << req->pass_id << " at time " << req->time << " already exists in request set!");
+        //req->pass_owner->set_curr_request(nullptr);
+        //delete req;
 
-	DEBUG_MSG("DEBUG: RequestHandler::addRequest : passenger request " << req->pass_id << " at time " << req->time << " already exists in request set!");
-	req->pass_owner->set_curr_request(nullptr);
-	delete req;
-	
-	return false;
+        return false;
+    }
 }
 
 void RequestHandler::removeRequest(const int pass_id)

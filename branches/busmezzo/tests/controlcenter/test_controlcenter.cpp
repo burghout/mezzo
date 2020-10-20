@@ -34,14 +34,15 @@ private Q_SLOTS:
 	void testDeletion(); //!< test deletion of Controlcenter
 
 private:
-	Controlcenter* ccPtr;
+    Controlcenter* ccPtr = nullptr;
 };
 
 void TestControlcenter::testConstruction()
 {   
-    ccPtr = new Controlcenter();
+    ccPtr = new Controlcenter(nullptr,nullptr,0,0,0,0,0,nullptr);
 
-    QVERIFY2(ccPtr, "Failed to create a Controlcenter");
+    QVERIFY2(ccPtr != nullptr, "Failed to create a Controlcenter");
+    QVERIFY(true == true);
 }
 
 void TestControlcenter::testConnectDisconnectPassenger()
@@ -50,6 +51,7 @@ void TestControlcenter::testConnectDisconnectPassenger()
     Busstop* destination = new Busstop();
     ODstops* OD_stop= new ODstops(origin,destination);
     Passenger* pass = new Passenger(0,0.0,OD_stop,nullptr);
+    pass->set_chosen_mode(TransitModeType::Flexible); // passenger must be a flexible transit user to connect to a Controlcenter
 
     ccPtr->connectPassenger(pass);
     QVERIFY2 (ccPtr->connectedPass_.size() == 1, "Failure, connectedPass_.size should now be 1 after passenger connect");
@@ -71,6 +73,7 @@ void TestControlcenter::testRequestHandler()
 	Busstop* destination = new Busstop(did, "destination", 1, 1, 1, 0, 0, 1.0, 0, 0, nullptr);
 	ODstops* OD_stop = new ODstops(origin, destination);
 	Passenger* pass = new Passenger(0, 0.0, OD_stop, nullptr);
+    pass->set_chosen_mode(TransitModeType::Flexible); // passenger is a flexible transit user
 
 	//test create request via passenger method
     Request* invreq = pass->createRequest(origin, destination, 1, 1.0, 1.0);
@@ -98,11 +101,13 @@ void TestControlcenter::testRequestHandler()
 	QVERIFY2(rhPtr->requestSet_.size() == 1, "Failure, there should still be 1 request in requestSet after duplicate sendRequest signal from connected passenger");
 
     Passenger* pass1 = new Passenger(1, 0.0, OD_stop, nullptr);
+    pass1->set_chosen_mode(TransitModeType::Flexible); // passenger is a flexible transit user
     Request* req2 = new Request(pass1,1, oid, did, 1, 0.0, 0.0); //creates request with pass_id 1
     rhPtr->addRequest(req2, ccPtr->serviceArea_);
 	QVERIFY2(rhPtr->requestSet_.size() == 2, "Failure, there should be 2 requests in requestSet after direct call to addRequest");
 
     Passenger* pass2 = new Passenger(2,0.0,OD_stop,nullptr);
+    pass2->set_chosen_mode(TransitModeType::Flexible); // passenger is a flexible transit user
     Request* invalidreq = new Request(pass2,2, 1, 1000, 1, 0.0, 0.0); //creates request with destination stop outside of controlcenter service area
 	rhPtr->addRequest(invalidreq, ccPtr->serviceArea_);
 	QVERIFY2(rhPtr->requestSet_.size() == 2, "Failure, request accepted even though destination is outside of Controlcenter service area");

@@ -38,13 +38,15 @@ class Passenger;
  *  Matched - request is matched but not picked-up yet
  *  ServedUnfinished - request has been picked-up but not dropped off
  *  ServedFinished - request has been picked-up and dropped off
+ *  Rejected - request was rejected by DRT operator
+ *  Cancelled - request was cancelled by traveler
  * 
  * @todo currently not all states used besides Null and Unmatched. Requests are currently removed upon passenger boarding a vehicle
  *       1. Add bookeeping methods to update RequestState, associated vehicles to requests, requests to vehicles...
  *       2. Maybe use pointers to Requests rather than copies in Passenger-Controlcenter communication. Need to doublecheck how qt default signal-slots connections work with multiple threads this is however (even if we are only creating one other thread from main)
  *       3. Replace ostop_id and dstop_id with pointers to the actual stops maybe
  */
-enum class RequestState { Null = 0, Unmatched }; // Matched, ServedUnfinished, ServedFinished };
+enum class RequestState { Null = 0, Unmatched }; // Matched, ServedUnfinished, ServedFinished, Rejected, Cancelled };
 
 //! @brief structure representing a passenger message to a control center requesting transport between an origin stop and a destination stop with a desired time of departure
 struct Request

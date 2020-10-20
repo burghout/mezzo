@@ -1962,7 +1962,7 @@ void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, d
 							{
 								if((*check_pass)->is_flexible_user()) //!< @todo boarded bus signal currently removes the request of the passenger from the request set of the Controlcenter. Travelers are currently always disconnected directly afterwards
 								{
-									emit(*check_pass)->boardedBus((*check_pass)->get_id()); //boarding passenger signals control center that they have just boarded, should be ignored if pass is not a flexible user
+									emit (*check_pass)->boardedBus((*check_pass)->get_id()); //boarding passenger signals control center that they have just boarded, should be ignored if pass is not a flexible user
 									CC->disconnectPassenger((*check_pass)); //now disconnect this passenger from the control center of this stop
 								}
 								(*check_pass)->set_chosen_mode(TransitModeType::Null); // reset travelers chosen mode. A new mode will be chosen when the traveler has chosen to alight
