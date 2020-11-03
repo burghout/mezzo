@@ -1,0 +1,59 @@
+### Total passenger summary ###
+Passenger journeys completed: 373
+
+Total walking time             : 0
+Average walking time           : 0
+
+Total waiting time             : 1.27683e+06
+Average total waiting time     : 3423.13
+Minimum waiting time           : 0.825213
+Maximum waiting time           : 5469.15
+Median waiting time            : 1668.78
+
+Total denied waiting time      : 784396
+Average denied waiting time    : 2102.94
+
+Total in-vehicle time          : 540786
+Average in-vehicle time        : 1449.83
+
+Total crowded in-vehicle time  : 581764
+Average crowded in-vehicle time: 1559.69
+
+### Total vehicle summary ###
+Total VKT                   : 667.5
+Total occupied VKT          : 274.5
+Total empty VKT             : 393
+Total occupied time         : 28267
+Total empty time            : 83021.2
+Total driving time          : 67039.9
+Total idle time             : 2012.13
+Total oncall time           : 42236.1
+
+### Fixed vehicle summmary ###
+Fixed VKT                   : 451.5
+Fixed occupied VKT          : 153
+Fixed empty VKT             : 298.5
+Fixed occupied time         : 15772.5
+Fixed empty time            : 30871.8
+Fixed driving time          : 45376.3
+Fixed idle time             : 1268
+Fixed oncall time           : 0
+
+### DRT vehicle summmary ###
+DRT VKT                     : 216
+DRT occupied VKT            : 121.5
+DRT empty VKT               : 94.5
+DRT occupied time           : 12494.5
+DRT empty time              : 52149.4
+DRT driving time            : 21663.6
+DRT idle time               : 744.134
+DRT oncall time             : 42236.1
+
+### ControlCenter summmary ###
+Requests recieved           : 337
+Requests rejected           : 0
+Requests accepted           : 337
+Requests served             : 280
+
+------------------------------------------------------------------
+

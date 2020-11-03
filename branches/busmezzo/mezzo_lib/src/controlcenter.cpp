@@ -664,6 +664,11 @@ Controlcenter_SummaryData Controlcenter::getSummaryData() const
 set<Busstop*> Controlcenter::getServiceArea() const { return serviceArea_; }
 vector<Busline*> Controlcenter::getServiceRoutes() const { return tg_.getServiceRoutes(); }
 
+map<int, Bus *> Controlcenter::getConnectedVehicles() const
+{
+    return connectedVeh_;
+}
+
 map<BusState, set<Bus*>> Controlcenter::getFleetState() const
 {
 	return fleetState_;

@@ -113,7 +113,7 @@ void TestFixedWithFlexible_walking::testInitNetwork()
         for(auto stop2 : net->get_stopsmap())
         {
             QString stops_str = QString("stops %1 -> %2").arg(stop1.first).arg(stop2.first);
-            qDebug() << "Checking walking links between " + stops_str;
+            //qDebug() << "Checking walking links between " + stops_str;
             QString nolink_failmsg = "Failure, no walking link defined for " + stops_str;
             if(stop1.first == stop2.first) // recall, key in stopsmap is id of stop
             {

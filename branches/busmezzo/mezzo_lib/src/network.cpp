@@ -7005,18 +7005,41 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
     Q_UNUSED(name14)
     Q_UNUSED(name15)
 
-    ofstream out1(name1.c_str(),ios_base::app);
-    ofstream out2(name2.c_str(),ios_base::app);
-    ofstream out3(name3.c_str(),ios_base::app);
-    ofstream out4(name4.c_str(),ios_base::app);
-    ofstream out7(name7.c_str(),ios_base::app);
-    ofstream out8(name8.c_str(),ios_base::app);
-    ofstream out9(name9.c_str(),ios_base::app);
-    ofstream out10(name10.c_str(),ios_base::app);
-    ofstream out11(name11.c_str(),ios_base::app);
-    ofstream out12(name12.c_str(),ios_base::app);
-    ofstream out16(name16.c_str(), ios_base::app);
-    ofstream out17(name17.c_str(), ios_base::app); 
+    ofstream out1(name1.c_str(),ios_base::app); //"o_transitlog_out.dat"
+    ofstream out2(name2.c_str(),ios_base::app); //"o_transitstop_sum.dat"
+    ofstream out3(name3.c_str(),ios_base::app); //"o_transitline_sum.dat"
+    ofstream out4(name4.c_str(),ios_base::app); //"o_transit_trajectory.dat"
+    ofstream out7(name7.c_str(),ios_base::app); //"o_segments_trip_loads.dat"
+    ofstream out8(name8.c_str(),ios_base::app); //"o_selected_paths.dat"
+    ofstream out9(name9.c_str(),ios_base::app); //"o_segments_line_loads.dat"
+    ofstream out10(name10.c_str(),ios_base::app); //"o_od_stops_summary.dat"
+    ofstream out11(name11.c_str(),ios_base::app); //"o_trip_total_travel_time.dat"
+    ofstream out12(name12.c_str(),ios_base::app); //"o_od_stop_summary_without_paths.dat"
+    ofstream out16(name16.c_str(), ios_base::app); //"o_passenger_trajectory.dat"
+    ofstream out17(name17.c_str(), ios_base::app); //"o_passenger_welfare_summary.dat"
+
+  /*  this->write_busstop_output(
+        workingdir + "o_transitlog_out.dat",                    out1
+        workingdir + "o_transitstop_sum.dat",                   out2
+        workingdir + "o_transitline_sum.dat",                   out3
+        workingdir + "o_transit_trajectory.dat",                out4
+        workingdir + "o_passenger_boarding.dat",                out5
+        workingdir + "o_passenger_alighting.dat",               out6   
+        workingdir + "o_segments_trip_loads.dat",               out7
+        workingdir + "o_selected_paths.dat",                    out8
+        workingdir + "o_segments_line_loads.dat",               out9
+        workingdir + "o_od_stops_summary.dat",                  out10
+        workingdir + "o_trip_total_travel_time.dat",            out11
+        workingdir + "o_od_stop_summary_without_paths.dat",     out12
+        workingdir + "o_passenger_waiting_experience.dat",      out13
+        workingdir + "o_passenger_onboard_experience.dat",      out14
+        workingdir + "o_passenger_connection.dat",              out15
+        workingdir + "o_passenger_trajectory.dat",              out16
+        workingdir + "o_passenger_welfare_summary.dat",         out17
+        workingdir + "o_fwf_summary.dat",                       out18
+        workingdir + "o_passenger_transitmode.dat",             out19
+        workingdir + "o_passenger_dropoff.dat"                  out20
+    );*/
 
     /* passenger decision related, deactivated
     ofstream out5(name5.c_str(),ios_base::app);
@@ -9126,108 +9149,108 @@ bool Network::run(int period)
 double Network::step(double timestep)
 // same as run, but more stripped down. Called every timestep by the GUI
 {
-    double t0=timestamp();
+    double t0 = timestamp();
 #ifndef _NO_GUI
     double tc; // current time
 #endif //_NO_GUI
-    double next_an_update=t0+timestep;   // when to exit
-    Q_UNUSED (next_an_update)
+    double next_an_update = t0 + timestep;   // when to exit
+    Q_UNUSED(next_an_update)
 
-    if (theParameters->pass_day_to_day_indicator == 0 && theParameters->in_vehicle_d2d_indicator == 0)
-    {
-        while ((time>-1.0) && (time<runtime))       // the big loop
+        if (theParameters->pass_day_to_day_indicator == 0 && theParameters->in_vehicle_d2d_indicator == 0)
         {
-            time=eventlist->next();
-            //cout << time << "\t";
-#ifndef _NO_GUI
-
-            tc=timestamp();
-
-            if (tc > next_an_update)  // the time has come for the next animation update
+            while ((time > -1.0) && (time < runtime))       // the big loop
             {
-                drawing->draw(pm,wm);
-                return time;
-            }
-
-#endif //_NO_GUI
-        }
-        return time;
-    }
-    
-    
-        enum m {wt, ivt};
-        float crit[2];
-        crit[wt] = 1000.0F;
-        crit[ivt] = 1000.0F;
-        float theta = theParameters->break_criterium;
-        //map<ODSL, Travel_time> wt_rec; //the record of waiting time data
-        //map<ODSLL, Travel_time> ivt_rec; //the record of in-vehicle time data
-        //day2day->reset();
-        bool iter = true;
-        while (iter) //day2day
-        {
-            cout << "Day: " << day << endl;
-
-            crit[wt] = 0.0F;
-            crit[ivt] = 0.0F;
-
-            double timer = 1200;
-            while ((time>-1.0) && (time<runtime))       // the big loop
-            {
-                time=eventlist->next();
+                time = eventlist->next();
                 //cout << time << "\t";
-
-                if (time >= timer) //Jens 2014
-                {
-                    cout << "Time: " << timer << endl;
-                    timer += 1200;
-                }
-
 #ifndef _NO_GUI
 
-                tc=timestamp();
+                tc = timestamp();
 
                 if (tc > next_an_update)  // the time has come for the next animation update
                 {
-                    drawing->draw(pm,wm);
+                    drawing->draw(pm, wm);
                     return time;
                 }
 
 #endif //_NO_GUI
             }
-
-            if (theParameters->pass_day_to_day_indicator > 0)
-            {
-                crit[wt] = insert(wt_rec, day2day->process_wt_replication(odstops, wt_rec)); //insert result from day2day learning in data container
-            }
-
-            if (theParameters->in_vehicle_d2d_indicator > 0)
-            {
-                crit[ivt] = insert(ivt_rec, day2day->process_ivt_replication(odstops, ivt_rec)); //insert result from day2day learning in data container
-            }
-
-            string addition = To_String(static_cast<long double>(crit[wt])) + "\t" + To_String(static_cast<long double>(crit[ivt]));
-            day2day->write_output(workingdir + "o_convergence.dat", addition);
-            cout << "Convergence: " << crit[wt] << " " << crit[ivt] << endl;
-
-            day++;
-            day2day->update_day(day);
-            if ((crit[wt] >= theta || crit[ivt] >= theta) && day <= 20)
-            {
-                reset();
-                read_transitday2day(wt_rec);
-                read_IVTT_day2day(ivt_rec);
-            }
-            else
-            {
-                iter = false; //break the while loop when one of the criteria has been reached
-            }
+            return time;
         }
-        wt_rec.clear();
-        ivt_rec.clear();
 
-        return time;
-    
+
+    enum m { wt, ivt };
+    float crit[2];
+    crit[wt] = 1000.0F;
+    crit[ivt] = 1000.0F;
+    float theta = theParameters->break_criterium;
+    //map<ODSL, Travel_time> wt_rec; //the record of waiting time data
+    //map<ODSLL, Travel_time> ivt_rec; //the record of in-vehicle time data
+    //day2day->reset();
+    bool iter = true;
+    while (iter) //day2day
+    {
+        cout << "Day: " << day << endl;
+
+        crit[wt] = 0.0F;
+        crit[ivt] = 0.0F;
+
+        double timer = 1200;
+        while ((time > -1.0) && (time < runtime))       // the big loop
+        {
+            time = eventlist->next();
+            //cout << time << "\t";
+
+            if (time >= timer) //Jens 2014
+            {
+                cout << "Time: " << timer << endl;
+                timer += 1200;
+            }
+
+#ifndef _NO_GUI
+
+            tc = timestamp();
+
+            if (tc > next_an_update)  // the time has come for the next animation update
+            {
+                drawing->draw(pm, wm);
+                return time;
+            }
+
+#endif //_NO_GUI
+        }
+
+        if (theParameters->pass_day_to_day_indicator > 0)
+        {
+            crit[wt] = insert(wt_rec, day2day->process_wt_replication(odstops, wt_rec)); //insert result from day2day learning in data container
+        }
+
+        if (theParameters->in_vehicle_d2d_indicator > 0)
+        {
+            crit[ivt] = insert(ivt_rec, day2day->process_ivt_replication(odstops, ivt_rec)); //insert result from day2day learning in data container
+        }
+
+        string addition = To_String(static_cast<long double>(crit[wt])) + "\t" + To_String(static_cast<long double>(crit[ivt]));
+        day2day->write_output(workingdir + "o_convergence.dat", addition);
+        cout << "Convergence: " << crit[wt] << " " << crit[ivt] << endl;
+
+        day++;
+        day2day->update_day(day);
+        if ((crit[wt] >= theta || crit[ivt] >= theta) && day <= 20)
+        {
+            reset();
+            read_transitday2day(wt_rec);
+            read_IVTT_day2day(ivt_rec);
+        }
+        else
+        {
+            iter = false; //break the while loop when one of the criteria has been reached
+        }
+    }
+    wt_rec.clear();
+    ivt_rec.clear();
+
+    return time;
+
 }
 
 #ifndef _NO_GUI

@@ -220,6 +220,7 @@ public:
 	Controlcenter_SummaryData getSummaryData() const;
 	set<Busstop*> getServiceArea() const;
     vector<Busline*> getServiceRoutes() const;
+    map<int,Bus*> getConnectedVehicles() const;
 
 	map<BusState, set<Bus*> > getFleetState() const;
 	set<Bus*> getAllVehicles();

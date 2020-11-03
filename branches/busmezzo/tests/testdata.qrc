@@ -47,7 +47,6 @@
         <file>networks/FWF_testnetwork2/ExpectedOutputs/o_trip_total_travel_time.dat</file>
         <file>networks/FWF_testnetwork2/ExpectedOutputs/o_fwf_summary.dat</file>
         <file>networks/FWF_testnetwork2/ExpectedOutputs/o_path_set_generation.dat</file>
-        <file>networks/FWF_testnetwork1/ExpectedOutputs/.gitignore</file>
         <file>networks/FWF_testnetwork1/ExpectedOutputs/o_fwf_summary.dat</file>
         <file>networks/FWF_testnetwork1/ExpectedOutputs/o_od_stop_summary_without_paths.dat</file>
         <file>networks/FWF_testnetwork1/ExpectedOutputs/o_od_stops_summary.dat</file>
@@ -62,7 +61,6 @@
         <file>networks/FWF_testnetwork1/ExpectedOutputs/o_transitlog_out.dat</file>
         <file>networks/FWF_testnetwork1/ExpectedOutputs/o_transitstop_sum.dat</file>
         <file>networks/FWF_testnetwork1/ExpectedOutputs/o_trip_total_travel_time.dat</file>
-        <file>networks/PentaFeeder_drt/ExpectedOutputs/.gitignore</file>
         <file>networks/PentaFeeder_drt/ExpectedOutputs/o_fwf_summary.dat</file>
         <file>networks/PentaFeeder_drt/ExpectedOutputs/o_od_stop_summary_without_paths.dat</file>
         <file>networks/PentaFeeder_drt/ExpectedOutputs/o_od_stops_summary.dat</file>
@@ -77,7 +75,6 @@
         <file>networks/PentaFeeder_drt/ExpectedOutputs/o_transitlog_out.dat</file>
         <file>networks/PentaFeeder_drt/ExpectedOutputs/o_transitstop_sum.dat</file>
         <file>networks/PentaFeeder_drt/ExpectedOutputs/o_trip_total_travel_time.dat</file>
-        <file>networks/PentaFeeder_fixed/ExpectedOutputs/.gitignore</file>
         <file>networks/PentaFeeder_fixed/ExpectedOutputs/o_od_stop_summary_without_paths.dat</file>
         <file>networks/PentaFeeder_fixed/ExpectedOutputs/o_od_stops_summary.dat</file>
         <file>networks/PentaFeeder_fixed/ExpectedOutputs/o_passenger_trajectory.dat</file>
@@ -91,5 +88,19 @@
         <file>networks/PentaFeeder_fixed/ExpectedOutputs/o_transitlog_out.dat</file>
         <file>networks/PentaFeeder_fixed/ExpectedOutputs/o_transitstop_sum.dat</file>
         <file>networks/PentaFeeder_fixed/ExpectedOutputs/o_trip_total_travel_time.dat</file>
+        <file>networks/FWF_testnetwork1_d2d/ExpectedOutputs/o_fwf_summary.dat</file>
+        <file>networks/FWF_testnetwork1_d2d/ExpectedOutputs/o_od_stop_summary_without_paths.dat</file>
+        <file>networks/FWF_testnetwork1_d2d/ExpectedOutputs/o_od_stops_summary.dat</file>
+        <file>networks/FWF_testnetwork1_d2d/ExpectedOutputs/o_passenger_trajectory.dat</file>
+        <file>networks/FWF_testnetwork1_d2d/ExpectedOutputs/o_passenger_welfare_summary.dat</file>
+        <file>networks/FWF_testnetwork1_d2d/ExpectedOutputs/o_segments_line_loads.dat</file>
+        <file>networks/FWF_testnetwork1_d2d/ExpectedOutputs/o_segments_trip_loads.dat</file>
+        <file>networks/FWF_testnetwork1_d2d/ExpectedOutputs/o_selected_paths.dat</file>
+        <file>networks/FWF_testnetwork1_d2d/ExpectedOutputs/o_transit_routes.dat</file>
+        <file>networks/FWF_testnetwork1_d2d/ExpectedOutputs/o_transit_trajectory.dat</file>
+        <file>networks/FWF_testnetwork1_d2d/ExpectedOutputs/o_transitline_sum.dat</file>
+        <file>networks/FWF_testnetwork1_d2d/ExpectedOutputs/o_transitlog_out.dat</file>
+        <file>networks/FWF_testnetwork1_d2d/ExpectedOutputs/o_transitstop_sum.dat</file>
+        <file>networks/FWF_testnetwork1_d2d/ExpectedOutputs/o_trip_total_travel_time.dat</file>
     </qresource>
 </RCC>
