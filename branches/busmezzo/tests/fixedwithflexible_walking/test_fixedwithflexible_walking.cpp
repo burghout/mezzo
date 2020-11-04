@@ -487,7 +487,8 @@ void TestFixedWithFlexible_walking::testFlexiblePathExpectedLoS()
     // third leg, should return exploration parameter
     Busline* path17_leg3 = path17->get_alt_lines()[2][0];
     arr_time = 0.0 + path17_leg1_wt + path17_leg2_wt + path17_walking_time*60 + leg1_ivt_rti + leg2_rti_ivt;
-    double path17_leg3_wt = CC->calc_expected_wt(path17_leg3,path17_leg3->stops.front(),path17_leg3->stops.back(),true,path17_walking_time*60,arr_time);
+    double path17_leg3_wt = CC->calc_expected_wt(path17_leg3,path17_leg3->stops.front(),path17_leg3->stops.back(),false,path17_walking_time*60,arr_time);
+    //qDebug() << "Path 17 leg 3 waiting time: " << path17_leg3_wt;
     QVERIFY(AproxEqual(path17_leg3_wt,::drt_exploration_wt));
     QVERIFY(AproxEqual(path17_leg1_wt + path17_leg2_wt + path17_leg3_wt, path17_total_wt*60));
 

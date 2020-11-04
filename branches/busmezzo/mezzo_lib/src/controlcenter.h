@@ -40,6 +40,21 @@ struct Controlcenter_SummaryData
 };
 
 
+//!< just used as key for caching shortest path calls for now
+struct Controlcenter_OD
+{
+	
+	Controlcenter_OD() = default;
+	~Controlcenter_OD() = default;
+	Controlcenter_OD(Busstop* orig, Busstop* dest);
+	
+	bool operator==(const Controlcenter_OD& rhs) const;
+	bool operator<(const Controlcenter_OD& rhs) const;
+
+	Busstop* orig = nullptr;
+	Busstop* dest = nullptr;
+};
+
 //! @brief responsible for adding and removing a passenger Request to/from a requestSet as well as sorting and distributing requests in the requestSet to process classes of a Controlcenter
 /*!
     groups the request handling processes of a Controlcenter. The responsibilities of the RequestHandler are to
@@ -229,7 +244,7 @@ public:
 	pair<Bus*,double> getClosestVehicleToStop(Busstop* stop, double time); //returns closest vehicle to stop and shortest expected time to get there
 	
 	double calc_route_travel_time(const vector<Link*>& routelinks, double time);
-	vector<Link*> find_shortest_path_between_stops(const Busstop* origin_stop, const Busstop* destination_stop, const double start_time) const;
+	vector<Link*> find_shortest_path_between_stops(Busstop * origin_stop, Busstop * destination_stop, double start_time);
 
     bool isInServiceArea(Busstop* stop) const; //!< true if stop is included in service area of Controlcenter, false otherwise
 	bool getGeneratedDirectRoutes();
@@ -327,6 +342,7 @@ private:
 	set<Bus*> initialVehicles_; //!< vehicles assigned to this control center on input (that should be preserved between resets)
 	vector<pair<Bus*, Bustrip*>> completedVehicleTrips_; //!< used for bookkeeping dynamically generated buses and bustrips (similar to busvehicles and bustrips in network) for writing output and deleting between resets
 
+	map<Controlcenter_OD, vector<Link*> > shortestPathCache; //!< cache for the first shortest path calls made between stops of this Controlcenter @todo add time-dependent caches maybe, currently only the initial calls are stored
 	Controlcenter_SummaryData summarydata_; //!< collection of data for summarizing Controlcenter performance.
 	Network* theNetwork_=nullptr; //!< again, ugly way of bringing in shortest path methods from the network to Controlcenter
 };

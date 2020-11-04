@@ -453,6 +453,7 @@ void Controlcenter::reset()
 	connectedPass_.clear();
 	fleetState_.clear();
 	
+	shortestPathCache.clear(); //TODO: Perhaps also cache over runs as well
 	summarydata_.reset(); //TODO: either aggregate over resets or save between them.
 }
 
@@ -559,7 +560,7 @@ double Controlcenter::calc_route_travel_time(const vector<Link*>& routelinks, do
 	return expected_travel_time;
 }
 
-vector<Link*> Controlcenter::find_shortest_path_between_stops(const Busstop* origin_stop, const Busstop* destination_stop, const double start_time) const
+vector<Link*> Controlcenter::find_shortest_path_between_stops(Busstop * origin_stop, Busstop * destination_stop, double start_time)
 {
 	assert(origin_stop);
 	assert(destination_stop);
@@ -567,12 +568,22 @@ vector<Link*> Controlcenter::find_shortest_path_between_stops(const Busstop* ori
 	assert(start_time >= 0);
 
 	vector<Link*> rlinks;
-	if (origin_stop && destination_stop)
+	Controlcenter_OD od = Controlcenter_OD(origin_stop, destination_stop);
+	if (shortestPathCache.count(od) != 0)
 	{
-		int rootlink_id = origin_stop->get_link_id();
-		int dest_node_id = destination_stop->get_dest_node()->get_id(); //!< @todo can change these to look between upstream and downstream junction nodes as well
+        rlinks = shortestPathCache[od]; // get cached results if called for this OD before
+    }
+	else
+	{
+        if (origin_stop && destination_stop)
+        {
+            int rootlink_id = origin_stop->get_link_id();
+            int dest_node_id = destination_stop->get_dest_node()->get_id(); //!< @todo can change these to look between upstream and downstream junction nodes as well
 
-		rlinks = theNetwork_->shortest_path_to_node(rootlink_id, dest_node_id, start_time);
+            rlinks = theNetwork_->shortest_path_to_node(rootlink_id, dest_node_id, start_time);
+
+			shortestPathCache[od] = rlinks; // cache shortest path results
+        }
 	}
 	return rlinks;
 }
@@ -1001,4 +1012,23 @@ void Controlcenter::matchEmptyVehiclesToTrips(double time)
 void Controlcenter::scheduleMatchedTrips(double time)
 {
 	vs_.scheduleMatchedTrips(tvm_, time);
+}
+
+Controlcenter_OD::Controlcenter_OD(Busstop* orig_, Busstop* dest_)
+{
+	orig = orig_;
+	dest = dest_;
+}
+
+bool Controlcenter_OD::operator==(const Controlcenter_OD& rhs) const
+{
+	return (orig == rhs.orig && dest == rhs.dest);
+}
+
+bool Controlcenter_OD::operator<(const Controlcenter_OD& rhs) const
+{
+	if (orig != nullptr && rhs.orig != nullptr)
+		return orig->get_id() < rhs.orig->get_id();
+	else
+		return true;
 }
