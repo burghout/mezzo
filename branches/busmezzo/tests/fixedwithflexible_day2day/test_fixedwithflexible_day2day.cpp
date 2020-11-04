@@ -21,6 +21,8 @@ const std::string network_name = "masterfile.mezzo";
 
 const QString expected_outputs_path = "://networks/FWF_testnetwork1_d2d/ExpectedOutputs/";
 const QString path_set_generation_filename = "o_path_set_generation.dat";
+const QString d2d_convergence_filename = "o_convergence.dat";
+
 const vector<QString> output_filenames =
 {
     "o_od_stop_summary_without_paths.dat",
@@ -62,11 +64,15 @@ private slots:
     void testRunNetwork();
     void testModeSplit(); //!< tests of resulting mode split on
     void testSaveResults();
+    void testConvergence(); //!< tests of day2day convergence
     void testDelete(); //!< tests correct deletion
 
 private:
     NetworkThread* nt = nullptr; //!< contains the network thread
     Network* net = nullptr;
+
+    map<Busline*,int> pass_flows; //!< contains the resulting pass flows without day2day activated
+    map<Busline*,int> pass_flows_d2d; //!< contains the resulting pass flows with day2day activated
 };
 
 
@@ -86,6 +92,8 @@ void TestFixedWithFlexible_day2day::testCreateNetwork()
 
 void TestFixedWithFlexible_day2day::testInitNetwork()
 {
+    qDebug() << "Removing file " + d2d_convergence_filename + ": " << QFile::remove(d2d_convergence_filename); //remove old day2day convergence results
+
     qDebug() << "Initializing network in " + QString::fromStdString(network_path);
     nt->init();
 
@@ -146,13 +154,13 @@ void TestFixedWithFlexible_day2day::testInitNetwork()
     QVERIFY2(odstops_demand.size() == 7, "Failure, network should have 7 od stop pairs (non-zero or defined in transit_demand) ");
 
     //Check OD stop demand rate between stop 1 and 4
-    ODstops* stop_1to4 = net->get_ODstop_from_odstops_demand(1,4);
-    QVERIFY2(AproxEqual(stop_1to4->get_arrivalrate(),500.0),"Failure, ODstops stop 1 to stop 4 should have 500 arrival rate");
-    QVERIFY2(stop_1to4 != nullptr,"Failure, OD stop 1 to 4 is undefined ");
+//    ODstops* stop_1to4 = net->get_ODstop_from_odstops_demand(1,4);
+//    QVERIFY2(AproxEqual(stop_1to4->get_arrivalrate(),500.0),"Failure, ODstops stop 1 to stop 4 should have 500 arrival rate");
+//    QVERIFY2(stop_1to4 != nullptr,"Failure, OD stop 1 to 4 is undefined ");
 
-    ODstops* stop_5to4 = net->get_ODstop_from_odstops_demand(5,4);
-    QVERIFY2(AproxEqual(stop_5to4->get_arrivalrate(),500.0),"Failure, ODstops stop 5 to stop 4 should have 500 arrival rate");
-    QVERIFY2(stop_5to4 != nullptr,"Failure, OD stop 5 to 4 is undefined ");
+//    ODstops* stop_5to4 = net->get_ODstop_from_odstops_demand(5,4);
+//    QVERIFY2(AproxEqual(stop_5to4->get_arrivalrate(),500.0),"Failure, ODstops stop 5 to stop 4 should have 500 arrival rate");
+//    QVERIFY2(stop_5to4 != nullptr,"Failure, OD stop 5 to 4 is undefined ");
 
 
     //Static fixed service design
@@ -178,7 +186,8 @@ void TestFixedWithFlexible_day2day::testInitParameters()
     //day2day params
     QVERIFY2(theParameters->pass_day_to_day_indicator == 1, "Failure, waiting time day2day indicator is not activated");
     QVERIFY2(theParameters->in_vehicle_d2d_indicator == 1, "Failure, IVT day2day indicator is not activade");
-    QVERIFY2(AproxEqual(theParameters->default_alpha_RTI,0.5), "Faliure, initial credibility coefficient for RTI is not set to 0.5");
+    QVERIFY2(AproxEqual(theParameters->default_alpha_RTI,0.5), "Faliure, initial credibility coefficient for day2day RTI is not set to 0.5");
+    QVERIFY2(AproxEqual(theParameters->break_criterium,0.1),"Failure, break criterium for day2day is not set to 0.1");
 }
 
 
@@ -199,91 +208,91 @@ void TestFixedWithFlexible_day2day::testPassengerStart()
     //!
 
     //create a DRT vehicle at stop 4
-    Busstop* stop4 = net->get_stopsmap()[4];
-    Controlcenter* CC = stop4->get_CC();
+//    Busstop* stop4 = net->get_stopsmap()[4];
+//    Controlcenter* CC = stop4->get_CC();
 
-    // Creating DRT vehicle 1 is on-call at stop 4
-    Bus* bus1 = new Bus(1,4,4,nullptr,nullptr,0.0,true,nullptr);
-    Bustype* bustype = CC->getConnectedVehicles().begin()->second->get_bus_type();
-    bus1->set_bustype_attributes(bustype);
-    bus1->set_bus_id(1); //vehicle id and bus id mumbojumbo
-    CC->connectVehicle(bus1); //connect vehicle to a control center
-    CC->addVehicleToAllServiceRoutes(bus1);
-    bus1->set_last_stop_visited(stop4); // need to do this before setting state always
-    stop4->add_unassigned_bus(bus1,0.0); //should change the buses stat to OnCall and update connected Controlcenter
-    QVERIFY(CC->getOnCallVehiclesAtStop(stop4).size() == 1);
+//    // Creating DRT vehicle 1 is on-call at stop 4
+//    Bus* bus1 = new Bus(1,4,4,nullptr,nullptr,0.0,true,nullptr);
+//    Bustype* bustype = CC->getConnectedVehicles().begin()->second->get_bus_type();
+//    bus1->set_bustype_attributes(bustype);
+//    bus1->set_bus_id(1); //vehicle id and bus id mumbojumbo
+//    CC->connectVehicle(bus1); //connect vehicle to a control center
+//    CC->addVehicleToAllServiceRoutes(bus1);
+//    bus1->set_last_stop_visited(stop4); // need to do this before setting state always
+//    stop4->add_unassigned_bus(bus1,0.0); //should change the buses stat to OnCall and update connected Controlcenter
+//    QVERIFY(CC->getOnCallVehiclesAtStop(stop4).size() == 1);
 
-    //Basically mimic what is supposed to happen in Passenger::start
-    ODstops* stop5to4 = net->get_ODstop_from_odstops_demand(5,4);
-    Passenger* pass1 = new Passenger(1,0,stop5to4,nullptr); //create a passenger at stop 1 going to stop 4
-    pass1->init();
+//    //Basically mimic what is supposed to happen in Passenger::start
+//    ODstops* stop5to4 = net->get_ODstop_from_odstops_demand(5,4);
+//    Passenger* pass1 = new Passenger(1,0,stop5to4,nullptr); //create a passenger at stop 1 going to stop 4
+//    pass1->init();
 
-    //!< Make a sequence of connection->transitmode->dropoff decisions and reset
-    double t_now = 0.0; //fake current simulation clocktime
-    map<Busstop*,int> connection_counts;
-    map<TransitModeType,int> mode_counts;
-    map<Busstop*,int> dropoff_counts;
-    const int draws = 10;
-    for(int i = 0; i < draws; i++)
-    {
-        cout << endl;
-        Busstop* connection_stop = pass1->make_connection_decision(t_now);
-        cout << "\tChosen pickup: " << connection_stop->get_id() << endl;
-        ++connection_counts[connection_stop];
+//    //!< Make a sequence of connection->transitmode->dropoff decisions and reset
+//    double t_now = 0.0; //fake current simulation clocktime
+//    map<Busstop*,int> connection_counts;
+//    map<TransitModeType,int> mode_counts;
+//    map<Busstop*,int> dropoff_counts;
+//    const int draws = 10;
+//    for(int i = 0; i < draws; i++)
+//    {
+//        cout << endl;
+//        Busstop* connection_stop = pass1->make_connection_decision(t_now);
+//        cout << "\tChosen pickup: " << connection_stop->get_id() << endl;
+//        ++connection_counts[connection_stop];
 
-        TransitModeType chosen_mode = pass1->make_transitmode_decision(connection_stop,t_now);
-        cout << "\tChosen mode: " << chosen_mode << endl;
-        ++mode_counts[chosen_mode];
-        cout << endl;
+//        TransitModeType chosen_mode = pass1->make_transitmode_decision(connection_stop,t_now);
+//        cout << "\tChosen mode: " << chosen_mode << endl;
+//        ++mode_counts[chosen_mode];
+//        cout << endl;
 
-        if(connection_stop->get_id() == 5)
-            QVERIFY(chosen_mode==TransitModeType::Fixed); // only fixed first legs available from stop 5->4 without walking
+//        if(connection_stop->get_id() == 5)
+//            QVERIFY(chosen_mode==TransitModeType::Fixed); // only fixed first legs available from stop 5->4 without walking
 
-        pass1->set_chosen_mode(chosen_mode);
-        Busstop* dropoff_stop = nullptr;
-        if(chosen_mode==TransitModeType::Flexible)
-        {
-            dropoff_stop = pass1->make_dropoff_decision(connection_stop,t_now);
-            cout << "\tChosen dropoff: " << dropoff_stop->get_id() << endl;
-            ++dropoff_counts[dropoff_stop];
-            cout << endl;
-        }
+//        pass1->set_chosen_mode(chosen_mode);
+//        Busstop* dropoff_stop = nullptr;
+//        if(chosen_mode==TransitModeType::Flexible)
+//        {
+//            dropoff_stop = pass1->make_dropoff_decision(connection_stop,t_now);
+//            cout << "\tChosen dropoff: " << dropoff_stop->get_id() << endl;
+//            ++dropoff_counts[dropoff_stop];
+//            cout << endl;
+//        }
 
-        //Passenger creates a request based on choices
+//        //Passenger creates a request based on choices
 
-        pass1->set_chosen_mode(TransitModeType::Null); //reset chosen mode
-        pass1->temp_connection_path_utilities.clear();
-    }
-    Busstop* stop5 = net->get_stopsmap()[5];
-    Busstop* stop1 = net->get_stopsmap()[1];
-    Busstop* stop2 = net->get_stopsmap()[2];
+//        pass1->set_chosen_mode(TransitModeType::Null); //reset chosen mode
+//        pass1->temp_connection_path_utilities.clear();
+//    }
+//    Busstop* stop5 = net->get_stopsmap()[5];
+//    Busstop* stop1 = net->get_stopsmap()[1];
+//    Busstop* stop2 = net->get_stopsmap()[2];
 
-    if(connection_counts.count(stop5)!=0)
-        cout << "Pickup stop 5 (%): " << 100 * connection_counts[stop5] / static_cast<double>(draws) << endl;
-    if(connection_counts.count(stop1)!=0)
-        cout << "Pickup stop 1 (%): " << 100 * connection_counts[stop1] / static_cast<double>(draws) << endl;
+//    if(connection_counts.count(stop5)!=0)
+//        cout << "Pickup stop 5 (%): " << 100 * connection_counts[stop5] / static_cast<double>(draws) << endl;
+//    if(connection_counts.count(stop1)!=0)
+//        cout << "Pickup stop 1 (%): " << 100 * connection_counts[stop1] / static_cast<double>(draws) << endl;
 
-    cout << endl;
-    if(mode_counts.count(TransitModeType::Null)!=0)
-        cout << "Null  (%): " << 100 * mode_counts[TransitModeType::Null] / static_cast<double>(draws) << endl;
-    if(mode_counts.count(TransitModeType::Fixed)!=0)
-        cout << "Fixed (%): " << 100 * mode_counts[TransitModeType::Fixed] / static_cast<double>(draws) << endl;
-    if(mode_counts.count(TransitModeType::Flexible)!=0)
-        cout << "Flex  (%): " << 100 * mode_counts[TransitModeType::Flexible] / static_cast<double>(draws) << endl;
+//    cout << endl;
+//    if(mode_counts.count(TransitModeType::Null)!=0)
+//        cout << "Null  (%): " << 100 * mode_counts[TransitModeType::Null] / static_cast<double>(draws) << endl;
+//    if(mode_counts.count(TransitModeType::Fixed)!=0)
+//        cout << "Fixed (%): " << 100 * mode_counts[TransitModeType::Fixed] / static_cast<double>(draws) << endl;
+//    if(mode_counts.count(TransitModeType::Flexible)!=0)
+//        cout << "Flex  (%): " << 100 * mode_counts[TransitModeType::Flexible] / static_cast<double>(draws) << endl;
 
-    cout << endl;
-    if(dropoff_counts.count(stop2)!=0)
-        cout << "Dropoff stop 2 (%): " << 100 * dropoff_counts[stop2] / static_cast<double>(draws) << endl;
-    if(dropoff_counts.count(stop4)!=0)
-        cout << "Dropoff stop 4 (%): " << 100 * dropoff_counts[stop4] / static_cast<double>(draws) << endl;
+//    cout << endl;
+//    if(dropoff_counts.count(stop2)!=0)
+//        cout << "Dropoff stop 2 (%): " << 100 * dropoff_counts[stop2] / static_cast<double>(draws) << endl;
+//    if(dropoff_counts.count(stop4)!=0)
+//        cout << "Dropoff stop 4 (%): " << 100 * dropoff_counts[stop4] / static_cast<double>(draws) << endl;
 
-    //cleanup
-    stop4->remove_unassigned_bus(bus1,0.0); //remove bus from queue of stop, updates state from OnCall to Idle, also in fleetState
-    bus1->set_state(BusState::Null,0.0); //change from Idle to Null should remove bus from fleetState
-    CC->disconnectVehicle(bus1); //should remove bus from Controlcenter
+//    //cleanup
+//    stop4->remove_unassigned_bus(bus1,0.0); //remove bus from queue of stop, updates state from OnCall to Idle, also in fleetState
+//    bus1->set_state(BusState::Null,0.0); //change from Idle to Null should remove bus from fleetState
+//    CC->disconnectVehicle(bus1); //should remove bus from Controlcenter
 
-    delete bus1;
-    delete pass1;
+//    delete bus1;
+//    delete pass1;
 }
 
 void TestFixedWithFlexible_day2day::testRunNetwork()
@@ -364,6 +373,30 @@ void TestFixedWithFlexible_day2day::testSaveResults()
         ex_outputfile.close();
         outputfile.close();
     }
+}
+
+void TestFixedWithFlexible_day2day::testConvergence()
+{
+
+        QString o_filename = d2d_convergence_filename;
+        qDebug() << "Comparing " + o_filename + " with ExpectedOutputs/" + o_filename;
+
+        QString ex_o_fullpath = expected_outputs_path + o_filename;
+        QFile ex_outputfile(ex_o_fullpath);
+
+        QString msg = "Failure, cannot open ExpectedOutputs/" + o_filename;
+        QVERIFY2(ex_outputfile.open(QIODevice::ReadOnly | QIODevice::Text), qPrintable(msg));
+
+        QFile outputfile(o_filename);
+        msg = "Failure, cannot open " + o_filename;
+        QVERIFY2(outputfile.open(QIODevice::ReadOnly | QIODevice::Text), qPrintable(msg));
+
+        msg = "Failure, " + o_filename + " differs from ExpectedOutputs/" + o_filename;
+        QVERIFY2(outputfile.readAll() == ex_outputfile.readAll(), qPrintable(msg));
+
+        ex_outputfile.close();
+        outputfile.close();
+
 }
 
 
