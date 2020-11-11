@@ -2,7 +2,6 @@
     <qresource prefix="/">
         <file alias="masterfile.mezzo">networks/SFnetwork/masterfile.mezzo</file>
         <file alias="drtmasterfile.mezzo">networks/DRTFeeder/masterfile.mezzo</file>
-        <file alias="pentamasterfile.mezzo">networks/PentaFeeder/masterfile.mezzo</file>
         <file alias="pentamasterfile_fixed.mezzo">networks/PentaFeeder_fixed/masterfile.mezzo</file>
         <file alias="pentamasterfile_drt.mezzo">networks/PentaFeeder_drt/masterfile.mezzo</file>
         <file>networks/SFnetwork/ExpectedOutputs/o_passenger_trajectory.dat</file>
@@ -18,20 +17,6 @@
         <file>networks/SFnetwork/ExpectedOutputs/o_transitstop_sum.dat</file>
         <file>networks/SFnetwork/ExpectedOutputs/o_transitlog_out.dat</file>
         <file>networks/SFnetwork/ExpectedOutputs/o_path_set_generation.dat</file>
-        <file>networks/PentaFeeder/ExpectedOutputs/o_od_stop_summary_without_paths.dat</file>
-        <file>networks/PentaFeeder/ExpectedOutputs/o_od_stops_summary.dat</file>
-        <file>networks/PentaFeeder/ExpectedOutputs/o_passenger_trajectory.dat</file>
-        <file>networks/PentaFeeder/ExpectedOutputs/o_passenger_welfare_summary.dat</file>
-        <file>networks/PentaFeeder/ExpectedOutputs/o_segments_line_loads.dat</file>
-        <file>networks/PentaFeeder/ExpectedOutputs/o_segments_trip_loads.dat</file>
-        <file>networks/PentaFeeder/ExpectedOutputs/o_selected_paths.dat</file>
-        <file>networks/PentaFeeder/ExpectedOutputs/o_transit_routes.dat</file>
-        <file>networks/PentaFeeder/ExpectedOutputs/o_transit_trajectory.dat</file>
-        <file>networks/PentaFeeder/ExpectedOutputs/o_transitline_sum.dat</file>
-        <file>networks/PentaFeeder/ExpectedOutputs/o_transitlog_out.dat</file>
-        <file>networks/PentaFeeder/ExpectedOutputs/o_transitstop_sum.dat</file>
-        <file>networks/PentaFeeder/ExpectedOutputs/o_trip_total_travel_time.dat</file>
-        <file>networks/PentaFeeder/ExpectedOutputs/o_fwf_summary.dat</file>
         <file>networks/FWF_testnetwork2/ExpectedOutputs/o_od_stop_summary_without_paths.dat</file>
         <file>networks/FWF_testnetwork2/ExpectedOutputs/o_od_stops_summary.dat</file>
         <file>networks/FWF_testnetwork2/ExpectedOutputs/o_passenger_trajectory.dat</file>
