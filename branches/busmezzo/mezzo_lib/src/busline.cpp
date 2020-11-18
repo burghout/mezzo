@@ -87,6 +87,7 @@ void Busline::reset ()
 	output_summary.reset();
 	output_line_assign.clear();
 	output_travel_times.clear();
+    total_boarded_pass = 0;
 }
 
 void Busline::reset_curr_trip ()
@@ -801,6 +802,13 @@ bool Busline::is_unique_tripid(int trip_id)
 		return false;
 
 	return true;
+}
+
+
+void Busline::add_to_total_boarded_pass(int nr_boarding)
+{
+	assert(nr_boarding >= 0);
+	total_boarded_pass += nr_boarding;
 }
 
 void Busline::update_total_travel_time (Bustrip* trip, double time)
@@ -1550,6 +1558,7 @@ bool Busstop::execute(Eventlist* eventlist, double time) // is executed by the e
 		occupy_length (entering_trip->get_busv());
 		buses_currently_at_stop.push_back(exiting_trip);
 		eventlist->add_event (exit_time, this); // book an event for the time it exits the stop
+		entering_trip->get_line()->add_to_total_boarded_pass(nr_boarding);
 		record_busstop_visit (entering_trip, entering_trip->get_enter_time()); // document stop-related info
 								// done BEFORE update_last_arrivals in order to calc the headway and BEFORE set_last_stop_exit_time
 		entering_trip->get_busv()->record_busvehicle_location (entering_trip, this, entering_trip->get_enter_time());

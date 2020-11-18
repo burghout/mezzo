@@ -2,6 +2,7 @@
 #include <QtTest/QtTest>
 #include "network.h"
 #include "MMath.h"
+#include "csvfile.h"
 #include <algorithm>
 #ifdef Q_OS_WIN
     #include <direct.h>
@@ -14,8 +15,6 @@
 
 //! DRT Tests BusMezzo
 //! Contains tests for testing fixed with flexible choice model implementation with walking links
-
-
 const std::string network_path = "../networks/FWF_testnetwork1_d2d/";
 const std::string network_name = "masterfile.mezzo";
 
@@ -62,7 +61,7 @@ private slots:
     void testInitParameters(); //!< tests that the parameters for the loaded network are as expected
     void testPassengerStart(); //!< tests for when a traveler first enters the simulation and makes a connection, transitmode and dropoff decision, sends a request if mode is flexible, changes 'chosen mode' state of traveler...etc
     void testRunNetwork();
-    void testModeSplit(); //!< tests of resulting mode split on
+    void testPassAssignment(); //!< tests of resulting mode split from only one day
     void testSaveResults();
     void testConvergence(); //!< tests of day2day convergence
     void testDelete(); //!< tests correct deletion
@@ -71,8 +70,8 @@ private:
     NetworkThread* nt = nullptr; //!< contains the network thread
     Network* net = nullptr;
 
-    map<Busline*,int> pass_flows; //!< contains the resulting pass flows without day2day activated
-    map<Busline*,int> pass_flows_d2d; //!< contains the resulting pass flows with day2day activated
+    map< Busline*,map<int,int> > total_pass_boarded_per_line_d2d; //!< contains the resulting pass flows without day2day activated. Key1 = busline, Key2 = day, value = passenger load
+    vector< Passenger* > all_pass;
 };
 
 
@@ -172,6 +171,12 @@ void TestFixedWithFlexible_day2day::testInitNetwork()
     QVERIFY2(ccmap.begin()->second->getGeneratedDirectRoutes() == false, "Failure, generate direct routes of controlcenter is not set to false");
 
     QVERIFY(ccmap.begin()->second->getConnectedVehicles().size() == 20);
+
+    //Check number of pass that have been generated:
+    all_pass = net->get_all_generated_passengers();
+    qDebug() << all_pass.size() << " passengers generated.";
+    QVERIFY(all_pass.size() == 6); //should always get 6 generated passengers
+
 }
 
 void TestFixedWithFlexible_day2day::testInitParameters()
@@ -304,10 +309,11 @@ void TestFixedWithFlexible_day2day::testRunNetwork()
     // test here the properties that should be true after running the simulation
     QString msg = "Failure current time " + QString::number(net->get_currenttime()) + " should be 10800.1 after running the simulation";
     QVERIFY2 (AproxEqual(net->get_currenttime(),10800.1), qPrintable(msg));
+    qDebug() << "Final day: " << net->day;
+    //QVERIFY(net->day == theParameters->max_days); // current setup does not converge within 20 days
 }
 
-
-void TestFixedWithFlexible_day2day::testModeSplit()
+void TestFixedWithFlexible_day2day::testPassAssignment()
 {
 /**
   Start by printing outputs for each Busline, separate the fixed ones and the flexible ones
@@ -317,26 +323,66 @@ void TestFixedWithFlexible_day2day::testModeSplit()
 /**
   @todo
     - Check that network has been run with default input params
-    - See how passenger flows have evolved. Print usage for each line..
+    - See how passenger flows have evolved. Print usage for each line.. over days
+        - Add attributes of network to fill in the data structures we need for additional outputs over days
+        - Perhaps look at the 'convergence' file for inspiration
+        -
+
+  @todo
+    - Check where unserved passengers go, print output for unserved passengers
+    - Look at where DRT credibility coefficients are updated
+    - Basically look at all o_selected_paths but over days instead...
+    - Print out all the attributes of passenger/od-stops over days as well
+
 
     See segments_line_loads.dat output file....Basically want the total number of travelers for each segment of each line. Since we only have one segment per line
     now this equates to the resulting flow assignment.
 */
+//    qDebug() << "Running network for 1 day (no day2day active)....";
+//    theParameters->max_days = 1; //reset day2day max days
+//    nt->start(QThread::HighestPriority);
+//    nt->wait();
 
-    QVERIFY2(net->get_currenttime() > 0.0, "Failure, network has not run yet, simulation time is not greater than 0.0");
+//    // test here the properties that should be true after running the simulation
+//    QVERIFY2(net->get_currenttime() > 0.0, "Failure, network has not run yet, simulation time is not greater than 0.0");
 
-    /**
-      1. Loop through all buslines
-      2. Call Busline::calculate_sum_output_line() (fills in this class), and get_output_summary()
-      3. Print out each of the results, or plot them, see also o_segments_line_loads...
-    */
-
+    total_pass_boarded_per_line_d2d = net->total_pass_boarded_per_line_d2d;
+    qDebug() << "Printing total passenger output per line to csv file: ";
     vector<Busline*> buslines = net->get_buslines();
+    //write resulting assignment to csv file
+    //make the header first
+    try
+    {
+        csvfile csv("test.csv",";");
+        //header - rows are the days, lines are the columns,
+        csv << "day";
+        for(const auto& line : buslines)
+        {
+            csv << line->get_name();
+        }
+        csv << endrow;
 
-//    for(auto& busline : buslines)
-//    {
-//        busline->calc_
-//    }
+        //data -  values are the total pass boarded
+        for(int day = 1; day < net->day; ++day)
+        {
+            csv << day;
+            for(const auto& line : buslines)
+            {
+                csv << total_pass_boarded_per_line_d2d[line][day];
+            }
+            csv << endrow;
+        }
+    }
+    catch(const exception &ex)
+    {
+        cout << "Exception was thrown: " << ex.what() << endl;
+    }
+
+    //cleanup
+    //theParameters->max_days = 20; //reset day2day max days
+    //net->wt_rec.clear(); //reset day2day of network (not included in network->reset since these are used for kindof nested resets)
+    //net->ivt_rec.clear(); //reset day2day of network (not included in network->reset since these are used for kindof nested resets)
+    //nt->reset(); // delete all passengers and reset network
 }
 
 void TestFixedWithFlexible_day2day::testSaveResults()

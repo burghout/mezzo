@@ -9176,6 +9176,10 @@ double Network::step(double timestep)
             }
             return time;
         }
+        else
+        {
+            total_pass_boarded_per_line_d2d.clear(); // Never used without day2day, want to clear this between resets but not add it to Network::reset since it collectes data for each day and reset is called between days.
+        }
 
 
     enum m { wt, ivt };
@@ -9219,6 +9223,13 @@ double Network::step(double timestep)
 #endif //_NO_GUI
         }
 
+
+        for (const auto& line : buslines) // collect traveler boarding on each line
+        {
+            total_pass_boarded_per_line_d2d[line][day] = line->get_total_boarded_pass();
+            //total_pass_boarded_per_line_d2d[line][day] = line->count_total_boarded_passengers();
+        }
+
         if (theParameters->pass_day_to_day_indicator > 0)
         {
             crit[wt] = insert(wt_rec, day2day->process_wt_replication(odstops, wt_rec)); //insert result from day2day learning in data container
@@ -9235,7 +9246,7 @@ double Network::step(double timestep)
 
         day++;
         day2day->update_day(day);
-        if ((crit[wt] >= theta || crit[ivt] >= theta) && day <= 20)
+        if ((crit[wt] >= theta || crit[ivt] >= theta) && day <= theParameters->max_days)
         {
             reset();
             read_transitday2day(wt_rec);

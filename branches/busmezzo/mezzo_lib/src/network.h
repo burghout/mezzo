@@ -506,11 +506,13 @@ protected:
 //	map<int,map<int, vector<Busline*> > > direct_lines; // contains all direct lines between a couple of stops
 	map<Busstop*,vector<Busstop*> > consecutive_stops; // contains all the stops that can be reached within no transfer per stop
 
+public: //!< @todo made all these day2day thingies public for testing, also added a structure for collecting passengers that boarded each line for all days
 	Day2day* day2day=nullptr;
 	map<ODSL, Travel_time> wt_rec; //the record of waiting time data
 	map<ODSLL, Travel_time> ivt_rec; //the record of in-vehicle time data
 	int day=0;
-
+	map<Busline*, map<int,int> > total_pass_boarded_per_line_d2d; //!< contains the resulting pass flows when day2day is activated for each day. Key1 = busline, Key2 = day, value = total boarded passengers
+protected:
 /** @ingroup DRT
     @{
 */
