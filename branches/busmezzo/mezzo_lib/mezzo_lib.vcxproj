@@ -153,6 +153,7 @@ nmake release</NMakeReBuildCommandLine>
     <ClInclude Include="src\busline.h" />
     <ClInclude Include="src\controlcenter.h" />
     <ClInclude Include="src\controlstrategies.h" />
+    <ClInclude Include="src\csvfile.h" />
     <ClInclude Include="src\day2day.h" />
     <ClInclude Include="src\eventlist.h" />
     <ClInclude Include="src\gettime.h" />
