@@ -654,48 +654,48 @@ public:
 	double cost;
 };
 
-class NetworkThread: public QThread
+class NetworkThread : public QThread
 {
 public:
 
-	NetworkThread (string masterfile,int threadnr = 1,long int seed=0):masterfile_(masterfile),threadnr_(threadnr),seed_(seed) 
-		{
+    NetworkThread(string masterfile, int threadnr = 1, long int seed = 0) :masterfile_(masterfile), threadnr_(threadnr), seed_(seed)
+    {
         Q_UNUSED(threadnr_)
-			theNetwork= new Network();
-			 
-			 if (seed != 0)
-			 {
-				theRandomizers[0]->seed(seed);
-			 }
-			if (seed_)
-					theNetwork->seed(seed_);
-		}
-	void init () 
-		{
-			theNetwork->readmaster(masterfile_);
-			runtime_=theNetwork->executemaster();
-		}
-	void run ()
-	  {				
-				theNetwork->step(runtime_);
-	  }
-	void saveresults (unsigned int replication = 0)
-	  {
-		  cout << "Saving results" << endl;
-		  theNetwork->writeall(replication);
-		  cout << "Saved and done!" << endl;
-	  }
-	void reset ()
-	{
-		cout << "Resetting" << endl;
-		theNetwork->delete_passengers();
-		theNetwork->reset();
-		cout << "Reset done!" << endl;
-	}
-	 ~NetworkThread () 
-	  {
-			delete theNetwork;
-	  }
+            theNetwork = new Network();
+
+        if (seed != 0)
+        {
+            theRandomizers[0]->seed(seed);
+        }
+        if (seed_)
+            theNetwork->seed(seed_);
+    }
+    void init()
+    {
+        theNetwork->readmaster(masterfile_);
+        runtime_ = theNetwork->executemaster();
+    }
+    void run()
+    {
+        theNetwork->step(runtime_);
+    }
+    void saveresults(unsigned int replication = 0)
+    {
+        cout << "Saving results" << endl;
+        theNetwork->writeall(replication);
+        cout << "Saved and done!" << endl;
+    }
+    void reset()
+    {
+        cout << "Resetting" << endl;
+        theNetwork->delete_passengers();
+        theNetwork->reset();
+        cout << "Reset done!" << endl;
+    }
+    ~NetworkThread()
+    {
+        delete theNetwork;
+    }
 
     Network* getNetwork()
     {
@@ -708,7 +708,7 @@ private:
     long int seed_;
 
     Network* theNetwork;
-    double runtime_=0.0;
+    double runtime_ = 0.0;
 
 };
 
