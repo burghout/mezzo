@@ -7816,23 +7816,21 @@ bool Network::readassignmentlinksfile(string name)
 bool Network::readparameters(string name)
 {
     ifstream inputfile(name.c_str());
-    assert (inputfile);
+    assert(inputfile);
     if (theParameters->read_parameters(inputfile))
     {
-        if (theParameters->pass_day_to_day_indicator != 0) {
+        if (theParameters->pass_day_to_day_indicator != 0) 
+        {
             cout << "theParameters->pass_day_to_day_indicator: " << theParameters->pass_day_to_day_indicator << endl;
-}
+        }
         // WILCO : deleted windows specific error code
         //SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX);
         inputfile.close();
         return true;
     }
-    
-    
-        inputfile.close();
-        return false;
-    
 
+    inputfile.close();
+    return false;
 }
 
 bool Network::init_shortest_path()

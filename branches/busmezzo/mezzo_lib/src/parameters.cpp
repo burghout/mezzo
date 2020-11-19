@@ -561,12 +561,22 @@ bool Parameters::read_parameters (istream & in )
 		}
 		in >> in_vehicle_d2d_indicator;
 		in >> keyword;
-		if (keyword!= "break_criterium=")
+		if (keyword!= "break_criterium=") // @todo reading this in regardless of day2day being active now to not invalidate/avoid updating previous networks
 		{
 			cout << "ERROR reading Parameters file, expecting: break_criterium=, read: " << keyword << endl;
 			return false;
 		}
 		in >> break_criterium;
+		if (pass_day_to_day_indicator != 0 || in_vehicle_d2d_indicator != 0) // if day2day is activated
+		{
+			in >> keyword;
+			if (keyword != "max_days=")
+			{
+				cout << "ERROR reading Parameters file, expecting: max_days=, read: " << keyword << endl;
+				return false;
+			}
+			in >> max_days;
+		}
 		in >> keyword;
 		if (keyword!= "transfer_coefficient=")
 		{

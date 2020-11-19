@@ -3,7 +3,8 @@
 TEMPLATE = subdirs
 
 SUBDIRS += \
-    integrationtest \
+    sf_fixed_day2day \
+    sf_fixed \
     controlcenter \
     routestest \
     drttest \

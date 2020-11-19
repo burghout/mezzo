@@ -11,11 +11,9 @@
 //#include <unistd.h>
 #include <QFileInfo>
 
-//! Integration Tests BusMezzo
-//! The tests contain loading, initializing, running, saving results and deleting network.
-//! NOTE: currently the std::ifstream is used everywhere, precluding the use of qrc resources,
-//! unless we switch to QFile everywhere.
-
+/**
+  Tests on the SF network with fixed services only
+*/
 
 const std::string network_path_1 = "../networks/SFnetwork/";
 const std::string network_name = "masterfile.mezzo";
@@ -40,12 +38,12 @@ const vector<QString> output_filenames =
 
 const long int seed = 42;
 
-class TestIntegration : public QObject
+class TestSpiessFlorianFixed : public QObject
 {
     Q_OBJECT
 
 public:
-    TestIntegration(){}
+    TestSpiessFlorianFixed(){}
 
 
 private Q_SLOTS:
@@ -61,7 +59,7 @@ private:
     Network* net;
 };
 
-void TestIntegration::testCreateNetwork()
+void TestSpiessFlorianFixed::testCreateNetwork()
 {   
     nt = nullptr;
     net = nullptr;
@@ -77,7 +75,7 @@ void TestIntegration::testCreateNetwork()
     QVERIFY2(net != nullptr, "Failure, could not create network");
 }
 
-void TestIntegration::testInitNetwork()
+void TestSpiessFlorianFixed::testInitNetwork()
 {
     qDebug() << "Removing file " + path_set_generation_filename + ": " << QFile::remove(path_set_generation_filename); //remove old passenger path sets
     qDebug() << "Initializing network in " + QString::fromStdString(network_path_1);
@@ -115,7 +113,7 @@ void TestIntegration::testInitNetwork()
 }
 
 
-void TestIntegration::testRunNetwork()
+void TestSpiessFlorianFixed::testRunNetwork()
 {
 
     nt->start(QThread::HighestPriority);
@@ -130,7 +128,7 @@ void TestIntegration::testRunNetwork()
     QVERIFY2 ( net->get_busstop_from_name("A")->get_last_departures().size() == 2, "Failure, get_last_departures().size() for stop A should be 2");
 }
 
-void TestIntegration::testSaveResults()
+void TestSpiessFlorianFixed::testSaveResults()
 {
     // remove old files:
 	for (const QString& filename : output_filenames)
@@ -165,16 +163,16 @@ void TestIntegration::testSaveResults()
 	}
 }
 
-void TestIntegration::testDelete()
+void TestSpiessFlorianFixed::testDelete()
 {
     delete nt;
     QVERIFY2(true, "Failure ");
 }
 
 
-QTEST_APPLESS_MAIN(TestIntegration)
+QTEST_APPLESS_MAIN(TestSpiessFlorianFixed)
 
-#include "test_integration.moc"
+#include "test_sf_fixed.moc"
 
 
 

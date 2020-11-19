@@ -193,6 +193,7 @@ void TestFixedWithFlexible_day2day::testInitParameters()
     QVERIFY2(theParameters->in_vehicle_d2d_indicator == 1, "Failure, IVT day2day indicator is not activade");
     QVERIFY2(AproxEqual(theParameters->default_alpha_RTI,0.5), "Faliure, initial credibility coefficient for day2day RTI is not set to 0.5");
     QVERIFY2(AproxEqual(theParameters->break_criterium,0.1),"Failure, break criterium for day2day is not set to 0.1");
+    QVERIFY2(theParameters->max_days == 20, "Failure, max days for day2day is not set to 20.");
 }
 
 
