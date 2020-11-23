@@ -53,7 +53,6 @@ class TestFixedWithFlexible_walking : public QObject
 public:
     TestFixedWithFlexible_walking(){}
 
-
 private Q_SLOTS:
     void testCreateNetwork(); //!< test loading a network
     void testInitNetwork(); //!< test generating passenger path sets & loading a network
@@ -86,9 +85,7 @@ void TestFixedWithFlexible_walking::testCreateNetwork()
 
 void TestFixedWithFlexible_walking::testInitNetwork()
 {
-    //qDebug() << "Removing file " + path_set_generation_filename + ": " << QFile::remove(path_set_generation_filename); //remove old passenger path sets
     qDebug() << "Initializing network in " + QString::fromStdString(network_path);
-
     nt->init();
 
     // Test if the network is properly read and initialized
@@ -116,7 +113,7 @@ void TestFixedWithFlexible_walking::testInitNetwork()
         for(auto stop2 : net->get_stopsmap())
         {
             QString stops_str = QString("stops %1 -> %2").arg(stop1.first).arg(stop2.first);
-            qDebug() << "Checking walking links between " + stops_str;
+            //qDebug() << "Checking walking links between " + stops_str;
             QString nolink_failmsg = "Failure, no walking link defined for " + stops_str;
             if(stop1.first == stop2.first) // recall, key in stopsmap is id of stop
             {
@@ -162,24 +159,14 @@ void TestFixedWithFlexible_walking::testInitNetwork()
     QVERIFY2(theParameters->choice_set_indicator == 1, "Failure, choice set indicator is not set to 1 in parameters");
     QVERIFY2(net->count_transit_paths() == 27, "Failure, network should have 14 transit paths defined");
 
+    //Static fixed service design
+    QVERIFY2(AproxEqual(net->get_buslines()[0]->get_planned_headway(),360.0), "Failure, buslines should have a 360 second (6 min) planned headway");
+
     //Control center
     map<int,Controlcenter*> ccmap = net->get_controlcenters();
     QVERIFY2(ccmap.size() == 1, "Failure, network should have 1 controlcenter");
     QVERIFY2(ccmap.begin()->second->getGeneratedDirectRoutes() == false, "Failure, generate direct routes of controlcenter is not set to false");
 
-    //Test if newly generated passenger path sets match expected output
-//    qDebug() << "Comparing " + path_set_generation_filename + " with ExpectedOutputs/" + path_set_generation_filename;
-//    QString ex_path_set_fullpath = expected_outputs_path + path_set_generation_filename;
-//    QFile ex_path_set_file(ex_path_set_fullpath); //expected o_path_set_generation.dat
-//    QVERIFY2(ex_path_set_file.open(QIODevice::ReadOnly | QIODevice::Text), "Failure, cannot open ExpectedOutputs/o_path_set_generation.dat");
-
-//    QFile path_set_file(path_set_generation_filename); //generated o_path_set_generation.dat
-//    QVERIFY2(path_set_file.open(QIODevice::ReadOnly | QIODevice::Text), "Failure, cannot open o_path_set_generation.dat");
-
-//    QVERIFY2(path_set_file.readAll() == ex_path_set_file.readAll(), "Failure, o_path_set_generation.dat differs from ExpectedOutputs/o_path_set_generation.dat");
-
-//    ex_path_set_file.close();
-    //    path_set_file.close();
 }
 
 void TestFixedWithFlexible_walking::testFleetState()
@@ -500,7 +487,8 @@ void TestFixedWithFlexible_walking::testFlexiblePathExpectedLoS()
     // third leg, should return exploration parameter
     Busline* path17_leg3 = path17->get_alt_lines()[2][0];
     arr_time = 0.0 + path17_leg1_wt + path17_leg2_wt + path17_walking_time*60 + leg1_ivt_rti + leg2_rti_ivt;
-    double path17_leg3_wt = CC->calc_expected_wt(path17_leg3,path17_leg3->stops.front(),path17_leg3->stops.back(),true,path17_walking_time*60,arr_time);
+    double path17_leg3_wt = CC->calc_expected_wt(path17_leg3,path17_leg3->stops.front(),path17_leg3->stops.back(),false,path17_walking_time*60,arr_time);
+    //qDebug() << "Path 17 leg 3 waiting time: " << path17_leg3_wt;
     QVERIFY(AproxEqual(path17_leg3_wt,::drt_exploration_wt));
     QVERIFY(AproxEqual(path17_leg1_wt + path17_leg2_wt + path17_leg3_wt, path17_total_wt*60));
 
@@ -587,14 +575,23 @@ void TestFixedWithFlexible_walking::testPathSetUtilities()
 {
     //!< Check pathset of a given ODstop pair (5to4 or 1to4), verify that utilities are being calculated as expected and the highest utility alternative is chosen
     /* Check the parameters that have been set that are used in calculating utilities */
-    QVERIFY(AproxEqual(theParameters->walking_time_coefficient,-2.0));
-    QVERIFY(AproxEqual(theParameters->waiting_time_coefficient,-2.0));
-    QVERIFY(AproxEqual(theParameters->in_vehicle_time_coefficient,-1.0));
-    QVERIFY(AproxEqual(theParameters->transfer_coefficient,-5.0));
+//    QVERIFY(AproxEqual(theParameters->walking_time_coefficient,-2.0));
+//    QVERIFY(AproxEqual(theParameters->waiting_time_coefficient,-2.0));
+//    QVERIFY(AproxEqual(theParameters->in_vehicle_time_coefficient,-1.0));
+//    QVERIFY(AproxEqual(theParameters->transfer_coefficient,-5.0));
+
+
+    /* Parameters taken from SF network */
+    QVERIFY(AproxEqual(theParameters->transfer_coefficient,-0.334));
+    QVERIFY(AproxEqual(theParameters->in_vehicle_time_coefficient,-0.04));
+    QVERIFY(AproxEqual(theParameters->waiting_time_coefficient,-0.07));
+    QVERIFY(AproxEqual(theParameters->walking_time_coefficient,-0.07));
+
+    /* Other parameters that effect pass decisions*/
     QVERIFY(AproxEqual(theParameters->max_waiting_time,1800.0));
+    QVERIFY(AproxEqual(theParameters->default_alpha_RTI,0.7)); // In case of RTI,
 
     /* Grab path sets for 5to4 and 1to4 */
-    vector<ODstops*> odstops_demand = net->get_odstops_demand();
     ODstops* stop1to4 = net->get_ODstop_from_odstops_demand(1,4);
     QVERIFY2(stop1to4 != nullptr,"Failure, OD stop 1 to 4 is undefined ");
     ODstops* stop5to4 = net->get_ODstop_from_odstops_demand(5,4);
@@ -645,6 +642,7 @@ void TestFixedWithFlexible_walking::testPathSetUtilities()
     //QVERIFY2(pass2->has_access_to_flexible() == false, "Failure, passenger without network-level RTI should not have access to flexible services");
 
 //!< TEST connection decision
+//! @note not quite like connection decision since 'no double walking rule' is not included, also the walking cost to access 5to4 or 1to4 pathsets calculated differently
     pathset_5to4 = pass1->get_OD_stop()->get_path_set();
     double sum_pathsetutil = 0.0;
 
@@ -665,11 +663,12 @@ void TestFixedWithFlexible_walking::testPathSetUtilities()
                  << "\t total IVT      : " << tivt << Qt::endl
                  << "\t total WT       : " << twt << Qt::endl
                  << "\t transfers      : " << n_trans << Qt::endl
+                 << "\t num flex legs  : " << path->count_flexible_legs() << Qt::endl
                  << "\t utility        : " << path_utility << Qt::endl;
 
         if(twt*60 > theParameters->max_waiting_time) //dynamic filtering rule
         {
-            path_utility = -10;
+            path_utility = ::large_negative_utility;
         }
 
         sum_pathsetutil += exp(path_utility);
@@ -698,7 +697,7 @@ void TestFixedWithFlexible_walking::testPathSetUtilities()
 
         if(twt*60 > theParameters->max_waiting_time) //dynamic filtering rule
         {
-            path_utility = -10;
+            path_utility = ::large_negative_utility;
         }
 
         sum_pathsetutil += exp(path_utility);
@@ -754,12 +753,13 @@ void TestFixedWithFlexible_walking::testPassArrivedToWaitingDecisions()
     Passenger* pass1 = new Passenger(1,0,stop5to4,nullptr); //create a passenger at stop 1 going to stop 4
     pass1->init();
 
-//Try out other parameters, Value of IVT (for bus, from 2006 Australian National Guidelines, conversion rate 0.63EUR/AUS) :
-    qDebug() << "Changing VoT coefficients to 2006 Australian National Guideline values";
-    theParameters->in_vehicle_time_coefficient= -0.001540; //EUR/s
-    theParameters->transfer_coefficient= -0.0077; // 5xIVT
-    theParameters->waiting_time_coefficient= -0.003080; //2xIVT, remember that the denied boarding coefficient is 3.5x whatever this is internal to BM
-    theParameters->walking_time_coefficient= -0.003080; //2xIVT
+//!< Try out other parameters, Value of IVT (for bus, from 2006 Australian National Guidelines, conversion rate 0.63EUR/AUS) :
+//! @note Larger VoT coefficients (i.e. IVT = 1, WT = 2...etc) seem at least at first glance, to increase the variance of resulting MNL probabilities with random draws
+//    qDebug() << "Changing VoT coefficients to 2006 Australian National Guideline values";
+//    theParameters->in_vehicle_time_coefficient= -0.001540; //EUR/s
+//    theParameters->transfer_coefficient= -0.0077; // 5xIVT
+//    theParameters->waiting_time_coefficient= -0.003080; //2xIVT, remember that the denied boarding coefficient is 3.5x whatever this is internal to BM
+//    theParameters->walking_time_coefficient= -0.003080; //2xIVT
 
     //!< Recall, the utility of a path set for a given OD pair is given by all the paths at this OD that
     //! do NOT include walking distances (no double walking rule and walking to access this path-set calculated separately)
@@ -778,7 +778,7 @@ void TestFixedWithFlexible_walking::testPassArrivedToWaitingDecisions()
     for(const auto& path : paths1to4)
     {
         //double twkt = path->calc_total_walking_distance() / theParameters->average_walking_speed;
-        if(path->calc_total_walking_distance() != 0) //no double walking
+        if(path->calc_total_walking_distance() > 0) //no double walking
             continue;
 
         ++pathcount;
@@ -798,7 +798,7 @@ void TestFixedWithFlexible_walking::testPassArrivedToWaitingDecisions()
 
         if(twt*60 > theParameters->max_waiting_time) //dynamic filtering rule
         {
-            path_utility = -10;
+            path_utility = ::large_negative_utility;
         }
 
         if(path->is_first_transit_leg_fixed())
@@ -817,6 +817,10 @@ void TestFixedWithFlexible_walking::testPassArrivedToWaitingDecisions()
 
     qDebug() << "\t Fixed prob with average utilities: " << fixed_p*100 << "%";
     qDebug() << "\t Flex prob with average utilities: " << flex_p*100 << "%";
+
+    //!< @todo
+    //!     Add another test if the resulting probabilities are close to those without random draws
+    //!     Make sure coefficients are in EUR/min instead...or doublecheck this
 
     //!< Make a sequence of connection->transitmode->dropoff decisions and reset
     double t_now = 0.0; //fake current simulation clocktime

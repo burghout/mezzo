@@ -13,10 +13,7 @@
 //! DRT Tests BusMezzo
 //! Contains tests of parts of the DRT framework
 
-
-const std::string network_path_1 = "../networks/SFnetwork/"; // Spiess Florian network
-const std::string network_path_2 = "../networks/DRTFeeder/"; // DRT feeder network
-
+const std::string network_path = "../networks/DRTFeeder/"; // DRT feeder network
 const std::string network_name = "masterfile.mezzo";
 
 //const QString expected_outputs_path = "://networks/SFnetwork/ExpectedOutputs/";
@@ -59,15 +56,13 @@ private Q_SLOTS:
     void testDelete(); //!< tests correct deletion
 
 private:
-    NetworkThread* nt; //!< contains the network thread
-    Network* net;
+    NetworkThread* nt = nullptr; //!< contains the network thread
+    Network* net = nullptr;
 };
 
 void TestDRT::testCreateNetwork()
 {   
-    nt = nullptr;
-    net = nullptr;
-    chdir(network_path_2.c_str());
+    chdir(network_path.c_str());
 
     QFileInfo check_file(network_name.c_str());
     QVERIFY2 (check_file.exists(), "Failure, masterfile cannot be found");

@@ -1,0 +1,5 @@
+Line_ID	Average_headway	Average_dwell_time	Average_abs_schedule_deviation	Average_waiting_time_per_stop	Total_pass_boarding	Standard_deviation_headway(averaged_over_stops)	Standard_deviation_dwell_time(averaged_over_stops)	Share_on_time	Share_early	Share_late	Total_pass_riding_time	Total_pass_dwell_time	Total_pass_waiting_time	Total_pass_holding_time	Control_objective_functon_value	Total_pass_weighted_in_vehicle_time	
+1	360	1	0.550001	1.66667	12.75	2.89258e-13	0	1	0	0	111007	153	27540	0	138700	105457	
+2	360	1.33333	1.73336	1.15926	3.33333	2.2552e-13	0	1	0	0	18783.1	99	7200	0	26082.1	17862	
+3	900	1	141.1	0	2	3.92116e-13	8.75162e-14	0.666667	0	0.333333	8340	20	4500	0	12860	7932.5	
+4	180	1	209.5	0	0.695652	1.64029e-13	0	0.5	0.5	0	2880	16	1440	0	4336	2736	

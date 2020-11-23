@@ -65,6 +65,8 @@ extern double drt_first_rep_max_headway; //!< currently corresponds to a global 
 extern double drt_first_rep_waiting_utility; //!< sometimes returned in calc_waiting_utility functions when a Busline currently has no Bustrips in its trips list yet
 extern int drt_min_occupancy; //!< currently used in controlstrategies to put different minimum size of the set of passenger requests to consider generating trips
 const double drt_exploration_wt = 0.0; //!< default value returns by Controlcenter if RTI or experience is unavailable for passenger anticipated waiting time calculations for decisions
+const double large_negative_utility = -10000.0;
+const double large_positive_utility = 10000.0;
 /**@}*/
 
 // GLOBAL VARIABLES
@@ -196,7 +198,8 @@ public:
    int choice_set_indicator; //!< 0 indicates process path-set generation; 1 indicates read path-set input file
    int pass_day_to_day_indicator; // 0 if irrelevant; 1 indicates read pass memory input and incorporate it on OD level; 2 indicates passenger specific memory
    int in_vehicle_d2d_indicator; // 0 if irrelevant; 1 indicates read pass memory input and incorporate it on OD level; 2 indicates passenger specific memory
-   double break_criterium;
+   double break_criterium; // day2day convergence criteria (based on ratio between anticipated and experienced WT and/or IVT)
+   int max_days = 20; // day2day termination criteria if break_criterium not met, maximum number of days we iterate over. @todo currently do not read this as a param from input files to not break previous networks, included instead for testing purposes (and to name magic numbers)
    double transfer_coefficient;
    double in_vehicle_time_coefficient;
    double waiting_time_coefficient;

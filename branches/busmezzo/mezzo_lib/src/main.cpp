@@ -19,69 +19,69 @@
 #include "network.h"
 #include "parameters.h"
 
-int main ( int argc, char **argv)
+int main(int argc, char** argv)
 {
-  //SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX);
-  long int seed = 0;
-  unsigned int replications = 1;
-  if (argc < 2)
-  {
-	cout << "at least one argument needed (*.mezzo filename) " << endl;
-	cout << " Usage: mezzo_s   <filename.mezzo>    <nr_replications>   <random_seed>" << endl; 
-	return -1;
-  }
-  if (argc > 2)
-	replications=atoi(argv[2]);
-   if (argc > 3)
-	  seed=atoi(argv[3]);
- 
-   // NEW started using threads for future parallel runs. 
-   // However, global vars need to be moved local to run more than one thread at a time to avoid data conflicts.
-  NetworkThread* net1 = new NetworkThread(argv[1],1,seed);
-  net1->init(); // reads the input files
-  //bool steady_state=false;
+    //SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX);
+    long int seed = 0;
+    unsigned int replications = 1;
+    if (argc < 2)
+    {
+        cout << "at least one argument needed (*.mezzo filename) " << endl;
+        cout << " Usage: mezzo_s   <filename.mezzo>    <nr_replications>   <random_seed>" << endl;
+        return -1;
+    }
+    if (argc > 2)
+        replications = atoi(argv[2]);
+    if (argc > 3)
+        seed = atoi(argv[3]);
 
-  if (replications <=1)
-  {
-		net1->start(QThread::HighestPriority);
-		net1->wait();
-		net1->saveresults();
-  }
-  else
-  {
-	  for (unsigned int rep=1; rep <=replications; rep++)
-	  {
-		  net1->start(QThread::HighestPriority);
-		  net1->wait();
-		  net1->saveresults(rep);
-		  net1->reset();
-	  }
-  }
-  delete net1;
-  
+    // NEW started using threads for future parallel runs. 
+    // However, global vars need to be moved local to run more than one thread at a time to avoid data conflicts.
+    NetworkThread* net1 = new NetworkThread(argv[1], 1, seed);
+    net1->init(); // reads the input files
+    //bool steady_state=false;
 
-  //OLD:
-  /*
-  Network* theNetwork= new Network();
-  if (argc > 2)
-  {
-      theNetwork->seed(atoi (argv[2]));
-	  //Network theNetwork = Network(atoi(argv[2]));
-	  theNetwork->readmaster(argv[1]);
-	  double runtime=theNetwork->executemaster();
-	  theNetwork->step(runtime);
-	  theNetwork->writeall();
-  }
-  else
-  {
-	  
-	  theNetwork->readmaster(argv[1]);
-	  double runtime=theNetwork->executemaster();
-	  theNetwork->step(runtime);
-	  theNetwork->writeall();
-  }
-  */
-  return 0;
+    if (replications <= 1)
+    {
+        net1->start(QThread::HighestPriority);
+        net1->wait();
+        net1->saveresults();
+    }
+    else
+    {
+        for (unsigned int rep = 1; rep <= replications; rep++)
+        {
+            net1->start(QThread::HighestPriority);
+            net1->wait();
+            net1->saveresults(rep);
+            net1->reset();
+        }
+    }
+    delete net1;
+
+
+    //OLD:
+    /*
+    Network* theNetwork= new Network();
+    if (argc > 2)
+    {
+        theNetwork->seed(atoi (argv[2]));
+        //Network theNetwork = Network(atoi(argv[2]));
+        theNetwork->readmaster(argv[1]);
+        double runtime=theNetwork->executemaster();
+        theNetwork->step(runtime);
+        theNetwork->writeall();
+    }
+    else
+    {
+
+        theNetwork->readmaster(argv[1]);
+        double runtime=theNetwork->executemaster();
+        theNetwork->step(runtime);
+        theNetwork->writeall();
+    }
+    */
+    return 0;
 }
 
 

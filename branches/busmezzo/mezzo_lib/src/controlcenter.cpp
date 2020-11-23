@@ -25,56 +25,76 @@ RequestHandler::~RequestHandler(){}
 
 void RequestHandler::reset()
 {
+	for (auto req : requestSet_)
+		delete req;
 	requestSet_.clear();
 }
 
-bool RequestHandler::addRequest(const Request req, const set<Busstop*>& serviceArea)
+bool RequestHandler::addRequest(Request* req, const set<Busstop*>& serviceArea)
 {
     if (!isFeasibleRequest(req, serviceArea))
     {
-        DEBUG_MSG("INFO::RequestHandler::addRequest : rejecting request to travel between origin stop " << req.ostop_id << 
-                    " and destination stop " << req.dstop_id << ", destination stop not reachable within service area");
-        return false;
+        DEBUG_MSG("INFO::RequestHandler::addRequest : rejecting request to travel between origin stop " << req->ostop_id << 
+                    " and destination stop " << req->dstop_id << ", destination stop not reachable within service area");
+		
+		// Currently if a request is rejected it is deleted, and passengers pointer to it is reset to nullptr @todo Perhaps move this to a different owner
+		req->pass_owner->set_curr_request(nullptr);
+		delete req;
+        
+		return false;
     }
 
 	if (find(requestSet_.begin(), requestSet_.end(), req) == requestSet_.end()) //if request does not already exist in set (which it shouldn't)
 	{
 		requestSet_.insert(req);
+		req->set_state(RequestState::Unmatched);
 		return true;
 	}
-	DEBUG_MSG("DEBUG: RequestHandler::addRequest : passenger request " << req.pass_id << " at time " << req.time << " already exists in request set!");
-	return false;
+    else
+    {
+        // Currently just ignore addRequest call if request already exists in request set
+        DEBUG_MSG("DEBUG: RequestHandler::addRequest : passenger request " << req->pass_id << " at time " << req->time << " already exists in request set!");
+        //req->pass_owner->set_curr_request(nullptr);
+        //delete req;
+
+        return false;
+    }
 }
 
 void RequestHandler::removeRequest(const int pass_id)
 {
-    set<Request>::iterator it;
+    set<Request*>::iterator it;
     it = find_if(requestSet_.begin(), requestSet_.end(),
-        [pass_id](const Request& req) -> bool
+        [pass_id](const Request* req) -> bool
         {
-            return req.pass_id == pass_id;
+            return req->pass_id == pass_id;
         }
     );
 
     if (it != requestSet_.end())
-        requestSet_.erase(it);
+	{
+		Request* req = *it;
+		req->pass_owner->set_curr_request(nullptr);
+        requestSet_.erase(req);
+		delete req;
+	}
     else
         DEBUG_MSG_V("DEBUG: RequestHandler::removeRequest : Passenger id " << pass_id << " not found in requestSet.");
 }
 
-bool RequestHandler::isFeasibleRequest(const Request& req, const set<Busstop*>& serviceArea) const
+bool RequestHandler::isFeasibleRequest(const Request* req, const set<Busstop*>& serviceArea) const
 {    
     //check if origin stop and destination stop are the same
-    if (req.ostop_id == req.dstop_id) 
+    if (req->ostop_id == req->dstop_id) 
         return false;
 
     //check if destination stop of request is within serviceArea
-    auto it = find_if(serviceArea.begin(), serviceArea.end(), [req](const Busstop* stop) -> bool {return stop->get_id() == req.dstop_id; });
+    auto it = find_if(serviceArea.begin(), serviceArea.end(), [req](const Busstop* stop) -> bool {return stop->get_id() == req->dstop_id; });
     if (it == serviceArea.end()) 
         return false;
 
     //check if origin stop of request is within serviceArea
-    it = find_if(serviceArea.begin(), serviceArea.end(), [req](const Busstop* stop) -> bool {return stop->get_id() == req.ostop_id; });
+    it = find_if(serviceArea.begin(), serviceArea.end(), [req](const Busstop* stop) -> bool {return stop->get_id() == req->ostop_id; });
     if (it == serviceArea.end()) 
         return false;
 
@@ -433,6 +453,7 @@ void Controlcenter::reset()
 	connectedPass_.clear();
 	fleetState_.clear();
 	
+	shortestPathCache.clear(); //TODO: Perhaps also cache over runs as well
 	summarydata_.reset(); //TODO: either aggregate over resets or save between them.
 }
 
@@ -539,7 +560,7 @@ double Controlcenter::calc_route_travel_time(const vector<Link*>& routelinks, do
 	return expected_travel_time;
 }
 
-vector<Link*> Controlcenter::find_shortest_path_between_stops(const Busstop* origin_stop, const Busstop* destination_stop, const double start_time) const
+vector<Link*> Controlcenter::find_shortest_path_between_stops(Busstop * origin_stop, Busstop * destination_stop, double start_time)
 {
 	assert(origin_stop);
 	assert(destination_stop);
@@ -547,12 +568,22 @@ vector<Link*> Controlcenter::find_shortest_path_between_stops(const Busstop* ori
 	assert(start_time >= 0);
 
 	vector<Link*> rlinks;
-	if (origin_stop && destination_stop)
+	Controlcenter_OD od = Controlcenter_OD(origin_stop, destination_stop);
+	if (shortestPathCache.count(od) != 0)
 	{
-		int rootlink_id = origin_stop->get_link_id();
-		int dest_node_id = destination_stop->get_dest_node()->get_id(); //!< @todo can change these to look between upstream and downstream junction nodes as well
+        rlinks = shortestPathCache[od]; // get cached results if called for this OD before
+    }
+	else
+	{
+        if (origin_stop && destination_stop)
+        {
+            int rootlink_id = origin_stop->get_link_id();
+            int dest_node_id = destination_stop->get_dest_node()->get_id(); //!< @todo can change these to look between upstream and downstream junction nodes as well
 
-		rlinks = theNetwork_->shortest_path_to_node(rootlink_id, dest_node_id, start_time);
+            rlinks = theNetwork_->shortest_path_to_node(rootlink_id, dest_node_id, start_time);
+
+			shortestPathCache[od] = rlinks; // cache shortest path results
+        }
 	}
 	return rlinks;
 }
@@ -644,6 +675,11 @@ Controlcenter_SummaryData Controlcenter::getSummaryData() const
 set<Busstop*> Controlcenter::getServiceArea() const { return serviceArea_; }
 vector<Busline*> Controlcenter::getServiceRoutes() const { return tg_.getServiceRoutes(); }
 
+map<int, Bus *> Controlcenter::getConnectedVehicles() const
+{
+    return connectedVeh_;
+}
+
 map<BusState, set<Bus*>> Controlcenter::getFleetState() const
 {
 	return fleetState_;
@@ -669,8 +705,10 @@ void Controlcenter::setGeneratedDirectRoutes(bool generate_direct_routes)
 
 void Controlcenter::connectPassenger(Passenger* pass)
 {
+	assert(pass->is_flexible_user()); // passenger should only be connected to a CC if they have chosen a flexible, or on-demand mode
 	int pid = pass->get_id();
 	assert(connectedPass_.count(pid) == 0); //passenger should only be added once
+	
 	connectedPass_[pid] = pass;
 
 	if (QObject::connect(pass, &Passenger::sendRequest, this, &Controlcenter::receiveRequest, Qt::DirectConnection) == nullptr)
@@ -877,9 +915,9 @@ double Controlcenter::calc_exploration_wt()
 }
 
 //Slot implementations
-void Controlcenter::receiveRequest(Request req, double time)
+void Controlcenter::receiveRequest(Request* req, double time)
 {
-	assert(req.desired_departure_time >= 0 && req.time >= 0 && req.load > 0); //assert that request is valid
+	assert(req->desired_departure_time >= 0 && req->time >= 0 && req->load > 0); //assert that request is valid
 	summarydata_.requests_recieved += 1;
 	rh_.addRequest(req, serviceArea_) ? emit requestAccepted(time) : emit requestRejected(time);
 }
@@ -887,6 +925,10 @@ void Controlcenter::receiveRequest(Request req, double time)
 void Controlcenter::removeRequest(int pass_id)
 {
 	//DEBUG_MSG(Q_FUNC_INFO);
+	assert(connectedPass_.count(pass_id) != 0); // remove request should only be called for connected travelers
+	if(connectedPass_.count(pass_id) != 0)
+		assert(connectedPass_[pass_id]->is_flexible_user()); // connected travelers should all be flexible transit users
+
 	rh_.removeRequest(pass_id);
 	summarydata_.requests_served += 1;
 }
@@ -970,4 +1012,23 @@ void Controlcenter::matchEmptyVehiclesToTrips(double time)
 void Controlcenter::scheduleMatchedTrips(double time)
 {
 	vs_.scheduleMatchedTrips(tvm_, time);
+}
+
+Controlcenter_OD::Controlcenter_OD(Busstop* orig_, Busstop* dest_)
+{
+	orig = orig_;
+	dest = dest_;
+}
+
+bool Controlcenter_OD::operator==(const Controlcenter_OD& rhs) const
+{
+	return (orig == rhs.orig && dest == rhs.dest);
+}
+
+bool Controlcenter_OD::operator<(const Controlcenter_OD& rhs) const
+{
+	if (orig != nullptr && rhs.orig != nullptr)
+		return orig->get_id() < rhs.orig->get_id();
+	else
+		return true;
 }

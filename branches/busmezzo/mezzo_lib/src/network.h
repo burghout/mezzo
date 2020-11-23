@@ -346,7 +346,7 @@ public:
 
 	// Public transport
 	
-	bool write_busstop_output(string name1, string name2, string name3, string name4, string name5, string name6, string name7, string name8, string name9, string name10, string name11, string name12, string name13, string name14, string name15, string name16, string name17, string name18); //<! writes all the bus-related output 
+	bool write_busstop_output(string name1, string name2, string name3, string name4, string name5, string name6, string name7, string name8, string name9, string name10, string name11, string name12, string name13, string name14, string name15, string name16, string name17, string name18, string name19, string name20); //<! writes all the bus-related output 
 	void write_passenger_welfare_summary(ostream& out, double total_gtc, int total_pass);
 	bool write_path_set (string name1); //!< writes the path-set generated at the initialization process (aimed to be used as an input file for other runs with the same network)
 	bool write_path_set_per_stop (string name1, Busstop* stop);
@@ -506,11 +506,13 @@ protected:
 //	map<int,map<int, vector<Busline*> > > direct_lines; // contains all direct lines between a couple of stops
 	map<Busstop*,vector<Busstop*> > consecutive_stops; // contains all the stops that can be reached within no transfer per stop
 
+public: //!< @todo made all these day2day thingies public for testing, also added a structure for collecting passengers that boarded each line for all days
 	Day2day* day2day=nullptr;
 	map<ODSL, Travel_time> wt_rec; //the record of waiting time data
 	map<ODSLL, Travel_time> ivt_rec; //the record of in-vehicle time data
 	int day=0;
-
+	map<Busline*, map<int,int> > total_pass_boarded_per_line_d2d; //!< contains the resulting pass flows when day2day is activated for each day. Key1 = busline, Key2 = day, value = total boarded passengers
+protected:
 /** @ingroup DRT
     @{
 */
@@ -652,48 +654,48 @@ public:
 	double cost;
 };
 
-class NetworkThread: public QThread
+class NetworkThread : public QThread
 {
 public:
 
-	NetworkThread (string masterfile,int threadnr = 1,long int seed=0):masterfile_(masterfile),threadnr_(threadnr),seed_(seed) 
-		{
+    NetworkThread(string masterfile, int threadnr = 1, long int seed = 0) :masterfile_(masterfile), threadnr_(threadnr), seed_(seed)
+    {
         Q_UNUSED(threadnr_)
-			theNetwork= new Network();
-			 
-			 if (seed != 0)
-			 {
-				theRandomizers[0]->seed(seed);
-			 }
-			if (seed_)
-					theNetwork->seed(seed_);
-		}
-	void init () 
-		{
-			theNetwork->readmaster(masterfile_);
-			runtime_=theNetwork->executemaster();
-		}
-	void run ()
-	  {				
-				theNetwork->step(runtime_);
-	  }
-	void saveresults (unsigned int replication = 0)
-	  {
-		  cout << "Saving results" << endl;
-		  theNetwork->writeall(replication);
-		  cout << "Saved and done!" << endl;
-	  }
-	void reset ()
-	{
-		cout << "Resetting" << endl;
-		theNetwork->delete_passengers();
-		theNetwork->reset();
-		cout << "Reset done!" << endl;
-	}
-	 ~NetworkThread () 
-	  {
-			delete theNetwork;
-	  }
+            theNetwork = new Network();
+
+        if (seed != 0)
+        {
+            theRandomizers[0]->seed(seed);
+        }
+        if (seed_)
+            theNetwork->seed(seed_);
+    }
+    void init()
+    {
+        theNetwork->readmaster(masterfile_);
+        runtime_ = theNetwork->executemaster();
+    }
+    void run()
+    {
+        theNetwork->step(runtime_);
+    }
+    void saveresults(unsigned int replication = 0)
+    {
+        cout << "Saving results" << endl;
+        theNetwork->writeall(replication);
+        cout << "Saved and done!" << endl;
+    }
+    void reset()
+    {
+        cout << "Resetting" << endl;
+        theNetwork->delete_passengers();
+        theNetwork->reset();
+        cout << "Reset done!" << endl;
+    }
+    ~NetworkThread()
+    {
+        delete theNetwork;
+    }
 
     Network* getNetwork()
     {
@@ -706,7 +708,7 @@ private:
     long int seed_;
 
     Network* theNetwork;
-    double runtime_=0.0;
+    double runtime_ = 0.0;
 
 };
 

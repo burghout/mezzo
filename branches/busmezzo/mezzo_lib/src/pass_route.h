@@ -54,7 +54,7 @@ class Pass_path
     /** @ingroup DRT
         @{
     */
-    
+    size_t count_flexible_legs() const;
     bool check_all_flexible_lines(const vector<Busline*>& line_vec) const; //!< returns true if all lines in vector are flagged as flexible (i.e. dynamically scheduled or routed) and is non-empty
     bool check_any_flexible_lines() const; //!< returns true if ANY transit leg of this path is flexible, will e.g. return false if all line legs are fixed, and for walking only paths
     bool check_all_fixed_lines(const vector<Busline*>& line_vec) const; //!< returns true if all lines in vector are not flagged as flexible and is non-empty

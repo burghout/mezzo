@@ -203,6 +203,7 @@ public:
 	Output_Summary_Line get_output_summary () {return output_summary;}
 	list <Start_trip>::iterator get_curr_trip() {return curr_trip;} 
 	list <Start_trip> get_trips () {return trips;}
+    string get_name(){return name;}
 
 	//transfer gets and sets
 	int	get_tr_line_id() {return tr_line_id;}
@@ -270,6 +271,11 @@ public:
     double get_planned_headway() const { return planned_headway; }
 	void add_CC(Controlcenter* CC) { CC_ = CC; }
 	Controlcenter* get_CC() { return CC_; }
+
+	//Additional outputs for testing, perhaps redundant but can remove later
+	// int count_total_boarded_passengers() const; // returns the total number of passengers that boarded this line at any stop along this line @note commented out wasnt really working for some odd reason
+	void add_to_total_boarded_pass(int nr_boarding); 
+	int get_total_boarded_pass() { return total_boarded_pass; }
 	/**@}*/
 
 protected:
@@ -307,6 +313,9 @@ protected:
     list <Start_trip> static_trips; //!< trips that were created from input files (i.e. were not created dynamically for this line), to be saved between resets
     double planned_headway = 0; //!< planned headway in seconds of this line, set to zero by default in constructor. If this is a DRT line then the planned headway is not based on pre-scheduled trips but on expectations given service design (@todo DRT currently only valid with trip format 3 now!)
 	Controlcenter* CC_ = nullptr; //!< controlcenter that can dynamically generate trips for this line
+
+	// additional output collection for FWF implementation/testing
+	int total_boarded_pass = 0; //!< total number of passengers that boarded this line at any stop along this line
     /**@}*/
 
     map <Busstop*, pair<Busstop*, pair<double, double> > > disruption_times; //!< contains the expected travel times between a pair of stops in case of disruption (does not affect actual travel time, only passenger information provision). Strat and end times

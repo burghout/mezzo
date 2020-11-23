@@ -160,10 +160,11 @@ void ODstops::delete_passengers()
 void ODstops::add_pass_waiting(Passenger* add_pass)
 {
 	assert(add_pass);
-	if (theParameters->drt && origin_stop->get_CC() != nullptr)
-	{
-		origin_stop->get_CC()->connectPassenger(add_pass); //connect passenger to the control center of their current stop if one exists
-	}
+	//if (theParameters->drt && origin_stop->get_CC() != nullptr)
+	//{
+	//	if(add_pass->is_flexible_user())
+	//		origin_stop->get_CC()->connectPassenger(add_pass); //connect passenger to the control center of their current stop if one exists
+	//}
 	waiting_passengers.push_back(add_pass);
 }
 
@@ -641,7 +642,7 @@ double ODstops::calc_combined_set_utility_for_connection (double walking_distanc
 	double connection_utility = 0.0;
 	if (check_path_set() == false) //return strong negative utility for empty path set
 	{
-		return -10000;
+		return ::large_negative_utility;
 	}
 
 	vector<Pass_path*> pass_path_set;
@@ -669,9 +670,9 @@ double ODstops::calc_combined_set_utility_for_connection (double walking_distanc
 				(*path)->calc_waiting_utility(alt_stops_iter, time + (time_till_connected_stop * 60), false, pass));
 			connection_utility += path_utility;
 			// waiting utility of this path is the 'utility' of walking to the origin stop of this path and 'using' it to the final destination
-			// 
 			// taking into account CT (walking time) till this connected stop and the utility of the path from this connected stop till the final destination
-			//DEBUG_MSG("ODstops::calc_combined_set_utility_for_connection() - storing utility of path " << (*path)->get_id() << " for passenger " << pass->get_id());
+
+			//DEBUG_MSG("ODstops::calc_combined_set_utility_for_connection() - storing utility of path " << (*path)->get_id() << " for passenger " << pass->get_id() <<": " << path_utility);
 			pass->temp_connection_path_utilities[this][(*path)] = path_utility; //cache the connection_utility of each path for use in transitmode and dropoff decisions
 		}
 	}

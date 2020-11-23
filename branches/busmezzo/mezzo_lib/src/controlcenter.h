@@ -40,6 +40,21 @@ struct Controlcenter_SummaryData
 };
 
 
+//!< just used as key for caching shortest path calls for now
+struct Controlcenter_OD
+{
+	
+	Controlcenter_OD() = default;
+	~Controlcenter_OD() = default;
+	Controlcenter_OD(Busstop* orig, Busstop* dest);
+	
+	bool operator==(const Controlcenter_OD& rhs) const;
+	bool operator<(const Controlcenter_OD& rhs) const;
+
+	Busstop* orig = nullptr;
+	Busstop* dest = nullptr;
+};
+
 //! @brief responsible for adding and removing a passenger Request to/from a requestSet as well as sorting and distributing requests in the requestSet to process classes of a Controlcenter
 /*!
     groups the request handling processes of a Controlcenter. The responsibilities of the RequestHandler are to
@@ -62,12 +77,17 @@ public:
 
 	void reset(); //!< resets members between simulation replications
 
-	bool addRequest(Request req, const set<Busstop*>& serviceArea); //!< adds request passenger Request to the requestSet
+	bool addRequest(Request* req, const set<Busstop*>& serviceArea); //!< adds request passenger Request to the requestSet
 	void removeRequest(int pass_id); //!< removes requests with pass_id from the requestSet if it exists
-    bool isFeasibleRequest(const Request& req, const set<Busstop*>& serviceArea) const; //!< returns true if request is feasible for a given service area, false otherwise
+    bool isFeasibleRequest(const Request* req, const set<Busstop*>& serviceArea) const; //!< returns true if request is feasible for a given service area, false otherwise
 
 private:
-	set<Request> requestSet_; //!< set of received requests sorted by desired departure time
+	set<Request*> requestSet_; //!< set of received requests sorted by desired departure time
+	//	Filtering methods for:
+	// unmatchedRequestSet
+	// matchedRequestSet that havent been served
+	// servedRequests unfinished (enroute)
+	// servedRequests finished
 };
 
 //! @brief responsible for generating an unassigned trip for any Busline (in this context a line is equivalent a sequence of scheduled Busstops along a Busroute) within a given service area
@@ -215,6 +235,7 @@ public:
 	Controlcenter_SummaryData getSummaryData() const;
 	set<Busstop*> getServiceArea() const;
     vector<Busline*> getServiceRoutes() const;
+    map<int,Bus*> getConnectedVehicles() const;
 
 	map<BusState, set<Bus*> > getFleetState() const;
 	set<Bus*> getAllVehicles();
@@ -223,7 +244,7 @@ public:
 	pair<Bus*,double> getClosestVehicleToStop(Busstop* stop, double time); //returns closest vehicle to stop and shortest expected time to get there
 	
 	double calc_route_travel_time(const vector<Link*>& routelinks, double time);
-	vector<Link*> find_shortest_path_between_stops(const Busstop* origin_stop, const Busstop* destination_stop, const double start_time) const;
+	vector<Link*> find_shortest_path_between_stops(Busstop * origin_stop, Busstop * destination_stop, double start_time);
 
     bool isInServiceArea(Busstop* stop) const; //!< true if stop is included in service area of Controlcenter, false otherwise
 	bool getGeneratedDirectRoutes();
@@ -266,7 +287,7 @@ signals:
 
 private slots:
 	//request related
-	void receiveRequest(Request req, double time); //<! delegates to RequestHandler to add the request to its requestSet
+	void receiveRequest(Request* req, double time); //<! delegates to RequestHandler to add the request to its requestSet
 	void removeRequest(int pass_id); //!< remove request with pass_id from requestSet in RequestHandler
 
 	//fleet related
@@ -302,6 +323,15 @@ private:
 	map<int, Bus*> connectedVeh_; //!< transit vehicles currently connected to Controlcenter
 	map<BusState, set<Bus*>> fleetState_; //!< holds set of connected transit vehicles per transit vehicle state 
 
+	/**
+	 * Functions for askng RequestHandler for unserved Requests to map to passengers etc... matched Requests 
+	 * @todo
+	 *	Double-mapping between connected Vehicles and Passengers
+	 *  Which connected passengers are assigned to a vehicle and which vehicle a passenger has been assigned
+	 *  
+	 *  Vehicle-trips & passenger-trips...
+	 */
+
     //process classes of control center
 	RequestHandler rh_;
 	BustripGenerator tg_;
@@ -312,6 +342,7 @@ private:
 	set<Bus*> initialVehicles_; //!< vehicles assigned to this control center on input (that should be preserved between resets)
 	vector<pair<Bus*, Bustrip*>> completedVehicleTrips_; //!< used for bookkeeping dynamically generated buses and bustrips (similar to busvehicles and bustrips in network) for writing output and deleting between resets
 
+	map<Controlcenter_OD, vector<Link*> > shortestPathCache; //!< cache for the first shortest path calls made between stops of this Controlcenter @todo add time-dependent caches maybe, currently only the initial calls are stored
 	Controlcenter_SummaryData summarydata_; //!< collection of data for summarizing Controlcenter performance.
 	Network* theNetwork_=nullptr; //!< again, ugly way of bringing in shortest path methods from the network to Controlcenter
 };

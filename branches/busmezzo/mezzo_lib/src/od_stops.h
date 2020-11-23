@@ -473,6 +473,16 @@ protected:
 	double boarding_utility = 0;
 	double staying_utility = 0;
 
+/** @ingroup DRT
+*	@note used purely for setting default values for boarding and staying utilities for recording boarding output in case of flexible servies (and there is no boarding decision since passenger is commited one deciding to used flexible transit)
+	@{
+ */
+public:
+	void set_boarding_utility(double boarding_utility_) { boarding_utility = boarding_utility_; }
+	void set_staying_utility(double staying_utility_) { staying_utility = staying_utility_; }
+/** @} */
+
+protected:
 	// output structures and measures (all output stored by origin zone)
     map <Passenger*,list<Pass_boarding_decision> > output_pass_boarding_decision;
     map <Passenger*,list<Pass_alighting_decision> > output_pass_alighting_decision;

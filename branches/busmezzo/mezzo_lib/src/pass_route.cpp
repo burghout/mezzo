@@ -573,7 +573,7 @@ double Pass_path::calc_waiting_utility (vector <vector <Busstop*> >::iterator st
 		Bustrip* next_trip = (*iter_lines)->find_next_expected_trip_at_stop((*stop_iter).front()); // if a trip is already en-route to stop
 		if (pass->line_is_rejected((*iter_lines)->get_id())) // in case the line was already rejected once before, added by Jens 2014-10-16
 		{
-			return -10.0; // why is this here? Only reject a line once?
+			return ::large_negative_utility; // why is this here? Only reject a line once?
 		}
 		
 		if (next_trip || (*iter_lines)->is_flex_line()) // basically if this waiting path is relevant....some first leg line needs to be en-route, in the case of flexible lines it doesnt
@@ -590,7 +590,7 @@ double Pass_path::calc_waiting_utility (vector <vector <Busstop*> >::iterator st
 		}
 	} 
 	// if none of the lines in the first leg is available - then the waiting alternative is irrelevant
-	return -10.0;
+	return ::large_negative_utility;
 }
 
 /** @ingroup PassengerDecisionParameters
@@ -649,6 +649,20 @@ map<Busline*, bool> Pass_path::check_maybe_worthwhile_to_wait (vector<Busline*> 
 		}
 	}
 	return worth_to_wait;
+}
+
+size_t Pass_path::count_flexible_legs() const
+{
+	size_t num_flex_legs = 0;
+	for (auto line_leg : alt_lines)
+	{
+		if (check_all_flexible_lines(line_leg)) // recall fixed and flexible lines are currently never mixed within the same vector of alt_lines
+		{
+			++num_flex_legs;
+		}
+	}
+
+	return num_flex_legs;
 }
 
 bool Pass_path::check_all_flexible_lines(const vector<Busline*>& line_vec) const

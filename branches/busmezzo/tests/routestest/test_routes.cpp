@@ -53,14 +53,9 @@ private Q_SLOTS:
     void testTimeDependentDetour();
 
 private:
-    //    NetworkThread* nt; //!< contains the network thread
-    //    Network* net;
-
-    Graph<double, GraphNoInfo<double> > * simpleGraph; // simple graph with fixed costs
-    Graph<double, LinkTimeInfo > * graph; // graph with time-dependent costs in LinkTimeInfo
-    LinkTimeInfo* linkinfo; // time-dependent link costs
-
-
+    Graph<double, GraphNoInfo<double> >* simpleGraph = nullptr; // simple graph with fixed costs
+    Graph<double, LinkTimeInfo >* graph = nullptr; // graph with time-dependent costs in LinkTimeInfo
+    LinkTimeInfo* linkinfo = nullptr; // time-dependent link costs
 };
 
 void TestRoutes::testInitGraphs()

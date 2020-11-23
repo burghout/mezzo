@@ -43,7 +43,8 @@ HEADERS += src/busline.h \
            src/od_stops.h \
            src/pass_route.h \
 		   src/controlcenter.h \
-		   src/controlstrategies.h
+		   src/controlstrategies.h \
+           src/csvfile.h
   #         src/Graph.cpp
 SOURCES += src/busline.cpp \
 		   src/day2day.cpp \

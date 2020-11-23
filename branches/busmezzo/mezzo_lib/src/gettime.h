@@ -55,6 +55,7 @@ char* timestring()
 // ctime_r(tt,stri);
 
  strftime (stri,30,"%Y-%m-%d\t%T",gmtime(tt));
+ delete tt;
  return stri;
 
 }
