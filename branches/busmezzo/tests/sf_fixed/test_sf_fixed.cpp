@@ -49,6 +49,7 @@ public:
 private Q_SLOTS:
     void testCreateNetwork(); //!< test loading a network
     void testInitNetwork(); //!< test generating passenger path sets & loading a network
+    void testRoutingGraph(); //!< test the routing graph and mapping
     //void testPathProbabilities(); //!< @todo add sanity checks of resulting probabilities of SF network, match this to original paper
     void testRunNetwork(); //!< test running the network
     void testSaveResults(); //!< tests saving results
@@ -90,9 +91,7 @@ void TestSpiessFlorianFixed::testInitNetwork()
     QVERIFY2 (net->get_busstop_from_name("B")->get_id() == 2, "Failure, bus stop B should be id 2 ");
     QVERIFY2 (net->get_busstop_from_name("C")->get_id() == 3, "Failure, bus stop C should be id 3 ");
     QVERIFY2 (net->get_busstop_from_name("D")->get_id() == 4, "Failure, bus stop D should be id 4 ");
-
     QVERIFY2 (AproxEqual(net->get_currenttime(),0.0), "Failure, currenttime should be 0 at start of simulation");
-
     QVERIFY2(theParameters->drt == false, "Failure, DRT is not set to false in parameters");
     QVERIFY2(theParameters->real_time_info == 2, "Failure, real time info is not set to 2 in parameters");
     QVERIFY2(theParameters->choice_set_indicator == 0, "Failure, choice set indicator is not set to 0 in parameters");
@@ -112,6 +111,19 @@ void TestSpiessFlorianFixed::testInitNetwork()
 	path_set_file.close();
 }
 
+void TestSpiessFlorianFixed::testRoutingGraph()
+{
+    for (auto l:net->get_links())
+    {
+        QVERIFY(net->get_graphlink_to_link(net->get_link_to_graphlink(l.first)) == l.first);
+    }
+
+    for (auto n:net->get_nodes())
+    {
+        QVERIFY(net->get_graphnode_to_node(net->get_node_to_graphnode(n.first)) == n.first);
+    }
+
+}
 
 void TestSpiessFlorianFixed::testRunNetwork()
 {

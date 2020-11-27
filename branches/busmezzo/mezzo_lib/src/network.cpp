@@ -713,6 +713,10 @@ bool Network::readnode(istream& in)
 #ifdef _DEBUG_NETWORK
     cout << "read"<<endl;
 #endif //_DEBUG_NETWORK
+    // Set up mapping for shortest path graph.
+    int new_id = graphnode_to_node.size(); // numbered from 0.
+    node_to_graphnode [nid] = new_id;
+    graphnode_to_node [new_id] = nid;
     return true;
 }
 
@@ -883,7 +887,10 @@ bool Network::readlink(istream& in)
 #ifdef _DEBUG_NETWORK
     cout << " read a link"<<endl;
 #endif //_DEBUG_NETWORK
-
+    // Set up mapping for shortest path graph.
+    int new_id = graphlink_to_link.size(); // numbered from 0.
+    link_to_graphlink [lid] = new_id;
+    graphlink_to_link [new_id] = lid;
 
     /** @ingroup DRT
         @brief Quick and dirty labelling of dummylinks for calculating e.g. VKT outputs correctly. 
