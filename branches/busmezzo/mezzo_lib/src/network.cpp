@@ -2218,26 +2218,27 @@ bool Network::createControlcenterDRTLines(Controlcenter* cc)
 
         for (auto startstop : serviceArea)
         {
-            ori = nullptr;
-            // find best origin for startstop if it does not exist
-            if (startstop->get_origin_node() == nullptr)
-            {
-                // find  origin node
-                ori = findNearestOriginToStop(startstop);
-                if (ori != nullptr)
-                    startstop->set_origin_node(ori);
-            }
             for (auto endstop : serviceArea)
             {
-                if (endstop->get_dest_node() == nullptr)
-                {
-                    // find  destination node
-                    dest = findNearestDestinationToStop(endstop);
-                    if (dest != nullptr)
-                        endstop->set_dest_node(dest);
-                }
                 if (startstop != endstop)
                 {
+                    // find best origin for startstop if it does not exist
+                    if (startstop->get_origin_node() == nullptr)
+                    {
+                        // find  origin node
+                        ori = findNearestOriginToStop(startstop);
+                        if (ori != nullptr)
+                            startstop->set_origin_node(ori);
+                    }
+                    // find best destination for endstop if it does not exist
+                    if (endstop->get_dest_node() == nullptr)
+                    {
+                        // find  destination node
+                        dest = findNearestDestinationToStop(endstop);
+                        if (dest != nullptr)
+                            endstop->set_dest_node(dest);
+                    }
+                
                     // find best odpair
                     int ori_id = startstop->get_origin_node()->get_id();
                     int dest_id = endstop->get_dest_node()->get_id();
