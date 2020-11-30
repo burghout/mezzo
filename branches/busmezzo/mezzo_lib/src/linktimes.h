@@ -1,6 +1,6 @@
 /*
-	Mezzo Mesoscopic Traffic Simulation 
-	Copyright (C) 2008  Wilco Burghout
+    Mezzo Mesoscopic Traffic Simulation
+    Copyright (C) 2008  Wilco Burghout
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -22,48 +22,52 @@ LinkTime contains the time-variant travel time for a link.
 LinkTimeInfo contains the LinkTime for all links in the network. It is used by the shortest path algorithm.
 
 ***********************************************************************************************************/
- #ifndef LINKTIMES
- #define LINKTIMES
+#ifndef LINKTIMES
+#define LINKTIMES
 
- #include <vector>
+#include <vector>
 #include <map>
 
- using namespace std;
+using namespace std;
 
- class LinkTime
- {
-  public:
-  LinkTime(): id(0), nrperiods(0), periodlength (0.0) {totaltime =0.0;}
-  LinkTime(LinkTime& lt) : id(lt.id) , nrperiods(lt.nrperiods), periodlength(lt.periodlength), times(lt.times), totaltime(lt.totaltime) {}
-  LinkTime(int id_, int nrperiods_, double periodlength_) : id(id_), nrperiods(nrperiods_), periodlength(periodlength_)   
-				{	totaltime = nrperiods*periodlength;
-					//times.resize(nrperiods);
-				}
-  void reset () {	times.clear();
-					//times.resize(nrperiods); 
-				}
-  int id;   // link id
-  int get_id() {return id;}
-  double mean ();
+class LinkTime
+{
+public:
+    LinkTime(): id(0), nrperiods(0), periodlength (0.0) {totaltime =0.0;}
+    LinkTime(LinkTime& lt) : id(lt.id) , nrperiods(lt.nrperiods), periodlength(lt.periodlength), times(lt.times), totaltime(lt.totaltime) {}
+    LinkTime(int id_, int nrperiods_, double periodlength_) : id(id_), nrperiods(nrperiods_), periodlength(periodlength_)
+    {	totaltime = nrperiods*periodlength;
+        //times.resize(nrperiods);
+    }
+    void reset () {	times.clear();
+                    //times.resize(nrperiods);
+                  }
+    int id;   // link id
+    int get_id() {return id;}
+    double mean ();
 
-  int nrperiods;   // number of time periods
-  double periodlength; //periodlength
-  //vector <double> times;  // the vector of times
-  map <int,double> times; // maps period to link time
-  double cost(const double time) ;            // this function returns the correct travel time (cost) based on the entry time
-  double totaltime;
+    int nrperiods;   // number of time periods
+    double periodlength; //periodlength
+    //vector <double> times;  // the vector of times
+    map <int,double> times; // maps period to link time
+    double cost(const double time) ;            // this function returns the correct travel time (cost) based on the entry time
+    double totaltime;
 
- } ;
+} ;
 
- class LinkTimeInfo
- {
- 	public:
- 	double cost (const int i, const double time=0.0);
-	double mean ();
+class LinkTimeInfo
+{
+public:
+    void set_graphlink_to_link (const map <int,int> & map) {graphlink_to_link = map;}//!< sets the mapping for graph_links to links (graph links have to be numbered continuously from 0, links can have any numbering)
 
- 	//vector <LinkTime*> times;
+    double cost (const int i, const double time=0.0);
+    double mean ();
+
+    //vector <LinkTime*> times;
     map <int, LinkTime*> times; // maps link id to LinkTime*
- };
-	 	
+    map <int, int> graphlink_to_link;
+
+};
+
 
 #endif

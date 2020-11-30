@@ -56,6 +56,8 @@ private:
     Graph<double, GraphNoInfo<double> >* simpleGraph = nullptr; // simple graph with fixed costs
     Graph<double, LinkTimeInfo >* graph = nullptr; // graph with time-dependent costs in LinkTimeInfo
     LinkTimeInfo* linkinfo = nullptr; // time-dependent link costs
+    map <int,int> graphlink_to_link; // maps link IDs to graphlink IDs
+
 };
 
 void TestRoutes::testInitGraphs()
@@ -80,8 +82,11 @@ void TestRoutes::testInitGraphs()
         lt->times [1] = 20.0;
         lt->times [2] = 30.0; // increasing travel times for all links, from 10.0 to 30.0
         linkinfo->times.insert(pair <int,LinkTime*>(id,lt));
+        graphlink_to_link [id] = id;
     }
 
+
+    linkinfo->set_graphlink_to_link(graphlink_to_link); // set the graphlink mapping
     graph = new Graph <double, LinkTimeInfo> (10,10,9999999.0);
     graph->addLink(1,1,2,10.0); // link 1 from node 1 to node 2
     graph->addLink(2,2,1,10.0);
@@ -132,6 +137,8 @@ void TestRoutes::testTimeDependentDetour()
      lt->times [1] = 30.0;
      lt->times [2] = 60.0; // same
      linkinfo->times.insert(pair <int,LinkTime*>(6,lt));
+     graphlink_to_link [6] = 6;
+     linkinfo->set_graphlink_to_link(graphlink_to_link);
 
      graph->labelCorrecting(1,0.0,linkinfo);
      for (int j=1; j <= 4; ++j) // for all destinations
