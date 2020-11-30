@@ -122,6 +122,7 @@ void TestSpiessFlorianFixed::testRoutingGraph()
     {
         QVERIFY(net->get_graphnode_to_node(net->get_node_to_graphnode(n.first)) == n.first);
     }
+    net->shortest_paths_all();
 
 }
 

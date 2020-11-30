@@ -7869,8 +7869,8 @@ bool Network::init_shortest_path()
 #ifndef _USE_VAR_TIMES
     graph=new Graph<double, GraphNoInfo<double> > (nodemap.size() /* 50000*/, linkmap.size(), 9999999.0);
 #else
-    graph=new Graph<double, LinkTimeInfo > (nodemap.rbegin()->first+1, linkmap.rbegin()->first+1, 9999999.0); // Wilco 2018-03-01 - creates a graph with maxId(nodes) vertices and maxId(links) edges
-  //  graph=new Graph<double, LinkTimeInfo > (nodemap.size()+1, linkmap.size()+1, 9999999.0); // Wilco 2020 - creates a graph at the right size
+   // graph=new Graph<double, LinkTimeInfo > (nodemap.rbegin()->first+1, linkmap.rbegin()->first+1, 9999999.0); // Wilco 2018-03-01 - creates a graph with maxId(nodes) vertices and maxId(links) edges
+    graph=new Graph<double, LinkTimeInfo > (nodemap.size()+1, linkmap.size()+1, 9999999.0); // Wilco 2020 - creates a graph at the right size
 
 #endif
     // ADD THE LINKS AND NODES
