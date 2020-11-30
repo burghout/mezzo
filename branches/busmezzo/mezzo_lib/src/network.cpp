@@ -2432,7 +2432,7 @@ Origin* Network::findNearestOriginToStop(Busstop* stop)
         for (auto rlink : o.second->get_links())
         {
             auto sp = shortest_path_to_node(rlink->get_id(),upstreamNodeId,0.0);
-            costMap [graph->costToNode(upstreamNodeId)] = o.second;
+            costMap [graph->costToNode(node_to_graphnode[upstreamNodeId]) ] = o.second;
         }
     }
     if (!costMap.empty())
@@ -2470,7 +2470,7 @@ Destination* Network::findNearestDestinationToStop(Busstop* stop)
     for (auto d:destinationmap)
     {
         auto sp = shortest_path_to_node(stop->get_link_id(),d.first,0.0);
-        costMap [graph->costToNode(d.first)] = d.second;
+        costMap [graph->costToNode(node_to_graphnode [d.first] )] = d.second;
     }
     if (!costMap.empty())
         return costMap.begin()->second;
