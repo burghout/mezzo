@@ -124,6 +124,40 @@ void TestSpiessFlorianFixed::testRoutingGraph()
     }
     net->shortest_paths_all();
 
+    auto destA = net->findNearestDestinationToStop(net->get_busstop_from_name("A"));
+    auto oriA = net->findNearestOriginToStop(net->get_busstop_from_name("A"));
+
+    auto destB = net->findNearestDestinationToStop(net->get_busstop_from_name("B"));
+    auto oriB = net->findNearestOriginToStop(net->get_busstop_from_name("B"));
+
+    auto destC = net->findNearestDestinationToStop(net->get_busstop_from_name("C"));
+    auto oriC = net->findNearestOriginToStop(net->get_busstop_from_name("C"));
+
+    auto destD = net->findNearestDestinationToStop(net->get_busstop_from_name("D"));
+    auto oriD = net->findNearestOriginToStop(net->get_busstop_from_name("D"));
+
+    QVERIFY (destA->get_id() == 4);
+    QVERIFY (oriA->get_id() == 1);
+    QVERIFY (destB->get_id() == 12);
+    QVERIFY (oriB->get_id() == 5);
+    QVERIFY (destC->get_id() == 12);
+    QVERIFY (oriC->get_id() == 9);
+    QVERIFY (destD->get_id() == 4);
+    QVERIFY (oriD->get_id() == 1);
+
+    auto linklist = net->shortest_path_to_node(12,4,0.0);
+    QVERIFY (linklist [0]->get_id() == 12);
+    QVERIFY (linklist [1]->get_id() == 23);
+    QVERIFY (linklist [2]->get_id() == 34);
+
+    linklist = net->shortest_path_to_node(56,10,0.0);
+    QVERIFY (linklist [0]->get_id() == 56);
+    QVERIFY (linklist [1]->get_id() == 67);
+    QVERIFY (linklist [2]->get_id() == 710);
+
+
+
+
 }
 
 void TestSpiessFlorianFixed::testRunNetwork()
