@@ -444,7 +444,7 @@ Request* Passenger::createRequest(Busstop* origin_stop, Busstop* dest_stop, int 
         }
         else
         {
-            req = new Request(this, this->get_id(), OD_stop->get_origin()->get_id(), OD_stop->get_destination()->get_id(), load, desired_departure_time, time); //create request with load 1 at current time 
+            req = new Request(this, this->get_id(), OD_stop->get_origin()->get_id(), dest_stop->get_id(), load, desired_departure_time, time); //create request with load 1 at current time 
         }
     }
 	return req;
