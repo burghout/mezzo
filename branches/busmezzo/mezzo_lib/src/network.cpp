@@ -713,6 +713,10 @@ bool Network::readnode(istream& in)
 #ifdef _DEBUG_NETWORK
     cout << "read"<<endl;
 #endif //_DEBUG_NETWORK
+    // Set up mapping for shortest path graph.
+    int new_id = graphnode_to_node.size(); // numbered from 0.
+    node_to_graphnode [nid] = new_id;
+    graphnode_to_node [new_id] = nid;
     return true;
 }
 
@@ -883,7 +887,10 @@ bool Network::readlink(istream& in)
 #ifdef _DEBUG_NETWORK
     cout << " read a link"<<endl;
 #endif //_DEBUG_NETWORK
-
+    // Set up mapping for shortest path graph.
+    int new_id = graphlink_to_link.size(); // numbered from 0.
+    link_to_graphlink [lid] = new_id;
+    graphlink_to_link [new_id] = lid;
 
     /** @ingroup DRT
         @brief Quick and dirty labelling of dummylinks for calculating e.g. VKT outputs correctly. 
@@ -2425,7 +2432,7 @@ Origin* Network::findNearestOriginToStop(Busstop* stop)
         for (auto rlink : o.second->get_links())
         {
             auto sp = shortest_path_to_node(rlink->get_id(),upstreamNodeId,0.0);
-            costMap [graph->costToNode(upstreamNodeId)] = o.second;
+            costMap [graph->costToNode(node_to_graphnode[upstreamNodeId]) ] = o.second;
         }
     }
     if (!costMap.empty())
@@ -2463,7 +2470,7 @@ Destination* Network::findNearestDestinationToStop(Busstop* stop)
     for (auto d:destinationmap)
     {
         auto sp = shortest_path_to_node(stop->get_link_id(),d.first,0.0);
-        costMap [graph->costToNode(d.first)] = d.second;
+        costMap [graph->costToNode(node_to_graphnode [d.first] )] = d.second;
     }
     if (!costMap.empty())
         return costMap.begin()->second;
@@ -7511,6 +7518,7 @@ bool Network::readtimes(istream& in)
             linkinfo->times.insert(pair <int,LinkTime*> (iter.second->get_id(),ltime ));
         }
     }
+    linkinfo->set_graphlink_to_link(graphlink_to_link);
 
     return true;
 }
@@ -7861,8 +7869,9 @@ bool Network::init_shortest_path()
 #ifndef _USE_VAR_TIMES
     graph=new Graph<double, GraphNoInfo<double> > (nodemap.size() /* 50000*/, linkmap.size(), 9999999.0);
 #else
-    //graph=new Graph<double, LinkTimeInfo > (/*nodemap.size()*/ 50000, linkmap.size()*10, 9999999.0);
-    graph=new Graph<double, LinkTimeInfo > (nodemap.rbegin()->first+1, linkmap.rbegin()->first+1, 9999999.0); // Wilco 2018-03-01 - creates a graph with maxId(nodes) vertices and maxId(links) edges
+   // graph=new Graph<double, LinkTimeInfo > (nodemap.rbegin()->first+1, linkmap.rbegin()->first+1, 9999999.0); // Wilco 2018-03-01 - creates a graph with maxId(nodes) vertices and maxId(links) edges
+    graph=new Graph<double, LinkTimeInfo > (nodemap.size()+1, linkmap.size()+1, 9999999.0); // Wilco 2020 - creates a graph at the right size
+
 #endif
     // ADD THE LINKS AND NODES
 
@@ -7877,18 +7886,25 @@ bool Network::init_shortest_path()
 #ifdef _DEBUG_SP
         cout << " graph->addlink: link " << lid << ", innode " << in << ", outnode " << out << ", cost " << cost << endl;
 #endif //_DEBUG_SP
-        graph->addLink(lid,in,out,cost);
+        //graph->addLink(lid,in,out,cost);
+        graph->addLink(link_to_graphlink[lid],node_to_graphnode[in],node_to_graphnode[out],cost);
+
     }
     // ADD THE TURNPENALTIES;
+
+    // NOTE TODO WILCO--> Check out if we need to complete turn penalties
+
 
     // first set all the indices
     graph->set_downlink_indices();
 
     for(auto iter1=turnpenalties.begin();iter1<turnpenalties.end();iter1++)
     {
+       // graph->set_turning_prohibitor((*iter1)->from_link, (*iter1)->to_link);
+        int from = link_to_graphlink[(*iter1)->from_link];
+        int to = link_to_graphlink[(*iter1)->to_link];
+        graph->set_turning_prohibitor(from, to);
 
-        //graph->penalty((*iter1)->from_link, (*iter1)->to_link,(*iter1)->cost);
-        graph->set_turning_prohibitor((*iter1)->from_link, (*iter1)->to_link);
     }
 
     theParameters->shortest_paths_initialised= true;
@@ -7897,16 +7913,15 @@ bool Network::init_shortest_path()
 }
 
 
-vector<Link*> Network::get_path(int destid)  // get the path from
+vector<Link*> Network::get_path(int destid)  // get the path to destid (original id)
 {
 #ifdef _DEBUG_SP
-    cout << "shortest path to " << destid << endl << " with " ;
+    eout << "shortest path to " << destid << endl << " with " ;
 #endif //_DEBUG_SP
-    //cout << "...calling  shortest_path_vector...." << endl;
-    vector <int> linkids=graph->shortest_path_vector(destid);  // get out the shortest path current root link to Destination (*iter3)
-    //cout << "...exited shortest path vector call" << endl;
+    int graphdest = node_to_graphnode[destid];
+    vector <int> linkids=graph->shortest_path_vector(graphdest);  // get out the shortest path current root link to Destination (*iter3)
 #ifdef _DEBUG_SP
-    cout << linkids.size() << " links " << endl << "  : " ;
+    eout << linkids.size() << " links " << endl << "  : " ;
 #endif //_DEBUG_SP
     vector <Link*> rlinks;
 
@@ -7917,13 +7932,14 @@ vector<Link*> Network::get_path(int destid)  // get the path from
     }
     for (auto iter4=linkids.begin();iter4<linkids.end();iter4++) // find all the links
     {
-        int lid=(*iter4);
+        //int lid=(*iter4);
+        int lid = graphlink_to_link[(*iter4)];
 #ifdef _DEBUG_SP
-        cout << lid << " , ";
+        eout << lid << " , ";
 #endif //_DEBUG_SP
         map <int,Link*>::iterator l_iter;
-        l_iter=linkmap.find(lid);
-        assert (l_iter!=linkmap.end());
+        l_iter = linkmap.find(lid);
+        assert (l_iter != linkmap.end());
         rlinks.insert(rlinks.end(),(*l_iter).second);
     }
     assert (!rlinks.empty());
@@ -7980,9 +7996,9 @@ bool Network::shortest_paths_all()
                 graph->labelCorrecting((*iter2)->get_id());  // find the shortest path from Link (*iter2) to ALL nodes
 #else
                 if (linkinfo != nullptr) { // if there are link info times
-                    graph->labelCorrecting((*iter2)->get_id(),entrytime,linkinfo);  // find the shortest path from Link (*iter2) to ALL nodes
+                    graph->labelCorrecting(link_to_graphlink[(*iter2)->get_id()],entrytime,linkinfo);  // find the shortest path from Link (*iter2) to ALL nodes
                 } else {
-                    graph->labelCorrecting((*iter2)->get_id());  // find the shortest path from Link (*iter2) to ALL nodes NO LINKINFO
+                    graph->labelCorrecting(link_to_graphlink[(*iter2)->get_id()]);  // find the shortest path from Link (*iter2) to ALL nodes NO LINKINFO
 }
 #endif // _USE_VAR_TIMES
 #ifdef _DEBUG_SP
@@ -7993,7 +8009,7 @@ bool Network::shortest_paths_all()
 #ifdef _DEBUG_SP
                     cout << " see if we can reach destination " << (*iter3)->get_id()<< endl;
 #endif //_DEBUG_SP
-                    if (graph->reachable((*iter3)->get_id())) // if the destination is reachable from this link...
+                    if (graph->reachable(node_to_graphnode[(*iter3)->get_id()])) // if the destination is reachable from this link...
                     {
 #ifdef _DEBUG_SP
                         cout << " it's reachable.." << endl;
@@ -8017,7 +8033,6 @@ bool Network::shortest_paths_all()
 #endif //_DEBUG_SP
                             odval val = odval(ori->get_id(), (*iter3)->get_id());
                             assert (!exists_route(routenr,val)); // Check that no route exists with same routeid, at least for this OD pair
-                            //assert ( (find_if (routes.begin(),routes.end(), compare <Route> (routenr))) == routes.end() ); // No route with routenr exists
 #ifdef _DEBUG_SP
                             cout << " making route " << endl;
 #endif //_DEBUG_SP
@@ -8025,7 +8040,6 @@ bool Network::shortest_paths_all()
                             bool exists=true;
                             if (rptr != nullptr)
                             {
-                                //not_exists= ( (find_if (routes.begin(),routes.end(), equalmembers <Route> (*rptr))) == routes.end() ); // find if there's a route with the same links
                                 exists = exists_same_route(rptr);
                                 if (!exists)
                                 {
@@ -8054,9 +8068,9 @@ bool Network::shortest_pathtree_from_origin_link(int lid, double start_time)
     if (theParameters->shortest_paths_initialised)
     {
         if (linkinfo != nullptr) {
-            graph->labelCorrecting(lid,start_time, linkinfo);
+            graph->labelCorrecting(link_to_graphlink[lid],start_time, linkinfo);
         } else {
-            graph->labelCorrecting(lid,start_time);
+            graph->labelCorrecting(link_to_graphlink[lid],start_time);
 }
 
 		return true;
@@ -8072,8 +8086,8 @@ vector<Link*> Network::shortest_path_to_node(int rootlink, int dest_node, double
     vector<Link*> rlinks;
     if (shortest_pathtree_from_origin_link(rootlink,start_time))
     {
-        if (graph->reachable(dest_node)) {
-            rlinks = get_path(dest_node);
+        if (graph->reachable(node_to_graphnode[dest_node])) {
+            rlinks = get_path(dest_node); // get_path requires original node id
         } else {
             cout << "shortest_path_to_node : Error: Node " << dest_node << " is not reachable from rootlink "
                  << rootlink << std::endl;
@@ -8166,20 +8180,20 @@ bool Network::find_alternatives_all (int lid, double penalty, Incident* incident
             for (; mi != links_without_alternative.end();mi++)
             {
                 // get shortest path and add.
-                double cost=(graph->linkCost (lid)) + penalty;
+                double cost=(graph->linkCost (link_to_graphlink [lid])) + penalty;
                 int root = mi->first;
                 Link* rootlink=linkmap[root];
                 set <int> dests = mi->second;
-                graph->linkCost(lid, cost);
-                graph->labelCorrecting(root);
+                graph->linkCost(link_to_graphlink[lid], cost);
+                graph->labelCorrecting(link_to_graphlink [root]);
                 for (auto dest : dests)
                 {
-                    if (graph->reachable (dest))
+                    if (graph->reachable (node_to_graphnode[dest]))
                     {
 
-                        vector<Link*> rlinks=get_path(dest);
+                        vector<Link*> rlinks=get_path(dest); // original ID
 #ifdef _DEBUG_SP
-                        cout << " network::shortest_alternatives from link " << root << " to destination " << (*di) << endl;
+                        eout << " network::shortest_alternatives from link " << root << " to destination " << (*di) << endl;
                         graph->printPathToNode((*di));
 #endif //_DEBUG_SP
                         //save the found remainder in the link table
@@ -8198,7 +8212,6 @@ bool Network::find_alternatives_all (int lid, double penalty, Incident* incident
     }
     //Now select all links that are affected:
     cout << " nr of routes affected by incident " << i_routemap.size() << endl;
-    //	cout << " nr of links without alternatives " << affected_links_without_alternative.size() << endl;
     return true;
 }
 

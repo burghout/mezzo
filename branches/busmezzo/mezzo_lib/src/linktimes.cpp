@@ -36,38 +36,6 @@ struct compare
 double LinkTime::cost(const double time)
 {
 
-      /* ORIGINAL
-      if (time > nrperiods*periodlength)  // if it is later than the last period, return the
-  			//return 0.0;
-           return 0.1; // NEVER RETURN 0
-  		else
-  		{
-  			int i=static_cast <int> (time/periodlength);
-  			if (static_cast<int>(times.size()) < i)
-  				//return 0.0;
-              return 0.1; // NEVER RETURN 0
-  			else	
-	  			return times[i];
-		}
-    */
-      // NEW
-/*
-    if (times.size() == 0) // if there are no link times registered
-        return 0.1; // never return 0
-    else
-    {
-      int i; // the period to return   the time of
-      if (time > nrperiods*periodlength)  // if it is later than the last period, return the
-        i=nrperiods;     // last period
-      else
-        i=static_cast <int> (time/periodlength); // return the current period
-      if (static_cast<int>(times.size()) < i) // extra check that i is not out of bounds
-        return 0.1; // NEVER RETURN 0
-      else
-        return times[i];
-    }
-*/    
-	// FASTER..
 	unsigned int i = static_cast <int> (time/periodlength); // return the current period
 	if (times.size()==0) 
         return 0.1; // never return 0
@@ -109,8 +77,8 @@ double LinkTimeInfo::cost (const int i, const double time)  // to be repaired. I
 
 
 {
- 	//vector <LinkTime*>::iterator iter=find_if (times.begin(),times.end(), compare <LinkTime> (i) );
-	map <int,LinkTime*>::iterator iter = times.find (i);
+    int graph_i = graphlink_to_link [i];
+    map <int,LinkTime*>::iterator iter = times.find (graph_i);
  	if (iter!=times.end())
  		return (*iter).second->cost(time);
  	else
