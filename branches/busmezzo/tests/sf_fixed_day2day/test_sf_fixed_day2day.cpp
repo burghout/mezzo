@@ -57,14 +57,12 @@ private Q_SLOTS:
     void testDelete(); //!< tests correct deletion
 
 private:
-    NetworkThread* nt; //!< contains the network thread
-    Network* net;
+    NetworkThread* nt = nullptr; //!< contains the network thread
+    Network* net = nullptr;
 };
 
 void TestSpiessFlorianFixed_day2day::testCreateNetwork()
 {
-    nt = nullptr;
-    net = nullptr;
     chdir(network_path_1.c_str());
 
     QFileInfo check_file(network_name.c_str());

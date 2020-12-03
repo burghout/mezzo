@@ -52,18 +52,17 @@ private Q_SLOTS:
     void testRoutingGraph(); //!< test the routing graph and mapping
     //void testPathProbabilities(); //!< @todo add sanity checks of resulting probabilities of SF network, match this to original paper
     void testRunNetwork(); //!< test running the network
+    void testPassAssignment(); //!< tests path-set-generation + resulting assignment
     void testSaveResults(); //!< tests saving results
     void testDelete(); //!< tests correct deletion
 
 private:
-    NetworkThread* nt; //!< contains the network thread
-    Network* net;
+    NetworkThread* nt = nullptr; //!< contains the network thread
+    Network* net = nullptr;
 };
 
 void TestSpiessFlorianFixed::testCreateNetwork()
 {   
-    nt = nullptr;
-    net = nullptr;
     chdir(network_path_1.c_str());
 
     QFileInfo check_file(network_name.c_str());
@@ -154,10 +153,6 @@ void TestSpiessFlorianFixed::testRoutingGraph()
     QVERIFY (linklist [0]->get_id() == 56);
     QVERIFY (linklist [1]->get_id() == 67);
     QVERIFY (linklist [2]->get_id() == 710);
-
-
-
-
 }
 
 void TestSpiessFlorianFixed::testRunNetwork()
@@ -173,6 +168,13 @@ void TestSpiessFlorianFixed::testRunNetwork()
    // qDebug() << net->get_busstop_from_name("A")->get_last_departures().size();
     // and here you turn it into a test
     QVERIFY2 ( net->get_busstop_from_name("A")->get_last_departures().size() == 2, "Failure, get_last_departures().size() for stop A should be 2");
+}
+
+void TestSpiessFlorianFixed::testPassAssignment()
+{
+    /**
+      @todo Check that all OD stop pairs with demand associated with them (in this unidirectional demand)
+    */
 }
 
 void TestSpiessFlorianFixed::testSaveResults()
