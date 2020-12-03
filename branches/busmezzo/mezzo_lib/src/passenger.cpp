@@ -512,23 +512,22 @@ bool Passenger:: make_boarding_decision (Bustrip* arriving_bus, double time)
 		// use the od based on last stop on record (in case of connections)
 		boarding_prob = OD_stop->calc_boarding_probability(arriving_bus->get_line(), time, this);
 		boarding_decision = theRandomizers[0]->brandom(boarding_prob);
-
-		if (boarding_decision == true)
-		{
-			rejected_lines.clear();
-			//int level_of_rti_upon_decision = curr_stop->get_rti(); //Everything moved to other places by Jens
-			//if (RTI_network_level == 1)
-			//{
-			//	level_of_rti_upon_decision = 3;
-			//}
-			////ODstops* passenger_od = original_origin->get_stop_od_as_origin_per_stop(OD_stop->get_destination()); //Jens changed this 2014-06-24, this enables remembering waiting time not only for the first stop of trip
-			////passenger_od->record_waiting_experience(this, arriving_bus, time, level_of_rti_upon_decision,this->get_memory_projected_RTI(curr_stop,arriving_bus->get_line()),AWT_first_leg_boarding);
-			////OD_stop->record_waiting_experience(this, arriving_bus, time, level_of_rti_upon_decision,this->get_memory_projected_RTI(curr_stop,arriving_bus->get_line()),AWT_first_leg_boarding);
-		}
-		else
-		{
-			rejected_lines.push_back(arriving_bus->get_line()->get_id());
-		}
+	}
+	if (boarding_decision == true)
+	{
+		rejected_lines.clear();
+		//int level_of_rti_upon_decision = curr_stop->get_rti(); //Everything moved to other places by Jens
+		//if (RTI_network_level == 1)
+		//{
+		//	level_of_rti_upon_decision = 3;
+		//}
+		////ODstops* passenger_od = original_origin->get_stop_od_as_origin_per_stop(OD_stop->get_destination()); //Jens changed this 2014-06-24, this enables remembering waiting time not only for the first stop of trip
+		////passenger_od->record_waiting_experience(this, arriving_bus, time, level_of_rti_upon_decision,this->get_memory_projected_RTI(curr_stop,arriving_bus->get_line()),AWT_first_leg_boarding);
+		////OD_stop->record_waiting_experience(this, arriving_bus, time, level_of_rti_upon_decision,this->get_memory_projected_RTI(curr_stop,arriving_bus->get_line()),AWT_first_leg_boarding);
+	}
+	else
+	{
+		rejected_lines.push_back(arriving_bus->get_line()->get_id());
 	}
 
 	OD_stop->record_passenger_boarding_decision(this, arriving_bus, time, boarding_prob, boarding_decision);
@@ -575,13 +574,34 @@ Busstop* Passenger::make_alighting_decision (Bustrip* boarding_bus, double time)
 {
 	if (theParameters->drt && chosen_mode_ == TransitModeType::Flexible)
 	{
+		assert(curr_request_->assigned_veh == nullptr); // have not started assigning vehicles to requests yet, otherwise can use this instead
+		
 		Busstop* final_stop = boarding_bus->stops.back()->first;
 		assert(curr_request_->dstop_id == final_stop->get_id()); //otherwise the traveler has boarded a bus they should not have boarded, final stop of boarded bus should be guarantee match chosen dropoff stop of traveler
+
+		if (final_stop->get_id() != OD_stop->get_destination()->get_id()) // in case the alighting stop is not the passengers final destination
+		{
+			ODstops* left_od_stop;
+			if (final_stop->check_stop_od_as_origin_per_stop(this->get_OD_stop()->get_destination()) == false) 
+			{
+				left_od_stop = new ODstops(final_stop, this->get_OD_stop()->get_destination());
+				final_stop->add_odstops_as_origin(this->get_OD_stop()->get_destination(), left_od_stop);
+				this->get_OD_stop()->get_destination()->add_odstops_as_destination(final_stop, left_od_stop);
+			}
+			else
+			{
+				left_od_stop = final_stop->get_stop_od_as_origin_per_stop(this->get_OD_stop()->get_destination());
+			}
+			left_od_stop->set_staying_utility(::large_positive_utility); // not sure if necessary, but doing to match behavior for fixed buses via left_od_stop->calc_combined_set_utility_for_alighting. A fluffy teddy bear
+		}
 
 		map<Busstop*, pair<double, double> > alighting_MNL; // utility followed by probability per stop
 		alighting_MNL[final_stop].first = ::large_positive_utility;
 		alighting_MNL[final_stop].second = 1.0;
 		OD_stop->record_passenger_alighting_decision(this, boarding_bus, time, final_stop, alighting_MNL);
+
+
+
 		return final_stop;
 	}
 
@@ -613,7 +633,7 @@ Busstop* Passenger::make_alighting_decision (Bustrip* boarding_bus, double time)
 					vector<vector<Busstop*> >::iterator stops_iter = alt_stops.begin() + 2; // pointing to the third place - the first transfer stop
 					if (path_set.size() == 1 && (*stops_iter).size() == 1)
 					{
-						candidate_transfer_stops_u[(*stops_iter).front()] = 10; // in case it is the only option
+						candidate_transfer_stops_u[(*stops_iter).front()] = ::large_positive_utility; // in case it is the only option
 					}
 					for (vector<Busstop*>::iterator first_transfer_stops = (*stops_iter).begin(); first_transfer_stops < (*stops_iter).end(); first_transfer_stops++)
 					{

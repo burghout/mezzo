@@ -462,16 +462,16 @@ public:
 protected:
 	Busstop* origin_stop = nullptr;
 	Busstop* destination_stop = nullptr;
-	double arrival_rate = 0; 
+	double arrival_rate = 0.0; 
 	passengers waiting_passengers; // a list of passengers with this OD that wait at the origin
 	int min_transfers = 0; // the minimum number of trnasfers possible for getting from O to D
 	int nr_pass_completed = 0;
-	double avg_tt = 0;
-	double avg_nr_boardings = 0;
+	double avg_tt = 0.0;
+	double avg_nr_boardings = 0.0;
     
 	vector <Pass_path*> path_set;
-	double boarding_utility = 0;
-	double staying_utility = 0;
+	double boarding_utility = 0.0;
+	double staying_utility = 0.0;
 
 /** @ingroup DRT
 *	@note used purely for setting default values for boarding and staying utilities for recording boarding output in case of flexible servies (and there is no boarding decision since passenger is commited one deciding to used flexible transit)
@@ -590,8 +590,8 @@ public:
 
 protected:
 	int id = -1;
-	double boarding_utility = 0;
-	double staying_utility = 0;
+	double boarding_utility = 0.0;
+	double staying_utility = 0.0;
     map <Busstop*,pair<double,double> > stops_distances; // the mean and SD of the distances to busstops included in the zone
 	map <ODzone*,double> arrival_rates; // hourly arrival rate from this origin zone to the specified destination zone 
 	Random* random = nullptr;
@@ -604,8 +604,8 @@ protected:
     map <Passenger*,list<Pass_alighting_decision_zone> > output_pass_alighting_decision_zone;
 	vector <Passenger*> passengers_during_simulation;
 	int nr_pass_completed = 0;
-	double avg_tt = 0;
-	double avg_nr_boardings = 0;
+	double avg_tt = 0.0;
+	double avg_nr_boardings = 0.0;
     vector <pair<vector<Busstop*>, pair <int,double> > > paths_tt;
 };
 

@@ -117,8 +117,8 @@ void ODstops::reset()
 		pass_recycler.addPassenger(*iter_pass);
 	}
 	*/
-	boarding_utility = 0;
-	staying_utility = 0;
+	boarding_utility = 0.0;
+	staying_utility = 0.0;
 	waiting_passengers.clear();
 	output_pass_boarding_decision.clear();
 	output_pass_alighting_decision.clear();
@@ -275,9 +275,9 @@ double ODstops::calc_boarding_probability (Busline* arriving_bus, double time, P
 	{
 		if (path_set.size() < 2) // if the choice-set includes only a single alternative of the arriving bus - then there is no choice left
 		{
-			boarding_utility = 2.0;
-			staying_utility = -2.0;
-			return 1;
+			boarding_utility = ::large_positive_utility;
+			staying_utility = ::large_negative_utility;
+			return 1.0;
 		}
 		vector<Pass_path*> arriving_paths;
 		for (vector<Pass_path*>::iterator iter_paths = path_set.begin(); iter_paths < path_set.end(); iter_paths++)
@@ -321,9 +321,9 @@ double ODstops::calc_boarding_probability (Busline* arriving_bus, double time, P
 		}
 		if (staying_utility == 0.0) // in case all the staying alternatives are dominated by arriving alternatives
 		{
-			boarding_utility = 2.0;
-			staying_utility = -2.0;
-			return 1;
+			boarding_utility = ::large_positive_utility;
+			staying_utility = ::large_negative_utility;
+			return 1.0;
 		}
 		else
 		{
@@ -342,11 +342,11 @@ double ODstops::calc_boarding_probability (Busline* arriving_bus, double time, P
 	// currently - will not board it
 	else 
 	{	
-		boarding_utility = -2.0;
-		staying_utility = 2.0;
-		return 0;
+		boarding_utility = ::large_negative_utility;
+		staying_utility = ::large_positive_utility;
+		return 0.0;
 	}
-	return 0;
+	return 0.0;
 }
 
 bool ODstops::check_if_path_is_dominated (Pass_path* considered_path, vector<Pass_path*> arriving_paths)
@@ -581,7 +581,7 @@ double ODstops::calc_combined_set_utility_for_alighting (Passenger* pass, Bustri
 	staying_utility = 0.0;
 	if (check_path_set() == false)
 	{
-		return -10000;
+		return ::large_negative_utility;
 	}
 	for (vector <Pass_path*>::iterator paths = path_set.begin(); paths < path_set.end(); paths++)
 	{
@@ -611,7 +611,7 @@ double ODstops::calc_combined_set_utility_for_alighting_zone (Passenger* pass, B
 	{
 		if (path_set.size() == 0)
 		{
-			staying_utility = -10.0;
+			staying_utility = ::large_negative_utility;
 			return staying_utility;
 		}
 	}
