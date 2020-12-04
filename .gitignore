@@ -13,7 +13,6 @@
 *.pdb
 Makefile*.*
 Makefile
-ui_parametersdialog_qt4.h
 *.user
 *.DS_Store
 *.o
@@ -22,15 +21,10 @@ ui_parametersdialog_qt4.h
 *.xcodeproj
 *.db
 *.opendb
-debug_log.txt
-link_log.txt
 *.stash
-target_wrapper.sh
-target_wrapper.bat
-test_integration.moc
-allmoes.dat
-assign.dat
-v_queues.dat
+allmoes.dat*
+assign.dat*
+v_queues.dat*
 o_*.dat
 !ExpectedOutputs/o_*.dat
 ui_*
@@ -48,6 +42,5 @@ tests.pro.user.*
 *.rej
 .vs/
 *.dat.*
-branches/busmezzo/tests/networks/PentaFeeder2/backup/*
-branches/busmezzo/tests/pentafeeder_integrationtest/backup/*
-branches/busmezzo/tests/networks/FWF_testnetwork2/backup/*
+*.bat
+*.sh
