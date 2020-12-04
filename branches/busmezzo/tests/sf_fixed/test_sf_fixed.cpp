@@ -52,8 +52,8 @@ private Q_SLOTS:
     void testRoutingGraph(); //!< test the routing graph and mapping
     //void testPathProbabilities(); //!< @todo add sanity checks of resulting probabilities of SF network, match this to original paper
     void testRunNetwork(); //!< test running the network
-    void testPassAssignment(); //!< tests path-set-generation + resulting assignment
     void testSaveResults(); //!< tests saving results
+    void testPassAssignment(); //!< tests path-set-generation + resulting assignment
     void testDelete(); //!< tests correct deletion
 
 private:
@@ -170,13 +170,6 @@ void TestSpiessFlorianFixed::testRunNetwork()
     QVERIFY2 ( net->get_busstop_from_name("A")->get_last_departures().size() == 2, "Failure, get_last_departures().size() for stop A should be 2");
 }
 
-void TestSpiessFlorianFixed::testPassAssignment()
-{
-    /**
-      @todo Check that all OD stop pairs with demand associated with them (in this unidirectional demand)
-    */
-}
-
 void TestSpiessFlorianFixed::testSaveResults()
 {
     // remove old files:
@@ -210,6 +203,26 @@ void TestSpiessFlorianFixed::testSaveResults()
 		ex_outputfile.close();
 		outputfile.close();
 	}
+}
+
+void TestSpiessFlorianFixed::testPassAssignment()
+{
+    /**
+      Check that passengers can reach their destinations for all OD stop pairs with demand associated with them (in this unidirectional demand network)
+    */
+    vector<ODstops*> odstops_demand = net->get_odstops_demand();
+    QVERIFY2(odstops_demand.size() == 6, "Failure, network should have 6 od stop pairs (with non-zero demand defined in transit_demand.dat) ");
+    for(auto od : odstops_demand)
+    {
+        // verify non-zero demand for this OD
+        QVERIFY2(od->get_arrivalrate() > 0,"Failure, all ODstops in Network::odstops_demand should have positive arrival rate.");
+
+        // verify that at least one passenger per OD made it to their destination
+        if (!od->get_passengers_during_simulation().empty()) // at least one passenger was generated
+        {
+            QVERIFY2(od->get_nr_pass_completed() > 0, "Failure, at least one passenger for ODstop with non-zero demand should have reached final destination."); //OBS needs to be called after saveResults test
+        }
+    }
 }
 
 void TestSpiessFlorianFixed::testDelete()

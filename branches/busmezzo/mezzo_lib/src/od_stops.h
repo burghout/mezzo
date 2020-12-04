@@ -480,6 +480,7 @@ protected:
 public:
 	void set_boarding_utility(double boarding_utility_) { boarding_utility = boarding_utility_; }
 	void set_staying_utility(double staying_utility_) { staying_utility = staying_utility_; }
+	int get_nr_pass_completed() { return nr_pass_completed; } //!< Getter added for testing purposes currently. Disclaimer: nr_pass_completed calculated after call to this->calc_pass_measures.
 /** @} */
 
 protected:
