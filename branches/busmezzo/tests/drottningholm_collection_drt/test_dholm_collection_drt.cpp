@@ -123,8 +123,21 @@ void TestDrottningholmCollection_drt::testRunNetwork()
 void TestDrottningholmCollection_drt::testPassAssignment()
 {
     /**
-      @todo Check that all OD stop pairs with demand associated with them (in this unidirectional demand)
+      @todo Check that passengers can reach their destinations for all OD stop pairs with demand associated with them (in this unidirectional demand network)
     */
+    vector<ODstops*> odstops_demand = net->get_odstops_demand();
+    //QVERIFY2(odstops_demand.size() == 6, "Failure, network should have 6 od stop pairs (with non-zero demand defined in transit_demand.dat) ");
+    for(auto od : odstops_demand)
+    {
+        // verify non-zero demand for this OD
+        QVERIFY2(od->get_arrivalrate() > 0,"Failure, all ODstops in Network::odstops_demand should have positive arrival rate.");
+
+        // verify that at least one passenger per OD made it to their destination
+        if (!od->get_passengers_during_simulation().empty()) // at least one passenger was generated
+        {
+            QVERIFY2(od->get_nr_pass_completed() > 0, "Failure, at least one passenger for ODstop with non-zero demand should have reached final destination."); //OBS needs to be called after saveResults test
+        }
+    }
 }
 
 void TestDrottningholmCollection_drt::testSaveResults()
