@@ -93,13 +93,13 @@ public:
         const map<BusState, set<Bus*> >& fleetState,             //!< state of all vehicles that are potentially available to serve the requests
         const double                     time,                   //!< time for which calc_trip_generation is called
         set<Bustrip*>&                   unmatchedTripSet        //!< set of trips that have been generated to serve requests that have not been assigned to a vehicle yet
-    ) const = 0; //!< returns true if a trip was generated and added to the unmatchedTripSet and false otherwise
+    ) = 0; //!< returns true if a trip was generated and added to the unmatchedTripSet and false otherwise
 
 public:
     //supporting methods for generating trips with whatever TripGenerationStrategy
     map<pair<int, int>, int> countRequestsPerOD(const set<Request*>& requestSet) const; //!< counts the number of requests with a particular od
     bool line_exists_in_tripset(const set<Bustrip*>& tripSet, const Busline* line) const; //!< returns true if a trip exists in trip set for the given bus line
-    vector<Busline*> find_lines_connecting_stops(const vector<Busline*>& lines, int ostop_id, int dstop_id) const; //!< returns buslines among lines given as input that run from a given origin stop to a given destination stop (Note: assumes lines are unidirectional and that bus line stops are ordered, which they currently are in BusMezzo)
+    vector<Busline*> find_lines_connecting_stops(const vector<Busline*>& lines, int ostop_id, int dstop_id); //!< returns buslines among lines given as input that run from a given origin stop to a given destination stop (Note: assumes lines are unidirectional and that bus line stops are ordered, which they currently are in BusMezzo)
 	vector<Visit_stop*> create_schedule(double init_dispatch_time, const vector<pair<Busstop*, double>>& time_between_stops) const; //!< creates a vector of scheduled visits to stops starting from the preliminary start time of the trip and given the scheduled in-vehicle time for the trip
 	Bustrip* create_unassigned_trip(Busline* line, double desired_dispatch_time, const vector<Visit_stop*>& schedule) const; //!< creates a Bustrip for a given line with a desired start time and a scheduled arrival to stops along this line (subject to the availability of a vehicle to serve this trip)
 	
@@ -109,6 +109,9 @@ public:
 	double calc_route_travel_time(const vector<Link*>& routelinks, double time) const; //!< returns the sum of dynamic travel time costs over all links in routelinks
     vector<Link*> find_shortest_path_between_stops(Network* theNetwork, const Busstop* origin_stop, const Busstop* destination_stop, double start_time) const; //!< returns the shortest route between a pair of stops for a given time, returns empty vector if none exists
 	Busline* find_shortest_busline(const vector<Busline*>& lines, double time) const; //!< returns shortest busline in terms of scheduled in-vehicle time among lines
+
+protected:
+    map<int, map<int, vector<Busline*> > > cached_lines_connecting_stops; //!< cached results of TripGenerationStrategy::find_lines_connecting_stops
 };
 
 //! @brief null strategy that always returns false
@@ -116,7 +119,7 @@ class NullTripGeneration : public TripGenerationStrategy
 {
 public:
 	~NullTripGeneration() override = default;
-	bool calc_trip_generation(const set<Request*>& requestSet, const vector<Busline*>& candidateServiceRoutes, const map<BusState, set<Bus*>>& fleetState, double time, set<Bustrip*>& unmatchedTripSet) const override;
+	bool calc_trip_generation(const set<Request*>& requestSet, const vector<Busline*>& candidateServiceRoutes, const map<BusState, set<Bus*>>& fleetState, double time, set<Bustrip*>& unmatchedTripSet) override;
 };
 
 //! @brief prioritizes generating trips for OD stop pair with the highest demand and most direct (in terms of scheduled in-vehicle time) service route
@@ -129,7 +132,7 @@ class NaiveTripGeneration : public TripGenerationStrategy
 {
 public:
 	~NaiveTripGeneration() override = default;
-	bool calc_trip_generation(const set<Request*>& requestSet, const vector<Busline*>& candidateServiceRoutes, const map<BusState, set<Bus*>>& fleetState, double time, set<Bustrip*>& unmatchedTripSet) const override;
+	bool calc_trip_generation(const set<Request*>& requestSet, const vector<Busline*>& candidateServiceRoutes, const map<BusState, set<Bus*>>& fleetState, double time, set<Bustrip*>& unmatchedTripSet) override;
 };
 
 
@@ -145,7 +148,7 @@ class NaiveEmptyVehicleTripGeneration : public TripGenerationStrategy
 public:
 	explicit NaiveEmptyVehicleTripGeneration(Network* theNetwork = nullptr);
 	~NaiveEmptyVehicleTripGeneration() override = default;
-	bool calc_trip_generation(const set<Request*>& requestSet, const vector<Busline*>& candidateServiceRoutes, const map<BusState, set<Bus*>>& fleetState, double time, set<Bustrip*>& unmatchedTripSet) const override;
+	bool calc_trip_generation(const set<Request*>& requestSet, const vector<Busline*>& candidateServiceRoutes, const map<BusState, set<Bus*>>& fleetState, double time, set<Bustrip*>& unmatchedTripSet) override;
 
 private:
 	Network* theNetwork_; //!< currently needs access to the network to find the closest on-call Bus to origin stop of highest OD demand

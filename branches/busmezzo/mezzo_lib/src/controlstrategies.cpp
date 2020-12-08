@@ -111,28 +111,36 @@ bool TripGenerationStrategy::line_exists_in_tripset(const set<Bustrip*>& tripSet
 	return false;
 }
 
-vector<Busline*> TripGenerationStrategy::find_lines_connecting_stops(const vector<Busline*>& lines, const int ostop_id, const int dstop_id) const
+vector<Busline*> TripGenerationStrategy::find_lines_connecting_stops(const vector<Busline*>& lines, int ostop_id, int dstop_id)
 {
 	vector<Busline*> lines_connecting_stops; // lines between stops given as input
 	if (!lines.empty() && (ostop_id != dstop_id) )
 	{
-		for (Busline* line : lines)
+		if (cached_lines_connecting_stops.count(ostop_id) != 0 && cached_lines_connecting_stops[ostop_id].count(dstop_id) != 0)
 		{
-			if (!line->stops.empty())
+			lines_connecting_stops = cached_lines_connecting_stops[ostop_id][dstop_id];
+		}
+		else
+		{
+			for (Busline* line : lines)
 			{
-				vector<Busstop*>::iterator ostop_it; //iterator pointing to origin busstop if it exists for this line
-				ostop_it = find_if(line->stops.begin(), line->stops.end(), compare<Busstop>(ostop_id));
-
-				if (ostop_it != line->stops.end()) //if origin busstop does exist on line see if destination stop is downstream from this stop
+				if (!line->stops.empty())
 				{
-					vector<Busstop*>::iterator dstop_it; //iterator pointing to destination busstop if it exists downstream of origin busstop for this line
-					dstop_it = find_if(ostop_it, line->stops.end(), compare<Busstop>(dstop_id));
+					vector<Busstop*>::iterator ostop_it; //iterator pointing to origin busstop if it exists for this line
+					ostop_it = find_if(line->stops.begin(), line->stops.end(), compare<Busstop>(ostop_id));
 
-					if (dstop_it != line->stops.end()) { //if destination stop exists 
-						lines_connecting_stops.push_back(line); //add line as a possible transit connection between these stops
-}
+					if (ostop_it != line->stops.end()) //if origin busstop does exist on line see if destination stop is downstream from this stop
+					{
+						vector<Busstop*>::iterator dstop_it; //iterator pointing to destination busstop if it exists downstream of origin busstop for this line
+						dstop_it = find_if(ostop_it, line->stops.end(), compare<Busstop>(dstop_id));
+
+						if (dstop_it != line->stops.end()) { //if destination stop exists 
+							lines_connecting_stops.push_back(line); //add line as a possible transit connection between these stops
+						}
+					}
 				}
 			}
+			cached_lines_connecting_stops[ostop_id][dstop_id] = lines_connecting_stops; //cache result
 		}
 	}
 
@@ -260,7 +268,7 @@ Busline* TripGenerationStrategy::find_shortest_busline(const vector<Busline*>& l
 	return shortestline;
 }
 
-bool NullTripGeneration::calc_trip_generation(const set<Request*>& requestSet, const vector<Busline*>& candidateServiceRoutes, const map<BusState, set<Bus*>>& fleetState, const double time, set<Bustrip*>& unmatchedTripSet) const
+bool NullTripGeneration::calc_trip_generation(const set<Request*>& requestSet, const vector<Busline*>& candidateServiceRoutes, const map<BusState, set<Bus*>>& fleetState, const double time, set<Bustrip*>& unmatchedTripSet) 
 {
     Q_UNUSED(requestSet)
     Q_UNUSED(candidateServiceRoutes)
@@ -271,7 +279,7 @@ bool NullTripGeneration::calc_trip_generation(const set<Request*>& requestSet, c
 	return false;
 }
 
-bool NaiveTripGeneration::calc_trip_generation(const set<Request*>& requestSet, const vector<Busline*>& candidateServiceRoutes, const map<BusState, set<Bus*>>& fleetState, const double time, set<Bustrip*>& unmatchedTripSet) const
+bool NaiveTripGeneration::calc_trip_generation(const set<Request*>& requestSet, const vector<Busline*>& candidateServiceRoutes, const map<BusState, set<Bus*>>& fleetState, const double time, set<Bustrip*>& unmatchedTripSet)
 {
     Q_UNUSED(fleetState)
 
@@ -366,7 +374,7 @@ bool NaiveTripGeneration::calc_trip_generation(const set<Request*>& requestSet, 
 
 //Empty vehicle trip generation
 NaiveEmptyVehicleTripGeneration::NaiveEmptyVehicleTripGeneration(Network* theNetwork) : theNetwork_(theNetwork){}
-bool NaiveEmptyVehicleTripGeneration::calc_trip_generation(const set<Request*>& requestSet, const vector<Busline*>& candidateServiceRoutes, const map<BusState, set<Bus*>>& fleetState, const double time, set<Bustrip*>& unmatchedTripSet) const
+bool NaiveEmptyVehicleTripGeneration::calc_trip_generation(const set<Request*>& requestSet, const vector<Busline*>& candidateServiceRoutes, const map<BusState, set<Bus*>>& fleetState, const double time, set<Bustrip*>& unmatchedTripSet)
 {
 	if (!requestSet.empty() && !candidateServiceRoutes.empty()) //Reactive strategy so only when requests exist
     {
