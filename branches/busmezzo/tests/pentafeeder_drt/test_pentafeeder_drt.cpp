@@ -148,18 +148,28 @@ void TestPentaFeeder_drt::testAssignment()
 
     Request* req = pass->createRequest(stopA, stopC, 1, 1.0, 1.0);
     pass->set_curr_request(req);
+
+
+
     emit pass->sendRequest(req, 1.0);
 // Check here the assignment status
     // 1. Check CC connect Internal put debug points and trace
 
     net->step(1.1);
     auto allVehicles = cc->getAllVehicles();
+    qDebug () << " Nr Vehicles " << allVehicles.size();
     auto fleetstate = cc->getFleetState();
     for(auto state : fleetstate)
     {
         if (state.first == BusState::OnCall)
         {
             qDebug() << " On Call: " << state.second.size();
+            for (auto veh:state.second)
+                qDebug() << " veh id " << veh->get_bus_id();
+        }
+        else if (state.first == BusState::DrivingEmpty)
+        {
+            qDebug() << " DrivingEmpty: " << state.second.size();
             for (auto veh:state.second)
                 qDebug() << " veh id " << veh->get_bus_id();
         }

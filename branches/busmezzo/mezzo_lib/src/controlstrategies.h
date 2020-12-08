@@ -35,6 +35,7 @@ class Passenger;
  * Enumerates possible states of a Request:
  *  Null - default uninitialized request
  *  Unmatched - request not matched to any vehicle trip
+ *  Assigned - request is assigned to a vehicle trip, but not yet matched to a vehicle
  *  Matched - request is matched but not picked-up yet
  *  ServedUnfinished - request has been picked-up but not dropped off
  *  ServedFinished - request has been picked-up and dropped off
@@ -46,7 +47,7 @@ class Passenger;
  *       2. Maybe use pointers to Requests rather than copies in Passenger-Controlcenter communication. Need to doublecheck how qt default signal-slots connections work with multiple threads this is however (even if we are only creating one other thread from main)
  *       3. Replace ostop_id and dstop_id with pointers to the actual stops maybe
  */
-enum class RequestState { Null = 0, Unmatched }; // Matched, ServedUnfinished, ServedFinished, Rejected, Cancelled };
+enum class RequestState { Null = 0, Unmatched, Assigned, Matched }; //  ServedUnfinished, ServedFinished, Rejected, Cancelled };
 
 //! @brief structure representing a passenger message to a control center requesting transport between an origin stop and a destination stop with a desired time of departure
 struct Request
@@ -60,7 +61,7 @@ struct Request
     RequestState state = RequestState::Null; //!< current state of the request
     Passenger* pass_owner = nullptr; //!< passenger who sent this request
     Bus* assigned_veh = nullptr; //!< vehicle that has been assigned to this request, nullptr if none has been assigned
-
+    Bustrip* assigned_trip = nullptr; //!< bustrip that has been assigned to this request, nullptr by default, updated when assigned
     Request() = default;
     Request(Passenger* pass, int pid, int oid, int did, int l, double dt, double t);
 

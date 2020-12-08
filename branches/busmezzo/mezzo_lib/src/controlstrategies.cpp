@@ -4,6 +4,8 @@
 #include "network.h"
 #include "MMath.h"
 
+
+// Helper functions
 template<class T>
 struct compare
 {
@@ -17,8 +19,24 @@ struct compare
 	int id;
 };
 
+std::set<Request*> filterRequests (const set<Request*> & oldSet, RequestState state)
+{
+   set <Request*> newSet;
+   std::copy_if(oldSet.begin(), oldSet.end(), std::inserter(newSet, newSet.end()), [state]( Request* value){return value->state == state;});
+   return newSet;
+}
+
+std::set<Request*> filterRequestsByOD (const set<Request*> & oldSet, int o_id, int d_id)
+{
+   set <Request*> newSet;
+   std::copy_if(oldSet.begin(), oldSet.end(), std::inserter(newSet, newSet.end()), [o_id, d_id]( Request* value){return (value->ostop_id == o_id) && (value->dstop_id == d_id);});
+   return newSet;
+}
+
+
+
 // Request
-Request::Request(Passenger* pass, int pid, int oid, int did, int l, double dt, double t) : pass_owner(pass), pass_id(pid), ostop_id(oid), dstop_id(did), load(l), desired_departure_time(dt), time(t)
+Request::Request(Passenger* pass, int pid, int oid, int did, int l, double dt, double t) : pass_id(pid), ostop_id(oid), dstop_id(did), load(l), desired_departure_time(dt), time(t),  pass_owner(pass)
 {
 	qRegisterMetaType<Request>(); //register Request as a metatype for QT signal arguments
 }
@@ -33,7 +51,7 @@ void Request::set_state(RequestState newstate)
 		//total_time_spent_in_state[oldstate] += time - time_state_last_entered[oldstate]; // update cumulative time in each state
 		//time_state_last_entered[newstate] = time; // start timer for newstate
 
-		// emit stateChanged(this, oldstate, state_, time);
+        // emit stateChanged(this, oldstate, state_, time);
 	}
 }
 
@@ -48,6 +66,12 @@ void Request::print_state()
 	case RequestState::Null:
 		cout << "Null";
 		break;
+    case RequestState::Assigned:
+        cout << "Assigned";
+        break;
+    case RequestState::Matched:
+        cout << "Matched";
+        break;
 		//	default:
 		//		DEBUG_MSG_V("Something went very wrong");
 		//		abort();
@@ -90,6 +114,7 @@ map<pair<int, int>, int> TripGenerationStrategy::countRequestsPerOD(const set<Re
 	}
 	return odcounts;
 }
+
 
 bool TripGenerationStrategy::line_exists_in_tripset(const set<Bustrip*>& tripSet, const Busline* line) const
 {
@@ -362,6 +387,7 @@ bool NaiveTripGeneration::calc_trip_generation(const set<Request*>& requestSet, 
 						Bustrip* newtrip = create_unassigned_trip(line, time, schedule); //create a new trip for this line using now as the dispatch time
 						unmatchedTripSet.insert(newtrip);//add this trip to the unmatchedTripSet
                         // WILCO TODO ADD TO REQUEST BOOKKEEPING
+
 						return true;
 					}
 				}
