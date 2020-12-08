@@ -353,6 +353,7 @@ bool NaiveTripGeneration::calc_trip_generation(const set<Request*>& requestSet, 
 						vector<Visit_stop*> schedule = create_schedule(time, line->get_delta_at_stops()); //build the schedule of stop visits for this trip (we visit all stops along the candidate line)
 						Bustrip* newtrip = create_unassigned_trip(line, time, schedule); //create a new trip for this line using now as the dispatch time
 						unmatchedTripSet.insert(newtrip);//add this trip to the unmatchedTripSet
+                        // WILCO TODO ADD TO REQUEST BOOKKEEPING
 						return true;
 					}
 				}

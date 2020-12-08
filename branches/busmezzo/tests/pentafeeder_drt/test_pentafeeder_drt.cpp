@@ -65,6 +65,7 @@ public:
 private Q_SLOTS:
     void testCreateNetwork(); //!< test loading a network
     void testInitNetwork(); //!< test generating passenger path sets & loading a network
+    void testAssignment();//!< test asssignment of passengers
     void testRunNetwork();
     void testSaveResults();
     void testDelete(); //!< tests correct deletion
@@ -127,6 +128,53 @@ void TestPentaFeeder_drt::testInitNetwork()
         total_demand += od->get_arrivalrate();
     }
     QVERIFY2(AproxEqual(total_demand,200.0), "Failure, total demand should be 200 pass/h");
+}
+
+void TestPentaFeeder_drt::testAssignment()
+{
+
+
+    // Create a dummy scenario to get access to all steps
+    auto stopA = net->get_busstop_from_name("A");
+    auto stopC = net->get_busstop_from_name("C");
+    auto stopE = net->get_busstop_from_name("E");
+
+    auto cc = stopA->get_CC();
+
+    ODstops* OD_stop = new ODstops(stopA, stopC);
+    Passenger* pass = new Passenger(99999, 0.0, OD_stop, nullptr);
+    pass->set_chosen_mode(TransitModeType::Flexible); // passenger is a flexible transit user
+    cc->connectPassenger(pass);
+
+    Request* req = pass->createRequest(stopA, stopC, 1, 1.0, 1.0);
+    pass->set_curr_request(req);
+    emit pass->sendRequest(req, 1.0);
+// Check here the assignment status
+    // 1. Check CC connect Internal put debug points and trace
+
+    net->step(1.1);
+    auto allVehicles = cc->getAllVehicles();
+    auto fleetstate = cc->getFleetState();
+    for(auto state : fleetstate)
+    {
+        if (state.first == BusState::OnCall)
+        {
+            qDebug() << " On Call: " << state.second.size();
+            for (auto veh:state.second)
+                qDebug() << " veh id " << veh->get_bus_id();
+        }
+    }
+
+    auto  closestToA = cc->getClosestVehicleToStop(stopA,0.0);
+    qDebug() << "Closest vehicle to stop A " << closestToA.first->get_bus_id()
+             << " traveltime " << closestToA.second;
+    auto  closestToC = cc->getClosestVehicleToStop(stopC,0.0);
+    qDebug() << "Closest vehicle to stop C " << closestToC.first->get_bus_id()
+             << " traveltime " << closestToC.second;
+    auto  closestToE = cc->getClosestVehicleToStop(stopE,0.0);
+    qDebug() << "Closest vehicle to stop E " << closestToE.first->get_bus_id()
+             << " traveltime " << closestToE.second;
+
 }
 
 void TestPentaFeeder_drt::testRunNetwork()
