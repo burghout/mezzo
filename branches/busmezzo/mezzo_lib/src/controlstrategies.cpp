@@ -387,7 +387,12 @@ bool NaiveTripGeneration::calc_trip_generation(const set<Request*>& requestSet, 
 						Bustrip* newtrip = create_unassigned_trip(line, time, schedule); //create a new trip for this line using now as the dispatch time
 						unmatchedTripSet.insert(newtrip);//add this trip to the unmatchedTripSet
                         // WILCO TODO ADD TO REQUEST BOOKKEEPING
-
+                        auto affectedRequests = filterRequestsByOD(requestSet,ostop_id, dstop_id);
+                        for (auto rq:affectedRequests)
+                        {
+                            rq->assigned_trip = newtrip;
+                            rq->set_state(RequestState::Assigned);
+                        }
 						return true;
 					}
 				}
