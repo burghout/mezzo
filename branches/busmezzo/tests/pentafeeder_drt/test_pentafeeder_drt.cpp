@@ -148,10 +148,13 @@ void TestPentaFeeder_drt::testAssignment()
 
     Request* req = pass->createRequest(stopA, stopC, 1, 1.0, 1.0);
     pass->set_curr_request(req);
-
-
-
+    QVERIFY (req->state == RequestState::Null);
+    QVERIFY (req->assigned_trip == nullptr);
     emit pass->sendRequest(req, 1.0);
+    QVERIFY (req->state == RequestState::Assigned);
+    QVERIFY (req->assigned_trip != nullptr);
+
+
 // Check here the assignment status
     // 1. Check CC connect Internal put debug points and trace
 
