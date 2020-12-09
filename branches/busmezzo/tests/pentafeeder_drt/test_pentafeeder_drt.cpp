@@ -135,58 +135,45 @@ void TestPentaFeeder_drt::testAssignment()
 
 
     // Create a dummy scenario to get access to all steps
-    auto stopA = net->get_busstop_from_name("A");
-    auto stopC = net->get_busstop_from_name("C");
-    auto stopE = net->get_busstop_from_name("E");
+//    auto stopA = net->get_busstop_from_name("A");
+//    auto stopC = net->get_busstop_from_name("C");
+//    auto stopE = net->get_busstop_from_name("E");
 
-    auto cc = stopA->get_CC();
+//    auto cc = stopA->get_CC();
 
-    ODstops* OD_stop = new ODstops(stopA, stopC);
-    Passenger* pass = new Passenger(99999, 0.0, OD_stop, nullptr);
-    pass->set_chosen_mode(TransitModeType::Flexible); // passenger is a flexible transit user
-    cc->connectPassenger(pass);
+//    ODstops* OD_stop = new ODstops(stopA, stopC);
+//    Passenger* pass = new Passenger(99999, 0.0, OD_stop, nullptr);
+//    pass->set_chosen_mode(TransitModeType::Flexible); // passenger is a flexible transit user
+//    cc->connectPassenger(pass);
 
-    Request* req = pass->createRequest(stopA, stopC, 1, 1.0, 1.0);
-    pass->set_curr_request(req);
-    QVERIFY (req->state == RequestState::Null);
-    QVERIFY (req->assigned_trip == nullptr);
-    emit pass->sendRequest(req, 1.0);
-    QVERIFY (req->state == RequestState::Assigned);
-    QVERIFY (req->assigned_trip != nullptr);
+//    Request* req = pass->createRequest(stopA, stopC, 1, 1.0, 1.0);
+//    pass->set_curr_request(req);
+//    QVERIFY (req->state == RequestState::Null);
+//    QVERIFY (req->assigned_trip == nullptr);
+//    emit pass->sendRequest(req, 1.0);
+//    QVERIFY (req->state == RequestState::Assigned);
+//    QVERIFY (req->assigned_trip != nullptr);
+//    qDebug() << " request assigned to trip " << req->assigned_trip->get_id();
 
 
-// Check here the assignment status
-    // 1. Check CC connect Internal put debug points and trace
+    //modify runtime
+//    auto original_runtime = net->get_runtime();
+//    int teststep = 1;
+//    net->step(teststep);
 
-    net->step(1.1);
-    auto allVehicles = cc->getAllVehicles();
-    qDebug () << " Nr Vehicles " << allVehicles.size();
-    auto fleetstate = cc->getFleetState();
-    for(auto state : fleetstate)
-    {
-        if (state.first == BusState::OnCall)
-        {
-            qDebug() << " On Call: " << state.second.size();
-            for (auto veh:state.second)
-                qDebug() << " veh id " << veh->get_bus_id();
-        }
-        else if (state.first == BusState::DrivingEmpty)
-        {
-            qDebug() << " DrivingEmpty: " << state.second.size();
-            for (auto veh:state.second)
-                qDebug() << " veh id " << veh->get_bus_id();
-        }
-    }
+//    auto  closestToA = cc->getClosestVehicleToStop(stopA,0.0);
+//    qDebug() << "Closest vehicle to stop A " << closestToA.first->get_bus_id()
+//             << " traveltime " << closestToA.second;
+//    auto  closestToC = cc->getClosestVehicleToStop(stopC,0.0);
+//    qDebug() << "Closest vehicle to stop C " << closestToC.first->get_bus_id()
+//             << " traveltime " << closestToC.second;
+//    auto  closestToE = cc->getClosestVehicleToStop(stopE,0.0);
+//    qDebug() << "Closest vehicle to stop E " << closestToE.first->get_bus_id()
+//             << " traveltime " << closestToE.second;
 
-    auto  closestToA = cc->getClosestVehicleToStop(stopA,0.0);
-    qDebug() << "Closest vehicle to stop A " << closestToA.first->get_bus_id()
-             << " traveltime " << closestToA.second;
-    auto  closestToC = cc->getClosestVehicleToStop(stopC,0.0);
-    qDebug() << "Closest vehicle to stop C " << closestToC.first->get_bus_id()
-             << " traveltime " << closestToC.second;
-    auto  closestToE = cc->getClosestVehicleToStop(stopE,0.0);
-    qDebug() << "Closest vehicle to stop E " << closestToE.first->get_bus_id()
-             << " traveltime " << closestToE.second;
+
+
+//    net->set_runtime(original_runtime);
 
 }
 

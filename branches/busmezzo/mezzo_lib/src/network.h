@@ -343,6 +343,7 @@ public:
     // SET's
     void set_workingdir (const string dir) {workingdir = dir;}
     void set_time_alpha(double val) {time_alpha=val;}
+    void set_runtime(int val) {runtime = val;}
 
     // Public transport
 
