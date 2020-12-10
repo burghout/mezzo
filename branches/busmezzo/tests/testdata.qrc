@@ -120,5 +120,19 @@
         <file>networks/Drottningholm_collection_drt/ExpectedOutputs/o_transitstop_sum.dat</file>
         <file>networks/Drottningholm_collection_drt/ExpectedOutputs/o_trip_total_travel_time.dat</file>
         <file alias="dholm_collect_drt.mezzo">networks/Drottningholm_collection_drt/masterfile.mezzo</file>
+        <file>networks/DRTAlgorithms/ExpectedOutputs/o_trip_total_travel_time.dat</file>
+        <file>networks/DRTAlgorithms/ExpectedOutputs/o_transitstop_sum.dat</file>
+        <file>networks/DRTAlgorithms/ExpectedOutputs/o_transitlog_out.dat</file>
+        <file>networks/DRTAlgorithms/ExpectedOutputs/o_transitline_sum.dat</file>
+        <file>networks/DRTAlgorithms/ExpectedOutputs/o_transit_trajectory.dat</file>
+        <file>networks/DRTAlgorithms/ExpectedOutputs/o_transit_routes.dat</file>
+        <file>networks/DRTAlgorithms/ExpectedOutputs/o_selected_paths.dat</file>
+        <file>networks/DRTAlgorithms/ExpectedOutputs/o_segments_trip_loads.dat</file>
+        <file>networks/DRTAlgorithms/ExpectedOutputs/o_segments_line_loads.dat</file>
+        <file>networks/DRTAlgorithms/ExpectedOutputs/o_passenger_welfare_summary.dat</file>
+        <file>networks/DRTAlgorithms/ExpectedOutputs/o_passenger_trajectory.dat</file>
+        <file>networks/DRTAlgorithms/ExpectedOutputs/o_od_stops_summary.dat</file>
+        <file>networks/DRTAlgorithms/ExpectedOutputs/o_od_stop_summary_without_paths.dat</file>
+        <file>networks/DRTAlgorithms/ExpectedOutputs/o_fwf_summary.dat</file>
     </qresource>
 </RCC>

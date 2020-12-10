@@ -13,6 +13,8 @@ SUBDIRS += \
     pentafeeder_drt \
     fixedwithflexible_walking \
     fixedwithflexible_day2day \
-	fixedwithflexible
+    fixedwithflexible \
+    drt_algorithms
+
 	
 CONFIG += sdk_no_version_check # for mac
