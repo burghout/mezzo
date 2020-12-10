@@ -196,6 +196,11 @@ void BustripGenerator::setTripGenerationStrategy(int type)
 	{
 		generationStrategy_ = new NaiveTripGeneration();
 	} 
+    else if (type == generationStrategyType::Simple)
+        {
+            generationStrategy_ = new SimpleTripGeneration();
+        }
+
 	else
 	{
 		DEBUG_MSG("BustripGenerator::setTripGenerationStrategy() - strategy " << type << " is not recognized! Setting strategy to nullptr. ");

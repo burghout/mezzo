@@ -72,7 +72,7 @@ struct Request
     bool operator < (const Request& rhs) const; //!< default less-than comparison of Requests in the order of smallest departure time, smallest time, smallest load, smallest origin stop id, smallest destination stop id and finally smallest passenger id
 
 };
-Q_DECLARE_METATYPE(Request);
+Q_DECLARE_METATYPE(Request)
 
 //Trip Generation Strategies
 //! @brief Base class for algorithms for generating an unmatched (unassigned to a vehicle) Bustrip via a BustripGenerator
@@ -134,6 +134,25 @@ class NaiveTripGeneration : public TripGenerationStrategy
 public:
 	~NaiveTripGeneration() override = default;
 	bool calc_trip_generation(const set<Request*>& requestSet, const vector<Busline*>& candidateServiceRoutes, const map<BusState, set<Bus*>>& fleetState, double time, set<Bustrip*>& unmatchedTripSet) override;
+};
+
+//! @brief Attempts to improve upon NaiveTripGeneration by taking into account matched requests, add bookkeeping to requests - trips - matched vehicles. Only send vehicles to unmatched requests, take capacity into account.
+/*!
+* Takes into account capacities of vehicles
+* Uses bookkeeping to match passenger requests to trips, and trips to vehicles, explicitly
+* Sort the untreated requests by origin, destination, and value (e.g. number): Map (OriginStop, DestinationStop, Value)
+* Bundle into trips (called Unmatched Trips in Davids algo), and sort trips into cumulative Value (i.e. importance)
+* Treat trips in descending order of Value by sending nearest vehicle to treat trip
+* Add bookkeeping so that requests know of their trips and vice versa, etc.
+* If passengers board another trip than their planned trip (in request), notify & update
+*/
+class SimpleTripGeneration : public TripGenerationStrategy
+{
+public:
+    ~SimpleTripGeneration() override = default;
+    bool calc_trip_generation(const set<Request*>& requestSet, const vector<Busline*>& candidateServiceRoutes, const map<BusState, set<Bus*>>& fleetState, double time, set<Bustrip*>& unmatchedTripSet) override;
+
+
 };
 
 

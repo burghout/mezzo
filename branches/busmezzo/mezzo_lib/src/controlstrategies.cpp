@@ -403,6 +403,110 @@ bool NaiveTripGeneration::calc_trip_generation(const set<Request*>& requestSet, 
 	return false;
 }
 
+bool SimpleTripGeneration::calc_trip_generation(const set<Request*>& requestSet, const vector<Busline*>& candidateServiceRoutes, const map<BusState, set<Bus*>>& fleetState, const double time, set<Bustrip*>& unmatchedTripSet)
+{
+    Q_UNUSED(fleetState)
+    // UPDATE TO ONLY unmatched requests
+    if (!requestSet.empty() && !candidateServiceRoutes.empty())
+    {
+        if (requestSet.size() >= static_cast<std::size_t>(drt_min_occupancy)) //do not attempt to generate trip unless requestSet is greater than the desired occupancy
+        {
+            //DEBUG_MSG(endl << "INFO::NaiveTripGeneration::calc_trip_generation - finding possible passenger carrying trip at time " << time);
+            //find od pair with the highest frequency in requestSet
+            map<pair<int, int>, int> odcounts = countRequestsPerOD(requestSet);
+            typedef pair<pair<int, int>, int> od_count;
+            vector<od_count> sortedODcounts;
+
+            for (auto it = odcounts.begin(); it != odcounts.end(); ++it)
+            {
+                sortedODcounts.push_back(*it);
+            }
+            assert(!sortedODcounts.empty());
+            sort(sortedODcounts.begin(), sortedODcounts.end(),
+                [](const od_count& p1, const od_count& p2)->bool {return p1.second > p2.second; }); //sort with the largest at the front
+
+            if (sortedODcounts.front().second < ::drt_min_occupancy)
+            {
+                DEBUG_MSG("No trip generated! Maximum OD count in request set " << sortedODcounts.front().second << " is smaller than min occupancy " << ::drt_min_occupancy);
+                return false;
+            }
+
+            /*attempt to generate trip for odpair with largest demand,
+            if candidate lines connecting this od stop pair already have an unmatched trip existing for them
+            continue to odpair with second highest demand ... etc.*/
+            for (const od_count& od : sortedODcounts)
+            {
+                Busline* line = nullptr; //line that connects odpair without an unmatched trip for it yet
+                int ostop_id;
+                int dstop_id;
+
+                ostop_id = od.first.first;
+                dstop_id = od.first.second;
+
+                vector<Busline*> lines_between_stops;
+                lines_between_stops = find_lines_connecting_stops(candidateServiceRoutes, ostop_id, dstop_id); //check if any candidate service route connects the OD pair (even for segments of the route)
+
+                if (lines_between_stops.size() > 1) //if there are several possible service routes connecting ostop and dstop sort these by shortest scheduled ivt to prioritize most direct routes
+                {
+                    sort(lines_between_stops.begin(), lines_between_stops.end(), [](const Busline* line1, const Busline* line2)
+                        {
+                            double ivt1 = 0.0;
+                            double ivt2 = 0.0;
+
+                            vector<pair<Busstop*, double> > deltas1 = line1->get_delta_at_stops();
+                            vector<pair<Busstop*, double> > deltas2 = line2->get_delta_at_stops();
+
+                            for_each(deltas1.begin(), deltas1.end(), [&ivt1](const pair<Busstop*, double> delta) { ivt1 += delta.second; }); //scheduled ivt for line1
+                            for_each(deltas2.begin(), deltas2.end(), [&ivt2](const pair<Busstop*, double> delta) { ivt2 += delta.second; }); //scheduled ivt for line2
+
+                            return ivt1 < ivt2;
+                        }
+                    );
+                }
+
+                bool found = false; //true only if one of the candidate lines that connects the od stop pair does not have a trip in the unmatchedTripSet yet
+                for (Busline* candidateLine : lines_between_stops)//if all lines have a trip already planned for them without a vehicle then we have saturated planned trips for this od stop pair
+                {
+                    if (!line_exists_in_tripset(unmatchedTripSet, candidateLine))
+                    {
+                        line = candidateLine;
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (found)
+                {
+                    assert(line);
+                    if (line)
+                    {
+                        //DEBUG_MSG("INFO::NaiveTripGeneration::calc_trip_generation - Trip found! Generating trip for line " << line->get_id());
+
+                        vector<Visit_stop*> schedule = create_schedule(time, line->get_delta_at_stops()); //build the schedule of stop visits for this trip (we visit all stops along the candidate line)
+                        Bustrip* newtrip = create_unassigned_trip(line, time, schedule); //create a new trip for this line using now as the dispatch time
+                        unmatchedTripSet.insert(newtrip);//add this trip to the unmatchedTripSet
+                        // WILCO TODO ADD TO REQUEST BOOKKEEPING
+                        auto affectedRequests = filterRequestsByOD(requestSet,ostop_id, dstop_id);
+                        for (auto rq:affectedRequests)
+                        {
+                            rq->assigned_trip = newtrip;
+                            rq->set_state(RequestState::Assigned);
+                        }
+                        return true;
+                    }
+                }
+            }
+            //DEBUG_MSG("INFO::NaiveTripGeneration::calc_trip_generation - No trip found!");
+        }
+    }
+    return false;
+}
+
+
+
+
+
+
 //Empty vehicle trip generation
 NaiveEmptyVehicleTripGeneration::NaiveEmptyVehicleTripGeneration(Network* theNetwork) : theNetwork_(theNetwork){}
 bool NaiveEmptyVehicleTripGeneration::calc_trip_generation(const set<Request*>& requestSet, const vector<Busline*>& candidateServiceRoutes, const map<BusState, set<Bus*>>& fleetState, const double time, set<Bustrip*>& unmatchedTripSet)

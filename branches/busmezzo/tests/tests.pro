@@ -15,3 +15,4 @@ SUBDIRS += \
     fixedwithflexible_day2day \
 	fixedwithflexible
 	
+CONFIG += sdk_no_version_check # for mac

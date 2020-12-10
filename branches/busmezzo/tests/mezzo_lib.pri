@@ -64,3 +64,5 @@ SOURCES += $$MEZZO_ROOT_RPATH/busline.cpp \
            $$MEZZO_ROOT_RPATH/pass_route.cpp \
            $$MEZZO_ROOT_RPATH/controlcenter.cpp \
 		   $$MEZZO_ROOT_RPATH/controlstrategies.cpp \
+
+CONFIG += sdk_no_version_check # for mac
