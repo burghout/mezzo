@@ -137,10 +137,10 @@ void TestDRTAlgorithms::testAssignment()
 {
 
 
-    // Create a dummy scenario to get access to all steps
+//    // Create a dummy scenario to get access to all steps
 //    auto stopA = net->get_busstop_from_name("A");
 //    auto stopC = net->get_busstop_from_name("C");
-//    auto stopE = net->get_busstop_from_name("E");
+//    //auto stopE = net->get_busstop_from_name("E");
 
 //    auto cc = stopA->get_CC();
 
@@ -192,38 +192,38 @@ void TestDRTAlgorithms::testRunNetwork()
 
 void TestDRTAlgorithms::testSaveResults()
 {
-//    // remove old output files:
-//    for (const QString& filename : output_filenames)
-//    {
-//        qDebug() << "Removing file " + filename + ": " << QFile::remove(filename);
-//    }
+    // remove old output files:
+    for (const QString& filename : output_filenames)
+    {
+        qDebug() << "Removing file " + filename + ": " << QFile::remove(filename);
+    }
 
-//    nt->saveresults();
+    nt->saveresults();
 
 //    //test if output files match the expected output files
-//    for (const QString& o_filename : output_filenames)
-//    {
-//        if (find(skip_output_filenames.begin(), skip_output_filenames.end(), o_filename) != skip_output_filenames.end())
-//            continue;
+    for (const QString& o_filename : output_filenames)
+    {
+        if (find(skip_output_filenames.begin(), skip_output_filenames.end(), o_filename) != skip_output_filenames.end())
+            continue;
 
-//        qDebug() << "Comparing " + o_filename + " with ExpectedOutputs/" + o_filename;
+        qDebug() << "Comparing " + o_filename + " with ExpectedOutputs/" + o_filename;
 
-//        QString ex_o_fullpath = expected_outputs_path + o_filename;
-//        QFile ex_outputfile(ex_o_fullpath);
+        QString ex_o_fullpath = expected_outputs_path + o_filename;
+        QFile ex_outputfile(ex_o_fullpath);
 
-//        QString msg = "Failure, cannot open ExpectedOutputs/" + o_filename;
-//        QVERIFY2(ex_outputfile.open(QIODevice::ReadOnly | QIODevice::Text), qPrintable(msg));
+        QString msg = "Failure, cannot open ExpectedOutputs/" + o_filename;
+        QVERIFY2(ex_outputfile.open(QIODevice::ReadOnly | QIODevice::Text), qPrintable(msg));
 
-//        QFile outputfile(o_filename);
-//        msg = "Failure, cannot open " + o_filename;
-//        QVERIFY2(outputfile.open(QIODevice::ReadOnly | QIODevice::Text), qPrintable(msg));
+        QFile outputfile(o_filename);
+        msg = "Failure, cannot open " + o_filename;
+        QVERIFY2(outputfile.open(QIODevice::ReadOnly | QIODevice::Text), qPrintable(msg));
 
-//        msg = "Failure, " + o_filename + " differs from ExpectedOutputs/" + o_filename;
-//        QVERIFY2(outputfile.readAll() == ex_outputfile.readAll(), qPrintable(msg));
+        msg = "Failure, " + o_filename + " differs from ExpectedOutputs/" + o_filename;
+        QVERIFY2(outputfile.readAll() == ex_outputfile.readAll(), qPrintable(msg));
 
-//        ex_outputfile.close();
-//        outputfile.close();
-//    }
+        ex_outputfile.close();
+        outputfile.close();
+    }
 }
 
 
