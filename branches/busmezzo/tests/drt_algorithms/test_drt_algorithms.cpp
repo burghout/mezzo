@@ -160,8 +160,8 @@ void TestDRTAlgorithms::testAssignment()
 
 
     // Clean up
-    delete req;
-    delete pass;
+//    delete req;
+//    delete pass;
 
     //modify runtime
 //    auto original_runtime = net->get_runtime();
