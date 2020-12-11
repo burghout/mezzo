@@ -9,28 +9,28 @@
 template<class T>
 struct compare
 {
-	compare(int id_) :id(id_) {}
-	bool operator () (T* thing)
+    compare(int id_) :id(id_) {}
+    bool operator () (T* thing)
 
-	{
-		return (thing->get_id() == id);
-	}
+    {
+        return (thing->get_id() == id);
+    }
 
-	int id;
+    int id;
 };
 
 std::set<Request*> filterRequests (const set<Request*> & oldSet, RequestState state)
 {
-   set <Request*> newSet;
-   std::copy_if(oldSet.begin(), oldSet.end(), std::inserter(newSet, newSet.end()), [state]( Request* value){return value->state == state;});
-   return newSet;
+    set <Request*> newSet;
+    std::copy_if(oldSet.begin(), oldSet.end(), std::inserter(newSet, newSet.end()), [state]( Request* value){return value->state == state;});
+    return newSet;
 }
 
 std::set<Request*> filterRequestsByOD (const set<Request*> & oldSet, int o_id, int d_id)
 {
-   set <Request*> newSet;
-   std::copy_if(oldSet.begin(), oldSet.end(), std::inserter(newSet, newSet.end()), [o_id, d_id]( Request* value){return (value->ostop_id == o_id) && (value->dstop_id == d_id);});
-   return newSet;
+    set <Request*> newSet;
+    std::copy_if(oldSet.begin(), oldSet.end(), std::inserter(newSet, newSet.end()), [o_id, d_id]( Request* value){return (value->ostop_id == o_id) && (value->dstop_id == d_id);});
+    return newSet;
 }
 
 
@@ -38,45 +38,45 @@ std::set<Request*> filterRequestsByOD (const set<Request*> & oldSet, int o_id, i
 // Request
 Request::Request(Passenger* pass, int pid, int oid, int did, int l, double dt, double t) : pass_id(pid), ostop_id(oid), dstop_id(did), load(l), desired_departure_time(dt), time(t),  pass_owner(pass)
 {
-	qRegisterMetaType<Request>(); //register Request as a metatype for QT signal arguments
+    qRegisterMetaType<Request>(); //register Request as a metatype for QT signal arguments
 }
 
 void Request::set_state(RequestState newstate)
 {
-	if (state != newstate)
-	{
-		//RequestState oldstate = state;
-		state = newstate;
+    if (state != newstate)
+    {
+        //RequestState oldstate = state;
+        state = newstate;
 
-		//total_time_spent_in_state[oldstate] += time - time_state_last_entered[oldstate]; // update cumulative time in each state
-		//time_state_last_entered[newstate] = time; // start timer for newstate
+        //total_time_spent_in_state[oldstate] += time - time_state_last_entered[oldstate]; // update cumulative time in each state
+        //time_state_last_entered[newstate] = time; // start timer for newstate
 
         // emit stateChanged(this, oldstate, state_, time);
-	}
+    }
 }
 
 void Request::print_state()
 {
-	cout << endl << "Request " << pass_id << " is ";
-	switch (state)
-	{
-	case RequestState::Unmatched:
-		cout << "Unmatched";
-		break;
-	case RequestState::Null:
-		cout << "Null";
-		break;
+    cout << endl << "Request " << pass_id << " is ";
+    switch (state)
+    {
+    case RequestState::Unmatched:
+        cout << "Unmatched";
+        break;
+    case RequestState::Null:
+        cout << "Null";
+        break;
     case RequestState::Assigned:
         cout << "Assigned";
         break;
     case RequestState::Matched:
         cout << "Matched";
         break;
-		//	default:
-		//		DEBUG_MSG_V("Something went very wrong");
-		//		abort();
-	}
-	cout << endl;
+        //	default:
+        //		DEBUG_MSG_V("Something went very wrong");
+        //		abort();
+    }
+    cout << endl;
 }
 
 bool Request::operator==(const Request & rhs) const
@@ -103,109 +103,109 @@ bool Request::operator<(const Request & rhs) const
 //TripGenerationStrategy
 map<pair<int, int>, int> TripGenerationStrategy::countRequestsPerOD(const set<Request*>& requestSet) const
 {
-	map<pair<int, int>, int> odcounts;
+    map<pair<int, int>, int> odcounts;
 
-	for (const Request* req : requestSet)
-	{
-		int oid = req->ostop_id;
-		int did = req->dstop_id;
+    for (const Request* req : requestSet)
+    {
+        int oid = req->ostop_id;
+        int did = req->dstop_id;
 
-		++odcounts[make_pair(oid, did)];
-	}
-	return odcounts;
+        ++odcounts[make_pair(oid, did)];
+    }
+    return odcounts;
 }
 
 
 bool TripGenerationStrategy::line_exists_in_tripset(const set<Bustrip*>& tripSet, const Busline* line) const
 {
-	assert(line);
-	if (line)
-	{
-		int lineid = line->get_id();
-		auto it = find_if(tripSet.begin(), tripSet.end(),
-			[lineid](Bustrip* trip)
-			{
-				return trip->get_line()->get_id() == lineid;
-			}
-		);
+    assert(line);
+    if (line)
+    {
+        int lineid = line->get_id();
+        auto it = find_if(tripSet.begin(), tripSet.end(),
+                          [lineid](Bustrip* trip)
+        {
+                return trip->get_line()->get_id() == lineid;
+    }
+                );
 
-		if (it != tripSet.end()) {
-			return true;
-		}
-	}
-	return false;
+        if (it != tripSet.end()) {
+            return true;
+        }
+    }
+    return false;
 }
 
 vector<Busline*> TripGenerationStrategy::find_lines_connecting_stops(const vector<Busline*>& lines, int ostop_id, int dstop_id)
 {
-	vector<Busline*> lines_connecting_stops; // lines between stops given as input
-	if (!lines.empty() && (ostop_id != dstop_id) )
-	{
-		if (cached_lines_connecting_stops.count(ostop_id) != 0 && cached_lines_connecting_stops[ostop_id].count(dstop_id) != 0)
-		{
-			lines_connecting_stops = cached_lines_connecting_stops[ostop_id][dstop_id];
-		}
-		else
-		{
-			for (Busline* line : lines)
-			{
-				if (!line->stops.empty())
-				{
-					vector<Busstop*>::iterator ostop_it; //iterator pointing to origin busstop if it exists for this line
-					ostop_it = find_if(line->stops.begin(), line->stops.end(), compare<Busstop>(ostop_id));
+    vector<Busline*> lines_connecting_stops; // lines between stops given as input
+    if (!lines.empty() && (ostop_id != dstop_id) )
+    {
+        if (cached_lines_connecting_stops.count(ostop_id) != 0 && cached_lines_connecting_stops[ostop_id].count(dstop_id) != 0)
+        {
+            lines_connecting_stops = cached_lines_connecting_stops[ostop_id][dstop_id];
+        }
+        else
+        {
+            for (Busline* line : lines)
+            {
+                if (!line->stops.empty())
+                {
+                    vector<Busstop*>::iterator ostop_it; //iterator pointing to origin busstop if it exists for this line
+                    ostop_it = find_if(line->stops.begin(), line->stops.end(), compare<Busstop>(ostop_id));
 
-					if (ostop_it != line->stops.end()) //if origin busstop does exist on line see if destination stop is downstream from this stop
-					{
-						vector<Busstop*>::iterator dstop_it; //iterator pointing to destination busstop if it exists downstream of origin busstop for this line
-						dstop_it = find_if(ostop_it, line->stops.end(), compare<Busstop>(dstop_id));
+                    if (ostop_it != line->stops.end()) //if origin busstop does exist on line see if destination stop is downstream from this stop
+                    {
+                        vector<Busstop*>::iterator dstop_it; //iterator pointing to destination busstop if it exists downstream of origin busstop for this line
+                        dstop_it = find_if(ostop_it, line->stops.end(), compare<Busstop>(dstop_id));
 
-						if (dstop_it != line->stops.end()) { //if destination stop exists 
-							lines_connecting_stops.push_back(line); //add line as a possible transit connection between these stops
-						}
-					}
-				}
-			}
-			cached_lines_connecting_stops[ostop_id][dstop_id] = lines_connecting_stops; //cache result
-		}
-	}
+                        if (dstop_it != line->stops.end()) { //if destination stop exists
+                            lines_connecting_stops.push_back(line); //add line as a possible transit connection between these stops
+                        }
+                    }
+                }
+            }
+            cached_lines_connecting_stops[ostop_id][dstop_id] = lines_connecting_stops; //cache result
+        }
+    }
 
-	return lines_connecting_stops;
+    return lines_connecting_stops;
 }
 
 vector<Visit_stop*> TripGenerationStrategy::create_schedule(double init_dispatch_time, const vector<pair<Busstop*, double>>& time_between_stops) const
 {
-	assert(init_dispatch_time >= 0);
-	vector<Visit_stop*> schedule;
-	double arrival_time_at_stop = init_dispatch_time;
+    assert(init_dispatch_time >= 0);
+    vector<Visit_stop*> schedule;
+    double arrival_time_at_stop = init_dispatch_time;
 
-	//add init_dispatch_time to all stop deltas for schedule
-	for (const pair<Busstop*, double>& stop_delta : time_between_stops)
-	{
-		arrival_time_at_stop += stop_delta.second;
-		auto* vs = new Visit_stop((stop_delta.first), arrival_time_at_stop);
-		schedule.push_back(vs);
-	}
+    //add init_dispatch_time to all stop deltas for schedule
+    for (const pair<Busstop*, double>& stop_delta : time_between_stops)
+    {
+        arrival_time_at_stop += stop_delta.second;
+        auto* vs = new Visit_stop((stop_delta.first), arrival_time_at_stop);
+        schedule.push_back(vs);
+    }
 
-	return schedule;
+    return schedule;
 }
 
 Bustrip* TripGenerationStrategy::create_unassigned_trip(Busline* line, double desired_dispatch_time, const vector<Visit_stop*>& desired_schedule) const
 {
-	assert(line);
-	int trip_id;
-	Bustrip* trip;
+    assert(line);
+    int trip_id;
+    Bustrip* trip;
 
-	trip_id = line->generate_new_trip_id(); //get new trip id for this line
-	assert(line->is_unique_tripid(trip_id));
+    trip_id = line->generate_new_trip_id(); //get new trip id for this line
+    assert(line->is_unique_tripid(trip_id));
 
-	trip = new Bustrip(trip_id, desired_dispatch_time, line); //create trip
+    trip = new Bustrip(trip_id, desired_dispatch_time, line); //create trip
 
-															  //initialize trip
-	trip->add_stops(desired_schedule); //add scheduled stop visits to trip
-	trip->convert_stops_vector_to_map(); // TODO(MrLeffler): not sure why this is necessary but is done for other trips so
-	trip->set_last_stop_visited(trip->stops.front()->first);  //sets last stop visited to the origin stop of the trip
-	trip->set_flex_trip(true);
-	return trip;
+    //initialize trip
+    trip->add_stops(desired_schedule); //add scheduled stop visits to trip
+    trip->convert_stops_vector_to_map(); // TODO(MrLeffler): not sure why this is necessary but is done for other trips so
+    trip->set_last_stop_visited(trip->stops.front()->first);  //sets last stop visited to the origin stop of the trip
+    trip->set_flex_trip(true);
+    return trip;
 
 }
 
@@ -221,7 +221,7 @@ set<Bus*> TripGenerationStrategy::get_driving_vehicles(const map<BusState, set<B
         case BusState::DrivingFull:
         case BusState::DrivingPartiallyFull:
             drivingvehicles.insert(vehgroup.second.begin(), vehgroup.second.end());
-			break;
+            break;
         default:
             break;
         }
@@ -240,7 +240,7 @@ set<Bus*> TripGenerationStrategy::get_vehicles_enroute_to_stop(const Busstop* st
             Busstop* next_stop = veh->get_next_stop();
             if (next_stop == stop) {
                 enroute_vehicles.insert(veh);
-}
+            }
         }
     }
     return enroute_vehicles;
@@ -248,13 +248,13 @@ set<Bus*> TripGenerationStrategy::get_vehicles_enroute_to_stop(const Busstop* st
 
 double TripGenerationStrategy::calc_route_travel_time(const vector<Link*>& routelinks, double time) const
 {
-	double expected_travel_time = 0;	
-	for (const Link* link : routelinks)
-	{
-		expected_travel_time += link->get_cost(time);
-	}
+    double expected_travel_time = 0;
+    for (const Link* link : routelinks)
+    {
+        expected_travel_time += link->get_cost(time);
+    }
 
-	return expected_travel_time;
+    return expected_travel_time;
 }
 
 vector<Link*> TripGenerationStrategy::find_shortest_path_between_stops(Network* theNetwork, const Busstop* origin_stop, const Busstop* destination_stop, const double start_time) const
@@ -264,33 +264,33 @@ vector<Link*> TripGenerationStrategy::find_shortest_path_between_stops(Network* 
     assert(theNetwork);
     assert(start_time >= 0);
 
-	vector<Link*> rlinks;
-	if(origin_stop && destination_stop)
-	{ 
+    vector<Link*> rlinks;
+    if(origin_stop && destination_stop)
+    {
         int rootlink_id = origin_stop->get_link_id();
         int dest_node_id = destination_stop->get_dest_node()->get_id(); //!< @todo can change these to look between upstream and downstream junction nodes as well
 
         rlinks = theNetwork->shortest_path_to_node(rootlink_id, dest_node_id, start_time);
-	}
-	return rlinks;
+    }
+    return rlinks;
 }
 
 Busline* TripGenerationStrategy::find_shortest_busline(const vector<Busline*>& lines, double time) const
 {
-	Busline* shortestline = nullptr;
-	double shortest_tt = HUGE_VAL; //shortest travel time
+    Busline* shortestline = nullptr;
+    double shortest_tt = HUGE_VAL; //shortest travel time
 
-	for (Busline* line : lines)
-	{
+    for (Busline* line : lines)
+    {
         double expected_tt = calc_route_travel_time(line->get_busroute()->get_links(), time); //expected travel time of a line
-		if (expected_tt < shortest_tt)
-		{
-			shortest_tt = expected_tt;
-			shortestline = line;
-		}
-	}
+        if (expected_tt < shortest_tt)
+        {
+            shortest_tt = expected_tt;
+            shortestline = line;
+        }
+    }
 
-	return shortestline;
+    return shortestline;
 }
 
 bool NullTripGeneration::calc_trip_generation(const set<Request*>& requestSet, const vector<Busline*>& candidateServiceRoutes, const map<BusState, set<Bus*>>& fleetState, const double time, set<Bustrip*>& unmatchedTripSet) 
@@ -301,109 +301,10 @@ bool NullTripGeneration::calc_trip_generation(const set<Request*>& requestSet, c
     Q_UNUSED(time)
     Q_UNUSED(unmatchedTripSet)
 
-	return false;
+    return false;
 }
 
 bool NaiveTripGeneration::calc_trip_generation(const set<Request*>& requestSet, const vector<Busline*>& candidateServiceRoutes, const map<BusState, set<Bus*>>& fleetState, const double time, set<Bustrip*>& unmatchedTripSet)
-{
-    Q_UNUSED(fleetState)
-    // UPDATE TO ONLY unmatched requests
-	if (!requestSet.empty() && !candidateServiceRoutes.empty())
-	{
-        if (requestSet.size() >= static_cast<std::size_t>(drt_min_occupancy)) //do not attempt to generate trip unless requestSet is greater than the desired occupancy
-		{
-			//DEBUG_MSG(endl << "INFO::NaiveTripGeneration::calc_trip_generation - finding possible passenger carrying trip at time " << time);
-			//find od pair with the highest frequency in requestSet
-			map<pair<int, int>, int> odcounts = countRequestsPerOD(requestSet);
-			typedef pair<pair<int, int>, int> od_count;
-			vector<od_count> sortedODcounts;
-
-			for (auto it = odcounts.begin(); it != odcounts.end(); ++it)
-			{
-				sortedODcounts.push_back(*it);
-			}
-			assert(!sortedODcounts.empty());
-			sort(sortedODcounts.begin(), sortedODcounts.end(),
-				[](const od_count& p1, const od_count& p2)->bool {return p1.second > p2.second; }); //sort with the largest at the front
-
-			if (sortedODcounts.front().second < ::drt_min_occupancy)
-			{
-				DEBUG_MSG("No trip generated! Maximum OD count in request set " << sortedODcounts.front().second << " is smaller than min occupancy " << ::drt_min_occupancy);
-				return false;
-			}
-
-			/*attempt to generate trip for odpair with largest demand,
-			if candidate lines connecting this od stop pair already have an unmatched trip existing for them
-			continue to odpair with second highest demand ... etc.*/
-			for (const od_count& od : sortedODcounts)
-			{
-				Busline* line = nullptr; //line that connects odpair without an unmatched trip for it yet
-				int ostop_id;
-				int dstop_id;
-
-				ostop_id = od.first.first;
-				dstop_id = od.first.second;
-
-				vector<Busline*> lines_between_stops;
-				lines_between_stops = find_lines_connecting_stops(candidateServiceRoutes, ostop_id, dstop_id); //check if any candidate service route connects the OD pair (even for segments of the route)
-                
-                if (lines_between_stops.size() > 1) //if there are several possible service routes connecting ostop and dstop sort these by shortest scheduled ivt to prioritize most direct routes
-                {
-                    sort(lines_between_stops.begin(), lines_between_stops.end(), [](const Busline* line1, const Busline* line2)
-                        {
-                            double ivt1 = 0.0;
-                            double ivt2 = 0.0;
-                        
-                            vector<pair<Busstop*, double> > deltas1 = line1->get_delta_at_stops();
-                            vector<pair<Busstop*, double> > deltas2 = line2->get_delta_at_stops();
-
-                            for_each(deltas1.begin(), deltas1.end(), [&ivt1](const pair<Busstop*, double> delta) { ivt1 += delta.second; }); //scheduled ivt for line1
-                            for_each(deltas2.begin(), deltas2.end(), [&ivt2](const pair<Busstop*, double> delta) { ivt2 += delta.second; }); //scheduled ivt for line2
-
-                            return ivt1 < ivt2;
-                        }
-                    );
-                }
-
-				bool found = false; //true only if one of the candidate lines that connects the od stop pair does not have a trip in the unmatchedTripSet yet
-				for (Busline* candidateLine : lines_between_stops)//if all lines have a trip already planned for them without a vehicle then we have saturated planned trips for this od stop pair
-				{
-					if (!line_exists_in_tripset(unmatchedTripSet, candidateLine))
-					{
-						line = candidateLine;
-						found = true;
-						break;
-					}
-				}
-
-				if (found)
-				{
-					assert(line);
-					if (line)
-					{
-						//DEBUG_MSG("INFO::NaiveTripGeneration::calc_trip_generation - Trip found! Generating trip for line " << line->get_id());
-
-						vector<Visit_stop*> schedule = create_schedule(time, line->get_delta_at_stops()); //build the schedule of stop visits for this trip (we visit all stops along the candidate line)
-						Bustrip* newtrip = create_unassigned_trip(line, time, schedule); //create a new trip for this line using now as the dispatch time
-						unmatchedTripSet.insert(newtrip);//add this trip to the unmatchedTripSet
-                        // WILCO TODO ADD TO REQUEST BOOKKEEPING
-                        auto affectedRequests = filterRequestsByOD(requestSet,ostop_id, dstop_id);
-                        for (auto rq:affectedRequests)
-                        {
-                            rq->assigned_trip = newtrip;
-                            rq->set_state(RequestState::Assigned);
-                        }
-						return true;
-					}
-				}
-			}
-			//DEBUG_MSG("INFO::NaiveTripGeneration::calc_trip_generation - No trip found!");
-		}
-	}
-	return false;
-}
-
-bool SimpleTripGeneration::calc_trip_generation(const set<Request*>& requestSet, const vector<Busline*>& candidateServiceRoutes, const map<BusState, set<Bus*>>& fleetState, const double time, set<Bustrip*>& unmatchedTripSet)
 {
     Q_UNUSED(fleetState)
     // UPDATE TO ONLY unmatched requests
@@ -423,7 +324,7 @@ bool SimpleTripGeneration::calc_trip_generation(const set<Request*>& requestSet,
             }
             assert(!sortedODcounts.empty());
             sort(sortedODcounts.begin(), sortedODcounts.end(),
-                [](const od_count& p1, const od_count& p2)->bool {return p1.second > p2.second; }); //sort with the largest at the front
+                 [](const od_count& p1, const od_count& p2)->bool {return p1.second > p2.second; }); //sort with the largest at the front
 
             if (sortedODcounts.front().second < ::drt_min_occupancy)
             {
@@ -445,22 +346,22 @@ bool SimpleTripGeneration::calc_trip_generation(const set<Request*>& requestSet,
 
                 vector<Busline*> lines_between_stops;
                 lines_between_stops = find_lines_connecting_stops(candidateServiceRoutes, ostop_id, dstop_id); //check if any candidate service route connects the OD pair (even for segments of the route)
-
+                
                 if (lines_between_stops.size() > 1) //if there are several possible service routes connecting ostop and dstop sort these by shortest scheduled ivt to prioritize most direct routes
                 {
                     sort(lines_between_stops.begin(), lines_between_stops.end(), [](const Busline* line1, const Busline* line2)
-                        {
-                            double ivt1 = 0.0;
-                            double ivt2 = 0.0;
+                    {
+                        double ivt1 = 0.0;
+                        double ivt2 = 0.0;
+                        
+                        vector<pair<Busstop*, double> > deltas1 = line1->get_delta_at_stops();
+                        vector<pair<Busstop*, double> > deltas2 = line2->get_delta_at_stops();
 
-                            vector<pair<Busstop*, double> > deltas1 = line1->get_delta_at_stops();
-                            vector<pair<Busstop*, double> > deltas2 = line2->get_delta_at_stops();
+                        for_each(deltas1.begin(), deltas1.end(), [&ivt1](const pair<Busstop*, double> delta) { ivt1 += delta.second; }); //scheduled ivt for line1
+                        for_each(deltas2.begin(), deltas2.end(), [&ivt2](const pair<Busstop*, double> delta) { ivt2 += delta.second; }); //scheduled ivt for line2
 
-                            for_each(deltas1.begin(), deltas1.end(), [&ivt1](const pair<Busstop*, double> delta) { ivt1 += delta.second; }); //scheduled ivt for line1
-                            for_each(deltas2.begin(), deltas2.end(), [&ivt2](const pair<Busstop*, double> delta) { ivt2 += delta.second; }); //scheduled ivt for line2
-
-                            return ivt1 < ivt2;
-                        }
+                        return ivt1 < ivt2;
+                    }
                     );
                 }
 
@@ -502,6 +403,128 @@ bool SimpleTripGeneration::calc_trip_generation(const set<Request*>& requestSet,
     return false;
 }
 
+bool SimpleTripGeneration::calc_trip_generation(const set<Request*>& requestSet, const vector<Busline*>& candidateServiceRoutes,
+                                                const map<BusState, set<Bus*>>& fleetState, const double time, set<Bustrip*>& unmatchedTripSet)
+{
+    // Steps:
+    // 1. get unassigned requests
+    // 2. get trips (i don't care if they are matched or unmatched...) and assign requests to existing trips
+    // 3. create trips for those requests for which I have not found a trip
+    // 4. assign requests to new trips
+    Q_UNUSED(fleetState)
+    // 1. get unassigned requests
+    auto unassignedRequests = filterRequests(requestSet, RequestState::Unmatched);
+    if (!unassignedRequests.empty() && !candidateServiceRoutes.empty())
+    {
+        // 2. get trips (i don't care if they are matched or unmatched...) and assign requests to existing trips
+
+        for (auto tr:unmatchedTripSet)
+        {
+            for (auto rq:unassignedRequests)
+            {
+                auto startstop = tr->stops.front()->first; // if trip starts at same stop
+                if (startstop->get_id() == rq->ostop_id)
+                {
+                    auto downstreamstops = tr->get_downstream_stops();
+                    if (downstreamstops.end() != find_if(downstreamstops.begin(), downstreamstops.end(),
+                                                         [rq](Busstop* st) { return rq->dstop_id == st->get_id();}) )
+                    { // if rq destination stop is in the downstream stops
+                        rq->assigned_trip = tr;
+                        rq->set_state(RequestState::Assigned);
+                        tr->add_request(rq);
+                    }
+                }
+            }
+        }
+
+        map<pair<int, int>, int> odcounts = countRequestsPerOD(requestSet);
+        typedef pair<pair<int, int>, int> od_count;
+        vector<od_count> sortedODcounts;
+
+        for (auto it = odcounts.begin(); it != odcounts.end(); ++it)
+        {
+            sortedODcounts.push_back(*it);
+        }
+        assert(!sortedODcounts.empty());
+        sort(sortedODcounts.begin(), sortedODcounts.end(),
+             [](const od_count& p1, const od_count& p2)->bool {return p1.second > p2.second; }); //sort with the largest at the front
+
+        if (sortedODcounts.front().second < ::drt_min_occupancy)
+        {
+            DEBUG_MSG("No trip generated! Maximum OD count in request set " << sortedODcounts.front().second << " is smaller than min occupancy " << ::drt_min_occupancy);
+            return false;
+        }
+
+        /*attempt to generate trip for odpair with largest demand,
+            if candidate lines connecting this od stop pair already have an unmatched trip existing for them
+            continue to odpair with second highest demand ... etc.*/
+        for (const od_count& od : sortedODcounts)
+        {
+            Busline* line = nullptr; //line that connects odpair without an unmatched trip for it yet
+            int ostop_id;
+            int dstop_id;
+
+            ostop_id = od.first.first;
+            dstop_id = od.first.second;
+
+            vector<Busline*> lines_between_stops;
+            lines_between_stops = find_lines_connecting_stops(candidateServiceRoutes, ostop_id, dstop_id); //check if any candidate service route connects the OD pair (even for segments of the route)
+
+            if (lines_between_stops.size() > 1) //if there are several possible service routes connecting ostop and dstop sort these by shortest scheduled ivt to prioritize most direct routes
+            {
+                sort(lines_between_stops.begin(), lines_between_stops.end(), [](const Busline* line1, const Busline* line2)
+                {
+                    double ivt1 = 0.0;
+                    double ivt2 = 0.0;
+
+                    vector<pair<Busstop*, double> > deltas1 = line1->get_delta_at_stops();
+                    vector<pair<Busstop*, double> > deltas2 = line2->get_delta_at_stops();
+
+                    for_each(deltas1.begin(), deltas1.end(), [&ivt1](const pair<Busstop*, double> delta) { ivt1 += delta.second; }); //scheduled ivt for line1
+                    for_each(deltas2.begin(), deltas2.end(), [&ivt2](const pair<Busstop*, double> delta) { ivt2 += delta.second; }); //scheduled ivt for line2
+
+                    return ivt1 < ivt2;
+                }
+                );
+            }
+
+            bool found = false; //true only if one of the candidate lines that connects the od stop pair does not have a trip in the unmatchedTripSet yet
+            for (Busline* candidateLine : lines_between_stops)//if all lines have a trip already planned for them without a vehicle then we have saturated planned trips for this od stop pair
+            {
+                if (!line_exists_in_tripset(unmatchedTripSet, candidateLine))
+                {
+                    line = candidateLine;
+                    found = true;
+                    break;
+                }
+            }
+
+            if (found)
+            {
+                assert(line);
+                if (line)
+                {
+                    //DEBUG_MSG("INFO::NaiveTripGeneration::calc_trip_generation - Trip found! Generating trip for line " << line->get_id());
+
+                    vector<Visit_stop*> schedule = create_schedule(time, line->get_delta_at_stops()); //build the schedule of stop visits for this trip (we visit all stops along the candidate line)
+                    Bustrip* newtrip = create_unassigned_trip(line, time, schedule); //create a new trip for this line using now as the dispatch time
+                    unmatchedTripSet.insert(newtrip);//add this trip to the unmatchedTripSet
+                    // WILCO TODO ADD TO REQUEST BOOKKEEPING
+                    auto affectedRequests = filterRequestsByOD(requestSet,ostop_id, dstop_id);
+                    for (auto rq:affectedRequests)
+                    {
+                        rq->assigned_trip = newtrip;
+                        rq->set_state(RequestState::Assigned);
+                    }
+                    return true;
+                }
+            }
+        }
+        //DEBUG_MSG("INFO::NaiveTripGeneration::calc_trip_generation - No trip found!");
+    }
+    return false;
+}
+
 
 
 
@@ -511,7 +534,7 @@ bool SimpleTripGeneration::calc_trip_generation(const set<Request*>& requestSet,
 NaiveEmptyVehicleTripGeneration::NaiveEmptyVehicleTripGeneration(Network* theNetwork) : theNetwork_(theNetwork){}
 bool NaiveEmptyVehicleTripGeneration::calc_trip_generation(const set<Request*>& requestSet, const vector<Busline*>& candidateServiceRoutes, const map<BusState, set<Bus*>>& fleetState, const double time, set<Bustrip*>& unmatchedTripSet)
 {
-	if (!requestSet.empty() && !candidateServiceRoutes.empty()) //Reactive strategy so only when requests exist
+    if (!requestSet.empty() && !candidateServiceRoutes.empty()) //Reactive strategy so only when requests exist
     {
         if (fleetState.find(BusState::OnCall) == fleetState.end())  //a drt vehicle must have been initialized
             return false;
@@ -519,30 +542,30 @@ bool NaiveEmptyVehicleTripGeneration::calc_trip_generation(const set<Request*>& 
         if (fleetState.at(BusState::OnCall).empty())  //a drt vehicle must be available
             return false;
 
-		//DEBUG_MSG(endl << "INFO::NaiveEmptyVehicleTripGeneration::calc_trip_generation - finding possible rebalancing trip at time " << time);
-		//find od pair with the highest frequency in requestSet (highest source of shareable demand)
-		map<pair<int, int>, int> odcounts = countRequestsPerOD(requestSet);
-		typedef pair<pair<int, int>, int> od_count;
-		
+        //DEBUG_MSG(endl << "INFO::NaiveEmptyVehicleTripGeneration::calc_trip_generation - finding possible rebalancing trip at time " << time);
+        //find od pair with the highest frequency in requestSet (highest source of shareable demand)
+        map<pair<int, int>, int> odcounts = countRequestsPerOD(requestSet);
+        typedef pair<pair<int, int>, int> od_count;
+
         vector<od_count> sortedODcounts; //long-winded way to sort odcounts map by value rather than key
-		for (auto it = odcounts.begin(); it != odcounts.end(); ++it)
-		{
-			sortedODcounts.push_back(*it);
-		}
-		assert(!sortedODcounts.empty());
-		sort(sortedODcounts.begin(), sortedODcounts.end(),[](const od_count& p1, const od_count& p2)->bool {return p1.second > p2.second; }); //sort with the largest at the front
+        for (auto it = odcounts.begin(); it != odcounts.end(); ++it)
+        {
+            sortedODcounts.push_back(*it);
+        }
+        assert(!sortedODcounts.empty());
+        sort(sortedODcounts.begin(), sortedODcounts.end(),[](const od_count& p1, const od_count& p2)->bool {return p1.second > p2.second; }); //sort with the largest at the front
 
-		if (sortedODcounts.front().second < ::drt_min_occupancy)
-		{
-			DEBUG_MSG("No trip generated! Maximum OD count in request set " << sortedODcounts.front().second << " is smaller than min occupancy " << ::drt_min_occupancy);
-			return false;
-		}
+        if (sortedODcounts.front().second < ::drt_min_occupancy)
+        {
+            DEBUG_MSG("No trip generated! Maximum OD count in request set " << sortedODcounts.front().second << " is smaller than min occupancy " << ::drt_min_occupancy);
+            return false;
+        }
 
-		int largest_demand_stop_id = sortedODcounts.front().first.first; //id of stop with largest source of demand
-		map<int, Busstop*> stopsmap = theNetwork_->get_stopsmap();
-		assert(stopsmap.count(largest_demand_stop_id) != 0); //stop with the highest demand should be known to network
+        int largest_demand_stop_id = sortedODcounts.front().first.first; //id of stop with largest source of demand
+        map<int, Busstop*> stopsmap = theNetwork_->get_stopsmap();
+        assert(stopsmap.count(largest_demand_stop_id) != 0); //stop with the highest demand should be known to network
 
-		Busstop* largest_demand_stop = theNetwork_->get_stopsmap()[largest_demand_stop_id];
+        Busstop* largest_demand_stop = theNetwork_->get_stopsmap()[largest_demand_stop_id];
         assert(largest_demand_stop->is_line_end()); //stop should be at the end of a transit route (otherwise no lines known to the Controlcenter will lead there)
         assert(largest_demand_stop->is_line_begin()); //stop should also be at the beginning of a transit route (otherwise no trip FROM this stop can be generated by a Controlcenter)
 
@@ -551,111 +574,111 @@ bool NaiveEmptyVehicleTripGeneration::calc_trip_generation(const set<Request*>& 
         if(!get_vehicles_enroute_to_stop(largest_demand_stop, drivingveh).empty())
             return false;
 
-		//find OnCall vehicle that is closest to largest source of demand
-		set<Bus*> vehOnCall = fleetState.at(BusState::OnCall); //vehicles that are currently available for empty vehicle rebalancing
-		Bus* closestVehicle = nullptr; //vehicle that is closest to the stop with the largest unserved source of demand
-		vector<Busline*> closestVehicle_serviceRoutes; //all service routes between the closest vehicle and the stop with the highest demand
-		double shortest_tt = HUGE_VAL;
+        //find OnCall vehicle that is closest to largest source of demand
+        set<Bus*> vehOnCall = fleetState.at(BusState::OnCall); //vehicles that are currently available for empty vehicle rebalancing
+        Bus* closestVehicle = nullptr; //vehicle that is closest to the stop with the largest unserved source of demand
+        vector<Busline*> closestVehicle_serviceRoutes; //all service routes between the closest vehicle and the stop with the highest demand
+        double shortest_tt = HUGE_VAL;
 
-		for (Bus* veh : vehOnCall)
-		{
-			Busstop* vehloc = veh->get_last_stop_visited(); //location of on call vehicle
+        for (Bus* veh : vehOnCall)
+        {
+            Busstop* vehloc = veh->get_last_stop_visited(); //location of on call vehicle
             if (vehloc == largest_demand_stop)
             {
                 DEBUG_MSG_V("ERROR::NaiveEmptyVehicleTripgeneration::calc_trip_generation - vehicle location is already at the source of demand when planning empty vehicle trips. Aborting...");
                 //abort();
             }
-			vector<Busline*> vehicle_serviceRoutes; //all service routes between the vehicle location (current stop and opposing stop) and the demand source (current stop and opposing stop)
+            vector<Busline*> vehicle_serviceRoutes; //all service routes between the vehicle location (current stop and opposing stop) and the demand source (current stop and opposing stop)
 
-			//collect a vector of all possible service routes between the vehicles current location and the demand source
-			vehicle_serviceRoutes = find_lines_connecting_stops(candidateServiceRoutes, vehloc->get_id(), largest_demand_stop->get_id());
+            //collect a vector of all possible service routes between the vehicles current location and the demand source
+            vehicle_serviceRoutes = find_lines_connecting_stops(candidateServiceRoutes, vehloc->get_id(), largest_demand_stop->get_id());
 
-			if (!vehicle_serviceRoutes.empty())
-			{
-				vector<Link*> shortestpath = find_shortest_path_between_stops(theNetwork_, vehloc, largest_demand_stop, time); //TODO: if all direct connects are included in the candidateServiceRoutes of the CC then can replace this by comparing the shortest ivts
-				assert(!shortestpath.empty()); //the network should be completely connected
-				double expected_tt = calc_route_travel_time(shortestpath, time);
+            if (!vehicle_serviceRoutes.empty())
+            {
+                vector<Link*> shortestpath = find_shortest_path_between_stops(theNetwork_, vehloc, largest_demand_stop, time); //TODO: if all direct connects are included in the candidateServiceRoutes of the CC then can replace this by comparing the shortest ivts
+                assert(!shortestpath.empty()); //the network should be completely connected
+                double expected_tt = calc_route_travel_time(shortestpath, time);
 
-				if (expected_tt < shortest_tt)
-				{
-					shortest_tt = expected_tt;
-					closestVehicle = veh;
-					closestVehicle_serviceRoutes = vehicle_serviceRoutes;
-				}
-			}
-		}
+                if (expected_tt < shortest_tt)
+                {
+                    shortest_tt = expected_tt;
+                    closestVehicle = veh;
+                    closestVehicle_serviceRoutes = vehicle_serviceRoutes;
+                }
+            }
+        }
 
-		//generate an empty vehicle trip between location of closest OnCall vehicle if found and the stop with the largest demand
-		if (closestVehicle != nullptr)
-		{
-			Busline* line = find_shortest_busline(closestVehicle_serviceRoutes, time);
-			assert(line);
+        //generate an empty vehicle trip between location of closest OnCall vehicle if found and the stop with the largest demand
+        if (closestVehicle != nullptr)
+        {
+            Busline* line = find_shortest_busline(closestVehicle_serviceRoutes, time);
+            assert(line);
 
-			if (!line_exists_in_tripset(unmatchedTripSet, line)) //if this trip does not already exist in unmatchedRebalancing trip set
-			{
-				/*DEBUG_MSG("INFO::NaiveEmptyVehicleTripGeneration::calc_trip_generation " << 
-                    "Empty vehicle trip found! Generating trip for line " << line->get_id() 
-                    << " between last location stop " << closestVehicle->get_last_stop_visited()->get_name() 
+            if (!line_exists_in_tripset(unmatchedTripSet, line)) //if this trip does not already exist in unmatchedRebalancing trip set
+            {
+                /*DEBUG_MSG("INFO::NaiveEmptyVehicleTripGeneration::calc_trip_generation " <<
+                    "Empty vehicle trip found! Generating trip for line " << line->get_id()
+                    << " between last location stop " << closestVehicle->get_last_stop_visited()->get_name()
                     << " of vehicle " << closestVehicle->get_bus_id() << " and source of demand stop " << largest_demand_stop->get_name());*/
 
-				vector<Visit_stop*> schedule = create_schedule(time, line->get_delta_at_stops()); //build the schedule of stop visits for this trip (we visit all stops along the candidate line)
-				Bustrip* newtrip = create_unassigned_trip(line, time, schedule); //create a new trip for this line using now as the dispatch time
+                vector<Visit_stop*> schedule = create_schedule(time, line->get_delta_at_stops()); //build the schedule of stop visits for this trip (we visit all stops along the candidate line)
+                Bustrip* newtrip = create_unassigned_trip(line, time, schedule); //create a new trip for this line using now as the dispatch time
                 unmatchedTripSet.insert(newtrip);//add this trip to the unmatchedTripSet
-				return true;
-			}
-		}
+                return true;
+            }
+        }
 
-		//DEBUG_MSG("INFO::NaiveEmptyVehicleTripGeneration::calc_trip_generation - No rebalancing trip found!");
-	}
-	return false;
+        //DEBUG_MSG("INFO::NaiveEmptyVehicleTripGeneration::calc_trip_generation - No rebalancing trip found!");
+    }
+    return false;
 }
 
 //MatchingStrategy
 void MatchingStrategy::assign_oncall_vehicle_to_trip(Busstop* currentStop, Bus* transitveh, Bustrip* trip, double starttime)
 {
-	assert(transitveh);
-	assert(trip);
-	if (transitveh && trip) //simply to remove warnings, still want things to abort for debug build with asserts above
-	{
-		assert(!transitveh->get_curr_trip()); //this particular bus instance (remember there may be copies of it if there is a trip chain, should not have a trip)
-		assert(transitveh->is_oncall());
+    assert(transitveh);
+    assert(trip);
+    if (transitveh && trip) //simply to remove warnings, still want things to abort for debug build with asserts above
+    {
+        assert(!transitveh->get_curr_trip()); //this particular bus instance (remember there may be copies of it if there is a trip chain, should not have a trip)
+        assert(transitveh->is_oncall());
 
-		//DEBUG_MSG("INFO::MatchingStrategy::assign_oncall_vehicle_to_trip - Assigning vehicle " << transitveh->get_bus_id() << " to trip " << trip->get_id());
+        //DEBUG_MSG("INFO::MatchingStrategy::assign_oncall_vehicle_to_trip - Assigning vehicle " << transitveh->get_bus_id() << " to trip " << trip->get_id());
 
-		trip->set_busv(transitveh); //assign bus to the trip
-		transitveh->set_curr_trip(trip); //assign trip to the bus
-		trip->set_bustype(transitveh->get_bus_type());//set the bus type of the trip (so trip has access to this bustypes dwell time function)
-		trip->get_busv()->set_on_trip(true); //flag the bus as busy for all trips except the first on its chain (TODO might move to dispatcher)
+        trip->set_busv(transitveh); //assign bus to the trip
+        transitveh->set_curr_trip(trip); //assign trip to the bus
+        trip->set_bustype(transitveh->get_bus_type());//set the bus type of the trip (so trip has access to this bustypes dwell time function)
+        trip->get_busv()->set_on_trip(true); //flag the bus as busy for all trips except the first on its chain (TODO might move to dispatcher)
 
-		vector<Start_trip*> driving_roster; //contains all other trips in this trips chain (if there are any) (TODO might move to dispatcher)
-		auto* st = new Start_trip(trip, starttime);
+        vector<Start_trip*> driving_roster; //contains all other trips in this trips chain (if there are any) (TODO might move to dispatcher)
+        auto* st = new Start_trip(trip, starttime);
 
-		driving_roster.push_back(st);
-		trip->add_trips(driving_roster); //save the driving roster at the trip level to conform to interfaces of Busline::execute, Bustrip::activate etc. 
-		//double delay = starttime - trip->get_starttime();
-		trip->set_starttime(starttime); //reset scheduled dispatch from origin to given starttime
+        driving_roster.push_back(st);
+        trip->add_trips(driving_roster); //save the driving roster at the trip level to conform to interfaces of Busline::execute, Bustrip::activate etc.
+        //double delay = starttime - trip->get_starttime();
+        trip->set_starttime(starttime); //reset scheduled dispatch from origin to given starttime
 
-		//DEBUG_MSG("Delay in start time for trip " << trip->get_id() << ": " << delay);
+        //DEBUG_MSG("Delay in start time for trip " << trip->get_id() << ": " << delay);
 
-		if (!currentStop->remove_unassigned_bus(transitveh, starttime)) //bus is no longer unassigned and is removed from vector of unassigned buses at whatever stop the vehicle is waiting on call at
-													  //trip associated with this bus will be added later to expected_bus_arrivals via
-													  //Busline::execute -> Bustrip::activate -> Origin::insert_veh -> Link::enter_veh -> Bustrip::book_stop_visit -> Busstop::book_bus_arrival
-		{
-			DEBUG_MSG_V("Busstop::remove_unassigned_bus failed for bus " << transitveh->get_bus_id() << " and stop " << currentStop->get_id());
-		}
-	}
+        if (!currentStop->remove_unassigned_bus(transitveh, starttime)) //bus is no longer unassigned and is removed from vector of unassigned buses at whatever stop the vehicle is waiting on call at
+            //trip associated with this bus will be added later to expected_bus_arrivals via
+            //Busline::execute -> Bustrip::activate -> Origin::insert_veh -> Link::enter_veh -> Bustrip::book_stop_visit -> Busstop::book_bus_arrival
+        {
+            DEBUG_MSG_V("Busstop::remove_unassigned_bus failed for bus " << transitveh->get_bus_id() << " and stop " << currentStop->get_id());
+        }
+    }
 }
 
 Bustrip* MatchingStrategy::find_earliest_planned_trip(const set<Bustrip*>& trips) const
 {
-	Bustrip* latest = nullptr;
+    Bustrip* latest = nullptr;
     if (!trips.empty())
     {
         auto maxit = max_element(trips.begin(), trips.end(),
-            [](const Bustrip* t1, const Bustrip* t2)->bool
-            {
-                return t1->get_starttime() < t2->get_starttime();
-            }
+                                 [](const Bustrip* t1, const Bustrip* t2)->bool
+        {
+            return t1->get_starttime() < t2->get_starttime();
+        }
         );
         latest = *maxit;
     }
@@ -670,82 +693,82 @@ bool NullMatching::find_tripvehicle_match(Bustrip* unmatchedTrip, map<int, set<B
     Q_UNUSED(time)
     Q_UNUSED(matchedTrips)
 
-	return false;
+    return false;
 }
 
 bool NaiveMatching::find_tripvehicle_match(Bustrip* unmatchedTrip, map<int, set<Bus*>>& veh_per_sroute, const double time, const set<Bustrip*>& matchedTrips)
 {
     Q_UNUSED(matchedTrips)
 
-	//attempt to match unmatchedTrip with first on-call vehicle found at the origin stop of the trip
-	if ((unmatchedTrip != nullptr) && !veh_per_sroute.empty())
-	{
-		//DEBUG_MSG(endl << "INFO::NaiveMatching::find_tripvehicle_match - finding vehicles to match to planned trips at time " << time);
-		Bus* veh = nullptr; //the transit veh that we wish to match to a trip
-		Busline* sroute = unmatchedTrip->get_line(); //get the line/service route of this trip
-		set<Bus*> candidate_buses = veh_per_sroute[sroute->get_id()]; //get all transit vehicles that have this route in their service area
+    //attempt to match unmatchedTrip with first on-call vehicle found at the origin stop of the trip
+    if ((unmatchedTrip != nullptr) && !veh_per_sroute.empty())
+    {
+        //DEBUG_MSG(endl << "INFO::NaiveMatching::find_tripvehicle_match - finding vehicles to match to planned trips at time " << time);
+        Bus* veh = nullptr; //the transit veh that we wish to match to a trip
+        Busline* sroute = unmatchedTrip->get_line(); //get the line/service route of this trip
+        set<Bus*> candidate_buses = veh_per_sroute[sroute->get_id()]; //get all transit vehicles that have this route in their service area
 
-		if (!candidate_buses.empty()) //there is at least one bus serving the route of this trip
-		{
-			Busstop* origin_stop = unmatchedTrip->get_last_stop_visited(); //get the initial stop of the trip
-			vector<pair<Bus*, double>> ua_buses_at_stop = origin_stop->get_unassigned_buses_at_stop();
+        if (!candidate_buses.empty()) //there is at least one bus serving the route of this trip
+        {
+            Busstop* origin_stop = unmatchedTrip->get_last_stop_visited(); //get the initial stop of the trip
+            vector<pair<Bus*, double>> ua_buses_at_stop = origin_stop->get_unassigned_buses_at_stop();
 
-			//check if one of the unassigned transit vehicles at the origin stop is currently serving the route of the trip
-			for (const pair<Bus*, double>& ua_bus : ua_buses_at_stop)
-			{
-				set<Bus*>::iterator c_bus_it;
-				c_bus_it = candidate_buses.find(ua_bus.first); //first bus in list should be the bus that arrived to the stop earliest
+            //check if one of the unassigned transit vehicles at the origin stop is currently serving the route of the trip
+            for (const pair<Bus*, double>& ua_bus : ua_buses_at_stop)
+            {
+                set<Bus*>::iterator c_bus_it;
+                c_bus_it = candidate_buses.find(ua_bus.first); //first bus in list should be the bus that arrived to the stop earliest
 
-				if (c_bus_it != candidate_buses.end()) //a bus match has been found
-				{
-					//DEBUG_MSG("INFO::NaiveMatching::find_tripvehicle_match - Match found!");
-					veh = (*c_bus_it);
-					assign_oncall_vehicle_to_trip(origin_stop, veh, unmatchedTrip, time); //schedule the vehicle to perform the trip at this time
+                if (c_bus_it != candidate_buses.end()) //a bus match has been found
+                {
+                    //DEBUG_MSG("INFO::NaiveMatching::find_tripvehicle_match - Match found!");
+                    veh = (*c_bus_it);
+                    assign_oncall_vehicle_to_trip(origin_stop, veh, unmatchedTrip, time); //schedule the vehicle to perform the trip at this time
 
-					return true;
-				}
-			}
-		}
-		//DEBUG_MSG("INFO::NaiveMatching::find_tripvehicle_match - No trip - vehicle match found!");
-	}
-	return false;
+                    return true;
+                }
+            }
+        }
+        //DEBUG_MSG("INFO::NaiveMatching::find_tripvehicle_match - No trip - vehicle match found!");
+    }
+    return false;
 }
 
 //SchedulingStrategy
 bool SchedulingStrategy::book_trip_dispatch(Eventlist* eventlist, Bustrip* trip)
 {
-	assert(eventlist);
-	assert(trip);
+    assert(eventlist);
+    assert(trip);
 
-	if (eventlist && trip)
-	{
-		Busline* line = trip->get_line();
-		double starttime = trip->get_starttime();
-		assert(line);
+    if (eventlist && trip)
+    {
+        Busline* line = trip->get_line();
+        double starttime = trip->get_starttime();
+        assert(line);
 
-		if(line)
-		{
-			assert(line->is_flex_line());
+        if(line)
+        {
+            assert(line->is_flex_line());
 
-			//DEBUG_MSG("INFO::SchedulingStrategy::book_trip_dispatch is scheduling trip " << trip->get_id() << " with start time " << starttime);
+            //DEBUG_MSG("INFO::SchedulingStrategy::book_trip_dispatch is scheduling trip " << trip->get_id() << " with start time " << starttime);
 
-			line->add_flex_trip(trip); //add trip as a flex trip of line for bookkeeping
-			line->add_trip(trip, starttime); //insert trip into the main trips list of the line
-			eventlist->add_event(starttime, line); //book the activation of this trip in the eventlist
-			trip->set_scheduled_for_dispatch(true);
-			return true;
-		}
-	}
+            line->add_flex_trip(trip); //add trip as a flex trip of line for bookkeeping
+            line->add_trip(trip, starttime); //insert trip into the main trips list of the line
+            eventlist->add_event(starttime, line); //book the activation of this trip in the eventlist
+            trip->set_scheduled_for_dispatch(true);
+            return true;
+        }
+    }
 
-	return false;
+    return false;
 }
 
 void SchedulingStrategy::update_schedule(Bustrip* trip, double new_starttime)
 {
-	assert(trip);
-	assert(new_starttime >= 0);
+    assert(trip);
+    assert(new_starttime >= 0);
 
-	if (trip && new_starttime >= 0)
+    if (trip && new_starttime >= 0)
     {
         if (trip->get_starttime() != new_starttime)
         {
@@ -763,10 +786,10 @@ void SchedulingStrategy::update_schedule(Bustrip* trip, double new_starttime)
             trip->convert_stops_vector_to_map(); //stops map used in some locations, stops vector used in others
         }
     }
-	else
-	{
-		DEBUG_MSG("WARNING::SchedulingStrategy::update_schedule - null trip or invalid starttime arguments");
-	}
+    else
+    {
+        DEBUG_MSG("WARNING::SchedulingStrategy::update_schedule - null trip or invalid starttime arguments");
+    }
 }
 
 bool NullScheduling::schedule_trips(Eventlist* eventlist, set<Bustrip*>& unscheduledTrips, const double time)
@@ -775,17 +798,17 @@ bool NullScheduling::schedule_trips(Eventlist* eventlist, set<Bustrip*>& unsched
     Q_UNUSED(unscheduledTrips)
     Q_UNUSED(time)
 
-	return false;
+    return false;
 }
 
 
 bool NaiveScheduling::schedule_trips(Eventlist* eventlist, set<Bustrip*>& unscheduledTrips, const double time)
 {
-	assert(eventlist);
-	if (!unscheduledTrips.empty())
-	{
-		Bustrip* trip = (*unscheduledTrips.begin()); 
-		Bus* bus = trip->get_busv();
+    assert(eventlist);
+    if (!unscheduledTrips.empty())
+    {
+        Bustrip* trip = (*unscheduledTrips.begin());
+        Bus* bus = trip->get_busv();
         //DEBUG_MSG(endl << "INFO::NaiveScheduling::schedule_trips - scheduling matched trips for dispatch at time " << time);
         //check if the bus associated with this trip is available
         if (bus->get_last_stop_visited()->get_id() == trip->get_last_stop_visited()->get_id()) //vehicle should already be located at the first stop of the trip
@@ -800,11 +823,11 @@ bool NaiveScheduling::schedule_trips(Eventlist* eventlist, set<Bustrip*>& unsche
             return true;
         }
         else
-		{
-			DEBUG_MSG_V("ERROR::NaiveScheduling::schedule_trips - Bus is unavailable for matched trip! Figure out why! Aborting...");
-			abort();
-		}
-	}
+        {
+            DEBUG_MSG_V("ERROR::NaiveScheduling::schedule_trips - Bus is unavailable for matched trip! Figure out why! Aborting...");
+            abort();
+        }
+    }
 
-	return false;
+    return false;
 }

@@ -454,6 +454,8 @@ public:
 	bool is_scheduled_for_dispatch() const { return scheduled_for_dispatch; }
 	void set_flex_trip(bool flex_trip_) { flex_trip = flex_trip_; }
 	bool is_flex_trip() const { return flex_trip; }
+    vector <Request*> get_requests() { return scheduled_requests;}
+    void add_request (Request* req) { scheduled_requests.push_back((req));}
 /**@}*/
 
 protected:
@@ -480,6 +482,7 @@ protected:
 	/** @ingroup DRT
         @{
     */
+    vector <Request*> scheduled_requests;
 	bool scheduled_for_dispatch = false; //!< true if this trip has been scheduled for dispatch (i.e. a busline event has been created with for the starttime of this trip) for its respective line, false otherwise
 	bool flex_trip = false; //!< true if this trip was generated dynamically
     /**@}*/
