@@ -420,6 +420,7 @@ bool SimpleTripGeneration::calc_trip_generation(const set<Request*>& requestSet,
 
         for (auto tr:unmatchedTripSet)
         {
+            unassignedRequests = filterRequests(requestSet, RequestState::Unmatched); // redo the filtering each time
             for (auto rq:unassignedRequests)
             {
                 auto startstop = tr->stops.front()->first; // if trip starts at same stop
@@ -436,40 +437,18 @@ bool SimpleTripGeneration::calc_trip_generation(const set<Request*>& requestSet,
                 }
             }
         }
-
-        map<pair<int, int>, int> odcounts = countRequestsPerOD(requestSet);
-        typedef pair<pair<int, int>, int> od_count;
-        vector<od_count> sortedODcounts;
-
-        for (auto it = odcounts.begin(); it != odcounts.end(); ++it)
+        if (unassignedRequests.empty())
+            return true;
+        // 3. create trips for those requests for which I have not found a trip
+        for (auto rq:unassignedRequests)
         {
-            sortedODcounts.push_back(*it);
-        }
-        assert(!sortedODcounts.empty());
-        sort(sortedODcounts.begin(), sortedODcounts.end(),
-             [](const od_count& p1, const od_count& p2)->bool {return p1.second > p2.second; }); //sort with the largest at the front
-
-        if (sortedODcounts.front().second < ::drt_min_occupancy)
-        {
-            DEBUG_MSG("No trip generated! Maximum OD count in request set " << sortedODcounts.front().second << " is smaller than min occupancy " << ::drt_min_occupancy);
-            return false;
-        }
-
-        /*attempt to generate trip for odpair with largest demand,
-            if candidate lines connecting this od stop pair already have an unmatched trip existing for them
-            continue to odpair with second highest demand ... etc.*/
-        for (const od_count& od : sortedODcounts)
-        {
-            Busline* line = nullptr; //line that connects odpair without an unmatched trip for it yet
-            int ostop_id;
-            int dstop_id;
-
-            ostop_id = od.first.first;
-            dstop_id = od.first.second;
-
-            vector<Busline*> lines_between_stops;
-            lines_between_stops = find_lines_connecting_stops(candidateServiceRoutes, ostop_id, dstop_id); //check if any candidate service route connects the OD pair (even for segments of the route)
-
+            auto  lines_between_stops = find_lines_connecting_stops(candidateServiceRoutes, rq->ostop_id, rq->dstop_id); //check if any candidate service route connects the OD pair (even for segments of the route)
+            if (lines_between_stops.empty())
+            {
+                DEBUG_MSG("No line found to serve request from stop " << rq->ostop_id << " to " << rq->dstop_id);
+                rq->set_state(RequestState::Null);
+            }
+            // Now sort
             if (lines_between_stops.size() > 1) //if there are several possible service routes connecting ostop and dstop sort these by shortest scheduled ivt to prioritize most direct routes
             {
                 sort(lines_between_stops.begin(), lines_between_stops.end(), [](const Busline* line1, const Busline* line2)
@@ -487,42 +466,28 @@ bool SimpleTripGeneration::calc_trip_generation(const set<Request*>& requestSet,
                 }
                 );
             }
+            // take best candidateLine
+            auto candidateLine = lines_between_stops.front();
+            // create new trip
+            vector<Visit_stop*> schedule = create_schedule(time, candidateLine->get_delta_at_stops()); //build the schedule of stop visits for this trip (we visit all stops along the candidate line)
+            Bustrip* newtrip = create_unassigned_trip(candidateLine, time, schedule); //create a new trip for this line using now as the dispatch time
+            unmatchedTripSet.insert(newtrip);//add this trip to the unmatchedTripSet
+         // 4. assign the request
+            rq->assigned_trip = newtrip;
+            newtrip->add_request(rq);
+            rq->set_state(RequestState::Assigned);
+            // TODO: now check all the remaining requests to see if they can be assigned as well.
 
-            bool found = false; //true only if one of the candidate lines that connects the od stop pair does not have a trip in the unmatchedTripSet yet
-            for (Busline* candidateLine : lines_between_stops)//if all lines have a trip already planned for them without a vehicle then we have saturated planned trips for this od stop pair
-            {
-                if (!line_exists_in_tripset(unmatchedTripSet, candidateLine))
-                {
-                    line = candidateLine;
-                    found = true;
-                    break;
-                }
-            }
-
-            if (found)
-            {
-                assert(line);
-                if (line)
-                {
-                    //DEBUG_MSG("INFO::NaiveTripGeneration::calc_trip_generation - Trip found! Generating trip for line " << line->get_id());
-
-                    vector<Visit_stop*> schedule = create_schedule(time, line->get_delta_at_stops()); //build the schedule of stop visits for this trip (we visit all stops along the candidate line)
-                    Bustrip* newtrip = create_unassigned_trip(line, time, schedule); //create a new trip for this line using now as the dispatch time
-                    unmatchedTripSet.insert(newtrip);//add this trip to the unmatchedTripSet
-                    // WILCO TODO ADD TO REQUEST BOOKKEEPING
-                    auto affectedRequests = filterRequestsByOD(requestSet,ostop_id, dstop_id);
-                    for (auto rq:affectedRequests)
-                    {
-                        rq->assigned_trip = newtrip;
-                        rq->set_state(RequestState::Assigned);
-                    }
-                    return true;
-                }
-            }
+//            auto affectedRequests = filterRequestsByOD(unassignedRequests,rq->ostop_id, rq->dstop_id);
+//            for (auto arq:affectedRequests)
+//            {
+//                arq->assigned_trip = newtrip;
+//                newtrip->add_request(arq);
+//                arq->set_state(RequestState::Assigned);
+//            }
         }
-        //DEBUG_MSG("INFO::NaiveTripGeneration::calc_trip_generation - No trip found!");
     }
-    return false;
+    return true;
 }
 
 
