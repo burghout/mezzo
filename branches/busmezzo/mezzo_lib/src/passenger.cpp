@@ -1069,9 +1069,9 @@ Busstop* Passenger::make_dropoff_decision(Busstop* pickup_stop, double time)
     return dropoff_stop;
 }
 
-map<Busstop*,double> Passenger::sample_walking_distances (ODzone* zone)
+map<Busstop *, double, ptr_less<Busstop *> > Passenger::sample_walking_distances(ODzone* zone)
 {
-	map<Busstop*,double> walking_distances;
+    map<Busstop*,double, ptr_less<Busstop*>> walking_distances;
 	map <Busstop*,pair<double,double> > stop_distances = zone->get_stop_distances();
 	for (map <Busstop*,pair<double,double> >::iterator stop_iter = stop_distances.begin(); stop_iter != stop_distances.end(); stop_iter++)
 	{

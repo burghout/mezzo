@@ -453,9 +453,9 @@ public:
 	void set_alpha_RTI (Busstop* stop, Busline* line, double alpha); 
 	void set_alpha_exp (Busstop* stop, Busline* line, double alpha); 
 	void set_ivtt_alpha_exp (Busstop* stop, Busline* line, Busstop* leg, double alpha); 
-	map<pair<Busstop*, Busline*>,double> get_anticipated_waiting_time () {return anticipated_waiting_time;}
-	map<pair<Busstop*, Busline*>,double> get_alpha_RTI () {return alpha_RTI;}
-	map<pair<Busstop*, Busline*>,double> get_alpha_exp () {return alpha_exp;}
+    map<pair<Busstop*, Busline*>,double, pair_less<pair <Busstop*, Busline*> >> get_anticipated_waiting_time () {return anticipated_waiting_time;}
+    map<pair<Busstop*, Busline*>,double, pair_less<pair <Busstop*, Busline*> >> get_alpha_RTI () {return alpha_RTI;}
+    map<pair<Busstop*, Busline*>,double, pair_less<pair <Busstop*, Busline*> >> get_alpha_exp () {return alpha_exp;}
 	map<SLL, double> get_anticipated_ivtt () {return anticipated_ivtt;}
 	map<SLL, double> get_ivtt_alpha_exp () {return ivtt_alpha_exp;}
 
@@ -507,9 +507,9 @@ protected:
 	bool active = false; // indicator for non-initialization call
 
 	// relevant only in case of day2day procedures
-	map<pair<Busstop*, Busline*>,double> anticipated_waiting_time;
-	map<pair<Busstop*, Busline*>,double> alpha_RTI;
-	map<pair<Busstop*, Busline*>,double> alpha_exp;
+    map<pair<Busstop*, Busline*>,double,pair_less<pair <Busstop*, Busline*> >> anticipated_waiting_time;
+    map<pair<Busstop*, Busline*>,double,pair_less<pair <Busstop*, Busline*> >> alpha_RTI;
+    map<pair<Busstop*, Busline*>,double,pair_less<pair <Busstop*, Busline*> >> alpha_exp;
 	map<SLL,double> anticipated_ivtt;
 	map<SLL,double> ivtt_alpha_exp;
 
