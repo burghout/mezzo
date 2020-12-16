@@ -4,10 +4,10 @@
 #include "MMath.h"
 #include <algorithm>
 #ifdef Q_OS_WIN
-    #include <direct.h>
-    #define chdir _chdir
+#include <direct.h>
+#define chdir _chdir
 #else
-    #include <unistd.h>
+#include <unistd.h>
 #endif
 #include <QFileInfo>
 
@@ -38,18 +38,18 @@ const vector<QString> output_filenames =
 
 const vector<QString> skip_output_filenames =
 {
-//    "o_od_stop_summary_without_paths.dat",
-//    "o_od_stops_summary.dat",
-//    "o_passenger_trajectory.dat",
-//    "o_passenger_welfare_summary.dat",
-//    "o_segments_line_loads.dat",
-//    "o_segments_trip_loads.dat",
-//    "o_selected_paths.dat",
-//    "o_transit_trajectory.dat",
-//    "o_transitline_sum.dat",
-//    "o_transitlog_out.dat",
-//    "o_transitstop_sum.dat",
-//    "o_trip_total_travel_time.dat",
+    //    "o_od_stop_summary_without_paths.dat",
+    //    "o_od_stops_summary.dat",
+    //    "o_passenger_trajectory.dat",
+    //    "o_passenger_welfare_summary.dat",
+    //    "o_segments_line_loads.dat",
+    //    "o_segments_trip_loads.dat",
+    //    "o_selected_paths.dat",
+    //    "o_transit_trajectory.dat",
+    //    "o_transitline_sum.dat",
+    //    "o_transitlog_out.dat",
+    //    "o_transitstop_sum.dat",
+    //    "o_trip_total_travel_time.dat",
 }; //!< Files skipped in testSaveResults. @todo Get different results for certain files on identical runs, not sure if differences are significant enough to dig into at the moment
 
 const long int seed = 42;
@@ -138,23 +138,45 @@ void TestDRTAlgorithms::testInitNetwork()
 
 void TestDRTAlgorithms::testDeterministicMap()
 {
-   map <Busstop*,int> bsmap1;
-   map <Busstop*,int,ptr_less<Busstop*> > bsmap2;
-   for (int i = 0; i < 100; ++i)
-   {
+    // throwaway test to test the ordering with and without a specialized less<T>
+    map <Busstop*,int> bsmap1;
+    map <Busstop*,int,ptr_less<Busstop*> > bsmap2;
+    for (int i = 0; i < 100; ++i)
+    {
         auto stop = new Busstop(i,"",0,0.0,10.0,1,1,1,0,1);
         bsmap1 [stop] = i;
         bsmap2 [stop] = i;
-   }
+    }
 
     auto it1 = bsmap1.begin();
     auto it2 = bsmap2.begin();
-   for (it1, it2; (it1 != bsmap1.end()) && (it2!=bsmap2.end()); ++it1, ++it2)
-   {
-       auto stopid_ordered = (*it1).first->get_id();
-       auto stopid_unordered = (*it2).first->get_id();
-       QVERIFY ( stopid_ordered == stopid_unordered);
-   }
+    for (it1, it2; (it1 != bsmap1.end()) && (it2!=bsmap2.end()); ++it1, ++it2)
+    {
+        auto stopid_ordered = (*it1).first->get_id();
+        auto stopid_unordered = (*it2).first->get_id();
+        QVERIFY ( stopid_ordered == stopid_unordered);
+    }
+
+    // now test for structures with pair <U*,V*> as key
+    map <pair <Busstop*, Busline*>, int> crazymap1;
+    map <pair <Busstop*, Busline*>, int, pair_less<pair <Busstop*, Busline*> > > crazymap2;
+    Busline* bl = new Busline();
+    for (int i = 0; i < 100; ++i)
+    {
+        auto stop = new Busstop(i,"",0,0.0,10.0,1,1,1,0,1);
+        pair <Busstop*, Busline*> val (stop,bl);
+        crazymap1 [val] = i;
+        crazymap2 [val] = i;
+    }
+    auto it3 = crazymap1.begin();
+    auto it4 = crazymap2.begin();
+    for (it3, it4; (it3 != crazymap1.end()) && (it4!=crazymap2.end()); ++it3, ++it4)
+    {
+        auto stopid_ordered = (*it3).first.first->get_id();
+        auto stopid_unordered = (*it4).first.first->get_id();
+        QVERIFY ( stopid_ordered == stopid_unordered);
+    }
+
 }
 
 
@@ -171,40 +193,40 @@ void TestDRTAlgorithms::testAssignment()
 
     ODstops* OD_stop = new ODstops(stopA, stopC);
     Passenger* pass = new Passenger(99999, 0.0, OD_stop, nullptr);
-//    pass->set_chosen_mode(TransitModeType::Flexible); // passenger is a flexible transit user
-//    cc->connectPassenger(pass);
+    //    pass->set_chosen_mode(TransitModeType::Flexible); // passenger is a flexible transit user
+    //    cc->connectPassenger(pass);
 
-//    Request* req = pass->createRequest(stopA, stopC, 1, 1.0, 1.0);
-//    pass->set_curr_request(req);
-//    QVERIFY (req->state == RequestState::Null);
-//    QVERIFY (req->assigned_trip == nullptr);
-//    emit pass->sendRequest(req, 1.0);
-//    QVERIFY (req->state == RequestState::Assigned);
-//    QVERIFY (req->assigned_trip != nullptr);
-//    qDebug() << " request assigned to trip " << req->assigned_trip->get_id();
+    //    Request* req = pass->createRequest(stopA, stopC, 1, 1.0, 1.0);
+    //    pass->set_curr_request(req);
+    //    QVERIFY (req->state == RequestState::Null);
+    //    QVERIFY (req->assigned_trip == nullptr);
+    //    emit pass->sendRequest(req, 1.0);
+    //    QVERIFY (req->state == RequestState::Assigned);
+    //    QVERIFY (req->assigned_trip != nullptr);
+    //    qDebug() << " request assigned to trip " << req->assigned_trip->get_id();
 
-//    cc->removeRequest(pass->get_id());
+    //    cc->removeRequest(pass->get_id());
     // Clean up
-//    delete pass;
+    //    delete pass;
 
     //modify runtime
-//    auto original_runtime = net->get_runtime();
-//    int teststep = 1;
-//    net->step(teststep);
+    //    auto original_runtime = net->get_runtime();
+    //    int teststep = 1;
+    //    net->step(teststep);
 
-//    auto  closestToA = cc->getClosestVehicleToStop(stopA,0.0);
-//    qDebug() << "Closest vehicle to stop A " << closestToA.first->get_bus_id()
-//             << " traveltime " << closestToA.second;
-//    auto  closestToC = cc->getClosestVehicleToStop(stopC,0.0);
-//    qDebug() << "Closest vehicle to stop C " << closestToC.first->get_bus_id()
-//             << " traveltime " << closestToC.second;
-//    auto  closestToE = cc->getClosestVehicleToStop(stopE,0.0);
-//    qDebug() << "Closest vehicle to stop E " << closestToE.first->get_bus_id()
-//             << " traveltime " << closestToE.second;
+    //    auto  closestToA = cc->getClosestVehicleToStop(stopA,0.0);
+    //    qDebug() << "Closest vehicle to stop A " << closestToA.first->get_bus_id()
+    //             << " traveltime " << closestToA.second;
+    //    auto  closestToC = cc->getClosestVehicleToStop(stopC,0.0);
+    //    qDebug() << "Closest vehicle to stop C " << closestToC.first->get_bus_id()
+    //             << " traveltime " << closestToC.second;
+    //    auto  closestToE = cc->getClosestVehicleToStop(stopE,0.0);
+    //    qDebug() << "Closest vehicle to stop E " << closestToE.first->get_bus_id()
+    //             << " traveltime " << closestToE.second;
 
 
 
-//    net->set_runtime(original_runtime);
+    //    net->set_runtime(original_runtime);
 
 }
 
@@ -228,7 +250,7 @@ void TestDRTAlgorithms::testSaveResults()
 
     nt->saveresults();
 
-   //test if output files match the expected output files
+    //test if output files match the expected output files
     for (const QString& o_filename : output_filenames)
     {
         if (find(skip_output_filenames.begin(), skip_output_filenames.end(), o_filename) != skip_output_filenames.end())
