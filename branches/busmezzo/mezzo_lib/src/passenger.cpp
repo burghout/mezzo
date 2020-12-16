@@ -1238,12 +1238,12 @@ Busstop* Passenger::make_alighting_decision_zone (Bustrip* boarding_bus, double 
 		if (iter == transfer_stop_position)
 		{
 			// constructing a structure for output
-			map<Busstop*,pair<double,double> > alighting_MNL; // utility followed by probability per stop
-			for (map <Busstop*, double>::iterator iter_u = candidate_transfer_stops_u.begin(); iter_u != candidate_transfer_stops_u.end(); iter_u++)
+            map<Busstop*,pair<double,double>,ptr_less<Busstop*> > alighting_MNL; // utility followed by probability per stop
+            for (auto iter_u = candidate_transfer_stops_u.begin(); iter_u != candidate_transfer_stops_u.end(); iter_u++)
 			{
 				alighting_MNL[(*iter_u).first].first = (*iter_u).second;
 			}
-			for (map <Busstop*, double>::iterator iter_p = candidate_transfer_stops_p.begin(); iter_p != candidate_transfer_stops_p.end(); iter_p++)
+            for (auto iter_p = candidate_transfer_stops_p.begin(); iter_p != candidate_transfer_stops_p.end(); iter_p++)
 			{
 				alighting_MNL[(*iter_p).first].second = (*iter_p).second;
 			}
