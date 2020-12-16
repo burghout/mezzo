@@ -1018,7 +1018,7 @@ bool ODzone::execute (Eventlist* eventlist, double curr_time)
 			pass->add_to_selected_path_stop(stop_time);
 			pass->add_to_selected_path_stop(stop_time); // twice - to maintain the same path structure
 			passengers_during_simulation.push_back(pass);
-			map <Busstop*,pair<double,double> > d_stops = (*dzones_iter).first->get_stop_distances();
+            auto d_stops = (*dzones_iter).first->get_stop_distances();
 			pass->set_ODstop(origin_stop->get_stop_od_as_origin_per_stop(d_stops.begin()->first)); // set the origin stop as pass's origin and an arbitary destination stop
 			pass->execute(eventlist, curr_time + pass->get_origin_walking_distance(origin_stop) / random->nrandom (theParameters->average_walking_speed, theParameters->average_walking_speed/4));
 			pass->get_OD_stop()->get_waiting_passengers().push_back(pass);

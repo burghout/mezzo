@@ -570,7 +570,7 @@ public:
 	~ODzone ();
 	int get_id () {return id;}
 	void reset (); 
-    map <Busstop*,pair<double,double> > get_stop_distances() {return stops_distances;}
+    map <Busstop*,pair<double,double> , ptr_less<Busstop*> > get_stop_distances() {return stops_distances;}
 	void set_boarding_u (double boarding_utility_) {boarding_utility = boarding_utility_;}
 	void set_staying_u (double staying_utility_) {staying_utility = staying_utility_;}
 	
@@ -593,7 +593,7 @@ protected:
 	int id = -1;
 	double boarding_utility = 0.0;
 	double staying_utility = 0.0;
-    map <Busstop*,pair<double,double> > stops_distances; // the mean and SD of the distances to busstops included in the zone
+    map <Busstop*,pair<double,double>, ptr_less<Busstop*> > stops_distances; // the mean and SD of the distances to busstops included in the zone
 	map <ODzone*,double> arrival_rates; // hourly arrival rate from this origin zone to the specified destination zone 
 	Random* random = nullptr;
 	Eventlist* eventlist = nullptr; //!< to book passenger generation events

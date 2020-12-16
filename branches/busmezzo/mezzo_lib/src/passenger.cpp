@@ -1072,8 +1072,8 @@ Busstop* Passenger::make_dropoff_decision(Busstop* pickup_stop, double time)
 map<Busstop *, double, ptr_less<Busstop *> > Passenger::sample_walking_distances(ODzone* zone)
 {
     map<Busstop*,double, ptr_less<Busstop*>> walking_distances;
-	map <Busstop*,pair<double,double> > stop_distances = zone->get_stop_distances();
-	for (map <Busstop*,pair<double,double> >::iterator stop_iter = stop_distances.begin(); stop_iter != stop_distances.end(); stop_iter++)
+    map <Busstop*,pair<double,double> , ptr_less<Busstop*> > stop_distances = zone->get_stop_distances();
+    for (map <Busstop*,pair<double,double>, ptr_less<Busstop*> >::iterator stop_iter = stop_distances.begin(); stop_iter != stop_distances.end(); stop_iter++)
 	{
 			walking_distances[(*stop_iter).first] = theRandomizers[0]->nrandom((*stop_iter).second.first, (*stop_iter).second.second);
 	}
@@ -1089,8 +1089,8 @@ double Passenger::calc_boarding_probability_zone (Busline* arriving_bus, Busstop
 	vector<Busline*> first_leg_lines;
 	bool in_alt = false; // indicates if the current arriving bus is included 
 	// checks if the arriving bus is included as an option in a path set of at least ONE of relevant OD pair 
-	map <Busstop*,pair<double,double> > d_stops = d_zone->get_stop_distances();
-	for (map <Busstop*,pair<double,double> >::iterator iter_d_stops = d_stops.begin(); iter_d_stops != d_stops.end(); iter_d_stops++)
+    auto d_stops = d_zone->get_stop_distances();
+    for (auto iter_d_stops = d_stops.begin(); iter_d_stops != d_stops.end(); iter_d_stops++)
 	{
 		vector <Pass_path*> path_set = o_stop->get_stop_od_as_origin_per_stop((*iter_d_stops).first)->get_path_set();
 		for (vector <Pass_path*>::iterator path = path_set.begin(); path < path_set.end(); path ++)
@@ -1186,8 +1186,8 @@ Busstop* Passenger::make_alighting_decision_zone (Bustrip* boarding_bus, double 
 	// assuming that a pass. boards only paths from his path set
 	map <Busstop*, double> candidate_transfer_stops_u; // the double value is the utility associated with the respective stop
 	map <Busstop*, double> candidate_transfer_stops_p; // the double value is the probability associated with the respective stop
-	map <Busstop*,pair<double,double> > d_stops = d_zone->get_stop_distances();
-	for (map <Busstop*,pair<double,double> >::iterator iter_d_stops = d_stops.begin(); iter_d_stops != d_stops.end(); iter_d_stops++)
+    auto d_stops = d_zone->get_stop_distances();
+    for (auto iter_d_stops = d_stops.begin(); iter_d_stops != d_stops.end(); iter_d_stops++)
 	{
 		vector<Pass_path*> path_set = OD_stop->get_origin()->get_stop_od_as_origin_per_stop((*iter_d_stops).first)->get_path_set();
 		for (vector <Pass_path*>::iterator path_iter = path_set.begin(); path_iter < path_set.end(); path_iter++)
@@ -1267,8 +1267,8 @@ Busstop* Passenger::make_connection_decision_zone (double time)
 			u_walk_directly = theParameters->walking_time_coefficient * destination_walking_distances[OD_stop->get_origin()] / theRandomizers[0]->nrandom(theParameters->average_walking_speed, theParameters->average_walking_speed/4);
 		}
 	}
-	map <Busstop*,pair<double,double> > distances = d_zone->get_stop_distances();
-	for (map<Busstop*,pair<double,double> >::iterator iter_d_stops = distances.begin(); iter_d_stops != distances.end(); iter_d_stops++)
+    auto distances = d_zone->get_stop_distances();
+    for (auto iter_d_stops = distances.begin(); iter_d_stops != distances.end(); iter_d_stops++)
 	{	
 		vector<Pass_path*> path_set = OD_stop->get_origin()->get_stop_od_as_origin_per_stop((*iter_d_stops).first)->get_path_set();
 		for (vector <Pass_path*>::iterator path_iter = path_set.begin(); path_iter < path_set.end(); path_iter++)
