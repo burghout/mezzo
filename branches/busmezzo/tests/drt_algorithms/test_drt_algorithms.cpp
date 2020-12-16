@@ -43,13 +43,13 @@ const vector<QString> skip_output_filenames =
 //    "o_passenger_trajectory.dat",
 //    "o_passenger_welfare_summary.dat",
 //    "o_segments_line_loads.dat",
-//    "o_segments_trip_loads.dat",
-//    "o_selected_paths.dat",
-//    "o_transit_trajectory.dat",
-//    "o_transitline_sum.dat",
-//    "o_transitlog_out.dat",
-//    "o_transitstop_sum.dat",
-//    "o_trip_total_travel_time.dat",
+    "o_segments_trip_loads.dat",
+    "o_selected_paths.dat",
+    "o_transit_trajectory.dat",
+    "o_transitline_sum.dat",
+    "o_transitlog_out.dat",
+    "o_transitstop_sum.dat",
+    "o_trip_total_travel_time.dat",
 }; //!< Files skipped in testSaveResults. @todo Get different results for certain files on identical runs, not sure if differences are significant enough to dig into at the moment
 
 const long int seed = 42;
@@ -88,6 +88,7 @@ void TestDRTAlgorithms::testCreateNetwork()
     nt = new NetworkThread(network_name,1,seed);
     net = nt->getNetwork();
 
+    qDebug() << " Randseed is " << randseed;
     QVERIFY2(nt != nullptr, "Failure, could not create network thread");
     QVERIFY2(net != nullptr, "Failure, could not create network");
 }
@@ -146,21 +147,20 @@ void TestDRTAlgorithms::testAssignment()
 
     ODstops* OD_stop = new ODstops(stopA, stopC);
     Passenger* pass = new Passenger(99999, 0.0, OD_stop, nullptr);
-    pass->set_chosen_mode(TransitModeType::Flexible); // passenger is a flexible transit user
-    cc->connectPassenger(pass);
+//    pass->set_chosen_mode(TransitModeType::Flexible); // passenger is a flexible transit user
+//    cc->connectPassenger(pass);
 
-    Request* req = pass->createRequest(stopA, stopC, 1, 1.0, 1.0);
-    pass->set_curr_request(req);
-    QVERIFY (req->state == RequestState::Null);
-    QVERIFY (req->assigned_trip == nullptr);
-    emit pass->sendRequest(req, 1.0);
-    QVERIFY (req->state == RequestState::Assigned);
-    QVERIFY (req->assigned_trip != nullptr);
-    qDebug() << " request assigned to trip " << req->assigned_trip->get_id();
+//    Request* req = pass->createRequest(stopA, stopC, 1, 1.0, 1.0);
+//    pass->set_curr_request(req);
+//    QVERIFY (req->state == RequestState::Null);
+//    QVERIFY (req->assigned_trip == nullptr);
+//    emit pass->sendRequest(req, 1.0);
+//    QVERIFY (req->state == RequestState::Assigned);
+//    QVERIFY (req->assigned_trip != nullptr);
+//    qDebug() << " request assigned to trip " << req->assigned_trip->get_id();
 
-
+//    cc->removeRequest(pass->get_id());
     // Clean up
-//    delete req;
 //    delete pass;
 
     //modify runtime
@@ -196,38 +196,38 @@ void TestDRTAlgorithms::testRunNetwork()
 
 void TestDRTAlgorithms::testSaveResults()
 {
-//    // remove old output files:
-//    for (const QString& filename : output_filenames)
-//    {
-//        qDebug() << "Removing file " + filename + ": " << QFile::remove(filename);
-//    }
+    // remove old output files:
+    for (const QString& filename : output_filenames)
+    {
+        qDebug() << "Removing file " + filename + ": " << QFile::remove(filename);
+    }
 
-//    nt->saveresults();
+    nt->saveresults();
 
-//   //test if output files match the expected output files
-//    for (const QString& o_filename : output_filenames)
-//    {
-//        if (find(skip_output_filenames.begin(), skip_output_filenames.end(), o_filename) != skip_output_filenames.end())
-//            continue;
+   //test if output files match the expected output files
+    for (const QString& o_filename : output_filenames)
+    {
+        if (find(skip_output_filenames.begin(), skip_output_filenames.end(), o_filename) != skip_output_filenames.end())
+            continue;
 
-//        qDebug() << "Comparing " + o_filename + " with ExpectedOutputs/" + o_filename;
+        qDebug() << "Comparing " + o_filename + " with ExpectedOutputs/" + o_filename;
 
-//        QString ex_o_fullpath = expected_outputs_path + o_filename;
-//        QFile ex_outputfile(ex_o_fullpath);
+        QString ex_o_fullpath = expected_outputs_path + o_filename;
+        QFile ex_outputfile(ex_o_fullpath);
 
-//        QString msg = "Failure, cannot open ExpectedOutputs/" + o_filename;
-//        QVERIFY2(ex_outputfile.open(QIODevice::ReadOnly | QIODevice::Text), qPrintable(msg));
+        QString msg = "Failure, cannot open ExpectedOutputs/" + o_filename;
+        QVERIFY2(ex_outputfile.open(QIODevice::ReadOnly | QIODevice::Text), qPrintable(msg));
 
-//        QFile outputfile(o_filename);
-//        msg = "Failure, cannot open " + o_filename;
-//        QVERIFY2(outputfile.open(QIODevice::ReadOnly | QIODevice::Text), qPrintable(msg));
+        QFile outputfile(o_filename);
+        msg = "Failure, cannot open " + o_filename;
+        QVERIFY2(outputfile.open(QIODevice::ReadOnly | QIODevice::Text), qPrintable(msg));
 
-//        msg = "Failure, " + o_filename + " differs from ExpectedOutputs/" + o_filename;
-//        QVERIFY2(outputfile.readAll() == ex_outputfile.readAll(), qPrintable(msg));
+        msg = "Failure, " + o_filename + " differs from ExpectedOutputs/" + o_filename;
+        QVERIFY2(outputfile.readAll() == ex_outputfile.readAll(), qPrintable(msg));
 
-//        ex_outputfile.close();
-//        outputfile.close();
-//    }
+        ex_outputfile.close();
+        outputfile.close();
+    }
 }
 
 

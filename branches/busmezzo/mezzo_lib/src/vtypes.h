@@ -57,6 +57,7 @@ class Vtypes
 {
 public:
  Vtypes () ;
+ ~Vtypes();
 
  Vtype* random_vtype () {
  	double sum=0.0;

@@ -221,7 +221,9 @@ void Bus::reset ()
 }
 
 Bus::~Bus()
-{}
+{
+    delete random;
+}
 
 Busvehicle_location::~Busvehicle_location()
 {}

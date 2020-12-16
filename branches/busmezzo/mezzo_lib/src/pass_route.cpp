@@ -2,12 +2,30 @@
 
 Pass_path:: Pass_path ()
 {
+    random = new (Random);
+    if (randseed != 0)
+        {
+        random->seed(randseed);
+        }
+    else
+    {
+        random->randomize();
+    }
 }
 Pass_path:: Pass_path (int path_id, vector<vector<Busline*> > alt_lines_)
 {
 	p_id = path_id;
 	alt_lines = alt_lines_;
 	number_of_transfers = find_number_of_transfers();
+    random = new (Random);
+    if (randseed != 0)
+        {
+        random->seed(randseed);
+        }
+    else
+    {
+        random->randomize();
+    }
 }
 Pass_path:: Pass_path (int path_id, vector<vector<Busline*> > alt_lines_, vector <vector <Busstop*> > alt_transfer_stops_)
 {
@@ -46,6 +64,7 @@ Pass_path::Pass_path (int path_id, vector<vector<Busline*> > alt_lines_, vector 
 
 Pass_path::~Pass_path()
 {
+    delete random;
 }
 
 void Pass_path::reset()

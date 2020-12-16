@@ -284,11 +284,13 @@ signals:
 
 	void tripVehicleMatchFound(double time); //!< emitted when a vehicle has been assigned to an unmatched passenger carrying trip or an unmatched rebalancing trip
 	void tripVehicleMatchNotFound(double time); //!< emitted when an attempt to match vehicles to unmatched passenger carrying trips has been made but no match was found
+public slots:
+    void removeRequest(int pass_id); //!< remove request with pass_id from requestSet in RequestHandler
+
 
 private slots:
 	//request related
 	void receiveRequest(Request* req, double time); //<! delegates to RequestHandler to add the request to its requestSet
-	void removeRequest(int pass_id); //!< remove request with pass_id from requestSet in RequestHandler
 
 	//fleet related
 	void updateFleetState(Bus* bus, BusState oldstate, BusState newstate, double time); //!< updates fleetState every time a connected transit vehicle changes its state

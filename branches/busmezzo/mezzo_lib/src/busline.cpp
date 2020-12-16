@@ -118,7 +118,7 @@ bool Busline::execute(Eventlist* eventlist, double time)
 		//int busid = curr_trip->first->get_busv()->get_bus_id();
 		//if(curr_trip->first->is_flex_trip())
 		//	DEBUG_MSG("Busline " << id << " activating trip " << curr_trip->first->get_id() << " for bus " << busid);
-
+        assert(curr_trip != trips.end());
 		curr_trip->first->activate(time, busroute, odpair, eventlist); // activates the trip, generates bus etc.
 		curr_trip++; // now points to next trip
 		if (curr_trip != trips.end()) // if there exists a next trip

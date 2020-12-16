@@ -310,14 +310,14 @@ ODpair::ODpair(Origin* origin_, Destination* destination_, double rate_, Vtypes*
  	odaction=new ODaction(this);
  	random=new Random();
 	start_rate=rate;
-#ifndef _DETERMINISTIC_ROUTE_CHOICE
+//#ifndef _DETERMINISTIC_ROUTE_CHOICE
  	if (randseed != 0)
 	   random->seed(randseed);
 	else
 		random->randomize();	
-#else
+//#else
 	random->seed(42);
-#endif // _DETERMINISTIC_ROUTE_CHOICE
+//#endif // _DETERMINISTIC_ROUTE_CHOICE
  	const int nr_fields=9;
 	string names[nr_fields]={"origin_id","dest_id","veh_id","start_time","end_time","travel_time", "mileage","route_id","switched_route"};
     vector <string> fields(names,names+nr_fields);

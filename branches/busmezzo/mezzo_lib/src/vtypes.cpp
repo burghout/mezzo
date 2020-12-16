@@ -20,16 +20,16 @@
 Vtypes::Vtypes () 
 {
  	random= new Random();
-		/**
+        /**
 #ifndef _DETERMINISTIC_VTYPES
 	if (randseed != 0)
 	   random->seed(randseed);
 	else
 		random->randomize();
 #else
-	random->seed(42);
+    random->seed(42);
 #endif
-	*/
+    */
 }
 
 
@@ -67,3 +67,8 @@ void Vtypes::initialize ()
 	// now sort according to probability
 	sort(vtypes.begin(), vtypes.end());
  }
+
+Vtypes::~Vtypes()
+{
+    delete random;
+}
