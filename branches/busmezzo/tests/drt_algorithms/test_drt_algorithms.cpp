@@ -43,13 +43,13 @@ const vector<QString> skip_output_filenames =
 //    "o_passenger_trajectory.dat",
 //    "o_passenger_welfare_summary.dat",
 //    "o_segments_line_loads.dat",
-    "o_segments_trip_loads.dat",
-    "o_selected_paths.dat",
-    "o_transit_trajectory.dat",
-    "o_transitline_sum.dat",
-    "o_transitlog_out.dat",
-    "o_transitstop_sum.dat",
-    "o_trip_total_travel_time.dat",
+//    "o_segments_trip_loads.dat",
+//    "o_selected_paths.dat",
+//    "o_transit_trajectory.dat",
+//    "o_transitline_sum.dat",
+//    "o_transitlog_out.dat",
+//    "o_transitstop_sum.dat",
+//    "o_trip_total_travel_time.dat",
 }; //!< Files skipped in testSaveResults. @todo Get different results for certain files on identical runs, not sure if differences are significant enough to dig into at the moment
 
 const long int seed = 42;
@@ -68,6 +68,7 @@ public:
 private Q_SLOTS:
     void testCreateNetwork(); //!< test loading a network
     void testInitNetwork(); //!< test generating passenger path sets & loading a network
+    void testDeterministicMap();
     void testAssignment();//!< test asssignment of passengers
     void testRunNetwork();
     void testSaveResults();
@@ -133,6 +134,29 @@ void TestDRTAlgorithms::testInitNetwork()
     }
     QVERIFY2(AproxEqual(total_demand,200.0), "Failure, total demand should be 200 pass/h");
 }
+
+
+void TestDRTAlgorithms::testDeterministicMap()
+{
+   map <Busstop*,int> bsmap1;
+   map <Busstop*,int,ptr_less<Busstop*> > bsmap2;
+   for (int i = 0; i < 100; ++i)
+   {
+        auto stop = new Busstop(i,"",0,0.0,10.0,1,1,1,0,1);
+        bsmap1 [stop] = i;
+        bsmap2 [stop] = i;
+   }
+
+    auto it1 = bsmap1.begin();
+    auto it2 = bsmap2.begin();
+   for (it1, it2; (it1 != bsmap1.end()) && (it2!=bsmap2.end()); ++it1, ++it2)
+   {
+       auto stopid_ordered = (*it1).first->get_id();
+       auto stopid_unordered = (*it2).first->get_id();
+       QVERIFY ( stopid_ordered == stopid_unordered);
+   }
+}
+
 
 void TestDRTAlgorithms::testAssignment()
 {

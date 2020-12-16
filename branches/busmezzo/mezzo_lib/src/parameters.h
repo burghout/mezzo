@@ -56,6 +56,11 @@
 #define DEBUG_MSG_V(str) do {} while (false)
 #endif
 
+template<class T> struct ptr_less {
+    bool operator()(const T & lhs, const T& rhs) const  {
+        return lhs->get_id() < rhs->get_id(); }};
+
+
 /** @defgroup PassengerDecisionParameters Debugging of interface with passenger decision model (CSGM, dynamic path choice, day2day, different levels of RTI), e.g. methods that return a DRT service parameter
     @ingroup DRT
     @{
