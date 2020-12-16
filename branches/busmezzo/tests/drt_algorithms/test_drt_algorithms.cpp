@@ -150,7 +150,7 @@ void TestDRTAlgorithms::testDeterministicMap()
 
     auto it1 = bsmap1.begin();
     auto it2 = bsmap2.begin();
-    for (it1, it2; (it1 != bsmap1.end()) && (it2!=bsmap2.end()); ++it1, ++it2)
+    for (; (it1 != bsmap1.end()) && (it2!=bsmap2.end()); ++it1, ++it2)
     {
         auto stopid_ordered = (*it1).first->get_id();
         auto stopid_unordered = (*it2).first->get_id();
@@ -170,7 +170,7 @@ void TestDRTAlgorithms::testDeterministicMap()
     }
     auto it3 = crazymap1.begin();
     auto it4 = crazymap2.begin();
-    for (it3, it4; (it3 != crazymap1.end()) && (it4!=crazymap2.end()); ++it3, ++it4)
+    for (; (it3 != crazymap1.end()) && (it4!=crazymap2.end()); ++it3, ++it4)
     {
         auto stopid_ordered = (*it3).first.first->get_id();
         auto stopid_unordered = (*it4).first.first->get_id();
@@ -185,14 +185,14 @@ void TestDRTAlgorithms::testAssignment()
 
 
     // Create a dummy scenario to get access to all steps
-    auto stopA = net->get_busstop_from_name("A");
-    auto stopC = net->get_busstop_from_name("C");
-    //auto stopE = net->get_busstop_from_name("E");
+//    auto stopA = net->get_busstop_from_name("A");
+//    auto stopC = net->get_busstop_from_name("C");
+//    //auto stopE = net->get_busstop_from_name("E");
 
-    auto cc = stopA->get_CC();
+//    auto cc = stopA->get_CC();
 
-    ODstops* OD_stop = new ODstops(stopA, stopC);
-    Passenger* pass = new Passenger(99999, 0.0, OD_stop, nullptr);
+//    ODstops* OD_stop = new ODstops(stopA, stopC);
+//    Passenger* pass = new Passenger(99999, 0.0, OD_stop, nullptr);
     //    pass->set_chosen_mode(TransitModeType::Flexible); // passenger is a flexible transit user
     //    cc->connectPassenger(pass);
 

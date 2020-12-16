@@ -3986,7 +3986,7 @@ void Network:: find_recursive_connection (Busstop* origin, Busstop* destination)
 void Network:: find_recursive_connection_with_walking (Busstop* origin, Busstop* destination)
 // search recursively for a path (forward - from origin to destination) with walking links
 {
-    map <Busstop*, double> possible_origins = origin->get_walking_distances();
+    map <Busstop*, double, ptr_less<Busstop*>> possible_origins = origin->get_walking_distances();
     vector <Busstop*> cons_stops = get_cons_stops(origin);
     //	if (cons_stops.size() > 0)
     //	{
@@ -4075,7 +4075,7 @@ void Network:: find_recursive_connection_with_walking (Busstop* origin, Busstop*
 void Network:: find_recursive_connection_with_walking (Busstop* origin)
 // search recursively for a path (forward - from origin) with walking links
 {
-    map <Busstop*, double> possible_origins = origin->get_walking_distances();
+    map <Busstop*, double, ptr_less<Busstop*>> possible_origins = origin->get_walking_distances();
     vector <Busstop*> cons_stops = get_cons_stops(origin);
 
     int nr_im_stop_elements = 0;

@@ -763,7 +763,7 @@ void Busline::add_record_passenger_loads_line (Busstop* stop1, Busstop* stop2, i
 
 void Busline::write_assign_output(ostream & out)
 {
-	for (map <Busstop*,Busline_assign>::iterator iter = output_line_assign.begin(); iter != output_line_assign.end(); iter++)
+    for (auto iter = output_line_assign.begin(); iter != output_line_assign.end(); iter++)
 	{
 		(*iter).second.write(out);
 	}
@@ -1883,9 +1883,9 @@ void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, d
 
 		// * Passengers on-board
 		//int avialable_seats = trip->get_busv()->get_occupancy() - trip->get_busv()->get_number_seats();
-		map <Busstop*, passengers> passengers_onboard = trip->get_passengers_on_board();
+        map <Busstop*, passengers, ptr_less<Busstop*>> passengers_onboard = trip->get_passengers_on_board();
 		bool next_stop = false;
-		map <Busstop*, passengers>::iterator downstream_stops = passengers_onboard.end();
+        auto downstream_stops = passengers_onboard.end();
 		downstream_stops--;
 		while (next_stop == false)
 		{
@@ -1919,7 +1919,7 @@ void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, d
 
 		// * Boarding passengers *
 
-		for (map <Busstop*, ODstops*>::iterator destination_stop = stop_as_origin.begin(); destination_stop != stop_as_origin.end(); destination_stop++)
+        for (auto destination_stop = stop_as_origin.begin(); destination_stop != stop_as_origin.end(); destination_stop++)
 		{
 			// going through all the stops that this stop is their origin on a given OD pair
 			passengers pass_waiting_od = (*destination_stop).second->get_waiting_passengers();

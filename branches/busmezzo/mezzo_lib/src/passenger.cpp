@@ -723,10 +723,10 @@ Busstop* Passenger::make_connection_decision (double time)
 	// 1. if the path set is empty, passenger moves to an arbitrary walkable stop (first in map of distances for walkable stops)? If no distances are available then the traveler stays at this stop and moves nowhere?
 	if (path_set.empty() == true) // move to a nearby stop in case needed
 	{
-		map<Busstop*,double> & stops = OD_stop->get_origin()->get_walking_distances();
+        map<Busstop*,double, ptr_less<Busstop*> > & stops = OD_stop->get_origin()->get_walking_distances();
 		if (stops.begin()->first->get_id() == OD_stop->get_origin()->get_id())
 		{
-			map<Busstop*,double>::iterator stops_iter = stops.begin();
+            auto stops_iter = stops.begin();
 			stops_iter++;
 			if (stops_iter == stops.end())
 			{
