@@ -178,7 +178,7 @@ void TestFixedWithFlexible_walking::testFleetState()
     //create a vehicles with certain state and add to controlcenter
     Controlcenter* CC = net->get_controlcenters().begin()->second;
     vector<Busline*> serviceRoutes = CC->getServiceRoutes();
-    set<Busstop*> serviceArea = CC->getServiceArea();
+    set<Busstop*, ptr_less<Busstop*>> serviceArea = CC->getServiceArea();
     map<BusState,set<Bus*> > fleetState = CC->getFleetState();
     NaiveTripGeneration* tgs = new NaiveTripGeneration(); // borrowed to use helper functions to build trips
 

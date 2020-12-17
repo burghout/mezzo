@@ -2208,7 +2208,7 @@ bool Network::createControlcenterDRTLines(Controlcenter* cc)
 
     if (cc)
     {
-        set<Busstop*> serviceArea = cc->getServiceArea();
+        set<Busstop*, ptr_less<Busstop*>> serviceArea = cc->getServiceArea();
         vector <Busstop*> stops;
         vector<Busroute*> routesFound;
         vector<Busline*>  buslinesFound;

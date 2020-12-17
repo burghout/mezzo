@@ -19,25 +19,28 @@ struct compare
     int id;
 };
 
-std::set<Request*> filterRequests (const set<Request*> & oldSet, RequestState state)
+std::set<Request* ,ptr_less<Request*>> filterRequests (const set<Request*,ptr_less<Request*>> & oldSet, RequestState state)
 {
-    set <Request*> newSet;
+    set <Request*,ptr_less<Request*>> newSet;
     std::copy_if(oldSet.begin(), oldSet.end(), std::inserter(newSet, newSet.end()), [state]( Request* value){return value->state == state;});
     return newSet;
 }
 
-std::set<Request*> filterRequestsByOD (const set<Request*> & oldSet, int o_id, int d_id)
+std::set<Request*,ptr_less<Request*>> filterRequestsByOD (const set<Request*,ptr_less<Request*>> & oldSet, int o_id, int d_id)
 {
-    set <Request*> newSet;
+    set <Request*,ptr_less<Request*>> newSet;
     std::copy_if(oldSet.begin(), oldSet.end(), std::inserter(newSet, newSet.end()), [o_id, d_id]( Request* value){return (value->ostop_id == o_id) && (value->dstop_id == d_id);});
     return newSet;
 }
 
+int Request::id_counter = 0;
 
 
 // Request
-Request::Request(Passenger* pass, int pid, int oid, int did, int l, double dt, double t) : pass_id(pid), ostop_id(oid), dstop_id(did), load(l), desired_departure_time(dt), time(t),  pass_owner(pass)
+Request::Request(Passenger* pass, int pid, int oid, int did, int l, double dt, double t) :
+    pass_id(pid), ostop_id(oid), dstop_id(did), load(l), desired_departure_time(dt), time(t),  pass_owner(pass)
 {
+    id = ++id_counter;
     qRegisterMetaType<Request>(); //register Request as a metatype for QT signal arguments
 }
 
@@ -101,7 +104,7 @@ bool Request::operator<(const Request & rhs) const
 }
 
 //TripGenerationStrategy
-map<pair<int, int>, int> TripGenerationStrategy::countRequestsPerOD(const set<Request*>& requestSet) const
+map<pair<int, int>, int> TripGenerationStrategy::countRequestsPerOD(const set<Request *, ptr_less<Request *> > &requestSet) const
 {
     map<pair<int, int>, int> odcounts;
 
@@ -293,7 +296,7 @@ Busline* TripGenerationStrategy::find_shortest_busline(const vector<Busline*>& l
     return shortestline;
 }
 
-bool NullTripGeneration::calc_trip_generation(const set<Request*>& requestSet, const vector<Busline*>& candidateServiceRoutes, const map<BusState, set<Bus*>>& fleetState, const double time, set<Bustrip*>& unmatchedTripSet) 
+bool NullTripGeneration::calc_trip_generation(const set<Request*, ptr_less<Request*>>& requestSet, const vector<Busline*>& candidateServiceRoutes, const map<BusState, set<Bus*>>& fleetState, const double time, set<Bustrip*>& unmatchedTripSet)
 {
     Q_UNUSED(requestSet)
     Q_UNUSED(candidateServiceRoutes)
@@ -304,7 +307,7 @@ bool NullTripGeneration::calc_trip_generation(const set<Request*>& requestSet, c
     return false;
 }
 
-bool NaiveTripGeneration::calc_trip_generation(const set<Request*>& requestSet, const vector<Busline*>& candidateServiceRoutes, const map<BusState, set<Bus*>>& fleetState, const double time, set<Bustrip*>& unmatchedTripSet)
+bool NaiveTripGeneration::calc_trip_generation(const set<Request*,ptr_less<Request*>>& requestSet, const vector<Busline*>& candidateServiceRoutes, const map<BusState, set<Bus*>>& fleetState, const double time, set<Bustrip*>& unmatchedTripSet)
 {
     Q_UNUSED(fleetState)
     // UPDATE TO ONLY unmatched requests
@@ -403,7 +406,7 @@ bool NaiveTripGeneration::calc_trip_generation(const set<Request*>& requestSet, 
     return false;
 }
 
-bool SimpleTripGeneration::calc_trip_generation(const set<Request*>& requestSet, const vector<Busline*>& candidateServiceRoutes,
+bool SimpleTripGeneration::calc_trip_generation(const set<Request*,ptr_less<Request*>>& requestSet, const vector<Busline*>& candidateServiceRoutes,
                                                 const map<BusState, set<Bus*>>& fleetState, const double time, set<Bustrip*>& unmatchedTripSet)
 {
     // Steps:
@@ -497,7 +500,7 @@ bool SimpleTripGeneration::calc_trip_generation(const set<Request*>& requestSet,
 
 //Empty vehicle trip generation
 NaiveEmptyVehicleTripGeneration::NaiveEmptyVehicleTripGeneration(Network* theNetwork) : theNetwork_(theNetwork){}
-bool NaiveEmptyVehicleTripGeneration::calc_trip_generation(const set<Request*>& requestSet, const vector<Busline*>& candidateServiceRoutes, const map<BusState, set<Bus*>>& fleetState, const double time, set<Bustrip*>& unmatchedTripSet)
+bool NaiveEmptyVehicleTripGeneration::calc_trip_generation(const set<Request*,ptr_less<Request*>>& requestSet, const vector<Busline*>& candidateServiceRoutes, const map<BusState, set<Bus*>>& fleetState, const double time, set<Bustrip*>& unmatchedTripSet)
 {
     if (!requestSet.empty() && !candidateServiceRoutes.empty()) //Reactive strategy so only when requests exist
     {

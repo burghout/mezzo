@@ -30,7 +30,7 @@ void RequestHandler::reset()
 	requestSet_.clear();
 }
 
-bool RequestHandler::addRequest(Request* req, const set<Busstop*>& serviceArea)
+bool RequestHandler::addRequest(Request* req, const set<Busstop*, ptr_less<Busstop*> >& serviceArea)
 {
     if (!isFeasibleRequest(req, serviceArea))
     {
@@ -64,7 +64,7 @@ bool RequestHandler::addRequest(Request* req, const set<Busstop*>& serviceArea)
 
 void RequestHandler::removeRequest(const int pass_id)
 {
-    set<Request*>::iterator it;
+    set<Request*, ptr_less<Request>>::iterator it;
     it = find_if(requestSet_.begin(), requestSet_.end(),
         [pass_id](const Request* req) -> bool
         {
@@ -83,7 +83,7 @@ void RequestHandler::removeRequest(const int pass_id)
         DEBUG_MSG_V("DEBUG: RequestHandler::removeRequest : Passenger id " << pass_id << " not found in requestSet.");
 }
 
-bool RequestHandler::isFeasibleRequest(const Request* req, const set<Busstop*>& serviceArea) const
+bool RequestHandler::isFeasibleRequest(const Request* req, const set<Busstop*, ptr_less<Busstop*>>& serviceArea) const
 {    
     //check if origin stop and destination stop are the same
     if (req->ostop_id == req->dstop_id) 
@@ -678,7 +678,7 @@ Controlcenter_SummaryData Controlcenter::getSummaryData() const
 	return summarydata_;
 }
 
-set<Busstop*> Controlcenter::getServiceArea() const { return serviceArea_; }
+set<Busstop*, ptr_less<Busstop*>> Controlcenter::getServiceArea() const { return serviceArea_; }
 vector<Busline*> Controlcenter::getServiceRoutes() const { return tg_.getServiceRoutes(); }
 
 map<int, Bus *> Controlcenter::getConnectedVehicles() const

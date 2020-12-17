@@ -77,12 +77,12 @@ public:
 
 	void reset(); //!< resets members between simulation replications
 
-	bool addRequest(Request* req, const set<Busstop*>& serviceArea); //!< adds request passenger Request to the requestSet
+    bool addRequest(Request* req, const set<Busstop *, ptr_less<Busstop *> > &serviceArea); //!< adds request passenger Request to the requestSet
 	void removeRequest(int pass_id); //!< removes requests with pass_id from the requestSet if it exists
-    bool isFeasibleRequest(const Request* req, const set<Busstop*>& serviceArea) const; //!< returns true if request is feasible for a given service area, false otherwise
+    bool isFeasibleRequest(const Request* req, const set<Busstop*, ptr_less<Busstop*>>& serviceArea) const; //!< returns true if request is feasible for a given service area, false otherwise
 
 private:
-	set<Request*> requestSet_; //!< set of received requests sorted by desired departure time
+    set<Request*, ptr_less<Request*>> requestSet_; //!< set of received requests sorted by desired departure time
 	//	Filtering methods for:
 	// unmatchedRequestSet
 	// matchedRequestSet that havent been served
@@ -233,7 +233,7 @@ private:
 public:
 	int getID() const;
 	Controlcenter_SummaryData getSummaryData() const;
-	set<Busstop*> getServiceArea() const;
+    set<Busstop *, ptr_less<Busstop *> > getServiceArea() const;
     vector<Busline*> getServiceRoutes() const;
     map<int,Bus*> getConnectedVehicles() const;
 
@@ -340,8 +340,8 @@ private:
 	BustripVehicleMatcher tvm_;
 	VehicleScheduler vs_;
 
-    set<Busstop*> serviceArea_; //!< set of stops in the service area of this control center's fleet of vehicles. In other words the stops for which this control center can generate trips between
-	set<Bus*> initialVehicles_; //!< vehicles assigned to this control center on input (that should be preserved between resets)
+    set<Busstop*, ptr_less<Busstop*>> serviceArea_; //!< set of stops in the service area of this control center's fleet of vehicles. In other words the stops for which this control center can generate trips between
+    set<Bus*, ptr_less<Bus*>> initialVehicles_; //!< vehicles assigned to this control center on input (that should be preserved between resets)
 	vector<pair<Bus*, Bustrip*>> completedVehicleTrips_; //!< used for bookkeeping dynamically generated buses and bustrips (similar to busvehicles and bustrips in network) for writing output and deleting between resets
 
 	map<Controlcenter_OD, vector<Link*> > shortestPathCache; //!< cache for the first shortest path calls made between stops of this Controlcenter @todo add time-dependent caches maybe, currently only the initial calls are stored
