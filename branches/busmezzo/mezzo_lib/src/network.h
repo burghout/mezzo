@@ -244,6 +244,7 @@ public:
     void renum_routes (); //!< renumerates the routes, to keep a consecutive series after deletions & additions
     Busroute* create_busroute_from_stops(int id, Origin* origin_node, Destination* destination_node, const vector<Busstop*>& stops, double time = 0.0); //!< creates a busroute beginning at origin node and ending at destination node that visits stops in sequential order. Returns nullptr if busroute is not possible
     Busline* create_busline(int busline_id, int opposite_busline_id, string name, Busroute* broute, vector <Busstop*> stops, Vtype* vtype, ODpair* odptr, int holding_strategy, double max_headway_holding, double init_occup_per_stop, int nr_stops_init_occup, bool flex_line); //!< creates a busline and adds it to Network::buslines
+    bool createAllDRTLines(); //!< creates all the DRT lines between each stop pair that has a viable route between them
     bool createControlcenterDRTLines(Controlcenter* cc); //!< creates all direct DRT lines between each stop pair in the service area of Controlcenter and assigns these lines to Controlcenter
     Origin* findNearestOriginToStop(Busstop* stop); //!< returns the nearest Origin Node to  stop
     Destination* findNearestDestinationToStop(Busstop* stop);  //!< returns the nearest Destination Node from stop

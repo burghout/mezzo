@@ -2310,6 +2310,102 @@ bool Network::createControlcenterDRTLines(Controlcenter* cc)
     return true;
 }
 
+bool Network::createAllDRTLines()
+{
+    // test to create direct busroutes from/to all stops
+    vector <Busstop*> stops;
+    auto stopsmap = get_stopsmap();
+    vector<Busroute*> routesFound;
+    vector<Busline*>  buslinesFound;
+    //*** Start of dummy values
+    theParameters->drt=true;
+    ODpair* od_pair = odpairs.front(); // for now just use this as dummy
+    Vtype* vtype = new Vtype(888, "octobus", 1.0, 20.0);
+    int id = 1;
+    int tg_strategy=0;
+    int ev_strategy=0;
+    int tvm_strategy=0;
+    int vs_strategy = 0;
+    auto* cc = new Controlcenter(eventlist, this, id, tg_strategy, ev_strategy, tvm_strategy, vs_strategy);
+    ccmap[id] = cc; //add to network map of control centers
+
+    int routeIdCounter = 10000; // TODO: update to find max routeId from busroutes vector
+    int busLineIdCounter = 10000; //  TODO: update later
+
+   //*** end of dummy values
+    Origin* ori = nullptr;
+    Destination* dest = nullptr;
+
+    for (auto startstop : stopsmap)
+    {
+        ori = nullptr;
+        // find best origin for startstop if it does not exist
+        if (startstop.second->get_origin_node() == nullptr)
+        {
+            // find  origin node
+            ori = findNearestOriginToStop(startstop.second);
+            if (ori != nullptr)
+                startstop.second->set_origin_node(ori);
+        }
+        for (auto endstop : stopsmap)
+        {
+            if (endstop.second->get_dest_node() == nullptr)
+            {
+                // find  destination node
+                dest = findNearestDestinationToStop(endstop.second);
+                if (dest != nullptr)
+                    endstop.second->set_dest_node(dest);
+            }
+            if (startstop != endstop)
+            {
+                // find best odpair
+                int ori_id = startstop.second->get_origin_node()->get_id();
+                int dest_id = endstop.second->get_dest_node()->get_id();
+                odval odid (ori_id, dest_id);
+                auto od_it = find_if (odpairs.begin(),odpairs.end(), compareod (odid) );
+                if (od_it != odpairs.end())
+                    od_pair = *od_it;
+                else // create new OD pair
+                {
+                    od_pair = new ODpair(startstop.second->get_origin_node(),endstop.second->get_dest_node(),0.0, &vehtypes);
+                    odpairs.push_back(od_pair);
+                    qDebug() <<  "createAllDRTLines----Missing OD pair, creating for Origin " << ori_id <<
+                                 ", destination " << dest_id;
+                }
+
+                stops.clear();
+                stops.push_back(startstop.second);
+                stops.push_back(endstop.second);
+               // qDebug() << "checking route for busline: " << startstop.first << " to " << endstop.first;
+
+                Busroute* newRoute = create_busroute_from_stops(routeIdCounter, od_pair->get_origin(), od_pair->get_destination(), stops);
+                if (newRoute != nullptr)
+                {
+                    //qDebug() << " route found";
+                    routesFound.push_back(newRoute);
+                    routeIdCounter++;
+                    // create busLine
+                    Busline* newLine = create_busline(busLineIdCounter,0,"DRT Line",newRoute,stops,vtype,od_pair,0,0.0,0.0,0,true);
+                    if (newLine != nullptr)
+                    {
+                        buslinesFound.push_back(newLine);
+                        busLineIdCounter++;
+                    }
+                }
+                else
+                    qDebug() << "DTR create buslines: no route found from stop " << startstop.first << " to " << endstop.first;
+
+            }
+        }
+    }
+    // add the routes found to the busroutes
+    busroutes.insert(busroutes.end(), routesFound.begin(), routesFound.end());
+    // add the buslines
+    buslines.insert(buslines.end(),buslinesFound.begin(),buslinesFound.end());
+
+    return true;
+}
+
 Origin* Network::findNearestOriginToStop(Busstop* stop)
 {
     int upstreamNodeId = linkmap[stop->get_link_id()]->get_in_node_id();
@@ -3305,7 +3401,7 @@ bool Network::check_consecutive (Busstop* first, Busstop* second)
 bool Network::find_direct_paths (Busstop* bs_origin, Busstop* bs_destination)
 // finds if there is a direct path between a given pair of stops, generate new direct paths
 {
-    vector <Busline*> lines_o = bs_origin->get_lines();
+    vector <Busline*> lines_o = bs_origin->get_lines(); //!> @todo Check how buslines are being added to stops after autogen of direct DRT lines
     for (auto bl_o = lines_o.begin(); bl_o < lines_o.end(); bl_o++)
     {
         vector <Busline*> lines_d = bs_destination->get_lines();
