@@ -38,6 +38,57 @@ const vector<QString> output_filenames =
 
 const long int seed = 42;
 
+
+const vector<int> branch_ids_176 = { 217619,217618,217617,217616,217615,217614,217613,217612,217611,217610,217609,217608,217607,217606,217605,217603,217602,217604,217600,277024 };
+const vector<int> branch_ids_177 = { 277036,277035,277034,277033,277032,277031,277030,277029,277028,277027,277026,277025,277024 };
+const vector<int> corridor_ids = { 277024,277023,277022,277021,277020,277019,277018,277017,277016,277015,277014,277013,277012,277011,277010,277009,277008,277007,277006,277005,277004,277003,277002,277001 };
+const int transfer_stop_id = 277024;
+
+bool is_on_branch176(int stop_id)
+{
+    return find(branch_ids_176.begin(),branch_ids_176.end(),stop_id) != branch_ids_176.end();
+}
+bool is_on_branch177(int stop_id)
+{
+    return find(branch_ids_177.begin(),branch_ids_177.end(),stop_id) != branch_ids_177.end();
+}
+bool is_on_branch(int stop_id) // is on either branch
+{
+    return is_on_branch176(stop_id) || is_on_branch177(stop_id);
+}
+bool is_on_corridor(int stop_id)
+{
+    return find(corridor_ids.begin(),corridor_ids.end(),stop_id) != corridor_ids.end();
+}
+bool is_transfer_stop(int stop_id)
+{
+    return stop_id == transfer_stop_id;
+}
+bool is_branch_to_branch(int ostop_id, int dstop_id) // if OD pair is branch to branch
+{
+    if(is_on_branch(ostop_id)) // origin of trip starts on a branch
+    {
+        if(is_transfer_stop(dstop_id)) // destination is the transfer stop (which is on both branch and corridor)
+            return true;
+        else
+            return !is_on_corridor(dstop_id); // destination is NOT on corridor
+    }
+    return false;
+}
+bool is_branch_to_corridor(int ostop_id, int dstop_id)
+{
+    if(!is_transfer_stop(ostop_id) && is_on_branch(ostop_id)) // origin is not the transfer stop (which is on corridor) and is on branch
+    {
+        if(!is_transfer_stop(dstop_id) && is_on_corridor(dstop_id)) // destination IS on corridor and is not the transfer stop
+            return true;
+    }
+    return false;
+}
+bool is_corridor_to_corridor(int ostop_id, int dstop_id)
+{
+    return is_on_corridor(ostop_id) && is_on_corridor(dstop_id);
+}
+
 class TestDrottningholmCollection_drt : public QObject
 {
     Q_OBJECT
@@ -49,6 +100,7 @@ public:
 private Q_SLOTS:
     void testCreateNetwork(); //!< test loading a network
     void testInitNetwork(); //!< test generating passenger path sets & loading a network
+    void testPassPathSetDefinitions(); //!< tests if the auto-generated passenger path sets are correct for each OD stop pair with positive demand rate
     void testRunNetwork(); //!< test running the network
     void testPassAssignment(); //!< tests path-set-generation + resulting assignment
     void testSaveResults(); //!< tests saving results
@@ -106,6 +158,173 @@ void TestDrottningholmCollection_drt::testInitNetwork()
 
     ex_path_set_file.close();
     path_set_file.close();
+}
+
+void TestDrottningholmCollection_drt::testPassPathSetDefinitions()
+{
+    /**
+       Want to check the validity of OD path sets for Drottningholm network. We should have three passenger cases for ODs
+
+Cases:
+       1. Branch to branch - both origin stop and destination stop is either among the 176 or 177 branch stops
+        - Should always be a direct line. There may be path sets generated where passengers make transfers however
+       2. Branch to corridor beyond transfer stop - origin stop is on either 176 or 177 branch stops and destination is on corridor
+        - Should always be a direct line to Malmvik and then fixed
+       3. Corridor to corridor - origin stop and destination stop is on corridor
+
+Assertions:
+       1. Check that the stop sequence of a path also matches stops on the lines of each path (if the line is direct, and the only line then this means the start and end stops of that leg)
+       2. There should really be only one line in each 'alt_lines' set i.e. line leg set for this network
+       3. Check that each the paths of each actually follows the correct structure (e.g. branch to corridor should have 6 alt_stops and must include transfer stop
+       4. All pairs of stops should be the same
+       5. Each time a line leg
+
+       @todo
+                - maybe add a test that all passengers that reached their final destination, actually had this OD to begin with
+                - set breakpoints in Network::find_all_paths_fast(), see where lines are being added to paths
+                    For current network setup, look at ODstops pair 277030 to 277010
+                        - We would get the first alt line has origin stop 277024 and dest stop 277025 (opposite direction!!!!)
+                        - Check also how lines are being added to stops
+                        - Look at sub-functions of find_all_paths_fast
+                - check if having the network with no 2-stop links 'fixes' the problem, ie all generated paths are valid
+                - fiddle around with max additional transfers and max transfers parameters in parameters.dat to try and eliminate transfers on a branch
+
+       @note
+            No walking links, so the connection decision will always be to stay at the same stop, i.e. all pairs of stops should be the same
+            The alt_line structure is fixed
+    */
+    //!< Define set of stops on each branch and on corridor to use when checking for whick case. Check basically where the start and end stops of each OD stop pair with demand are in each of these vectors
+// Loop through all OD demands,
+
+
+    vector<ODstops*> ods = net->get_odstops_demand();
+    for(auto od : ods)
+    {
+        int ostop = od->get_origin()->get_id();
+        int dstop = od->get_destination()->get_id();
+        enum ODCategory { Null = 0, b2b, b2c, c2c };
+        ODCategory od_category = Null;
+
+        //qDebug() << "Checking validity of path set definitions for od pair: (" << ostop << "," << dstop << ")";
+        vector<Pass_path*> pathset = od->get_path_set();
+
+//        if(ostop ==277030 && dstop ==277010)
+//            qDebug() << "Debugging 277030->277010";
+
+        if(is_branch_to_branch(ostop,dstop))
+        {
+            //qDebug() << "Branch to branch ";
+            od_category = b2b;
+        }
+        else if (is_branch_to_corridor(ostop,dstop))
+        {
+            //qDebug() << "Branch to corridor ";
+            od_category = b2c;
+        }
+        else if (is_corridor_to_corridor(ostop,dstop))
+        {
+            //qDebug() << "Corridor to corridor ";
+            od_category = c2c;
+        }
+
+
+        for(auto path : pathset)
+        {
+            //qDebug() << "\tChecking validity of path: " << path->get_id();
+            vector<vector<Busline*> > alt_lines = path->get_alt_lines();
+            vector<vector<Busstop*> > alt_stops = path->get_alt_transfer_stops();
+
+            //!< General conditions that should hold for any path
+            // m = number of alt line sets in a path alternative
+            // 2m+2 = number of transit stop sets including OD
+            // m+1 = number of connection (walking) links
+            // m - 1 = number of transfers
+            size_t m = alt_lines.size();
+            int n_transfers = path->get_number_of_transfers();
+            QVERIFY(alt_stops.size() == 2*m + 2);
+            QVERIFY(path->get_walking_distances().size() == m + 1);
+            QVERIFY(n_transfers == static_cast<int>(m) - 1);
+
+            QVERIFY(alt_stops.size() > 2); // this network should not have any walking only legs (since no walking links are defined, and we should not have OD demand from an origin to itself)
+            QVERIFY(alt_stops.size() % 2 == 0); // alt stops sets always come in pairs (alight at stop+walk/stay at stop for departure/destination)
+
+            vector<pair<Busstop*,Busstop*> > arriving_departing_stop_pairs; // pairs of stops on the path. First in each pair is the stop of arrival/origin, second is stop of departure/destination
+
+            for(auto alt_stops_it = alt_stops.begin(); alt_stops_it != alt_stops.end(); advance(alt_stops_it,2)) // walk over pairs of alt stops
+            {
+                //qDebug() << "\t\tChecking alt_transfer_stops...";
+                auto alt_stops_it2 = alt_stops_it+1;
+                QVERIFY((*alt_stops_it).size() == 1); // only one stop in each alt stop vec for this network
+                QVERIFY((*alt_stops_it2).size() == 1);
+
+                Busstop* arr_stop = (*alt_stops_it).front();
+                Busstop* dep_stop = (*alt_stops_it2).front();
+
+                // every pair of alt stops starting from the first and second should be the same (since we do not have walking links, and we only have one stop in each alt_stop set)
+                QVERIFY(arr_stop->get_id() == dep_stop->get_id());
+
+                arriving_departing_stop_pairs.push_back(make_pair(arr_stop,dep_stop)); // store each pair of arrival and departure locations to compare to alt_lines
+            }
+            QVERIFY(arriving_departing_stop_pairs.size() == m + 1); // there should be as many pairs as walking links
+
+            //!< check that transit links match stops in path
+            for(size_t idx = 0; idx != m; ++idx)
+            {
+                //qDebug() << "\t\tChecking if alt_lines matches alt_transfer_stops...";
+                QVERIFY(alt_lines[idx].size() == 1); // no overlapping lines (in terms of common stops) for this network
+                Busline* transit_link = alt_lines[idx].front();
+
+                Busstop* first_stop = transit_link->stops.front();
+                Busstop* last_stop = transit_link->stops.back();
+
+//                if(ostop ==277030 && dstop ==277010)
+//                    qDebug() << "\t\t Transit link " << transit_link->get_id() << " from " << first_stop->get_id() << " to " << last_stop->get_id();
+
+
+                pair<Busstop*,Busstop*> stop_pair1 = arriving_departing_stop_pairs[idx];
+                pair<Busstop*,Busstop*> stop_pair2 = arriving_departing_stop_pairs[idx+1];
+
+                if(od_category == b2b) //branch2branch
+                {
+                    // if branch to branch then we should only have direct DRT lines, meaning the start and end stop should match the departure and arrival stops of the path
+                    QVERIFY(transit_link->is_flex_line());
+                    QVERIFY(first_stop->get_id() == stop_pair1.second->get_id()); // boarding stop matches the start of the DRT line
+                    QVERIFY(last_stop->get_id() == stop_pair2.first->get_id()); // alighting stop matches the end of the DRT line
+                }
+                if(od_category == b2c) //branch2corridor
+                {
+                    QVERIFY(n_transfers >= 1);
+                    if(idx == 0) //the first transit link should be DRT, collection direction
+                    {
+                        QVERIFY(transit_link->is_flex_line());
+                        QVERIFY(first_stop->get_id() == stop_pair1.second->get_id()); // boarding stop matches the start of the DRT line
+                        QVERIFY(last_stop->get_id() == stop_pair2.first->get_id()); // alighting stop matches the end of the DRT line
+                    }
+                    else if(idx == m - 1) //the last transit link should be fixed
+                    {
+                        QVERIFY(!transit_link->is_flex_line());
+                        QVERIFY(first_stop->get_id() == stop_pair1.second->get_id()); // boarding stop matches the start of the fixed line
+                        QVERIFY(is_transfer_stop(first_stop->get_id())); // first stop of fixed line is the transfer stop
+                        QVERIFY(is_on_corridor(stop_pair2.first->get_id())); // the alighting stop of the last transit link should be on the corridor
+                    }
+                }
+                if(od_category == c2c) //corridor2corridor
+                {
+                    QVERIFY(n_transfers == 0);
+                    //all pairs of stops should be on the corridor, and all transit links should start and end on corridor
+                    QVERIFY(is_on_corridor(stop_pair1.second->get_id()));
+                    QVERIFY(is_on_corridor(stop_pair2.first->get_id()));
+                    QVERIFY(is_on_corridor(first_stop->get_id()));
+                    QVERIFY(is_on_corridor(last_stop->get_id()));
+                }
+
+
+
+            } // for alt_lines in path
+
+        } //for paths in od
+    } //for ods with demand
+
 }
 
 void TestDrottningholmCollection_drt::testRunNetwork()
