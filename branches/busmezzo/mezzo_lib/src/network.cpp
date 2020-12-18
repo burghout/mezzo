@@ -3362,7 +3362,7 @@ void Network::generate_consecutive_stops()
     for (auto iter_stop = busstops.begin(); iter_stop < busstops.end(); iter_stop++)
     {
         vector<Busstop*> updated_cons;
-        map<Busstop*,bool> already_exist;
+        map<Busstop*,bool, ptr_less<Busstop*>> already_exist;
         vector<Busstop*> cons_stops = consecutive_stops[(*iter_stop)];
         for (auto cons_stops_iter = cons_stops.begin(); cons_stops_iter < cons_stops.end(); cons_stops_iter++)
         {

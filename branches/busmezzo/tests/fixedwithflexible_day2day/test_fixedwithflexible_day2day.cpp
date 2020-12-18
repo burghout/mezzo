@@ -70,7 +70,7 @@ private:
     NetworkThread* nt = nullptr; //!< contains the network thread
     Network* net = nullptr;
 
-    map< Busline*,map<int,int> > total_pass_boarded_per_line_d2d; //!< contains the resulting pass flows without day2day activated. Key1 = busline, Key2 = day, value = passenger load
+    map< Busline*,map<int,int>, ptr_less<Busline*> > total_pass_boarded_per_line_d2d; //!< contains the resulting pass flows without day2day activated. Key1 = busline, Key2 = day, value = passenger load
     vector< Passenger* > all_pass;
 };
 
