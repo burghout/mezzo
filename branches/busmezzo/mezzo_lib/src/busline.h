@@ -319,14 +319,14 @@ protected:
     /**@}*/
 
     map <Busstop*, pair<Busstop*, pair<double, double> > > disruption_times; //!< contains the expected travel times between a pair of stops in case of disruption (does not affect actual travel time, only passenger information provision). Strat and end times
-    map <Busstop*, double> disruption_cap_reduction;
+    map <Busstop*, double, ptr_less<Busstop*>> disruption_cap_reduction;
 
     bool active = false;														//!< is true when the busline has started generating trips
     list <Start_trip>::iterator curr_trip;							//!< indicates the next trip
     list <Start_trip>::iterator next_trip; //!< indicates the next trip
     Output_Summary_Line output_summary;
-    map <Busstop*, int> stop_pass;
-    map <Busstop*, Busline_assign> output_line_assign;
+    map <Busstop*, int, ptr_less<Busstop*>> stop_pass;
+    map <Busstop*, Busline_assign, ptr_less<Busstop*>> output_line_assign;
     list <Busline_travel_times> output_travel_times;
 };
 
@@ -411,7 +411,7 @@ public:
 	void set_last_stop_visited (Busstop* last_stop_visited_) {last_stop_visited = last_stop_visited_;}
 	Busstop* get_last_stop_visited() {return last_stop_visited;}
 	double get_actual_dispatching_time () {return actual_dispatching_time;}
-	map <Busstop*, passengers> get_passengers_on_board () {return passengers_on_board;}
+    map <Busstop*, passengers,ptr_less<Busstop*>> get_passengers_on_board () {return passengers_on_board;}
 
 	void set_holding_at_stop(bool holding_at_stop_){holding_at_stop = holding_at_stop_;} //David added 2016-05-26
 	bool get_holding_at_stop(){return holding_at_stop;} //David added 2016-05-26
@@ -442,9 +442,9 @@ public:
 	vector <Visit_stop*> stops;						//!< contains all the busstops and the times that they are supposed to be served. NOTE: this can be a subset of the total nr of stops in the Busline (according to the schedule input file)
 	map <Busstop*, double> stops_map;
 	vector <Start_trip*> driving_roster;			//!< trips assignment for each bus vehicle.
-	map <Busstop*, passengers> passengers_on_board; //!< passenger on-board stored by their alighting stop (format 3)
-	map <Busstop*, int> nr_expected_alighting;		//!< number of passengers expected to alight at the busline's stops (format 2)
-	map <Busstop*, int> assign_segements;			//!< contains the number of pass. traveling between trip segments
+    map <Busstop*, passengers,ptr_less<Busstop*>> passengers_on_board; //!< passenger on-board stored by their alighting stop (format 3)
+    map <Busstop*, int, ptr_less<Busstop*>> nr_expected_alighting;		//!< number of passengers expected to alight at the busline's stops (format 2)
+    map <Busstop*, int, ptr_less<Busstop*>> assign_segements;			//!< contains the number of pass. traveling between trip segments
 
 /** @ingroup DRT
     @{
@@ -454,6 +454,8 @@ public:
 	bool is_scheduled_for_dispatch() const { return scheduled_for_dispatch; }
 	void set_flex_trip(bool flex_trip_) { flex_trip = flex_trip_; }
 	bool is_flex_trip() const { return flex_trip; }
+    vector <Request*> get_requests() { return scheduled_requests;}
+    void add_request (Request* req) { scheduled_requests.push_back((req));}
 /**@}*/
 
 protected:
@@ -480,16 +482,17 @@ protected:
 	/** @ingroup DRT
         @{
     */
+    vector <Request*> scheduled_requests;
 	bool scheduled_for_dispatch = false; //!< true if this trip has been scheduled for dispatch (i.e. a busline event has been created with for the starttime of this trip) for its respective line, false otherwise
 	bool flex_trip = false; //!< true if this trip was generated dynamically
     /**@}*/
 };
 
 typedef pair<Busstop*, double> stop_rate;
-typedef map <Busstop*, double> stops_rate;
+typedef map <Busstop*, double, ptr_less<Busstop*>> stops_rate;
 typedef pair <Busline*, stops_rate> multi_rate;
-typedef map <Busline*, stops_rate> multi_rates;
-typedef map <Busstop*, ODstops*> ODs_for_stop;
+typedef map <Busline*, stops_rate, ptr_less<Busline*>> multi_rates;
+typedef map <Busstop*, ODstops*, ptr_less<Busstop*>> ODs_for_stop;
 
 class Busstop_Visit // container object holding output data for stop visits
 {
@@ -700,10 +703,10 @@ public:
 	double get_exit_time() { return exit_time;}
 	vector<Busline*> get_lines () {return lines;}
 	void set_position (double position_ ) {position = position_;}
-	map <Busline*, pair<Bustrip*, double> > get_last_departures () {return last_departures;}
+    map <Busline*, pair<Bustrip*, double>, ptr_less<Busline*> > get_last_departures () {return last_departures;}
 	double get_last_departure (Busline* line) {return last_departures[line].second;}
 	Bustrip* get_last_trip_departure (Busline* line) {return last_departures[line].first;}
-	map<Busstop*,double> & get_walking_distances () {return distances;}
+    map<Busstop*,double, ptr_less<Busstop*>> & get_walking_distances () {return distances;}
 	bool get_had_been_visited ( Busline * line) {return had_been_visited[line];} 
 	double get_walking_distance_stop (Busstop* stop) {return distances[stop];}
 	void save_previous_arrival_rates () {previous_arrival_rates.swap(arrival_rates);}
@@ -820,18 +823,18 @@ protected:
 	vector<pair<Bustrip*,double> > expected_bus_arrivals;	//!< booked arrivals of buses on the link on their way to the stop
 	map <double,Bus*> buses_at_stop;						//!< buses currently visiting stop
 	vector<pair<Bustrip*,double> > buses_currently_at_stop;	//!< buses currently visiting stop
-	map <Busline*, pair<Bustrip*, double> > last_arrivals;	//!< contains the arrival time of the last bus from each line that stops at the stop (can result headways)
-	map <Busline*, pair<Bustrip*, double> > last_departures; //!< contains the departure time of the last bus from each line that stops at the stop (can result headways)
-	map <Busline*,bool> had_been_visited;					//!< indicates if this stop had been visited by a given line till now
+    map <Busline*, pair<Bustrip*, double>, ptr_less<Busline*> > last_arrivals;	//!< contains the arrival time of the last bus from each line that stops at the stop (can result headways)
+    map <Busline*, pair<Bustrip*, double>,ptr_less<Busline*> > last_departures; //!< contains the departure time of the last bus from each line that stops at the stop (can result headways)
+    map <Busline*,bool, ptr_less<Busline*>> had_been_visited;					//!< indicates if this stop had been visited by a given line till now
 
 	// relevant only for demand format 1
-	map <Busline*, double> arrival_rates;		//!< parameter lambda that defines the poisson process of passengers arriving at the stop
-	map <Busline*, double> alighting_fractions; //!< parameter that defines the poisson process of the alighting passengers 
+    map <Busline*, double, ptr_less<Busline*>> arrival_rates;		//!< parameter lambda that defines the poisson process of passengers arriving at the stop
+    map <Busline*, double, ptr_less<Busline*>> alighting_fractions; //!< parameter that defines the poisson process of the alighting passengers
 
 	// relevant only for demand format 1 TD (format 10)
-	map <Busline*, double> previous_arrival_rates;
-	map <Busline*, double> previous_alighting_fractions; 
-	map <Busline*, vector<double> > update_rates_times;		//!< contains the information about when there is a change in rates (but not the actual change)
+    map <Busline*, double, ptr_less<Busline*> > previous_arrival_rates;
+    map <Busline*, double, ptr_less<Busline*> > previous_alighting_fractions;
+    map <Busline*, vector<double>, ptr_less<Busline*> > update_rates_times;		//!< contains the information about when there is a change in rates (but not the actual change)
 	
 	// relevant only for demand format 2
 	multi_rates multi_nr_waiting;			//!< for demand format is from type 2. 
@@ -844,13 +847,13 @@ protected:
 	ODs_for_stop stop_as_destination;		//!< a map of all the OD's that this busstop is their destination
 	bool is_origin=false;							//!< indicates if this busstop serves as an origin for some passenger demand
 	bool is_destination=false;					//!< indicates if this busstop serves as an destination for some passenger demand
-	map <Busline*, bool> real_time_info;	//!< indicates for each line if it has real-time info. at this stop
+    map <Busline*, bool,ptr_less<Busline*> > real_time_info;	//!< indicates for each line if it has real-time info. at this stop
 
 	// walking distances between stops (relevant only for demand format 3 and 4)
-	map<Busstop*,double> distances;			//!< contains the distances [meters] from other bus stops
+    map<Busstop*,double, ptr_less<Busstop*> > distances;			//!< contains the distances [meters] from other bus stops
     
     // walking times between steps
-    map<Busstop*, vector<Walking_time_dist*> > walking_time_distribution_map; //!< contains set of distributions for a given destination node
+    map<Busstop*, vector<Walking_time_dist*>,ptr_less<Busstop*> > walking_time_distribution_map; //!< contains set of distributions for a given destination node
 
     /** @ingroup DRT 
         @{
@@ -873,7 +876,7 @@ protected:
 };
 
 typedef pair<Busline*,double> TD_single_pair;
-typedef map<Busstop*, map<Busline*,double> > TD_demand;
+typedef map<Busstop*, map<Busline*,double>,ptr_less<Busstop*> > TD_demand;
 
 class Change_arrival_rate : public Action
 {
@@ -897,7 +900,7 @@ class Walking_time_dist {
 public:
     Walking_time_dist (Busstop* dest_stop_, vector<double> quantiles_, vector<double> quantile_values_, int num_quantiles_, double time_start_, double time_end_);
     
-    virtual ~Walking_time_dist(){};
+    virtual ~Walking_time_dist(){}
     
     bool time_is_in_range(double);
     int get_num_quantiles() {return num_quantiles;}

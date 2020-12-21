@@ -6,11 +6,10 @@ TARGET = mezzo_s
 #DEFINES += _BUSES
 DEFINES += _NO_GUI
 macx {
-    CONFIG   -= app_bundle # for mac remove the application bundling
+    CONFIG -= app_bundle # for mac remove the application bundling
+    CONFIG += sdk_no_version_check # for mac
 }
-#win32 {
- #    QMAKE_LFLAGS +=
-#}
+
 
 # Input
 HEADERS += ../mezzo_lib/src/busline.h \

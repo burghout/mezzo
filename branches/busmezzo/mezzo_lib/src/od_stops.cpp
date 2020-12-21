@@ -1018,7 +1018,7 @@ bool ODzone::execute (Eventlist* eventlist, double curr_time)
 			pass->add_to_selected_path_stop(stop_time);
 			pass->add_to_selected_path_stop(stop_time); // twice - to maintain the same path structure
 			passengers_during_simulation.push_back(pass);
-			map <Busstop*,pair<double,double> > d_stops = (*dzones_iter).first->get_stop_distances();
+            auto d_stops = (*dzones_iter).first->get_stop_distances();
 			pass->set_ODstop(origin_stop->get_stop_od_as_origin_per_stop(d_stops.begin()->first)); // set the origin stop as pass's origin and an arbitary destination stop
 			pass->execute(eventlist, curr_time + pass->get_origin_walking_distance(origin_stop) / random->nrandom (theParameters->average_walking_speed, theParameters->average_walking_speed/4));
 			pass->get_OD_stop()->get_waiting_passengers().push_back(pass);
@@ -1036,7 +1036,7 @@ void ODzone::record_passenger_boarding_decision_zone (Passenger* pass, Bustrip* 
 	output_pass_boarding_decision_zone[pass].push_back(Pass_boarding_decision_zone(pass->get_id(), id, pass->get_d_zone()->get_id(), trip->get_line()->get_id(), trip->get_id() , pass->get_OD_stop()->get_origin()->get_id() , time, pass->get_start_time(), boarding_probability , boarding_decision, boarding_utility, staying_utility)); 
 }
 
-void ODzone::record_passenger_alighting_decision_zone (Passenger* pass, Bustrip* trip, double time, Busstop* chosen_alighting_stop, map<Busstop*,pair<double,double> > alighting_MNL)  //  add to output structure alighting decision info
+void ODzone::record_passenger_alighting_decision_zone (Passenger* pass, Bustrip* trip, double time, Busstop* chosen_alighting_stop, map<Busstop*,pair<double,double>,ptr_less<Busstop*> > alighting_MNL)  //  add to output structure alighting decision info
 {
 	output_pass_alighting_decision_zone[pass].push_back(Pass_alighting_decision_zone(pass->get_id(), id, pass->get_d_zone()->get_id(), trip->get_line()->get_id(), trip->get_id() , pass->get_OD_stop()->get_origin()->get_id() , time, pass->get_start_time(), chosen_alighting_stop->get_id(), alighting_MNL)); 
 }

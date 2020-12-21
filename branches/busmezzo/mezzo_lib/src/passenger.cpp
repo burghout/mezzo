@@ -56,6 +56,7 @@ Passenger::Passenger (int pass_id, double start_time_, ODstops* OD_stop_, QObjec
 
 Passenger::~Passenger()
 {
+    delete random;
 }
 
 
@@ -722,10 +723,10 @@ Busstop* Passenger::make_connection_decision (double time)
 	// 1. if the path set is empty, passenger moves to an arbitrary walkable stop (first in map of distances for walkable stops)? If no distances are available then the traveler stays at this stop and moves nowhere?
 	if (path_set.empty() == true) // move to a nearby stop in case needed
 	{
-		map<Busstop*,double> & stops = OD_stop->get_origin()->get_walking_distances();
+        map<Busstop*,double, ptr_less<Busstop*> > & stops = OD_stop->get_origin()->get_walking_distances();
 		if (stops.begin()->first->get_id() == OD_stop->get_origin()->get_id())
 		{
-			map<Busstop*,double>::iterator stops_iter = stops.begin();
+            auto stops_iter = stops.begin();
 			stops_iter++;
 			if (stops_iter == stops.end())
 			{
@@ -1068,11 +1069,11 @@ Busstop* Passenger::make_dropoff_decision(Busstop* pickup_stop, double time)
     return dropoff_stop;
 }
 
-map<Busstop*,double> Passenger::sample_walking_distances (ODzone* zone)
+map<Busstop *, double, ptr_less<Busstop *> > Passenger::sample_walking_distances(ODzone* zone)
 {
-	map<Busstop*,double> walking_distances;
-	map <Busstop*,pair<double,double> > stop_distances = zone->get_stop_distances();
-	for (map <Busstop*,pair<double,double> >::iterator stop_iter = stop_distances.begin(); stop_iter != stop_distances.end(); stop_iter++)
+    map<Busstop*,double, ptr_less<Busstop*>> walking_distances;
+    map <Busstop*,pair<double,double> , ptr_less<Busstop*> > stop_distances = zone->get_stop_distances();
+    for (map <Busstop*,pair<double,double>, ptr_less<Busstop*> >::iterator stop_iter = stop_distances.begin(); stop_iter != stop_distances.end(); stop_iter++)
 	{
 			walking_distances[(*stop_iter).first] = theRandomizers[0]->nrandom((*stop_iter).second.first, (*stop_iter).second.second);
 	}
@@ -1088,8 +1089,8 @@ double Passenger::calc_boarding_probability_zone (Busline* arriving_bus, Busstop
 	vector<Busline*> first_leg_lines;
 	bool in_alt = false; // indicates if the current arriving bus is included 
 	// checks if the arriving bus is included as an option in a path set of at least ONE of relevant OD pair 
-	map <Busstop*,pair<double,double> > d_stops = d_zone->get_stop_distances();
-	for (map <Busstop*,pair<double,double> >::iterator iter_d_stops = d_stops.begin(); iter_d_stops != d_stops.end(); iter_d_stops++)
+    auto d_stops = d_zone->get_stop_distances();
+    for (auto iter_d_stops = d_stops.begin(); iter_d_stops != d_stops.end(); iter_d_stops++)
 	{
 		vector <Pass_path*> path_set = o_stop->get_stop_od_as_origin_per_stop((*iter_d_stops).first)->get_path_set();
 		for (vector <Pass_path*>::iterator path = path_set.begin(); path < path_set.end(); path ++)
@@ -1183,10 +1184,10 @@ double Passenger::calc_boarding_probability_zone (Busline* arriving_bus, Busstop
 Busstop* Passenger::make_alighting_decision_zone (Bustrip* boarding_bus, double time)
 {
 	// assuming that a pass. boards only paths from his path set
-	map <Busstop*, double> candidate_transfer_stops_u; // the double value is the utility associated with the respective stop
-	map <Busstop*, double> candidate_transfer_stops_p; // the double value is the probability associated with the respective stop
-	map <Busstop*,pair<double,double> > d_stops = d_zone->get_stop_distances();
-	for (map <Busstop*,pair<double,double> >::iterator iter_d_stops = d_stops.begin(); iter_d_stops != d_stops.end(); iter_d_stops++)
+    map <Busstop*, double,ptr_less<Busstop*>> candidate_transfer_stops_u; // the double value is the utility associated with the respective stop
+    map <Busstop*, double,ptr_less<Busstop*>> candidate_transfer_stops_p; // the double value is the probability associated with the respective stop
+    auto d_stops = d_zone->get_stop_distances();
+    for (auto iter_d_stops = d_stops.begin(); iter_d_stops != d_stops.end(); iter_d_stops++)
 	{
 		vector<Pass_path*> path_set = OD_stop->get_origin()->get_stop_od_as_origin_per_stop((*iter_d_stops).first)->get_path_set();
 		for (vector <Pass_path*>::iterator path_iter = path_set.begin(); path_iter < path_set.end(); path_iter++)
@@ -1214,35 +1215,35 @@ Busstop* Passenger::make_alighting_decision_zone (Bustrip* boarding_bus, double 
 	}
 	// calc MNL probabilities
 	double MNL_denominator = 0.0;
-	for (map <Busstop*, double>::iterator transfer_stops = candidate_transfer_stops_u.begin(); transfer_stops != candidate_transfer_stops_u.end(); transfer_stops++)
+    for (auto transfer_stops = candidate_transfer_stops_u.begin(); transfer_stops != candidate_transfer_stops_u.end(); transfer_stops++)
 	{
 		// calc denominator value
 		MNL_denominator += exp((*transfer_stops).second);
 	}
-	for (map <Busstop*, double>::iterator transfer_stops = candidate_transfer_stops_u.begin(); transfer_stops != candidate_transfer_stops_u.end(); transfer_stops++)
+    for (auto transfer_stops = candidate_transfer_stops_u.begin(); transfer_stops != candidate_transfer_stops_u.end(); transfer_stops++)
 	{
 		candidate_transfer_stops_p[(*transfer_stops).first] = exp(candidate_transfer_stops_u[(*transfer_stops).first]) / MNL_denominator;
 	}
 	// perform choice
 	vector<double> alighting_probs;
-	for (map <Busstop*, double>::iterator stops_probs = candidate_transfer_stops_p.begin(); stops_probs != candidate_transfer_stops_p.end(); stops_probs++)
+    for (auto stops_probs = candidate_transfer_stops_p.begin(); stops_probs != candidate_transfer_stops_p.end(); stops_probs++)
 	{
 		alighting_probs.push_back((*stops_probs).second);
 	}
 	int transfer_stop_position = theRandomizers[0]->mrandom(alighting_probs);
 	int iter = 0;
-	for (map <Busstop*, double>::iterator stops_probs = candidate_transfer_stops_p.begin(); stops_probs != candidate_transfer_stops_p.end(); stops_probs++)
+    for (auto stops_probs = candidate_transfer_stops_p.begin(); stops_probs != candidate_transfer_stops_p.end(); stops_probs++)
 	{
 		iter++;
 		if (iter == transfer_stop_position)
 		{
 			// constructing a structure for output
-			map<Busstop*,pair<double,double> > alighting_MNL; // utility followed by probability per stop
-			for (map <Busstop*, double>::iterator iter_u = candidate_transfer_stops_u.begin(); iter_u != candidate_transfer_stops_u.end(); iter_u++)
+            map<Busstop*,pair<double,double>,ptr_less<Busstop*> > alighting_MNL; // utility followed by probability per stop
+            for (auto iter_u = candidate_transfer_stops_u.begin(); iter_u != candidate_transfer_stops_u.end(); iter_u++)
 			{
 				alighting_MNL[(*iter_u).first].first = (*iter_u).second;
 			}
-			for (map <Busstop*, double>::iterator iter_p = candidate_transfer_stops_p.begin(); iter_p != candidate_transfer_stops_p.end(); iter_p++)
+            for (auto iter_p = candidate_transfer_stops_p.begin(); iter_p != candidate_transfer_stops_p.end(); iter_p++)
 			{
 				alighting_MNL[(*iter_p).first].second = (*iter_p).second;
 			}
@@ -1256,8 +1257,8 @@ Busstop* Passenger::make_alighting_decision_zone (Bustrip* boarding_bus, double 
 Busstop* Passenger::make_connection_decision_zone (double time)
 {
 	// called with the new transfer stop as the origin stop	
-	map <Busstop*, double> candidate_connection_stops_u; // the double value is the utility associated with the respective stop
-	map <Busstop*, double> candidate_connection_stops_p; // the double value is the probability associated with the respective stop
+    map <Busstop*, double,ptr_less<Busstop*>> candidate_connection_stops_u; // the double value is the utility associated with the respective stop
+    map <Busstop*, double,ptr_less<Busstop*>> candidate_connection_stops_p; // the double value is the probability associated with the respective stop
 	double u_walk_directly = -10.0;
 	if (destination_walking_distances.count(OD_stop->get_origin()) > 0) // in case this stop belongs to the destination zone
 	{
@@ -1266,8 +1267,8 @@ Busstop* Passenger::make_connection_decision_zone (double time)
 			u_walk_directly = theParameters->walking_time_coefficient * destination_walking_distances[OD_stop->get_origin()] / theRandomizers[0]->nrandom(theParameters->average_walking_speed, theParameters->average_walking_speed/4);
 		}
 	}
-	map <Busstop*,pair<double,double> > distances = d_zone->get_stop_distances();
-	for (map<Busstop*,pair<double,double> >::iterator iter_d_stops = distances.begin(); iter_d_stops != distances.end(); iter_d_stops++)
+    auto distances = d_zone->get_stop_distances();
+    for (auto iter_d_stops = distances.begin(); iter_d_stops != distances.end(); iter_d_stops++)
 	{	
 		vector<Pass_path*> path_set = OD_stop->get_origin()->get_stop_od_as_origin_per_stop((*iter_d_stops).first)->get_path_set();
 		for (vector <Pass_path*>::iterator path_iter = path_set.begin(); path_iter < path_set.end(); path_iter++)
@@ -1290,13 +1291,13 @@ Busstop* Passenger::make_connection_decision_zone (double time)
 	}
 	// calc MNL probabilities
 	double MNL_denominator = 0.0;
-	for (map <Busstop*, double>::iterator transfer_stops = candidate_connection_stops_u.begin(); transfer_stops != candidate_connection_stops_u.end(); transfer_stops++)
+    for (auto transfer_stops = candidate_connection_stops_u.begin(); transfer_stops != candidate_connection_stops_u.end(); transfer_stops++)
 	{
 		// calc denominator value
 		MNL_denominator += exp((*transfer_stops).second);
 	}
 	double u_continue_transit_trip = log(MNL_denominator);
-	for (map <Busstop*, double>::iterator transfer_stops = candidate_connection_stops_u.begin(); transfer_stops != candidate_connection_stops_u.end(); transfer_stops++)
+    for (auto transfer_stops = candidate_connection_stops_u.begin(); transfer_stops != candidate_connection_stops_u.end(); transfer_stops++)
 	{
 		candidate_connection_stops_p[(*transfer_stops).first] = exp(candidate_connection_stops_u[(*transfer_stops).first]) / MNL_denominator;
 	}
@@ -1314,24 +1315,24 @@ Busstop* Passenger::make_connection_decision_zone (double time)
 	}
 	// second - if we continue by transit, than at which stop to transfer
 	vector<double> connecting_probs;
-	for (map <Busstop*, double>::iterator stops_probs = candidate_connection_stops_p.begin(); stops_probs != candidate_connection_stops_p.end(); stops_probs++)
+    for (auto stops_probs = candidate_connection_stops_p.begin(); stops_probs != candidate_connection_stops_p.end(); stops_probs++)
 	{
 		connecting_probs.push_back((*stops_probs).second);
 	}
 	int transfer_stop_position = theRandomizers[0]->mrandom(connecting_probs);
 	int iter = 0;
-	for (map <Busstop*, double>::iterator stops_probs = candidate_connection_stops_p.begin(); stops_probs != candidate_connection_stops_p.end(); stops_probs++)
+    for (auto stops_probs = candidate_connection_stops_p.begin(); stops_probs != candidate_connection_stops_p.end(); stops_probs++)
 	{
 		iter++;
 		if (iter == transfer_stop_position)
 		{
 			// constructing a structure for output
-			map<Busstop*,pair<double,double> > alighting_MNL; // utility followed by probability per stop
-			for (map <Busstop*, double>::iterator iter_u = candidate_connection_stops_u.begin(); iter_u != candidate_connection_stops_u.end(); iter_u++)
+            map<Busstop*,pair<double,double>,ptr_less<Busstop*> > alighting_MNL; // utility followed by probability per stop
+            for (auto iter_u = candidate_connection_stops_u.begin(); iter_u != candidate_connection_stops_u.end(); iter_u++)
 			{
 				alighting_MNL[(*iter_u).first].first = (*iter_u).second;
 			}
-			for (map <Busstop*, double>::iterator iter_p = candidate_connection_stops_p.begin(); iter_p != candidate_connection_stops_p.end(); iter_p++)
+            for (auto iter_p = candidate_connection_stops_p.begin(); iter_p != candidate_connection_stops_p.end(); iter_p++)
 			{
 				alighting_MNL[(*iter_p).first].second = (*iter_p).second;
 			}

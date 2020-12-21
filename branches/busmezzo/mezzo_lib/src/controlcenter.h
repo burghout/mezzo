@@ -77,12 +77,12 @@ public:
 
 	void reset(); //!< resets members between simulation replications
 
-	bool addRequest(Request* req, const set<Busstop*>& serviceArea); //!< adds request passenger Request to the requestSet
+    bool addRequest(Request* req, const set<Busstop *, ptr_less<Busstop *> > &serviceArea); //!< adds request passenger Request to the requestSet
 	void removeRequest(int pass_id); //!< removes requests with pass_id from the requestSet if it exists
-    bool isFeasibleRequest(const Request* req, const set<Busstop*>& serviceArea) const; //!< returns true if request is feasible for a given service area, false otherwise
+    bool isFeasibleRequest(const Request* req, const set<Busstop*, ptr_less<Busstop*>>& serviceArea) const; //!< returns true if request is feasible for a given service area, false otherwise
 
 private:
-	set<Request*> requestSet_; //!< set of received requests sorted by desired departure time
+    set<Request*, ptr_less<Request*>> requestSet_; //!< set of received requests sorted by desired departure time
 	//	Filtering methods for:
 	// unmatchedRequestSet
 	// matchedRequestSet that havent been served
@@ -99,7 +99,7 @@ private:
 */
 class BustripGenerator
 {
-	enum generationStrategyType { Null = 0, Naive }; //!< ids of passenger trip generation strategies known to BustripGenerator
+    enum generationStrategyType { Null = 0, Naive, Simple }; //!< ids of passenger trip generation strategies known to BustripGenerator
 	enum emptyVehicleStrategyType {	EVNull = 0, EVNaive }; //!< ids of empty-vehicle redistribution strategies known to BustripGenerator
 	friend class BustripVehicleMatcher; //!< give matcher class access to unmatchedTrips_. May remove trip from this set without destroying it if it has been matched. Also gives VehicleMatcher access to serviceRoutes for initializing vehicles
 
@@ -233,7 +233,7 @@ private:
 public:
 	int getID() const;
 	Controlcenter_SummaryData getSummaryData() const;
-	set<Busstop*> getServiceArea() const;
+    set<Busstop *, ptr_less<Busstop *> > getServiceArea() const;
     vector<Busline*> getServiceRoutes() const;
     map<int,Bus*> getConnectedVehicles() const;
 
@@ -284,11 +284,13 @@ signals:
 
 	void tripVehicleMatchFound(double time); //!< emitted when a vehicle has been assigned to an unmatched passenger carrying trip or an unmatched rebalancing trip
 	void tripVehicleMatchNotFound(double time); //!< emitted when an attempt to match vehicles to unmatched passenger carrying trips has been made but no match was found
+public slots:
+    void removeRequest(int pass_id); //!< remove request with pass_id from requestSet in RequestHandler
+
 
 private slots:
 	//request related
 	void receiveRequest(Request* req, double time); //<! delegates to RequestHandler to add the request to its requestSet
-	void removeRequest(int pass_id); //!< remove request with pass_id from requestSet in RequestHandler
 
 	//fleet related
 	void updateFleetState(Bus* bus, BusState oldstate, BusState newstate, double time); //!< updates fleetState every time a connected transit vehicle changes its state
@@ -338,8 +340,8 @@ private:
 	BustripVehicleMatcher tvm_;
 	VehicleScheduler vs_;
 
-    set<Busstop*> serviceArea_; //!< set of stops in the service area of this control center's fleet of vehicles. In other words the stops for which this control center can generate trips between
-	set<Bus*> initialVehicles_; //!< vehicles assigned to this control center on input (that should be preserved between resets)
+    set<Busstop*, ptr_less<Busstop*>> serviceArea_; //!< set of stops in the service area of this control center's fleet of vehicles. In other words the stops for which this control center can generate trips between
+    set<Bus*> initialVehicles_; //!< vehicles assigned to this control center on input (that should be preserved between resets)
 	vector<pair<Bus*, Bustrip*>> completedVehicleTrips_; //!< used for bookkeeping dynamically generated buses and bustrips (similar to busvehicles and bustrips in network) for writing output and deleting between resets
 
 	map<Controlcenter_OD, vector<Link*> > shortestPathCache; //!< cache for the first shortest path calls made between stops of this Controlcenter @todo add time-dependent caches maybe, currently only the initial calls are stored

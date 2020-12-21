@@ -8,7 +8,7 @@ INCLUDEPATH += ../mezzoAnalyzer/Debug ../mezzoAnalyzer $(QTDIR)/include ui_h
 #LIBS += -L.
 
 macx {
-    CONFIG(debug, debug|release) {
+   CONFIG(debug, debug|release) {
         LIBS +=  -L../../mezzo_lib/Debug -lmezzo_lib -L../../mezzoAnalyzer/Debug -lmezzoAnalyzer
         DEPENDS += ../../mezzo_lib/Debug/mezzo_lib.lib ../../mezzoAnalyzer/Debug/mezzoAnalyzer.lib
         INCLUDEPATH+= ../mezzoAnalyzer/Debug/
@@ -16,7 +16,8 @@ macx {
         INCLUDEPATH += ../mezzoAnalyzer/Release/ui_h
         LIBS +=  -L../../mezzo_lib/Release -lmezzo_lib -L../../mezzoAnalyzer/Release -lmezzoAnalyzer
     }
-          #  LIBS += -L$(QTDIR)/lib -framework QtCore -framework QtGui -framework QtNetwork
+    CONFIG += sdk_no_version_check # for mac
+
 }
 
 

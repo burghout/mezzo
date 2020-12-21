@@ -56,6 +56,21 @@
 #define DEBUG_MSG_V(str) do {} while (false)
 #endif
 
+template<class T> //! EXPECTS T->get_id()
+struct ptr_less {
+    bool operator() (const T & lhs, const T & rhs) const  {
+        return lhs->get_id() < rhs->get_id(); }
+};
+
+template<class T> //! EXPECTS T to be a pair<X,Y> where X->get_id() and Y->get_id() exist
+struct pair_less {
+    bool operator() (const T & lhs, const T & rhs) const  {
+        if (lhs.first->get_id() == rhs.first->get_id())
+            return lhs.second->get_id() < rhs.second->get_id();
+        return lhs.first->get_id() < rhs.first->get_id();
+    }
+};
+
 /** @defgroup PassengerDecisionParameters Debugging of interface with passenger decision model (CSGM, dynamic path choice, day2day, different levels of RTI), e.g. methods that return a DRT service parameter
     @ingroup DRT
     @{

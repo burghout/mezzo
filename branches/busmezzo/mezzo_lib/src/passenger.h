@@ -46,8 +46,8 @@ public:
 	ODzone*		get_o_zone () {return o_zone;}
 	ODzone*		get_d_zone () {return d_zone;}
 	
-	void		set_origin_walking_distances (map<Busstop*,double> origin_walking_distances_) {origin_walking_distances = origin_walking_distances_;}
-	void		set_destination_walking_distances (map<Busstop*,double> destination_walking_distances_) {destination_walking_distances = destination_walking_distances_;}
+    void		set_origin_walking_distances (map<Busstop*,double, ptr_less<Busstop*>> origin_walking_distances_) {origin_walking_distances = origin_walking_distances_;}
+    void		set_destination_walking_distances (map<Busstop*,double, ptr_less<Busstop*>> destination_walking_distances_) {destination_walking_distances = destination_walking_distances_;}
 	double		get_origin_walking_distance (Busstop* stop) {return origin_walking_distances[stop];}
 	double		get_destination_walking_distance (Busstop* stop) {return destination_walking_distances[stop];}
 	
@@ -85,7 +85,7 @@ public:
 /** @} */
 
 	// Demand in terms of zones
-	map<Busstop*,double> sample_walking_distances (ODzone* zone);
+    map<Busstop*,double, ptr_less<Busstop*>> sample_walking_distances (ODzone* zone);
 	Busstop* make_first_stop_decision (double time); // deciding at which stop to initiate the trip
 	double calc_boarding_probability_zone (Busline* arriving_bus, Busstop* o_stop, double time);
 	Busstop* make_alighting_decision_zone (Bustrip* boarding_bus, double time); 
@@ -185,21 +185,21 @@ protected:
     double arrival_time_at_stop = 0;
     //double first_bus_arrival_time; //Used to calculate weighted waiting time in case the first bus is full
     //bool left_behind_before;
-    map<pair<Busstop*, Busline*>, double> memory_projected_RTI;
+    map<pair<Busstop*, Busline*>, double, pair_less<pair <Busstop*, Busline*> >> memory_projected_RTI;
     double AWT_first_leg_boarding = 0;
 
     // relevant only in case of day2day procedures
-    map<pair<Busstop*, Busline*>, double> anticipated_waiting_time;
-    map<pair<Busstop*, Busline*>, double> alpha_RTI;
-    map<pair<Busstop*, Busline*>, double> alpha_exp;
+    map<pair<Busstop*, Busline*>, double,pair_less<pair <Busstop*, Busline*> >> anticipated_waiting_time;
+    map<pair<Busstop*, Busline*>, double,pair_less<pair <Busstop*, Busline*> >> alpha_RTI;
+    map<pair<Busstop*, Busline*>, double,pair_less<pair <Busstop*, Busline*> >> alpha_exp;
     map<SLL, double> anticipated_ivtt;
     map<SLL, double> ivtt_alpha_exp;
 
     // relevant only for OD in terms od zones
     ODzone* o_zone = nullptr;
     ODzone* d_zone = nullptr;
-    map<Busstop*, double> origin_walking_distances;
-    map<Busstop*, double> destination_walking_distances;
+    map<Busstop*, double, ptr_less<Busstop*>> origin_walking_distances;
+    map<Busstop*, double, ptr_less<Busstop*>> destination_walking_distances;
     bool this_is_the_last_stop = false;
 };
 

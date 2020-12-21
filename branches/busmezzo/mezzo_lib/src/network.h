@@ -508,7 +508,7 @@ protected:
     vector <Bustype*> bustypes; // types of bus vehicles
     vector <Bus*> busvehicles; // a list of the bus vehicles
     vector <ODstops*> odstops;
-    map <Busstop*,vector<ODstops*> > odstops_map;
+    map <Busstop*,vector<ODstops*>, ptr_less<Busstop*> > odstops_map;
     map <string,Busstop*> busstop_name_map; //!< mapping PT node names to their object
     vector <ODzone*> odzones;
     vector <ODstops*> odstops_demand; // contains only ODs with a non-zero demand
@@ -517,14 +517,14 @@ protected:
     vector<double> collect_walking_distances; // compose the list of walking distances for a path
     map <ODstops*, vector<Busline*> > od_direct_lines; // contains all direct lines between a pair of stops
     //	map<int,map<int, vector<Busline*> > > direct_lines; // contains all direct lines between a couple of stops
-    map<Busstop*,vector<Busstop*> > consecutive_stops; // contains all the stops that can be reached within no transfer per stop
+    map<Busstop*,vector<Busstop*>, ptr_less<Busstop*> > consecutive_stops; // contains all the stops that can be reached within no transfer per stop
 
 public: //!< @todo made all these day2day thingies public for testing, also added a structure for collecting passengers that boarded each line for all days
     Day2day* day2day=nullptr;
     map<ODSL, Travel_time> wt_rec; //the record of waiting time data
     map<ODSLL, Travel_time> ivt_rec; //the record of in-vehicle time data
     int day=0;
-    map<Busline*, map<int,int> > total_pass_boarded_per_line_d2d; //!< contains the resulting pass flows when day2day is activated for each day. Key1 = busline, Key2 = day, value = total boarded passengers
+    map<Busline*, map<int,int> , ptr_less<Busline*> > total_pass_boarded_per_line_d2d; //!< contains the resulting pass flows when day2day is activated for each day. Key1 = busline, Key2 = day, value = total boarded passengers
 protected:
     /** @ingroup DRT
     @{

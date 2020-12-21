@@ -2208,7 +2208,7 @@ bool Network::createControlcenterDRTLines(Controlcenter* cc)
 
     if (cc)
     {
-        set<Busstop*> serviceArea = cc->getServiceArea();
+        set<Busstop*, ptr_less<Busstop*>> serviceArea = cc->getServiceArea();
         vector <Busstop*> stops;
         vector<Busroute*> routesFound;
         vector<Busline*>  buslinesFound;
@@ -3362,7 +3362,7 @@ void Network::generate_consecutive_stops()
     for (auto iter_stop = busstops.begin(); iter_stop < busstops.end(); iter_stop++)
     {
         vector<Busstop*> updated_cons;
-        map<Busstop*,bool> already_exist;
+        map<Busstop*,bool, ptr_less<Busstop*>> already_exist;
         vector<Busstop*> cons_stops = consecutive_stops[(*iter_stop)];
         for (auto cons_stops_iter = cons_stops.begin(); cons_stops_iter < cons_stops.end(); cons_stops_iter++)
         {
@@ -3986,7 +3986,7 @@ void Network:: find_recursive_connection (Busstop* origin, Busstop* destination)
 void Network:: find_recursive_connection_with_walking (Busstop* origin, Busstop* destination)
 // search recursively for a path (forward - from origin to destination) with walking links
 {
-    map <Busstop*, double> possible_origins = origin->get_walking_distances();
+    map <Busstop*, double, ptr_less<Busstop*>> possible_origins = origin->get_walking_distances();
     vector <Busstop*> cons_stops = get_cons_stops(origin);
     //	if (cons_stops.size() > 0)
     //	{
@@ -4075,7 +4075,7 @@ void Network:: find_recursive_connection_with_walking (Busstop* origin, Busstop*
 void Network:: find_recursive_connection_with_walking (Busstop* origin)
 // search recursively for a path (forward - from origin) with walking links
 {
-    map <Busstop*, double> possible_origins = origin->get_walking_distances();
+    map <Busstop*, double, ptr_less<Busstop*>> possible_origins = origin->get_walking_distances();
     vector <Busstop*> cons_stops = get_cons_stops(origin);
 
     int nr_im_stop_elements = 0;

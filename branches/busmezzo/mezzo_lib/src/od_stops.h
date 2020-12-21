@@ -453,9 +453,9 @@ public:
 	void set_alpha_RTI (Busstop* stop, Busline* line, double alpha); 
 	void set_alpha_exp (Busstop* stop, Busline* line, double alpha); 
 	void set_ivtt_alpha_exp (Busstop* stop, Busline* line, Busstop* leg, double alpha); 
-	map<pair<Busstop*, Busline*>,double> get_anticipated_waiting_time () {return anticipated_waiting_time;}
-	map<pair<Busstop*, Busline*>,double> get_alpha_RTI () {return alpha_RTI;}
-	map<pair<Busstop*, Busline*>,double> get_alpha_exp () {return alpha_exp;}
+    map<pair<Busstop*, Busline*>,double, pair_less<pair <Busstop*, Busline*> >> get_anticipated_waiting_time () {return anticipated_waiting_time;}
+    map<pair<Busstop*, Busline*>,double, pair_less<pair <Busstop*, Busline*> >> get_alpha_RTI () {return alpha_RTI;}
+    map<pair<Busstop*, Busline*>,double, pair_less<pair <Busstop*, Busline*> >> get_alpha_exp () {return alpha_exp;}
 	map<SLL, double> get_anticipated_ivtt () {return anticipated_ivtt;}
 	map<SLL, double> get_ivtt_alpha_exp () {return ivtt_alpha_exp;}
 
@@ -507,9 +507,9 @@ protected:
 	bool active = false; // indicator for non-initialization call
 
 	// relevant only in case of day2day procedures
-	map<pair<Busstop*, Busline*>,double> anticipated_waiting_time;
-	map<pair<Busstop*, Busline*>,double> alpha_RTI;
-	map<pair<Busstop*, Busline*>,double> alpha_exp;
+    map<pair<Busstop*, Busline*>,double,pair_less<pair <Busstop*, Busline*> >> anticipated_waiting_time;
+    map<pair<Busstop*, Busline*>,double,pair_less<pair <Busstop*, Busline*> >> alpha_RTI;
+    map<pair<Busstop*, Busline*>,double,pair_less<pair <Busstop*, Busline*> >> alpha_exp;
 	map<SLL,double> anticipated_ivtt;
 	map<SLL,double> ivtt_alpha_exp;
 
@@ -544,9 +544,12 @@ public:
 class Pass_alighting_decision_zone // container object holding output data for passenger alighting decision
 {
 public:
-	Pass_alighting_decision_zone (int pass_id_, int origin_zone_, int destination_zone_, int line_id_, int trip_id_, int stop_id_, double time_,	double generation_time_, int chosen_alighting_stop_,
-                            map<Busstop*,pair<double,double> > alighting_MNL_):
-							pass_id(pass_id_),origin_zone(origin_zone_),destination_zone(destination_zone_),line_id(line_id_),trip_id(trip_id_), stop_id(stop_id_),time(time_),generation_time(generation_time_),chosen_alighting_stop(chosen_alighting_stop_),alighting_MNL(alighting_MNL_) {}
+    Pass_alighting_decision_zone (int pass_id_, int origin_zone_, int destination_zone_, int line_id_, int trip_id_, int stop_id_, double time_,
+                                  double generation_time_, int chosen_alighting_stop_,
+                            map<Busstop*,pair<double,double>,ptr_less<Busstop*> > alighting_MNL_):
+                            pass_id(pass_id_),origin_zone(origin_zone_),destination_zone(destination_zone_),
+                            line_id(line_id_),trip_id(trip_id_), stop_id(stop_id_),time(time_),generation_time(generation_time_),
+                            chosen_alighting_stop(chosen_alighting_stop_),alighting_MNL(alighting_MNL_) {}
 	virtual ~Pass_alighting_decision_zone(); //!< destructor
 	void write (ostream& out);
 	void reset () { pass_id = 0; origin_zone = 0; destination_zone = 0; line_id = 0; trip_id = 0; stop_id = 0; time = 0;
@@ -560,7 +563,7 @@ public:
 	double time;
 	double generation_time;
 	int chosen_alighting_stop;
-    map<Busstop*,pair<double,double> > alighting_MNL;
+    map<Busstop*,pair<double,double>,ptr_less<Busstop*> > alighting_MNL;
 };
 
 class ODzone : public Action
@@ -570,7 +573,7 @@ public:
 	~ODzone ();
 	int get_id () {return id;}
 	void reset (); 
-    map <Busstop*,pair<double,double> > get_stop_distances() {return stops_distances;}
+    map <Busstop*,pair<double,double> , ptr_less<Busstop*> > get_stop_distances() {return stops_distances;}
 	void set_boarding_u (double boarding_utility_) {boarding_utility = boarding_utility_;}
 	void set_staying_u (double staying_utility_) {staying_utility = staying_utility_;}
 	
@@ -583,17 +586,17 @@ public:
 
 	// output-related functions
 	void record_passenger_boarding_decision_zone (Passenger* pass, Bustrip* trip, double time, double boarding_probability, bool boarding_decision); //!< creates a log-file for boarding decision related info
-    void record_passenger_alighting_decision_zone (Passenger* pass, Bustrip* trip, double time, Busstop* chosen_alighting_stop, map<Busstop*,pair<double,double> > alighting_MNL); // !< creates a log-file for alighting decision related info
+    void record_passenger_alighting_decision_zone (Passenger* pass, Bustrip* trip, double time, Busstop* chosen_alighting_stop, map<Busstop *, pair<double, double>, ptr_less<Busstop *> > alighting_MNL); // !< creates a log-file for alighting decision related info
 	void write_boarding_output_zone(ostream & out, Passenger* pass);
 	void write_alighting_output_zone(ostream & out, Passenger* pass);
-    map <Passenger*,list<Pass_boarding_decision_zone> > get_boarding_output_zone () {return output_pass_boarding_decision_zone;}
-    map <Passenger*,list<Pass_alighting_decision_zone> > get_alighting_output_zone () {return output_pass_alighting_decision_zone;}
+    map <Passenger*,list<Pass_boarding_decision_zone>, ptr_less<Passenger*> > get_boarding_output_zone () {return output_pass_boarding_decision_zone;}
+    map <Passenger*,list<Pass_alighting_decision_zone>,ptr_less<Passenger*> > get_alighting_output_zone () {return output_pass_alighting_decision_zone;}
 
 protected:
 	int id = -1;
 	double boarding_utility = 0.0;
 	double staying_utility = 0.0;
-    map <Busstop*,pair<double,double> > stops_distances; // the mean and SD of the distances to busstops included in the zone
+    map <Busstop*,pair<double,double>, ptr_less<Busstop*> > stops_distances; // the mean and SD of the distances to busstops included in the zone
 	map <ODzone*,double> arrival_rates; // hourly arrival rate from this origin zone to the specified destination zone 
 	Random* random = nullptr;
 	Eventlist* eventlist = nullptr; //!< to book passenger generation events
@@ -601,8 +604,8 @@ protected:
 
 	
 	// output structures and measures
-    map <Passenger*,list<Pass_boarding_decision_zone> > output_pass_boarding_decision_zone;
-    map <Passenger*,list<Pass_alighting_decision_zone> > output_pass_alighting_decision_zone;
+    map <Passenger*,list<Pass_boarding_decision_zone>,ptr_less<Passenger*> > output_pass_boarding_decision_zone;
+    map <Passenger*,list<Pass_alighting_decision_zone>,ptr_less<Passenger*> > output_pass_alighting_decision_zone;
 	vector <Passenger*> passengers_during_simulation;
 	int nr_pass_completed = 0;
 	double avg_tt = 0.0;
