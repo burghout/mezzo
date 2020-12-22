@@ -19,7 +19,7 @@ struct compare
     int id;
 };
 
-std::set<Request* ,ptr_less<Request*>> filterRequests (const set<Request*,ptr_less<Request*>> & oldSet, RequestState state)
+std::set<Request* ,ptr_less<Request*>> filterRequestsByState (const set<Request*,ptr_less<Request*>> & oldSet, RequestState state)
 {
     set <Request*,ptr_less<Request*>> newSet;
     std::copy_if(oldSet.begin(), oldSet.end(), std::inserter(newSet, newSet.end()), [state]( Request* value){return value->state == state;});
@@ -416,14 +416,14 @@ bool SimpleTripGeneration::calc_trip_generation(const set<Request*,ptr_less<Requ
     // 4. assign requests to new trips
     Q_UNUSED(fleetState)
     // 1. get unassigned requests
-    auto unassignedRequests = filterRequests(requestSet, RequestState::Unmatched);
+    auto unassignedRequests = filterRequestsByState(requestSet, RequestState::Unmatched);
     if (!unassignedRequests.empty() && !candidateServiceRoutes.empty())
     {
         // 2. get trips (i don't care if they are matched or unmatched...) and assign requests to existing trips
 
         for (auto tr:unmatchedTripSet)
         {
-            unassignedRequests = filterRequests(requestSet, RequestState::Unmatched); // redo the filtering each time
+            unassignedRequests = filterRequestsByState(requestSet, RequestState::Unmatched); // redo the filtering each time
             for (auto rq:unassignedRequests)
             {
                 auto startstop = tr->stops.front()->first; // if trip starts at same stop
