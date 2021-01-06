@@ -53,7 +53,7 @@ bool RequestHandler::addRequest(Request* req, const set<Busstop*, ptr_less<Busst
     else
     {
         // Currently just ignore addRequest call if request already exists in request set
-        DEBUG_MSG("DEBUG: RequestHandler::addRequest : passenger request " << req->pass_id << " at time " << req->time << " already exists in request set!");
+        DEBUG_MSG("DEBUG: RequestHandler::addRequest : passenger request " << req->pass_id << " at time " << req->time_request_generated << " already exists in request set!");
 
         //req->pass_owner->set_curr_request(nullptr);
         //delete req;
@@ -923,7 +923,7 @@ double Controlcenter::calc_exploration_wt()
 //Slot implementations
 void Controlcenter::receiveRequest(Request* req, double time)
 {
-	assert(req->desired_departure_time >= 0 && req->time >= 0 && req->load > 0); //assert that request is valid
+	assert(req->time_desired_departure >= 0 && req->time_request_generated >= 0 && req->load > 0); //assert that request is valid
 	summarydata_.requests_recieved += 1;
 	rh_.addRequest(req, serviceArea_) ? emit requestAccepted(time) : emit requestRejected(time);
 }

@@ -106,6 +106,51 @@ void ODstops::set_ivtt_alpha_exp (Busstop* stop, Busline* line, Busstop* leg, do
 	ivtt_alpha_exp[stoplineleg] = alpha;
 }
 
+list<Pass_transitmode_decision> ODstops::get_pass_transitmode_decisions(Passenger* pass)
+{
+	assert(pass);
+	list<Pass_transitmode_decision> pass_decisions;
+	if (output_pass_transitmode_decision.count(pass) != 0)
+	{
+		pass_decisions = output_pass_transitmode_decision[pass];
+	}
+	else
+	{
+		qDebug() << "Warning, no transitmode decisions registered for passenger " << pass->get_id() << "for ODstop: (" << origin_stop->get_id() << "," << destination_stop->get_id() << ")";
+	}
+	return pass_decisions;
+}
+
+list<Pass_dropoff_decision> ODstops::get_pass_dropoff_decisions(Passenger* pass)
+{
+	assert(pass);
+	list<Pass_dropoff_decision> pass_decisions;
+	if (output_pass_dropoff_decision.count(pass) != 0)
+	{
+		pass_decisions = output_pass_dropoff_decision[pass];
+	}
+	else
+	{
+		qDebug() << "Warning, no dropoff decisions registered for passenger " << pass->get_id() << "for ODstop: (" << origin_stop->get_id() << "," << destination_stop->get_id() << ")";
+	}
+	return pass_decisions;
+}
+
+list<Pass_connection_decision> ODstops::get_pass_connection_decisions(Passenger* pass)
+{
+	assert(pass);
+	list<Pass_connection_decision> pass_decisions;
+	if (output_pass_connection_decision.count(pass) != 0)
+	{
+		pass_decisions = output_pass_connection_decision[pass];
+	}
+	else
+	{
+		qDebug() << "Warning, no dropoff decisions registered for passenger " << pass->get_id() << "for ODstop: (" << origin_stop->get_id() << "," << destination_stop->get_id() << ")";
+	}
+	return pass_decisions;
+}
+
 void ODstops::reset()
 {
 	min_transfers = 100;

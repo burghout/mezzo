@@ -480,7 +480,14 @@ protected:
 public:
 	void set_boarding_utility(double boarding_utility_) { boarding_utility = boarding_utility_; }
 	void set_staying_utility(double staying_utility_) { staying_utility = staying_utility_; }
+	
+	//mostly for debugging
 	int get_nr_pass_completed() { return nr_pass_completed; } //!< Getter added for testing purposes currently. Disclaimer: nr_pass_completed calculated after call to this->calc_pass_measures.
+	Passenger* first_passenger_start = nullptr; //!< @todo For debugging purposes only, will contain the first passenger arrival at each ODstop pair (set at the beginning of Passenger::start)
+
+	list<Pass_transitmode_decision> get_pass_transitmode_decisions(Passenger* pass); //!< returns the list, if any, of transitmode decisions the a passenger has made for this OD
+	list<Pass_dropoff_decision> get_pass_dropoff_decisions(Passenger* pass); //!< returns the list, if any, of dropoff decisions the a passenger has made for this OD
+	list<Pass_connection_decision> get_pass_connection_decisions(Passenger* pass); //!< returns the list, if any, of connection decisions that a passenger has made for this OD
 /** @} */
 
 protected:
