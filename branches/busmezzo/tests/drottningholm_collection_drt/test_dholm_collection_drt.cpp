@@ -201,13 +201,13 @@ void TestDrottningholmCollection_drt::testPathSetTransfers()
             3. Corridor to corridor
                 - Check that there are no transfers, and the only transit leg available is fixed
     */
-
+    
     vector<ODstops*> ods = net->get_odstops_demand();
     for(auto od : ods)
     {
         int ostop = od->get_origin()->get_id();
         int dstop = od->get_destination()->get_id();
-        qDebug() << "Checking path set transfers for OD: ("<<ostop<<","<<dstop<<")";
+        //qDebug() << "Checking path set transfers for OD: ("<<ostop<<","<<dstop<<")";
         ODCategory od_category = ODCategory::Null;
 
         if(is_branch_to_branch(ostop,dstop))
@@ -268,7 +268,7 @@ void TestDrottningholmCollection_drt::testPathSetTransfers()
                     // if branch to branch then we should only have direct DRT lines
                     QVERIFY(transit_link->is_flex_line());
                     QVERIFY(is_on_branch(first_stop->get_id())); //boarding stop is on a branch
-                    QVERIFY(is_on_branch(last_stop->get_id())); // alighting stop is the transfer stop to fixed
+                    QVERIFY(is_on_branch(last_stop->get_id())); // alighting stop is on a branch
                 }
                 if(od_category == ODCategory::b2c) //branch2corridor
                 {
@@ -477,24 +477,105 @@ void TestDrottningholmCollection_drt::testRunNetwork()
 void TestDrottningholmCollection_drt::testPassAssignment()
 {
     /**
-      @todo Check that passengers can reach their destinations for all OD stop pairs with demand associated with them (in this unidirectional demand network)
+      Check that passengers can reach their destinations for all OD stop pairs with demand associated with them (in this unidirectional demand network)
+
+      @todo
+        Print out first passenger that arrived for each OD, what their request ended up being and how far they managed to get, use the test attribute of ODstops 'first_passenger_start'
+            - Time the passenger arrived
+            - Connection, transitmode and dropoff stop decision made after Passenger::start
+            - State of the request that they generated if transitmode is equal to flexible (Null, Unmatched, Assigned)
+                - assert that if transitmode equal to fixed, no request was generated
+            - If the passenger reached their final destination or not
+            - If not, where did they end up, what is their current location
     */
+    
     vector<ODstops*> odstops_demand = net->get_odstops_demand();
-    //QVERIFY2(odstops_demand.size() == 6, "Failure, network should have 6 od stop pairs (with non-zero demand defined in transit_demand.dat) ");
+    QVERIFY2(odstops_demand.size() == 140, "Failure, network should have 140 od stop pairs (with non-zero demand defined in transit_demand.dat) ");
 
     for(auto od : odstops_demand)
     {
         // verify non-zero demand for this OD
         QVERIFY2(od->get_arrivalrate() > 0,"Failure, all ODstops in Network::odstops_demand should have positive arrival rate.");
 
-        // verify that at least one passenger per OD made it to their destination
-        if (!od->get_passengers_during_simulation().empty()) // at least one passenger was generated
+        QVERIFY(!od->get_passengers_during_simulation().empty()); // at least one passenger was generated
+        QVERIFY(od->first_passenger_start != nullptr); // at least one passenger was added to the Eventlist and its Passenger::start action called
+        Passenger* first_pass = od->first_passenger_start;
+        
+        QString orig_s = QString::number(od->get_origin()->get_id());
+        QString dest_s = QString::number(od->get_destination()->get_id());
+
+        // check expected passenger behavior for this network
+        if(first_pass != nullptr)
         {
-            QString orig_s = QString::number(od->get_origin()->get_id());
-            QString dest_s = QString::number(od->get_destination()->get_id());
-            QString failmsg = "Failure, at least one passenger for ODstop (" + orig_s + "," + dest_s + ") with non-zero demand should have reached final destination.";
-            QVERIFY2(od->get_nr_pass_completed() > 0, qPrintable(failmsg)); //OBS needs to be called after saveResults test
+            qDebug() << "First passenger for OD " << "(" << orig_s << "," << dest_s << "):";
+            qDebug() << "\t" << "finished trip    : " << (first_pass->get_end_time() > 0);
+            qDebug() << "\t" << "start time       : " << first_pass->get_start_time();
+            qDebug() << "\t" << "last stop visited: " << first_pass->get_chosen_path_stops().back().first->get_id();
+            
+            // collect the first set of decisions for the first passenger for each ODstop with demand
+            list<Pass_connection_decision> connection_decisions = od->get_pass_connection_decisions(first_pass);
+            list<Pass_transitmode_decision> mode_decisions = od->get_pass_transitmode_decisions(first_pass);
+            list<Pass_dropoff_decision> dropoff_decisions = od->get_pass_dropoff_decisions(first_pass);
+            
+            QVERIFY(connection_decisions.front().chosen_connection_stop == od->get_origin()->get_id()); // pass always stays (no walking links)
+            QVERIFY(mode_decisions.front().chosen_transitmode != TransitModeType::Null); // A choice of either fixed or flexible should have always been made
+            
+            if(mode_decisions.front().chosen_transitmode == TransitModeType::Fixed)
+            {
+                QVERIFY(first_pass->get_curr_request() == nullptr); // a request should never have been generated if transit mode choice is fixed
+                QVERIFY(is_on_corridor(od->get_origin()->get_id())); // the origin of this passenger should be on the corridor if their first transitmode decision is fixed
+                
+            }
+            else if(mode_decisions.front().chosen_transitmode == TransitModeType::Flexible)
+            {
+                if(first_pass->get_end_time() > 0) // passenger completed their trip
+                {
+                    QVERIFY(first_pass->get_curr_request() == nullptr); // curr request reset to null after a trip is completed
+                    //QVERIFY(first_pass->get_)
+                    
+                    if(is_on_branch(first_pass->get_OD_stop()->get_destination()->get_id()) && first_pass->get_original_origin()->get_id() != transfer_stop_id) // passenger must have made a transfer to reach final dest
+                    {
+                        QVERIFY(first_pass->get_nr_boardings() == 2); // a total of 2 vehicle should have been used to reach final dest.
+                    }
+                }
+                else // the passengers first decision was flexible but they never reached their destination
+                {
+                    Request* request = first_pass->get_curr_request();
+                    QVERIFY(request != nullptr); // not requests should have been rejected or canceled
+                    // Print out the request attributes (maybe create a print member method of Request for this):
+//                    int id;
+//                    int pass_id = -1;    //!< id of passenger that created request
+//                    int ostop_id = -1;   //!< id of origin stop
+//                    int dstop_id = -1;   //!< id of destination stop
+//                    int load = -1;       //!< number of passengers in request
+//                    double desired_departure_time = -1.0;  //!< desired/earliest departure time for passenger
+//                    double time = -1.0;                    //!< time request was generated
+//                    RequestState state = RequestState::Null; //!< current state of the request
+//                    Passenger* pass_owner = nullptr; //!< passenger who sent this request
+//                    Bus* assigned_veh = nullptr; //!< vehicle that has been assigned to this request, nullptr if none has been assigned
+//                    Bustrip* assigned_trip = nullptr; //!< bustrip that has been assigned to this request, nullptr by default, updated when assigned
+                    if(request != nullptr)
+                    {
+                        QVERIFY(request->pass_id == request->pass_owner->get_id());
+                        
+                        qDebug() << "\n\t chose FLEX, did not reach final dest, curr_request: ";
+                        qDebug() << "\t\t pass_id      : " << request->pass_id;
+                        qDebug() << "\t\t ostop_id     : " << request->ostop_id;
+                        qDebug() << "\t\t dstop_id     : " << request->dstop_id;
+                        qDebug() << "\t\t load         : " << request->load;
+                        qDebug() << "\t\t t_desired_dep: " << request->time_desired_departure;
+                        qDebug() << "\t\t t_request_gen: " << request->time_request_generated;
+                        qDebug() << "\t\t request_state: " << Request::state_to_string(request->state);
+                    }
+                }
+            }
+            
+
         }
+
+        // verify that at least one passenger per OD made it to their destination
+        QString failmsg = "Failure, at least one passenger for ODstop (" + orig_s + "," + dest_s + ") with non-zero demand should have reached final destination.";
+        QVERIFY2(od->get_nr_pass_completed() > 0, qPrintable(failmsg)); //OBS needs to be called after saveResults test
     }
 }
 
