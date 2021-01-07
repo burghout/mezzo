@@ -2828,6 +2828,11 @@ bool Network::readtransitdemand (string name)
         }
         if (format == 3)
         {
+            if (theParameters->demand_format != 3)
+            {
+                cout << "readtransitdemand: format " << format << " read in " << name << " incompatible with parameter demand_format= " << theParameters->demand_format << endl;
+                return false;
+            }
             if (!read_passenger_rates_format3(in))
             {
                 cout << "readtransitdemand: read_passenger_rates returned false for line nr " << (i+1) << endl;
@@ -2840,25 +2845,95 @@ bool Network::readtransitdemand (string name)
             return false;
         }
     }
-    if (format == 3)
+
+    return true;
+}
+
+bool Network::readtransitdemand_empirical(const string& name)
+{
+    assert(theParameters->demand_format == 3); //currently assumes demand_format 3 is being used
+    ifstream in{ name.c_str() }; // open input file
+    if (!in)
     {
-        //generate_stop_ods();
-        if (theParameters->choice_set_indicator == 0)
+        cout << "Problem reading empirical demand: " << name << endl;
+        return false;
+    }
+
+    string line;
+    int counter = 0;
+    while (getline(in, line))
+    {
+        if (line.empty()) //skip empty lines
+            continue;
+
+        ++counter;
+        istringstream iss(line);
+        int origin_stop_id, destination_stop_id;
+        double arrival_time; //arrival time in seconds after start passenger generation time
+
+        if (!(iss >> origin_stop_id >> destination_stop_id >> arrival_time))
         {
-            generate_consecutive_stops();
-            if (theParameters->od_pairs_for_generation)
+            cout << "readtransitdemand_empirical: scanner jammed at line nr " << counter << "." << endl
+                << "\tRead: " << line << endl;
+            return false;
+        }
+
+        if (arrival_time + theParameters->start_pass_generation < 0)
+        {
+            cout << "readtransitdemand_empirical: scanner jammed at line nr " << counter << ". Passenger arrival time " << arrival_time << " seconds after start_pass_generation " << theParameters->start_pass_generation << " is negative." << endl;
+            return false;
+        }
+
+        vector<Busstop*>::iterator bs_o_it = find_if(busstops.begin(), busstops.end(), compare <Busstop>(origin_stop_id));
+        if (bs_o_it == busstops.end())
+        {
+            cout << "readtransitdemand_empirical: scanner jammed at line nr " << counter << ". Bus stop " << origin_stop_id << " not found." << endl;
+            return false;
+        }
+        Busstop* bs_o = *bs_o_it;
+        vector<Busstop*>::iterator bs_d_it = find_if(busstops.begin(), busstops.end(), compare <Busstop>(destination_stop_id));
+        if (bs_d_it == busstops.end())
+        {
+            cout << "readtransitdemand_empirical: scanner jammed at line nr " << counter << ". Bus stop " << destination_stop_id << " not found." << endl;
+            return false;
+        }
+        Busstop* bs_d = *bs_d_it;
+
+        ODstops* od_stop = nullptr;
+        //Check if this ODstops has already been created
+        if (bs_o->check_stop_od_as_origin_per_stop(bs_d) == false) //check if OD stop pair exists with this stop as origin to the destination of the passenger
+        {
+            od_stop = new ODstops(bs_o, bs_d, 0.0); //arrival rate set to zero, if non-zero should not have passed check. Note: means this must be called AFTER readtransitdemand
+            bs_o->add_odstops_as_origin(bs_d, od_stop);
+            bs_d->add_odstops_as_destination(bs_o, od_stop);
+            odstops.push_back(od_stop); //used for resets, as well as when passengers are deleted between resets
+            odstops_demand.push_back(od_stop); //if arrival rate is zero, should never be initialized via ODstops->execute. Used also for writing outputs for each odstop with at least one passenger generated
+        }
+        else 
+        {
+            vector<ODstops*>::iterator od_stop_it;
+            od_stop_it = find_if(odstops.begin(), odstops.end(), [bs_o, bs_d](const ODstops* od_stop) -> bool
+                {
+                    return (od_stop->get_origin() == bs_o) && (od_stop->get_destination() == bs_d);
+                }
+            );
+            if (od_stop_it == odstops.end()) //if true something is wrong with check_stop_od_as_origin_per_stop
             {
-                assert(!theParameters->drt); //this call path is currently completely untested with DRT
-                read_od_pairs_for_generation (workingdir + "ODpairs_pathset.dat");
-                find_all_paths_with_OD_for_generation();
+                cout << "readtransitdemand_empirical: scanner jammed at line nr " << counter << ". ODstop not found." << endl
+                    << "\tRead: " << line << endl;
+                return false;
             }
             else
-            {
-                find_all_paths_fast();
-            }
+                od_stop = *od_stop_it;
         }
+        od_stop->set_empirical_arrivals(true); //flags that this odstop is generating empirical arrival events (needed to keep track between resets in Network::init for both day2day and without)
+
+        empirical_passenger_arrivals.push_back(make_pair(od_stop, arrival_time + theParameters->start_pass_generation));
     }
+
+    cout << "readtransitdemand_empirical: read " << counter << " passengers." << endl;
     return true;
+
 }
 
 bool Network::read_od_pairs_for_generation (string name)
@@ -8573,7 +8648,7 @@ double Network::executemaster(QPixmap * pm_,QMatrix * wm_)
 
     if (theParameters->drt)
     {
-        if (!readcontrolcenters(workingdir + "controlcenters.dat")) //Note: currently dependent on being read after transit network (to find stops and lines) and before transit fleet (to find control center)
+        if (!readcontrolcenters(workingdir + "controlcenters.dat")) //Note: currently dependent on being read after transit network (to find stops and lines) and before transit fleet (to find control center) and before path_set_generation
         {
             DEBUG_MSG_V("Problem reading controlcenters.dat. Aborting...");
             abort();
@@ -8582,10 +8657,36 @@ double Network::executemaster(QPixmap * pm_,QMatrix * wm_)
 
     this->readtransitfleet (workingdir + "transit_fleet.dat");
     this->readtransitdemand (workingdir + "transit_demand.dat");
-    if (theParameters->choice_set_indicator == 1)
+
+    if (theParameters->empirical_demand == 1)
     {
-        this->read_transit_path_sets (workingdir +"path_set_generation.dat");
+        assert(theParameters->demand_format == 3);
+        this->readtransitdemand_empirical(workingdir + "transit_demand_empirical.dat"); // needs to be called before path set generation (since odstops with no demand are skipped)
     }
+
+    if (theParameters->demand_format == 3)
+    {
+        //generate_stop_ods();
+        if (theParameters->choice_set_indicator == 0)
+        {
+            generate_consecutive_stops();
+            if (theParameters->od_pairs_for_generation)
+            {
+                assert(!theParameters->drt); //this call path is currently completely untested with DRT
+                read_od_pairs_for_generation(workingdir + "ODpairs_pathset.dat");
+                find_all_paths_with_OD_for_generation();
+            }
+            else
+            {
+                find_all_paths_fast();
+            }
+        }
+        else if (theParameters->choice_set_indicator == 1)
+        {
+            this->read_transit_path_sets(workingdir + "path_set_generation.dat");
+        }
+    }
+
     day = 1;
     day2day = new Day2day(1);
     if (theParameters->pass_day_to_day_indicator >= 1)
@@ -8692,7 +8793,7 @@ double Network::executemaster()
 
     if (theParameters->drt)
     {
-        if (!readcontrolcenters(workingdir + "controlcenters.dat")) //Note: currently dependent on being read after transit network (to find stops and lines) and before transit fleet (to find control center)
+        if (!readcontrolcenters(workingdir + "controlcenters.dat")) //Note: currently dependent on being read after transit network (to find stops and lines) and before transit fleet (to find control center) and path_set_generation (if direct lines are autogenerated)
         {
             DEBUG_MSG_V("Problem reading controlcenters.dat. Aborting...");
             abort();
@@ -8701,10 +8802,35 @@ double Network::executemaster()
 
     this->readtransitfleet (workingdir + "transit_fleet.dat");
     this->readtransitdemand (workingdir + "transit_demand.dat");
-    if (theParameters->choice_set_indicator == 1)
+    
+    if (theParameters->empirical_demand == 1)
     {
-        this->read_transit_path_sets (workingdir +"path_set_generation.dat");
+        assert(theParameters->demand_format == 3);
+        this->readtransitdemand_empirical(workingdir + "transit_demand_empirical.dat");
     }
+
+    if (theParameters->demand_format == 3)
+    {
+        //generate_stop_ods();
+        if (theParameters->choice_set_indicator == 0)
+        {
+            generate_consecutive_stops();
+            if (theParameters->od_pairs_for_generation == true)
+            {
+                read_od_pairs_for_generation(workingdir + "ODpairs_pathset.dat");
+                find_all_paths_with_OD_for_generation();
+            }
+            else
+            {
+                find_all_paths_fast();
+            }
+        }
+        else if (theParameters->choice_set_indicator == 1)
+        {
+            this->read_transit_path_sets(workingdir + "path_set_generation.dat");
+        }
+    }
+
     day = 1;
     day2day = new Day2day(1);
     if (theParameters->pass_day_to_day_indicator >= 1)
@@ -9028,9 +9154,35 @@ bool Network::init()
 
     if(theParameters->demand_format == 3)
     {
+        if (theParameters->empirical_demand == 1)
+        {
+            //!< @todo should work with day2day as well as far as I can tell, however this needs to be tested further, seems to work with SF network with day2day in test group
+            //assert(theParameters->pass_day_to_day_indicator == 0); 
+            //assert(theParameters->in_vehicle_d2d_indicator == 0);
+
+            for (const auto& od_arrival : empirical_passenger_arrivals) //add all empirical passenger arrivals to corresponding OD in terms of stops. TODO: currently untested with day2day, should be fine though
+            {
+                ODstops* od_stop = od_arrival.first;
+                double arrival_time = od_arrival.second;
+
+                if (od_stop->check_path_set() == true && !od_stop->is_active()) // if non-empty path set and not an initialization call. For resets then the passengers should already have been added to the odstops_demand->execute chain via add_passenger_to_odstop
+                {
+                    Passenger* pass = new Passenger(pid, arrival_time, od_stop);
+                    od_stop->add_passenger_to_odstop(pass);
+                    pid++;
+                    pass->init();
+                    eventlist->add_event(arrival_time, pass);
+                }
+                else
+                {
+                    assert((theParameters->pass_day_to_day_indicator > 0 || theParameters->in_vehicle_d2d_indicator > 0)); // if od stop is active here, this means we have this is not the first call to Network::init after reset AND passengers are not deleted between resets with day2day (they have memory)
+                    assert(od_stop->has_empirical_arrivals()); //Empirical passengers will be initialized via ODstops::execute instead ('active' call to this will loop over ODstops::passengers_during_simulation)
+                }
+            }
+        }
         for (auto iter_odstops = odstops_demand.begin(); iter_odstops < odstops_demand.end(); iter_odstops++ )
         {
-            if ((*iter_odstops)->get_arrivalrate() != 0.0 )
+            if ((*iter_odstops)->get_arrivalrate() != 0.0 || (*iter_odstops)->has_empirical_arrivals())
             {
                 if ((*iter_odstops)->check_path_set())
                 {
