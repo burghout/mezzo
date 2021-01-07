@@ -495,7 +495,7 @@ void TestDrottningholmCollection_drt::testPassAssignment()
     for(auto od : odstops_demand)
     {
         // verify non-zero demand for this OD
-        QVERIFY2(od->get_arrivalrate() > 0,"Failure, all ODstops in Network::odstops_demand should have positive arrival rate.");
+        QVERIFY2((od->get_arrivalrate() > 0 || od->has_empirical_arrivals()),"Failure, all ODstops in Network::odstops_demand should have positive arrival rate.");
 
         QVERIFY(!od->get_passengers_during_simulation().empty()); // at least one passenger was generated
         QVERIFY(od->first_passenger_start != nullptr); // at least one passenger was added to the Eventlist and its Passenger::start action called
@@ -558,7 +558,7 @@ void TestDrottningholmCollection_drt::testPassAssignment()
                     {
                         QVERIFY(request->pass_id == request->pass_owner->get_id());
                         
-                        qDebug() << "\n\t chose FLEX, did not reach final dest, curr_request: ";
+                        qDebug() << "\t\t chose FLEX, did not reach final dest, curr_request: ";
                         qDebug() << "\t\t pass_id      : " << request->pass_id;
                         qDebug() << "\t\t ostop_id     : " << request->ostop_id;
                         qDebug() << "\t\t dstop_id     : " << request->dstop_id;

@@ -95,6 +95,16 @@ void TestSpiessFlorianFixed::testInitNetwork()
     QVERIFY2(theParameters->real_time_info == 2, "Failure, real time info is not set to 2 in parameters");
     QVERIFY2(theParameters->choice_set_indicator == 0, "Failure, choice set indicator is not set to 0 in parameters");
 
+    //Test reading of empirical passenger arrivals
+    QVERIFY2(theParameters->empirical_demand == 1, "Failure, empirical demand not set to 1 in parameters");
+    vector<pair<ODstops*, double> > empirical_passenger_arrivals = net->get_empirical_passenger_arrivals();
+    QVERIFY2(empirical_passenger_arrivals.size() == 7, "Failure, there should be 7 empirical passenger arrivals");
+
+    for(const auto& pass_arrival : empirical_passenger_arrivals)
+    {
+        QVERIFY2(AproxEqual(pass_arrival.second,(theParameters->start_pass_generation + 100)), "Failure, empirical passenger arrivals should be 100 seconds after start_pass_generation");
+    }
+    
 	//Test if newly generated passenger path sets match expected output
     qDebug() << "Comparing " + path_set_generation_filename + " with ExpectedOutputs/" + path_set_generation_filename;
 	QString ex_path_set_fullpath = expected_outputs_path + path_set_generation_filename;
@@ -215,7 +225,7 @@ void TestSpiessFlorianFixed::testPassAssignment()
     for(auto od : odstops_demand)
     {
         // verify non-zero demand for this OD
-        QVERIFY2(od->get_arrivalrate() > 0,"Failure, all ODstops in Network::odstops_demand should have positive arrival rate.");
+        QVERIFY2((od->get_arrivalrate() > 0 || od->has_empirical_arrivals()),"Failure, all ODstops in Network::odstops_demand should have positive arrival rate or empirical demand.");
 
         // verify that at least one passenger per OD made it to their destination
         if (!od->get_passengers_during_simulation().empty()) // at least one passenger was generated
