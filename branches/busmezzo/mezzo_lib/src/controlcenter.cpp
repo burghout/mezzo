@@ -691,6 +691,17 @@ map<BusState, set<Bus*>> Controlcenter::getFleetState() const
 	return fleetState_;
 }
 
+void Controlcenter::printFleetState() const
+{
+	for (const auto& state : fleetState_)
+	{
+		for (auto veh : state.second)
+		{
+			veh->print_state();
+		}
+	}
+}
+
 bool Controlcenter::isInServiceArea(Busstop* stop) const
 {
     if(serviceArea_.count(stop) != 0) {

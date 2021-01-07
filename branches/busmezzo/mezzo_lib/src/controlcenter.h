@@ -238,6 +238,8 @@ public:
     map<int,Bus*> getConnectedVehicles() const;
 
 	map<BusState, set<Bus*> > getFleetState() const;
+	void printFleetState() const; //!< for printing the state of the entire fleet for debugging
+
 	set<Bus*> getAllVehicles();
 	set<Bus*> getVehiclesDrivingToStop(Busstop* end_stop); //!< get connected vehicles that are driving to target end_stop
 	set<Bus*> getOnCallVehiclesAtStop(Busstop* stop); //!< get connected vehicles that are currently on-call at target stop
