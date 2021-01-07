@@ -71,6 +71,7 @@
    stop_pass_generation= 18000.0
    od_pairs_for_generation= 0
    gate_generation_time_diff= 0
+   empirical_demand= 0
 #transit_control_parameters
    riding_time_weight= 1.0
    dwell_time_weight= 1.0
