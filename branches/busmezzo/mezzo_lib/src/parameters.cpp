@@ -704,7 +704,13 @@ bool Parameters::read_parameters (istream & in )
             return false;
         }
         in >> gate_generation_time_diff;
-        
+		in >> keyword;
+		if (keyword != "empirical_demand=")
+		{
+			cout << "ERROR reading Parameters file, expecting: empirical_demand=, read: " << keyword << endl;
+			return false;
+		}
+		in >> empirical_demand;
 	}
 	in >> keyword;
 	if (keyword!= "#transit_control_parameters")
