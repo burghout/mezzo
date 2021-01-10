@@ -163,13 +163,15 @@ void TestDrottningholmCollection_drt::testInitNetwork()
     QVERIFY(theParameters->walking_time_coefficient== -0.00);
     QVERIFY(theParameters->average_walking_speed== 66.66);
 
-
+    //Test reading of empirical passenger arrivals
+    QVERIFY2(theParameters->empirical_demand == 1, "Failure, empirical demand not set to 1 in parameters");
+    vector<pair<ODstops*, double> > empirical_passenger_arrivals = net->get_empirical_passenger_arrivals();
+    QVERIFY2(empirical_passenger_arrivals.size() == 140, "Failure, there should be 140 empirical passenger arrivals");
+    
     // Autogen of DRT lines parameters, there should be one control center, and it autogenerates all lines between all stops
     map<int,Controlcenter*> ccmap = net->get_controlcenters();
     QVERIFY2(ccmap.size() == 1, "Failure, network should have 1 controlcenter");
     QVERIFY2(ccmap.begin()->second->getGeneratedDirectRoutes() == true, "Failure, generate direct routes of controlcenter is not set to 1");
-
-
 
     //!< Test if newly generated passenger path sets match expected output
     qDebug() << "Comparing " + path_set_generation_filename + " with ExpectedOutputs/" + path_set_generation_filename;
@@ -533,9 +535,14 @@ void TestDrottningholmCollection_drt::testPassAssignment()
                     QVERIFY(first_pass->get_curr_request() == nullptr); // curr request reset to null after a trip is completed
                     //QVERIFY(first_pass->get_)
                     
-                    if(is_on_branch(first_pass->get_OD_stop()->get_destination()->get_id()) && first_pass->get_original_origin()->get_id() != transfer_stop_id) // passenger must have made a transfer to reach final dest
+                    if(!is_on_branch(first_pass->get_OD_stop()->get_destination()->get_id()) && first_pass->get_original_origin()->get_id() != transfer_stop_id) // passenger must have made a transfer to reach final dest
                     {
                         QVERIFY(first_pass->get_nr_boardings() == 2); // a total of 2 vehicle should have been used to reach final dest.
+                        QVERIFY(mode_decisions.back().chosen_transitmode == TransitModeType::Fixed); // last chosen mode should be fixed
+                    }
+                    else if(is_on_branch(first_pass->get_OD_stop()->get_destination()->get_id()) && is_on_branch(first_pass->get_original_origin()->get_id()))
+                    {
+                        QVERIFY(first_pass->get_nr_boardings() == 1); // a total of 1 vehicle should have been used to reach final dest. From branch to branch
                     }
                 }
                 else // the passengers first decision was flexible but they never reached their destination

@@ -343,6 +343,9 @@ void Passenger::start (Eventlist* eventlist, double time)
 		stop_time.first = connection_stop;
 		double arrival_time_to_connected_stop = start_time;
 
+		if (OD_stop->first_passenger_start == nullptr)
+			OD_stop->first_passenger_start = this;
+
 		if (connection_stop->get_id() != OD_stop->get_origin()->get_id()) // if the pass. walks to another stop
 		{
 			// set connected_stop as the new origin
