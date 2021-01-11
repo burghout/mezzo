@@ -1,33 +1,33 @@
 ### Total passenger summary ###
-Passenger journeys completed: 195
+Passenger journeys completed: 1
 
 Total walking time             : 0
 Average walking time           : 0
 
-Total waiting time             : 65554.2
-Average total waiting time     : 336.176
-Minimum waiting time           : 0.216949
-Maximum waiting time           : 1364.83
-Median waiting time            : 283.598
+Total waiting time             : 186.1
+Average total waiting time     : 186.1
+Minimum waiting time           : 186.1
+Maximum waiting time           : 186.1
+Median waiting time            : 186.1
 
 Total denied waiting time      : 0
 Average denied waiting time    : 0
 
-Total in-vehicle time          : 48297.1
-Average in-vehicle time        : 247.677
+Total in-vehicle time          : 293.007
+Average in-vehicle time        : 293.007
 
-Total crowded in-vehicle time  : 45882.2
-Average crowded in-vehicle time: 235.293
+Total crowded in-vehicle time  : 278.357
+Average crowded in-vehicle time: 278.357
 
 ### Total vehicle summary ###
-Total VKT                   : 102.675
-Total occupied VKT          : 51.978
-Total empty VKT             : 50.697
-Total occupied time         : 6458.38
-Total empty time            : 18055.8
-Total driving time          : 12341.3
-Total idle time             : 585.531
-Total oncall time           : 11587.3
+Total VKT                   : 3.927
+Total occupied VKT          : 2.427
+Total empty VKT             : 1.5
+Total occupied time         : 293.007
+Total empty time            : 198.1
+Total driving time          : 472.007
+Total idle time             : 9.10014
+Total oncall time           : 10
 
 ### Fixed vehicle summmary ###
 Fixed VKT                   : 0
@@ -40,20 +40,20 @@ Fixed idle time             : 0
 Fixed oncall time           : 0
 
 ### DRT vehicle summmary ###
-DRT VKT                     : 102.675
-DRT occupied VKT            : 51.978
-DRT empty VKT               : 50.697
-DRT occupied time           : 6458.38
-DRT empty time              : 18055.8
-DRT driving time            : 12341.3
-DRT idle time               : 585.531
-DRT oncall time             : 11587.3
+DRT VKT                     : 3.927
+DRT occupied VKT            : 2.427
+DRT empty VKT               : 1.5
+DRT occupied time           : 293.007
+DRT empty time              : 198.1
+DRT driving time            : 472.007
+DRT idle time               : 9.10014
+DRT oncall time             : 10
 
 ### ControlCenter summmary ###
-Requests recieved           : 195
+Requests recieved           : 1
 Requests rejected           : 0
-Requests accepted           : 195
-Requests served             : 195
+Requests accepted           : 1
+Requests served             : 1
 
 ------------------------------------------------------------------
 

@@ -1,12 +1,3 @@
 Line_ID	Upstream_stop_ID	Upstream_stop_name	Downstream_stop_ID	Downstream_stop_name	Passenger_load	
-10000	1	A	2	B	0	
-10003	1	A	5	E	42	
-10005	2	B	3	C	0	
-10007	2	B	5	E	47	
-10009	3	C	2	B	0	
-10011	3	C	5	E	53	
-10015	4	D	5	E	53	
-10016	5	E	1	A	0	
-10017	5	E	2	B	0	
-10018	5	E	3	C	0	
-10019	5	E	4	D	0	
+10001	1	A	3	C	1	
+10004	2	B	1	A	0	
