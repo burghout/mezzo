@@ -37,8 +37,8 @@ int Request::id_counter = 0;
 
 
 // Request
-Request::Request(Passenger* pass, int pid, int oid, int did, int l, double dt, double t) :
-    pass_id(pid), ostop_id(oid), dstop_id(did), load(l), desired_departure_time(dt), time(t),  pass_owner(pass)
+Request::Request(Passenger * pass_owner, int pass_id, int ostop_id, int dstop_id, int load, double t_departure, double t_generated) :
+    pass_owner(pass_owner), pass_id(pass_id), ostop_id(ostop_id), dstop_id(dstop_id), load(load), time_desired_departure(t_departure), time_request_generated(t_generated)
 {
     id = ++id_counter;
     qRegisterMetaType<Request>(); //register Request as a metatype for QT signal arguments
@@ -82,17 +82,40 @@ void Request::print_state()
     cout << endl;
 }
 
+QString Request::state_to_string(RequestState state)
+{
+    QString state_s = "";
+    switch (state)
+    {
+    case RequestState::Null:
+        state_s = "Null";
+        break;
+    case RequestState::Unmatched:
+        state_s = "Unmatched";
+        break;
+    case RequestState::Matched:
+        state_s = "Matched";
+        break;
+    case RequestState::Assigned:
+        state_s = "Assigned";
+        break;
+    }
+
+    return state_s;
+}
+
+
 bool Request::operator==(const Request & rhs) const
 {
-    return (pass_owner == rhs.pass_owner && pass_id == rhs.pass_id && ostop_id == rhs.ostop_id && dstop_id == rhs.dstop_id && load == rhs.load && AproxEqual(desired_departure_time,rhs.desired_departure_time) && AproxEqual(time,rhs.time));
+    return (pass_owner == rhs.pass_owner && pass_id == rhs.pass_id && ostop_id == rhs.ostop_id && dstop_id == rhs.dstop_id && load == rhs.load && AproxEqual(time_desired_departure,rhs.time_desired_departure) && AproxEqual(time_request_generated,rhs.time_request_generated));
 }
 
 bool Request::operator<(const Request & rhs) const
 {
-    if (desired_departure_time != rhs.desired_departure_time)
-        return desired_departure_time < rhs.desired_departure_time;
-    else if (time != rhs.time)
-        return time < rhs.time;
+    if (time_desired_departure != rhs.time_desired_departure)
+        return time_desired_departure < rhs.time_desired_departure;
+    else if (time_request_generated != rhs.time_request_generated)
+        return time_request_generated < rhs.time_request_generated;
     else if (load != rhs.load)
         return load < rhs.load;
     else if (ostop_id != rhs.ostop_id)

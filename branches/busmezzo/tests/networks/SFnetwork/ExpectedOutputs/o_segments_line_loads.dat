@@ -1,7 +1,7 @@
 Line_ID	Upstream_stop_ID	Upstream_stop_name	Downstream_stop_ID	Downstream_stop_name	Passenger_load	
-1	1	A	4	D	161	
-2	1	A	2	B	460	
-2	2	B	3	C	317	
-3	2	B	3	C	176	
-3	3	C	4	D	143	
-4	3	C	4	D	187	
+1	1	A	4	D	136	
+2	1	A	2	B	430	
+2	2	B	3	C	321	
+3	2	B	3	C	179	
+3	3	C	4	D	144	
+4	3	C	4	D	203	

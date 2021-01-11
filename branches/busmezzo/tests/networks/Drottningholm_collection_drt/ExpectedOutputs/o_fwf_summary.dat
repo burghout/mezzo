@@ -293,3 +293,593 @@ Requests served             : 4260
 
 ------------------------------------------------------------------
 
+### Total passenger summary ###
+Passenger journeys completed: 11104
+
+Total walking time             : 0
+Average walking time           : 0
+
+Total waiting time             : 2.81926e+07
+Average total waiting time     : 2538.96
+Minimum waiting time           : 0
+Maximum waiting time           : 12598.4
+Median waiting time            : 590.04
+
+Total denied waiting time      : 1.67187e+07
+Average denied waiting time    : 1505.65
+
+Total in-vehicle time          : 2.72591e+07
+Average in-vehicle time        : 2454.89
+
+Total crowded in-vehicle time  : 5.36198e+07
+Average crowded in-vehicle time: 4828.87
+
+### Total vehicle summary ###
+Total VKT                   : 3992.11
+Total occupied VKT          : 1971.67
+Total empty VKT             : 2020.44
+Total occupied time         : 374599
+Total empty time            : 1.09252e+06
+Total driving time          : 528728
+Total idle time             : 104653
+Total oncall time           : 833740
+
+### Fixed vehicle summmary ###
+Fixed VKT                   : 1468.78
+Fixed occupied VKT          : 1038.32
+Fixed empty VKT             : 430.46
+Fixed occupied time         : 226039
+Fixed empty time            : 72037
+Fixed driving time          : 237039
+Fixed idle time             : 61037.5
+Fixed oncall time           : 0
+
+### DRT vehicle summmary ###
+DRT VKT                     : 2523.33
+DRT occupied VKT            : 933.35
+DRT empty VKT               : 1589.98
+DRT occupied time           : 148560
+DRT empty time              : 1.02048e+06
+DRT driving time            : 291689
+DRT idle time               : 43615.7
+DRT oncall time             : 833740
+
+### ControlCenter summmary ###
+Requests recieved           : 5811
+Requests rejected           : 0
+Requests accepted           : 5811
+Requests served             : 4154
+
+------------------------------------------------------------------
+
+### Total passenger summary ###
+Passenger journeys completed: 10959
+
+Total walking time             : 0
+Average walking time           : 0
+
+Total waiting time             : 3.35757e+07
+Average total waiting time     : 3063.76
+Minimum waiting time           : 0
+Maximum waiting time           : 12845.2
+Median waiting time            : 584.029
+
+Total denied waiting time      : 2.10261e+07
+Average denied waiting time    : 1918.61
+
+Total in-vehicle time          : 2.68086e+07
+Average in-vehicle time        : 2446.27
+
+Total crowded in-vehicle time  : 5.26454e+07
+Average crowded in-vehicle time: 4803.85
+
+### Total vehicle summary ###
+Total VKT                   : 3831.22
+Total occupied VKT          : 1875.92
+Total empty VKT             : 1955.3
+Total occupied time         : 360768
+Total empty time            : 1.03719e+06
+Total driving time          : 513975
+Total idle time             : 93862
+Total oncall time           : 790121
+
+### Fixed vehicle summmary ###
+Fixed VKT                   : 1467.23
+Fixed occupied VKT          : 1024.42
+Fixed empty VKT             : 442.81
+Fixed occupied time         : 224152
+Fixed empty time            : 73396
+Fixed driving time          : 236293
+Fixed idle time             : 61255.2
+Fixed oncall time           : 0
+
+### DRT vehicle summmary ###
+DRT VKT                     : 2363.99
+DRT occupied VKT            : 851.5
+DRT empty VKT               : 1512.49
+DRT occupied time           : 136615
+DRT empty time              : 963795
+DRT driving time            : 277682
+DRT idle time               : 32606.9
+DRT oncall time             : 790121
+
+### ControlCenter summmary ###
+Requests recieved           : 5783
+Requests rejected           : 0
+Requests accepted           : 5783
+Requests served             : 4044
+
+------------------------------------------------------------------
+
+### Total passenger summary ###
+Passenger journeys completed: 11005
+
+Total walking time             : 0
+Average walking time           : 0
+
+Total waiting time             : 2.74173e+07
+Average total waiting time     : 2491.35
+Minimum waiting time           : 0
+Maximum waiting time           : 12601.7
+Median waiting time            : 464.647
+
+Total denied waiting time      : 1.72164e+07
+Average denied waiting time    : 1564.41
+
+Total in-vehicle time          : 2.71423e+07
+Average in-vehicle time        : 2466.36
+
+Total crowded in-vehicle time  : 5.30149e+07
+Average crowded in-vehicle time: 4817.35
+
+### Total vehicle summary ###
+Total VKT                   : 3914.86
+Total occupied VKT          : 1914.52
+Total empty VKT             : 2000.34
+Total occupied time         : 368035
+Total empty time            : 1.06079e+06
+Total driving time          : 520336
+Total idle time             : 95812.8
+Total oncall time           : 812674
+
+### Fixed vehicle summmary ###
+Fixed VKT                   : 1468.96
+Fixed occupied VKT          : 1031.16
+Fixed empty VKT             : 437.8
+Fixed occupied time         : 224799
+Fixed empty time            : 72968.9
+Fixed driving time          : 235712
+Fixed idle time             : 62055.8
+Fixed oncall time           : 0
+
+### DRT vehicle summmary ###
+DRT VKT                     : 2445.9
+DRT occupied VKT            : 883.36
+DRT empty VKT               : 1562.54
+DRT occupied time           : 143236
+DRT empty time              : 987819
+DRT driving time            : 284624
+DRT idle time               : 33757
+DRT oncall time             : 812674
+
+### ControlCenter summmary ###
+Requests recieved           : 5776
+Requests rejected           : 0
+Requests accepted           : 5776
+Requests served             : 4037
+
+------------------------------------------------------------------
+
+### Total passenger summary ###
+Passenger journeys completed: 10939
+
+Total walking time             : 0
+Average walking time           : 0
+
+Total waiting time             : 2.99131e+07
+Average total waiting time     : 2734.54
+Minimum waiting time           : 0
+Maximum waiting time           : 12669
+Median waiting time            : 668.359
+
+Total denied waiting time      : 1.99222e+07
+Average denied waiting time    : 1821.21
+
+Total in-vehicle time          : 2.71432e+07
+Average in-vehicle time        : 2481.32
+
+Total crowded in-vehicle time  : 5.29496e+07
+Average crowded in-vehicle time: 4840.44
+
+### Total vehicle summary ###
+Total VKT                   : 4321
+Total occupied VKT          : 2057.86
+Total empty VKT             : 2263.14
+Total occupied time         : 392148
+Total empty time            : 1.05701e+06
+Total driving time          : 578132
+Total idle time             : 100404
+Total oncall time           : 770619
+
+### Fixed vehicle summmary ###
+Fixed VKT                   : 1463.43
+Fixed occupied VKT          : 1029.85
+Fixed empty VKT             : 433.58
+Fixed occupied time         : 224435
+Fixed empty time            : 72528.6
+Fixed driving time          : 235929
+Fixed idle time             : 61034.7
+Fixed oncall time           : 0
+
+### DRT vehicle summmary ###
+DRT VKT                     : 2857.57
+DRT occupied VKT            : 1028.01
+DRT empty VKT               : 1829.56
+DRT occupied time           : 167713
+DRT empty time              : 984479
+DRT driving time            : 342203
+DRT idle time               : 39369.8
+DRT oncall time             : 770619
+
+### ControlCenter summmary ###
+Requests recieved           : 5858
+Requests rejected           : 0
+Requests accepted           : 5858
+Requests served             : 4477
+
+------------------------------------------------------------------
+
+### Total passenger summary ###
+Passenger journeys completed: 10899
+
+Total walking time             : 0
+Average walking time           : 0
+
+Total waiting time             : 2.71227e+07
+Average total waiting time     : 2488.55
+Minimum waiting time           : 0
+Maximum waiting time           : 12679.8
+Median waiting time            : 510.553
+
+Total denied waiting time      : 1.59329e+07
+Average denied waiting time    : 1461.86
+
+Total in-vehicle time          : 2.72923e+07
+Average in-vehicle time        : 2504.11
+
+Total crowded in-vehicle time  : 5.35111e+07
+Average crowded in-vehicle time: 4909.72
+
+### Total vehicle summary ###
+Total VKT                   : 3916.09
+Total occupied VKT          : 1943.79
+Total empty VKT             : 1972.3
+Total occupied time         : 368965
+Total empty time            : 1.06249e+06
+Total driving time          : 520415
+Total idle time             : 101857
+Total oncall time           : 809180
+
+### Fixed vehicle summmary ###
+Fixed VKT                   : 1461.59
+Fixed occupied VKT          : 1015.46
+Fixed empty VKT             : 446.13
+Fixed occupied time         : 221322
+Fixed empty time            : 73936.3
+Fixed driving time          : 234276
+Fixed idle time             : 60982.4
+Fixed oncall time           : 0
+
+### DRT vehicle summmary ###
+DRT VKT                     : 2454.5
+DRT occupied VKT            : 928.33
+DRT empty VKT               : 1526.17
+DRT occupied time           : 147644
+DRT empty time              : 988550
+DRT driving time            : 286139
+DRT idle time               : 40874.4
+DRT oncall time             : 809180
+
+### ControlCenter summmary ###
+Requests recieved           : 5785
+Requests rejected           : 0
+Requests accepted           : 5785
+Requests served             : 3896
+
+------------------------------------------------------------------
+
+### Total passenger summary ###
+Passenger journeys completed: 11108
+
+Total walking time             : 0
+Average walking time           : 0
+
+Total waiting time             : 2.83171e+07
+Average total waiting time     : 2549.25
+Minimum waiting time           : 0
+Maximum waiting time           : 12355.4
+Median waiting time            : 544.073
+
+Total denied waiting time      : 2.09099e+07
+Average denied waiting time    : 1882.42
+
+Total in-vehicle time          : 2.67693e+07
+Average in-vehicle time        : 2409.91
+
+Total crowded in-vehicle time  : 5.19089e+07
+Average crowded in-vehicle time: 4673.11
+
+### Total vehicle summary ###
+Total VKT                   : 4092.13
+Total occupied VKT          : 1871.33
+Total empty VKT             : 2220.8
+Total occupied time         : 360526
+Total empty time            : 943006
+Total driving time          : 545479
+Total idle time             : 101971
+Total oncall time           : 656081
+
+### Fixed vehicle summmary ###
+Fixed VKT                   : 1470.45
+Fixed occupied VKT          : 988.22
+Fixed empty VKT             : 482.23
+Fixed occupied time         : 217597
+Fixed empty time            : 78896.4
+Fixed driving time          : 234760
+Fixed idle time             : 61734
+Fixed oncall time           : 0
+
+### DRT vehicle summmary ###
+DRT VKT                     : 2621.68
+DRT occupied VKT            : 883.11
+DRT empty VKT               : 1738.57
+DRT occupied time           : 142928
+DRT empty time              : 864109
+DRT driving time            : 310719
+DRT idle time               : 40237.5
+DRT oncall time             : 656081
+
+### ControlCenter summmary ###
+Requests recieved           : 5736
+Requests rejected           : 0
+Requests accepted           : 5736
+Requests served             : 3520
+
+------------------------------------------------------------------
+
+### Total passenger summary ###
+Passenger journeys completed: 11167
+
+Total walking time             : 0
+Average walking time           : 0
+
+Total waiting time             : 3.18314e+07
+Average total waiting time     : 2850.49
+Minimum waiting time           : 0
+Maximum waiting time           : 12578.9
+Median waiting time            : 712.425
+
+Total denied waiting time      : 1.93563e+07
+Average denied waiting time    : 1733.35
+
+Total in-vehicle time          : 2.69732e+07
+Average in-vehicle time        : 2415.44
+
+Total crowded in-vehicle time  : 5.2627e+07
+Average crowded in-vehicle time: 4712.73
+
+### Total vehicle summary ###
+Total VKT                   : 4277.87
+Total occupied VKT          : 2117.72
+Total empty VKT             : 2160.15
+Total occupied time         : 403124
+Total empty time            : 1.14645e+06
+Total driving time          : 579720
+Total idle time             : 112392
+Total oncall time           : 857463
+
+### Fixed vehicle summmary ###
+Fixed VKT                   : 1464.26
+Fixed occupied VKT          : 1029.46
+Fixed empty VKT             : 434.8
+Fixed occupied time         : 224938
+Fixed empty time            : 72928.7
+Fixed driving time          : 236010
+Fixed idle time             : 61856.4
+Fixed oncall time           : 0
+
+### DRT vehicle summmary ###
+DRT VKT                     : 2813.61
+DRT occupied VKT            : 1088.26
+DRT empty VKT               : 1725.35
+DRT occupied time           : 178186
+DRT empty time              : 1.07352e+06
+DRT driving time            : 343710
+DRT idle time               : 50535.8
+DRT oncall time             : 857463
+
+### ControlCenter summmary ###
+Requests recieved           : 5892
+Requests rejected           : 0
+Requests accepted           : 5892
+Requests served             : 4712
+
+------------------------------------------------------------------
+
+### Total passenger summary ###
+Passenger journeys completed: 10862
+
+Total walking time             : 0
+Average walking time           : 0
+
+Total waiting time             : 2.67825e+07
+Average total waiting time     : 2465.71
+Minimum waiting time           : 0
+Maximum waiting time           : 12887.8
+Median waiting time            : 473.495
+
+Total denied waiting time      : 1.76071e+07
+Average denied waiting time    : 1620.98
+
+Total in-vehicle time          : 2.7398e+07
+Average in-vehicle time        : 2522.37
+
+Total crowded in-vehicle time  : 5.28512e+07
+Average crowded in-vehicle time: 4865.69
+
+### Total vehicle summary ###
+Total VKT                   : 3874.03
+Total occupied VKT          : 1942.72
+Total empty VKT             : 1931.31
+Total occupied time         : 372234
+Total empty time            : 1.05791e+06
+Total driving time          : 519728
+Total idle time             : 112639
+Total oncall time           : 797778
+
+### Fixed vehicle summmary ###
+Fixed VKT                   : 1465.41
+Fixed occupied VKT          : 1006.1
+Fixed empty VKT             : 459.31
+Fixed occupied time         : 220399
+Fixed empty time            : 75483.7
+Fixed driving time          : 234623
+Fixed idle time             : 61259
+Fixed oncall time           : 0
+
+### DRT vehicle summmary ###
+DRT VKT                     : 2408.62
+DRT occupied VKT            : 936.62
+DRT empty VKT               : 1472
+DRT occupied time           : 151836
+DRT empty time              : 982426
+DRT driving time            : 285104
+DRT idle time               : 51379.6
+DRT oncall time             : 797778
+
+### ControlCenter summmary ###
+Requests recieved           : 5786
+Requests rejected           : 0
+Requests accepted           : 5786
+Requests served             : 3833
+
+------------------------------------------------------------------
+
+### Total passenger summary ###
+Passenger journeys completed: 11045
+
+Total walking time             : 0
+Average walking time           : 0
+
+Total waiting time             : 2.94017e+07
+Average total waiting time     : 2661.99
+Minimum waiting time           : 0
+Maximum waiting time           : 13027.5
+Median waiting time            : 532.627
+
+Total denied waiting time      : 2.04401e+07
+Average denied waiting time    : 1850.62
+
+Total in-vehicle time          : 2.68376e+07
+Average in-vehicle time        : 2429.84
+
+Total crowded in-vehicle time  : 5.15777e+07
+Average crowded in-vehicle time: 4669.78
+
+### Total vehicle summary ###
+Total VKT                   : 3625.86
+Total occupied VKT          : 1722.9
+Total empty VKT             : 1902.96
+Total occupied time         : 337944
+Total empty time            : 1.07217e+06
+Total driving time          : 490085
+Total idle time             : 100219
+Total oncall time           : 819806
+
+### Fixed vehicle summmary ###
+Fixed VKT                   : 1466.15
+Fixed occupied VKT          : 1036.41
+Fixed empty VKT             : 429.74
+Fixed occupied time         : 225866
+Fixed empty time            : 71788.1
+Fixed driving time          : 236316
+Fixed idle time             : 61338.4
+Fixed oncall time           : 0
+
+### DRT vehicle summmary ###
+DRT VKT                     : 2159.71
+DRT occupied VKT            : 686.49
+DRT empty VKT               : 1473.22
+DRT occupied time           : 112078
+DRT empty time              : 1.00038e+06
+DRT driving time            : 253770
+DRT idle time               : 38880.5
+DRT oncall time             : 819806
+
+### ControlCenter summmary ###
+Requests recieved           : 5604
+Requests rejected           : 0
+Requests accepted           : 5604
+Requests served             : 4050
+
+------------------------------------------------------------------
+
+### Total passenger summary ###
+Passenger journeys completed: 11271
+
+Total walking time             : 0
+Average walking time           : 0
+
+Total waiting time             : 2.89829e+07
+Average total waiting time     : 2571.45
+Minimum waiting time           : 0
+Maximum waiting time           : 12734.7
+Median waiting time            : 501.311
+
+Total denied waiting time      : 1.94167e+07
+Average denied waiting time    : 1722.72
+
+Total in-vehicle time          : 2.66225e+07
+Average in-vehicle time        : 2362.03
+
+Total crowded in-vehicle time  : 5.19632e+07
+Average crowded in-vehicle time: 4610.35
+
+### Total vehicle summary ###
+Total VKT                   : 4142.68
+Total occupied VKT          : 1844.03
+Total empty VKT             : 2298.65
+Total occupied time         : 356555
+Total empty time            : 1.08724e+06
+Total driving time          : 552109
+Total idle time             : 101401
+Total oncall time           : 790282
+
+### Fixed vehicle summmary ###
+Fixed VKT                   : 1465.73
+Fixed occupied VKT          : 1037.01
+Fixed empty VKT             : 428.72
+Fixed occupied time         : 225599
+Fixed empty time            : 71699.8
+Fixed driving time          : 235496
+Fixed idle time             : 61803.4
+Fixed oncall time           : 0
+
+### DRT vehicle summmary ###
+DRT VKT                     : 2676.95
+DRT occupied VKT            : 807.02
+DRT empty VKT               : 1869.93
+DRT occupied time           : 130956
+DRT empty time              : 1.01554e+06
+DRT driving time            : 316614
+DRT idle time               : 39597.8
+DRT oncall time             : 790282
+
+### ControlCenter summmary ###
+Requests recieved           : 5604
+Requests rejected           : 0
+Requests accepted           : 5604
+Requests served             : 4384
+
+------------------------------------------------------------------
+

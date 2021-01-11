@@ -366,6 +366,7 @@ public:
     bool readtransitroutes(string name); //!< reads the transit routes, similar to readroutes
     bool readtransitnetwork(string name); //!< reads the stops, distances between stops, lines, trips and travel disruptions
     bool readtransitdemand (string name); //!< reads passenger demand for transit services
+    bool readtransitdemand_empirical(const string& name); //!< reads empirical passenger demand (demand format 3 only)
     bool readtransitfleet (string name); // !< reads transit vehicle types, vehicle scheduling and dwell time functions
     bool read_transitday2day (string name); // !< reads info on transit pass. day-to-day memory
     bool read_transitday2day(map<ODSL, Travel_time>& ivt_map);
@@ -529,6 +530,10 @@ protected:
     /** @ingroup DRT
     @{
 */
+public:
+    vector<pair<ODstops*, double> > get_empirical_passenger_arrivals() const { return empirical_passenger_arrivals; }
+protected:
+    vector <pair<ODstops*, double> > empirical_passenger_arrivals; //!< all empirical passenger arrivals consisting of stop OD and arrival time. Used to generate and initialize passengers between resets. Added to ODstops::passengers_during_simulation in Network::init
     //DRT implementation
 #include <tuple>
     typedef std::tuple<Bus*, Busstop*, Controlcenter*, double> DrtVehicleInit; //!< un-scheduled vehicle, initial busstop, initial controlcenter, initial time

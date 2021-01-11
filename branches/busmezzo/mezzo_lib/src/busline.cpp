@@ -337,7 +337,7 @@ Bustrip* Busline::find_next_expected_trip_at_stop (Busstop* stop)
 */
 double Busline::time_till_next_arrival_at_stop_after_time (Busstop* stop, double time)
 {
-    assert(theParameters->real_time_info != 0); //this method at least claims that its based on RTI
+    //assert(theParameters->real_time_info != 0); //this method at least claims that its based on RTI
     if (theParameters->drt && flex_line)
     {
         //DEBUG_MSG_V("Busline::time_till_next_arrival_at_stop_after_time - returning expected arrival for a flexible transit line"); //!< @todo note this should never really be called for a flex_line

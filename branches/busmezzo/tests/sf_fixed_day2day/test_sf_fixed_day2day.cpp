@@ -98,6 +98,16 @@ void TestSpiessFlorianFixed_day2day::testInitNetwork()
     QVERIFY2(theParameters->real_time_info == 2, "Failure, real time info is not set to 2 in parameters");
     QVERIFY2(theParameters->choice_set_indicator == 0, "Failure, choice set indicator is not set to 0 in parameters");
 
+    //Test reading of empirical passenger arrivals
+    QVERIFY2(theParameters->empirical_demand == 1, "Failure, empirical demand not set to 1 in parameters");
+    vector<pair<ODstops*, double> > empirical_passenger_arrivals = net->get_empirical_passenger_arrivals();
+    QVERIFY2(empirical_passenger_arrivals.size() == 7, "Failure, there should be 7 empirical passenger arrivals");
+
+    for(const auto& pass_arrival : empirical_passenger_arrivals)
+    {
+        QVERIFY2(AproxEqual(pass_arrival.second,(theParameters->start_pass_generation + 100)), "Failure, empirical passenger arrivals should be 100 seconds after start_pass_generation");
+    }
+    
     //day2day params
     QVERIFY2(theParameters->pass_day_to_day_indicator == 1, "Failure, waiting time day2day indicator is not activated");
     QVERIFY2(theParameters->in_vehicle_d2d_indicator == 1, "Failure, IVT day2day indicator is not activated");

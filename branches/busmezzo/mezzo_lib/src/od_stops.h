@@ -378,12 +378,16 @@ public:
 	void delete_passengers();
 	
 	//Gets and Sets:
-	Busstop* get_origin() {return origin_stop;}
-	Busstop* get_destination () {return destination_stop;}
+	Busstop* get_origin() const {return origin_stop;}
+	Busstop* get_destination () const {return destination_stop;}
 	void set_arrival_rate (double rate_) {arrival_rate= rate_;}
 	vector <Pass_path*> get_path_set () {return path_set;}
 	void set_path_set (vector <Pass_path*> path_set_) {path_set = path_set_;}
 	bool check_path_set ();
+
+	bool is_active() { return active; } //!< check if ODstop has been initialized
+	bool has_empirical_arrivals() { return empirical_arrivals; } //!< check if ODstop has empirical passenger arrivals being generated for it
+	void set_empirical_arrivals(bool empirical_arrivals_) { empirical_arrivals = empirical_arrivals_; }
 
 	/** @ingroup DRT
 	 	@{
@@ -409,6 +413,7 @@ public:
 	vector <Passenger*> get_passengers_during_simulation () const {return passengers_during_simulation;}
 	
 	void add_pass_waiting(Passenger* add_pass);
+	void add_passenger_to_odstop(Passenger* pass) { passengers_during_simulation.push_back(pass); } // used for reading empirical pass arrivals
 	
 	// Passengers processes
 	void book_next_passenger (double curr_time);
@@ -463,6 +468,7 @@ protected:
 	Busstop* origin_stop = nullptr;
 	Busstop* destination_stop = nullptr;
 	double arrival_rate = 0.0; 
+	bool empirical_arrivals = false; //!< flags whether or not empirical passenger arrivals are being generated for this ODstop pair
 	passengers waiting_passengers; // a list of passengers with this OD that wait at the origin
 	int min_transfers = 0; // the minimum number of trnasfers possible for getting from O to D
 	int nr_pass_completed = 0;
@@ -480,7 +486,14 @@ protected:
 public:
 	void set_boarding_utility(double boarding_utility_) { boarding_utility = boarding_utility_; }
 	void set_staying_utility(double staying_utility_) { staying_utility = staying_utility_; }
+	
+	//mostly for debugging
 	int get_nr_pass_completed() { return nr_pass_completed; } //!< Getter added for testing purposes currently. Disclaimer: nr_pass_completed calculated after call to this->calc_pass_measures.
+	Passenger* first_passenger_start = nullptr; //!< @todo For debugging purposes only, will contain the first passenger arrival at each ODstop pair (set at the beginning of Passenger::start)
+
+	list<Pass_transitmode_decision> get_pass_transitmode_decisions(Passenger* pass); //!< returns the list, if any, of transitmode decisions the a passenger has made for this OD
+	list<Pass_dropoff_decision> get_pass_dropoff_decisions(Passenger* pass); //!< returns the list, if any, of dropoff decisions the a passenger has made for this OD
+	list<Pass_connection_decision> get_pass_connection_decisions(Passenger* pass); //!< returns the list, if any, of connection decisions that a passenger has made for this OD
 /** @} */
 
 protected:

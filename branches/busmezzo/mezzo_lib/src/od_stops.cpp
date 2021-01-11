@@ -106,6 +106,51 @@ void ODstops::set_ivtt_alpha_exp (Busstop* stop, Busline* line, Busstop* leg, do
 	ivtt_alpha_exp[stoplineleg] = alpha;
 }
 
+list<Pass_transitmode_decision> ODstops::get_pass_transitmode_decisions(Passenger* pass)
+{
+	assert(pass);
+	list<Pass_transitmode_decision> pass_decisions;
+	if (output_pass_transitmode_decision.count(pass) != 0)
+	{
+		pass_decisions = output_pass_transitmode_decision[pass];
+	}
+	else
+	{
+		qDebug() << "Warning, no transitmode decisions registered for passenger " << pass->get_id() << "for ODstop: (" << origin_stop->get_id() << "," << destination_stop->get_id() << ")";
+	}
+	return pass_decisions;
+}
+
+list<Pass_dropoff_decision> ODstops::get_pass_dropoff_decisions(Passenger* pass)
+{
+	assert(pass);
+	list<Pass_dropoff_decision> pass_decisions;
+	if (output_pass_dropoff_decision.count(pass) != 0)
+	{
+		pass_decisions = output_pass_dropoff_decision[pass];
+	}
+	else
+	{
+		qDebug() << "Warning, no dropoff decisions registered for passenger " << pass->get_id() << "for ODstop: (" << origin_stop->get_id() << "," << destination_stop->get_id() << ")";
+	}
+	return pass_decisions;
+}
+
+list<Pass_connection_decision> ODstops::get_pass_connection_decisions(Passenger* pass)
+{
+	assert(pass);
+	list<Pass_connection_decision> pass_decisions;
+	if (output_pass_connection_decision.count(pass) != 0)
+	{
+		pass_decisions = output_pass_connection_decision[pass];
+	}
+	else
+	{
+		qDebug() << "Warning, no dropoff decisions registered for passenger " << pass->get_id() << "for ODstop: (" << origin_stop->get_id() << "," << destination_stop->get_id() << ")";
+	}
+	return pass_decisions;
+}
+
 void ODstops::reset()
 {
 	min_transfers = 100;
@@ -117,6 +162,7 @@ void ODstops::reset()
 		pass_recycler.addPassenger(*iter_pass);
 	}
 	*/
+	first_passenger_start = nullptr;
 	boarding_utility = 0.0;
 	staying_utility = 0.0;
 	waiting_passengers.clear();
@@ -174,10 +220,19 @@ bool ODstops::execute (Eventlist* eventlist, double curr_time) // generate passe
 	{
         active = true;
         
+		if (arrival_rate == 0.0)
+		{
+			assert(theParameters->empirical_demand == 1); // ODstops Actions are only added to ODstops with zero stochastic demand (arrival rate) if empirical arrivals are available
+			assert(has_empirical_arrivals()); // stochastic arrival rate is zero and empirical arrivals added in Network::init
+
+			return true;
+		}
+
         bool non_random_arrivals = origin_stop->get_gate_flag(); // 1 - passengers are generated according to timetable, 0 - passengers generated according to Poisson process
         
         //origin node with random passenger arrival/generation pattern
-        if ( non_random_arrivals == false) {
+        if ( non_random_arrivals == false) 
+		{
             curr_time = theParameters->start_pass_generation + theRandomizers[0]->erandom(arrival_rate / 3600.0); // passenger arrival is assumed to be a poission process (exp headways)
             
             while (curr_time < theParameters->stop_pass_generation)
@@ -190,9 +245,9 @@ bool ODstops::execute (Eventlist* eventlist, double curr_time) // generate passe
                 curr_time += theRandomizers[0]->erandom(arrival_rate / 3600.0);
             }
         }
-        
         //origin node with non-random/scheduled passenger generation pattern (gate nodes)
-        else {
+        else 
+		{
             //get gate line (by definition, gate nodes serve exactly one line)
             Busline* servedLine = origin_stop->get_lines().front();
             
@@ -227,8 +282,6 @@ bool ODstops::execute (Eventlist* eventlist, double curr_time) // generate passe
                 
             }
         }
-        
-
 	}
 	else
 	{
