@@ -492,10 +492,32 @@ void TestDrottningholmCollection_drt::testPassAssignment()
     */
     
     vector<ODstops*> odstops_demand = net->get_odstops_demand();
-    QVERIFY2(odstops_demand.size() == 140, "Failure, network should have 140 od stop pairs (with non-zero demand defined in transit_demand.dat) ");
+    //QVERIFY2(odstops_demand.size() == 140, "Failure, network should have 140 od stop pairs (with non-zero demand defined in transit_demand.dat) ");
 
     for(auto od : odstops_demand)
     {
+        
+        int ostop = od->get_origin()->get_id();
+        int dstop = od->get_destination()->get_id();
+        ODCategory od_category = ODCategory::Null;
+
+        if(is_branch_to_branch(ostop,dstop))
+        {
+            //qDebug() << "Branch to branch ";
+            od_category = ODCategory::b2b;
+        }
+        else if (is_branch_to_corridor(ostop,dstop))
+        {
+            //qDebug() << "Branch to corridor ";
+            od_category = ODCategory::b2c;
+        }
+        else if (is_corridor_to_corridor(ostop,dstop))
+        {
+            //qDebug() << "Corridor to corridor ";
+            od_category = ODCategory::c2c;
+        }
+        QVERIFY(od_category != ODCategory::Null); // each od should have a category
+        
         // verify non-zero demand for this OD
         QVERIFY2((od->get_arrivalrate() > 0 || od->has_empirical_arrivals()),"Failure, all ODstops in Network::odstops_demand should have positive arrival rate.");
 
@@ -522,11 +544,11 @@ void TestDrottningholmCollection_drt::testPassAssignment()
             QVERIFY(connection_decisions.front().chosen_connection_stop == od->get_origin()->get_id()); // pass always stays (no walking links)
             QVERIFY(mode_decisions.front().chosen_transitmode != TransitModeType::Null); // A choice of either fixed or flexible should have always been made
             
-            if(mode_decisions.front().chosen_transitmode == TransitModeType::Fixed)
+            if(mode_decisions.front().chosen_transitmode == TransitModeType::Fixed) //first chosen mode
             {
                 QVERIFY(first_pass->get_curr_request() == nullptr); // a request should never have been generated if transit mode choice is fixed
-                QVERIFY(is_on_corridor(od->get_origin()->get_id())); // the origin of this passenger should be on the corridor if their first transitmode decision is fixed
-                
+                QVERIFY(od_category == ODCategory::c2c); // the origin of this passenger should be on the corridor if their first transitmode decision is fixed
+                QVERIFY(first_pass->get_nr_boardings() == 1); // a total of 1 vehicle should have been used to reach final dest. 
             }
             else if(mode_decisions.front().chosen_transitmode == TransitModeType::Flexible)
             {
@@ -538,7 +560,7 @@ void TestDrottningholmCollection_drt::testPassAssignment()
                     if(!is_on_branch(first_pass->get_OD_stop()->get_destination()->get_id()) && first_pass->get_original_origin()->get_id() != transfer_stop_id) // passenger must have made a transfer to reach final dest
                     {
                         QVERIFY(first_pass->get_nr_boardings() == 2); // a total of 2 vehicle should have been used to reach final dest.
-                        QVERIFY(mode_decisions.back().chosen_transitmode == TransitModeType::Fixed); // last chosen mode should be fixed
+
                     }
                     else if(is_on_branch(first_pass->get_OD_stop()->get_destination()->get_id()) && is_on_branch(first_pass->get_original_origin()->get_id()))
                     {
@@ -577,12 +599,10 @@ void TestDrottningholmCollection_drt::testPassAssignment()
                 }
             }
             
-
+            // verify that at least one passenger per OD made it to their destination
+            QString failmsg = "Failure, at least one passenger for ODstop (" + orig_s + "," + dest_s + ") with non-zero demand should have reached final destination.";
+            QVERIFY2(first_pass->get_end_time() > 0, qPrintable(failmsg)); // replaced the od->get_nr_pass_completed() call with this since there is some less intuitive dependency between this and calc_pass_measures() after saving results
         }
-
-        // verify that at least one passenger per OD made it to their destination
-        QString failmsg = "Failure, at least one passenger for ODstop (" + orig_s + "," + dest_s + ") with non-zero demand should have reached final destination.";
-        QVERIFY2(od->get_nr_pass_completed() > 0, qPrintable(failmsg)); //OBS needs to be called after saveResults test
     }
 }
 
