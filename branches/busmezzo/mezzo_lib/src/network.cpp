@@ -9165,18 +9165,21 @@ bool Network::init()
                 ODstops* od_stop = od_arrival.first;
                 double arrival_time = od_arrival.second;
 
-                if (od_stop->check_path_set() == true && !od_stop->is_active()) // if non-empty path set and not an initialization call. For resets then the passengers should already have been added to the odstops_demand->execute chain via add_passenger_to_odstop
+                if (od_stop->check_path_set() == true) // if no path set available to traveler then skip it
                 {
-                    Passenger* pass = new Passenger(pid, arrival_time, od_stop);
-                    od_stop->add_passenger_to_odstop(pass);
-                    pid++;
-                    pass->init();
-                    eventlist->add_event(arrival_time, pass);
-                }
-                else
-                {
-                    assert((theParameters->pass_day_to_day_indicator > 0 || theParameters->in_vehicle_d2d_indicator > 0)); // if od stop is active here, this means we have this is not the first call to Network::init after reset AND passengers are not deleted between resets with day2day (they have memory)
-                    assert(od_stop->has_empirical_arrivals()); //Empirical passengers will be initialized via ODstops::execute instead ('active' call to this will loop over ODstops::passengers_during_simulation)
+                    if (!od_stop->is_active()) // if non-empty path set and not an initialization call. For resets then the passengers should already have been added to the odstops_demand->execute chain via add_passenger_to_odstop
+                    {
+                        Passenger* pass = new Passenger(pid, arrival_time, od_stop);
+                        od_stop->add_passenger_to_odstop(pass);
+                        pid++;
+                        pass->init();
+                        eventlist->add_event(arrival_time, pass);
+                    }
+                    else
+                    {
+                        assert((theParameters->pass_day_to_day_indicator > 0 || theParameters->in_vehicle_d2d_indicator > 0)); // if od stop is active here, this means we have this is not the first call to Network::init after reset AND passengers are not deleted between resets with day2day (they have memory)
+                        assert(od_stop->has_empirical_arrivals()); //Empirical passengers will be initialized via ODstops::execute instead ('active' call to this will loop over ODstops::passengers_during_simulation)
+                    }
                 }
             }
         }
