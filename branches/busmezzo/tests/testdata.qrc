@@ -134,5 +134,6 @@
         <file>networks/DRTAlgorithms/ExpectedOutputs/o_od_stops_summary.dat</file>
         <file>networks/DRTAlgorithms/ExpectedOutputs/o_od_stop_summary_without_paths.dat</file>
         <file>networks/DRTAlgorithms/ExpectedOutputs/o_fwf_summary.dat</file>
+        <file>networks/DRTAlgorithms/ExpectedOutputs/o_path_set_generation.dat</file>
     </qresource>
 </RCC>
