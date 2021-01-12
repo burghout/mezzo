@@ -531,6 +531,7 @@ bool SimpleTripGeneration::calc_trip_generation(const set<Request*,ptr_less<Requ
 
 //Empty vehicle trip generation
 NaiveEmptyVehicleTripGeneration::NaiveEmptyVehicleTripGeneration(Network* theNetwork) : theNetwork_(theNetwork){}
+
 bool NaiveEmptyVehicleTripGeneration::calc_trip_generation(const set<Request*,ptr_less<Request*>>& requestSet, const vector<Busline*>& candidateServiceRoutes, const map<BusState, set<Bus*>>& fleetState, const double time, set<Bustrip*>& unmatchedTripSet)
 {
     if (!requestSet.empty() && !candidateServiceRoutes.empty()) //Reactive strategy so only when requests exist
@@ -632,6 +633,30 @@ bool NaiveEmptyVehicleTripGeneration::calc_trip_generation(const set<Request*,pt
     return false;
 }
 
+// SimpleEmptyVehicleTripGeneration
+SimpleEmptyVehicleTripGeneration::SimpleEmptyVehicleTripGeneration(Network *theNetwork):theNetwork_(theNetwork) {}
+
+bool SimpleEmptyVehicleTripGeneration::calc_trip_generation(const set<Request *, ptr_less<Request *> > &requestSet, const vector<Busline *> &candidateServiceRoutes, const map<BusState, set<Bus *> > &fleetState, double time, set<Bustrip *> &unmatchedTripSet)
+{
+    // 0. if no unmatched Trips, exit
+    if (unmatchedTripSet.empty())
+        return false;
+    // 1. see if any vehicles are available, if no, exit
+    if (fleetState.find(BusState::OnCall) == fleetState.end())  //a drt vehicle must have been initialized
+        return false;
+    if (fleetState.at(BusState::OnCall).empty())  //a drt vehicle must be available
+        return false;
+    // 2. sort unMatchedTrips (by nr of requests)
+    set<Bustrip*,compareBustripByNrRequests> sortedTrips (unmatchedTripSet.begin(), unmatchedTripSet.end());
+
+    // 3. send nearest vehicle to the unMatchedTrip location (For now: hope for the best :)
+    auto selectedTrip = *(sortedTrips.begin());
+
+    // 4. Later: preBook the next trip for which you sent the vehicle
+    // 5. Later: Remove trip from unMatchedTrips and  repeat until all available vehicles are used
+
+    return true;
+}
 //MatchingStrategy
 void MatchingStrategy::assign_oncall_vehicle_to_trip(Busstop* currentStop, Bus* transitveh, Bustrip* trip, double starttime)
 {
