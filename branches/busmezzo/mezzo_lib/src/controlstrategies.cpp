@@ -327,6 +327,27 @@ Busline* TripGenerationStrategy::find_shortest_busline(const vector<Busline*>& l
     return shortestline;
 }
 
+pair <Bus*,double> TripGenerationStrategy::get_nearest_oncall_vehicle(const Busstop *targetStop, set<Bus*> vehicles, Network* theNetwork, double time) const
+{
+    pair<Bus*,double> closest (nullptr,numeric_limits<double>::max());
+
+    for (auto v:vehicles)
+    {
+        Busstop* laststop = v->get_last_stop_visited(); //current stop if not driving
+        vector<Link*> shortestpath = find_shortest_path_between_stops(theNetwork,laststop, targetStop, time);
+        auto expected_tt = calc_route_travel_time(shortestpath, time);
+        if (expected_tt < closest.second)
+        {
+            closest.first = v;
+            closest.second = expected_tt;
+        }
+
+    }
+
+
+    return closest;
+}
+
 bool NullTripGeneration::calc_trip_generation(const set<Request*, ptr_less<Request*>>& requestSet, const vector<Busline*>& candidateServiceRoutes, const map<BusState, set<Bus*>>& fleetState, const double time, set<Bustrip*>& unmatchedTripSet)
 {
     Q_UNUSED(requestSet)
@@ -649,11 +670,15 @@ bool SimpleEmptyVehicleTripGeneration::calc_trip_generation(const set<Request *,
     // 2. sort unMatchedTrips (by nr of requests)
     set<Bustrip*,compareBustripByNrRequests> sortedTrips (unmatchedTripSet.begin(), unmatchedTripSet.end());
 
-    // 3. send nearest vehicle to the unMatchedTrip location (For now: hope for the best :)
+    // 3. find nearest vehicle to the unMatchedTrip location (For now: hope for the best :)
     auto selectedTrip = *(sortedTrips.begin());
+    auto startStop = selectedTrip->get_downstream_stops().front();
+    auto onCallVehicles = fleetState.at(BusState::OnCall);
+    auto nearestOnCall = get_nearest_oncall_vehicle(startStop,onCallVehicles,theNetwork_,time);
+    // 4. generate the empty trip
 
-    // 4. Later: preBook the next trip for which you sent the vehicle
-    // 5. Later: Remove trip from unMatchedTrips and  repeat until all available vehicles are used
+    // 5. Later: preBook the next trip for which you sent the vehicle
+    // 6. Later: Remove trip from unMatchedTrips and  repeat until all available vehicles are used
 
     return true;
 }
