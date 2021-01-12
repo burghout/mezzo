@@ -206,7 +206,7 @@ void TestDRTAlgorithms::testDeterministicMap()
 
 struct compareBustripByNrRequests
 {
-    bool operator () (const Bustrip* lhs, const Bustrip* rhs)
+    bool operator () (const Bustrip* lhs, const Bustrip* rhs) const
     {
         return lhs->get_requests().size() > rhs->get_requests().size();
     }
@@ -224,16 +224,12 @@ void TestDRTAlgorithms::testSortedBustrips()
     t2->add_request(rq2);
     original.insert(t1);
     original.insert(t2);
-    for (auto bt:original)
-        qDebug() << bt->get_id();
     set<Bustrip*,compareBustripByNrRequests> sorted (original.begin(), original.end());
-    qDebug() << "sorted ";
-    for (auto bt:sorted)
-        qDebug() << bt->get_id();
-    qDebug() << "t1.requests " << t1->get_requests().size();
-    qDebug() << "t2.requests " << t2->get_requests().size();
-
-
+    auto firstOrig = *original.begin();
+    auto firstSorted = *sorted.begin();
+    QVERIFY(firstOrig->get_id() == 1);
+    QVERIFY(firstSorted->get_id() == 2);
+    QVERIFY(t1->get_requests().size() < t2->get_requests().size()) ;
 }
 
 
