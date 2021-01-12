@@ -68,7 +68,8 @@ public:
 private Q_SLOTS:
     void testCreateNetwork(); //!< test loading a network
     void testInitNetwork(); //!< test generating passenger path sets & loading a network
-    void testDeterministicMap();
+    void testDeterministicMap(); //!< temporary test for deterministic maps (helper)
+    void testSortedBustrips();
     void testAssignment();//!< test asssignment of passengers
     void testRunNetwork();
     void testPostRunAssignment(); //!< test assignment of passengers after running the network
@@ -202,6 +203,39 @@ void TestDRTAlgorithms::testDeterministicMap()
     }
 
 }
+
+struct compareBustripByNrRequests
+{
+    bool operator () (const Bustrip* lhs, const Bustrip* rhs)
+    {
+        return lhs->get_requests().size() > rhs->get_requests().size();
+    }
+};
+
+void TestDRTAlgorithms::testSortedBustrips()
+{
+    auto busline = net->get_buslines().front();
+    set<Bustrip*> original;
+    Bustrip* t1 = new Bustrip(1,1.0,busline);
+    Bustrip* t2 = new Bustrip(2,1.0,busline);
+    auto rq1 = new Request();
+    auto rq2 = new Request();
+    t2->add_request(rq1);
+    t2->add_request(rq2);
+    original.insert(t1);
+    original.insert(t2);
+    for (auto bt:original)
+        qDebug() << bt->get_id();
+    set<Bustrip*,compareBustripByNrRequests> sorted (original.begin(), original.end());
+    qDebug() << "sorted ";
+    for (auto bt:sorted)
+        qDebug() << bt->get_id();
+    qDebug() << "t1.requests " << t1->get_requests().size();
+    qDebug() << "t2.requests " << t2->get_requests().size();
+
+
+}
+
 
 
 void TestDRTAlgorithms::testAssignment()

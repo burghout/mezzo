@@ -454,7 +454,7 @@ public:
 	bool is_scheduled_for_dispatch() const { return scheduled_for_dispatch; }
 	void set_flex_trip(bool flex_trip_) { flex_trip = flex_trip_; }
 	bool is_flex_trip() const { return flex_trip; }
-    vector <Request*> get_requests() { return scheduled_requests;}
+    vector <Request*> get_requests() const { return scheduled_requests;}
     void add_request (Request* req) { scheduled_requests.push_back((req));}
 /**@}*/
 

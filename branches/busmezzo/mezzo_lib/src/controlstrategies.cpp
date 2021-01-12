@@ -19,6 +19,14 @@ struct compare
     int id;
 };
 
+struct compareBustripByNrRequests
+{
+    bool operator () (const Bustrip* lhs, const Bustrip* rhs)
+    {
+        return lhs->get_requests().size() > rhs->get_requests().size();
+    }
+};
+
 std::set<Request* ,ptr_less<Request*>> filterRequestsByState (const set<Request*,ptr_less<Request*>> & oldSet, RequestState state)
 {
     set <Request*,ptr_less<Request*>> newSet;
