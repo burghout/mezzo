@@ -21,7 +21,7 @@ struct compare
 
 struct compareBustripByNrRequests
 {
-    bool operator () (const Bustrip* lhs, const Bustrip* rhs)
+    bool operator () (const Bustrip* lhs, const Bustrip* rhs) const
     {
         return lhs->get_requests().size() > rhs->get_requests().size();
     }
@@ -46,7 +46,7 @@ int Request::id_counter = 0;
 
 // Request
 Request::Request(Passenger * pass_owner, int pass_id, int ostop_id, int dstop_id, int load, double t_departure, double t_generated) :
-    pass_owner(pass_owner), pass_id(pass_id), ostop_id(ostop_id), dstop_id(dstop_id), load(load), time_desired_departure(t_departure), time_request_generated(t_generated)
+     pass_id(pass_id), ostop_id(ostop_id), dstop_id(dstop_id), load(load), time_desired_departure(t_departure), time_request_generated(t_generated),pass_owner(pass_owner)
 {
     id = ++id_counter;
     qRegisterMetaType<Request>(); //register Request as a metatype for QT signal arguments

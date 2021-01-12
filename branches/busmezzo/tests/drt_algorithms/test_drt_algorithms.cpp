@@ -68,7 +68,6 @@ public:
 private Q_SLOTS:
     void testCreateNetwork(); //!< test loading a network
     void testInitNetwork(); //!< test generating passenger path sets & loading a network
-    void testDeterministicMap(); //!< temporary test for deterministic maps (helper)
     void testSortedBustrips();
     void testAssignment();//!< test asssignment of passengers
     void testRunNetwork();
@@ -161,48 +160,7 @@ void TestDRTAlgorithms::testInitNetwork()
 }
 
 
-void TestDRTAlgorithms::testDeterministicMap()
-{
-    // throwaway test to test the ordering with and without a specialized less<T>
-    map <Busstop*,int> bsmap1;
-    map <Busstop*,int,ptr_less<Busstop*> > bsmap2;
-    for (int i = 0; i < 100; ++i)
-    {
-        auto stop = new Busstop(i,"",0,0.0,10.0,1,1,1,0,1);
-        bsmap1 [stop] = i;
-        bsmap2 [stop] = i;
-    }
 
-    auto it1 = bsmap1.begin();
-    auto it2 = bsmap2.begin();
-    for (; (it1 != bsmap1.end()) && (it2!=bsmap2.end()); ++it1, ++it2)
-    {
-        auto stopid_ordered = (*it1).first->get_id();
-        auto stopid_unordered = (*it2).first->get_id();
-        QVERIFY ( stopid_ordered == stopid_unordered);
-    }
-
-    // now test for structures with pair <U*,V*> as key
-    map <pair <Busstop*, Busline*>, int> crazymap1;
-    map <pair <Busstop*, Busline*>, int, pair_less<pair <Busstop*, Busline*> > > crazymap2;
-    Busline* bl = new Busline();
-    for (int i = 0; i < 100; ++i)
-    {
-        auto stop = new Busstop(i,"",0,0.0,10.0,1,1,1,0,1);
-        pair <Busstop*, Busline*> val (stop,bl);
-        crazymap1 [val] = i;
-        crazymap2 [val] = i;
-    }
-    auto it3 = crazymap1.begin();
-    auto it4 = crazymap2.begin();
-    for (; (it3 != crazymap1.end()) && (it4!=crazymap2.end()); ++it3, ++it4)
-    {
-        auto stopid_ordered = (*it3).first.first->get_id();
-        auto stopid_unordered = (*it4).first.first->get_id();
-        QVERIFY ( stopid_ordered == stopid_unordered);
-    }
-
-}
 
 struct compareBustripByNrRequests
 {
