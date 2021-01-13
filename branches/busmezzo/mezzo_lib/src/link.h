@@ -267,15 +267,13 @@ protected:
 	bool use_ass_matrix; // boolean set to true if this link collects assignment matrix data
 	bool selected; //true if link is 'selected'
 
-	/** @ingroup DRT
-		@todo remove later specific to 'dummy link' scenarios
+	 /** @ingroup DRT
+		@brief Quick and dirty labelling of dummylinks for calculating e.g. VKT outputs correctly.
+		@todo Remove this section of code later. Mostly used for debugging/specific scenarios
 		@{
 	*/
 public:
-	bool is_dummylink() { return dummylink; } //!< returns true if this link is a dummy link, and false otherwise
-	void set_dummylink(bool dummylink_) { dummylink = dummylink_; }
-protected:
-	bool dummylink=false; //!< true if this link is a dummy link (i.e. used purely for implementation/nefarious hacky purposes), false otherwise
+	bool is_dummylink() { return sdfunc->get_vfree() > ::dummy_link_freeflow_speed; } //!< returns true if this link is a dummy link (i.e. used purely for implementation/nefarious hacky purposes), and false otherwise
 	/**@}*/
 };
 
