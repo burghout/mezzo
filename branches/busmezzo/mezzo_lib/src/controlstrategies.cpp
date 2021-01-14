@@ -13,6 +13,8 @@ void update_schedule(Bustrip* trip, double new_starttime)
     assert(trip);
     assert(new_starttime >= 0);
 
+    //!< @todo might have to add updates to the driving roster of the trip here now as well....
+
     if (trip && new_starttime >= 0)
     {
         if (trip->get_starttime() != new_starttime)
@@ -499,6 +501,8 @@ bool NaiveTripGeneration::calc_trip_generation(const set<Request*,ptr_less<Reque
                             rq->assigned_trip = newtrip;
                             rq->set_state(RequestState::Assigned);
                         }
+                        vector<Bustrip* > tripchain = { newtrip }; //tripchain is only one trip long
+                        add_driving_roster_to_tripchain(tripchain); 
                         return true;
                     }
                 }
@@ -731,16 +735,25 @@ bool SimpleEmptyVehicleTripGeneration::calc_trip_generation(const set<Request *,
         return false;
     // 4. generate the empty trip
     Busstop* vehicleStartStop = nearestOnCall.first->get_last_stop_visited();
-    auto vehicle_serviceRoutes = find_lines_connecting_stops(candidateServiceRoutes, tripStartStop->get_id(),vehicleStartStop->get_id());
+    auto vehicle_serviceRoutes = find_lines_connecting_stops(candidateServiceRoutes,vehicleStartStop->get_id(),tripStartStop->get_id());
     Busline* line = find_shortest_busline(vehicle_serviceRoutes, time);
     assert(line);
+ 
     auto schedule = create_schedule(time,line->get_delta_at_stops());
     Bustrip* newTrip = create_unassigned_trip(line,time,schedule);
-    // 5. Add newTrip to the unmatchedEmptyTripset
 
-    // 6. DAVID: remove selectedTrip from unMatchedTripset, add to ROSTER--> Any more bookkeeping in MatchedTrips?
+    // 5. associate the chained trips by modifying Bustrip::driving_roster
+    vector<Bustrip*> tripchain = { newTrip, selectedTrip };
+    update_schedule(selectedTrip, newTrip->stops.back()->second); // Get last stop arrival time of newtrip, and then update the chained selectedTrip with this as dispatch time
+    add_driving_roster_to_tripchain(tripchain); // newTrip and selectedTrip now have pointers to eachother as well as info of which order they are in
 
-    // 7. BONUS: add any requests that match EmptyTrip to it as well???
+    // 6. Add newTrip to the unmatchedEmptyTripset
+    unmatchedEmptyTripSet.insert(newTrip); // now unmatchedEmptyTripSet will signal matcher to match vehicle to both trips via Bustrip::driving_roster
+
+    // 7. remove selectedTrip from unMatchedTripset
+    unmatchedTripSet.erase(selectedTrip); 
+
+    // 8. BONUS: add any requests that match EmptyTrip to it as well???
 
     return true; // emits Signal that empty trip was generated, matcher does the rest.
 }
@@ -754,18 +767,21 @@ void MatchingStrategy::assign_oncall_vehicle_to_trip(Busstop* currentStop, Bus* 
         assert(!transitveh->get_curr_trip()); //this particular bus instance (remember there may be copies of it if there is a trip chain, should not have a trip)
         assert(transitveh->is_oncall());
 
-        //DEBUG_MSG("INFO::MatchingStrategy::assign_oncall_vehicle_to_trip - Assigning vehicle " << transitveh->get_bus_id() << " to trip " << trip->get_id());
+        //!< @todo Adds bus to the first trip in this chain, the others will recieve their vehicle 'clone' dynamically in Bus::advance_curr_trip, also when things are disconnected and reconnected to CC
+        //! reason for delaying this until later is in case we make changes to the trip chain (driving_roster) dynamically as well
 
+        // assign bus to the first trip in chain
         trip->set_busv(transitveh); //assign bus to the trip
         transitveh->set_curr_trip(trip); //assign trip to the bus
         trip->set_bustype(transitveh->get_bus_type());//set the bus type of the trip (so trip has access to this bustypes dwell time function)
         trip->get_busv()->set_on_trip(true); //flag the bus as busy for all trips except the first on its chain (TODO might move to dispatcher)
 
-        vector<Start_trip*> driving_roster; //contains all other trips in this trips chain (if there are any) (TODO might move to dispatcher)
-        auto* st = new Start_trip(trip, starttime);
-
-        driving_roster.push_back(st);
-        trip->add_trips(driving_roster); //save the driving roster at the trip level to conform to interfaces of Busline::execute, Bustrip::activate etc.
+        //!< moved the generation of driving_roster to where TripGenerationStrategy::create_unassigned_trip() calls occur
+        //vector<Start_trip*> driving_roster; //contains all other trips in this trips chain (if there are any) (TODO might move to dispatcher)
+        //auto* st = new Start_trip(trip, starttime);
+        //driving_roster.push_back(st);
+        //trip->add_trips(driving_roster); //save the driving roster at the trip level to conform to interfaces of Busline::execute, Bustrip::activate etc.
+        
         //double delay = starttime - trip->get_starttime();
         trip->set_starttime(starttime); //reset scheduled dispatch from origin to given starttime
 
@@ -850,28 +866,41 @@ bool SchedulingStrategy::book_trip_dispatch(Eventlist* eventlist, Bustrip* trip)
 {
     assert(eventlist);
     assert(trip);
-
+    bool scheduled_trip_success = false;
     if (eventlist && trip)
     {
-        Busline* line = trip->get_line();
-        double starttime = trip->get_starttime();
-        assert(line);
-
-        if(line)
+        for (auto trip_it = trip->driving_roster.begin(); trip_it != trip->driving_roster.end(); ++trip_it) // want to add an event only for the first trip in the trip chain (driving roster)
         {
-            assert(line->is_flex_line());
+            Start_trip* trip_dispatch = (*trip_it);
+            Bustrip* unscheduled_trip = trip_dispatch->first;
+            Busline* line = unscheduled_trip->get_line();
+            double starttime = trip->get_starttime(); // @note the start time here is the one passed through the assignment pipeline, may no longer match the dispatch time of driving roster
+            assert(line);
 
-            //DEBUG_MSG("INFO::SchedulingStrategy::book_trip_dispatch is scheduling trip " << trip->get_id() << " with start time " << starttime);
+            if (line)
+            {
+                assert(line->is_flex_line());
 
-            line->add_flex_trip(trip); //add trip as a flex trip of line for bookkeeping
-            line->add_trip(trip, starttime); //insert trip into the main trips list of the line
-            eventlist->add_event(starttime, line); //book the activation of this trip in the eventlist
-            trip->set_scheduled_for_dispatch(true);
-            return true;
+                //DEBUG_MSG("INFO::SchedulingStrategy::book_trip_dispatch is scheduling trip " << trip->get_id() << " with start time " << starttime);
+
+                line->add_flex_trip(trip); //add trip as a flex trip of line for bookkeeping
+                line->add_trip(trip, starttime); //insert trip into the main trips list of the line
+                
+                if (trip_dispatch == trip->driving_roster.front()) // Busline event added only for first trip in chain, the others handled by Bus::advance_curr_trip
+                {
+                    eventlist->add_event(starttime, line); //book the activation of this trip in the eventlist
+                    trip->set_scheduled_for_dispatch(true);
+                    scheduled_trip_success = true;
+                }
+                else
+                {
+                    trip->set_scheduled_for_dispatch(false);
+                }
+            }
         }
     }
-
-    return false;
+      
+    return scheduled_trip_success;
 }
 
 bool NullScheduling::schedule_trips(Eventlist* eventlist, set<Bustrip*>& unscheduledTrips, const double time)
