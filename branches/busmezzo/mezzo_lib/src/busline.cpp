@@ -1031,8 +1031,7 @@ bool Bustrip::activate (double time, Route* route, ODpair* odpair, Eventlist* ev
 		previous_trip = curr_trip-1;
 		if ((*previous_trip)->first->busv->get_on_trip() == true) // if the assigned bus isn't avaliable
 		{
-			ok=false;
-			return ok;
+			return false;
 		}
 		busv->set_curr_trip(this);	
 		first_dispatch_time = (*previous_trip)->first->get_last_stop_exit_time(); //Added by Jens 2014-07-03
