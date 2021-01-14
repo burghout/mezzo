@@ -678,6 +678,8 @@ bool SimpleEmptyVehicleTripGeneration::calc_trip_generation(const set<Request *,
     Busstop*  tripStartStop = selectedTrip->stops.front()->first;
     auto onCallVehicles = fleetState.at(BusState::OnCall);
     auto nearestOnCall = get_nearest_vehicle(tripStartStop,onCallVehicles,theNetwork_,time);
+    if (nearestOnCall.first == nullptr)
+        return false;
     // 4. generate the empty trip
     Busstop* vehicleStartStop = nearestOnCall.first->get_last_stop_visited();
     auto vehicle_serviceRoutes = find_lines_connecting_stops(candidateServiceRoutes, tripStartStop->get_id(),vehicleStartStop->get_id());
@@ -687,9 +689,9 @@ bool SimpleEmptyVehicleTripGeneration::calc_trip_generation(const set<Request *,
     Bustrip* newTrip = create_unassigned_trip(line,time,schedule);
     // 5. Add newTrip to the unmatchedEmptyTripset
 
-    // 6. DAVID: remove selectedTrip from unMatchedTripset, add to ROSTER
+    // 6. DAVID: remove selectedTrip from unMatchedTripset, add to ROSTER--> Any more bookkeeping in MatchedTrips?
 
-
+    // 7. BONUS: add any requests that match EmptyTrip to it as well???
 
     return true; // emits Signal that empty trip was generated, matcher does the rest.
 }
