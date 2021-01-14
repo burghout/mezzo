@@ -659,6 +659,9 @@ SimpleEmptyVehicleTripGeneration::SimpleEmptyVehicleTripGeneration(Network *theN
 
 bool SimpleEmptyVehicleTripGeneration::calc_trip_generation(const set<Request *, ptr_less<Request *> > &requestSet, const vector<Busline *> &candidateServiceRoutes, const map<BusState, set<Bus *> > &fleetState, double time, set<Bustrip *> &unmatchedTripSet)
 {
+    // WILCO/DAVID TODO: have unmatchedTrips and unmatchedEmptyTrips
+
+
     // 0. if no unmatched Trips, exit
     if (unmatchedTripSet.empty())
         return false;
@@ -672,17 +675,23 @@ bool SimpleEmptyVehicleTripGeneration::calc_trip_generation(const set<Request *,
 
     // 3. find nearest vehicle to the unMatchedTrip location (For now: hope for the best :)
     auto selectedTrip = *(sortedTrips.begin());
-    auto startStop = selectedTrip->get_downstream_stops().front();
+    Busstop*  tripStartStop = selectedTrip->stops.front()->first;
     auto onCallVehicles = fleetState.at(BusState::OnCall);
-    auto nearestOnCall = get_nearest_vehicle(startStop,onCallVehicles,theNetwork_,time);
+    auto nearestOnCall = get_nearest_vehicle(tripStartStop,onCallVehicles,theNetwork_,time);
     // 4. generate the empty trip
-//    auto vehicle_serviceRoutes = find_lines_connecting_stops(candidateServiceRoutes, vehloc->get_id(), largest_demand_stop->get_id());
-//    Busline* line = find_shortest_busline(vehicle_serviceRoutes, time);
-//    assert(line);
-    // 5. Later: preBook the next trip for which you sent the vehicle
-    // 6. Later: Remove trip from unMatchedTrips and  repeat until all available vehicles are used
+    Busstop* vehicleStartStop = nearestOnCall.first->get_last_stop_visited();
+    auto vehicle_serviceRoutes = find_lines_connecting_stops(candidateServiceRoutes, tripStartStop->get_id(),vehicleStartStop->get_id());
+    Busline* line = find_shortest_busline(vehicle_serviceRoutes, time);
+    assert(line);
+    auto schedule = create_schedule(time,line->get_delta_at_stops());
+    Bustrip* newTrip = create_unassigned_trip(line,time,schedule);
+    // 5. Add newTrip to the unmatchedEmptyTripset
 
-    return true;
+    // 6. DAVID: remove selectedTrip from unMatchedTripset, add to ROSTER
+
+
+
+    return true; // emits Signal that empty trip was generated, matcher does the rest.
 }
 //MatchingStrategy
 void MatchingStrategy::assign_oncall_vehicle_to_trip(Busstop* currentStop, Bus* transitveh, Bustrip* trip, double starttime)
