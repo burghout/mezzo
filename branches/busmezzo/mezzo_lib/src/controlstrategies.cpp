@@ -327,7 +327,7 @@ Busline* TripGenerationStrategy::find_shortest_busline(const vector<Busline*>& l
     return shortestline;
 }
 
-pair <Bus*,double> TripGenerationStrategy::get_nearest_oncall_vehicle(const Busstop *targetStop, set<Bus*> vehicles, Network* theNetwork, double time) const
+pair <Bus*,double> TripGenerationStrategy::get_nearest_vehicle(const Busstop *targetStop, set<Bus*> vehicles, Network* theNetwork, double time) const
 {
     pair<Bus*,double> closest (nullptr,numeric_limits<double>::max());
 
@@ -674,9 +674,11 @@ bool SimpleEmptyVehicleTripGeneration::calc_trip_generation(const set<Request *,
     auto selectedTrip = *(sortedTrips.begin());
     auto startStop = selectedTrip->get_downstream_stops().front();
     auto onCallVehicles = fleetState.at(BusState::OnCall);
-    auto nearestOnCall = get_nearest_oncall_vehicle(startStop,onCallVehicles,theNetwork_,time);
+    auto nearestOnCall = get_nearest_vehicle(startStop,onCallVehicles,theNetwork_,time);
     // 4. generate the empty trip
-
+//    auto vehicle_serviceRoutes = find_lines_connecting_stops(candidateServiceRoutes, vehloc->get_id(), largest_demand_stop->get_id());
+//    Busline* line = find_shortest_busline(vehicle_serviceRoutes, time);
+//    assert(line);
     // 5. Later: preBook the next trip for which you sent the vehicle
     // 6. Later: Remove trip from unMatchedTrips and  repeat until all available vehicles are used
 
