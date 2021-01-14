@@ -161,7 +161,7 @@ bool BustripGenerator::requestTrip(const RequestHandler& rh, const map<BusState,
 {
     if (generationStrategy_ != nullptr)
     {
-        bool trip_found = generationStrategy_->calc_trip_generation(rh.requestSet_, serviceRoutes_, fleetState, time, unmatchedTrips_); //returns true if trip has been generated and added to the unmatchedTrips_
+        bool trip_found = generationStrategy_->calc_trip_generation(rh.requestSet_, serviceRoutes_, fleetState, time, unmatchedTrips_, unmatchedRebalancingTrips_); //returns true if trip has been generated and added to the unmatchedTrips_
 
         if (!trip_found && !unmatchedTrips_.empty()) //if no trip was found but an unmatched trip remains in the unmatchedTrips set
 		{ 
@@ -177,7 +177,7 @@ bool BustripGenerator::requestRebalancingTrip(const RequestHandler& rh, const ma
 {
 	if (emptyVehicleStrategy_ != nullptr)
 	{
-		return emptyVehicleStrategy_->calc_trip_generation(rh.requestSet_, serviceRoutes_, fleetState, time, unmatchedRebalancingTrips_); //returns true if trip has been generated and added to the unmatchedRebalancingTrips_
+		return emptyVehicleStrategy_->calc_trip_generation(rh.requestSet_, serviceRoutes_, fleetState, time, unmatchedTrips_, unmatchedRebalancingTrips_); //returns true if trip has been generated and added to the unmatchedRebalancingTrips_
 	}
 	return false;
 }
@@ -226,6 +226,15 @@ void BustripGenerator::setEmptyVehicleStrategy(int type)
 			abort();
 		}
 		emptyVehicleStrategy_ = new NaiveEmptyVehicleTripGeneration(theNetwork_);
+	}
+	else if (type == emptyVehicleStrategyType::EVSimple)
+	{
+		if (theNetwork_ == nullptr)
+		{
+			DEBUG_MSG_V("Problem with BustripGenerator::setEmptyVehicleStrategy - switching to " << type << " strategy failed due to theNetwork nullptr. Aborting...");
+			abort();
+		}
+		emptyVehicleStrategy_ = new SimpleEmptyVehicleTripGeneration(theNetwork_);
 	}
 	else
 	{

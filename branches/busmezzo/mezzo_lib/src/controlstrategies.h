@@ -101,7 +101,8 @@ public:
         const vector<Busline*>&          candidateServiceRoutes, //!< service routes available to potentially serve the requests
         const map<BusState, set<Bus*> >& fleetState,             //!< state of all vehicles that are potentially available to serve the requests
         const double                     time,                   //!< time for which calc_trip_generation is called
-        set<Bustrip*>&                   unmatchedTripSet        //!< set of trips that have been generated to serve requests that have not been assigned to a vehicle yet
+        set<Bustrip*>&                   unmatchedTripSet,       //!< set of trips that have been generated to serve requests that have not been assigned to a vehicle yet
+        set<Bustrip*>&                   unmatchedEmptyTripSet   //!< set of empty trips that have been generated to serve requests that have not been assigned to a vehicle yet
     ) = 0; //!< returns true if a trip was generated and added to the unmatchedTripSet and false otherwise
 
 public:
@@ -128,7 +129,7 @@ class NullTripGeneration : public TripGenerationStrategy
 {
 public:
 	~NullTripGeneration() override = default;
-    bool calc_trip_generation(const set<Request*, ptr_less<Request*>> & requestSet, const vector<Busline*>& candidateServiceRoutes, const map<BusState, set<Bus*>>& fleetState, double time, set<Bustrip*>& unmatchedTripSet) override;
+    bool calc_trip_generation(const set<Request*, ptr_less<Request*>> & requestSet, const vector<Busline*>& candidateServiceRoutes, const map<BusState, set<Bus*>>& fleetState, double time, set<Bustrip*>& unmatchedTripSet, set<Bustrip*>& unmatchedEmptyTripSet) override;
 };
 
 //! @brief prioritizes generating trips for OD stop pair with the highest demand and most direct (in terms of scheduled in-vehicle time) service route
@@ -141,7 +142,7 @@ class NaiveTripGeneration : public TripGenerationStrategy
 {
 public:
 	~NaiveTripGeneration() override = default;
-    bool calc_trip_generation(const set<Request*, ptr_less<Request*>>& requestSet, const vector<Busline*>& candidateServiceRoutes, const map<BusState, set<Bus*>>& fleetState, double time, set<Bustrip*>& unmatchedTripSet) override;
+    bool calc_trip_generation(const set<Request*, ptr_less<Request*>>& requestSet, const vector<Busline*>& candidateServiceRoutes, const map<BusState, set<Bus*>>& fleetState, double time, set<Bustrip*>& unmatchedTripSet, set<Bustrip*>& unmatchedEmptyTripSet) override;
 };
 
 //! @brief Attempts to improve upon NaiveTripGeneration by taking into account matched requests, add bookkeeping to requests - trips - matched vehicles. Only send vehicles to unmatched requests, take capacity into account.
@@ -158,9 +159,7 @@ class SimpleTripGeneration : public TripGenerationStrategy
 {
 public:
     ~SimpleTripGeneration() override = default;
-    bool calc_trip_generation(const set<Request*, ptr_less<Request*>>& requestSet, const vector<Busline*>& candidateServiceRoutes, const map<BusState, set<Bus*>>& fleetState, double time, set<Bustrip*>& unmatchedTripSet) override;
-
-
+    bool calc_trip_generation(const set<Request*, ptr_less<Request*>>& requestSet, const vector<Busline*>& candidateServiceRoutes, const map<BusState, set<Bus*>>& fleetState, double time, set<Bustrip*>& unmatchedTripSet, set<Bustrip*>& unmatchedEmptyTripSet) override;
 };
 
 
@@ -176,7 +175,7 @@ class NaiveEmptyVehicleTripGeneration : public TripGenerationStrategy
 public:
 	explicit NaiveEmptyVehicleTripGeneration(Network* theNetwork = nullptr);
 	~NaiveEmptyVehicleTripGeneration() override = default;
-    bool calc_trip_generation(const set<Request*, ptr_less<Request*>>& requestSet, const vector<Busline*>& candidateServiceRoutes, const map<BusState, set<Bus*>>& fleetState, double time, set<Bustrip*>& unmatchedTripSet) override;
+    bool calc_trip_generation(const set<Request*, ptr_less<Request*>>& requestSet, const vector<Busline*>& candidateServiceRoutes, const map<BusState, set<Bus*>>& fleetState, double time, set<Bustrip*>& unmatchedTripSet, set<Bustrip*>& unmatchedEmptyTripSet) override;
 
 private:
 	Network* theNetwork_; //!< currently needs access to the network to find the closest on-call Bus to origin stop of highest OD demand
@@ -187,7 +186,7 @@ class SimpleEmptyVehicleTripGeneration : public TripGenerationStrategy
 public:
     explicit SimpleEmptyVehicleTripGeneration(Network* theNetwork = nullptr);
     ~SimpleEmptyVehicleTripGeneration() override = default;
-    bool calc_trip_generation(const set<Request*, ptr_less<Request*>>& requestSet, const vector<Busline*>& candidateServiceRoutes, const map<BusState, set<Bus*>>& fleetState, double time, set<Bustrip*>& unmatchedTripSet) override;
+    bool calc_trip_generation(const set<Request*, ptr_less<Request*>>& requestSet, const vector<Busline*>& candidateServiceRoutes, const map<BusState, set<Bus*>>& fleetState, double time, set<Bustrip*>& unmatchedTripSet, set<Bustrip*>& unmatchedEmptyTripSet) override;
 
 private:
     Network* theNetwork_; //!< currently needs access to the network to find the closest on-call Bus to origin stop of highest OD demand

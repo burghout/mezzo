@@ -100,7 +100,7 @@ private:
 class BustripGenerator
 {
     enum generationStrategyType { Null = 0, Naive, Simple }; //!< ids of passenger trip generation strategies known to BustripGenerator
-	enum emptyVehicleStrategyType {	EVNull = 0, EVNaive }; //!< ids of empty-vehicle redistribution strategies known to BustripGenerator
+	enum emptyVehicleStrategyType {	EVNull = 0, EVNaive, EVSimple }; //!< ids of empty-vehicle redistribution strategies known to BustripGenerator
 	friend class BustripVehicleMatcher; //!< give matcher class access to unmatchedTrips_. May remove trip from this set without destroying it if it has been matched. Also gives VehicleMatcher access to serviceRoutes for initializing vehicles
 
 public:
