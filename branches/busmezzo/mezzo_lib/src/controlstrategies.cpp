@@ -6,6 +6,57 @@
 
 
 // Helper functions
+
+//!< takes trip that already has a preliminary schedule for both dispatch and stop visits, and updates this schedule given a new start time
+void update_schedule(Bustrip* trip, double new_starttime)
+{
+    assert(trip);
+    assert(new_starttime >= 0);
+
+    if (trip && new_starttime >= 0)
+    {
+        if (trip->get_starttime() != new_starttime)
+        {
+            double delta = new_starttime - trip->get_starttime(); //positive to shift the schedule later in time, and negative if it should shift earlier in time
+            vector<Visit_stop*> schedule = trip->stops;
+
+            //add the delta to all the scheduled stop visits
+            for (Visit_stop* stop_arrival : schedule)
+            {
+                stop_arrival->second += delta;
+            }
+
+            trip->set_starttime(new_starttime); //set planned dispatch to new start time
+            trip->add_stops(schedule); //overwrite old schedule with the new scheduled stop visits
+            trip->convert_stops_vector_to_map(); //stops map used in some locations, stops vector used in others
+        }
+    }
+    else
+    {
+        DEBUG_MSG("WARNING::update schedule - null trip or invalid starttime arguments");
+    }
+}
+
+//!< Takes a vector of Bustrips and connects them via their driving_roster attribute in the order of the tripchain (i.e. index 0 is first trip, index 1 the second etc.)
+void add_driving_roster_to_tripchain(const vector<Bustrip*>& tripchain)
+{
+    //!< @todo assumes that the trip starttimes make sense I suppose. Not sure if this matters yet, but could in case a trip is 'early for dispatch'
+    vector<Start_trip*> driving_roster;
+    // build the driving roster (expected dispatch of chained trips between different lines)
+    for (auto trip : tripchain)
+    {
+        Start_trip* st = new Start_trip(trip, trip->get_starttime());
+        driving_roster.push_back(st);
+    }
+    // save the driving roster at the trip level for each trip on the chain
+    for (auto it = driving_roster.begin(); it != driving_roster.end(); ++it)
+    {
+        (*it)->first->add_trips(driving_roster);
+    }
+
+    //result should be that each trip in "tripchain" knows of eachother and we can throw this into the Busline::execute, Bustrip::activate, Bus::advance_curr_trip loop
+}
+
 template<class T>
 struct compare
 {
@@ -821,35 +872,6 @@ bool SchedulingStrategy::book_trip_dispatch(Eventlist* eventlist, Bustrip* trip)
     }
 
     return false;
-}
-
-void SchedulingStrategy::update_schedule(Bustrip* trip, double new_starttime)
-{
-    assert(trip);
-    assert(new_starttime >= 0);
-
-    if (trip && new_starttime >= 0)
-    {
-        if (trip->get_starttime() != new_starttime)
-        {
-            double delta = new_starttime - trip->get_starttime(); //positive to shift the schedule later in time, and negative if it should shift earlier in time
-            vector<Visit_stop*> schedule = trip->stops;
-
-            //add the delta to all the scheduled stop visits
-            for (Visit_stop* stop_arrival : schedule)
-            {
-                stop_arrival->second += delta;
-            }
-
-            trip->set_starttime(new_starttime); //set planned dispatch to new start time
-            trip->add_stops(schedule); //overwrite old schedule with the new scheduled stop visits
-            trip->convert_stops_vector_to_map(); //stops map used in some locations, stops vector used in others
-        }
-    }
-    else
-    {
-        DEBUG_MSG("WARNING::SchedulingStrategy::update_schedule - null trip or invalid starttime arguments");
-    }
 }
 
 bool NullScheduling::schedule_trips(Eventlist* eventlist, set<Bustrip*>& unscheduledTrips, const double time)

@@ -250,7 +250,6 @@ public:
 
 protected:
 	bool book_trip_dispatch(Eventlist* eventlist, Bustrip* trip); //!< add a matched and scheduled trip (i.e., Bustrip that has a Bus, a Busline, a schedule and a start time) to the trips list of its Busline and add a Busline event to dispatch this trip its given start time
-	void update_schedule(Bustrip* trip, double new_starttime); //!< takes trip that already has a preliminary schedule for both dispatch and stop visits, and updates this schedule given a new start time
 };
 
 //! @brief Null scheduling strategy that always returns false
