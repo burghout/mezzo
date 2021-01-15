@@ -442,6 +442,7 @@ public:
 	vector <Visit_stop*> stops;						//!< contains all the busstops and the times that they are supposed to be served. NOTE: this can be a subset of the total nr of stops in the Busline (according to the schedule input file)
 	map <Busstop*, double> stops_map;
 	vector <Start_trip*> driving_roster;			//!< trips assignment for each bus vehicle.
+	bool deleted_driving_roster = false;			//!< false if the driving roster for a chain of trips that this trip is a part of has been deleted already, true otherwise
     map <Busstop*, passengers,ptr_less<Busstop*>> passengers_on_board; //!< passenger on-board stored by their alighting stop (format 3)
     map <Busstop*, int, ptr_less<Busstop*>> nr_expected_alighting;		//!< number of passengers expected to alight at the busline's stops (format 2)
     map <Busstop*, int, ptr_less<Busstop*>> assign_segements;			//!< contains the number of pass. traveling between trip segments

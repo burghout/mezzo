@@ -238,6 +238,73 @@ void Bus::set_bustype_attributes (Bustype* bty)
 	bus_type = bty;
 }
 
+Bustrip* Bus::get_next_trip()
+{
+    Bustrip* next_trip = nullptr;
+    if (curr_trip != nullptr && !curr_trip->driving_roster.empty())
+    {
+        vector <Start_trip*>::iterator curr_trip_it, next_trip_it; // find the pointer to the current and next trip
+        for (vector <Start_trip*>::iterator trip = curr_trip->driving_roster.begin(); trip < curr_trip->driving_roster.end(); trip++)
+        {
+            if ((*trip)->first == curr_trip)
+            {
+                curr_trip_it = trip;
+                break;
+            }
+        }
+        next_trip_it = curr_trip_it + 1;
+        //on_trip = false;  // the bus is available for its next trip
+        if (next_trip_it != curr_trip->driving_roster.end()) // there are more trips for this bus
+        {
+            next_trip = (*next_trip_it)->first;
+        }
+	}
+	return next_trip;
+}
+
+
+Bus* Bus::progressFlexVehicle(Bus* oldbus, double time) 
+{
+    assert(oldbus->get_occupancy() == 0); //no passengers should be remaining on the bus at this point
+    //vid++; // VehicleID is already incremented in Bustrip::advance_next_stop and so many other places, so just let the caller be responsible for it
+    Bus* newbus = recycler.newBus(); //want to clone the bus that just finished its trip with its final stop as its 'origin stop'
+    assert(newbus->get_state() == BusState::Null);
+
+    //copy over info from the old bus to the new
+    newbus->set_flex_vehicle(true);
+    newbus->set_bus_id(oldbus->get_bus_id());
+    newbus->set_bustype_attributes(oldbus->get_bus_type());
+    newbus->set_curr_trip(nullptr); //bus has no trip assigned to it yet
+    newbus->set_on_trip(false); //free too be assigned to a trip
+
+	//disconnect and connect oldbus and newbus to/from controlcenter and swap busstates
+    BusState oldstate = oldbus->get_state();
+	assert(oldstate == BusState::IdleEmpty); //oldbus should have reached their final stop on trip and all passengers should have exited
+
+    Controlcenter* cc = oldbus->get_CC(); //save local pointer to member control center, disconnectVehicle sets member to nullptr
+    oldbus->set_state(BusState::Null, time); //set state of old bus to Null to remove it from fleet state map
+    cc->disconnectVehicle(oldbus); //disconnect old bus and connect new bus
+    cc->connectVehicle(newbus);
+    newbus->set_state(oldstate, time); //updates fleet state with this vehicle
+
+	//add newbus to the same service routes as oldbus
+    set<int> sroute_ids = oldbus->sroute_ids_; //copy ids of service routes of old bus when it finished its trip, sroute_ids_ will change when removing oldbus from control center service routes
+    for (const int& sroute_id : sroute_ids)
+    {
+        cc->removeVehicleFromServiceRoute(sroute_id, this); //strip oldbus (this) of all of its service routes, both in control center and from its member sroute_ids_
+        cc->addVehicleToServiceRoute(sroute_id, newbus); //initiate the newbus with the sroutes of the oldbus
+    }
+    return newbus;
+}
+
+void Bus::assignBusToTrip(Bus* bus, Bustrip* trip)
+{
+	trip->set_busv(bus); //assign bus to the trip
+	bus->set_curr_trip(trip); //assign trip to the bus
+	trip->set_bustype(bus->get_bus_type());//set the bus type of the trip (so trip has access to this bustypes dwell time function)
+}
+
+
 void Bus::advance_curr_trip (double time, Eventlist* eventlist) // progresses trip-pointer 
 {
     if (theParameters->drt)
@@ -253,8 +320,8 @@ void Bus::advance_curr_trip (double time, Eventlist* eventlist) // progresses tr
                 abort();
             }
 
-            double trip_time = curr_trip->get_enter_time() - curr_trip->get_starttime();
-            Q_UNUSED(trip_time);
+            //double trip_time = curr_trip->get_enter_time() - curr_trip->get_starttime();
+            //Q_UNUSED(trip_time);
             //DEBUG_MSG("\t Total trip time: " << trip_time);
             
             curr_trip->get_line()->remove_flex_trip(curr_trip); //remove from set of uncompleted flex trips in busline, control center takes ownership of the trip for deletion
@@ -262,24 +329,27 @@ void Bus::advance_curr_trip (double time, Eventlist* eventlist) // progresses tr
         }
     }
 
-	vector <Start_trip*>::iterator trip1, next_trip; // find the pointer to the current and next trip
-	for (vector <Start_trip*>::iterator trip = curr_trip->driving_roster.begin(); trip < curr_trip->driving_roster.end(); trip++)
-	{
-		if ((*trip)->first == curr_trip)
-		{
-			trip1 = trip;
-			break;
-		}
-	}
-	next_trip = trip1+1;
+	Bustrip* next_trip = get_next_trip();
 	on_trip = false;  // the bus is available for its next trip
-	if (next_trip != curr_trip->driving_roster.end()) // there are more trips for this bus
+
+	if (next_trip != nullptr) // there are more trips for this bus
 	{
-		if ((*next_trip)->first->get_starttime() <= time) // if the bus is already late for the next trip
+		if (flex_vehicle_ && next_trip->is_flex_trip()) // for dynamically scheduled trip-chains a new bus needs to be dynamically generated and assigned to next trip
 		{
-			Busline* line = (*next_trip)->first->get_line();
+			assert(theParameters->drt);
+			//vid++ when we have a trip-chain that is continuing, the id is already incremented in Bustrip::advance_next_stop for whatever reason
+			Bus* busclone = progressFlexVehicle(this, time); //! - Create the cloned bus, do the disconnect and reconnect with CC
+			next_trip->set_starttime(time); // for calculating output as well as the activation check below, this now represents actual starttime and not just the 'expected one'
+			assignBusToTrip(busclone, next_trip); //the trip has not started yet however, on_trip set to true in Bustrip::activate
+			assert(busclone->get_curr_trip() == next_trip); //should now point to the same once assigned
+			next_trip->set_scheduled_for_dispatch(true); // probably unnecessary, but just to make sure the trip is not double activated via Busline::execute, you never know
+
+		}
+		if (next_trip->get_starttime() <= time) // if the bus is already late for the next trip
+		{
+			Busline* line = next_trip->get_line();
 			// then the trip is activated
-			(*next_trip)->first->activate(time, line->get_busroute(), line->get_odpair(), eventlist);
+			next_trip->activate(time, line->get_busroute(), line->get_odpair(), eventlist);
 			return;
 		}
 		// if the bus is early for the next trip, then it will be activated at the scheduled time from Busline
@@ -290,37 +360,17 @@ void Bus::advance_curr_trip (double time, Eventlist* eventlist) // progresses tr
     {
         if (flex_vehicle_ && curr_trip->is_flex_trip())
         {
-            assert(occupancy == 0); //no passengers should be remaining on the bus at this point
-            vid++;
-            Bus* newbus = recycler.newBus(); //want to clone the bus that just finished its trip with its final stop as its 'origin stop'
-            assert(newbus->get_state() == BusState::Null);
+			vid++; // still have no clue if this is important but sticking basically to what is done in Network::read_busvehicle
+			Bus* busclone = progressFlexVehicle(this, time);
 
-            //copy over info from the old bus to the new
-            newbus->set_flex_vehicle(true);
-            newbus->set_bus_id(id);
-            newbus->set_bustype_attributes(bus_type);
-            newbus->set_curr_trip(nullptr); //bus has no trip assigned to it yet
-            newbus->set_on_trip(false);
-
-            Controlcenter* cc = CC_; //save local pointer to member control center, disconnectVehicle sets member to nullptr
-            this->set_state(BusState::Null, time); //set state of old bus to Null to remove it from fleet state map
-            cc->disconnectVehicle(this); //disconnect old bus and connect new bus
-            cc->connectVehicle(newbus);
-            set<int> sroute_ids = sroute_ids_; //copy ids of service routes of old bus when it finished its trip, sroute_ids_ will change when removing oldbus from control center service routes
-            for (const int& sroute_id : sroute_ids)
-            {
-                cc->removeVehicleFromServiceRoute(sroute_id, this); //strip oldbus (this) of all of its service routes, both in control center and from its member sroute_ids_
-                cc->addVehicleToServiceRoute(sroute_id, newbus); //initiate the newbus with the sroutes of the oldbus
-            }
-
-            //initialize newbus as unassigned at the final stop of the trip
+            //initialize busclone as unassigned at the final stop of the trip
             if (last_stop_visited_->get_origin_node() == nullptr) //bus cannot currently be assigned a new trip starting from this stop unless there is an origin node associated with it
             {
-                DEBUG_MSG_V("ERROR in Bus::advance_curr_trip - problem re-initializing bus " << newbus->get_bus_id() << " at final stop " << last_stop_visited_->get_id() << 
+                DEBUG_MSG_V("ERROR in Bus::advance_curr_trip - problem re-initializing bus " << busclone->get_bus_id() << " at final stop " << last_stop_visited_->get_id() <<
                                 ", Busstop does not have an origin node associated with it. Aborting...");
                 abort();
             }
-            last_stop_visited_->book_unassigned_bus_arrival(eventlist, newbus, time);
+            last_stop_visited_->book_unassigned_bus_arrival(eventlist, busclone, time);
 
         }
     }
@@ -610,6 +660,7 @@ Busstop* Bus::get_next_stop() const
 
 	return next_stop;
 }
+
 
 // ***** Bus-types functions *****
 Bustype::Bustype ()

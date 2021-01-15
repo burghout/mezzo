@@ -121,7 +121,14 @@ void BustripGenerator::reset(int generation_strategy_type, int empty_vehicle_str
 	{
 		delete trip;
 	}
+
+	for (Bustrip* trip : unmatchedRebalancingTrips_)
+	{
+		delete trip;
+	}
 	unmatchedTrips_.clear();
+	unmatchedRebalancingTrips_.clear();
+
 	setTripGenerationStrategy(generation_strategy_type);
 	setEmptyVehicleStrategy(empty_vehicle_strategy_type);
 }
@@ -139,7 +146,6 @@ vector<Busline*> BustripGenerator::getServiceRoutes() const
 
 void BustripGenerator::cancelUnmatchedTrip(Bustrip* trip)
 {
-	assert(trip->driving_roster.empty());
 	if (unmatchedTrips_.count(trip) != 0)
 	{
 		delete trip;
@@ -149,7 +155,6 @@ void BustripGenerator::cancelUnmatchedTrip(Bustrip* trip)
 
 void BustripGenerator::cancelRebalancingTrip(Bustrip* trip)
 {
-	assert(trip->driving_roster.empty());
 	if (unmatchedRebalancingTrips_.count(trip) != 0)
 	{
 		delete trip;
@@ -448,6 +453,7 @@ void Controlcenter::reset()
 		{
 			vehtrip.first->reset(); //reset initial vehicles instead of deleting
 		}
+		//!< @todo clean up all trips that are chained at this point. Assumes that the first trip in the roster is always 'responsible' for the others...not sure how to clean up without invalidating driving_roster at the moment
 		delete vehtrip.second;
 	}
 	completedVehicleTrips_.clear();

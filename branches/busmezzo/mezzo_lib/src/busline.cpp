@@ -881,9 +881,17 @@ Bustrip::~Bustrip ()
 	{
 		delete stop_visit;
 	}
-	for (Start_trip* trip_start : driving_roster)
+
+	if (!deleted_driving_roster) //!< ugly hack to ensure that we do not delete driving roster twice, in case delete has been called for two trips in the same driving roster
 	{
-		delete trip_start;
+		for (auto trip_start : driving_roster)
+		{
+			trip_start->first->deleted_driving_roster = true;
+		}
+		for (Start_trip* trip_start : driving_roster)
+		{
+			delete trip_start;
+		}
 	}
 }
 
