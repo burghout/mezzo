@@ -1046,7 +1046,15 @@ bool Bustrip::activate (double time, Route* route, ODpair* odpair, Eventlist* ev
 		/*if (busv->get_route() != NULL)
 			cout << "Warning, the route is changing!" << endl;*/
 	}
-	double dispatch_time = calc_departure_time(first_dispatch_time);
+	double dispatch_time;
+	if(!this->is_flex_trip())
+		dispatch_time = calc_departure_time(first_dispatch_time); // also sets 'actual dispatch time' attribute of Bustrip
+	else
+	{
+		dispatch_time = time; // @todo the assumption is that flex vehicles are dispatched immediately without the 'layover recovery' delay like scheduled bus-trips, assumed already on-call at a stop when trip was assigned. Perhaps model this more explicitly in the future.
+		actual_dispatching_time = time; 
+	}
+
 	if (dispatch_time < time)
 		cout << "Warning, dispatch time is before current time for bus trip " << id << endl;
 	busv->init(busv->get_bus_id(),4,busv->get_length(),route,odpair,time); // initialize with the trip specific details
