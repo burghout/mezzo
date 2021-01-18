@@ -801,6 +801,11 @@ bool SimpleEmptyVehicleTripGeneration::calc_trip_generation(const set<Request *,
     unmatchedTripSet.erase(selectedTrip); 
 
     // 8. BONUS: add any requests that match EmptyTrip to it as well???
+    for (auto rq : selectedTrip->get_requests())
+    {
+        //!< @todo maybe remove the scheduled requests from the later chained trips, matcher currently only changes request state to matched for the first trip in driving roster chain
+        newTrip->add_request(rq);
+    }
 
     return true; // emits Signal that empty trip was generated, matcher does the rest.
 }
