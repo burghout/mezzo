@@ -48,6 +48,21 @@ namespace helper_functions
         // build the driving roster (expected dispatch of chained trips between different lines)
         for (auto trip : tripchain)
         {
+            // delete old driving roster if it exists
+            if (!trip->driving_roster.empty() && !trip->deleted_driving_roster) //!< ugly hack to ensure that we do not delete driving roster twice, in case delete has been called for two trips in the same driving roster
+            {
+                for (auto trip_start : trip->driving_roster)
+                {
+                    trip_start->first->deleted_driving_roster = true;
+                }
+                for (Start_trip* trip_start : trip->driving_roster)
+                {
+                    delete trip_start;
+                }
+            }
+            trip->driving_roster.clear();
+            trip->deleted_driving_roster = false; // now reset driving roster deletion flag to false
+
             Start_trip* st = new Start_trip(trip, trip->get_starttime());
             driving_roster.push_back(st);
         }
