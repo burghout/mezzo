@@ -77,7 +77,7 @@ public:
 
 	void reset(); //!< resets members between simulation replications
 
-    bool addRequest(Request* req, const set<Busstop *, ptr_less<Busstop *> > &serviceArea); //!< adds request passenger Request to the requestSet
+    bool addRequest(Request* req, const set<Busstop*, ptr_less<Busstop*> > &serviceArea); //!< adds request passenger Request to the requestSet
 	void removeRequest(int pass_id); //!< removes requests with pass_id from the requestSet if it exists
     bool isFeasibleRequest(const Request* req, const set<Busstop*, ptr_less<Busstop*>>& serviceArea) const; //!< returns true if request is feasible for a given service area, false otherwise
 
@@ -159,7 +159,7 @@ public:
 	bool matchVehiclesToEmptyVehicleTrips(BustripGenerator& tg, double time); //!< returns true if at LEAST one unmatched rebalancing trip was assigned to a vehicle
 
 private:
-	set<Bustrip*> matchedTrips_; //!< set of trips that have been matched with a transit vehicle but have not yet been dispatched
+	set<Bustrip*, ptr_less<Bustrip*> > matchedTrips_; //!< set of trips that have been matched with a transit vehicle but have not yet been dispatched
 	map<int, set<Bus*>> vehicles_per_service_route; //!< maps lineIDs among service routes for this control center to vector of candidate transit vehicles
 
 	MatchingStrategy* matchingStrategy_; //!< strategy for assigning unmatched trips to candidate transit vehicles

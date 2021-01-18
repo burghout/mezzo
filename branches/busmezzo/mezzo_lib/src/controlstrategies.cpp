@@ -867,7 +867,7 @@ Bustrip* MatchingStrategy::find_earliest_planned_trip(const set<Bustrip*>& trips
 }
 
 
-bool NullMatching::find_tripvehicle_match(Bustrip* unmatchedTrip, map<int, set<Bus*>>& veh_per_sroute, const double time, const set<Bustrip*>& matchedTrips)
+bool NullMatching::find_tripvehicle_match(Bustrip* unmatchedTrip, map<int, set<Bus*>>& veh_per_sroute, const double time, const set<Bustrip*, ptr_less<Bustrip*> >& matchedTrips)
 {
     Q_UNUSED(unmatchedTrip)
     Q_UNUSED(veh_per_sroute)
@@ -877,7 +877,7 @@ bool NullMatching::find_tripvehicle_match(Bustrip* unmatchedTrip, map<int, set<B
     return false;
 }
 
-bool NaiveMatching::find_tripvehicle_match(Bustrip* unmatchedTrip, map<int, set<Bus*>>& veh_per_sroute, const double time, const set<Bustrip*>& matchedTrips)
+bool NaiveMatching::find_tripvehicle_match(Bustrip* unmatchedTrip, map<int, set<Bus*>>& veh_per_sroute, const double time, const set<Bustrip*, ptr_less<Bustrip*> >& matchedTrips)
 {
     Q_UNUSED(matchedTrips)
 
@@ -957,7 +957,7 @@ bool SchedulingStrategy::book_trip_dispatch(Eventlist* eventlist, Bustrip* trip)
     return scheduled_trip_success;
 }
 
-bool NullScheduling::schedule_trips(Eventlist* eventlist, set<Bustrip*>& unscheduledTrips, const double time)
+bool NullScheduling::schedule_trips(Eventlist* eventlist, set<Bustrip*, ptr_less<Bustrip*> >& unscheduledTrips, const double time)
 {
     Q_UNUSED(eventlist)
     Q_UNUSED(unscheduledTrips)
@@ -967,7 +967,7 @@ bool NullScheduling::schedule_trips(Eventlist* eventlist, set<Bustrip*>& unsched
 }
 
 
-bool NaiveScheduling::schedule_trips(Eventlist* eventlist, set<Bustrip*>& unscheduledTrips, const double time)
+bool NaiveScheduling::schedule_trips(Eventlist* eventlist, set<Bustrip*, ptr_less<Bustrip*> >& unscheduledTrips, const double time)
 {
     assert(eventlist);
     if (!unscheduledTrips.empty())

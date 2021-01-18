@@ -209,7 +209,7 @@ public:
         Bustrip*                unmatchedTrip,  //!< planned trip that has not yet been assigned to any transit vehicle
         map<int, set<Bus*>>&    veh_per_sroute, //!< set of candidate vehicles assigned with different service routes
         double                  time,           //!< time find_tripvehicle_match is called
-        const set<Bustrip*>&    matchedTrips    //!< set of dynamically generated trips that already have a vehicle assigned to them, Note: the idea here is to use these in the future for e.g. dynamic trip-chaining
+        const set<Bustrip*, ptr_less<Bustrip*> >&    matchedTrips    //!< set of dynamically generated trips that already have a vehicle assigned to them, Note: the idea here is to use these in the future for e.g. dynamic trip-chaining
     ) = 0; //!< returns true if unmatchedTrip was assigned to a transit vehicle from veh_per_sroute
 
 protected:
@@ -222,7 +222,7 @@ class NullMatching : public MatchingStrategy
 {
 public:
 	~NullMatching() override = default;
-	bool find_tripvehicle_match(Bustrip* unmatchedTrip, map<int, set<Bus*>>& veh_per_sroute, double time, const set<Bustrip*>& matchedTrips) override;
+	bool find_tripvehicle_match(Bustrip* unmatchedTrip, map<int, set<Bus*>>& veh_per_sroute, double time, const set<Bustrip*, ptr_less<Bustrip*> >& matchedTrips) override;
 };
 
 //! @brief Naive matching strategy always attempts to match the unmatchedTrip to the first candidate transit vehicle found (if any) at the origin stop of the unmatchedTrip
@@ -234,7 +234,7 @@ class NaiveMatching : public MatchingStrategy
 {
 public:
 	~NaiveMatching() override = default;
-	bool find_tripvehicle_match(Bustrip* unmatchedTrip, map<int, set<Bus*>>& veh_per_sroute, double time, const set<Bustrip*>& matchedTrips) override;
+	bool find_tripvehicle_match(Bustrip* unmatchedTrip, map<int, set<Bus*>>& veh_per_sroute, double time, const set<Bustrip*, ptr_less<Bustrip*> >& matchedTrips) override;
 };
 
 //Scheduling Strategy
@@ -246,7 +246,7 @@ class SchedulingStrategy
 {
 public:
 	virtual ~SchedulingStrategy() = default;
-	virtual bool schedule_trips(Eventlist* eventlist, set<Bustrip*>& unscheduledTrips, double time) = 0; //!< returns true if an unscheduled trip has been given a dispatch time and added to the eventlist as a Busline action. This trip is then removed from the set of unscheduledTrips
+	virtual bool schedule_trips(Eventlist* eventlist, set<Bustrip*, ptr_less<Bustrip*> >& unscheduledTrips, double time) = 0; //!< returns true if an unscheduled trip has been given a dispatch time and added to the eventlist as a Busline action. This trip is then removed from the set of unscheduledTrips
 
 protected:
 	bool book_trip_dispatch(Eventlist* eventlist, Bustrip* trip); //!< add a matched and scheduled trip (i.e., Bustrip that has a Bus, a Busline, a schedule and a start time) to the trips list of its Busline and add a Busline event to dispatch this trip its given start time
@@ -257,7 +257,7 @@ class NullScheduling : public SchedulingStrategy
 {
 public:
 	~NullScheduling() override = default;
-	bool schedule_trips(Eventlist* eventlist, set<Bustrip*>& unscheduledTrips, double time) override;
+	bool schedule_trips(Eventlist* eventlist, set<Bustrip*, ptr_less<Bustrip*> >& unscheduledTrips, double time) override;
 };
 
 //! @brief Schedules the first trip found in unscheduledTrips to be dispatched at the earliest possible time (i.e. immediately)
@@ -268,7 +268,7 @@ class NaiveScheduling : public SchedulingStrategy
 {
 public:
 	~NaiveScheduling() override = default;
-	bool schedule_trips(Eventlist* eventlist, set<Bustrip*>& unscheduledTrips, double time) override;
+	bool schedule_trips(Eventlist* eventlist, set<Bustrip*, ptr_less<Bustrip*> >& unscheduledTrips, double time) override;
 };
 
 #endif // ifndef CONTROLSTRATEGIES_H
