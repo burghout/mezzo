@@ -276,6 +276,7 @@ Bus* Bus::progressFlexVehicle(Bus* oldbus, double time)
     newbus->set_bustype_attributes(oldbus->get_bus_type());
     newbus->set_curr_trip(nullptr); //bus has no trip assigned to it yet
     newbus->set_on_trip(false); //free too be assigned to a trip
+	newbus->set_last_stop_visited(oldbus->get_last_stop_visited());
 
 	//disconnect and connect oldbus and newbus to/from controlcenter and swap busstates
     BusState oldstate = oldbus->get_state();
@@ -285,7 +286,7 @@ Bus* Bus::progressFlexVehicle(Bus* oldbus, double time)
     oldbus->set_state(BusState::Null, time); //set state of old bus to Null to remove it from fleet state map
     cc->disconnectVehicle(oldbus); //disconnect old bus and connect new bus
     cc->connectVehicle(newbus);
-    newbus->set_state(oldstate, time); //updates fleet state with this vehicle
+    newbus->set_state(oldstate, time); //updates fleet state of CC with this vehicle
 
 	//add newbus to the same service routes as oldbus
     set<int> sroute_ids = oldbus->sroute_ids_; //copy ids of service routes of old bus when it finished its trip, sroute_ids_ will change when removing oldbus from control center service routes
@@ -604,7 +605,10 @@ void Bus::print_state()
 //		abort();
 	}
 	cout << endl;
-	cout << "\t" << "- last stop visited: " << last_stop_visited_->get_id() << endl;
+	if(last_stop_visited_)
+		cout << "\t" << "- last stop visited: " << last_stop_visited_->get_id() << endl;
+	else
+		cout << "\t" << "- last stop visited: nullptr" << endl;
 }
 
 bool Bus::is_idle() const
