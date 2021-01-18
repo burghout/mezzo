@@ -970,9 +970,12 @@ bool NullScheduling::schedule_trips(Eventlist* eventlist, set<Bustrip*, ptr_less
 bool NaiveScheduling::schedule_trips(Eventlist* eventlist, set<Bustrip*, ptr_less<Bustrip*> >& unscheduledTrips, const double time)
 {
     assert(eventlist);
-    if (!unscheduledTrips.empty())
+    bool scheduled_trip = false; // true if at least one trip has been scheduled
+    set<Bustrip*, compareBustripByEarliestStarttime> sortedTrips(unscheduledTrips.begin(), unscheduledTrips.end()); // process uncheduledTrips in order of earliest to latest starttime
+    assert(sortedTrips.size() == unscheduledTrips.size());
+
+    for (auto trip : sortedTrips)
     {
-        Bustrip* trip = (*unscheduledTrips.begin());
         Bus* bus = trip->get_busv();
         //DEBUG_MSG(endl << "INFO::NaiveScheduling::schedule_trips - scheduling matched trips for dispatch at time " << time);
         //check if the bus associated with this trip is available
@@ -985,7 +988,7 @@ bool NaiveScheduling::schedule_trips(Eventlist* eventlist, set<Bustrip*, ptr_les
                 return false;
 
             unscheduledTrips.erase(trip); //trip is now scheduled for dispatch
-            return true;
+            scheduled_trip = true;
         }
         else
         {
@@ -994,5 +997,5 @@ bool NaiveScheduling::schedule_trips(Eventlist* eventlist, set<Bustrip*, ptr_les
         }
     }
 
-    return false;
+    return scheduled_trip;
 }
