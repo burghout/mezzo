@@ -826,6 +826,13 @@ void MatchingStrategy::assign_oncall_vehicle_to_trip(Busstop* currentStop, Bus* 
         {
             DEBUG_MSG_V("Busstop::remove_unassigned_bus failed for bus " << transitveh->get_bus_id() << " and stop " << currentStop->get_id());
         }
+
+        // update state of requests (if trip was previously associated with a bundle of requests)
+        for (auto rq : trip->get_requests())
+        {
+            assert(rq->state == RequestState::Assigned); //should have been set to assigned when trip was generated
+            rq->set_state(RequestState::Matched);
+        }
     }
 }
 
