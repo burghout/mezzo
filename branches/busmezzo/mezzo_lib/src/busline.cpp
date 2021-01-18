@@ -915,6 +915,7 @@ void Bustrip::reset ()
 	last_stop_visited = stops.front()->first;
 	holding_at_stop = false;
 	scheduled_for_dispatch = false;
+	deleted_driving_roster = false;
 }
 
 void Bustrip::convert_stops_vector_to_map ()
