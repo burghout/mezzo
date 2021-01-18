@@ -108,7 +108,21 @@ struct compareBustripByNrRequests
 {
     bool operator () (const Bustrip* lhs, const Bustrip* rhs) const
     {
-        return lhs->get_requests().size() > rhs->get_requests().size();
+        if (lhs->get_requests().size() != rhs->get_requests().size())
+            return lhs->get_requests().size() > rhs->get_requests().size();
+        else
+            return lhs->get_id() < rhs->get_id(); // tiebreaker return trip with smallest id
+    }
+};
+
+struct compareBustripByEarliestStarttime
+{
+    bool operator () (const Bustrip* lhs, const Bustrip* rhs) const
+    {
+        if (lhs->get_starttime() != rhs->get_starttime())
+            return lhs->get_starttime() < rhs->get_starttime();
+        else
+            return lhs->get_id() < rhs->get_id(); // tiebreaker return trip with smallest id
     }
 };
 

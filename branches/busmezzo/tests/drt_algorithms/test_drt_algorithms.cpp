@@ -166,12 +166,27 @@ struct compareBustripByNrRequests
 {
     bool operator () (const Bustrip* lhs, const Bustrip* rhs) const
     {
-        return lhs->get_requests().size() > rhs->get_requests().size();
+        if (lhs->get_requests().size() != rhs->get_requests().size())
+            return lhs->get_requests().size() > rhs->get_requests().size();
+        else
+            return lhs->get_id() < rhs->get_id(); // tiebreaker return trip with smallest id
+    }
+};
+
+struct compareBustripByEarliestStarttime
+{
+    bool operator () (const Bustrip* lhs, const Bustrip* rhs) const
+    {
+        if (lhs->get_starttime() != rhs->get_starttime())
+            return lhs->get_starttime() < rhs->get_starttime();
+        else
+            return lhs->get_id() < rhs->get_id(); // tiebreaker return trip with smallest id
     }
 };
 
 void TestDRTAlgorithms::testSortedBustrips()
 {
+    //compare by num scheduled requests
     auto busline = net->get_buslines().front();
     set<Bustrip*> original;
     Bustrip* t1 = new Bustrip(1,1.0,busline);
@@ -188,6 +203,41 @@ void TestDRTAlgorithms::testSortedBustrips()
     QVERIFY(firstOrig->get_id() == 1);
     QVERIFY(firstSorted->get_id() == 2);
     QVERIFY(t1->get_requests().size() < t2->get_requests().size()) ;
+    
+    //check equivalence relation, lowest id first as tiebreaker
+    auto rq3 = new Request();
+    auto rq4 = new Request();
+    t1->add_request(rq3);
+    t1->add_request(rq4);
+    QVERIFY(t1->get_requests().size() == t2->get_requests().size());
+    
+    set<Bustrip*,compareBustripByNrRequests> sorted2 (original.begin(), original.end());
+    auto firstSorted2 = *sorted2.begin();
+    QVERIFY(firstSorted2->get_id() == 1);
+    QVERIFY(original.size() == 2);
+    QVERIFY(sorted2.size() == 2);
+    
+    //compare by starttime
+    t1->set_starttime(200.0);
+    t2->set_starttime(100.0);
+    set<Bustrip*,compareBustripByEarliestStarttime> sortedTime (original.begin(), original.end());
+    auto firstSortedTime = *sortedTime.begin();
+    QVERIFY(firstSortedTime->get_id() == 2);
+    
+    //check equivalence relation, lowest id first as tiebreaker
+    t1->set_starttime(t2->get_starttime()); 
+    set<Bustrip*,compareBustripByEarliestStarttime> sortedTime2 (original.begin(), original.end());
+    auto firstSortedTime2 = *sortedTime2.begin();
+    QVERIFY(firstSortedTime2->get_id() == 1);
+    QVERIFY(original.size() == 2);
+    QVERIFY(sortedTime2.size() == 2);
+    
+    delete t1;
+    delete t2;
+    delete rq1;
+    delete rq2;
+    delete rq3;
+    delete rq4;
 }
 
 
@@ -244,7 +294,6 @@ void TestDRTAlgorithms::testAssignment()
 
 void TestDRTAlgorithms::testRunNetwork()
 {
-
     nt->start(QThread::HighestPriority);
     nt->wait();
 
@@ -323,7 +372,6 @@ void TestDRTAlgorithms::testPostRunAssignment()
                     qDebug() << "\t\t request_state: " << Request::state_to_string(request->state);
                 }
             }
-        
             
             // verify that at least one passenger per OD made it to their destination
             QString failmsg = "Failure, at least one passenger for ODstop (" + orig_s + "," + dest_s + ") with non-zero demand should have reached final destination.";
