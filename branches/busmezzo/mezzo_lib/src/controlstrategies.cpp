@@ -88,6 +88,32 @@ namespace helper_functions
         std::copy_if(oldSet.begin(), oldSet.end(), std::inserter(newSet, newSet.end()), [o_id, d_id](Request* value) {return (value->ostop_id == o_id) && (value->dstop_id == d_id); });
         return newSet;
     }
+
+    // Assign requests to trips
+    void assignRequestsToTrips(const set<Request*,ptr_less<Request*>>& requestSet, const set<Bustrip*>& tripSet)
+    {
+        for (auto tr:tripSet)
+        {
+            auto unassignedRequests = helper_functions::filterRequestsByState(requestSet, RequestState::Unmatched); // redo the filtering each time
+            // TODO Add also for emptyTrips followed by a "selectedTrip"
+            for (auto rq:unassignedRequests)
+            {
+                auto startstop = tr->stops.front()->first; // if trip starts at same stop
+                if (startstop->get_id() == rq->ostop_id)
+                {
+                    auto downstreamstops = tr->get_downstream_stops();
+                    if (downstreamstops.end() != find_if(downstreamstops.begin(), downstreamstops.end(),
+                                                         [rq](Busstop* st) { return rq->dstop_id == st->get_id();}) )
+                    { // if rq destination stop is in the downstream stops
+                        rq->assigned_trip = tr;
+                        rq->set_state(RequestState::Assigned);
+                        tr->add_request(rq);
+                    }
+                }
+            }
+        }
+    }
+
 }
 
 template<class T>
@@ -563,25 +589,27 @@ bool SimpleTripGeneration::calc_trip_generation(const set<Request*,ptr_less<Requ
     {
         // 2. get trips (i don't care if they are matched or unmatched...) and assign requests to existing trips
 
-        for (auto tr:unmatchedTripSet)
-        {
-            unassignedRequests = helper_functions::filterRequestsByState(requestSet, RequestState::Unmatched); // redo the filtering each time
-            for (auto rq:unassignedRequests)
-            {
-                auto startstop = tr->stops.front()->first; // if trip starts at same stop
-                if (startstop->get_id() == rq->ostop_id)
-                {
-                    auto downstreamstops = tr->get_downstream_stops();
-                    if (downstreamstops.end() != find_if(downstreamstops.begin(), downstreamstops.end(),
-                                                         [rq](Busstop* st) { return rq->dstop_id == st->get_id();}) )
-                    { // if rq destination stop is in the downstream stops
-                        rq->assigned_trip = tr;
-                        rq->set_state(RequestState::Assigned);
-                        tr->add_request(rq);
-                    }
-                }
-            }
-        }
+        helper_functions::assignRequestsToTrips(requestSet,unmatchedTripSet);
+//        for (auto tr:unmatchedTripSet)
+//        {
+//            unassignedRequests = helper_functions::filterRequestsByState(requestSet, RequestState::Unmatched); // redo the filtering each time
+//            // TODO Add also for emptyTrips followed by a "selectedTrip"
+//            for (auto rq:unassignedRequests)
+//            {
+//                auto startstop = tr->stops.front()->first; // if trip starts at same stop
+//                if (startstop->get_id() == rq->ostop_id)
+//                {
+//                    auto downstreamstops = tr->get_downstream_stops();
+//                    if (downstreamstops.end() != find_if(downstreamstops.begin(), downstreamstops.end(),
+//                                                         [rq](Busstop* st) { return rq->dstop_id == st->get_id();}) )
+//                    { // if rq destination stop is in the downstream stops
+//                        rq->assigned_trip = tr;
+//                        rq->set_state(RequestState::Assigned);
+//                        tr->add_request(rq);
+//                    }
+//                }
+//            }
+//        }
         if (unassignedRequests.empty())
             return true;
         // 3. create trips for those requests for which I have not found a trip
