@@ -117,11 +117,12 @@ public:
     set<Bus*> get_driving_vehicles(const map<BusState, set<Bus*> >& fleetState) const;
     set<Bus*> get_vehicles_enroute_to_stop(const Busstop* stop, const set<Bus*>& vehicles) const; //!< returns true if at least one bus is currently driving to stop (and no intermediate stops) and false otherwise
 	double calc_route_travel_time(const vector<Link*>& routelinks, double time) const; //!< returns the sum of dynamic travel time costs over all links in routelinks
-    vector<Link*> find_shortest_path_between_stops(Network* theNetwork, const Busstop* origin_stop, const Busstop* destination_stop, double start_time) const; //!< returns the shortest route between a pair of stops for a given time, returns empty vector if none exists
+    vector<Link*> find_shortest_path_between_stops(Network* theNetwork, const Busstop* origin_stop, const Busstop* destination_stop, double start_time); //!< returns the shortest route between a pair of stops for a given time, returns empty vector if none exists
 	Busline* find_shortest_busline(const vector<Busline*>& lines, double time) const; //!< returns shortest busline in terms of scheduled in-vehicle time among lines
-    pair <Bus*,double> get_nearest_vehicle(const Busstop* targetStop, set<Bus *> vehicles, Network *theNetwork, double time) const; //!< returns nearest onCall vehicle, returns pair(nullptr,0.0) if none
+    pair <Bus*,double> get_nearest_vehicle(const Busstop* targetStop, set<Bus *> vehicles, Network *theNetwork, double time); //!< returns nearest onCall vehicle, returns pair(nullptr,0.0) if none
 protected:
     map<int, map<int, vector<Busline*> > > cached_lines_connecting_stops; //!< cached results of TripGenerationStrategy::find_lines_connecting_stops
+    map<int, map<int, vector<Link*> > > cached_shortest_path_between_stops;
 };
 
 //! @brief null strategy that always returns false

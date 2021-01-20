@@ -409,7 +409,7 @@ double TripGenerationStrategy::calc_route_travel_time(const vector<Link*>& route
     return expected_travel_time;
 }
 
-vector<Link*> TripGenerationStrategy::find_shortest_path_between_stops(Network* theNetwork, const Busstop* origin_stop, const Busstop* destination_stop, const double start_time) const
+vector<Link*> TripGenerationStrategy::find_shortest_path_between_stops(Network* theNetwork, const Busstop* origin_stop, const Busstop* destination_stop, double start_time)
 {
     assert(origin_stop);
     assert(destination_stop);
@@ -417,12 +417,23 @@ vector<Link*> TripGenerationStrategy::find_shortest_path_between_stops(Network* 
     assert(start_time >= 0);
 
     vector<Link*> rlinks;
-    if(origin_stop && destination_stop)
+    int ostop_id = origin_stop->get_id();
+    int dstop_id = destination_stop->get_id();
+    if (cached_shortest_path_between_stops.count(ostop_id) != 0 && cached_shortest_path_between_stops[ostop_id].count(dstop_id) != 0)
     {
-        int rootlink_id = origin_stop->get_link_id();
-        int dest_node_id = destination_stop->get_dest_node()->get_id(); //!< @todo can change these to look between upstream and downstream junction nodes as well
+        rlinks = cached_shortest_path_between_stops[ostop_id][dstop_id]; // get cached results if called for this OD before
+    }
+    else
+    {
+        if (origin_stop && destination_stop)
+        {
+            int rootlink_id = origin_stop->get_link_id();
+            int dest_node_id = destination_stop->get_dest_node()->get_id(); //!< @todo can change these to look between upstream and downstream junction nodes as well
 
-        rlinks = theNetwork->shortest_path_to_node(rootlink_id, dest_node_id, start_time);
+            rlinks = theNetwork->shortest_path_to_node(rootlink_id, dest_node_id, start_time);
+
+            cached_shortest_path_between_stops[ostop_id][dstop_id] = rlinks;
+        }
     }
     return rlinks;
 }
@@ -445,7 +456,7 @@ Busline* TripGenerationStrategy::find_shortest_busline(const vector<Busline*>& l
     return shortestline;
 }
 
-pair <Bus*,double> TripGenerationStrategy::get_nearest_vehicle(const Busstop *targetStop, set<Bus*> vehicles, Network* theNetwork, double time) const
+pair <Bus*,double> TripGenerationStrategy::get_nearest_vehicle(const Busstop *targetStop, set<Bus*> vehicles, Network* theNetwork, double time)
 {
     pair<Bus*,double> closest (nullptr,numeric_limits<double>::max());
 
