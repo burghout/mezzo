@@ -453,6 +453,8 @@ public:
 	void set_starttime(double starttime_) { starttime = starttime_; }
 	void set_scheduled_for_dispatch(bool scheduled_for_dispatch_) { scheduled_for_dispatch = scheduled_for_dispatch_; }
 	bool is_scheduled_for_dispatch() const { return scheduled_for_dispatch; }
+	void set_activated(bool activated_) { activated = activated_; }
+	bool is_activated() { return activated; }
 	void set_flex_trip(bool flex_trip_) { flex_trip = flex_trip_; }
 	bool is_flex_trip() const { return flex_trip; }
     vector <Request*> get_requests() const { return scheduled_requests;}
@@ -485,6 +487,7 @@ protected:
     */
     vector <Request*> scheduled_requests;
 	bool scheduled_for_dispatch = false; //!< true if this trip has been scheduled for dispatch (i.e. a busline event has been created with for the starttime of this trip) for its respective line, false otherwise
+	bool activated = false; //!< true if this trip has been successfully activated (i.e. a bus has started this trip), false otherwise
 	bool flex_trip = false; //!< true if this trip was generated dynamically
     /**@}*/
 };

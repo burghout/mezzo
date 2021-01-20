@@ -119,7 +119,13 @@ bool Busline::execute(Eventlist* eventlist, double time)
 		//if(curr_trip->first->is_flex_trip())
 		//	DEBUG_MSG("Busline " << id << " activating trip " << curr_trip->first->get_id() << " for bus " << busid);
         assert(curr_trip != trips.end());
-		curr_trip->first->activate(time, busroute, odpair, eventlist); // activates the trip, generates bus etc.
+		if(!curr_trip->first->is_activated()) // a trip that is successfully activated should not be activated twice
+			curr_trip->first->activate(time, busroute, odpair, eventlist); // activates the trip, generates bus etc.
+		else
+		{
+			qDebug() << "Warning - Busline::execute ignored double activation of trip " << curr_trip->first->get_id();
+		}
+
 		curr_trip++; // now points to next trip
 		if (curr_trip != trips.end()) // if there exists a next trip
 		{
@@ -916,6 +922,7 @@ void Bustrip::reset ()
 	holding_at_stop = false;
 	scheduled_for_dispatch = false;
 	deleted_driving_roster = false;
+	activated = false;
 }
 
 void Bustrip::convert_stops_vector_to_map ()
@@ -1010,6 +1017,15 @@ bool Bustrip::advance_next_stop (double time, Eventlist* eventlist)
 
 bool Bustrip::activate (double time, Route* route, ODpair* odpair, Eventlist* eventlist_)
 {
+	if (get_busv() == nullptr) // this can happen if the Bustrip activation call is for a dynamically generated chained trip, and this is not the first trip in the chain, 
+							   // the 'cloned bus' is assigned to the chained trip dynamically when the previous trip has finished (see Bus::advance_curr_trip)
+							   // basically see busv == nullptr as another indicator that a bus is not available for this trip (yet) if this trip is a flex_trip
+	{
+		assert(theParameters->drt);
+		assert(is_flex_trip()); //should only happen for flex-trips
+		return false; // ignore this call
+	}
+
 	// inserts the bus at the origin of the route
 	// if the assigned bus isn't avaliable at the scheduled time, then the trip is activated by Bus::advance_curr_trip as soon as it is done with the previous trip
 	double first_dispatch_time = time;
@@ -1064,11 +1080,13 @@ bool Bustrip::activate (double time, Route* route, ODpair* odpair, Eventlist* ev
 	{
   		busv->set_on_trip(true); // turn on indicator for bus on a trip
 		ok = true;
+		assert(!is_activated()); // no trip should not be activated twice
 	}
 	else // if insert returned false
   	{
   		ok = false; 
   	}	
+	set_activated(ok);
 	return ok;
 }
 

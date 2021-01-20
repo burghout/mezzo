@@ -946,7 +946,7 @@ bool SchedulingStrategy::book_trip_dispatch(Eventlist* eventlist, Bustrip* trip)
     bool scheduled_trip_success = false;
     if (eventlist && trip)
     {
-        for (auto trip_it = trip->driving_roster.begin(); trip_it != trip->driving_roster.end(); ++trip_it) // want to add an event only for the first trip in the trip chain (driving roster)
+        for (auto trip_it = trip->driving_roster.begin(); trip_it != trip->driving_roster.end(); ++trip_it)
         {
             Start_trip* trip_dispatch = (*trip_it);
             Bustrip* unscheduled_trip = trip_dispatch->first;
@@ -966,12 +966,14 @@ bool SchedulingStrategy::book_trip_dispatch(Eventlist* eventlist, Bustrip* trip)
                 if (trip_dispatch == trip->driving_roster.front()) // Busline event added only for first trip in chain, the others handled by Bus::advance_curr_trip
                 {
                     eventlist->add_event(starttime, line); //book the activation of this trip in the eventlist
-                    unscheduled_trip->set_scheduled_for_dispatch(true);
+                    unscheduled_trip->set_scheduled_for_dispatch(true); //scheduled for dispatch is set in Busline::execute?
                     scheduled_trip_success = true;
                 }
                 else
                 {
-                    unscheduled_trip->set_scheduled_for_dispatch(false);
+                    //!< @todo Kindof hacky, but add an 'ambitious' dispatch event from Busline for now to mimic previous behavior as closely as possible, activated Busline and have Busline::curr_trip always pointing to the correct trip to be dispatched
+                    eventlist->add_event(trip->get_starttime()+0.0001, line); // adds a busline event with the starttime of the first trip in chain + 0.0001 seconds.... Should activate the line if not activated, but ignore activation of the trip (with busv == nullptr)
+                    unscheduled_trip->set_scheduled_for_dispatch(true); // this unscheduled trip (chained) is guaranteed to be activated via Bus::advance_curr_trip
                 }
             }
         }

@@ -346,11 +346,18 @@ void Bus::advance_curr_trip (double time, Eventlist* eventlist) // progresses tr
 			next_trip->set_scheduled_for_dispatch(true); // probably unnecessary, but just to make sure the trip is not double activated via Busline::execute, you never know
 
 		}
-		if (next_trip->get_starttime() <= time) // if the bus is already late for the next trip
+		if (next_trip->get_starttime() <= time) // if the bus is already late for the next trip (or dynamically generated trip that starts immediately)
 		{
 			Busline* line = next_trip->get_line();
+			
 			// then the trip is activated
-			next_trip->activate(time, line->get_busroute(), line->get_odpair(), eventlist);
+			if(!next_trip->is_activated()) // a trip should only be activated (successfully) once
+				next_trip->activate(time, line->get_busroute(), line->get_odpair(), eventlist);
+			else
+			{
+				qDebug() << "Warning - Busline::execute ignored double activation of trip " << next_trip->get_id();
+			}
+
 			return;
 		}
 		// if the bus is early for the next trip, then it will be activated at the scheduled time from Busline
