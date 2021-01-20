@@ -90,31 +90,37 @@ namespace helper_functions
     }
 
     // Assign requests to trips
-    void assignRequestsToTrips(const set<Request*,ptr_less<Request*>>& requestSet, const set<Bustrip*>& tripSet)
+    void assignRequestsToTrip(const set<Request*,ptr_less<Request*>>& requestSet, Bustrip* tr)
     {
-        for (auto tr:tripSet)
+        auto unassignedRequests = helper_functions::filterRequestsByState(requestSet, RequestState::Unmatched); // redo the filtering each time
+        // TODO Add also for emptyTrips followed by a "selectedTrip"
+        for (auto rq:unassignedRequests)
         {
-            auto unassignedRequests = helper_functions::filterRequestsByState(requestSet, RequestState::Unmatched); // redo the filtering each time
-            // TODO Add also for emptyTrips followed by a "selectedTrip"
-            for (auto rq:unassignedRequests)
+            auto startstop = tr->stops.front()->first; // if trip starts at same stop
+            if (startstop->get_id() == rq->ostop_id)
             {
-                auto startstop = tr->stops.front()->first; // if trip starts at same stop
-                if (startstop->get_id() == rq->ostop_id)
-                {
-                    auto downstreamstops = tr->get_downstream_stops();
-                    if (downstreamstops.end() != find_if(downstreamstops.begin(), downstreamstops.end(),
-                                                         [rq](Busstop* st) { return rq->dstop_id == st->get_id();}) )
-                    { // if rq destination stop is in the downstream stops
-                        rq->assigned_trip = tr;
-                        rq->set_state(RequestState::Assigned);
-                        tr->add_request(rq);
-                    }
+                auto downstreamstops = tr->get_downstream_stops();
+                if (downstreamstops.end() != find_if(downstreamstops.begin(), downstreamstops.end(),
+                                                     [rq](Busstop* st) { return rq->dstop_id == st->get_id();}) )
+                { // if rq destination stop is in the downstream stops
+                    rq->assigned_trip = tr;
+                    rq->set_state(RequestState::Assigned);
+                    tr->add_request(rq);
                 }
             }
         }
+
     }
 
-}
+    void assignRequestsToTripSet(const set<Request*,ptr_less<Request*>>& requestSet, const set<Bustrip*>& tripSet)
+    {
+        for (auto tr:tripSet)
+        {
+           assignRequestsToTrip(requestSet,tr);
+        }
+    }
+
+} // end namespace helper_functions
 
 template<class T>
 struct compare
@@ -589,27 +595,9 @@ bool SimpleTripGeneration::calc_trip_generation(const set<Request*,ptr_less<Requ
     {
         // 2. get trips (i don't care if they are matched or unmatched...) and assign requests to existing trips
 
-        helper_functions::assignRequestsToTrips(requestSet,unmatchedTripSet);
-//        for (auto tr:unmatchedTripSet)
-//        {
-//            unassignedRequests = helper_functions::filterRequestsByState(requestSet, RequestState::Unmatched); // redo the filtering each time
-//            // TODO Add also for emptyTrips followed by a "selectedTrip"
-//            for (auto rq:unassignedRequests)
-//            {
-//                auto startstop = tr->stops.front()->first; // if trip starts at same stop
-//                if (startstop->get_id() == rq->ostop_id)
-//                {
-//                    auto downstreamstops = tr->get_downstream_stops();
-//                    if (downstreamstops.end() != find_if(downstreamstops.begin(), downstreamstops.end(),
-//                                                         [rq](Busstop* st) { return rq->dstop_id == st->get_id();}) )
-//                    { // if rq destination stop is in the downstream stops
-//                        rq->assigned_trip = tr;
-//                        rq->set_state(RequestState::Assigned);
-//                        tr->add_request(rq);
-//                    }
-//                }
-//            }
-//        }
+        helper_functions::assignRequestsToTripSet(requestSet,unmatchedTripSet);
+        // TODO: here we want to call it with the emptyTripset as well
+
         if (unassignedRequests.empty())
             return true;
         // 3. create trips for those requests for which I have not found a trip
@@ -653,7 +641,7 @@ bool SimpleTripGeneration::calc_trip_generation(const set<Request*,ptr_less<Requ
             newtrip->add_request(rq);
             rq->set_state(RequestState::Assigned);
             // TODO: now check all the remaining requests to see if they can be assigned as well.
-
+            helper_functions::assignRequestsToTrip(requestSet,newtrip);
 //            auto affectedRequests = filterRequestsByOD(unassignedRequests,rq->ostop_id, rq->dstop_id);
 //            for (auto arq:affectedRequests)
 //            {
@@ -828,12 +816,14 @@ bool SimpleEmptyVehicleTripGeneration::calc_trip_generation(const set<Request *,
     // 7. remove selectedTrip from unMatchedTripset
     unmatchedTripSet.erase(selectedTrip); 
 
-    // 8. BONUS: add any requests that match EmptyTrip to it as well???
+    // 8. adding the requests to the empty trip as well (why?)
     for (auto rq : selectedTrip->get_requests())
     {
         //!< @todo maybe remove the scheduled requests from the later chained trips, matcher currently only changes request state to matched for the first trip in driving roster chain
         newTrip->add_request(rq);
     }
+    // 9. adding potential requests to the empty trip
+    helper_functions::assignRequestsToTrip(requestSet,newTrip);
 
     return true; // emits Signal that empty trip was generated, matcher does the rest.
 }
