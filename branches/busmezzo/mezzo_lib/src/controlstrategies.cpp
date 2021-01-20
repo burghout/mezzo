@@ -590,8 +590,10 @@ bool SimpleTripGeneration::calc_trip_generation(const set<Request*,ptr_less<Requ
     // 4. assign requests to new trips
     Q_UNUSED(fleetState)
     Q_UNUSED(unmatchedEmptyTripSet)
+    bool trip_generated = false; // true if at least one trip has been generated
     // 1. get unassigned requests
     auto unassignedRequests = helper_functions::filterRequestsByState(requestSet, RequestState::Unmatched);
+    //qDebug() << "Size of unassignedRequests: " << unassignedRequests.size();
     if (!unassignedRequests.empty() && !candidateServiceRoutes.empty())
     {
         // 2. get trips (i don't care if they are matched or unmatched...) and assign requests to existing trips
@@ -637,23 +639,25 @@ bool SimpleTripGeneration::calc_trip_generation(const set<Request*,ptr_less<Requ
             helper_functions::add_driving_roster_to_tripchain(tripchain);
 
             unmatchedTripSet.insert(newtrip);//add this trip to the unmatchedTripSet
+            trip_generated = true;
+
          // 4. assign the request
             rq->assigned_trip = newtrip;
             newtrip->add_request(rq);
             rq->set_state(RequestState::Assigned);
             // TODO: now check all the remaining requests to see if they can be assigned as well.
             helper_functions::assignRequestsToTrip(requestSet,newtrip);
+            
 //            auto affectedRequests = filterRequestsByOD(unassignedRequests,rq->ostop_id, rq->dstop_id);
 //            for (auto arq:affectedRequests)
 //            {
 //                arq->assigned_trip = newtrip;
 //                newtrip->add_request(arq);
 //                arq->set_state(RequestState::Assigned);
-//            }
-            return true;
+//            } 
         }
     }
-    return false;
+    return trip_generated;
 }
 
 
