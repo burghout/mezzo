@@ -506,6 +506,7 @@ bool Passenger:: make_boarding_decision (Bustrip* arriving_bus, double time)
 				OD_stop->set_boarding_utility(::large_positive_utility);
 				boarding_prob = 1.0;
 				boarding_decision = true;
+				//qDebug() << "Passenger at stop " << QString::fromStdString(this->get_OD_stop()->get_origin()->get_name()) << ", time " << time << " decided to board Veh " << arriving_bus->get_busv()->get_bus_id();
 			}
 			else // always stay and wait otherwise
 			{
@@ -611,7 +612,7 @@ Busstop* Passenger::make_alighting_decision (Bustrip* boarding_bus, double time)
 		alighting_MNL[final_stop].second = 1.0;
 		OD_stop->record_passenger_alighting_decision(this, boarding_bus, time, final_stop, alighting_MNL);
 
-
+		// qDebug() << "Passenger boarding Veh " << boarding_bus->get_busv()->get_bus_id() << " at stop " << QString::fromStdString(this->get_OD_stop()->get_origin()->get_name()) << ", time " << time << " made decision to alight at " <<  QString::fromStdString(final_stop->get_name());
 
 		return final_stop;
 	}

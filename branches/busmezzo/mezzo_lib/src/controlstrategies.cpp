@@ -175,7 +175,7 @@ void Request::set_state(RequestState newstate)
     {
         //RequestState oldstate = state;
         state = newstate;
-
+        //print_state();
         //total_time_spent_in_state[oldstate] += time - time_state_last_entered[oldstate]; // update cumulative time in each state
         //time_state_last_entered[newstate] = time; // start timer for newstate
 
@@ -186,6 +186,7 @@ void Request::set_state(RequestState newstate)
 void Request::print_state()
 {
     cout << endl << "Request " << pass_id << " is ";
+    //qDebug() << Request::state_to_string(state);
     switch (state)
     {
     case RequestState::Unmatched:
@@ -836,9 +837,7 @@ void MatchingStrategy::assign_oncall_vehicle_to_trip(Busstop* currentStop, Bus* 
     {
         assert(!transitveh->get_curr_trip()); //this particular bus instance (remember there may be copies of it if there is a trip chain, should not have a trip)
         assert(transitveh->is_oncall());
-
-        //!< @todo Adds bus to the first trip in this chain, the others will recieve their vehicle 'clone' dynamically in Bus::advance_curr_trip, also when things are disconnected and reconnected to CC
-        //! reason for delaying this until later is in case we make changes to the trip chain (driving_roster) dynamically as well
+        //qDebug() << "Matching vehicle " << transitveh->get_bus_id() << " with trip from stop " << QString::fromStdString(trip->stops.front()->first->get_name()) << " to " << QString::fromStdString(trip->stops.back()->first->get_name());
 
         // assign bus to the first trip in chain
         trip->set_busv(transitveh); //assign bus to the trip
@@ -855,7 +854,7 @@ void MatchingStrategy::assign_oncall_vehicle_to_trip(Busstop* currentStop, Bus* 
         //double delay = starttime - trip->get_starttime();
         trip->set_starttime(starttime); //reset scheduled dispatch from origin to given starttime
 
-        //DEBUG_MSG("Delay in start time for trip " << trip->get_id() << ": " << delay);
+        
 
         if (!currentStop->remove_unassigned_bus(transitveh, starttime)) //bus is no longer unassigned and is removed from vector of unassigned buses at whatever stop the vehicle is waiting on call at
             //trip associated with this bus will be added later to expected_bus_arrivals via
