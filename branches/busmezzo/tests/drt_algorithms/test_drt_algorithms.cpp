@@ -28,6 +28,7 @@ const vector<QString> output_filenames =
     "o_segments_line_loads.dat",
     "o_segments_trip_loads.dat",
     "o_selected_paths.dat",
+    "o_transit_routes.dat",
     "o_transit_trajectory.dat",
     "o_transitline_sum.dat",
     "o_transitlog_out.dat",
