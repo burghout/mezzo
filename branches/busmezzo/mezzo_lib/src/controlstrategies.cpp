@@ -659,13 +659,6 @@ bool SimpleTripGeneration::calc_trip_generation(const set<Request*,ptr_less<Requ
             // TODO: now check all the remaining requests to see if they can be assigned as well.
             helper_functions::assignRequestsToTrip(requestSet,newtrip);
             
-//            auto affectedRequests = filterRequestsByOD(unassignedRequests,rq->ostop_id, rq->dstop_id);
-//            for (auto arq:affectedRequests)
-//            {
-//                arq->assigned_trip = newtrip;
-//                newtrip->add_request(arq);
-//                arq->set_state(RequestState::Assigned);
-//            } 
         }
     }
     return trip_generated;
