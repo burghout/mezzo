@@ -3,9 +3,8 @@ Line_ID	Upstream_stop_ID	Upstream_stop_name	Downstream_stop_ID	Downstream_stop_n
 10003	1	A	5	E	42	
 10005	2	B	3	C	0	
 10007	2	B	5	E	47	
-10009	3	C	2	B	0	
+10010	3	C	4	D	0	
 10011	3	C	5	E	53	
-10012	4	D	1	A	0	
 10015	4	D	5	E	53	
 10016	5	E	1	A	0	
 10017	5	E	2	B	0	
