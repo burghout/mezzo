@@ -10,6 +10,18 @@
 #include <cassert>
 
 
+namespace cc_helper_functions
+{
+	//!< Removes request from 'Bustrip::scheduled_requests' for any bustrip in driving_roster
+	void removeRequestFromTripChain(const Request* req, const vector<Start_trip*>& driving_roster)
+	{
+		for (auto trip_dispatch : driving_roster)
+		{
+			trip_dispatch->first->remove_request(req);
+		}
+	}
+}
+
 void Controlcenter_SummaryData::reset()
 {
 	requests_recieved = 0;
@@ -76,6 +88,8 @@ void RequestHandler::removeRequest(const int pass_id)
 	{
 		Request* req = *it;
 		req->pass_owner->set_curr_request(nullptr);
+		if(req->assigned_trip != nullptr) // if request has been assigned to a trip-chain
+			cc_helper_functions::removeRequestFromTripChain(req, req->assigned_trip->driving_roster); //!< remove this request from scheduled request of any trip it might be scheduled to @todo perhaps change this to a 'ServedFinished' RequestState and save deletion for later in the future
         requestSet_.erase(req);
 		delete req;
 	}

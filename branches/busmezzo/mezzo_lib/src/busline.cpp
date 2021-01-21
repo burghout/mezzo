@@ -1147,6 +1147,22 @@ void Bustrip::record_passenger_loads (vector <Visit_stop*>::iterator start_stop)
 	}
 }
 
+bool Bustrip::remove_request(const Request* req)
+{
+	assert(req);
+	vector<Request*>::iterator rq_it = find(scheduled_requests.begin(), scheduled_requests.end(), req);
+	if (rq_it != scheduled_requests.end())
+	{
+		scheduled_requests.erase(rq_it);
+		return true;
+	}
+	/*else
+	{
+		qDebug() << "Warning - request " << req->id << " does not exist in scheduled_requests of trip " << id;
+	}*/
+	return false;
+}
+
 double Bustrip::find_crowding_coeff (Passenger* pass)
 {
 	// first - calculate load factor

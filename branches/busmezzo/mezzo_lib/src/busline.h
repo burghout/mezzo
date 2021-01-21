@@ -459,6 +459,7 @@ public:
 	bool is_flex_trip() const { return flex_trip; }
     vector <Request*> get_requests() const { return scheduled_requests;}
     void add_request (Request* req) { scheduled_requests.push_back((req));}
+	bool remove_request(const Request* req); //!< removes request from scheduled requests if it exists, returns true if successful, false otherwise
 /**@}*/
 
 protected:

@@ -6,7 +6,7 @@
 
 
 // Helper functions
-namespace helper_functions
+namespace cs_helper_functions
 {
     //!< takes trip that already has a preliminary schedule for both dispatch and stop visits, and updates this schedule given a new start time
     void update_schedule(Bustrip* trip, double new_starttime)
@@ -75,6 +75,25 @@ namespace helper_functions
         //result should be that each trip in "tripchain" knows of eachother and we can throw this into the Busline::execute, Bustrip::activate, Bus::advance_curr_trip loop
     }
 
+    //!< Takes a trip chain (Bustrip::driving_roster) and returns a vector of ALL requests scheduled to any trip in this chain. 
+    vector<Request*> getRequestsInTripChain(const vector<Start_trip*>& driving_roster)
+    {
+        vector<Request*> all_scheduled_requests;
+        for (auto trip_dispatch : driving_roster)
+        {
+            vector<Request*> trip_requests = trip_dispatch->first->get_requests();
+            all_scheduled_requests.insert(all_scheduled_requests.end(), trip_requests.begin(), trip_requests.end());
+        }
+        return all_scheduled_requests;
+    }
+
+    bool requestExistsInTripChain(const Request* req, const vector<Start_trip*>& driving_roster)
+    {
+        vector<Request*> all_req = getRequestsInTripChain(driving_roster);
+        auto it = find(all_req.begin(), all_req.end(), req);
+        return (it != all_req.end());
+    }
+
     std::set<Request*, ptr_less<Request*>> filterRequestsByState(const set<Request*, ptr_less<Request*>>& oldSet, RequestState state)
     {
         set <Request*, ptr_less<Request*>> newSet;
@@ -92,16 +111,17 @@ namespace helper_functions
     // Assign requests to trips
     void assignRequestsToTrip(const set<Request*,ptr_less<Request*>>& requestSet, Bustrip* tr)
     {
-        auto unassignedRequests = helper_functions::filterRequestsByState(requestSet, RequestState::Unmatched); // redo the filtering each time
+        auto unassignedRequests = cs_helper_functions::filterRequestsByState(requestSet, RequestState::Unmatched); // redo the filtering each time
         // TODO Add also for emptyTrips followed by a "selectedTrip"
-        for (auto rq:unassignedRequests)
+        for (auto rq : unassignedRequests)
         {
+            assert(rq->state == RequestState::Unmatched);
             auto startstop = tr->stops.front()->first; // if trip starts at same stop
             if (startstop->get_id() == rq->ostop_id)
             {
                 auto downstreamstops = tr->get_downstream_stops();
                 if (downstreamstops.end() != find_if(downstreamstops.begin(), downstreamstops.end(),
-                                                     [rq](Busstop* st) { return rq->dstop_id == st->get_id();}) )
+                                                     [rq](const Busstop* st) { return rq->dstop_id == st->get_id();}) )
                 { // if rq destination stop is in the downstream stops
                     rq->assigned_trip = tr;
                     rq->set_state(RequestState::Assigned);
@@ -114,7 +134,7 @@ namespace helper_functions
 
     void assignRequestsToTripSet(const set<Request*,ptr_less<Request*>>& requestSet, const set<Bustrip*>& tripSet)
     {
-        for (auto tr:tripSet)
+        for (auto tr : tripSet)
         {
            assignRequestsToTrip(requestSet,tr);
         }
@@ -173,6 +193,15 @@ void Request::set_state(RequestState newstate)
 {
     if (state != newstate)
     {
+        switch (newstate) //keep track of currently 'legal' state transitions @todo remove
+        {
+        case RequestState::Assigned:
+            assert(state == RequestState::Unmatched);
+            break;
+        case RequestState::Matched:
+            assert(state == RequestState::Assigned);
+            break;
+        }
         //RequestState oldstate = state;
         state = newstate;
         //print_state();
@@ -275,11 +304,11 @@ bool TripGenerationStrategy::line_exists_in_tripset(const set<Bustrip*>& tripSet
     {
         int lineid = line->get_id();
         auto it = find_if(tripSet.begin(), tripSet.end(),
-                          [lineid](Bustrip* trip)
-        {
+            [lineid](Bustrip* trip)
+            {
                 return trip->get_line()->get_id() == lineid;
-    }
-                );
+            }
+        );
 
         if (it != tripSet.end()) {
             return true;
@@ -573,14 +602,14 @@ bool NaiveTripGeneration::calc_trip_generation(const set<Request*,ptr_less<Reque
                         Bustrip* newtrip = create_unassigned_trip(line, time, schedule); //create a new trip for this line using now as the dispatch time
                         unmatchedTripSet.insert(newtrip);//add this trip to the unmatchedTripSet
                         // WILCO TODO ADD TO REQUEST BOOKKEEPING
-                        auto affectedRequests = helper_functions::filterRequestsByOD(requestSet,ostop_id, dstop_id);
-                        for (auto rq:affectedRequests)
+                        auto affectedRequests = cs_helper_functions::filterRequestsByOD(requestSet,ostop_id, dstop_id);
+                        for (auto rq : affectedRequests)
                         {
                             rq->assigned_trip = newtrip;
                             rq->set_state(RequestState::Assigned);
                         }
                         vector<Bustrip* > tripchain = { newtrip }; //tripchain is only one trip long
-                        helper_functions::add_driving_roster_to_tripchain(tripchain); 
+                        cs_helper_functions::add_driving_roster_to_tripchain(tripchain); 
                         return true;
                     }
                 }
@@ -603,13 +632,14 @@ bool SimpleTripGeneration::calc_trip_generation(const set<Request*,ptr_less<Requ
     Q_UNUSED(unmatchedEmptyTripSet)
     bool trip_generated = false; // true if at least one trip has been generated
     // 1. get unassigned requests
-    auto unassignedRequests = helper_functions::filterRequestsByState(requestSet, RequestState::Unmatched);
+    auto unassignedRequests = cs_helper_functions::filterRequestsByState(requestSet, RequestState::Unmatched);
     //qDebug() << "Size of unassignedRequests: " << unassignedRequests.size();
     if (!unassignedRequests.empty() && !candidateServiceRoutes.empty())
     {
         // 2. get trips (i don't care if they are matched or unmatched...) and assign requests to existing trips
 
-        helper_functions::assignRequestsToTripSet(requestSet,unmatchedTripSet);
+        cs_helper_functions::assignRequestsToTripSet(requestSet,unmatchedTripSet);
+        unassignedRequests = cs_helper_functions::filterRequestsByState(requestSet, RequestState::Unmatched); // redo the filtering after assignRequestsToTripSet
         // TODO: here we want to call it with the emptyTripset as well
 
         if (unassignedRequests.empty())
@@ -647,7 +677,7 @@ bool SimpleTripGeneration::calc_trip_generation(const set<Request*,ptr_less<Requ
             vector<Visit_stop*> schedule = create_schedule(time, candidateLine->get_delta_at_stops()); //build the schedule of stop visits for this trip (we visit all stops along the candidate line)
             Bustrip* newtrip = create_unassigned_trip(candidateLine, time, schedule); //create a new trip for this line using now as the dispatch time
             vector<Bustrip* > tripchain = { newtrip }; //tripchain is only one trip long
-            helper_functions::add_driving_roster_to_tripchain(tripchain);
+            cs_helper_functions::add_driving_roster_to_tripchain(tripchain);
 
             unmatchedTripSet.insert(newtrip);//add this trip to the unmatchedTripSet
             trip_generated = true;
@@ -657,16 +687,12 @@ bool SimpleTripGeneration::calc_trip_generation(const set<Request*,ptr_less<Requ
             newtrip->add_request(rq);
             rq->set_state(RequestState::Assigned);
             // TODO: now check all the remaining requests to see if they can be assigned as well.
-            helper_functions::assignRequestsToTrip(requestSet,newtrip);
+            cs_helper_functions::assignRequestsToTrip(requestSet,newtrip);
             
         }
     }
     return trip_generated;
 }
-
-
-
-
 
 
 //Empty vehicle trip generation
@@ -767,7 +793,7 @@ bool NaiveEmptyVehicleTripGeneration::calc_trip_generation(const set<Request*,pt
                 vector<Visit_stop*> schedule = create_schedule(time, line->get_delta_at_stops()); //build the schedule of stop visits for this trip (we visit all stops along the candidate line)
                 Bustrip* newtrip = create_unassigned_trip(line, time, schedule); //create a new trip for this line using now as the dispatch time
                 vector<Bustrip* > tripchain = { newtrip }; //tripchain is only one trip long
-                helper_functions::add_driving_roster_to_tripchain(tripchain);
+                cs_helper_functions::add_driving_roster_to_tripchain(tripchain);
                 
                 unmatchedTripSet.insert(newtrip);//add this trip to the unmatchedTripSet
                 
@@ -816,8 +842,8 @@ bool SimpleEmptyVehicleTripGeneration::calc_trip_generation(const set<Request *,
 
     // 5. associate the chained trips by modifying Bustrip::driving_roster
     vector<Bustrip*> tripchain = { newTrip, selectedTrip };
-    helper_functions::update_schedule(selectedTrip, newTrip->stops.back()->second); // Get last stop arrival time of newtrip, and then update the chained selectedTrip with this as dispatch time
-    helper_functions::add_driving_roster_to_tripchain(tripchain); // newTrip and selectedTrip now have pointers to eachother as well as info of which order they are in
+    cs_helper_functions::update_schedule(selectedTrip, newTrip->stops.back()->second); // Get last stop arrival time of newtrip, and then update the chained selectedTrip with this as dispatch time
+    cs_helper_functions::add_driving_roster_to_tripchain(tripchain); // newTrip and selectedTrip now have pointers to eachother as well as info of which order they are in
 
     // 6. Add newTrip to the unmatchedEmptyTripset
     unmatchedEmptyTripSet.insert(newTrip); // now unmatchedEmptyTripSet will signal matcher to match vehicle to both trips via Bustrip::driving_roster
@@ -826,13 +852,13 @@ bool SimpleEmptyVehicleTripGeneration::calc_trip_generation(const set<Request *,
     unmatchedTripSet.erase(selectedTrip); 
 
     // 8. adding the requests to the empty trip as well (why?)
-    for (auto rq : selectedTrip->get_requests())
-    {
-        //!< @todo maybe remove the scheduled requests from the later chained trips, matcher currently only changes request state to matched for the first trip in driving roster chain
-        newTrip->add_request(rq);
-    }
+    //for (auto rq : selectedTrip->get_requests())
+    //{
+    //    //!< @todo maybe remove the scheduled requests from the later chained trips, matcher currently only changes request state to matched for the first trip in driving roster chain
+    //    newTrip->add_request(rq);
+    //}
     // 9. adding potential requests to the empty trip
-    helper_functions::assignRequestsToTrip(requestSet,newTrip);
+    cs_helper_functions::assignRequestsToTrip(requestSet,newTrip);
 
     return true; // emits Signal that empty trip was generated, matcher does the rest.
 }
@@ -862,8 +888,6 @@ void MatchingStrategy::assign_oncall_vehicle_to_trip(Busstop* currentStop, Bus* 
         //double delay = starttime - trip->get_starttime();
         trip->set_starttime(starttime); //reset scheduled dispatch from origin to given starttime
 
-        
-
         if (!currentStop->remove_unassigned_bus(transitveh, starttime)) //bus is no longer unassigned and is removed from vector of unassigned buses at whatever stop the vehicle is waiting on call at
             //trip associated with this bus will be added later to expected_bus_arrivals via
             //Busline::execute -> Bustrip::activate -> Origin::insert_veh -> Link::enter_veh -> Bustrip::book_stop_visit -> Busstop::book_bus_arrival
@@ -871,8 +895,9 @@ void MatchingStrategy::assign_oncall_vehicle_to_trip(Busstop* currentStop, Bus* 
             DEBUG_MSG_V("Busstop::remove_unassigned_bus failed for bus " << transitveh->get_bus_id() << " and stop " << currentStop->get_id());
         }
 
-        // update state of requests (if trip was previously associated with a bundle of requests)
-        for (auto rq : trip->get_requests())
+        // update state of requests (if trip was previously associated with a bundle of requests) in trip-chain
+        vector<Request*> all_req = cs_helper_functions::getRequestsInTripChain(trip->driving_roster);
+        for (auto rq : all_req)
         {
             assert(rq->state == RequestState::Assigned); //should have been set to assigned when trip was generated
             rq->set_state(RequestState::Matched);
@@ -1014,7 +1039,7 @@ bool NaiveScheduling::schedule_trips(Eventlist* eventlist, set<Bustrip*, ptr_les
         if (bus->get_last_stop_visited()->get_id() == trip->get_last_stop_visited()->get_id()) //vehicle should already be located at the first stop of the trip
         {
             if (trip->get_starttime() < time)  //if scheduling call was made after the original planned dispatch of the trip
-                helper_functions::update_schedule(trip, time); //update schedule for dispatch and stop visits according to new starttime
+                cs_helper_functions::update_schedule(trip, time); //update schedule for dispatch and stop visits according to new starttime
 
             if (!book_trip_dispatch(eventlist, trip))
                 return false;
