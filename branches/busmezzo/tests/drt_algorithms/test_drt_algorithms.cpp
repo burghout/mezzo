@@ -123,7 +123,7 @@ void TestDRTAlgorithms::testInitNetwork()
 
     QVERIFY2(net->get_buslines().size() == 20, "Failure, network should have 20 bus lines defined");
     QVERIFY2(net->get_busvehicles().size() == 0, "Failure, network should have 0 scheduled vehicles");
-    QVERIFY2(net->get_drtvehicles_init().size() == 1, "Failure, network should have 1 unassigned vehicles");
+    QVERIFY2(net->get_drtvehicles_init().size() == 2, "Failure, network should have 1 unassigned vehicles");
     QVERIFY2(get<0>(net->get_drtvehicles_init()[0])->get_capacity() == 25, "Failure, vehicles should have capacity 25");
 
     QVERIFY(theParameters->demand_format==3);
@@ -131,9 +131,9 @@ void TestDRTAlgorithms::testInitNetwork()
     QVERIFY2(theParameters->empirical_demand == 1, "Failure, empirical demand not set to 1 in parameters");
     vector<pair<ODstops*, double> > empirical_passenger_arrivals = net->get_empirical_passenger_arrivals();
     
-    QVERIFY2(empirical_passenger_arrivals.size() == 1, "Failure, there should be 1 empirical passenger arrivals");
+    QVERIFY2(empirical_passenger_arrivals.size() == 3, "Failure, there should be 1 empirical passenger arrivals");
     vector<ODstops*> odstops_demand = net->get_odstops_demand(); //get all odstops with demand defined for them
-    QVERIFY(odstops_demand.size() == 1); // the one empirical arrival is the one OD with demand
+    QVERIFY(odstops_demand.size() == 3); // the one empirical arrival is the one OD with demand
     
 //    double total_demand = 0.0;
 //    for(const auto& od : odstops_demand)
