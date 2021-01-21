@@ -10,5 +10,6 @@ vehicle_types: 1
 
 vehicle_scheduling:	0
 
-unassigned_vehicles: 1
+unassigned_vehicles: 2
 { 801	1	2 	1	0 }
+{ 802	1	4 	1	0 }
