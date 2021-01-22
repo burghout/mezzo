@@ -2245,8 +2245,8 @@ bool Network::createControlcenterDRTLines(Controlcenter* cc)
                     {
                         od_pair = new ODpair(startstop->get_origin_node(), endstop->get_dest_node(), 0.0, &vehtypes);
                         odpairs.push_back(od_pair);
-                        qDebug() << "createControlcenterDRTLines:----Missing OD pair, creating for Origin " << ori_id <<
-                            ", destination " << dest_id;
+                        /*qDebug() << "createControlcenterDRTLines:----Missing OD pair, creating for Origin " << ori_id <<
+                            ", destination " << dest_id;*/
                     }
 
                     stops.clear();
@@ -2357,8 +2357,8 @@ bool Network::createAllDRTLines()
                 {
                     od_pair = new ODpair(startstop.second->get_origin_node(),endstop.second->get_dest_node(),0.0, &vehtypes);
                     odpairs.push_back(od_pair);
-                    qDebug() <<  "createAllDRTLines----Missing OD pair, creating for Origin " << ori_id <<
-                                 ", destination " << dest_id;
+                    /*qDebug() <<  "createAllDRTLines----Missing OD pair, creating for Origin " << ori_id <<
+                                 ", destination " << dest_id;*/
                 }
 
                 stops.clear();
