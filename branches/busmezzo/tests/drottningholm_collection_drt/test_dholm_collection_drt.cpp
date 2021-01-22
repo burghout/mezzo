@@ -12,7 +12,7 @@
 #include <QFileInfo>
 
 /**
-  Tests on the SF network with fixed services only
+  Tests on the Drottningholm network with DRT service on branches, fixed on corridor
 */
 
 const std::string network_path_1 = "../networks/Drottningholm_collection_drt/";
@@ -486,7 +486,7 @@ void TestDrottningholmCollection_drt::testPassAssignment()
         Print out first passenger that arrived for each OD, what their request ended up being and how far they managed to get, use the test attribute of ODstops 'first_passenger_start'
             - Time the passenger arrived
             - Connection, transitmode and dropoff stop decision made after Passenger::start
-            - State of the request that they generated if transitmode is equal to flexible (Null, Unmatched, Assigned)
+            - State of the request that they generated if transitmode is equal to flexible (Null, Unmatched, Assigned, Matched)
                 - assert that if transitmode equal to fixed, no request was generated
             - If the passenger reached their final destination or not
             - If not, where did they end up, what is their current location
@@ -596,6 +596,7 @@ void TestDrottningholmCollection_drt::testPassAssignment()
                         qDebug() << "\t\t t_desired_dep: " << request->time_desired_departure;
                         qDebug() << "\t\t t_request_gen: " << request->time_request_generated;
                         qDebug() << "\t\t request_state: " << Request::state_to_string(request->state);
+                        //qDebug() << request->assigned_trip-> //empty trip is on its way
                     }
                 }
             }
