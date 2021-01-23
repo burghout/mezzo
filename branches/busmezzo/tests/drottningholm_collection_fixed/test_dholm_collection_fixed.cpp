@@ -36,6 +36,7 @@ const vector<QString> output_filenames =
     "o_transitlog_out.dat",
     "o_transitstop_sum.dat",
     "o_trip_total_travel_time.dat",
+    "o_fwf_summary.dat"
 };
 
 const long int seed = 42;

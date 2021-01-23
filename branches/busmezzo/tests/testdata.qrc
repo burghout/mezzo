@@ -151,5 +151,6 @@
         <file>networks/Drottningholm_collection_fixed/ExpectedOutputs/o_transitlog_out.dat</file>
         <file>networks/Drottningholm_collection_fixed/ExpectedOutputs/o_transitstop_sum.dat</file>
         <file>networks/Drottningholm_collection_fixed/ExpectedOutputs/o_trip_total_travel_time.dat</file>
+        <file>networks/Drottningholm_collection_fixed/ExpectedOutputs/o_fwf_summary.dat</file>
     </qresource>
 </RCC>

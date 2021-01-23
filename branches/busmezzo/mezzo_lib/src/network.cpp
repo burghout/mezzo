@@ -6941,7 +6941,6 @@ bool Network::writeFWFsummary(ostream& out,
     const FWF_vehdata& total_vehdata, const FWF_vehdata& fix_vehdata, const FWF_vehdata& drt_vehdata,
     const FWF_ccdata& cc_data)
 {
-    assert(theParameters->drt);
     assert(out);
 
     Q_UNUSED(drt_passdata);
@@ -7088,6 +7087,7 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
     ofstream out12(name12.c_str(),ios_base::app); //"o_od_stop_summary_without_paths.dat"
     ofstream out16(name16.c_str(), ios_base::app); //"o_passenger_trajectory.dat"
     ofstream out17(name17.c_str(), ios_base::app); //"o_passenger_welfare_summary.dat"
+    ofstream out18(name18.c_str(), ios_base::app); // drt+fwf summary filestream, "o_fwf_summary.dat"
 
   /*  this->write_busstop_output(
         workingdir + "o_transitlog_out.dat",                    out1
@@ -7213,11 +7213,16 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
         }
         write_passenger_welfare_summary(out17, total_pass_GTC, pass_counter);
         
-        
+
+        //fill in the fwf summary containers
+        total_passdata.pass_completed = pass_counter; //passengers that completed trips
+
+        // FWF passenger output
+        vector<Passenger*> all_pass = get_all_generated_passengers(); //should include all passengers, even those that did not complete their trip?
+        total_passdata.calc_pass_statistics(all_pass);
+
         if (theParameters->drt)
         {
-            ofstream out18(name18.c_str(), ios_base::app); // drt+fwf summary filestream, o_fwf_summary.dat
-
             Q_UNUSED(name19)
             Q_UNUSED(name20)
             //ofstream out19(name19.c_str(), ios_base::app); //o_passenger_transitmode_choices.dat
@@ -7235,13 +7240,6 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
             //        /*}*/
             //    }
             //}
-
-            //fill in the fwf summary containers
-            total_passdata.pass_completed = pass_counter; //passengers that completed trips
-            
-            // FWF passenger output
-            vector<Passenger*> all_pass = get_all_generated_passengers(); //should include all passengers, even those that did not complete their trip?
-            total_passdata.calc_pass_statistics(all_pass);
 
             //write outputs for objects owned by control centers
             for (const auto& cc : ccmap) //writing trajectory output for each drt vehicle
@@ -7284,14 +7282,10 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
                     veh.second->write_output(out4); //write trajectory output for each bus vehicle that has not completed a trip
                 }
             }
-
-            //place the write to out18 here
-            // 1. collect all total, fixed only vs drt only passenger and vehicle data in structs. 
-            // 2. Pass to writeFWFSummary function. Or writeDRTSummary dependent on where feels most relevant
-            total_vehdata = fix_vehdata + drt_vehdata;
-            writeFWFsummary(out18, total_passdata, fix_passdata, drt_passdata, total_vehdata, fix_vehdata, drt_vehdata,cc_summarydata);
-
         }
+
+        total_vehdata = fix_vehdata + drt_vehdata;
+        writeFWFsummary(out18, total_passdata, fix_passdata, drt_passdata, total_vehdata, fix_vehdata, drt_vehdata, cc_summarydata);
         /* deactivated - unneccessary files in most cases
         for (vector<Busstop*>::iterator stop_iter = busstops.begin(); stop_iter < busstops.end(); stop_iter++)
         {
