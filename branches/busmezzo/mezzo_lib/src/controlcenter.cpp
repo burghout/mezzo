@@ -691,7 +691,7 @@ pair<Bus*,double> Controlcenter::getClosestVehicleToStop(Busstop* stop, double t
 		else
 		{
 			Busstop* laststop = veh->get_last_stop_visited(); //current stop if not driving
-			vector<Link*> shortestpath = find_shortest_path_between_stops(laststop, stop, time);
+			shortestpath = find_shortest_path_between_stops(laststop, stop, time);
 			expected_tt = calc_route_travel_time(shortestpath, time);
 			time_to_stop = expected_tt;
 		}

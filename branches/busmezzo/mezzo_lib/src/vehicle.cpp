@@ -220,6 +220,12 @@ void Bus::reset ()
 	total_occupied_meters_traveled = 0;
 }
 
+void Bus::set_occupancy(int occup)
+{
+	assert(occup >= 0 && occup <= capacity);
+	occupancy = occup;
+}
+
 Bus::~Bus()
 {
     delete random;

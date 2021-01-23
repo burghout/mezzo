@@ -174,7 +174,7 @@ public:
 	int get_bus_id () const {return bus_id;}
 	void set_bus_id (int bus_id_) {bus_id = bus_id_;}
 	int get_occupancy() {return occupancy;}
-	void set_occupancy (const int occup) {occupancy=occup;}
+	void set_occupancy(int occup);
 	int get_number_seats () {return number_seats;}
 	int get_capacity () {return capacity;}
 	bool get_on_trip () const {return on_trip;}

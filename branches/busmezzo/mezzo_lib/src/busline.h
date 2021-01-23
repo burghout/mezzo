@@ -454,12 +454,17 @@ public:
 	void set_scheduled_for_dispatch(bool scheduled_for_dispatch_) { scheduled_for_dispatch = scheduled_for_dispatch_; }
 	bool is_scheduled_for_dispatch() const { return scheduled_for_dispatch; }
 	void set_activated(bool activated_) { activated = activated_; }
-	bool is_activated() { return activated; }
+	bool is_activated() const { return activated; }
 	void set_flex_trip(bool flex_trip_) { flex_trip = flex_trip_; }
 	bool is_flex_trip() const { return flex_trip; }
     vector <Request*> get_requests() const { return scheduled_requests;}
     void add_request (Request* req) { scheduled_requests.push_back((req));}
 	bool remove_request(const Request* req); //!< removes request from scheduled requests if it exists, returns true if successful, false otherwise
+
+	void update_total_boardings(int n_boarding) { total_boarding += n_boarding; }
+	void update_total_alightings(int n_alighting) { total_alighting += n_alighting; }
+	int get_total_boarding() const { return total_boarding; }
+	int get_total_alighting() const { return total_alighting; }
 /**@}*/
 
 protected:
@@ -490,6 +495,8 @@ protected:
 	bool scheduled_for_dispatch = false; //!< true if this trip has been scheduled for dispatch (i.e. a busline event has been created with for the starttime of this trip) for its respective line, false otherwise
 	bool activated = false; //!< true if this trip has been successfully activated (i.e. a bus has started this trip), false otherwise
 	bool flex_trip = false; //!< true if this trip was generated dynamically
+	int total_boarding = 0;
+	int total_alighting = 0;
     /**@}*/
 };
 

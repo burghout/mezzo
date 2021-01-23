@@ -923,6 +923,8 @@ void Bustrip::reset ()
 	scheduled_for_dispatch = false;
 	deleted_driving_roster = false;
 	activated = false;
+	total_boarding = 0;
+	total_alighting = 0;
 }
 
 void Bustrip::convert_stops_vector_to_map ()
@@ -1930,6 +1932,7 @@ void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, d
 		}
 		trip->passengers_on_board[this].clear(); // clear passengers with this stop as their alighting stop
 		trip->get_busv()->set_occupancy(trip->get_busv()->get_occupancy()-nr_alighting);	// update occupancy on bus
+		trip->update_total_alightings(nr_alighting);
 
 		// * Passengers on-board
 		//int avialable_seats = trip->get_busv()->get_occupancy() - trip->get_busv()->get_number_seats();
@@ -2016,6 +2019,7 @@ void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, d
 								trip->passengers_on_board[(*check_pass)->make_alighting_decision(trip, time)].push_back((*check_pass)); 
 							}
 							trip->get_busv()->set_occupancy(trip->get_busv()->get_occupancy()+1);
+							trip->update_total_boardings(1);
 							
 							if (theParameters->drt && CC != nullptr)
 							{
