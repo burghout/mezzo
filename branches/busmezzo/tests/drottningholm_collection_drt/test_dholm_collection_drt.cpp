@@ -166,9 +166,9 @@ void TestDrottningholmCollection_drt::testInitNetwork()
     QVERIFY(theParameters->average_walking_speed== 66.66);
 
     //Test reading of empirical passenger arrivals
-    QVERIFY2(theParameters->empirical_demand == 1, "Failure, empirical demand not set to 1 in parameters");
-    vector<pair<ODstops*, double> > empirical_passenger_arrivals = net->get_empirical_passenger_arrivals();
-    QVERIFY2(empirical_passenger_arrivals.size() == 140, "Failure, there should be 140 empirical passenger arrivals");
+    //QVERIFY2(theParameters->empirical_demand == 1, "Failure, empirical demand not set to 1 in parameters");
+    //vector<pair<ODstops*, double> > empirical_passenger_arrivals = net->get_empirical_passenger_arrivals();
+    //QVERIFY2(empirical_passenger_arrivals.size() == 140, "Failure, there should be 140 empirical passenger arrivals");
     
     // Autogen of DRT lines parameters, there should be one control center, and it autogenerates all lines between all stops
     map<int,Controlcenter*> ccmap = net->get_controlcenters();
@@ -537,6 +537,7 @@ void TestDrottningholmCollection_drt::testPassAssignment()
             qDebug() << "\t" << "finished trip    : " << (first_pass->get_end_time() > 0);
             qDebug() << "\t" << "start time       : " << first_pass->get_start_time();
             qDebug() << "\t" << "last stop visited: " << first_pass->get_chosen_path_stops().back().first->get_id();
+            qDebug() << "\t" << "num boardings    : " << first_pass->get_nr_boardings();
             
             // collect the first set of decisions for the first passenger for each ODstop with demand
             list<Pass_connection_decision> connection_decisions = od->get_pass_connection_decisions(first_pass);
@@ -559,12 +560,12 @@ void TestDrottningholmCollection_drt::testPassAssignment()
                     QVERIFY(first_pass->get_curr_request() == nullptr); // curr request reset to null after a trip is completed
                     //QVERIFY(first_pass->get_)
                     
-                    if(!is_on_branch(first_pass->get_OD_stop()->get_destination()->get_id()) && first_pass->get_original_origin()->get_id() != transfer_stop_id) // passenger must have made a transfer to reach final dest
+                    if(od_category == ODCategory::b2c) // passenger must have made a transfer to reach final dest
                     {
                         QVERIFY(first_pass->get_nr_boardings() == 2); // a total of 2 vehicle should have been used to reach final dest.
 
                     }
-                    else if(is_on_branch(first_pass->get_OD_stop()->get_destination()->get_id()) && is_on_branch(first_pass->get_original_origin()->get_id()))
+                    else if(od_category == ODCategory::b2b)
                     {
                         QVERIFY(first_pass->get_nr_boardings() == 1); // a total of 1 vehicle should have been used to reach final dest. From branch to branch
                     }

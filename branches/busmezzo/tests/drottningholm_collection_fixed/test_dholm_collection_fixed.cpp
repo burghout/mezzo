@@ -167,9 +167,9 @@ void TestDrottningholmCollection_fixed::testInitNetwork()
     QVERIFY(theParameters->average_walking_speed== 66.66);
 
     //Test reading of empirical passenger arrivals
-    QVERIFY2(theParameters->empirical_demand == 1, "Failure, empirical demand not set to 1 in parameters");
-    vector<pair<ODstops*, double> > empirical_passenger_arrivals = net->get_empirical_passenger_arrivals();
-    QVERIFY2(empirical_passenger_arrivals.size() == 140, "Failure, there should be 140 empirical passenger arrivals");
+    //QVERIFY2(theParameters->empirical_demand == 1, "Failure, empirical demand not set to 1 in parameters");
+    //vector<pair<ODstops*, double> > empirical_passenger_arrivals = net->get_empirical_passenger_arrivals();
+    //QVERIFY2(empirical_passenger_arrivals.size() == 140, "Failure, there should be 140 empirical passenger arrivals");
     
     // Autogen of DRT lines parameters, there should be one control center, and it autogenerates all lines between all stops
     map<int,Controlcenter*> ccmap = net->get_controlcenters();
@@ -503,6 +503,7 @@ void TestDrottningholmCollection_fixed::testPassAssignment()
             qDebug() << "\t" << "finished trip    : " << (first_pass->get_end_time() > 0);
             qDebug() << "\t" << "start time       : " << first_pass->get_start_time();
             qDebug() << "\t" << "last stop visited: " << first_pass->get_chosen_path_stops().back().first->get_id();
+            qDebug() << "\t" << "num boardings    : " << first_pass->get_nr_boardings();
             
             // collect the first set of decisions for the first passenger for each ODstop with demand
             list<Pass_connection_decision> connection_decisions = od->get_pass_connection_decisions(first_pass);
