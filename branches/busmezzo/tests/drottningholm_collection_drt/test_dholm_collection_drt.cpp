@@ -533,16 +533,27 @@ void TestDrottningholmCollection_drt::testPassAssignment()
         // check expected passenger behavior for this network
         if(first_pass != nullptr)
         {
+            bool finished_trip = first_pass->get_end_time() > 0;
+            
             qDebug() << "First passenger for OD " << "(" << orig_s << "," << dest_s << "):";
-            qDebug() << "\t" << "finished trip    : " << (first_pass->get_end_time() > 0);
-            qDebug() << "\t" << "start time       : " << first_pass->get_start_time();
-            qDebug() << "\t" << "last stop visited: " << first_pass->get_chosen_path_stops().back().first->get_id();
-            qDebug() << "\t" << "num boardings    : " << first_pass->get_nr_boardings();
+            qDebug() << "\t" << "passenger id        : " << (first_pass->get_id());
+            qDebug() << "\t" << "finished trip       : " << finished_trip;
+            qDebug() << "\t" << "start time          : " << first_pass->get_start_time();
+            qDebug() << "\t" << "last stop visited   : " << first_pass->get_chosen_path_stops().back().first->get_id();
+            
+            
+            size_t n_transfers = (first_pass->get_selected_path_stops().size() - 4) / 2; // given path definition (direct connection - 4 elements, 1 transfers - 6 elements, 2 transfers - 8 elements, etc.
+            if(finished_trip)
+            {
+                qDebug() << "\t" << "num transfers       : " << n_transfers;
+            }
             
             // collect the first set of decisions for the first passenger for each ODstop with demand
             list<Pass_connection_decision> connection_decisions = od->get_pass_connection_decisions(first_pass);
             list<Pass_transitmode_decision> mode_decisions = od->get_pass_transitmode_decisions(first_pass);
-            list<Pass_dropoff_decision> dropoff_decisions = od->get_pass_dropoff_decisions(first_pass);
+            
+            if(mode_decisions.front().chosen_transitmode == TransitModeType::Flexible)
+                list<Pass_dropoff_decision> dropoff_decisions = od->get_pass_dropoff_decisions(first_pass);          
             
             QVERIFY(connection_decisions.front().chosen_connection_stop == od->get_origin()->get_id()); // pass always stays (no walking links)
             QVERIFY(mode_decisions.front().chosen_transitmode != TransitModeType::Null); // A choice of either fixed or flexible should have always been made
@@ -551,23 +562,24 @@ void TestDrottningholmCollection_drt::testPassAssignment()
             {
                 QVERIFY(first_pass->get_curr_request() == nullptr); // a request should never have been generated if transit mode choice is fixed
                 QVERIFY(od_category == ODCategory::c2c); // the origin of this passenger should be on the corridor if their first transitmode decision is fixed
-                QVERIFY(first_pass->get_nr_boardings() == 1); // a total of 1 vehicle should have been used to reach final dest. 
+                
+                if(finished_trip)
+                    QVERIFY(n_transfers == 0); // a total of 1 vehicle should have been used to reach final dest. 
             }
             else if(mode_decisions.front().chosen_transitmode == TransitModeType::Flexible)
             {
-                if(first_pass->get_end_time() > 0) // passenger completed their trip
+                if(finished_trip) // passenger completed their trip
                 {
                     QVERIFY(first_pass->get_curr_request() == nullptr); // curr request reset to null after a trip is completed
-                    //QVERIFY(first_pass->get_)
                     
                     if(od_category == ODCategory::b2c) // passenger must have made a transfer to reach final dest
                     {
-                        QVERIFY(first_pass->get_nr_boardings() == 2); // a total of 2 vehicle should have been used to reach final dest.
+                        QVERIFY(n_transfers == 1); // a total of 2 vehicle should have been used to reach final dest.
 
                     }
                     else if(od_category == ODCategory::b2b)
                     {
-                        QVERIFY(first_pass->get_nr_boardings() == 1); // a total of 1 vehicle should have been used to reach final dest. From branch to branch
+                        QVERIFY(n_transfers == 0); // a total of 1 vehicle should have been used to reach final dest. From branch to branch
                     }
                 }
                 else // the passengers first decision was flexible but they never reached their destination

@@ -175,7 +175,7 @@ protected:
     Random* random = nullptr;
     bool already_walked = false;
     bool sitting = false;		//!< 0 - sits; 1 - stands
-    int nr_boardings = 0;	//!< counts the number of times pass boarded a vehicle
+    int nr_boardings = 0;	//!< counts the number of times pass boarded a vehicle @note actually this seems to be more like a counter for each time a make_boarding_decision() call returned true, if e.g. denied boarding nr_boardings increases regardless...
     vector <pair<Busstop*, double> > selected_path_stops;				 //!< stops and corresponding arrival times
     vector <pair<Bustrip*, double> > selected_path_trips;				 //!< trips and corresponding boarding times
     vector <pair<double, double> > experienced_crowding_levels;		 //!< IVT and corresponding crowding levels (route segment level)

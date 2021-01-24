@@ -499,11 +499,19 @@ void TestDrottningholmCollection_fixed::testPassAssignment()
         // check expected passenger behavior for this network
         if(first_pass != nullptr)
         {
+            bool finished_trip = first_pass->get_end_time() > 0;
+            
             qDebug() << "First passenger for OD " << "(" << orig_s << "," << dest_s << "):";
-            qDebug() << "\t" << "finished trip    : " << (first_pass->get_end_time() > 0);
-            qDebug() << "\t" << "start time       : " << first_pass->get_start_time();
-            qDebug() << "\t" << "last stop visited: " << first_pass->get_chosen_path_stops().back().first->get_id();
-            qDebug() << "\t" << "num boardings    : " << first_pass->get_nr_boardings();
+            qDebug() << "\t" << "passenger id        : " << (first_pass->get_id());
+            qDebug() << "\t" << "finished trip       : " << finished_trip;
+            qDebug() << "\t" << "start time          : " << first_pass->get_start_time();
+            qDebug() << "\t" << "last stop visited   : " << first_pass->get_chosen_path_stops().back().first->get_id();
+            
+            size_t n_transfers = (first_pass->get_selected_path_stops().size() - 4) / 2; // given path definition (direct connection - 4 elements, 1 transfers - 6 elements, 2 transfers - 8 elements, etc.
+            if(finished_trip)
+            {
+                qDebug() << "\t" << "num transfers       : " << n_transfers;
+            }
             
             // collect the first set of decisions for the first passenger for each ODstop with demand
             list<Pass_connection_decision> connection_decisions = od->get_pass_connection_decisions(first_pass);
@@ -512,11 +520,12 @@ void TestDrottningholmCollection_fixed::testPassAssignment()
             
             QVERIFY(first_pass->get_chosen_mode() == TransitModeType::Null); // with drt parameter set to false no mode choice is ever made (chosen_mode_ stays at default value Null)
             QVERIFY(first_pass->get_curr_request() == nullptr); // a request should never have been generated if transit mode choice is fixed
-            QVERIFY(first_pass->get_nr_boardings() == 1); // a total of 1 vehicle should have been used to reach final dest. No transfers are necessary
+            if(finished_trip)
+                QVERIFY(n_transfers); // a total of 1 vehicle should have been used to reach final dest. No transfers are necessary
             
             // verify that at least one passenger per OD made it to their destination
             QString failmsg = "Failure, at least one passenger for ODstop (" + orig_s + "," + dest_s + ") with non-zero demand should have reached final destination.";
-            QVERIFY2(first_pass->get_end_time() > 0, qPrintable(failmsg)); // replaced the od->get_nr_pass_completed() call with this since there is some less intuitive dependency between this and calc_pass_measures() after saving results
+            QVERIFY2(finished_trip, qPrintable(failmsg)); // replaced the od->get_nr_pass_completed() call with this since there is some less intuitive dependency between this and calc_pass_measures() after saving results
         }
     }
 }
