@@ -1,0 +1,77 @@
+### Total passenger summary ###
+Passenger journeys completed: 13385
+
+Total walking time             : 0
+Average walking time           : 0
+Stdev walking time             : 0
+
+Total waiting time             : 4.02677e+06
+Average total waiting time     : 300.842
+Stdev total waiting time       : 439.33
+Minimum waiting time           : 0.0136668
+Maximum waiting time           : 6990.33
+Median waiting time            : 187.581
+
+Total denied waiting time      : 1.74136e+06
+Average denied waiting time    : 130.098
+Stdev denied waiting time      : 425.713
+
+Total in-vehicle time          : 2.26832e+07
+Average in-vehicle time        : 1694.68
+Stdev in-vehicle time          : 425.713
+
+Total crowded in-vehicle time  : 4.25827e+07
+Average crowded in-vehicle time: 3181.37
+Stdev crowded in-vehicle time  : 1770.74
+
+### Total vehicle summary ###
+Total VKT                   : 2195.74
+Total occupied VKT          : 1488.8
+Total empty VKT             : 706.94
+Total occupied time         : 319205
+Total empty time            : 118440
+Total driving time          : 351651
+Total idle time             : 85994.5
+Total oncall time           : 0
+
+### Fixed vehicle summary ###
+Fixed VKT                   : 2195.74
+Fixed occupied VKT          : 1488.8
+Fixed empty VKT             : 706.94
+Fixed occupied time         : 319205
+Fixed empty time            : 118440
+Fixed driving time          : 351651
+Fixed idle time             : 85994.5
+Fixed oncall time           : 0
+
+### DRT vehicle summary ###
+DRT VKT                     : 0
+DRT occupied VKT            : 0
+DRT empty VKT               : 0
+DRT occupied time           : 0
+DRT empty time              : 0
+DRT driving time            : 0
+DRT idle time               : 0
+DRT oncall time             : 0
+
+### DRT trip summary ###
+Total trips                            : 0
+Total pass-carrying trips              : 0
+Total empty trips                      : 0
+Total pass boarding                    : 0
+Total pass alighting                   : 0
+
+Average boarding per pass-carrying trip: 0
+Stdev boarding per pass-carrying trip  : 0
+Minimum boarding per pass-carrying trip: 2.14748e+09
+Maximum boarding per pass-carrying trip: 0
+Median boarding per pass-carrying trip : 0
+
+### ControlCenter summary ###
+Requests recieved           : 0
+Requests rejected           : 0
+Requests accepted           : 0
+Requests served             : 0
+
+------------------------------------------------------------------
+

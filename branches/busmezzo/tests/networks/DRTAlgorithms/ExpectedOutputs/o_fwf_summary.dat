@@ -3,21 +3,26 @@ Passenger journeys completed: 3
 
 Total walking time             : 0
 Average walking time           : 0
+Stdev walking time             : 0
 
 Total waiting time             : 1130.3
 Average total waiting time     : 376.767
+Stdev total waiting time       : 269.644
 Minimum waiting time           : 186.1
 Maximum waiting time           : 758.101
 Median waiting time            : 186.1
 
 Total denied waiting time      : 0
 Average denied waiting time    : 0
+Stdev denied waiting time      : 0
 
 Total in-vehicle time          : 769.015
 Average in-vehicle time        : 256.338
+Stdev in-vehicle time          : 0
 
 Total crowded in-vehicle time  : 730.564
 Average crowded in-vehicle time: 243.521
+Stdev crowded in-vehicle time  : 49.2651
 
 ### Total vehicle summary ###
 Total VKT                   : 11.781
@@ -29,7 +34,7 @@ Total driving time          : 1416.02
 Total idle time             : 28.1868
 Total oncall time           : 30
 
-### Fixed vehicle summmary ###
+### Fixed vehicle summary ###
 Fixed VKT                   : 0
 Fixed occupied VKT          : 0
 Fixed empty VKT             : 0
@@ -39,7 +44,7 @@ Fixed driving time          : 0
 Fixed idle time             : 0
 Fixed oncall time           : 0
 
-### DRT vehicle summmary ###
+### DRT vehicle summary ###
 DRT VKT                     : 11.781
 DRT occupied VKT            : 6.354
 DRT empty VKT               : 5.427
@@ -49,7 +54,20 @@ DRT driving time            : 1416.02
 DRT idle time               : 28.1868
 DRT oncall time             : 30
 
-### ControlCenter summmary ###
+### DRT trip summary ###
+Total trips                            : 6
+Total pass-carrying trips              : 3
+Total empty trips                      : 3
+Total pass boarding                    : 3
+Total pass alighting                   : 3
+
+Average boarding per pass-carrying trip: 1
+Stdev boarding per pass-carrying trip  : 1
+Minimum boarding per pass-carrying trip: 1
+Maximum boarding per pass-carrying trip: 1
+Median boarding per pass-carrying trip : 1
+
+### ControlCenter summary ###
 Requests recieved           : 3
 Requests rejected           : 0
 Requests accepted           : 3

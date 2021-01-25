@@ -3,57 +3,75 @@ Passenger journeys completed: 300
 
 Total walking time             : 0
 Average walking time           : 0
+Stdev walking time             : 0
 
-Total waiting time             : 608525
-Average total waiting time     : 2028.42
+Total waiting time             : 602738
+Average total waiting time     : 2009.13
+Stdev total waiting time       : 1751.28
 Minimum waiting time           : 0.610066
-Maximum waiting time           : 5343.1
-Median waiting time            : 890.487
+Maximum waiting time           : 5511.3
+Median waiting time            : 1663.53
 
-Total denied waiting time      : 75910.9
-Average denied waiting time    : 253.036
+Total denied waiting time      : 187822
+Average denied waiting time    : 626.073
+Stdev denied waiting time      : 1053.14
 
-Total in-vehicle time          : 282342
-Average in-vehicle time        : 941.141
+Total in-vehicle time          : 281876
+Average in-vehicle time        : 939.588
+Stdev in-vehicle time          : 1053.14
 
-Total crowded in-vehicle time  : 292512
-Average crowded in-vehicle time: 975.038
+Total crowded in-vehicle time  : 296004
+Average crowded in-vehicle time: 986.679
+Stdev crowded in-vehicle time  : 99.0666
 
 ### Total vehicle summary ###
-Total VKT                   : 688.5
-Total occupied VKT          : 232.5
-Total empty VKT             : 456
-Total occupied time         : 24064.4
-Total empty time            : 100456
-Total driving time          : 69226.2
-Total idle time             : 2135.13
-Total oncall time           : 53159.2
+Total VKT                   : 681
+Total occupied VKT          : 246
+Total empty VKT             : 435
+Total occupied time         : 25394.9
+Total empty time            : 100562
+Total driving time          : 68474.1
+Total idle time             : 2079.43
+Total oncall time           : 55403
 
-### Fixed vehicle summmary ###
+### Fixed vehicle summary ###
 Fixed VKT                   : 474
-Fixed occupied VKT          : 138
-Fixed empty VKT             : 336
-Fixed occupied time         : 14210
-Fixed empty time            : 34597.7
-Fixed driving time          : 47639.7
-Fixed idle time             : 1168
+Fixed occupied VKT          : 144
+Fixed empty VKT             : 330
+Fixed occupied time         : 14799.5
+Fixed empty time            : 33980.1
+Fixed driving time          : 47639.6
+Fixed idle time             : 1140
 Fixed oncall time           : 0
 
-### DRT vehicle summmary ###
-DRT VKT                     : 214.5
-DRT occupied VKT            : 94.5
-DRT empty VKT               : 120
-DRT occupied time           : 9854.38
-DRT empty time              : 65858.5
-DRT driving time            : 21586.6
-DRT idle time               : 967.133
-DRT oncall time             : 53159.2
+### DRT vehicle summary ###
+DRT VKT                     : 207
+DRT occupied VKT            : 102
+DRT empty VKT               : 105
+DRT occupied time           : 10595.4
+DRT empty time              : 66581.5
+DRT driving time            : 20834.5
+DRT idle time               : 939.435
+DRT oncall time             : 55403
 
-### ControlCenter summmary ###
-Requests recieved           : 285
+### DRT trip summary ###
+Total trips                            : 58
+Total pass-carrying trips              : 23
+Total empty trips                      : 35
+Total pass boarding                    : 335
+Total pass alighting                   : 335
+
+Average boarding per pass-carrying trip: 14.5652
+Stdev boarding per pass-carrying trip  : 14.5652
+Minimum boarding per pass-carrying trip: 1
+Maximum boarding per pass-carrying trip: 25
+Median boarding per pass-carrying trip : 13
+
+### ControlCenter summary ###
+Requests recieved           : 272
 Requests rejected           : 0
-Requests accepted           : 285
-Requests served             : 285
+Requests accepted           : 272
+Requests served             : 272
 
 ------------------------------------------------------------------
 
