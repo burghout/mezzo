@@ -506,7 +506,7 @@ void TestDrottningholmCollection_fixed::testPassAssignment()
             qDebug() << "\t" << "finished trip       : " << finished_trip;
             qDebug() << "\t" << "start time          : " << first_pass->get_start_time();
             qDebug() << "\t" << "last stop visited   : " << first_pass->get_chosen_path_stops().back().first->get_id();
-            qDebug() << "\t" << "num denied boardings: " << first_pass->get_number_of_denied_boardings();
+            qDebug() << "\t" << "num denied boardings: " << first_pass->get_nr_denied_boardings();
             
             size_t n_transfers = (first_pass->get_selected_path_stops().size() - 4) / 2; // given path definition (direct connection - 4 elements, 1 transfers - 6 elements, 2 transfers - 8 elements, etc.
             if(finished_trip)

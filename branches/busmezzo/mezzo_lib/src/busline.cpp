@@ -2048,6 +2048,7 @@ void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, d
 						else
 						{		
 							// if the passenger CAN NOT board
+							(*check_pass)->increment_nr_denied_boardings();
 							if ((*check_pass)->empty_denied_boarding() == true || this->get_id() != (*check_pass)->get_last_denied_boarding_stop_id()) // no double registration 
 							{
 								pair<Busstop*,double> denied_boarding;

@@ -75,6 +75,7 @@ void Passenger::reset ()
 
 	end_time = 0;
 	nr_boardings = 0;
+	nr_denied_boardings = 0;
 	AWT_first_leg_boarding = 0;
 	this_is_the_last_stop = false;
 	memory_projected_RTI.clear();
@@ -1536,9 +1537,14 @@ void Passenger::write_passenger_trajectory(ostream& out)
 	out << '}' << endl;
 }
 
-int Passenger::get_number_of_denied_boardings()
+void Passenger::increment_nr_denied_boardings()
 {
-	return static_cast<int>(waiting_time_due_denied_boarding.size());
+	++nr_denied_boardings;
+}
+
+int Passenger::get_nr_denied_boardings()
+{
+	return nr_denied_boardings;
 }
 
 int Passenger::get_selected_path_last_line_id ()
