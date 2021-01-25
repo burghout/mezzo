@@ -23,11 +23,12 @@
 #include <climits>
 #include <algorithm>
 #include <vector>
+#include <numeric>
 
 #ifdef RogueWave
 #include <rw/math.h>
 #else
-#include <math.h>
+#include <cmath>
 #endif
 
 const double	AproxEpsilon = 1.0E-5;
@@ -57,16 +58,34 @@ const double	DBL_EPSILON = 1.0 / DBL_INF;
 
 #ifndef MACRO
 
-template<class T>
-T findMedian(std::vector<T> v)
-{
-    size_t n = v.size();
-    sort(v.begin(), v.end());
-    
-    if (n % 2 != 0)
-        return v[n / 2];
-    else
-        return (v[(n - 1) / 2] + v[n / 2]) / 2.0;
+namespace fwf_stats {
+    template<class T>
+    inline T findMedian(std::vector<T> v)
+    {
+        size_t n = v.size();
+        sort(v.begin(), v.end());
+
+        if (n % 2 != 0)
+            return v[n / 2];
+        else
+            return (v[(n - 1) / 2] + v[n / 2]) / 2.0;
+    }
+
+    inline std::pair<double, double> calcMeanAndStdev(std::vector<double> v)
+    {
+        if (v.size() == 0)
+            return std::make_pair(0.0, 0.0);
+
+        double sum = std::accumulate(v.begin(), v.end(), 0.0);
+        double mean = sum / v.size();
+
+        std::vector<double> diff(v.size());
+        std::transform(v.begin(), v.end(), diff.begin(), [mean](double x) { return x - mean; });
+        double sq_sum = std::inner_product(diff.begin(), diff.end(), diff.begin(), 0.0);
+        double stdev = sqrt(sq_sum / v.size());
+
+        return std::make_pair(mean, stdev);
+    }
 }
 
 template <class T>

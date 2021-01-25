@@ -134,19 +134,20 @@ FWF_vehdata operator+(const FWF_vehdata& lhs, const FWF_vehdata& rhs)
     return sum;
 }
 
-FWF_tripdata operator+(const FWF_tripdata& lhs, const FWF_tripdata& rhs)
-{
-    FWF_tripdata sum;
-    sum.total_trips = lhs.total_trips + rhs.total_trips;
-    sum.total_empty_trips = lhs.total_empty_trips + rhs.total_empty_trips;
-    sum.total_pass_carrying_trips = lhs.total_pass_carrying_trips + rhs.total_pass_carrying_trips;
-
-    sum.total_pass_boarding = lhs.total_pass_boarding + rhs.total_pass_boarding;
-    sum.total_pass_alighting = lhs.total_pass_alighting + rhs.total_pass_alighting;
-    sum.avg_boarding_per_trip = lhs.avg_boarding_per_trip + rhs.avg_boarding_per_trip;
-
-    return sum;
-}
+//FWF_tripdata operator+(const FWF_tripdata& lhs, const FWF_tripdata& rhs)
+//{
+//    FWF_tripdata sum;
+//    sum.total_trips = lhs.total_trips + rhs.total_trips;
+//    sum.total_empty_trips = lhs.total_empty_trips + rhs.total_empty_trips;
+//    sum.total_pass_carrying_trips = lhs.total_pass_carrying_trips + rhs.total_pass_carrying_trips;
+//
+//    sum.total_pass_boarding = lhs.total_pass_boarding + rhs.total_pass_boarding;
+//    sum.total_pass_alighting = lhs.total_pass_alighting + rhs.total_pass_alighting;
+//    // @todo combined mean and combined stdev calculations
+//    // sum.avg_boarding_per_trip = lhs.avg_boarding_per_trip + rhs.avg_boarding_per_trip;
+//
+//    return sum;
+//}
 
 // End of helper functions
 
@@ -6977,21 +6978,26 @@ bool Network::writeFWFsummary(
 
         out << "\n\nTotal walking time             : " << total_passdata.total_wlkt;
         out << "\nAverage walking time           : " << total_passdata.avg_total_wlkt;
+        out << "\nStdev walking time             : " << total_passdata.std_total_wlkt;
 
         out << "\n\nTotal waiting time             : " << total_passdata.total_wt;
         out << "\nAverage total waiting time     : " << total_passdata.avg_total_wt;
+        out << "\nStdev total waiting time       : " << total_passdata.std_total_wt;
         out << "\nMinimum waiting time           : " << total_passdata.min_wt;
         out << "\nMaximum waiting time           : " << total_passdata.max_wt;
         out << "\nMedian waiting time            : " << total_passdata.median_wt;
 
         out << "\n\nTotal denied waiting time      : " << total_passdata.total_denied_wt;
         out << "\nAverage denied waiting time    : " << total_passdata.avg_denied_wt;
+        out << "\nStdev denied waiting time      : " << total_passdata.std_denied_wt;
         
         out << "\n\nTotal in-vehicle time          : " << total_passdata.total_ivt;
         out << "\nAverage in-vehicle time        : " << total_passdata.avg_total_ivt;
+        out << "\nStdev in-vehicle time          : " << total_passdata.std_denied_wt;
 
         out << "\n\nTotal crowded in-vehicle time  : " << total_passdata.total_crowded_ivt;
         out << "\nAverage crowded in-vehicle time: " << total_passdata.avg_total_crowded_ivt;
+        out << "\nStdev crowded in-vehicle time   : " << total_passdata.std_total_crowded_ivt;
         
  /*       out << "\n\n### Fixed passenger summary ###";
         out << "\n\nTotal walking time             : " << fix_passdata.total_wlkt;
@@ -7067,7 +7073,12 @@ bool Network::writeFWFsummary(
         out << "\nTotal empty trips                      : " << drt_tripdata.total_empty_trips;
         out << "\nTotal pass boarding                    : " << drt_tripdata.total_pass_boarding;
         out << "\nTotal pass alighting                   : " << drt_tripdata.total_pass_alighting;
-        out << "\nAverage boarding per pass-carrying trip: " << drt_tripdata.avg_boarding_per_trip;
+        
+        out << "\n\nAverage boarding per pass-carrying trip: " << drt_tripdata.avg_boarding_per_trip;
+        out << "\nStdev boarding per pass-carrying trip  : " << drt_tripdata.std_boarding_per_trip;
+        out << "\nMinimum boarding per pass-carrying trip: " << drt_tripdata.min_boarding_per_trip;
+        out << "\nMaximum boarding per pass-carrying trip: " << drt_tripdata.max_boarding_per_trip;
+        out << "\nMedian boarding per pass-carrying trip : " << drt_tripdata.median_boarding_per_trip;
 
         out << "\n\n### ControlCenter summary ###";
         out << "\nRequests recieved           : " << cc_data.total_requests_recieved;
@@ -9788,6 +9799,10 @@ bool MatrixAction::execute(Eventlist* eventlist, double   /*time*/)
 void FWF_passdata::calc_pass_statistics(const vector<Passenger*>& passengers)
 {
     vector<double> waiting_times;
+    vector<double> waiting_denied_times;
+    vector<double> walking_times;
+    vector<double> inveh_times;
+    vector<double> inveh_crowded_times;
     
     double wlkt = 0.0;
     double wt = 0.0;
@@ -9807,54 +9822,84 @@ void FWF_passdata::calc_pass_statistics(const vector<Passenger*>& passengers)
 
             ivt = pass->calc_total_IVT();
             c_ivt = pass->calc_IVT_crowding();
+
+
+            total_wlkt = wlkt;
+            total_wt += wt;
+            total_denied_wt += d_wt;
+            total_ivt += ivt;
+            total_crowded_ivt += c_ivt;
+
+            min_wt = Min(min_wt, wt);
+            max_wt = Max(max_wt, wt);
+
+            walking_times.push_back(wlkt);
+            waiting_times.push_back(wt);
+            waiting_denied_times.push_back(d_wt);
+            inveh_times.push_back(ivt);
+            inveh_crowded_times.push_back(c_ivt);
         }
-
-        total_wlkt = wlkt;
-        total_wt += wt;
-        total_denied_wt += d_wt;
-        total_ivt += ivt;
-        total_crowded_ivt += c_ivt;
-
-        min_wt = Min(min_wt, wt);
-        max_wt = Max(max_wt, wt);
-
-        waiting_times.push_back(wt);
     }
     if (npass != 0)
     {
-        median_wt = findMedian(waiting_times);
-        avg_total_wlkt = total_wlkt / static_cast<double>(npass);
-        avg_total_wt = total_wt / static_cast<double>(npass);
-        avg_denied_wt = total_denied_wt / static_cast<double>(npass);
-        avg_total_ivt = total_ivt / static_cast<double>(npass);
-        avg_total_crowded_ivt = total_crowded_ivt / static_cast<double>(npass);
+        median_wt = fwf_stats::findMedian(waiting_times);
+
+        // calc mean and stdevs
+        pair<double, double> wlkt_stats = fwf_stats::calcMeanAndStdev(walking_times);
+        pair<double, double> wt_stats = fwf_stats::calcMeanAndStdev(waiting_times);
+        pair<double, double> wtd_stats = fwf_stats::calcMeanAndStdev(waiting_denied_times);
+        pair<double, double> ivt_stats = fwf_stats::calcMeanAndStdev(inveh_times);
+        pair<double, double> ivtc_stats = fwf_stats::calcMeanAndStdev(inveh_crowded_times);
+        
+        avg_total_wlkt = wlkt_stats.first;
+        std_total_wlkt = wlkt_stats.second;
+
+        avg_total_wt = wt_stats.first;
+        std_total_wt = wt_stats.second;
+
+        avg_denied_wt = wtd_stats.first;
+        std_denied_wt = wtd_stats.second;
+
+        avg_total_ivt = ivt_stats.first;
+        std_total_ivt = ivt_stats.second;
+
+        avg_total_crowded_ivt = ivtc_stats.first;
+        std_total_crowded_ivt = ivtc_stats.second;
     }
     
 }
 
 void FWF_tripdata::calc_trip_statistics(const vector<Bustrip*>& trips)
 {
+    vector<double> trip_boardings;
+    double trip_total_boarding;
     for (const Bustrip* trip : trips)
     {
         if (trip->is_activated())
         {
+            trip_total_boarding = trip->get_total_boarding();
             ++total_trips;
-            total_pass_boarding += trip->get_total_boarding();
+            total_pass_boarding += trip_total_boarding;
             total_pass_alighting += trip->get_total_alighting();
 
-            if (trip->get_total_boarding() == 0)
+            if (trip_total_boarding == 0)
             {
                 ++total_empty_trips;
             }
             else
             {
+                trip_boardings.push_back(trip_total_boarding);
+                min_boarding_per_trip = Min(min_boarding_per_trip, trip_total_boarding);
+                max_boarding_per_trip = Max(max_boarding_per_trip, trip_total_boarding);
                 ++total_pass_carrying_trips;
             }
         }
-
-        if (total_pass_carrying_trips != 0)
-        {
-            avg_boarding_per_trip = total_pass_boarding / static_cast<double>(total_pass_carrying_trips);
-        }
+    }
+    if (total_pass_carrying_trips != 0)
+    {
+        median_boarding_per_trip = fwf_stats::findMedian(trip_boardings);
+        pair<double, double> boarding_stats = fwf_stats::calcMeanAndStdev(trip_boardings);
+        avg_boarding_per_trip = boarding_stats.first;
+        std_boarding_per_trip = boarding_stats.first;
     }
 }
