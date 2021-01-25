@@ -6997,7 +6997,7 @@ bool Network::writeFWFsummary(
 
         out << "\n\nTotal crowded in-vehicle time  : " << total_passdata.total_crowded_ivt;
         out << "\nAverage crowded in-vehicle time: " << total_passdata.avg_total_crowded_ivt;
-        out << "\nStdev crowded in-vehicle time   : " << total_passdata.std_total_crowded_ivt;
+        out << "\nStdev crowded in-vehicle time  : " << total_passdata.std_total_crowded_ivt;
         
  /*       out << "\n\n### Fixed passenger summary ###";
         out << "\n\nTotal walking time             : " << fix_passdata.total_wlkt;
