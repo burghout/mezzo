@@ -62,7 +62,7 @@ Total pass boarding                    : 4
 Total pass alighting                   : 4
 
 Average boarding per pass-carrying trip: 1.33333
-Stdev boarding per pass-carrying trip  : 1.33333
+Stdev boarding per pass-carrying trip  : 0.471405
 Minimum boarding per pass-carrying trip: 1
 Maximum boarding per pass-carrying trip: 2
 Median boarding per pass-carrying trip : 1

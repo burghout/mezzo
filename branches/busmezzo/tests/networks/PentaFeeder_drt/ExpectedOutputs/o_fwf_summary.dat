@@ -5,12 +5,12 @@ Total walking time             : 0
 Average walking time           : 0
 Stdev walking time             : 0
 
-Total waiting time             : 72910.2
-Average total waiting time     : 373.899
-Stdev total waiting time       : 293.274
+Total waiting time             : 70812.2
+Average total waiting time     : 363.14
+Stdev total waiting time       : 278.183
 Minimum waiting time           : 0.216949
-Maximum waiting time           : 1266.21
-Median waiting time            : 313.598
+Maximum waiting time           : 1235.65
+Median waiting time            : 306.729
 
 Total denied waiting time      : 0
 Average denied waiting time    : 0
@@ -25,14 +25,14 @@ Average crowded in-vehicle time: 236.053
 Stdev crowded in-vehicle time  : 51.8404
 
 ### Total vehicle summary ###
-Total VKT                   : 99.102
+Total VKT                   : 98.175
 Total occupied VKT          : 50.478
-Total empty VKT             : 48.624
+Total empty VKT             : 47.697
 Total occupied time         : 6277.52
-Total empty time            : 17417.5
-Total driving time          : 11909.5
-Total idle time             : 569.913
-Total oncall time           : 11215.6
+Total empty time            : 17164.5
+Total driving time          : 11798.2
+Total idle time             : 569.207
+Total oncall time           : 11074.6
 
 ### Fixed vehicle summary ###
 Fixed VKT                   : 0
@@ -45,14 +45,14 @@ Fixed idle time             : 0
 Fixed oncall time           : 0
 
 ### DRT vehicle summary ###
-DRT VKT                     : 99.102
+DRT VKT                     : 98.175
 DRT occupied VKT            : 50.478
-DRT empty VKT               : 48.624
+DRT empty VKT               : 47.697
 DRT occupied time           : 6277.52
-DRT empty time              : 17417.5
-DRT driving time            : 11909.5
-DRT idle time               : 569.913
-DRT oncall time             : 11215.6
+DRT empty time              : 17164.5
+DRT driving time            : 11798.2
+DRT idle time               : 569.207
+DRT oncall time             : 11074.6
 
 ### DRT trip summary ###
 Total trips                            : 50
@@ -62,7 +62,7 @@ Total pass boarding                    : 195
 Total pass alighting                   : 195
 
 Average boarding per pass-carrying trip: 7.8
-Stdev boarding per pass-carrying trip  : 7.8
+Stdev boarding per pass-carrying trip  : 4.50777
 Minimum boarding per pass-carrying trip: 1
 Maximum boarding per pass-carrying trip: 15
 Median boarding per pass-carrying trip : 8

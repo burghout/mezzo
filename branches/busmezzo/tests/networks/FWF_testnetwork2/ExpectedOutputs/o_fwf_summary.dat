@@ -5,73 +5,73 @@ Total walking time             : 0
 Average walking time           : 0
 Stdev walking time             : 0
 
-Total waiting time             : 602738
-Average total waiting time     : 2009.13
-Stdev total waiting time       : 1751.28
+Total waiting time             : 434776
+Average total waiting time     : 1449.25
+Stdev total waiting time       : 926.466
 Minimum waiting time           : 0.610066
-Maximum waiting time           : 5511.3
-Median waiting time            : 1663.53
+Maximum waiting time           : 3536.1
+Median waiting time            : 1338.23
 
-Total denied waiting time      : 187822
-Average denied waiting time    : 626.073
-Stdev denied waiting time      : 1053.14
+Total denied waiting time      : 77409
+Average denied waiting time    : 258.03
+Stdev denied waiting time      : 349.783
 
-Total in-vehicle time          : 281876
-Average in-vehicle time        : 939.588
-Stdev in-vehicle time          : 1053.14
+Total in-vehicle time          : 284450
+Average in-vehicle time        : 948.165
+Stdev in-vehicle time          : 349.783
 
-Total crowded in-vehicle time  : 296004
-Average crowded in-vehicle time: 986.679
-Stdev crowded in-vehicle time  : 99.0666
+Total crowded in-vehicle time  : 303611
+Average crowded in-vehicle time: 1012.04
+Stdev crowded in-vehicle time  : 89.8645
 
 ### Total vehicle summary ###
-Total VKT                   : 681
-Total occupied VKT          : 246
-Total empty VKT             : 435
-Total occupied time         : 25394.9
-Total empty time            : 100562
-Total driving time          : 68474.1
-Total idle time             : 2079.43
-Total oncall time           : 55403
+Total VKT                   : 636
+Total occupied VKT          : 214.5
+Total empty VKT             : 421.5
+Total occupied time         : 22314.4
+Total empty time            : 87766.7
+Total driving time          : 63961.7
+Total idle time             : 2208.42
+Total oncall time           : 43910.9
 
 ### Fixed vehicle summary ###
 Fixed VKT                   : 474
-Fixed occupied VKT          : 144
-Fixed empty VKT             : 330
-Fixed occupied time         : 14799.5
-Fixed empty time            : 33980.1
-Fixed driving time          : 47639.6
-Fixed idle time             : 1140
+Fixed occupied VKT          : 124.5
+Fixed empty VKT             : 349.5
+Fixed occupied time         : 12902.5
+Fixed empty time            : 36011.2
+Fixed driving time          : 47639.7
+Fixed idle time             : 1274
 Fixed oncall time           : 0
 
 ### DRT vehicle summary ###
-DRT VKT                     : 207
-DRT occupied VKT            : 102
-DRT empty VKT               : 105
-DRT occupied time           : 10595.4
-DRT empty time              : 66581.5
-DRT driving time            : 20834.5
-DRT idle time               : 939.435
-DRT oncall time             : 55403
+DRT VKT                     : 162
+DRT occupied VKT            : 90
+DRT empty VKT               : 72
+DRT occupied time           : 9411.86
+DRT empty time              : 51755.5
+DRT driving time            : 16322.1
+DRT idle time               : 934.42
+DRT oncall time             : 43910.9
 
 ### DRT trip summary ###
-Total trips                            : 58
-Total pass-carrying trips              : 23
-Total empty trips                      : 35
-Total pass boarding                    : 335
-Total pass alighting                   : 335
+Total trips                            : 53
+Total pass-carrying trips              : 25
+Total empty trips                      : 28
+Total pass boarding                    : 346
+Total pass alighting                   : 346
 
-Average boarding per pass-carrying trip: 14.5652
-Stdev boarding per pass-carrying trip  : 14.5652
+Average boarding per pass-carrying trip: 13.84
+Stdev boarding per pass-carrying trip  : 9.77622
 Minimum boarding per pass-carrying trip: 1
 Maximum boarding per pass-carrying trip: 25
-Median boarding per pass-carrying trip : 13
+Median boarding per pass-carrying trip : 11
 
 ### ControlCenter summary ###
-Requests recieved           : 272
+Requests recieved           : 294
 Requests rejected           : 0
-Requests accepted           : 272
-Requests served             : 272
+Requests accepted           : 294
+Requests served             : 294
 
 ------------------------------------------------------------------
 
