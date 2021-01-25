@@ -521,7 +521,7 @@ void TestDrottningholmCollection_fixed::testPassAssignment()
             QVERIFY(first_pass->get_chosen_mode() == TransitModeType::Null); // with drt parameter set to false no mode choice is ever made (chosen_mode_ stays at default value Null)
             QVERIFY(first_pass->get_curr_request() == nullptr); // a request should never have been generated if transit mode choice is fixed
             if(finished_trip)
-                QVERIFY(n_transfers); // a total of 1 vehicle should have been used to reach final dest. No transfers are necessary
+                QVERIFY(n_transfers == 0); // a total of 1 vehicle should have been used to reach final dest. No transfers are necessary
             
             // verify that at least one passenger per OD made it to their destination
             QString failmsg = "Failure, at least one passenger for ODstop (" + orig_s + "," + dest_s + ") with non-zero demand should have reached final destination.";
