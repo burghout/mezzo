@@ -9900,6 +9900,6 @@ void FWF_tripdata::calc_trip_statistics(const vector<Bustrip*>& trips)
         median_boarding_per_trip = fwf_stats::findMedian(trip_boardings);
         pair<double, double> boarding_stats = fwf_stats::calcMeanAndStdev(trip_boardings);
         avg_boarding_per_trip = boarding_stats.first;
-        std_boarding_per_trip = boarding_stats.first;
+        std_boarding_per_trip = boarding_stats.second;
     }
 }
