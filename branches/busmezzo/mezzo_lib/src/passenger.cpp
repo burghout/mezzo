@@ -1536,6 +1536,11 @@ void Passenger::write_passenger_trajectory(ostream& out)
 	out << '}' << endl;
 }
 
+int Passenger::get_number_of_denied_boardings()
+{
+	return static_cast<int>(waiting_time_due_denied_boarding.size());
+}
+
 int Passenger::get_selected_path_last_line_id ()
 {
 	return selected_path_trips.back().first->get_line()->get_id();

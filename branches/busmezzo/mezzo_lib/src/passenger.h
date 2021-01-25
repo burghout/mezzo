@@ -99,6 +99,7 @@ public:
 	void add_to_selected_path_stop (pair<Busstop*,double> stop_time) {selected_path_stops.push_back(stop_time);}
     void add_to_experienced_crowding_levels(pair<double,double> riding_coeff) {experienced_crowding_levels.push_back(riding_coeff);}
 	void add_to_denied_boarding (pair<Busstop*,double> denied_time) {waiting_time_due_denied_boarding.push_back(denied_time);}
+	int get_number_of_denied_boardings(); //!< returns the number of times a passenger missed a bus due to denied boarding
 	bool check_selected_path_trips_empty () {return selected_path_trips.empty();}
 	int get_selected_path_last_line_id ();
 	int get_last_denied_boarding_stop_id ();
