@@ -6976,13 +6976,13 @@ bool Network::writeFWFsummary(
         out << "### Total passenger summary ###";
         out << "\nPassenger journeys completed: " << total_passdata.pass_completed;
 
-        out << "\n\nTotal walking time             : " << total_passdata.total_wlkt;
-        out << "\nAverage walking time           : " << total_passdata.avg_total_wlkt;
-        out << "\nStdev walking time             : " << total_passdata.std_total_wlkt;
+        //out << "\n\nTotal walking time             : " << total_passdata.total_wlkt;
+        //out << "\nAverage walking time           : " << total_passdata.avg_total_wlkt;
+        //out << "\nStdev walking time             : " << total_passdata.std_total_wlkt;
 
-        out << "\n\nTotal waiting time             : " << total_passdata.total_wt;
-        out << "\nAverage total waiting time     : " << total_passdata.avg_total_wt;
-        out << "\nStdev total waiting time       : " << total_passdata.std_total_wt;
+        //out << "\n\nTotal waiting time             : " << total_passdata.total_wt;
+        out << "\n\nAverage waiting time     : " << total_passdata.avg_total_wt;
+        out << "\nStdev waiting time       : " << total_passdata.std_total_wt;
         out << "\nMinimum waiting time           : " << total_passdata.min_wt;
         out << "\nMaximum waiting time           : " << total_passdata.max_wt;
         out << "\nMedian waiting time            : " << total_passdata.median_wt;
@@ -7179,15 +7179,15 @@ namespace PARTC
     void writeFWFsummary_odcategories(ostream& out, const FWF_passdata& passdata_b2b, const FWF_passdata& passdata_b2c, const FWF_passdata& passdata_c2c, const FWF_passdata& passdata_total)
     {
         assert(out);
-        out << "### Passenger per OD category summary: \tbranch-to-branch\tbranch-to-corridor\tcorridor-to-corridor\ttotal";
+        out << "### Passenger per OD category summary: \tB2B\tB2C\tC2C\tTotal";
         out << "\nPassenger journeys completed:\t" << passdata_b2b.pass_completed << "\t" << passdata_b2c.pass_completed << "\t" << passdata_c2c.pass_completed << "\t" << passdata_total.pass_completed;
 
-        out << "\n\nTotal walking time             :\t" << passdata_b2b.total_wlkt << "\t" << passdata_b2c.total_wlkt << "\t" << passdata_c2c.total_wlkt << "\t" << passdata_total.total_wlkt;
-        out << "\nAverage walking time           :\t" << passdata_b2b.avg_total_wlkt << "\t" << passdata_b2c.avg_total_wlkt << "\t" << passdata_c2c.avg_total_wlkt << "\t" << passdata_total.avg_total_wlkt;
-        out << "\nStdev walking time             :\t" << passdata_b2b.std_total_wlkt << "\t" << passdata_b2c.std_total_wlkt << "\t" << passdata_c2c.std_total_wlkt << "\t" << passdata_total.std_total_wlkt;
+        //out << "\n\nTotal walking time             :\t" << passdata_b2b.total_wlkt << "\t" << passdata_b2c.total_wlkt << "\t" << passdata_c2c.total_wlkt << "\t" << passdata_total.total_wlkt;
+        //out << "\nAverage walking time           :\t" << passdata_b2b.avg_total_wlkt << "\t" << passdata_b2c.avg_total_wlkt << "\t" << passdata_c2c.avg_total_wlkt << "\t" << passdata_total.avg_total_wlkt;
+        //out << "\nStdev walking time             :\t" << passdata_b2b.std_total_wlkt << "\t" << passdata_b2c.std_total_wlkt << "\t" << passdata_c2c.std_total_wlkt << "\t" << passdata_total.std_total_wlkt;
 
-        out << "\n\nTotal waiting time             :\t" << passdata_b2b.total_wt << "\t" << passdata_b2c.total_wt << "\t" << passdata_c2c.total_wt << "\t" << passdata_total.total_wt;
-        out << "\nAverage waiting time           :\t" << passdata_b2b.avg_total_wt << "\t" << passdata_b2c.avg_total_wt << "\t" << passdata_c2c.avg_total_wt << "\t" << passdata_total.avg_total_wt;
+        //out << "\n\nTotal waiting time             :\t" << passdata_b2b.total_wt << "\t" << passdata_b2c.total_wt << "\t" << passdata_c2c.total_wt << "\t" << passdata_total.total_wt;
+        out << "\n\nAverage waiting time           :\t" << passdata_b2b.avg_total_wt << "\t" << passdata_b2c.avg_total_wt << "\t" << passdata_c2c.avg_total_wt << "\t" << passdata_total.avg_total_wt;
         out << "\nStdev waiting time             :\t" << passdata_b2b.std_total_wt << "\t" << passdata_b2c.std_total_wt << "\t" << passdata_c2c.std_total_wt << "\t" << passdata_total.std_total_wt;
         out << "\nMinimum waiting time           :\t" << passdata_b2b.min_wt << "\t" << passdata_b2c.min_wt << "\t" << passdata_c2c.min_wt << "\t" << passdata_total.min_wt;
         out << "\nMaximum waiting time           :\t" << passdata_b2b.max_wt << "\t" << passdata_b2c.max_wt << "\t" << passdata_c2c.max_wt << "\t" << passdata_total.max_wt;
