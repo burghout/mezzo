@@ -7176,34 +7176,36 @@ namespace PARTC
     {
         return is_on_corridor(ostop_id) && is_on_corridor(dstop_id);
     }
-    void writeFWFsummary_odcategories(ostream& out, const FWF_passdata& passdata_b2b, const FWF_passdata& passdata_b2c, const FWF_passdata& passdata_c2c)
+    void writeFWFsummary_odcategories(ostream& out, const FWF_passdata& passdata_b2b, const FWF_passdata& passdata_b2c, const FWF_passdata& passdata_c2c, const FWF_passdata& passdata_total)
     {
         assert(out);
-        out << "### OD category summary: (branch-to-branch, branch-to-corridor, corridor-to-corridor) ###";
-        out << "\nPassenger journeys completed: " << passdata_b2b.pass_completed << "\t" << passdata_b2c.pass_completed << "\t" << passdata_c2c.pass_completed;
+        out << "### Passenger per OD category summary: \tbranch-to-branch\tbranch-to-corridor\tcorridor-to-corridor\ttotal";
+        out << "\nPassenger journeys completed:\t" << passdata_b2b.pass_completed << "\t" << passdata_b2c.pass_completed << "\t" << passdata_c2c.pass_completed << "\t" << passdata_total.pass_completed;
 
-        out << "\n\nTotal walking time             : " << passdata_b2b.total_wlkt << "\t" << passdata_b2c.total_wlkt << "\t" << passdata_c2c.total_wlkt;
-        out << "\nAverage walking time           : " << passdata_b2b.avg_total_wlkt << "\t" << passdata_b2c.avg_total_wlkt << "\t" << passdata_c2c.avg_total_wlkt;
-        out << "\nStdev walking time             : " << passdata_b2b.std_total_wlkt << "\t" << passdata_b2c.std_total_wlkt << "\t" << passdata_c2c.std_total_wlkt;
+        out << "\n\nTotal walking time             :\t" << passdata_b2b.total_wlkt << "\t" << passdata_b2c.total_wlkt << "\t" << passdata_c2c.total_wlkt << "\t" << passdata_total.total_wlkt;
+        out << "\nAverage walking time           :\t" << passdata_b2b.avg_total_wlkt << "\t" << passdata_b2c.avg_total_wlkt << "\t" << passdata_c2c.avg_total_wlkt << "\t" << passdata_total.avg_total_wlkt;
+        out << "\nStdev walking time             :\t" << passdata_b2b.std_total_wlkt << "\t" << passdata_b2c.std_total_wlkt << "\t" << passdata_c2c.std_total_wlkt << "\t" << passdata_total.std_total_wlkt;
 
-        out << "\n\nTotal waiting time             : " << passdata_b2b.total_wt << "\t" << passdata_b2c.total_wt << "\t" << passdata_c2c.total_wt;
-        out << "\nAverage waiting time           : " << passdata_b2b.avg_total_wt << "\t" << passdata_b2c.avg_total_wt << "\t" << passdata_c2c.avg_total_wt;
-        out << "\nStdev waiting time             : " << passdata_b2b.std_total_wt << "\t" << passdata_b2c.std_total_wt << "\t" << passdata_c2c.std_total_wt;
-        out << "\nMinimum waiting time           : " << passdata_b2b.min_wt << "\t" << passdata_b2c.min_wt << "\t" << passdata_c2c.min_wt;
-        out << "\nMaximum waiting time           : " << passdata_b2b.max_wt << "\t" << passdata_b2c.max_wt << "\t" << passdata_c2c.max_wt;
-        out << "\nMedian waiting time            : " << passdata_b2b.median_wt << "\t" << passdata_b2c.median_wt << "\t" << passdata_c2c.median_wt;
+        out << "\n\nTotal waiting time             :\t" << passdata_b2b.total_wt << "\t" << passdata_b2c.total_wt << "\t" << passdata_c2c.total_wt << "\t" << passdata_total.total_wt;
+        out << "\nAverage waiting time           :\t" << passdata_b2b.avg_total_wt << "\t" << passdata_b2c.avg_total_wt << "\t" << passdata_c2c.avg_total_wt << "\t" << passdata_total.avg_total_wt;
+        out << "\nStdev waiting time             :\t" << passdata_b2b.std_total_wt << "\t" << passdata_b2c.std_total_wt << "\t" << passdata_c2c.std_total_wt << "\t" << passdata_total.std_total_wt;
+        out << "\nMinimum waiting time           :\t" << passdata_b2b.min_wt << "\t" << passdata_b2c.min_wt << "\t" << passdata_c2c.min_wt << "\t" << passdata_total.min_wt;
+        out << "\nMaximum waiting time           :\t" << passdata_b2b.max_wt << "\t" << passdata_b2c.max_wt << "\t" << passdata_c2c.max_wt << "\t" << passdata_total.max_wt;
+        out << "\nMedian waiting time            :\t" << passdata_b2b.median_wt << "\t" << passdata_b2c.median_wt << "\t" << passdata_c2c.median_wt << "\t" << passdata_total.median_wt;
 
-        out << "\n\nTotal denied waiting time      : " << passdata_b2b.total_denied_wt << "\t" << passdata_b2c.total_denied_wt << "\t" << passdata_c2c.total_denied_wt;
-        out << "\nAverage denied waiting time    : " << passdata_b2b.avg_denied_wt << "\t" << passdata_b2c.avg_denied_wt << "\t" << passdata_c2c.avg_denied_wt;
-        out << "\nStdev denied waiting time      : " << passdata_b2b.std_denied_wt << "\t" << passdata_b2c.std_denied_wt << "\t" << passdata_c2c.std_denied_wt;
+        out << "\n\nTotal denied waiting time      :\t" << passdata_b2b.total_denied_wt << "\t" << passdata_b2c.total_denied_wt << "\t" << passdata_c2c.total_denied_wt << "\t" << passdata_total.total_denied_wt;
+        out << "\nAverage denied waiting time    :\t" << passdata_b2b.avg_denied_wt << "\t" << passdata_b2c.avg_denied_wt << "\t" << passdata_c2c.avg_denied_wt << "\t" << passdata_total.avg_denied_wt;
+        out << "\nStdev denied waiting time      :\t" << passdata_b2b.std_denied_wt << "\t" << passdata_b2c.std_denied_wt << "\t" << passdata_c2c.std_denied_wt << "\t" << passdata_total.std_denied_wt;
 
-        out << "\n\nTotal in-vehicle time          : " << passdata_b2b.total_ivt << "\t" << passdata_b2c.total_ivt << "\t" << passdata_c2c.total_ivt;
-        out << "\nAverage in-vehicle time        : " << passdata_b2b.avg_total_ivt << "\t" << passdata_b2c.avg_total_ivt << "\t" << passdata_c2c.avg_total_ivt;
-        out << "\nStdev in-vehicle time          : " << passdata_b2b.std_denied_wt << "\t" << passdata_b2c.std_denied_wt << "\t" << passdata_c2c.std_denied_wt;
+        out << "\n\nTotal in-vehicle time          :\t" << passdata_b2b.total_ivt << "\t" << passdata_b2c.total_ivt << "\t" << passdata_c2c.total_ivt << "\t" << passdata_total.total_ivt;
+        out << "\nAverage in-vehicle time        :\t" << passdata_b2b.avg_total_ivt << "\t" << passdata_b2c.avg_total_ivt << "\t" << passdata_c2c.avg_total_ivt << "\t" << passdata_total.avg_total_ivt;
+        out << "\nStdev in-vehicle time          :\t" << passdata_b2b.std_total_ivt << "\t" << passdata_b2c.std_total_ivt << "\t" << passdata_c2c.std_total_ivt << "\t" << passdata_total.std_total_ivt;
 
-        out << "\n\nTotal crowded in-vehicle time  : " << passdata_b2b.total_crowded_ivt << "\t" << passdata_b2c.total_crowded_ivt << "\t" << passdata_c2c.total_crowded_ivt;
-        out << "\nAverage crowded in-vehicle time: " << passdata_b2b.avg_total_crowded_ivt << "\t" << passdata_b2c.avg_total_crowded_ivt << "\t" << passdata_c2c.avg_total_crowded_ivt;
-        out << "\nStdev crowded in-vehicle time  : " << passdata_b2b.std_total_crowded_ivt << "\t" << passdata_b2c.std_total_crowded_ivt << "\t" << passdata_c2c.std_total_crowded_ivt;
+        out << "\n\nTotal crowded in-vehicle time  :\t" << passdata_b2b.total_crowded_ivt << "\t" << passdata_b2c.total_crowded_ivt << "\t" << passdata_c2c.total_crowded_ivt << "\t" << passdata_total.total_crowded_ivt;
+        out << "\nAverage crowded in-vehicle time:\t" << passdata_b2b.avg_total_crowded_ivt << "\t" << passdata_b2c.avg_total_crowded_ivt << "\t" << passdata_c2c.avg_total_crowded_ivt << "\t" << passdata_total.avg_total_crowded_ivt;
+        out << "\nStdev crowded in-vehicle time  :\t" << passdata_b2b.std_total_crowded_ivt << "\t" << passdata_b2c.std_total_crowded_ivt << "\t" << passdata_c2c.std_total_crowded_ivt << "\t" << passdata_total.std_total_crowded_ivt;
+
+        out << "\n\n------------------------------------------------------------------\n\n";
 
        /* out << "\n\n### Branch to Corridor passenger summary ###";
         out << "\nPassenger journeys completed: " << passdata_b2c.pass_completed;
@@ -7321,15 +7323,15 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
                 PARTCflag = false;
         }
     }
-    if (PARTCflag)
-    {
-        ofstream out21(name21.c_str(), ios_base::app); //"o_fwf_summary_odcategory.dat"
-        FWF_passdata total_passdata_b2b;
-        FWF_passdata total_passdata_b2c;
-        FWF_passdata total_passdata_c2c;
-    }
-    else
-        Q_UNUSED(name21)
+
+    FWF_passdata total_passdata_b2b;
+    FWF_passdata total_passdata_b2c;
+    FWF_passdata total_passdata_c2c;
+
+    vector<Passenger*> allpass_within_passgen;
+    vector<Passenger*> allpass_b2b;
+    vector<Passenger*> allpass_b2c;
+    vector<Passenger*> allpass_c2c;
     
 
     // writing the crude data and summary outputs for each bus stop
@@ -7414,11 +7416,69 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
         
 
         //fill in the fwf summary containers
-        total_passdata.pass_completed = pass_counter; //passengers that completed trips
-
+        //total_passdata.pass_completed = pass_counter; //passengers that completed trips
+        
+        vector<Passenger*> all_pass = get_all_generated_passengers(); // includes also pass that did not complete their trip, outside pass gen range etc..
+        
         // FWF passenger output
-        vector<Passenger*> all_pass = get_all_generated_passengers(); //should include all passengers, even those that did not complete their trip?
-        total_passdata.calc_pass_statistics(all_pass);
+        if (PARTCflag)
+        {
+            int pass_ignored;
+            for (auto pass : all_pass) // only check pass who started and completed trip within the pass generation time interval
+            {
+                if (PARTC::finished_trip_within_pass_generation_interval(pass))
+                {
+                    allpass_within_passgen.push_back(pass);
+                    PARTC::ODCategory od_category = PARTC::ODCategory::Null;
+                    ODstops* od = pass->get_OD_stop();
+                    int ostop = pass->get_original_origin()->get_id();
+                    int dstop = od->get_destination()->get_id();
+
+                    // divide passengers by od category and print to output file
+                    if (PARTC::is_branch_to_branch(ostop, dstop))
+                    {
+                        od_category = PARTC::ODCategory::b2b;
+                    }
+                    else if (PARTC::is_branch_to_corridor(ostop, dstop))
+                    {
+                        od_category = PARTC::ODCategory::b2c;
+                    }
+                    else if (PARTC::is_corridor_to_corridor(ostop, dstop))
+                    {
+                        od_category = PARTC::ODCategory::c2c;
+                    }
+                    assert(od_category != PARTC::ODCategory::Null); // each od should have a category
+
+                    if (od_category == PARTC::ODCategory::b2b)
+                    {
+                        allpass_b2b.push_back(pass);
+                    }
+                    else if (od_category == PARTC::ODCategory::b2c)
+                    {
+                        allpass_b2c.push_back(pass);
+                    }
+                    else if (od_category == PARTC::ODCategory::c2c)
+                    {
+                        allpass_c2c.push_back(pass);
+                    }
+                }
+                {
+                    ++pass_ignored;
+                }
+            }
+            total_passdata.calc_pass_statistics(allpass_within_passgen);
+            total_passdata_b2b.calc_pass_statistics(allpass_b2b);
+            total_passdata_b2c.calc_pass_statistics(allpass_b2c);
+            total_passdata_c2c.calc_pass_statistics(allpass_c2c);
+
+            ofstream out21(name21.c_str(), ios_base::app); //"o_fwf_summary_odcategory.dat"
+            PARTC::writeFWFsummary_odcategories(out21,total_passdata_b2b,total_passdata_b2c,total_passdata_c2c, total_passdata);
+        }
+        else
+        {
+            Q_UNUSED(name21);
+            total_passdata.calc_pass_statistics(all_pass);
+        }
 
         if (theParameters->drt)
         {
@@ -10025,7 +10085,7 @@ void FWF_passdata::calc_pass_statistics(const vector<Passenger*>& passengers)
         avg_total_crowded_ivt = ivtc_stats.first;
         std_total_crowded_ivt = ivtc_stats.second;
     }
-    
+    pass_completed = npass; //!< @todo pass_completed and npass kindof redundant at the moment
 }
 
 void FWF_tripdata::calc_trip_statistics(const vector<Bustrip*>& trips)
