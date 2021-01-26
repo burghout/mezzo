@@ -7107,7 +7107,136 @@ bool Network::writeheadways(string name)
 
 }
 
-bool Network::write_busstop_output(string name1, string name2, string name3, string name4, string name5, string name6, string name7, string name8, string name9, string name10, string name11, string name12, string name13, string name14, string name15, string name16, string name17, string name18, string name19, string name20)
+/** @ingroup PARTC
+* - bunch of stuff used for results output
+* @todo remove
+*/
+namespace PARTC
+{
+    const vector<int> branch_ids_176 = { 217619,217618,217617,217616,217615,217614,217613,217612,217611,217610,217609,217608,217607,217606,217605,217603,217602,217604,217600,277024 };
+    const vector<int> branch_ids_177 = { 277036,277035,277034,277033,277032,277031,277030,277029,277028,277027,277026,277025,277024 };
+    const vector<int> corridor_ids = { 277024,277023,277022,277021,277020,277019,277018,277017,277016,277015,277014,277013,277012,277011,277010,277009,277008,277007,277006,277005,277004,277003,277002,277001 };
+    const int transfer_stop_id = 277024;
+    const int morby_station_id = 277001;
+
+    enum class ODCategory { Null = 0, b2b, b2c, c2c };
+
+    bool finished_trip_within_pass_generation_interval(Passenger* pass)
+    {
+        if (pass->get_end_time() <= 0)
+            return false;
+        if (pass->get_end_time() > theParameters->stop_pass_generation)
+            return false;
+        if (pass->get_start_time() < theParameters->start_pass_generation)
+            return false;
+        return true;
+    }
+
+    bool is_on_branch176(int stop_id)
+    {
+        return find(branch_ids_176.begin(), branch_ids_176.end(), stop_id) != branch_ids_176.end();
+    }
+    bool is_on_branch177(int stop_id)
+    {
+        return find(branch_ids_177.begin(), branch_ids_177.end(), stop_id) != branch_ids_177.end();
+    }
+    bool is_on_branch(int stop_id) // is on either branch
+    {
+        return is_on_branch176(stop_id) || is_on_branch177(stop_id);
+    }
+    bool is_on_corridor(int stop_id)
+    {
+        return find(corridor_ids.begin(), corridor_ids.end(), stop_id) != corridor_ids.end();
+    }
+    bool is_transfer_stop(int stop_id)
+    {
+        return stop_id == transfer_stop_id;
+    }
+    bool is_branch_to_branch(int ostop_id, int dstop_id) // if OD pair is branch to branch
+    {
+        if (is_on_branch(ostop_id)) // origin of trip starts on a branch
+        {
+            if (is_transfer_stop(dstop_id)) // destination is the transfer stop (which is on both branch and corridor)
+                return true;
+            else
+                return !is_on_corridor(dstop_id); // destination is NOT on corridor
+        }
+        return false;
+    }
+    bool is_branch_to_corridor(int ostop_id, int dstop_id)
+    {
+        if (!is_transfer_stop(ostop_id) && is_on_branch(ostop_id)) // origin is not the transfer stop (which is on corridor) and is on branch
+        {
+            if (!is_transfer_stop(dstop_id) && is_on_corridor(dstop_id)) // destination IS on corridor and is not the transfer stop
+                return true;
+        }
+        return false;
+    }
+    bool is_corridor_to_corridor(int ostop_id, int dstop_id)
+    {
+        return is_on_corridor(ostop_id) && is_on_corridor(dstop_id);
+    }
+    void writeFWFsummary_odcategories(ostream& out, const FWF_passdata& passdata_b2b, const FWF_passdata& passdata_b2c, const FWF_passdata& passdata_c2c)
+    {
+        assert(out);
+        out << "### OD category summary: (branch-to-branch, branch-to-corridor, corridor-to-corridor) ###";
+        out << "\nPassenger journeys completed: " << passdata_b2b.pass_completed << "\t" << passdata_b2c.pass_completed << "\t" << passdata_c2c.pass_completed;
+
+        out << "\n\nTotal walking time             : " << passdata_b2b.total_wlkt << "\t" << passdata_b2c.total_wlkt << "\t" << passdata_c2c.total_wlkt;
+        out << "\nAverage walking time           : " << passdata_b2b.avg_total_wlkt << "\t" << passdata_b2c.avg_total_wlkt << "\t" << passdata_c2c.avg_total_wlkt;
+        out << "\nStdev walking time             : " << passdata_b2b.std_total_wlkt << "\t" << passdata_b2c.std_total_wlkt << "\t" << passdata_c2c.std_total_wlkt;
+
+        out << "\n\nTotal waiting time             : " << passdata_b2b.total_wt << "\t" << passdata_b2c.total_wt << "\t" << passdata_c2c.total_wt;
+        out << "\nAverage waiting time           : " << passdata_b2b.avg_total_wt << "\t" << passdata_b2c.avg_total_wt << "\t" << passdata_c2c.avg_total_wt;
+        out << "\nStdev waiting time             : " << passdata_b2b.std_total_wt << "\t" << passdata_b2c.std_total_wt << "\t" << passdata_c2c.std_total_wt;
+        out << "\nMinimum waiting time           : " << passdata_b2b.min_wt << "\t" << passdata_b2c.min_wt << "\t" << passdata_c2c.min_wt;
+        out << "\nMaximum waiting time           : " << passdata_b2b.max_wt << "\t" << passdata_b2c.max_wt << "\t" << passdata_c2c.max_wt;
+        out << "\nMedian waiting time            : " << passdata_b2b.median_wt << "\t" << passdata_b2c.median_wt << "\t" << passdata_c2c.median_wt;
+
+        out << "\n\nTotal denied waiting time      : " << passdata_b2b.total_denied_wt << "\t" << passdata_b2c.total_denied_wt << "\t" << passdata_c2c.total_denied_wt;
+        out << "\nAverage denied waiting time    : " << passdata_b2b.avg_denied_wt << "\t" << passdata_b2c.avg_denied_wt << "\t" << passdata_c2c.avg_denied_wt;
+        out << "\nStdev denied waiting time      : " << passdata_b2b.std_denied_wt << "\t" << passdata_b2c.std_denied_wt << "\t" << passdata_c2c.std_denied_wt;
+
+        out << "\n\nTotal in-vehicle time          : " << passdata_b2b.total_ivt << "\t" << passdata_b2c.total_ivt << "\t" << passdata_c2c.total_ivt;
+        out << "\nAverage in-vehicle time        : " << passdata_b2b.avg_total_ivt << "\t" << passdata_b2c.avg_total_ivt << "\t" << passdata_c2c.avg_total_ivt;
+        out << "\nStdev in-vehicle time          : " << passdata_b2b.std_denied_wt << "\t" << passdata_b2c.std_denied_wt << "\t" << passdata_c2c.std_denied_wt;
+
+        out << "\n\nTotal crowded in-vehicle time  : " << passdata_b2b.total_crowded_ivt << "\t" << passdata_b2c.total_crowded_ivt << "\t" << passdata_c2c.total_crowded_ivt;
+        out << "\nAverage crowded in-vehicle time: " << passdata_b2b.avg_total_crowded_ivt << "\t" << passdata_b2c.avg_total_crowded_ivt << "\t" << passdata_c2c.avg_total_crowded_ivt;
+        out << "\nStdev crowded in-vehicle time  : " << passdata_b2b.std_total_crowded_ivt << "\t" << passdata_b2c.std_total_crowded_ivt << "\t" << passdata_c2c.std_total_crowded_ivt;
+
+       /* out << "\n\n### Branch to Corridor passenger summary ###";
+        out << "\nPassenger journeys completed: " << passdata_b2c.pass_completed;
+
+        out << "\n\nTotal walking time             : " << passdata_b2c.total_wlkt;
+        out << "\nAverage walking time           : " << passdata_b2c.avg_total_wlkt;
+        out << "\nStdev walking time             : " << passdata_b2c.std_total_wlkt;
+
+        out << "\n\nTotal waiting time             : " << passdata_b2c.total_wt;
+        out << "\nAverage total waiting time     : " << passdata_b2c.avg_total_wt;
+        out << "\nStdev total waiting time       : " << passdata_b2c.std_total_wt;
+        out << "\nMinimum waiting time           : " << passdata_b2c.min_wt;
+        out << "\nMaximum waiting time           : " << passdata_b2c.max_wt;
+        out << "\nMedian waiting time            : " << passdata_b2c.median_wt;
+
+        out << "\n\nTotal denied waiting time      : " << passdata_b2c.total_denied_wt;
+        out << "\nAverage denied waiting time    : " << passdata_b2c.avg_denied_wt;
+        out << "\nStdev denied waiting time      : " << passdata_b2c.std_denied_wt;
+
+        out << "\n\nTotal in-vehicle time          : " << passdata_b2c.total_ivt;
+        out << "\nAverage in-vehicle time        : " << passdata_b2c.avg_total_ivt;
+        out << "\nStdev in-vehicle time          : " << passdata_b2c.std_denied_wt;
+
+        out << "\n\nTotal crowded in-vehicle time  : " << passdata_b2c.total_crowded_ivt;
+        out << "\nAverage crowded in-vehicle time: " << passdata_b2c.avg_total_crowded_ivt;
+        out << "\nStdev crowded in-vehicle time  : " << passdata_b2c.std_total_crowded_ivt;
+
+        out << "\n\n### Corridor to Corridor passenger summary ###";*/
+    }
+}
+
+
+bool Network::write_busstop_output(string name1, string name2, string name3, string name4, string name5, string name6, string name7, string name8, string name9, string name10, string name11, string name12, string name13, string name14, string name15, string name16, string name17, string name18, string name19, string name20, string name21)
 {
     Q_UNUSED(name5)
     Q_UNUSED(name6)
@@ -7173,6 +7302,35 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
 
     FWF_ccdata cc_summarydata;
 
+
+    /** @ingroup PARTC
+    *   @todo Drottningholms OD outputs
+    *   - add temporary flag to recognize whether or not this is a dholm network - if all fixed buslines end at Mörby C...
+    *   - filter 'all_pass' by start & end time
+    *   - also check the category of each od being checked
+    *   - generate a FWF_passdata for each OD category
+    */
+    bool PARTCflag = false;
+    for (auto line : buslines)
+    {
+        if (!line->is_flex_line())
+        {
+            if (line->stops.back()->get_id() == PARTC::morby_station_id) //all fixed lines end at morby station
+                PARTCflag = true;
+            else
+                PARTCflag = false;
+        }
+    }
+    if (PARTCflag)
+    {
+        ofstream out21(name21.c_str(), ios_base::app); //"o_fwf_summary_odcategory.dat"
+        FWF_passdata total_passdata_b2b;
+        FWF_passdata total_passdata_b2c;
+        FWF_passdata total_passdata_c2c;
+    }
+    else
+        Q_UNUSED(name21)
+    
 
     // writing the crude data and summary outputs for each bus stop
     write_transitlogout_header(out1);
@@ -8946,7 +9104,8 @@ bool Network::writeall(unsigned int repl)
                 workingdir + "o_passenger_welfare_summary.dat",
                 workingdir + "o_fwf_summary.dat",
                 workingdir + "o_passenger_transitmode.dat",
-                workingdir + "o_passenger_dropoff.dat"
+                workingdir + "o_passenger_dropoff.dat",
+                workingdir + "o_fwf_summary_odcategory.dat"
                 );
     write_transitroutes(workingdir + "o_transit_routes.dat");
     return true;
