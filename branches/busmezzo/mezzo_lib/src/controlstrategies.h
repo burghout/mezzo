@@ -193,6 +193,17 @@ private:
     Network* theNetwork_; //!< currently needs access to the network to find the closest on-call Bus to origin stop of highest OD demand
 };
 
+class MaxWaitEmptyVehicleTripGeneration : public TripGenerationStrategy
+{
+public:
+    explicit MaxWaitEmptyVehicleTripGeneration(Network* theNetwork = nullptr);
+    ~MaxWaitEmptyVehicleTripGeneration() override = default;
+    bool calc_trip_generation(const set<Request*, ptr_less<Request*>>& requestSet, const vector<Busline*>& candidateServiceRoutes, const map<BusState, set<Bus*>>& fleetState, double time, set<Bustrip*>& unmatchedTripSet, set<Bustrip*>& unmatchedEmptyTripSet) override;
+
+private:
+    Network* theNetwork_; //!< currently needs access to the network to find the closest on-call Bus to origin stop of highest OD demand
+};
+
 //Matching Strategies
 //! @brief Base class for algorithms for assigning a Bus to an unmatched Bustrip.
 /*!

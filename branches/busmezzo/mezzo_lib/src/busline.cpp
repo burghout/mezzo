@@ -1165,6 +1165,29 @@ bool Bustrip::remove_request(const Request* req)
 	return false;
 }
 
+double Bustrip::get_max_wait_requests(double cur_time) const
+{
+    double max_wait = 0.0;
+    for (Request* r:scheduled_requests)
+    {
+        double wait = (cur_time - r->time_desired_departure);
+        if ( wait < max_wait)
+            max_wait = wait;
+    }
+    return max_wait;
+}
+
+double Bustrip::get_cumulative_wait_requests(double cur_time) const
+{
+    double total_wait = 0.0;
+    for (Request* r:scheduled_requests)
+    {
+        double wait = (cur_time - r->time_desired_departure);
+        total_wait += wait;
+    }
+    return total_wait;
+}
+
 double Bustrip::find_crowding_coeff (Passenger* pass)
 {
 	// first - calculate load factor

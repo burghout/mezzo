@@ -450,7 +450,10 @@ public:
 /** @ingroup DRT
     @{
 */
-	void set_starttime(double starttime_) { starttime = starttime_; }
+    double get_max_wait_requests(double cur_time) const; //!< returns the waiting time of longest waiting request for this trip
+    double get_cumulative_wait_requests(double cur_time) const; //!< returns sum of all the waiting times for requests for this trip
+
+    void set_starttime(double starttime_) { starttime = starttime_; }
 	void set_scheduled_for_dispatch(bool scheduled_for_dispatch_) { scheduled_for_dispatch = scheduled_for_dispatch_; }
 	bool is_scheduled_for_dispatch() const { return scheduled_for_dispatch; }
 	void set_activated(bool activated_) { activated = activated_; }
