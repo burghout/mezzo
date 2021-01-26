@@ -6993,7 +6993,7 @@ bool Network::writeFWFsummary(
         
         out << "\n\nTotal in-vehicle time          : " << total_passdata.total_ivt;
         out << "\nAverage in-vehicle time        : " << total_passdata.avg_total_ivt;
-        out << "\nStdev in-vehicle time          : " << total_passdata.std_denied_wt;
+        out << "\nStdev in-vehicle time          : " << total_passdata.std_total_ivt;
 
         out << "\n\nTotal crowded in-vehicle time  : " << total_passdata.total_crowded_ivt;
         out << "\nAverage crowded in-vehicle time: " << total_passdata.avg_total_crowded_ivt;
