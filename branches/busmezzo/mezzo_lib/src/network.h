@@ -94,6 +94,8 @@ struct FWF_passdata
 { 
     //Passengers
     int pass_completed = 0; // pass completed trips (that reached their final destination)
+    double avg_gtc = 0.0;
+    double std_gtc = 0.0;
     
     double total_wlkt = 0.0; //total walking time
     double avg_total_wlkt = 0.0; //avg walking time
