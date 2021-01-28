@@ -7239,10 +7239,26 @@ namespace PARTC
 
         out << "\n\n### Corridor to Corridor passenger summary ###";*/
     }
+    
+    //write out vkt for each replication to copy into excel and average over
+    void writeVKT(ostream& out, const FWF_vehdata& fix_vehdata, const FWF_vehdata& drt_vehdata)
+    {
+        out << drt_vehdata.total_vkt << "\t" << drt_vehdata.total_occupied_vkt << "\t" << drt_vehdata.total_empty_vkt << "\t"
+            << fix_vehdata.total_vkt << "\t" << fix_vehdata.total_occupied_vkt << "\t" << fix_vehdata.total_empty_vkt << endl;
+
+            /*out << "\nDRT VKT                     : " << drt_vehdata.total_vkt;
+        out << "\nDRT occupied VKT            : " << drt_vehdata.total_occupied_vkt;
+        out << "\nDRT empty VKT               : " << drt_vehdata.total_empty_vkt;
+        out << "\nDRT occupied time           : " << drt_vehdata.total_occupied_time;
+        out << "\nDRT empty time              : " << drt_vehdata.total_empty_time;
+        out << "\nDRT driving time            : " << drt_vehdata.total_driving_time;
+        out << "\nDRT idle time               : " << drt_vehdata.total_idle_time;
+        out << "\nDRT oncall time             : " << drt_vehdata.total_oncall_time;*/
+    }
 }
 
 
-bool Network::write_busstop_output(string name1, string name2, string name3, string name4, string name5, string name6, string name7, string name8, string name9, string name10, string name11, string name12, string name13, string name14, string name15, string name16, string name17, string name18, string name19, string name20, string name21)
+bool Network::write_busstop_output(string name1, string name2, string name3, string name4, string name5, string name6, string name7, string name8, string name9, string name10, string name11, string name12, string name13, string name14, string name15, string name16, string name17, string name18, string name19, string name20, string name21, string name22)
 {
     Q_UNUSED(name5)
     Q_UNUSED(name6)
@@ -7552,6 +7568,9 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
             }
             drt_tripdata.calc_trip_statistics(all_completed_trips);
         }
+
+        ofstream out22(name22.c_str(), ios_base::app); // "o_drtvkt.dat"
+        PARTC::writeVKT(out22, fix_vehdata, drt_vehdata);
 
         total_vehdata = fix_vehdata + drt_vehdata;
         writeFWFsummary(out18, total_passdata, fix_passdata, drt_passdata, total_vehdata, fix_vehdata, drt_vehdata, cc_summarydata, drt_tripdata);
@@ -9170,7 +9189,8 @@ bool Network::writeall(unsigned int repl)
                 workingdir + "o_fwf_summary.dat",
                 workingdir + "o_passenger_transitmode.dat",
                 workingdir + "o_passenger_dropoff.dat",
-                workingdir + "o_fwf_summary_odcategory.dat"
+                workingdir + "o_fwf_summary_odcategory.dat",
+                workingdir + "o_vkt.dat"
                 );
     write_transitroutes(workingdir + "o_transit_routes.dat");
     return true;
