@@ -848,7 +848,9 @@ bool SimpleEmptyVehicleTripGeneration::calc_trip_generation(const set<Request *,
     if (fleetState.at(BusState::OnCall).empty())  //a drt vehicle must be available
         return false;
     // 2. sort unMatchedTrips (by nr of requests)
-    set<Bustrip*,compareBustripByNrRequests> sortedTrips (unmatchedTripSet.begin(), unmatchedTripSet.end());
+    //set<Bustrip*,compareBustripByNrRequests> sortedTrips (unmatchedTripSet.begin(), unmatchedTripSet.end());
+    //set<Bustrip*,compareBustripByMaxWait> sortedTrips (unmatchedTripSet.begin(), unmatchedTripSet.end(),time) ;
+    set<Bustrip*,compareBustripByCumulativeWait> sortedTrips (unmatchedTripSet.begin(), unmatchedTripSet.end(),time) ;
 
     // 3. find nearest vehicle to the unMatchedTrip location (For now: hope for the best :)
     auto selectedTrip = *(sortedTrips.begin());
