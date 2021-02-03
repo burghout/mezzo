@@ -93,20 +93,30 @@ class Incident;
 struct FWF_passdata 
 { 
     //Passengers
-    int pass_completed=0; // pass completed trips (that reached their final destination)
-    double total_wlkt = 0; //total walking time
-    double avg_total_wlkt = 0; //avg walking time
-    double total_wt=0; // total waiting time
-    double avg_total_wt=0; // avg. total waiting time
-    double total_denied_wt=0; // total denied waiting time
-    double avg_denied_wt=0; // avg. denied waiting time
-    double min_wt=DBL_INF; // min. max waiting time
-    double max_wt=0; // max. waiting time
-    double median_wt=0; // median waiting time
-    double total_ivt=0; // total ivt time
-    double avg_total_ivt = 0;
-    double total_crowded_ivt = 0;
-    double avg_total_crowded_ivt = 0;
+    int pass_completed = 0; // pass completed trips (that reached their final destination)
+    
+    double total_wlkt = 0.0; //total walking time
+    double avg_total_wlkt = 0.0; //avg walking time
+    double std_total_wlkt = 0.0; //std walking time
+    
+    double total_wt = 0.0; // total waiting time
+    double avg_total_wt = 0.0; // avg. total waiting time
+    double std_total_wt = 0.0; // std total waiting time
+    double total_denied_wt = 0.0; // total denied waiting time
+    double avg_denied_wt = 0.0; // avg. denied waiting time
+    double std_denied_wt = 0.0; // std. denied waiting time
+    double min_wt = numeric_limits<double>::max(); // min. max waiting time
+    double max_wt = 0.0; // max. waiting time
+    double median_wt = 0.0; // median waiting time
+    
+    double total_ivt = 0.0; // total ivt time
+    double avg_total_ivt = 0.0;
+    double std_total_ivt = 0.0;
+    
+    double total_crowded_ivt = 0.0;
+    double avg_total_crowded_ivt = 0.0;
+    double std_total_crowded_ivt = 0.0;
+    
     size_t npass = 0; //number of passengers statistics have been calculated for
 
     void calc_pass_statistics(const vector<Passenger*>& passengers); //fill in aggregate passengers statistics based on whatever vector of passengers
@@ -116,16 +126,16 @@ struct FWF_passdata
 struct FWF_vehdata
 {
     // Vehicles
-    double total_vkt = 0; // total empty + occupied VKT
-    double total_empty_vkt = 0; // total empty VKT
-    double total_occupied_vkt = 0; // total occupied VKT
+    double total_vkt = 0.0; // total empty + occupied VKT
+    double total_empty_vkt = 0.0; // total empty VKT
+    double total_occupied_vkt = 0.0; // total occupied VKT
 
-    double total_empty_time = 0;
-    double total_occupied_time = 0;
+    double total_empty_time = 0.0;
+    double total_occupied_time = 0.0;
 
-    double total_driving_time = 0;
-    double total_idle_time = 0;
-    double total_oncall_time = 0;
+    double total_driving_time = 0.0;
+    double total_idle_time = 0.0;
+    double total_oncall_time = 0.0;
 
     friend FWF_vehdata operator+(const FWF_vehdata& lhs, const FWF_vehdata& rhs);
 
@@ -150,6 +160,41 @@ struct FWF_vehdata
     // NOTE: Turns out this is kindof tricky. Recall that bus instances represent the same bus but there are several of these instances being copied and destroyed over a run....
     // Instead.....things tend to revolve around trips again?
 
+};
+
+//!< @brief trip output data for fixed with flexible implementation. 
+struct FWF_tripdata 
+{
+    // DRT trip-specific summary
+    int total_trips = 0; // total number of activated trips that were calculated via calc_trip_statistics
+    int total_empty_trips = 0; // number of trips where no boardings occurred
+    int total_pass_carrying_trips = 0; // number of trips where at least one boarding occurred
+    
+    int total_pass_boarding = 0; // total boardings over all trips
+    int total_pass_alighting = 0; // total alightings over all trips (should match boardings)
+    
+    double avg_boarding_per_trip = 0; // average number of passengers that boarded each trip at any stop
+    double std_boarding_per_trip = 0; // stdev number of passengers that boarded each trip at any stop
+    double min_boarding_per_trip = numeric_limits<int>::max();
+    double max_boarding_per_trip = 0.0;
+    double median_boarding_per_trip = 0.0;
+
+    //!< @todo calc combined avg and std together with summing totals
+    /*friend FWF_tripdata operator+(const FWF_tripdata& lhs, const FWF_tripdata& rhs);*/
+    //FWF_tripdata& operator+=(const FWF_tripdata& rhs)
+    //{
+    //    
+    //    total_trips += rhs.total_trips; 
+    //    total_empty_trips += rhs.total_empty_trips; 
+    //    total_pass_carrying_trips += rhs.total_pass_carrying_trips; 
+
+    //    total_pass_boarding += rhs.total_pass_boarding; 
+    //    total_pass_alighting += rhs.total_pass_alighting; 
+
+    //    return *this;
+    //}
+
+    void calc_trip_statistics(const vector<Bustrip*>& trips); 
 };
 
 //!< @brief controlcenter output data for fixed with flexible implementation. 
@@ -264,7 +309,7 @@ public:
     bool writeoutput(string name); //!< writes detailed output, at this time theOD output!
     bool writesummary(string name); //!< writes the summary of the OD output
 
-    bool writeFWFsummary(ostream& out, const FWF_passdata& total_passdata, const FWF_passdata& fix_passdata, const FWF_passdata& drt_passdata, const FWF_vehdata& total_vehdata, const FWF_vehdata& fix_vehdata, const FWF_vehdata& drt_vehdata, const FWF_ccdata& cc_data); //!< summary of output for debugging fixed with flexible implementation
+    bool writeFWFsummary(ostream& out, const FWF_passdata& total_passdata, const FWF_passdata& fix_passdata, const FWF_passdata& drt_passdata, const FWF_vehdata& total_vehdata, const FWF_vehdata& fix_vehdata, const FWF_vehdata& drt_vehdata, const FWF_ccdata& cc_data, const FWF_tripdata& drt_tripdata); //!< summary of output for debugging fixed with flexible implementation
 
     bool writelinktimes(string name); //!<writes average link traversal times.
     bool writeheadways(string name); //!< writes the timestamps of vehicles entering a Virtual Link (i e Mitsim).

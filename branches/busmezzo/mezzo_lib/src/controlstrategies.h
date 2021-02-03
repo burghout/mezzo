@@ -101,7 +101,8 @@ public:
         const vector<Busline*>&          candidateServiceRoutes, //!< service routes available to potentially serve the requests
         const map<BusState, set<Bus*> >& fleetState,             //!< state of all vehicles that are potentially available to serve the requests
         const double                     time,                   //!< time for which calc_trip_generation is called
-        set<Bustrip*>&                   unmatchedTripSet        //!< set of trips that have been generated to serve requests that have not been assigned to a vehicle yet
+        set<Bustrip*>&                   unmatchedTripSet,       //!< set of trips that have been generated to serve requests that have not been assigned to a vehicle yet
+        set<Bustrip*>&                   unmatchedEmptyTripSet   //!< set of empty trips that have been generated to serve requests that have not been assigned to a vehicle yet
     ) = 0; //!< returns true if a trip was generated and added to the unmatchedTripSet and false otherwise
 
 public:
@@ -116,11 +117,12 @@ public:
     set<Bus*> get_driving_vehicles(const map<BusState, set<Bus*> >& fleetState) const;
     set<Bus*> get_vehicles_enroute_to_stop(const Busstop* stop, const set<Bus*>& vehicles) const; //!< returns true if at least one bus is currently driving to stop (and no intermediate stops) and false otherwise
 	double calc_route_travel_time(const vector<Link*>& routelinks, double time) const; //!< returns the sum of dynamic travel time costs over all links in routelinks
-    vector<Link*> find_shortest_path_between_stops(Network* theNetwork, const Busstop* origin_stop, const Busstop* destination_stop, double start_time) const; //!< returns the shortest route between a pair of stops for a given time, returns empty vector if none exists
+    vector<Link*> find_shortest_path_between_stops(Network* theNetwork, const Busstop* origin_stop, const Busstop* destination_stop, double start_time); //!< returns the shortest route between a pair of stops for a given time, returns empty vector if none exists
 	Busline* find_shortest_busline(const vector<Busline*>& lines, double time) const; //!< returns shortest busline in terms of scheduled in-vehicle time among lines
-
+    pair <Bus*,double> get_nearest_vehicle(const Busstop* targetStop, set<Bus *> vehicles, Network *theNetwork, double time); //!< returns nearest onCall vehicle, returns pair(nullptr,0.0) if none
 protected:
     map<int, map<int, vector<Busline*> > > cached_lines_connecting_stops; //!< cached results of TripGenerationStrategy::find_lines_connecting_stops
+    map<int, map<int, vector<Link*> > > cached_shortest_path_between_stops;
 };
 
 //! @brief null strategy that always returns false
@@ -128,7 +130,7 @@ class NullTripGeneration : public TripGenerationStrategy
 {
 public:
 	~NullTripGeneration() override = default;
-    bool calc_trip_generation(const set<Request*, ptr_less<Request*>> & requestSet, const vector<Busline*>& candidateServiceRoutes, const map<BusState, set<Bus*>>& fleetState, double time, set<Bustrip*>& unmatchedTripSet) override;
+    bool calc_trip_generation(const set<Request*, ptr_less<Request*>> & requestSet, const vector<Busline*>& candidateServiceRoutes, const map<BusState, set<Bus*>>& fleetState, double time, set<Bustrip*>& unmatchedTripSet, set<Bustrip*>& unmatchedEmptyTripSet) override;
 };
 
 //! @brief prioritizes generating trips for OD stop pair with the highest demand and most direct (in terms of scheduled in-vehicle time) service route
@@ -141,7 +143,7 @@ class NaiveTripGeneration : public TripGenerationStrategy
 {
 public:
 	~NaiveTripGeneration() override = default;
-    bool calc_trip_generation(const set<Request*, ptr_less<Request*>>& requestSet, const vector<Busline*>& candidateServiceRoutes, const map<BusState, set<Bus*>>& fleetState, double time, set<Bustrip*>& unmatchedTripSet) override;
+    bool calc_trip_generation(const set<Request*, ptr_less<Request*>>& requestSet, const vector<Busline*>& candidateServiceRoutes, const map<BusState, set<Bus*>>& fleetState, double time, set<Bustrip*>& unmatchedTripSet, set<Bustrip*>& unmatchedEmptyTripSet) override;
 };
 
 //! @brief Attempts to improve upon NaiveTripGeneration by taking into account matched requests, add bookkeeping to requests - trips - matched vehicles. Only send vehicles to unmatched requests, take capacity into account.
@@ -158,9 +160,7 @@ class SimpleTripGeneration : public TripGenerationStrategy
 {
 public:
     ~SimpleTripGeneration() override = default;
-    bool calc_trip_generation(const set<Request*, ptr_less<Request*>>& requestSet, const vector<Busline*>& candidateServiceRoutes, const map<BusState, set<Bus*>>& fleetState, double time, set<Bustrip*>& unmatchedTripSet) override;
-
-
+    bool calc_trip_generation(const set<Request*, ptr_less<Request*>>& requestSet, const vector<Busline*>& candidateServiceRoutes, const map<BusState, set<Bus*>>& fleetState, double time, set<Bustrip*>& unmatchedTripSet, set<Bustrip*>& unmatchedEmptyTripSet) override;
 };
 
 
@@ -176,10 +176,32 @@ class NaiveEmptyVehicleTripGeneration : public TripGenerationStrategy
 public:
 	explicit NaiveEmptyVehicleTripGeneration(Network* theNetwork = nullptr);
 	~NaiveEmptyVehicleTripGeneration() override = default;
-    bool calc_trip_generation(const set<Request*, ptr_less<Request*>>& requestSet, const vector<Busline*>& candidateServiceRoutes, const map<BusState, set<Bus*>>& fleetState, double time, set<Bustrip*>& unmatchedTripSet) override;
+    bool calc_trip_generation(const set<Request*, ptr_less<Request*>>& requestSet, const vector<Busline*>& candidateServiceRoutes, const map<BusState, set<Bus*>>& fleetState, double time, set<Bustrip*>& unmatchedTripSet, set<Bustrip*>& unmatchedEmptyTripSet) override;
 
 private:
 	Network* theNetwork_; //!< currently needs access to the network to find the closest on-call Bus to origin stop of highest OD demand
+};
+
+class SimpleEmptyVehicleTripGeneration : public TripGenerationStrategy
+{
+public:
+    explicit SimpleEmptyVehicleTripGeneration(Network* theNetwork = nullptr);
+    ~SimpleEmptyVehicleTripGeneration() override = default;
+    bool calc_trip_generation(const set<Request*, ptr_less<Request*>>& requestSet, const vector<Busline*>& candidateServiceRoutes, const map<BusState, set<Bus*>>& fleetState, double time, set<Bustrip*>& unmatchedTripSet, set<Bustrip*>& unmatchedEmptyTripSet) override;
+
+private:
+    Network* theNetwork_; //!< currently needs access to the network to find the closest on-call Bus to origin stop of highest OD demand
+};
+
+class MaxWaitEmptyVehicleTripGeneration : public TripGenerationStrategy
+{
+public:
+    explicit MaxWaitEmptyVehicleTripGeneration(Network* theNetwork = nullptr);
+    ~MaxWaitEmptyVehicleTripGeneration() override = default;
+    bool calc_trip_generation(const set<Request*, ptr_less<Request*>>& requestSet, const vector<Busline*>& candidateServiceRoutes, const map<BusState, set<Bus*>>& fleetState, double time, set<Bustrip*>& unmatchedTripSet, set<Bustrip*>& unmatchedEmptyTripSet) override;
+
+private:
+    Network* theNetwork_; //!< currently needs access to the network to find the closest on-call Bus to origin stop of highest OD demand
 };
 
 //Matching Strategies
@@ -199,7 +221,7 @@ public:
         Bustrip*                unmatchedTrip,  //!< planned trip that has not yet been assigned to any transit vehicle
         map<int, set<Bus*>>&    veh_per_sroute, //!< set of candidate vehicles assigned with different service routes
         double                  time,           //!< time find_tripvehicle_match is called
-        const set<Bustrip*>&    matchedTrips    //!< set of dynamically generated trips that already have a vehicle assigned to them, Note: the idea here is to use these in the future for e.g. dynamic trip-chaining
+        const set<Bustrip*, ptr_less<Bustrip*> >&    matchedTrips    //!< set of dynamically generated trips that already have a vehicle assigned to them, Note: the idea here is to use these in the future for e.g. dynamic trip-chaining
     ) = 0; //!< returns true if unmatchedTrip was assigned to a transit vehicle from veh_per_sroute
 
 protected:
@@ -212,7 +234,7 @@ class NullMatching : public MatchingStrategy
 {
 public:
 	~NullMatching() override = default;
-	bool find_tripvehicle_match(Bustrip* unmatchedTrip, map<int, set<Bus*>>& veh_per_sroute, double time, const set<Bustrip*>& matchedTrips) override;
+	bool find_tripvehicle_match(Bustrip* unmatchedTrip, map<int, set<Bus*>>& veh_per_sroute, double time, const set<Bustrip*, ptr_less<Bustrip*> >& matchedTrips) override;
 };
 
 //! @brief Naive matching strategy always attempts to match the unmatchedTrip to the first candidate transit vehicle found (if any) at the origin stop of the unmatchedTrip
@@ -224,7 +246,7 @@ class NaiveMatching : public MatchingStrategy
 {
 public:
 	~NaiveMatching() override = default;
-	bool find_tripvehicle_match(Bustrip* unmatchedTrip, map<int, set<Bus*>>& veh_per_sroute, double time, const set<Bustrip*>& matchedTrips) override;
+	bool find_tripvehicle_match(Bustrip* unmatchedTrip, map<int, set<Bus*>>& veh_per_sroute, double time, const set<Bustrip*, ptr_less<Bustrip*> >& matchedTrips) override;
 };
 
 //Scheduling Strategy
@@ -236,11 +258,10 @@ class SchedulingStrategy
 {
 public:
 	virtual ~SchedulingStrategy() = default;
-	virtual bool schedule_trips(Eventlist* eventlist, set<Bustrip*>& unscheduledTrips, double time) = 0; //!< returns true if an unscheduled trip has been given a dispatch time and added to the eventlist as a Busline action. This trip is then removed from the set of unscheduledTrips
+	virtual bool schedule_trips(Eventlist* eventlist, set<Bustrip*, ptr_less<Bustrip*> >& unscheduledTrips, double time) = 0; //!< returns true if an unscheduled trip has been given a dispatch time and added to the eventlist as a Busline action. This trip is then removed from the set of unscheduledTrips
 
 protected:
 	bool book_trip_dispatch(Eventlist* eventlist, Bustrip* trip); //!< add a matched and scheduled trip (i.e., Bustrip that has a Bus, a Busline, a schedule and a start time) to the trips list of its Busline and add a Busline event to dispatch this trip its given start time
-	void update_schedule(Bustrip* trip, double new_starttime); //!< takes trip that already has a preliminary schedule for both dispatch and stop visits, and updates this schedule given a new start time
 };
 
 //! @brief Null scheduling strategy that always returns false
@@ -248,7 +269,7 @@ class NullScheduling : public SchedulingStrategy
 {
 public:
 	~NullScheduling() override = default;
-	bool schedule_trips(Eventlist* eventlist, set<Bustrip*>& unscheduledTrips, double time) override;
+	bool schedule_trips(Eventlist* eventlist, set<Bustrip*, ptr_less<Bustrip*> >& unscheduledTrips, double time) override;
 };
 
 //! @brief Schedules the first trip found in unscheduledTrips to be dispatched at the earliest possible time (i.e. immediately)
@@ -259,7 +280,7 @@ class NaiveScheduling : public SchedulingStrategy
 {
 public:
 	~NaiveScheduling() override = default;
-	bool schedule_trips(Eventlist* eventlist, set<Bustrip*>& unscheduledTrips, double time) override;
+	bool schedule_trips(Eventlist* eventlist, set<Bustrip*, ptr_less<Bustrip*> >& unscheduledTrips, double time) override;
 };
 
 #endif // ifndef CONTROLSTRATEGIES_H

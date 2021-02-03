@@ -77,7 +77,7 @@ public:
 
 	void reset(); //!< resets members between simulation replications
 
-    bool addRequest(Request* req, const set<Busstop *, ptr_less<Busstop *> > &serviceArea); //!< adds request passenger Request to the requestSet
+    bool addRequest(Request* req, const set<Busstop*, ptr_less<Busstop*> > &serviceArea); //!< adds request passenger Request to the requestSet
 	void removeRequest(int pass_id); //!< removes requests with pass_id from the requestSet if it exists
     bool isFeasibleRequest(const Request* req, const set<Busstop*, ptr_less<Busstop*>>& serviceArea) const; //!< returns true if request is feasible for a given service area, false otherwise
 
@@ -100,7 +100,7 @@ private:
 class BustripGenerator
 {
     enum generationStrategyType { Null = 0, Naive, Simple }; //!< ids of passenger trip generation strategies known to BustripGenerator
-	enum emptyVehicleStrategyType {	EVNull = 0, EVNaive }; //!< ids of empty-vehicle redistribution strategies known to BustripGenerator
+	enum emptyVehicleStrategyType {	EVNull = 0, EVNaive, EVSimple }; //!< ids of empty-vehicle redistribution strategies known to BustripGenerator
 	friend class BustripVehicleMatcher; //!< give matcher class access to unmatchedTrips_. May remove trip from this set without destroying it if it has been matched. Also gives VehicleMatcher access to serviceRoutes for initializing vehicles
 
 public:
@@ -159,7 +159,7 @@ public:
 	bool matchVehiclesToEmptyVehicleTrips(BustripGenerator& tg, double time); //!< returns true if at LEAST one unmatched rebalancing trip was assigned to a vehicle
 
 private:
-	set<Bustrip*> matchedTrips_; //!< set of trips that have been matched with a transit vehicle but have not yet been dispatched
+	set<Bustrip*, ptr_less<Bustrip*> > matchedTrips_; //!< set of trips that have been matched with a transit vehicle but have not yet been dispatched
 	map<int, set<Bus*>> vehicles_per_service_route; //!< maps lineIDs among service routes for this control center to vector of candidate transit vehicles
 
 	MatchingStrategy* matchingStrategy_; //!< strategy for assigning unmatched trips to candidate transit vehicles

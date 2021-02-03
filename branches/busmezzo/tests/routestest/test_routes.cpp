@@ -14,30 +14,6 @@
 //! Route Tests
 //! Checking if the routing module works as expected
 
-
-//const std::string network_path = "../networks/SFnetwork/";
-//const std::string network_name = "masterfile.mezzo";
-
-//const QString expected_outputs_path = "://networks/SFnetwork/ExpectedOutputs/";
-//const QString path_set_generation_filename = "o_path_set_generation.dat";
-//const vector<QString> output_filenames =
-//{
-//	"o_od_stop_summary_without_paths.dat",
-//	"o_od_stops_summary.dat",
-//	"o_passenger_trajectory.dat",
-//	"o_passenger_welfare_summary.dat",
-//	"o_segments_line_loads.dat",
-//	"o_segments_trip_loads.dat",
-//	"o_selected_paths.dat",
-//	"o_transit_trajectory.dat",
-//	"o_transitline_sum.dat",
-//	"o_transitlog_out.dat",
-//	"o_transitstop_sum.dat",
-//	"o_trip_total_travel_time.dat",
-//};
-
-//const long int seed = 42;
-
 class TestRoutes : public QObject
 {
     Q_OBJECT

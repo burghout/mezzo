@@ -585,7 +585,7 @@ Vehicle* Link::exit_veh(double time, Link* nextlink, int lookback)
             moe_outflow->report_value(time);
             moe_speed->report_value((length / traveltime), time);
 
-			if (theParameters->drt && veh->get_type() == 4) // currently only used for fwf_summary.dat output file
+			if (veh->get_type() == 4) // currently only used for fwf_summary.dat output file
 			{
 				if (!is_dummylink()) // do not count the length on dummy-links
 				{
@@ -662,7 +662,7 @@ Vehicle* Link::exit_veh(double time)
             moe_outflow->report_value(time);
             moe_speed->report_value((length / traveltime), time);
 			
-			if (theParameters->drt && veh->get_type() == 4) // currently only used for fwf_summary.dat output file
+			if (veh->get_type() == 4) // currently only used for fwf_summary.dat output file
 			{
 				if (!is_dummylink()) // do not count the length on dummy-links
 				{

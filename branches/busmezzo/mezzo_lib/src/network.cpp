@@ -134,6 +134,21 @@ FWF_vehdata operator+(const FWF_vehdata& lhs, const FWF_vehdata& rhs)
     return sum;
 }
 
+//FWF_tripdata operator+(const FWF_tripdata& lhs, const FWF_tripdata& rhs)
+//{
+//    FWF_tripdata sum;
+//    sum.total_trips = lhs.total_trips + rhs.total_trips;
+//    sum.total_empty_trips = lhs.total_empty_trips + rhs.total_empty_trips;
+//    sum.total_pass_carrying_trips = lhs.total_pass_carrying_trips + rhs.total_pass_carrying_trips;
+//
+//    sum.total_pass_boarding = lhs.total_pass_boarding + rhs.total_pass_boarding;
+//    sum.total_pass_alighting = lhs.total_pass_alighting + rhs.total_pass_alighting;
+//    // @todo combined mean and combined stdev calculations
+//    // sum.avg_boarding_per_trip = lhs.avg_boarding_per_trip + rhs.avg_boarding_per_trip;
+//
+//    return sum;
+//}
+
 // End of helper functions
 
 Network::Network()
@@ -891,18 +906,6 @@ bool Network::readlink(istream& in)
     int new_id = graphlink_to_link.size(); // numbered from 0.
     link_to_graphlink [lid] = new_id;
     graphlink_to_link [new_id] = lid;
-
-    /** @ingroup DRT
-        @brief Quick and dirty labelling of dummylinks for calculating e.g. VKT outputs correctly. 
-        @todo Remove this section of code later. Mostly used for debugging/specific scenarios
-        @{
-    */
-    //check if this link should be marked as a dummy link
-    if (sdptr->get_vfree() > 1000) //assumes that dummy links have a free-flow speed of greater than 1000 m/s (3600 km/h)
-    {
-        link->set_dummylink(true);
-    }
-    /**@}*/
 
     return true;
 }
@@ -2257,8 +2260,8 @@ bool Network::createControlcenterDRTLines(Controlcenter* cc)
                     {
                         od_pair = new ODpair(startstop->get_origin_node(), endstop->get_dest_node(), 0.0, &vehtypes);
                         odpairs.push_back(od_pair);
-                        qDebug() << "createControlcenterDRTLines:----Missing OD pair, creating for Origin " << ori_id <<
-                            ", destination " << dest_id;
+                        /*qDebug() << "createControlcenterDRTLines:----Missing OD pair, creating for Origin " << ori_id <<
+                            ", destination " << dest_id;*/
                     }
 
                     stops.clear();
@@ -2369,8 +2372,8 @@ bool Network::createAllDRTLines()
                 {
                     od_pair = new ODpair(startstop.second->get_origin_node(),endstop.second->get_dest_node(),0.0, &vehtypes);
                     odpairs.push_back(od_pair);
-                    qDebug() <<  "createAllDRTLines----Missing OD pair, creating for Origin " << ori_id <<
-                                 ", destination " << dest_id;
+                    /*qDebug() <<  "createAllDRTLines----Missing OD pair, creating for Origin " << ori_id <<
+                                 ", destination " << dest_id;*/
                 }
 
                 stops.clear();
@@ -6948,12 +6951,17 @@ bool Network::writesummary(string name)
     return ok;
 }
 
-bool Network::writeFWFsummary(ostream& out, 
-    const FWF_passdata& total_passdata, const FWF_passdata& fix_passdata, const FWF_passdata& drt_passdata, 
-    const FWF_vehdata& total_vehdata, const FWF_vehdata& fix_vehdata, const FWF_vehdata& drt_vehdata,
-    const FWF_ccdata& cc_data)
+bool Network::writeFWFsummary(
+    ostream& out,
+    const FWF_passdata& total_passdata, 
+    const FWF_passdata& fix_passdata,
+    const FWF_passdata& drt_passdata,
+    const FWF_vehdata& total_vehdata, 
+    const FWF_vehdata& fix_vehdata,
+    const FWF_vehdata& drt_vehdata,
+    const FWF_ccdata& cc_data, 
+    const FWF_tripdata& drt_tripdata)
 {
-    assert(theParameters->drt);
     assert(out);
 
     Q_UNUSED(drt_passdata);
@@ -6970,21 +6978,26 @@ bool Network::writeFWFsummary(ostream& out,
 
         out << "\n\nTotal walking time             : " << total_passdata.total_wlkt;
         out << "\nAverage walking time           : " << total_passdata.avg_total_wlkt;
+        out << "\nStdev walking time             : " << total_passdata.std_total_wlkt;
 
         out << "\n\nTotal waiting time             : " << total_passdata.total_wt;
         out << "\nAverage total waiting time     : " << total_passdata.avg_total_wt;
+        out << "\nStdev total waiting time       : " << total_passdata.std_total_wt;
         out << "\nMinimum waiting time           : " << total_passdata.min_wt;
         out << "\nMaximum waiting time           : " << total_passdata.max_wt;
         out << "\nMedian waiting time            : " << total_passdata.median_wt;
 
         out << "\n\nTotal denied waiting time      : " << total_passdata.total_denied_wt;
         out << "\nAverage denied waiting time    : " << total_passdata.avg_denied_wt;
+        out << "\nStdev denied waiting time      : " << total_passdata.std_denied_wt;
         
         out << "\n\nTotal in-vehicle time          : " << total_passdata.total_ivt;
         out << "\nAverage in-vehicle time        : " << total_passdata.avg_total_ivt;
+        out << "\nStdev in-vehicle time          : " << total_passdata.std_total_ivt;
 
         out << "\n\nTotal crowded in-vehicle time  : " << total_passdata.total_crowded_ivt;
         out << "\nAverage crowded in-vehicle time: " << total_passdata.avg_total_crowded_ivt;
+        out << "\nStdev crowded in-vehicle time  : " << total_passdata.std_total_crowded_ivt;
         
  /*       out << "\n\n### Fixed passenger summary ###";
         out << "\n\nTotal walking time             : " << fix_passdata.total_wlkt;
@@ -7034,7 +7047,7 @@ bool Network::writeFWFsummary(ostream& out,
         out << "\nTotal idle time             : " << total_vehdata.total_idle_time;
         out << "\nTotal oncall time           : " << total_vehdata.total_oncall_time;
         
-        out << "\n\n### Fixed vehicle summmary ###";
+        out << "\n\n### Fixed vehicle summary ###";
         out << "\nFixed VKT                   : " << fix_vehdata.total_vkt;
         out << "\nFixed occupied VKT          : " << fix_vehdata.total_occupied_vkt;
         out << "\nFixed empty VKT             : " << fix_vehdata.total_empty_vkt;
@@ -7044,7 +7057,7 @@ bool Network::writeFWFsummary(ostream& out,
         out << "\nFixed idle time             : " << fix_vehdata.total_idle_time;
         out << "\nFixed oncall time           : " << fix_vehdata.total_oncall_time; //should always be zero...fixed schedule buses are currently always assigned a trip
 
-        out << "\n\n### DRT vehicle summmary ###";
+        out << "\n\n### DRT vehicle summary ###";
         out << "\nDRT VKT                     : " << drt_vehdata.total_vkt;
         out << "\nDRT occupied VKT            : " << drt_vehdata.total_occupied_vkt;
         out << "\nDRT empty VKT               : " << drt_vehdata.total_empty_vkt;
@@ -7054,11 +7067,25 @@ bool Network::writeFWFsummary(ostream& out,
         out << "\nDRT idle time               : " << drt_vehdata.total_idle_time;
         out << "\nDRT oncall time             : " << drt_vehdata.total_oncall_time;
 
-        out << "\n\n### ControlCenter summmary ###";
+        out << "\n\n### DRT trip summary ###";
+        out << "\nTotal trips                            : " << drt_tripdata.total_trips;
+        out << "\nTotal pass-carrying trips              : " << drt_tripdata.total_pass_carrying_trips;
+        out << "\nTotal empty trips                      : " << drt_tripdata.total_empty_trips;
+        out << "\nTotal pass boarding                    : " << drt_tripdata.total_pass_boarding;
+        out << "\nTotal pass alighting                   : " << drt_tripdata.total_pass_alighting;
+        
+        out << "\n\nAverage boarding per pass-carrying trip: " << drt_tripdata.avg_boarding_per_trip;
+        out << "\nStdev boarding per pass-carrying trip  : " << drt_tripdata.std_boarding_per_trip;
+        out << "\nMinimum boarding per pass-carrying trip: " << drt_tripdata.min_boarding_per_trip;
+        out << "\nMaximum boarding per pass-carrying trip: " << drt_tripdata.max_boarding_per_trip;
+        out << "\nMedian boarding per pass-carrying trip : " << drt_tripdata.median_boarding_per_trip;
+
+        out << "\n\n### ControlCenter summary ###";
         out << "\nRequests recieved           : " << cc_data.total_requests_recieved;
         out << "\nRequests rejected           : " << cc_data.total_requests_rejected;
         out << "\nRequests accepted           : " << cc_data.total_requests_accepted;
         out << "\nRequests served             : " << cc_data.total_requests_served;
+
         out << "\n\n------------------------------------------------------------------\n\n";
 
         return true;
@@ -7100,6 +7127,7 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
     ofstream out12(name12.c_str(),ios_base::app); //"o_od_stop_summary_without_paths.dat"
     ofstream out16(name16.c_str(), ios_base::app); //"o_passenger_trajectory.dat"
     ofstream out17(name17.c_str(), ios_base::app); //"o_passenger_welfare_summary.dat"
+    ofstream out18(name18.c_str(), ios_base::app); // drt+fwf summary filestream, "o_fwf_summary.dat"
 
   /*  this->write_busstop_output(
         workingdir + "o_transitlog_out.dat",                    out1
@@ -7141,6 +7169,7 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
     FWF_vehdata  total_vehdata;
     FWF_vehdata  fix_vehdata;
     FWF_vehdata  drt_vehdata;
+    FWF_tripdata drt_tripdata;
 
     FWF_ccdata cc_summarydata;
 
@@ -7225,11 +7254,16 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
         }
         write_passenger_welfare_summary(out17, total_pass_GTC, pass_counter);
         
-        
+
+        //fill in the fwf summary containers
+        total_passdata.pass_completed = pass_counter; //passengers that completed trips
+
+        // FWF passenger output
+        vector<Passenger*> all_pass = get_all_generated_passengers(); //should include all passengers, even those that did not complete their trip?
+        total_passdata.calc_pass_statistics(all_pass);
+
         if (theParameters->drt)
         {
-            ofstream out18(name18.c_str(), ios_base::app); // drt+fwf summary filestream, o_fwf_summary.dat
-
             Q_UNUSED(name19)
             Q_UNUSED(name20)
             //ofstream out19(name19.c_str(), ios_base::app); //o_passenger_transitmode_choices.dat
@@ -7248,16 +7282,11 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
             //    }
             //}
 
-            //fill in the fwf summary containers
-            total_passdata.pass_completed = pass_counter; //passengers that completed trips
-            
-            // FWF passenger output
-            vector<Passenger*> all_pass = get_all_generated_passengers(); //should include all passengers, even those that did not complete their trip?
-            total_passdata.calc_pass_statistics(all_pass);
-
             //write outputs for objects owned by control centers
+            vector<Bustrip*> all_completed_trips; // all completed drt trip from any control center
             for (const auto& cc : ccmap) //writing trajectory output for each drt vehicle
             {
+                
                 cc_summarydata.total_requests_recieved += cc.second->summarydata_.requests_recieved;
                 cc_summarydata.total_requests_rejected += cc.second->summarydata_.requests_rejected;
                 cc_summarydata.total_requests_accepted += cc.second->summarydata_.requests_accepted;
@@ -7266,6 +7295,7 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
                 for (const auto& vehtrip : cc.second->completedVehicleTrips_)
                 {
                     Bus* drtveh = vehtrip.first;
+                    all_completed_trips.push_back(vehtrip.second);
 
                     drt_vehdata.total_driving_time += drtveh->get_total_time_driving();
                     drt_vehdata.total_idle_time += drtveh->get_total_time_idle();
@@ -7280,6 +7310,7 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
                     vehtrip.first->write_output(out4); //write trajectory output for each bus vehicle that completed a trip
                     vehtrip.second->write_assign_segments_output(out7); // writing the assignment results in terms of each segment on individual trips
                 }
+
                 for (const auto& veh : cc.second->connectedVeh_)
                 {
                     Bus* drtveh = veh.second;
@@ -7296,14 +7327,11 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
                     veh.second->write_output(out4); //write trajectory output for each bus vehicle that has not completed a trip
                 }
             }
-
-            //place the write to out18 here
-            // 1. collect all total, fixed only vs drt only passenger and vehicle data in structs. 
-            // 2. Pass to writeFWFSummary function. Or writeDRTSummary dependent on where feels most relevant
-            total_vehdata = fix_vehdata + drt_vehdata;
-            writeFWFsummary(out18, total_passdata, fix_passdata, drt_passdata, total_vehdata, fix_vehdata, drt_vehdata,cc_summarydata);
-
+            drt_tripdata.calc_trip_statistics(all_completed_trips);
         }
+
+        total_vehdata = fix_vehdata + drt_vehdata;
+        writeFWFsummary(out18, total_passdata, fix_passdata, drt_passdata, total_vehdata, fix_vehdata, drt_vehdata, cc_summarydata, drt_tripdata);
         /* deactivated - unneccessary files in most cases
         for (vector<Busstop*>::iterator stop_iter = busstops.begin(); stop_iter < busstops.end(); stop_iter++)
         {
@@ -9165,18 +9193,21 @@ bool Network::init()
                 ODstops* od_stop = od_arrival.first;
                 double arrival_time = od_arrival.second;
 
-                if (od_stop->check_path_set() == true && !od_stop->is_active()) // if non-empty path set and not an initialization call. For resets then the passengers should already have been added to the odstops_demand->execute chain via add_passenger_to_odstop
+                if (od_stop->check_path_set() == true) // if no path set available to traveler then skip it
                 {
-                    Passenger* pass = new Passenger(pid, arrival_time, od_stop);
-                    od_stop->add_passenger_to_odstop(pass);
-                    pid++;
-                    pass->init();
-                    eventlist->add_event(arrival_time, pass);
-                }
-                else
-                {
-                    assert((theParameters->pass_day_to_day_indicator > 0 || theParameters->in_vehicle_d2d_indicator > 0)); // if od stop is active here, this means we have this is not the first call to Network::init after reset AND passengers are not deleted between resets with day2day (they have memory)
-                    assert(od_stop->has_empirical_arrivals()); //Empirical passengers will be initialized via ODstops::execute instead ('active' call to this will loop over ODstops::passengers_during_simulation)
+                    if (!od_stop->is_active()) // if non-empty path set and not an initialization call. For resets then the passengers should already have been added to the odstops_demand->execute chain via add_passenger_to_odstop
+                    {
+                        Passenger* pass = new Passenger(pid, arrival_time, od_stop);
+                        od_stop->add_passenger_to_odstop(pass);
+                        pid++;
+                        pass->init();
+                        eventlist->add_event(arrival_time, pass);
+                    }
+                    else
+                    {
+                        assert((theParameters->pass_day_to_day_indicator > 0 || theParameters->in_vehicle_d2d_indicator > 0)); // if od stop is active here, this means we have this is not the first call to Network::init after reset AND passengers are not deleted between resets with day2day (they have memory)
+                        assert(od_stop->has_empirical_arrivals()); //Empirical passengers will be initialized via ODstops::execute instead ('active' call to this will loop over ODstops::passengers_during_simulation)
+                    }
                 }
             }
         }
@@ -9768,6 +9799,10 @@ bool MatrixAction::execute(Eventlist* eventlist, double   /*time*/)
 void FWF_passdata::calc_pass_statistics(const vector<Passenger*>& passengers)
 {
     vector<double> waiting_times;
+    vector<double> waiting_denied_times;
+    vector<double> walking_times;
+    vector<double> inveh_times;
+    vector<double> inveh_crowded_times;
     
     double wlkt = 0.0;
     double wt = 0.0;
@@ -9787,28 +9822,84 @@ void FWF_passdata::calc_pass_statistics(const vector<Passenger*>& passengers)
 
             ivt = pass->calc_total_IVT();
             c_ivt = pass->calc_IVT_crowding();
+
+
+            total_wlkt = wlkt;
+            total_wt += wt;
+            total_denied_wt += d_wt;
+            total_ivt += ivt;
+            total_crowded_ivt += c_ivt;
+
+            min_wt = Min(min_wt, wt);
+            max_wt = Max(max_wt, wt);
+
+            walking_times.push_back(wlkt);
+            waiting_times.push_back(wt);
+            waiting_denied_times.push_back(d_wt);
+            inveh_times.push_back(ivt);
+            inveh_crowded_times.push_back(c_ivt);
         }
-
-        total_wlkt = wlkt;
-        total_wt += wt;
-        total_denied_wt += d_wt;
-        total_ivt += ivt;
-        total_crowded_ivt += c_ivt;
-
-        min_wt = Min(min_wt, wt);
-        max_wt = Max(max_wt, wt);
-
-        waiting_times.push_back(wt);
     }
     if (npass != 0)
     {
-        median_wt = findMedian(waiting_times);
-        avg_total_wlkt = total_wlkt / static_cast<double>(npass);
-        avg_total_wt = total_wt / static_cast<double>(npass);
-        avg_denied_wt = total_denied_wt / static_cast<double>(npass);
-        avg_total_ivt = total_ivt / static_cast<double>(npass);
-        avg_total_crowded_ivt = total_crowded_ivt / static_cast<double>(npass);
+        median_wt = fwf_stats::findMedian(waiting_times);
+
+        // calc mean and stdevs
+        pair<double, double> wlkt_stats = fwf_stats::calcMeanAndStdev(walking_times);
+        pair<double, double> wt_stats = fwf_stats::calcMeanAndStdev(waiting_times);
+        pair<double, double> wtd_stats = fwf_stats::calcMeanAndStdev(waiting_denied_times);
+        pair<double, double> ivt_stats = fwf_stats::calcMeanAndStdev(inveh_times);
+        pair<double, double> ivtc_stats = fwf_stats::calcMeanAndStdev(inveh_crowded_times);
+        
+        avg_total_wlkt = wlkt_stats.first;
+        std_total_wlkt = wlkt_stats.second;
+
+        avg_total_wt = wt_stats.first;
+        std_total_wt = wt_stats.second;
+
+        avg_denied_wt = wtd_stats.first;
+        std_denied_wt = wtd_stats.second;
+
+        avg_total_ivt = ivt_stats.first;
+        std_total_ivt = ivt_stats.second;
+
+        avg_total_crowded_ivt = ivtc_stats.first;
+        std_total_crowded_ivt = ivtc_stats.second;
     }
     
 }
 
+void FWF_tripdata::calc_trip_statistics(const vector<Bustrip*>& trips)
+{
+    vector<double> trip_boardings;
+    double trip_total_boarding;
+    for (const Bustrip* trip : trips)
+    {
+        if (trip->is_activated())
+        {
+            trip_total_boarding = trip->get_total_boarding();
+            ++total_trips;
+            total_pass_boarding += trip_total_boarding;
+            total_pass_alighting += trip->get_total_alighting();
+
+            if (trip_total_boarding == 0)
+            {
+                ++total_empty_trips;
+            }
+            else
+            {
+                trip_boardings.push_back(trip_total_boarding);
+                min_boarding_per_trip = Min(min_boarding_per_trip, trip_total_boarding);
+                max_boarding_per_trip = Max(max_boarding_per_trip, trip_total_boarding);
+                ++total_pass_carrying_trips;
+            }
+        }
+    }
+    if (total_pass_carrying_trips != 0)
+    {
+        median_boarding_per_trip = fwf_stats::findMedian(trip_boardings);
+        pair<double, double> boarding_stats = fwf_stats::calcMeanAndStdev(trip_boardings);
+        avg_boarding_per_trip = boarding_stats.first;
+        std_boarding_per_trip = boarding_stats.second;
+    }
+}

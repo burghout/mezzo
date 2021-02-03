@@ -174,7 +174,7 @@ public:
 	int get_bus_id () const {return bus_id;}
 	void set_bus_id (int bus_id_) {bus_id = bus_id_;}
 	int get_occupancy() {return occupancy;}
-	void set_occupancy (const int occup) {occupancy=occup;}
+	void set_occupancy(int occup);
 	int get_number_seats () {return number_seats;}
 	int get_capacity () {return capacity;}
 	bool get_on_trip () const {return on_trip;}
@@ -219,12 +219,17 @@ public:
 	Busstop* get_last_stop_visited() const { return last_stop_visited_; }
 	void set_last_stop_visited(Busstop* last_stop_visited) { last_stop_visited_ = last_stop_visited; } 
 	Busstop* get_next_stop() const; //!< returns the next stop of the current trip for this vehicle. If no trip is assigned to this vehicle then returns nullptr
+	Bustrip* get_next_trip(); //!< returns the next trip this bus is scheduled to visit according to it's driving_roster. Returns nullptr if there is no next trip (curr_trip)
+
+	Bus* progressFlexVehicle(Bus* oldbus, double time); //!< clones the oldbus into newbus, sets oldbus to null, disconnects it, removes it from service routes. Newbus inherits state from oldbus (DrivingEmpty), and is connected to cc, with same service routes as oldbus. Returns the new bus
+	void assignBusToTrip(Bus* bus, Bustrip* trip); //!< performs operations necessary to connect a bus with no trip with an 'unassigned' bustrip (for example the next trip of the driving_roster)
 
 	void set_flex_vehicle(bool flex_vehicle) { flex_vehicle_ = flex_vehicle; }
 	bool is_flex_vehicle() const { return flex_vehicle_; }
 	void add_sroute_id(int sroute_id) { sroute_ids_.insert(sroute_id); } 
 	void remove_sroute_id(int sroute_id) { if (sroute_ids_.count(sroute_id) != 0) { sroute_ids_.erase(sroute_id); } }
     void set_control_center(Controlcenter* CC) { CC_ = CC; }
+	Controlcenter* get_CC() { return CC_; }
 
 signals:
 	void stateChanged(Bus* bus, BusState oldstate, BusState newstate, double time); //!< signal informing a change in this vehicle's BusState

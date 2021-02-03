@@ -1,0 +1,6 @@
+Line_ID	Upstream_stop_ID	Upstream_stop_name	Downstream_stop_ID	Downstream_stop_name	Passenger_load	
+10001	1	A	3	C	1	
+10004	2	B	1	A	0	
+10011	3	C	5	E	1	
+10014	4	D	3	C	0	
+10019	5	E	4	D	1	

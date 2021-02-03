@@ -10,6 +10,18 @@
 #include <cassert>
 
 
+namespace cc_helper_functions
+{
+	//!< Removes request from 'Bustrip::scheduled_requests' for any bustrip in driving_roster
+	void removeRequestFromTripChain(const Request* req, const vector<Start_trip*>& driving_roster)
+	{
+		for (auto trip_dispatch : driving_roster)
+		{
+			trip_dispatch->first->remove_request(req);
+		}
+	}
+}
+
 void Controlcenter_SummaryData::reset()
 {
 	requests_recieved = 0;
@@ -76,6 +88,8 @@ void RequestHandler::removeRequest(const int pass_id)
 	{
 		Request* req = *it;
 		req->pass_owner->set_curr_request(nullptr);
+		if(req->assigned_trip != nullptr) // if request has been assigned to a trip-chain
+			cc_helper_functions::removeRequestFromTripChain(req, req->assigned_trip->driving_roster); //!< remove this request from scheduled request of any trip it might be scheduled to @todo perhaps change this to a 'ServedFinished' RequestState and save deletion for later in the future
         requestSet_.erase(req);
 		delete req;
 	}
@@ -121,7 +135,14 @@ void BustripGenerator::reset(int generation_strategy_type, int empty_vehicle_str
 	{
 		delete trip;
 	}
+
+	for (Bustrip* trip : unmatchedRebalancingTrips_)
+	{
+		delete trip;
+	}
 	unmatchedTrips_.clear();
+	unmatchedRebalancingTrips_.clear();
+
 	setTripGenerationStrategy(generation_strategy_type);
 	setEmptyVehicleStrategy(empty_vehicle_strategy_type);
 }
@@ -139,7 +160,6 @@ vector<Busline*> BustripGenerator::getServiceRoutes() const
 
 void BustripGenerator::cancelUnmatchedTrip(Bustrip* trip)
 {
-	assert(trip->driving_roster.empty());
 	if (unmatchedTrips_.count(trip) != 0)
 	{
 		delete trip;
@@ -149,7 +169,6 @@ void BustripGenerator::cancelUnmatchedTrip(Bustrip* trip)
 
 void BustripGenerator::cancelRebalancingTrip(Bustrip* trip)
 {
-	assert(trip->driving_roster.empty());
 	if (unmatchedRebalancingTrips_.count(trip) != 0)
 	{
 		delete trip;
@@ -159,9 +178,11 @@ void BustripGenerator::cancelRebalancingTrip(Bustrip* trip)
 
 bool BustripGenerator::requestTrip(const RequestHandler& rh, const map<BusState, set<Bus*>>& fleetState, double time)
 {
+	/*qDebug() << "BustripGenerator is requesting a passenger-carrying trip at time " << time;
+	qDebug() << "\tSize of requestSet: " << rh.requestSet_.size();*/
     if (generationStrategy_ != nullptr)
     {
-        bool trip_found = generationStrategy_->calc_trip_generation(rh.requestSet_, serviceRoutes_, fleetState, time, unmatchedTrips_); //returns true if trip has been generated and added to the unmatchedTrips_
+        bool trip_found = generationStrategy_->calc_trip_generation(rh.requestSet_, serviceRoutes_, fleetState, time, unmatchedTrips_, unmatchedRebalancingTrips_); //returns true if trip has been generated and added to the unmatchedTrips_
 
         if (!trip_found && !unmatchedTrips_.empty()) //if no trip was found but an unmatched trip remains in the unmatchedTrips set
 		{ 
@@ -175,9 +196,11 @@ bool BustripGenerator::requestTrip(const RequestHandler& rh, const map<BusState,
 
 bool BustripGenerator::requestRebalancingTrip(const RequestHandler& rh, const map<BusState, set<Bus*>>& fleetState, double time)
 {
+	/*qDebug() << "BustripGenerator is requesting a rebalancing trip at time " << time;
+	qDebug() << "\tSize of requestSet: " << rh.requestSet_.size();*/
 	if (emptyVehicleStrategy_ != nullptr)
 	{
-		return emptyVehicleStrategy_->calc_trip_generation(rh.requestSet_, serviceRoutes_, fleetState, time, unmatchedRebalancingTrips_); //returns true if trip has been generated and added to the unmatchedRebalancingTrips_
+		return emptyVehicleStrategy_->calc_trip_generation(rh.requestSet_, serviceRoutes_, fleetState, time, unmatchedTrips_, unmatchedRebalancingTrips_); //returns true if trip has been generated and added to the unmatchedRebalancingTrips_
 	}
 	return false;
 }
@@ -226,6 +249,15 @@ void BustripGenerator::setEmptyVehicleStrategy(int type)
 			abort();
 		}
 		emptyVehicleStrategy_ = new NaiveEmptyVehicleTripGeneration(theNetwork_);
+	}
+	else if (type == emptyVehicleStrategyType::EVSimple)
+	{
+		if (theNetwork_ == nullptr)
+		{
+			DEBUG_MSG_V("Problem with BustripGenerator::setEmptyVehicleStrategy - switching to " << type << " strategy failed due to theNetwork nullptr. Aborting...");
+			abort();
+		}
+		emptyVehicleStrategy_ = new SimpleEmptyVehicleTripGeneration(theNetwork_);
 	}
 	else
 	{
@@ -307,6 +339,8 @@ void BustripVehicleMatcher::setMatchingStrategy(int type)
 
 bool BustripVehicleMatcher::matchVehiclesToTrips(BustripGenerator& tg, double time)
 {
+	/*qDebug() << "BustripVehicleMatcher is matching passenger carrying trips to vehicles at time " << time;
+	qDebug() << "\tSize of unmatchedTrips: " << tg.unmatchedTrips_.size();*/
 	if (matchingStrategy_ != nullptr)
 	{
 		bool matchfound = false;
@@ -331,7 +365,8 @@ bool BustripVehicleMatcher::matchVehiclesToTrips(BustripGenerator& tg, double ti
 
 bool BustripVehicleMatcher::matchVehiclesToEmptyVehicleTrips(BustripGenerator& tg, double time)
 {
-	//DEBUG_MSG("BustripVehicleMatcher is matching empty vehicle trips to vehicles at time " << time);
+	/*qDebug() << "BustripVehicleMatcher is matching empty vehicle trips to vehicles at time " << time;
+	qDebug() << "\tSize of unmatchedRebalancingTrips: " << tg.unmatchedRebalancingTrips_.size();*/
 	if (matchingStrategy_ != nullptr)
 	{
 		bool matchfound = false;
@@ -369,6 +404,8 @@ void VehicleScheduler::reset(int scheduling_strategy_type)
 
 bool VehicleScheduler::scheduleMatchedTrips(BustripVehicleMatcher& tvm, double time)
 {
+	/*qDebug() << "VehicleScheduler is scheduling matched trips at time " << time;
+	qDebug() << "\tSize of matchedTrips set: " << tvm.matchedTrips_.size();*/
 	if (schedulingStrategy_ != nullptr)
 	{
 		return schedulingStrategy_->schedule_trips(eventlist_, tvm.matchedTrips_, time);
@@ -439,6 +476,7 @@ void Controlcenter::reset()
 		{
 			vehtrip.first->reset(); //reset initial vehicles instead of deleting
 		}
+		//!< @todo clean up all trips that are chained at this point. Assumes that the first trip in the roster is always 'responsible' for the others...not sure how to clean up without invalidating driving_roster at the moment
 		delete vehtrip.second;
 	}
 	completedVehicleTrips_.clear();
@@ -653,7 +691,7 @@ pair<Bus*,double> Controlcenter::getClosestVehicleToStop(Busstop* stop, double t
 		else
 		{
 			Busstop* laststop = veh->get_last_stop_visited(); //current stop if not driving
-			vector<Link*> shortestpath = find_shortest_path_between_stops(laststop, stop, time);
+			shortestpath = find_shortest_path_between_stops(laststop, stop, time);
 			expected_tt = calc_route_travel_time(shortestpath, time);
 			time_to_stop = expected_tt;
 		}
@@ -952,26 +990,26 @@ void Controlcenter::removeRequest(int pass_id)
 
 void Controlcenter::on_requestAccepted(double time)
 {
-	//DEBUG_MSG(Q_FUNC_INFO << ": Request Accepted at time " << time);	
+	//qDebug() << ": Request Accepted at time " << time;	
     Q_UNUSED(time)
 	summarydata_.requests_accepted += 1;
 }
 void Controlcenter::on_requestRejected(double time)
 {
-	//DEBUG_MSG(Q_FUNC_INFO << ": Request Rejected at time " << time);
+	//qDebug() << ": Request Rejected at time " << time;
     Q_UNUSED(time)
 	summarydata_.requests_rejected += 1;
 }
 
 void Controlcenter::on_tripGenerated(double time)
 {
-	//DEBUG_MSG(Q_FUNC_INFO << ": Trip Generated at time " << time);
+	//qDebug() << ": Trip Generated at time " << time;
     Q_UNUSED(time)
 }
 
 void Controlcenter::on_tripVehicleMatchFound(double time)
 {
-	//DEBUG_MSG(Q_FUNC_INFO << ": Vehicle - Trip match found at time " << time);
+	//qDebug() << ": Vehicle - Trip match found at time " << time;
     Q_UNUSED(time)
 }
 

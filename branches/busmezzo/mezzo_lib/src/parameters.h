@@ -83,6 +83,7 @@ extern int drt_min_occupancy; //!< currently used in controlstrategies to put di
 const double drt_exploration_wt = 0.0; //!< default value returns by Controlcenter if RTI or experience is unavailable for passenger anticipated waiting time calculations for decisions
 const double large_negative_utility = -10000.0;
 const double large_positive_utility = 10000.0;
+const double dummy_link_freeflow_speed = 1000.0;
 /**@}*/
 
 // GLOBAL VARIABLES

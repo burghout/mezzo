@@ -28,6 +28,7 @@ const vector<QString> output_filenames =
     "o_segments_line_loads.dat",
     "o_segments_trip_loads.dat",
     "o_selected_paths.dat",
+    "o_transit_routes.dat",
     "o_transit_trajectory.dat",
     "o_transitline_sum.dat",
     "o_transitlog_out.dat",
@@ -68,9 +69,10 @@ public:
 private Q_SLOTS:
     void testCreateNetwork(); //!< test loading a network
     void testInitNetwork(); //!< test generating passenger path sets & loading a network
-    void testDeterministicMap();
+    void testSortedBustrips();
     void testAssignment();//!< test asssignment of passengers
     void testRunNetwork();
+    void testPostRunAssignment(); //!< test assignment of passengers after running the network
     void testSaveResults();
     void testDelete(); //!< tests correct deletion
 
@@ -96,7 +98,8 @@ void TestDRTAlgorithms::testCreateNetwork()
 
 void TestDRTAlgorithms::testInitNetwork()
 {
-    //QFile::remove(path_set_generation_filename); //remove old passenger path sets
+    qDebug() << "Removing file " + path_set_generation_filename + ": " << QFile::remove(path_set_generation_filename); //remove old passenger path sets
+    
     qDebug() << "Initializing network in " + QString::fromStdString(network_path);
 
     nt->init();
@@ -114,70 +117,130 @@ void TestDRTAlgorithms::testInitNetwork()
     QVERIFY2 (theParameters->drt == true, "Failure, DRT not activated in parameters for PentaFeeder_drt");
     QVERIFY2 (AproxEqual(net->get_currenttime(),0.0), "Failure, currenttime should be 0 at start of simulation");
 
-    QVERIFY(theParameters->choice_set_indicator == 1); // Traveler choice set for this network is manually defined
-
     map<int,Controlcenter*> ccmap = net->get_controlcenters();
     QVERIFY2(ccmap.size() == 1, "Failure, network should have 1 controlcenter");
     QVERIFY2(ccmap.begin()->second->getGeneratedDirectRoutes() == true, "Failure, generate direct routes of controlcenter is not set to 1");
 
     QVERIFY2(net->get_buslines().size() == 20, "Failure, network should have 20 bus lines defined");
     QVERIFY2(net->get_busvehicles().size() == 0, "Failure, network should have 0 scheduled vehicles");
-    QVERIFY2(net->get_drtvehicles_init().size() == 4, "Failure, network should have 4 unassigned vehicles");
+    QVERIFY2(net->get_drtvehicles_init().size() == 2, "Failure, network should have 1 unassigned vehicles");
     QVERIFY2(get<0>(net->get_drtvehicles_init()[0])->get_capacity() == 25, "Failure, vehicles should have capacity 25");
 
     QVERIFY(theParameters->demand_format==3);
+    //Test reading of empirical passenger arrivals
+    QVERIFY2(theParameters->empirical_demand == 1, "Failure, empirical demand not set to 1 in parameters");
+    vector<pair<ODstops*, double> > empirical_passenger_arrivals = net->get_empirical_passenger_arrivals();
+    
+    QVERIFY2(empirical_passenger_arrivals.size() == 3, "Failure, there should be 1 empirical passenger arrivals");
     vector<ODstops*> odstops_demand = net->get_odstops_demand(); //get all odstops with demand defined for them
-    double total_demand = 0.0;
-    for(const auto& od : odstops_demand)
-    {
-        total_demand += od->get_arrivalrate();
-    }
-    QVERIFY2(AproxEqual(total_demand,200.0), "Failure, total demand should be 200 pass/h");
+    QVERIFY(odstops_demand.size() == 3); // the one empirical arrival is the one OD with demand
+    
+//    double total_demand = 0.0;
+//    for(const auto& od : odstops_demand)
+//    {
+//        total_demand += od->get_arrivalrate();
+//    }
+//    QVERIFY2(AproxEqual(total_demand,200.0), "Failure, total demand should be 200 pass/h");
+    
+    //!< Test if newly generated passenger path sets match expected output
+    //QVERIFY(theParameters->choice_set_indicator == 1); // Traveler choice set for this network is manually defined
+    QVERIFY(theParameters->choice_set_indicator == 0); // Traveler choice set for this network is generated
+    
+    qDebug() << "Comparing " + path_set_generation_filename + " with ExpectedOutputs/" + path_set_generation_filename;
+    QString ex_path_set_fullpath = expected_outputs_path + path_set_generation_filename;
+    QFile ex_path_set_file(ex_path_set_fullpath); //expected o_path_set_generation.dat
+    QVERIFY2(ex_path_set_file.open(QIODevice::ReadOnly | QIODevice::Text), "Failure, cannot open ExpectedOutputs/o_path_set_generation.dat");
+
+    QFile path_set_file(path_set_generation_filename); //generated o_path_set_generation.dat
+    QVERIFY2(path_set_file.open(QIODevice::ReadOnly | QIODevice::Text), "Failure, cannot open o_path_set_generation.dat");
+
+    QVERIFY2(path_set_file.readAll() == ex_path_set_file.readAll(), "Failure, o_path_set_generation.dat differs from ExpectedOutputs/o_path_set_generation.dat");
+
+    ex_path_set_file.close();
+    path_set_file.close();
 }
 
 
-void TestDRTAlgorithms::testDeterministicMap()
+
+
+struct compareBustripByNrRequests
 {
-    // throwaway test to test the ordering with and without a specialized less<T>
-    map <Busstop*,int> bsmap1;
-    map <Busstop*,int,ptr_less<Busstop*> > bsmap2;
-    for (int i = 0; i < 100; ++i)
+    bool operator () (const Bustrip* lhs, const Bustrip* rhs) const
     {
-        auto stop = new Busstop(i,"",0,0.0,10.0,1,1,1,0,1);
-        bsmap1 [stop] = i;
-        bsmap2 [stop] = i;
+        if (lhs->get_requests().size() != rhs->get_requests().size())
+            return lhs->get_requests().size() > rhs->get_requests().size();
+        else
+            return lhs->get_id() < rhs->get_id(); // tiebreaker return trip with smallest id
     }
+};
 
-    auto it1 = bsmap1.begin();
-    auto it2 = bsmap2.begin();
-    for (; (it1 != bsmap1.end()) && (it2!=bsmap2.end()); ++it1, ++it2)
+struct compareBustripByEarliestStarttime
+{
+    bool operator () (const Bustrip* lhs, const Bustrip* rhs) const
     {
-        auto stopid_ordered = (*it1).first->get_id();
-        auto stopid_unordered = (*it2).first->get_id();
-        QVERIFY ( stopid_ordered == stopid_unordered);
+        if (lhs->get_starttime() != rhs->get_starttime())
+            return lhs->get_starttime() < rhs->get_starttime();
+        else
+            return lhs->get_id() < rhs->get_id(); // tiebreaker return trip with smallest id
     }
+};
 
-    // now test for structures with pair <U*,V*> as key
-    map <pair <Busstop*, Busline*>, int> crazymap1;
-    map <pair <Busstop*, Busline*>, int, pair_less<pair <Busstop*, Busline*> > > crazymap2;
-    Busline* bl = new Busline();
-    for (int i = 0; i < 100; ++i)
-    {
-        auto stop = new Busstop(i,"",0,0.0,10.0,1,1,1,0,1);
-        pair <Busstop*, Busline*> val (stop,bl);
-        crazymap1 [val] = i;
-        crazymap2 [val] = i;
-    }
-    auto it3 = crazymap1.begin();
-    auto it4 = crazymap2.begin();
-    for (; (it3 != crazymap1.end()) && (it4!=crazymap2.end()); ++it3, ++it4)
-    {
-        auto stopid_ordered = (*it3).first.first->get_id();
-        auto stopid_unordered = (*it4).first.first->get_id();
-        QVERIFY ( stopid_ordered == stopid_unordered);
-    }
-
+void TestDRTAlgorithms::testSortedBustrips()
+{
+    //compare by num scheduled requests
+    auto busline = net->get_buslines().front();
+    set<Bustrip*> original;
+    Bustrip* t1 = new Bustrip(1,1.0,busline);
+    Bustrip* t2 = new Bustrip(2,1.0,busline);
+    auto rq1 = new Request();
+    auto rq2 = new Request();
+    t2->add_request(rq1);
+    t2->add_request(rq2);
+    original.insert(t1);
+    original.insert(t2);
+    set<Bustrip*,compareBustripByNrRequests> sorted (original.begin(), original.end());
+    auto firstOrig = *original.begin();
+    auto firstSorted = *sorted.begin();
+    QVERIFY(firstOrig->get_id() == 1);
+    QVERIFY(firstSorted->get_id() == 2);
+    QVERIFY(t1->get_requests().size() < t2->get_requests().size()) ;
+    
+    //check equivalence relation, lowest id first as tiebreaker
+    auto rq3 = new Request();
+    auto rq4 = new Request();
+    t1->add_request(rq3);
+    t1->add_request(rq4);
+    QVERIFY(t1->get_requests().size() == t2->get_requests().size());
+    
+    set<Bustrip*,compareBustripByNrRequests> sorted2 (original.begin(), original.end());
+    auto firstSorted2 = *sorted2.begin();
+    QVERIFY(firstSorted2->get_id() == 1);
+    QVERIFY(original.size() == 2);
+    QVERIFY(sorted2.size() == 2);
+    
+    //compare by starttime
+    t1->set_starttime(200.0);
+    t2->set_starttime(100.0);
+    set<Bustrip*,compareBustripByEarliestStarttime> sortedTime (original.begin(), original.end());
+    auto firstSortedTime = *sortedTime.begin();
+    QVERIFY(firstSortedTime->get_id() == 2);
+    
+    //check equivalence relation, lowest id first as tiebreaker
+    t1->set_starttime(t2->get_starttime()); 
+    set<Bustrip*,compareBustripByEarliestStarttime> sortedTime2 (original.begin(), original.end());
+    auto firstSortedTime2 = *sortedTime2.begin();
+    QVERIFY(firstSortedTime2->get_id() == 1);
+    QVERIFY(original.size() == 2);
+    QVERIFY(sortedTime2.size() == 2);
+    
+    delete t1;
+    delete t2;
+    delete rq1;
+    delete rq2;
+    delete rq3;
+    delete rq4;
 }
+
 
 
 void TestDRTAlgorithms::testAssignment()
@@ -232,12 +295,90 @@ void TestDRTAlgorithms::testAssignment()
 
 void TestDRTAlgorithms::testRunNetwork()
 {
-
     nt->start(QThread::HighestPriority);
     nt->wait();
 
     QString msg = "Failure current time " + QString::number(net->get_currenttime()) + " should be 10800.1 after running the simulation";
     QVERIFY2 (AproxEqual(net->get_currenttime(),10800.1), qPrintable(msg));
+}
+
+void TestDRTAlgorithms::testPostRunAssignment()
+{
+    vector<ODstops*> odstops_demand = net->get_odstops_demand();
+    //QVERIFY2(odstops_demand.size() == 140, "Failure, network should have 140 od stop pairs (with non-zero demand defined in transit_demand.dat) ");
+
+    for(auto od : odstops_demand)
+    {
+        // verify non-zero demand for this OD
+        QVERIFY2((od->get_arrivalrate() > 0 || od->has_empirical_arrivals()),"Failure, all ODstops in Network::odstops_demand should have positive arrival rate.");
+
+        QVERIFY(!od->get_passengers_during_simulation().empty()); // at least one passenger was generated
+        QVERIFY(od->first_passenger_start != nullptr); // at least one passenger was added to the Eventlist and its Passenger::start action called
+        Passenger* first_pass = od->first_passenger_start;
+        
+        QString orig_s = QString::number(od->get_origin()->get_id());
+        QString dest_s = QString::number(od->get_destination()->get_id());
+        
+        // check expected passenger behavior for this network
+        if(first_pass != nullptr)
+        {
+            qDebug() << "First passenger for OD " << "(" << orig_s << "," << dest_s << "):";
+            qDebug() << "\t" << "finished trip    : " << (first_pass->get_end_time() > 0);
+            qDebug() << "\t" << "start time       : " << first_pass->get_start_time();
+            qDebug() << "\t" << "last stop visited: " << first_pass->get_chosen_path_stops().back().first->get_id();
+            
+            // collect the first set of decisions for the first passenger for each ODstop with demand
+            list<Pass_connection_decision> connection_decisions = od->get_pass_connection_decisions(first_pass);
+            list<Pass_transitmode_decision> mode_decisions = od->get_pass_transitmode_decisions(first_pass);
+            list<Pass_dropoff_decision> dropoff_decisions = od->get_pass_dropoff_decisions(first_pass);
+            QVERIFY(connection_decisions.size() == 1);
+            QVERIFY(mode_decisions.size() == 1);
+            QVERIFY(dropoff_decisions.size() == 1);
+            
+            QVERIFY(connection_decisions.front().chosen_connection_stop == od->get_origin()->get_id()); // pass always stays (no walking links)
+            QVERIFY(mode_decisions.front().chosen_transitmode != TransitModeType::Null); // A choice of either fixed or flexible should have always been made
+            QVERIFY(mode_decisions.front().chosen_transitmode == TransitModeType::Flexible); //! only flexible modes available
+        
+            if(first_pass->get_end_time() > 0) // passenger completed their trip
+            {
+                QVERIFY(first_pass->get_curr_request() == nullptr); // curr request reset to null after a trip is completed
+            }
+            else // the passengers first decision was flexible but they never reached their destination
+            {
+                Request* request = first_pass->get_curr_request();
+                QVERIFY(request != nullptr); // not requests should have been rejected or canceled
+                // Print out the request attributes (maybe create a print member method of Request for this):
+//                    int id;
+//                    int pass_id = -1;    //!< id of passenger that created request
+//                    int ostop_id = -1;   //!< id of origin stop
+//                    int dstop_id = -1;   //!< id of destination stop
+//                    int load = -1;       //!< number of passengers in request
+//                    double desired_departure_time = -1.0;  //!< desired/earliest departure time for passenger
+//                    double time = -1.0;                    //!< time request was generated
+//                    RequestState state = RequestState::Null; //!< current state of the request
+//                    Passenger* pass_owner = nullptr; //!< passenger who sent this request
+//                    Bus* assigned_veh = nullptr; //!< vehicle that has been assigned to this request, nullptr if none has been assigned
+//                    Bustrip* assigned_trip = nullptr; //!< bustrip that has been assigned to this request, nullptr by default, updated when assigned
+                if(request != nullptr)
+                {
+                    QVERIFY(request->pass_id == request->pass_owner->get_id());
+                    
+                    qDebug() << "\t\t chose FLEX, did not reach final dest, curr_request: ";
+                    qDebug() << "\t\t pass_id      : " << request->pass_id;
+                    qDebug() << "\t\t ostop_id     : " << request->ostop_id;
+                    qDebug() << "\t\t dstop_id     : " << request->dstop_id;
+                    qDebug() << "\t\t load         : " << request->load;
+                    qDebug() << "\t\t t_desired_dep: " << request->time_desired_departure;
+                    qDebug() << "\t\t t_request_gen: " << request->time_request_generated;
+                    qDebug() << "\t\t request_state: " << Request::state_to_string(request->state);
+                }
+            }
+            
+            // verify that at least one passenger per OD made it to their destination
+            QString failmsg = "Failure, at least one passenger for ODstop (" + orig_s + "," + dest_s + ") with non-zero demand should have reached final destination.";
+            QVERIFY2(first_pass->get_end_time() > 0, qPrintable(failmsg)); // replaced the od->get_nr_pass_completed() call with this since there is some less intuitive dependency between this and calc_pass_measures() after saving results
+        }
+    }
 }
 
 void TestDRTAlgorithms::testSaveResults()

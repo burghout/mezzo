@@ -119,7 +119,13 @@ bool Busline::execute(Eventlist* eventlist, double time)
 		//if(curr_trip->first->is_flex_trip())
 		//	DEBUG_MSG("Busline " << id << " activating trip " << curr_trip->first->get_id() << " for bus " << busid);
         assert(curr_trip != trips.end());
-		curr_trip->first->activate(time, busroute, odpair, eventlist); // activates the trip, generates bus etc.
+		if(!curr_trip->first->is_activated()) // a trip that is successfully activated should not be activated twice
+			curr_trip->first->activate(time, busroute, odpair, eventlist); // activates the trip, generates bus etc.
+		else
+		{
+			qDebug() << "Warning - Busline::execute ignored double activation of trip " << curr_trip->first->get_id();
+		}
+
 		curr_trip++; // now points to next trip
 		if (curr_trip != trips.end()) // if there exists a next trip
 		{
@@ -881,9 +887,17 @@ Bustrip::~Bustrip ()
 	{
 		delete stop_visit;
 	}
-	for (Start_trip* trip_start : driving_roster)
+
+	if (!deleted_driving_roster) //!< ugly hack to ensure that we do not delete driving roster twice, in case delete has been called for two trips in the same driving roster
 	{
-		delete trip_start;
+		for (auto trip_start : driving_roster)
+		{
+			trip_start->first->deleted_driving_roster = true;
+		}
+		for (Start_trip* trip_start : driving_roster)
+		{
+			delete trip_start;
+		}
 	}
 }
 
@@ -907,6 +921,10 @@ void Bustrip::reset ()
 	last_stop_visited = stops.front()->first;
 	holding_at_stop = false;
 	scheduled_for_dispatch = false;
+	deleted_driving_roster = false;
+	activated = false;
+	total_boarding = 0;
+	total_alighting = 0;
 }
 
 void Bustrip::convert_stops_vector_to_map ()
@@ -1001,6 +1019,15 @@ bool Bustrip::advance_next_stop (double time, Eventlist* eventlist)
 
 bool Bustrip::activate (double time, Route* route, ODpair* odpair, Eventlist* eventlist_)
 {
+	if (get_busv() == nullptr) // this can happen if the Bustrip activation call is for a dynamically generated chained trip, and this is not the first trip in the chain, 
+							   // the 'cloned bus' is assigned to the chained trip dynamically when the previous trip has finished (see Bus::advance_curr_trip)
+							   // basically see busv == nullptr as another indicator that a bus is not available for this trip (yet) if this trip is a flex_trip
+	{
+		assert(theParameters->drt);
+		assert(is_flex_trip()); //should only happen for flex-trips
+		return false; // ignore this call
+	}
+
 	// inserts the bus at the origin of the route
 	// if the assigned bus isn't avaliable at the scheduled time, then the trip is activated by Bus::advance_curr_trip as soon as it is done with the previous trip
 	double first_dispatch_time = time;
@@ -1031,15 +1058,22 @@ bool Bustrip::activate (double time, Route* route, ODpair* odpair, Eventlist* ev
 		previous_trip = curr_trip-1;
 		if ((*previous_trip)->first->busv->get_on_trip() == true) // if the assigned bus isn't avaliable
 		{
-			ok=false;
-			return ok;
+			return false;
 		}
 		busv->set_curr_trip(this);	
 		first_dispatch_time = (*previous_trip)->first->get_last_stop_exit_time(); //Added by Jens 2014-07-03
 		/*if (busv->get_route() != NULL)
 			cout << "Warning, the route is changing!" << endl;*/
 	}
-	double dispatch_time = calc_departure_time(first_dispatch_time);
+	double dispatch_time;
+	if(!this->is_flex_trip())
+		dispatch_time = calc_departure_time(first_dispatch_time); // also sets 'actual dispatch time' attribute of Bustrip
+	else
+	{
+		dispatch_time = time; // @todo the assumption is that flex vehicles are dispatched immediately without the 'layover recovery' delay like scheduled bus-trips, assumed already on-call at a stop when trip was assigned. Perhaps model this more explicitly in the future.
+		actual_dispatching_time = time; 
+	}
+
 	if (dispatch_time < time)
 		cout << "Warning, dispatch time is before current time for bus trip " << id << endl;
 	busv->init(busv->get_bus_id(),4,busv->get_length(),route,odpair,time); // initialize with the trip specific details
@@ -1048,11 +1082,13 @@ bool Bustrip::activate (double time, Route* route, ODpair* odpair, Eventlist* ev
 	{
   		busv->set_on_trip(true); // turn on indicator for bus on a trip
 		ok = true;
+		assert(!is_activated()); // no trip should not be activated twice
 	}
 	else // if insert returned false
   	{
   		ok = false; 
   	}	
+	set_activated(ok);
 	return ok;
 }
 
@@ -1111,6 +1147,45 @@ void Bustrip::record_passenger_loads (vector <Visit_stop*>::iterator start_stop)
 		output_passenger_load.push_back(Bustrip_assign(line->get_id(), id, busv->get_id(), (*start_stop)->first->get_id() , (*start_stop)->first->get_name(), (*(start_stop+1))->first->get_id(), (*(start_stop + 1))->first->get_name(), assign_segements[(*start_stop)->first]));
 		this->get_line()->add_record_passenger_loads_line((*start_stop)->first, (*(start_stop+1))->first,assign_segements[(*start_stop)->first]);
 	}
+}
+
+bool Bustrip::remove_request(const Request* req)
+{
+	assert(req);
+	vector<Request*>::iterator rq_it = find(scheduled_requests.begin(), scheduled_requests.end(), req);
+	if (rq_it != scheduled_requests.end())
+	{
+		scheduled_requests.erase(rq_it);
+		return true;
+	}
+	/*else
+	{
+		qDebug() << "Warning - request " << req->id << " does not exist in scheduled_requests of trip " << id;
+	}*/
+	return false;
+}
+
+double Bustrip::get_max_wait_requests(double cur_time) const
+{
+    double max_wait = 0.0;
+    for (Request* r:scheduled_requests)
+    {
+        double wait = (cur_time - r->time_desired_departure);
+        if ( wait < max_wait)
+            max_wait = wait;
+    }
+    return max_wait;
+}
+
+double Bustrip::get_cumulative_wait_requests(double cur_time) const
+{
+    double total_wait = 0.0;
+    for (Request* r:scheduled_requests)
+    {
+        double wait = (cur_time - r->time_desired_departure);
+        total_wait += wait;
+    }
+    return total_wait;
 }
 
 double Bustrip::find_crowding_coeff (Passenger* pass)
@@ -1880,6 +1955,7 @@ void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, d
 		}
 		trip->passengers_on_board[this].clear(); // clear passengers with this stop as their alighting stop
 		trip->get_busv()->set_occupancy(trip->get_busv()->get_occupancy()-nr_alighting);	// update occupancy on bus
+		trip->update_total_alightings(nr_alighting);
 
 		// * Passengers on-board
 		//int avialable_seats = trip->get_busv()->get_occupancy() - trip->get_busv()->get_number_seats();
@@ -1966,6 +2042,7 @@ void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, d
 								trip->passengers_on_board[(*check_pass)->make_alighting_decision(trip, time)].push_back((*check_pass)); 
 							}
 							trip->get_busv()->set_occupancy(trip->get_busv()->get_occupancy()+1);
+							trip->update_total_boardings(1);
 							
 							if (theParameters->drt && CC != nullptr)
 							{
@@ -1994,6 +2071,7 @@ void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, d
 						else
 						{		
 							// if the passenger CAN NOT board
+							(*check_pass)->increment_nr_denied_boardings();
 							if ((*check_pass)->empty_denied_boarding() == true || this->get_id() != (*check_pass)->get_last_denied_boarding_stop_id()) // no double registration 
 							{
 								pair<Busstop*,double> denied_boarding;

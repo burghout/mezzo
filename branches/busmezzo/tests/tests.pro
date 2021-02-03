@@ -4,6 +4,7 @@ TEMPLATE = subdirs
 
 SUBDIRS += \
     drottningholm_collection_drt \
+    drottningholm_collection_fixed \
     sf_fixed_day2day \
     sf_fixed \
     controlcenter \

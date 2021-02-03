@@ -442,6 +442,7 @@ public:
 	vector <Visit_stop*> stops;						//!< contains all the busstops and the times that they are supposed to be served. NOTE: this can be a subset of the total nr of stops in the Busline (according to the schedule input file)
 	map <Busstop*, double> stops_map;
 	vector <Start_trip*> driving_roster;			//!< trips assignment for each bus vehicle.
+	bool deleted_driving_roster = false;			//!< false if the driving roster for a chain of trips that this trip is a part of has been deleted already, true otherwise
     map <Busstop*, passengers,ptr_less<Busstop*>> passengers_on_board; //!< passenger on-board stored by their alighting stop (format 3)
     map <Busstop*, int, ptr_less<Busstop*>> nr_expected_alighting;		//!< number of passengers expected to alight at the busline's stops (format 2)
     map <Busstop*, int, ptr_less<Busstop*>> assign_segements;			//!< contains the number of pass. traveling between trip segments
@@ -449,13 +450,24 @@ public:
 /** @ingroup DRT
     @{
 */
-	void set_starttime(double starttime_) { starttime = starttime_; }
+    double get_max_wait_requests(double cur_time) const; //!< returns the waiting time of longest waiting request for this trip
+    double get_cumulative_wait_requests(double cur_time) const; //!< returns sum of all the waiting times for requests for this trip
+
+    void set_starttime(double starttime_) { starttime = starttime_; }
 	void set_scheduled_for_dispatch(bool scheduled_for_dispatch_) { scheduled_for_dispatch = scheduled_for_dispatch_; }
 	bool is_scheduled_for_dispatch() const { return scheduled_for_dispatch; }
+	void set_activated(bool activated_) { activated = activated_; }
+	bool is_activated() const { return activated; }
 	void set_flex_trip(bool flex_trip_) { flex_trip = flex_trip_; }
 	bool is_flex_trip() const { return flex_trip; }
-    vector <Request*> get_requests() { return scheduled_requests;}
+    vector <Request*> get_requests() const { return scheduled_requests;}
     void add_request (Request* req) { scheduled_requests.push_back((req));}
+	bool remove_request(const Request* req); //!< removes request from scheduled requests if it exists, returns true if successful, false otherwise
+
+	void update_total_boardings(int n_boarding) { total_boarding += n_boarding; }
+	void update_total_alightings(int n_alighting) { total_alighting += n_alighting; }
+	int get_total_boarding() const { return total_boarding; }
+	int get_total_alighting() const { return total_alighting; }
 /**@}*/
 
 protected:
@@ -484,7 +496,10 @@ protected:
     */
     vector <Request*> scheduled_requests;
 	bool scheduled_for_dispatch = false; //!< true if this trip has been scheduled for dispatch (i.e. a busline event has been created with for the starttime of this trip) for its respective line, false otherwise
+	bool activated = false; //!< true if this trip has been successfully activated (i.e. a bus has started this trip), false otherwise
 	bool flex_trip = false; //!< true if this trip was generated dynamically
+	int total_boarding = 0;
+	int total_alighting = 0;
     /**@}*/
 };
 

@@ -644,7 +644,7 @@ map<Busline*, bool> Pass_path::check_maybe_worthwhile_to_wait (vector<Busline*> 
 		{
 			for (vector<Busline*>::iterator iter1_leg_lines = iter_leg_lines+1; iter1_leg_lines < leg_lines.end(); iter1_leg_lines++)
 			{
-				DEBUG_MSG("INFO::Pass_path::check_maybe_worthwhile_to_wait - comparing lines " << (*iter_leg_lines)->get_id() << " and " << (*iter1_leg_lines)->get_id());
+				//DEBUG_MSG("INFO::Pass_path::check_maybe_worthwhile_to_wait - comparing lines " << (*iter_leg_lines)->get_id() << " and " << (*iter1_leg_lines)->get_id());
 				if ((*iter_leg_lines)->is_flex_line() || (*iter1_leg_lines)->is_flex_line()) // ignore flex lines for this filtering rule since WT and IVT expectations are learned instead
 				{
 					assert(theParameters->drt);

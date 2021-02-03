@@ -95,10 +95,13 @@ public:
 	// output-related 
 	void write_selected_path(ostream& out);
 	void write_passenger_trajectory(ostream& out);
+	
 	void add_to_selected_path_trips (pair<Bustrip*,double> trip_time) {selected_path_trips.push_back(trip_time);}
 	void add_to_selected_path_stop (pair<Busstop*,double> stop_time) {selected_path_stops.push_back(stop_time);}
     void add_to_experienced_crowding_levels(pair<double,double> riding_coeff) {experienced_crowding_levels.push_back(riding_coeff);}
-	void add_to_denied_boarding (pair<Busstop*,double> denied_time) {waiting_time_due_denied_boarding.push_back(denied_time);}
+	void add_to_denied_boarding(pair<Busstop*, double> denied_time) { waiting_time_due_denied_boarding.push_back(denied_time); }
+	void increment_nr_denied_boardings(); //!< increment nr_denied_boardings counter
+	int get_nr_denied_boardings(); //!< returns the number of times a passenger missed a bus due to denied boarding
 	bool check_selected_path_trips_empty () {return selected_path_trips.empty();}
 	int get_selected_path_last_line_id ();
 	int get_last_denied_boarding_stop_id ();
@@ -175,7 +178,8 @@ protected:
     Random* random = nullptr;
     bool already_walked = false;
     bool sitting = false;		//!< 0 - sits; 1 - stands
-    int nr_boardings = 0;	//!< counts the number of times pass boarded a vehicle
+    int nr_boardings = 0;	//!< counts the number of times pass boarded a vehicle @note actually this seems to be more like a counter for each time a make_boarding_decision() call returned true, if e.g. denied boarding nr_boardings increases regardless...
+	int nr_denied_boardings = 0; //!< counts the number of times this passenger has been denied boarding a vehicle
     vector <pair<Busstop*, double> > selected_path_stops;				 //!< stops and corresponding arrival times
     vector <pair<Bustrip*, double> > selected_path_trips;				 //!< trips and corresponding boarding times
     vector <pair<double, double> > experienced_crowding_levels;		 //!< IVT and corresponding crowding levels (route segment level)
