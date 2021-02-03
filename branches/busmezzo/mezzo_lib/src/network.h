@@ -110,6 +110,8 @@ struct FWF_passdata
     double min_wt = numeric_limits<double>::max(); // min. max waiting time
     double max_wt = 0.0; // max. waiting time
     double median_wt = 0.0; // median waiting time
+    double cv_wt = 0.0; // waiting time coefficient of variation
+    
     
     double total_ivt = 0.0; // total ivt time
     double avg_total_ivt = 0.0;
@@ -311,7 +313,7 @@ public:
     bool writeoutput(string name); //!< writes detailed output, at this time theOD output!
     bool writesummary(string name); //!< writes the summary of the OD output
 
-    bool writeFWFsummary(ostream& out, const FWF_passdata& total_passdata, const FWF_passdata& fix_passdata, const FWF_passdata& drt_passdata, const FWF_vehdata& total_vehdata, const FWF_vehdata& fix_vehdata, const FWF_vehdata& drt_vehdata, const FWF_ccdata& cc_data, const FWF_tripdata& drt_tripdata); //!< summary of output for debugging fixed with flexible implementation
+    bool writeFWFsummary(ostream& out, const FWF_passdata& total_passdata, const FWF_passdata& fix_passdata, const FWF_passdata& drt_passdata, const FWF_vehdata& total_vehdata, const FWF_vehdata& fix_vehdata, const FWF_vehdata& drt_vehdata, const FWF_ccdata& cc_data, const FWF_tripdata& drt_tripdata, int pass_ignored); //!< summary of output for debugging fixed with flexible implementation
 
     bool writelinktimes(string name); //!<writes average link traversal times.
     bool writeheadways(string name); //!< writes the timestamps of vehicles entering a Virtual Link (i e Mitsim).
@@ -394,7 +396,7 @@ public:
 
     // Public transport
 
-    bool write_busstop_output(string name1, string name2, string name3, string name4, string name5, string name6, string name7, string name8, string name9, string name10, string name11, string name12, string name13, string name14, string name15, string name16, string name17, string name18, string name19, string name20, string name21, string name22); //<! writes all the bus-related output
+    bool write_busstop_output(string name1, string name2, string name3, string name4, string name5, string name6, string name7, string name8, string name9, string name10, string name11, string name12, string name13, string name14, string name15, string name16, string name17, string name18, string name19, string name20, string name21); //<! writes all the bus-related output
     void write_passenger_welfare_summary(ostream& out, double total_gtc, int total_pass);
     bool write_path_set (string name1); //!< writes the path-set generated at the initialization process (aimed to be used as an input file for other runs with the same network)
     bool write_path_set_per_stop (string name1, Busstop* stop);
