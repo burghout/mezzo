@@ -94,6 +94,8 @@ struct FWF_passdata
 { 
     //Passengers
     int pass_completed = 0; // pass completed trips (that reached their final destination)
+    double avg_gtc = 0.0;
+    double std_gtc = 0.0;
     
     double total_wlkt = 0.0; //total walking time
     double avg_total_wlkt = 0.0; //avg walking time
@@ -392,7 +394,7 @@ public:
 
     // Public transport
 
-    bool write_busstop_output(string name1, string name2, string name3, string name4, string name5, string name6, string name7, string name8, string name9, string name10, string name11, string name12, string name13, string name14, string name15, string name16, string name17, string name18, string name19, string name20); //<! writes all the bus-related output
+    bool write_busstop_output(string name1, string name2, string name3, string name4, string name5, string name6, string name7, string name8, string name9, string name10, string name11, string name12, string name13, string name14, string name15, string name16, string name17, string name18, string name19, string name20, string name21, string name22); //<! writes all the bus-related output
     void write_passenger_welfare_summary(ostream& out, double total_gtc, int total_pass);
     bool write_path_set (string name1); //!< writes the path-set generated at the initialization process (aimed to be used as an input file for other runs with the same network)
     bool write_path_set_per_stop (string name1, Busstop* stop);
