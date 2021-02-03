@@ -152,5 +152,18 @@
         <file>networks/Drottningholm_collection_fixed/ExpectedOutputs/o_transitstop_sum.dat</file>
         <file>networks/Drottningholm_collection_fixed/ExpectedOutputs/o_trip_total_travel_time.dat</file>
         <file>networks/Drottningholm_collection_fixed/ExpectedOutputs/o_fwf_summary.dat</file>
+        <file>networks/Drottningholm_collection_drt/ExpectedOutputs/o_vkt.dat</file>
+        <file>networks/Drottningholm_collection_fixed/ExpectedOutputs/o_vkt.dat</file>
+        <file>networks/DRTAlgorithms/ExpectedOutputs/o_vkt.dat</file>
+        <file>networks/FWF_testnetwork1/ExpectedOutputs/o_vkt.dat</file>
+        <file>networks/FWF_testnetwork1_d2d/ExpectedOutputs/o_vkt.dat</file>
+        <file>networks/FWF_testnetwork2/ExpectedOutputs/o_vkt.dat</file>
+        <file>networks/PentaFeeder_drt/ExpectedOutputs/o_vkt.dat</file>
+        <file>networks/PentaFeeder_fixed/ExpectedOutputs/o_fwf_summary.dat</file>
+        <file>networks/PentaFeeder_fixed/ExpectedOutputs/o_vkt.dat</file>
+        <file>networks/SFnetwork/ExpectedOutputs/o_fwf_summary.dat</file>
+        <file>networks/SFnetwork/ExpectedOutputs/o_vkt.dat</file>
+        <file>networks/SFnetwork_d2d/ExpectedOutputs/o_fwf_summary.dat</file>
+        <file>networks/SFnetwork_d2d/ExpectedOutputs/o_vkt.dat</file>
     </qresource>
 </RCC>

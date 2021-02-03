@@ -1,28 +1,28 @@
 ### Total passenger summary ###
-Passenger journeys completed: 195
+Passenger journeys completed: 158
 
-Total walking time             : 0
+Average GTC                    : -1.32039
+Stdev GTC                      : 0.651689
+
 Average walking time           : 0
 Stdev walking time             : 0
 
-Total waiting time             : 70812.2
-Average total waiting time     : 363.14
-Stdev total waiting time       : 278.183
-Minimum waiting time           : 0.216949
-Maximum waiting time           : 1235.65
-Median waiting time            : 306.729
+Average waiting time           : 308.031
+Stdev waiting time             : 211.42
+Maximum waiting time           : 999.631
+Median waiting time            : 283.632
+CV waiting time                : 0.68636
 
-Total denied waiting time      : 0
 Average denied waiting time    : 0
 Stdev denied waiting time      : 0
 
-Total in-vehicle time          : 48453.1
-Average in-vehicle time        : 248.477
-Stdev in-vehicle time          : 0
+Average in-vehicle time        : 254.036
+Stdev in-vehicle time          : 54.5893
 
-Total crowded in-vehicle time  : 46030.4
-Average crowded in-vehicle time: 236.053
-Stdev crowded in-vehicle time  : 51.8404
+Average crowded in-vehicle time: 241.334
+Stdev crowded in-vehicle time  : 51.8598
+
+Total passengers ignored (trip out of pass-generation start-stop interval): 37
 
 ### Total vehicle summary ###
 Total VKT                   : 98.175
