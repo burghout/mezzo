@@ -120,6 +120,10 @@ struct FWF_passdata
     double total_crowded_ivt = 0.0;
     double avg_total_crowded_ivt = 0.0;
     double std_total_crowded_ivt = 0.0;
+
+    double total_pass_vkt = 0.0;
+    double total_pass_drt_vkt = 0.0;
+    double total_pass_fix_vkt = 0.0;
     
     size_t npass = 0; //number of passengers statistics have been calculated for
 

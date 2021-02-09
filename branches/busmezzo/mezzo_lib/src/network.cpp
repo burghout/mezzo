@@ -7002,6 +7002,11 @@ bool Network::writeFWFsummary(
         out << "\n\nAverage crowded in-vehicle time: " << total_passdata.avg_total_crowded_ivt;
         out << "\nStdev crowded in-vehicle time  : " << total_passdata.std_total_crowded_ivt;
 
+        out << "\n\nTotal PKT      : " << total_passdata.total_pass_vkt;
+        out << "\nTotal Fixed PKT: " << total_passdata.total_pass_fix_vkt;
+        out << "\nTotal DRT PKT  : " << total_passdata.total_pass_drt_vkt;
+        out << "\nPKT mode split (FIX / Total, DRT / Total)     : " << total_passdata.total_pass_fix_vkt / total_passdata.total_pass_vkt << ", " << total_passdata.total_pass_drt_vkt / total_passdata.total_pass_vkt;
+
         out << "\n\nTotal passengers ignored (trip out of pass-generation start-stop interval): " << pass_ignored;
  /*       out << "\n\n### Fixed passenger summary ###";
         out << "\n\nTotal walking time             : " << fix_passdata.total_wlkt;
@@ -9833,6 +9838,10 @@ void FWF_passdata::calc_pass_statistics(const vector<Passenger*>& passengers)
     double d_wt = 0.0;
     double c_ivt = 0.0;
 
+    double vkt = 0.0;
+    double drt_vkt = 0.0;
+    double fix_vkt = 0.0;
+
     for(Passenger* pass : passengers)
     {
         if (pass->get_end_time() > 0) // will cause a crash otherwise when searching through incomplete output rows, so for now only passengers that completed their trip will count
@@ -9846,8 +9855,15 @@ void FWF_passdata::calc_pass_statistics(const vector<Passenger*>& passengers)
             ivt = pass->calc_total_IVT();
             c_ivt = pass->calc_IVT_crowding();
 
+            vkt = pass->get_total_vkt();
+            drt_vkt = pass->get_total_drt_vkt();
+            fix_vkt = pass->get_total_fix_vkt();
 
-            total_wlkt = wlkt;
+            total_pass_vkt += vkt;
+            total_pass_drt_vkt += drt_vkt;
+            total_pass_fix_vkt += fix_vkt;
+
+            total_wlkt += wlkt;
             total_wt += wt;
             total_denied_wt += d_wt;
             total_ivt += ivt;

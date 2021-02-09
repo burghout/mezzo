@@ -68,6 +68,10 @@ void Passenger::reset ()
     curr_request_ = nullptr;
 	temp_connection_path_utilities.clear();
 
+	total_vehicle_meters_traveled = 0;
+	total_fixvehicle_meters_traveled = 0;
+	total_flexvehicle_meters_traveled = 0;
+
 	double new_start_time = 0; 
 	while (new_start_time <= theParameters->start_pass_generation || new_start_time > theParameters->stop_pass_generation)
 		new_start_time = start_time + theRandomizers[0]->urandom(-300, 300); //The passengers should arrive at stops a little bit randomly, otherwise they might face the exact same situation every day
@@ -486,6 +490,36 @@ vector<Pass_path*> Passenger::get_first_leg_fixed_paths(const vector<Pass_path*>
 		}
 	}
 	return fix_paths;
+}
+
+void Passenger::update_vehicle_meters_traveled(int meters, bool is_flextrip)
+{
+	//!< update passenger meters traveled to calculate PKT...distinguish between 'flex trips' and 'fixed trips'
+	//! in other words a 'flex vehicle' can still serve a fixed trip, this will not count as a 'flex' or 'drt' trip
+	//! check if this bus is on a trip first of all
+	//! if the bus is on a trip, check if is a fixed or a flex trip
+	//! if fixed, update all passenger vkt for total, fixed and flex
+	total_vehicle_meters_traveled += meters;
+	if (is_flextrip)
+		total_flexvehicle_meters_traveled += meters;
+	else
+		total_fixvehicle_meters_traveled += meters;
+
+}
+
+double Passenger::get_total_vkt()
+{
+	return static_cast<double>(total_vehicle_meters_traveled) / 1000.0;
+}
+
+double Passenger::get_total_drt_vkt()
+{
+	return static_cast<double>(total_flexvehicle_meters_traveled) / 1000.0;
+}
+
+double Passenger::get_total_fix_vkt()
+{
+	return static_cast<double>(total_fixvehicle_meters_traveled) / 1000.0;
 }
 
 bool Passenger:: make_boarding_decision (Bustrip* arriving_bus, double time) 

@@ -22,6 +22,11 @@ Stdev in-vehicle time          : 824.805
 Average crowded in-vehicle time: 1547.83
 Stdev crowded in-vehicle time  : 783.565
 
+Total PKT      : 1398.7
+Total Fixed PKT: 1398.7
+Total DRT PKT  : 0
+PKT mode split (FIX / Total, DRT / Total)     : 1, 0
+
 Total passengers ignored (trip out of pass-generation start-stop interval): 0
 
 ### Total vehicle summary ###

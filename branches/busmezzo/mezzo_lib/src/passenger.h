@@ -148,6 +148,9 @@ public:
 protected:
 	TransitModeType chosen_mode_ = TransitModeType::Null; /**!< Null if no choice has been made yet, otherwise the result of a mode choice decision. Travelers do not currently re-make a choice of fixed or flexible mode and are commited to this mode for the next leg of their trip once this choice is made. */
 	Request* curr_request_ = nullptr; //!< should point to the current request of the traveler, nullptr if none is active
+	int total_vehicle_meters_traveled = 0; //!< total meters traveled using a transit vehicle (so basically everything but walking right now)
+	int total_flexvehicle_meters_traveled = 0; //!< total meters traveled using a transit vehicle that was dynamically scheduled and/or routed
+	int total_fixvehicle_meters_traveled = 0; //!< total meters traveled using a transit vehicle that followed a fixed schedule and route
 
 public:
 	map<ODstops*, map<Pass_path*, double> > temp_connection_path_utilities; //!< cached exp(path utilities) calculated for a given connection/transitmode/dropoff decision. Cleared at the beginning of each make_connection_decision call and filled via calls from this method
@@ -158,6 +161,10 @@ public:
 	bool is_flexible_user() { return chosen_mode_ == TransitModeType::Flexible; }
 	vector<Pass_path*> get_first_leg_flexible_paths(const vector<Pass_path*>& path_set) const; //!< returns all paths in path_set that have a flexible first transit leg (that a traveler would need to send a request for to ride with)
 	vector<Pass_path*> get_first_leg_fixed_paths(const vector<Pass_path*>& path_set) const; //!< returns all paths in path_set that have a fixed first transit leg
+	void update_vehicle_meters_traveled(int meters, bool is_flextrip); //!< updates total, flex and fixed vehicle meters traveled to calculate PKT in output
+	double get_total_vkt();
+	double get_total_drt_vkt();
+	double get_total_fix_vkt();
 signals:
 	void sendRequest(Request* req, double time); //!< signal to send Request message to Controlcenter along with time in which signal is sent
 	void boardedBus(int pass_id); //!< signal that a passenger with pass_id (this passenger's id) has just boarded a bus

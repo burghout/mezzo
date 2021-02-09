@@ -548,6 +548,23 @@ void Bus::update_meters_traveled(int meters_, bool is_empty)
 		total_empty_meters_traveled += meters_;
 	else
 		total_occupied_meters_traveled += meters_;
+
+	if ( (this->get_curr_trip() != nullptr) && this->get_on_trip() ) // the bus is currently on a trip
+	{
+		if(get_occupancy() > 0) // if there are passengers onboard, update their meters traveled as well
+		{
+			bool is_flextrip = this->get_curr_trip()->is_flex_trip();
+			map <Busstop*, passengers, ptr_less<Busstop*>> passengers_onboard = this->get_curr_trip()->get_passengers_on_board(); // pass stored by their alighting stop
+			for (auto alighting_stop : passengers_onboard)
+			{
+				vector<Passenger*> pass_with_alighting_stop = alighting_stop.second;
+				for (Passenger* pass : pass_with_alighting_stop)
+				{
+					pass->update_vehicle_meters_traveled(meters_, is_flextrip);
+				}
+			}
+		}
+	}
 }
 
 double Bus::get_total_vkt() const
