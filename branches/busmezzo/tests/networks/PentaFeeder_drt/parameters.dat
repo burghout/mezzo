@@ -49,7 +49,7 @@
 #transit_demand_parameters
    demand_format= 3
    demand_scale= 1.0
-   choice_set_indicator= 1
+   choice_set_indicator= 0
    pass_day_to_day_indicator= 0
    in_vehicle_d2d_indicator= 0
    break_criterium= 0.1
@@ -58,8 +58,8 @@
    waiting_time_coefficient= -0.00308
    walking_time_coefficient= -0.00308
    average_walking_speed= 66.66
-   max_nr_extra_transfers= 1
-   absolute_max_transfers= 3
+   max_nr_extra_transfers= 0
+   absolute_max_transfers= 2
    max_in_vehicle_time_ratio= 2.0
    max_walking_distance= 2500.0
    max_waiting_time= 1800.0

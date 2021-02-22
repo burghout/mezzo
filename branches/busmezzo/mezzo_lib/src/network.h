@@ -162,12 +162,6 @@ struct FWF_vehdata
 
         return *this;
     }
-
-    // @todo calc_VKT, maybe use total driving time (empty), total driving time (full) - dwelltime * avgSpeed?
-    // alt could grab the distance traversed while driving in different states?
-    // NOTE: Turns out this is kindof tricky. Recall that bus instances represent the same bus but there are several of these instances being copied and destroyed over a run....
-    // Instead.....things tend to revolve around trips again?
-
 };
 
 //!< @brief trip output data for fixed with flexible implementation. 
