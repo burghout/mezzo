@@ -66,7 +66,7 @@ public:
 private Q_SLOTS:
     void testCreateNetwork(); //!< test loading a network
     void testInitNetwork(); //!< test generating passenger path sets & loading a network
-    void testAssignment();//!< test asssignment of passengers
+    //void testAssignment();//!< test asssignment of passengers
     void testRunNetwork();
     void testSaveResults();
     void testDelete(); //!< tests correct deletion
@@ -144,12 +144,6 @@ void TestPentaFeeder_drt::testInitNetwork()
     ex_path_set_file.close();
     path_set_file.close();
     
-}
-
-void TestPentaFeeder_drt::testAssignment()
-{
-
-
 }
 
 void TestPentaFeeder_drt::testRunNetwork()
