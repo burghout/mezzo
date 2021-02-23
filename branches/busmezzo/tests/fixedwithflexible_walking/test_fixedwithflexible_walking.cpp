@@ -58,6 +58,7 @@ public:
 private Q_SLOTS:
     void testCreateNetwork(); //!< test loading a network
     void testInitNetwork(); //!< test generating passenger path sets & loading a network
+    void testPassPathSetDefinitions(); //!< tests if the passenger path sets conform to 'valid' path set definitions for each OD stop pair with positive demand rate
     void testFleetState(); //!< test methods for filtering vehicles dependent on fleetState in Controlcenter
     void testFlexiblePathExpectedLoS(); //!< test the reading and methods of a specific Pass_path instance, tests calculation of path attributes (ivt, wt, etc. via Controlcenter for flexible legs)
     void testPathSetUtilities(); //!< test navigating generated path-sets, calculating utilities under different circumstances (e.g. access to RTI for different legs)
@@ -169,6 +170,119 @@ void TestFixedWithFlexible_walking::testInitNetwork()
     map<int,Controlcenter*> ccmap = net->get_controlcenters();
     QVERIFY2(ccmap.size() == 1, "Failure, network should have 1 controlcenter");
     QVERIFY2(ccmap.begin()->second->getGeneratedDirectRoutes() == false, "Failure, generate direct routes of controlcenter is not set to false");
+
+}
+
+void TestFixedWithFlexible_walking::testPassPathSetDefinitions()
+{
+    /**
+       Want to check the validity of OD stops 1->4 path sets for FWF base network + walking. 
+
+@note 
+       1. Min number of transfers is 0 (drt 2 from s1 to s4)
+       2. Max number of transfers is 2 (fix or drt 1 -> fix2 -> fix or drt 3)
+       3. Bidirectional transit links are defined but we have unidirectional demand
+       4. One walking link, so the connection decision will sometimes be to stay at the same stop, i.e. all pairs of stops should be the same, or sometimes the first pair will be different
+            The alt_line structure is fixed
+       5. 27 paths total in 1->4, 5->4 direction
+
+Assertions:
+       1. Check that the stop sequence of a path also matches stops on the lines of each path (if the line is direct, and the only line then this means the start and end stops of that leg)
+       2. There should really be only one line in each 'alt_lines' set i.e. line leg set for this network (no opportunistic boarding)
+       3. Check that each the paths of each actually follows the correct structure (e.g. branch to corridor should have 6 alt_stops and must include transfer stop
+    */
+
+
+    vector<ODstops*> ods = net->get_odstops_demand();
+    for(auto od : ods)
+    {
+        int ostop = od->get_origin()->get_id();
+        int dstop = od->get_destination()->get_id();
+        qDebug() << "\tChecking paths for OD stop (" << ostop << "," << dstop << ")";  
+        vector<Pass_path*> pathset = od->get_path_set();
+        if(od->get_arrivalrate() > 0)
+            QVERIFY(!pathset.empty()); // there should always be a path for each OD with non-zero demand rate for this network
+
+        for(auto path : pathset)
+        {
+            qDebug() << "\tChecking validity of path: " << path->get_id();
+            vector<vector<Busline*> > alt_lines = path->get_alt_lines();
+            vector<vector<Busstop*> > alt_stops = path->get_alt_transfer_stops();
+
+            //!< General conditions that should hold for any path
+            // m = number of alt line sets in a path alternative
+            // 2m+2 = number of transit stop sets including OD
+            // m+1 = number of connection (walking) links
+            // m - 1 = number of transfers
+            size_t m = alt_lines.size();
+            int n_transfers = path->get_number_of_transfers();
+            QVERIFY(alt_stops.size() == 2*m + 2);
+            QVERIFY(path->get_walking_distances().size() == m + 1);
+            QVERIFY(n_transfers == static_cast<int>(m) - 1);
+            QVERIFY(n_transfers <= 2); //max number of transfers is 2 for this network
+
+            QVERIFY(alt_stops.size() > 2); // this network should not have any walking only legs (since no walking links are defined, and we should not have OD demand from an origin to itself)
+            QVERIFY(alt_stops.size() % 2 == 0); // alt stops sets always come in pairs (alight at stop+walk/stay at stop for departure/destination)
+
+            vector<pair<Busstop*,Busstop*> > arriving_departing_stop_pairs; // pairs of stops on the path. First in each pair is the stop of arrival/origin, second is stop of departure/destination
+
+            for(auto alt_stops_it = alt_stops.begin(); alt_stops_it != alt_stops.end(); advance(alt_stops_it,2)) // walk over pairs of alt stops
+            {
+                //qDebug() << "\t\tChecking alt_transfer_stops...";
+                auto alt_stops_it2 = alt_stops_it+1;
+                QVERIFY((*alt_stops_it).size() == 1); // only one stop in each alt stop vec for this network
+                QVERIFY((*alt_stops_it2).size() == 1);
+
+                Busstop* arr_stop = (*alt_stops_it).front();
+                Busstop* dep_stop = (*alt_stops_it2).front();
+
+                
+                if(arr_stop->get_id() == 5 || arr_stop->get_id() == 1) //there is a walking link available at stop 5 and 1
+                {
+                    QVERIFY(dep_stop->get_id() == 5 || dep_stop->get_id() == 1); // either the pass chooses to stay or walk
+                }  
+                else
+                {
+                    QVERIFY(arr_stop->get_id() == dep_stop->get_id()); // every pair of alt stops starting from the first and second should be the same (since we do not have walking links, and we only have one stop in each alt_stop set)
+                }
+                
+
+                arriving_departing_stop_pairs.push_back(make_pair(arr_stop,dep_stop)); // store each pair of arrival and departure locations to compare to alt_lines
+            }
+            QVERIFY(arriving_departing_stop_pairs.size() == m + 1); // there should be as many pairs as walking links
+            //!< check that transit links match stops in path
+            for(size_t idx = 0; idx != m; ++idx)
+            {
+                //qDebug() << "\t\tChecking if alt_lines matches alt_transfer_stops...";
+                QVERIFY(alt_lines[idx].size() == 1); // no overlapping lines (in terms of common stops) for this network
+                Busline* transit_link = alt_lines[idx].front();
+
+                Busstop* first_stop = transit_link->stops.front();
+                Busstop* last_stop = transit_link->stops.back();
+
+                pair<Busstop*,Busstop*> stop_pair1 = arriving_departing_stop_pairs[idx];
+                pair<Busstop*,Busstop*> stop_pair2 = arriving_departing_stop_pairs[idx+1];
+
+                //all lines, both fixed and flex are direct lines...
+                //QVERIFY(transit_link->is_flex_line());
+                QVERIFY(first_stop->get_id() == stop_pair1.second->get_id()); // boarding stop matches the start of the line
+                QVERIFY(last_stop->get_id() == stop_pair2.first->get_id()); // alighting stop matches the end of the line
+                
+//                if(idx == 0) //the first transit link
+//                {
+//                    QVERIFY(transit_link->is_flex_line());
+//                    QVERIFY(first_stop->get_id() == stop_pair1.second->get_id()); // boarding stop matches the start of the DRT line
+//                    QVERIFY(last_stop->get_id() == stop_pair2.first->get_id()); // alighting stop matches the end of the DRT line
+//                }
+//                else if(idx == m - 1) //the last transit link
+//                {
+//                    QVERIFY(!transit_link->is_flex_line());
+//                    QVERIFY(first_stop->get_id() == stop_pair1.second->get_id()); // boarding stop matches the start of the fixed line
+//                }
+                
+            } // for alt_lines in path
+        } //for paths in od
+    } //for ods with demand
 
 }
 
