@@ -422,48 +422,48 @@ Request* Passenger::createRequest(Busstop* origin_stop, Busstop* dest_stop, int 
     assert(desired_departure_time >= 0);
     assert(current_time >= 0);
 
-	Request* req = nullptr;
+    Request* req = nullptr;
 
     Controlcenter* cc = origin_stop->get_CC();
     if (cc)
     {
         if (!cc->isInServiceArea(dest_stop)) //if destination of passenger is not within range of the controlcenter of origin stop
         {
-			// @todo commented out, probably delete this exception handling, just makes things more confusing and solves a problem that has never occured. Should be guaranteed by caller instead
-			//        DEBUG_MSG("DEBUG: Passenger::start : passenger decided to connect at " << origin_stop->get_id() << ", but destination " <<
-						//dest_stop->get_id() << " is outside of service area of controlcenter, searching for transfer stop for ODstop of passenger...");
-			//        Busstop* transferstop = nullptr;
-			//        vector<Pass_path*> paths = OD_stop->get_path_set(); //check the path set of current ODstop pair
+            // @todo commented out, probably delete this exception handling, just makes things more confusing and solves a problem that has never occured. Should be guaranteed by caller instead
+            //        DEBUG_MSG("DEBUG: Passenger::start : passenger decided to connect at " << origin_stop->get_id() << ", but destination " <<
+                        //dest_stop->get_id() << " is outside of service area of controlcenter, searching for transfer stop for ODstop of passenger...");
+            //        Busstop* transferstop = nullptr;
+            //        vector<Pass_path*> paths = OD_stop->get_path_set(); //check the path set of current ODstop pair
 
-			//        for (const Pass_path* path : paths)
-			//        {
-			//            if (path->get_number_of_transfers() != 0) //find first path that includes transfers
-			//            {
-			//                //check if the first transfer point of this path is included within the drt service area
-			//                transferstop = path->get_first_transfer_stop();
-			//                if (transferstop != nullptr && cc->isInServiceArea(transferstop))
-			//                    break;
-			//            }
-			//        }
+            //        for (const Pass_path* path : paths)
+            //        {
+            //            if (path->get_number_of_transfers() != 0) //find first path that includes transfers
+            //            {
+            //                //check if the first transfer point of this path is included within the drt service area
+            //                transferstop = path->get_first_transfer_stop();
+            //                if (transferstop != nullptr && cc->isInServiceArea(transferstop))
+            //                    break;
+            //            }
+            //        }
 
-			//        if (transferstop != nullptr) //create request for transfer stop of first path instead of final destination TODO: what to do when there are several transfer stops i.e. several paths
-			//        {
-			//            DEBUG_MSG("DEBUG: Passenger::start : Transfer stop found! Sending request to travel to transfer stop " << transferstop->get_id());
-			//            req = new Request(this, this->get_id(), OD_stop->get_origin()->get_id(), transferstop->get_id(), load, desired_departure_time, time);
-			//        }
-			DEBUG_MSG_V("DEBUG: Passenger::start : passenger decided to connect at " << origin_stop->get_id() << ", but destination " << dest_stop->get_id() << " is outside of service area of controlcenter....");
-        }
-        else
-            {
-            req = new Request(this, this->get_id(), origin_stop->get_id(), dest_stop->get_id(), load, desired_departure_time, current_time); //create request with load 1 at current time 
-            }
+            //        if (transferstop != nullptr) //create request for transfer stop of first path instead of final destination TODO: what to do when there are several transfer stops i.e. several paths
+            //        {
+            //            DEBUG_MSG("DEBUG: Passenger::start : Transfer stop found! Sending request to travel to transfer stop " << transferstop->get_id());
+            //            req = new Request(this, this->get_id(), OD_stop->get_origin()->get_id(), transferstop->get_id(), load, desired_departure_time, time);
+            //        }
+            DEBUG_MSG_V("DEBUG: Passenger::start : passenger decided to connect at " << origin_stop->get_id() << ", but destination " << dest_stop->get_id() << " is outside of service area of controlcenter....");
         }
         else
         {
-		DEBUG_MSG_V("DEBUG: Passenger::start : passenger decided to connect at stop " << origin_stop->get_id() << ", but no controlcenter available at connection stop....");
+            req = new Request(this, this->get_id(), origin_stop->get_id(), dest_stop->get_id(), load, desired_departure_time, current_time); //create request with load 1 at current time 
+        }
+    }
+    else
+    {
+        DEBUG_MSG_V("DEBUG: Passenger::start : passenger decided to connect at stop " << origin_stop->get_id() << ", but no controlcenter available at connection stop....");
     }
 
-	return req;
+    return req;
 }
 
 vector<Pass_path*> Passenger::get_first_leg_flexible_paths(const vector<Pass_path*>& path_set) const
