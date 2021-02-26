@@ -144,17 +144,24 @@ void TestFixedWithFlexible_walking::testInitNetwork()
 
     QVERIFY2 (AproxEqual(net->get_currenttime(),0.0), "Failure, currenttime should be 0 at start of simulation");
 
+    
+    //transit demand
+    //Test reading of empirical passenger arrivals
+    QVERIFY2(theParameters->empirical_demand == 1, "Failure, empirical demand not set to 1 in parameters");
+    vector<pair<ODstops*, double> > empirical_passenger_arrivals = net->get_empirical_passenger_arrivals();
+    //QVERIFY2(empirical_passenger_arrivals.size() == 2, "Failure, there should be 2 empirical passenger arrivals");
+    
     vector<ODstops*> odstops_demand = net->get_odstops_demand();
-    QVERIFY2(odstops_demand.size() == 2, "Failure, network should have 7 od stop pairs (non-zero or defined in transit_demand) ");
+    QVERIFY2(odstops_demand.size() == 2, "Failure, network should have 2 od stop pairs (defined in transit_demand or transit_demand_empirical) ");
 
     //Check OD stop demand rate between stop 1 and 4
-    ODstops* stop_1to4 = net->get_ODstop_from_odstops_demand(1,4);
-    QVERIFY2(AproxEqual(stop_1to4->get_arrivalrate(),300.0),"Failure, ODstops stop 1 to stop 4 should have 300 arrival rate");
-    QVERIFY2(stop_1to4 != nullptr,"Failure, OD stop 1 to 4 is undefined ");
+//    ODstops* stop_1to4 = net->get_ODstop_from_odstops_demand(1,4);
+//    QVERIFY2(AproxEqual(stop_1to4->get_arrivalrate(),300.0),"Failure, ODstops stop 1 to stop 4 should have 300 arrival rate");
+//    QVERIFY2(stop_1to4 != nullptr,"Failure, OD stop 1 to 4 is undefined ");
 
-    ODstops* stop_5to4 = net->get_ODstop_from_odstops_demand(5,4);
-    QVERIFY2(AproxEqual(stop_5to4->get_arrivalrate(),300.0),"Failure, ODstops stop 5 to stop 4 should have 300 arrival rate");
-    QVERIFY2(stop_5to4 != nullptr,"Failure, OD stop 5 to 4 is undefined ");
+//    ODstops* stop_5to4 = net->get_ODstop_from_odstops_demand(5,4);
+//    QVERIFY2(AproxEqual(stop_5to4->get_arrivalrate(),300.0),"Failure, ODstops stop 5 to stop 4 should have 300 arrival rate");
+//    QVERIFY2(stop_5to4 != nullptr,"Failure, OD stop 5 to 4 is undefined ");
 
     //Parameters
     QVERIFY2(theParameters->drt == true, "Failure, DRT is not set to true in parameters");
@@ -1071,13 +1078,19 @@ void TestFixedWithFlexible_walking::testPassAssignment()
             
             if(connection_decisions.front().chosen_connection_stop == od->get_origin()->get_id()) //if chosen connection stop is the same as the original origin the first connection decision was to stay, otherwise walk
             {
-                if(mode_decisions.front().chosen_transitmode == TransitModeType::Flexible)
-                    list<Pass_dropoff_decision> dropoff_decisions = od->get_pass_dropoff_decisions(first_pass);          
-                QVERIFY(mode_decisions.front().chosen_transitmode != TransitModeType::Null); // A choice of either fixed or flexible should have always been made
+                qDebug() << "\t" << "first connection decision : stay at stop " << od->get_origin()->get_id();
+            }
+            else
+            {
+                qDebug() << "\t" << "first connection decision : walk from stop " << od->get_origin()->get_id() << " to " << connection_decisions.front().chosen_connection_stop;
             }
             
             if(!mode_decisions.empty())
             {
+                if(mode_decisions.front().chosen_transitmode == TransitModeType::Flexible)
+                    list<Pass_dropoff_decision> dropoff_decisions = od->get_pass_dropoff_decisions(first_pass);          
+                QVERIFY(mode_decisions.front().chosen_transitmode != TransitModeType::Null); // A choice of either fixed or flexible should have always been made
+                
                 if(mode_decisions.back().chosen_transitmode == TransitModeType::Fixed) //last chosen mode
                 {
                     QVERIFY(first_pass->get_curr_request() == nullptr); // a request should never have been generated if transit mode choice is fixed

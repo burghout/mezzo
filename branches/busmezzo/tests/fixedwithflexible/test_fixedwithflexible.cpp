@@ -115,7 +115,7 @@ void TestFixedWithFlexible::testInitNetwork()
     QVERIFY2 (AproxEqual(net->get_currenttime(),0.0), "Failure, currenttime should be 0 at start of simulation");
 
     vector<ODstops*> odstops_demand = net->get_odstops_demand();
-    QVERIFY2(odstops_demand.size() == 1, "Failure, network should have 6 od stop pairs (non-zero or defined in transit_demand) ");
+    QVERIFY2(odstops_demand.size() == 1, "Failure, network should have 1 od stop pairs (defined in transit_demand) ");
 
     //Check OD stop demand rate between stop 1 and 4
     ODstops* stop_1to4 = net->get_ODstop_from_odstops_demand(1,4);
