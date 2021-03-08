@@ -188,6 +188,4 @@ Line_ID	Trip_ID	Vehicle_ID	Start_stop_ID	Start_stop_name	End_stop_id	End_stop_na
 23	2325	374	24	Stop_24	23	Stop_23	0	
 23	2326	375	24	Stop_24	23	Stop_23	0	
 23	2327	376	24	Stop_24	23	Stop_23	0	
-8002	800201	8001	1	Stop_1	4	Stop_4	2	
-8002	800202	8005	1	Stop_1	4	Stop_4	1	
-8002	800203	8009	1	Stop_1	4	Stop_4	1	
+8002	800201	8001	1	Stop_1	4	Stop_4	1	

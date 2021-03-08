@@ -108,7 +108,7 @@ void TestFixedWithFlexible_walking::testInitNetwork()
     QVERIFY2(net->get_nodes().size() == 20, "Failure, network should have 20 nodes ");
     QVERIFY2(net->get_destinations().size() == 5, "Failure, network should have 5 destination nodes ");
     QVERIFY2(net->get_origins().size() == 5, "Failure, network should have 5 origin nodes ");
-    QVERIFY2(net->get_odpairs().size() == 18, "Failure, network should have 14 od pairs ");
+    QVERIFY2(net->get_odpairs().size() == 18, "Failure, network should have 18 od pairs ");
     QVERIFY2(net->get_stopsmap().size() == 10, "Failure, network should have 10 stops defined ");
 
     //check that there are walking links between stops 1 and 5 and no other stops
@@ -1036,6 +1036,12 @@ void TestFixedWithFlexible_walking::testPassAssignment()
                 - assert that if transitmode equal to fixed, no request was generated
             - If the passenger reached their final destination or not
             - If not, where did they end up, what is their current location
+            
+      @todo repeatability
+        - print out all decisions for first pass
+        - trace sequence of each vehicle, lifetime of each vehicle from e.g. transit_trajectory.dat
+            - print state updates...
+        - 
     */
     
     vector<ODstops*> odstops_demand = net->get_odstops_demand();
