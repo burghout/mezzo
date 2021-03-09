@@ -9221,7 +9221,7 @@ bool Network::init()
 
                 if (od_stop->check_path_set() == true) // if no path set available to traveler then skip it
                 {
-                    if (!od_stop->is_active()) // if non-empty path set and not an initialization call. For resets then the passengers should already have been added to the odstops_demand->execute chain via add_passenger_to_odstop
+                    if (!od_stop->is_active()) // if non-empty path set and not an initialization call. Active set first time ODstop::execute is called. For resets then the passengers should already have been added to the odstops_demand->execute chain via add_passenger_to_odstop
                     {
                         Passenger* pass = new Passenger(pid, arrival_time, od_stop);
                         od_stop->add_passenger_to_odstop(pass);

@@ -211,6 +211,8 @@ void ODstops::add_pass_waiting(Passenger* add_pass)
 	//	if(add_pass->is_flexible_user())
 	//		origin_stop->get_CC()->connectPassenger(add_pass); //connect passenger to the control center of their current stop if one exists
 	//}
+	if (find_if(waiting_passengers.begin(), waiting_passengers.end(), [add_pass](Passenger* pass) {return pass->get_id() == add_pass->get_id(); }) != waiting_passengers.end()) // pass is already in queue for this OD
+		qDebug() << "Warning - double addition of" << add_pass->get_id() << "to waiting passengerd of ODstop (" << this->get_origin()->get_id() << "," << this->get_destination()->get_id() << ")";
 	waiting_passengers.push_back(add_pass);
 }
 

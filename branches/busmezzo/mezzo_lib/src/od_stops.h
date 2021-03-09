@@ -413,7 +413,7 @@ public:
     map <Passenger*,list<Pass_onboard_experience> > get_onboard_output () {return output_pass_onboard_experience;}
 	vector <Passenger*> get_passengers_during_simulation () const {return passengers_during_simulation;}
 	
-	void add_pass_waiting(Passenger* add_pass);
+	void add_pass_waiting(Passenger* add_pass); //!< add passenger to the queue of this OD, called when passenger has arrived to the origin stop of this OD
 	void add_passenger_to_odstop(Passenger* pass) { passengers_during_simulation.push_back(pass); } // used for reading empirical pass arrivals
 	
 	// Passengers processes
