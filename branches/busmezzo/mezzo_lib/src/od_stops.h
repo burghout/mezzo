@@ -395,6 +395,7 @@ public:
 	// methods for filtering the path set of this OD stop pair
 	vector<Pass_path*> get_flex_first_paths(); //!< returns all paths for this OD that have a flexible first transit leg (empty if none exist)
 	vector<Pass_path*> get_fix_first_paths(); //!< returns all paths for this OD that have a fixed first transit leg (empty if none exist)
+	vector<Pass_path*> get_nonflex_first_paths(); //!< returns all paths for this OD that do NOT have a flexible first transit leg (similar to get_fix_first_paths() but also includes walking only paths)
 	vector<Pass_path*> get_nonflex_paths(); //!< returns all paths for this OD that do not contain a flexible transit leg (including walk only paths)
 	/**@}*/
 

@@ -303,8 +303,20 @@ double ODstops::calc_boarding_probability (Busline* arriving_bus, double time, P
 	map<Pass_path*,pair<bool,double> > set_utilities; // true - boarding, false - staying
 	vector<Busline*> first_leg_lines;
 	bool in_alt = false; // indicates if the current arriving bus is included 
+
+	vector<Pass_path*> decision_path_set;
+
+	if (theParameters->drt) // if using drt then boarding probabilities only calculated for paths where the first transit leg set (alt_lines) is operated as a fixed service
+	{
+		decision_path_set = this->get_nonflex_first_paths(); // all paths including walking only paths that do not have flex as the first transit leg.
+	}
+	else
+	{
+		decision_path_set = path_set; // all first legs are fixed without drt
+	}
+
 	// checks if the arriving bus is included as an option in the path set of this OD pair 
-	for (vector <Pass_path*>::iterator path = path_set.begin(); path < path_set.end(); path ++)
+	for (vector <Pass_path*>::iterator path = decision_path_set.begin(); path < decision_path_set.end(); path++)
 	{
 		if (in_alt == true)
 		{
@@ -326,14 +338,14 @@ double ODstops::calc_boarding_probability (Busline* arriving_bus, double time, P
 	}
 	if (in_alt == true)
 	{
-		if (path_set.size() < 2) // if the choice-set includes only a single alternative of the arriving bus - then there is no choice left
+		if (decision_path_set.size() < 2) // if the choice-set includes only a single alternative of the arriving bus - then there is no choice left
 		{
 			boarding_utility = ::large_positive_utility;
 			staying_utility = ::large_negative_utility;
 			return 1.0;
 		}
 		vector<Pass_path*> arriving_paths;
-		for (vector<Pass_path*>::iterator iter_paths = path_set.begin(); iter_paths < path_set.end(); iter_paths++)
+		for (vector<Pass_path*>::iterator iter_paths = decision_path_set.begin(); iter_paths < decision_path_set.end(); iter_paths++)
 		{
 			(*iter_paths)->set_arriving_bus_rellevant(false);
 			if ((*iter_paths)->get_alt_lines().empty() == false) //  in case it is not a walking-only alternative
@@ -355,7 +367,7 @@ double ODstops::calc_boarding_probability (Busline* arriving_bus, double time, P
 			}
 		}
 		boarding_utility = log (boarding_utility);
-		for (vector<Pass_path*>::iterator iter_paths = path_set.begin(); iter_paths < path_set.end(); iter_paths++)
+		for (vector<Pass_path*>::iterator iter_paths = decision_path_set.begin(); iter_paths < decision_path_set.end(); iter_paths++)
 		{
 			Busstop* first_boarding_stop = (*iter_paths)->get_alt_transfer_stops()[1].front(); //Added by Jens 2014-06-12 to increase the chance of boarding. Now only paths starting from this stop are evaluated.
 
@@ -455,6 +467,20 @@ vector<Pass_path*> ODstops::get_flex_first_paths()
 	}
 	return flex_paths;
 }
+
+vector<Pass_path*> ODstops::get_nonflex_first_paths()
+{
+	vector<Pass_path*> nonflex_paths; //paths where the first leg is flexible
+	for (Pass_path* path : path_set)
+	{
+		if (!path->is_first_transit_leg_flexible())
+		{
+			nonflex_paths.push_back(path);
+		}
+	}
+	return nonflex_paths;
+}
+
 
 vector<Pass_path*> ODstops::get_fix_first_paths()
 {
