@@ -360,9 +360,11 @@ void Passenger::start (Eventlist* eventlist, double time)
 				connection_stop->add_odstops_as_origin(OD_stop->get_destination(), od_stop);
 				OD_stop->get_destination()->add_odstops_as_destination(connection_stop, od_stop);
 			}
-			set_ODstop(connection_stop->get_stop_od_as_origin_per_stop(OD_stop->get_destination())); // set this stop as his new origin (new OD)
+			Busstop* currstop = OD_stop->get_origin();
 			
-			arrival_time_to_connected_stop += get_walking_time(connection_stop,start_time);
+			double walking_time = get_walking_time(connection_stop, start_time);
+			arrival_time_to_connected_stop += walking_time;
+			set_ODstop(connection_stop->get_stop_od_as_origin_per_stop(OD_stop->get_destination())); // set this stop as his new origin (new OD)
 			eventlist->add_event(arrival_time_to_connected_stop, this);
 
             pair<Busstop*,double> stop_time;
