@@ -8,6 +8,26 @@ ostream& operator<<(ostream& os, const TransitModeType& obj)
 	return os;
 }
 
+QString transitmodetype_to_QString(TransitModeType mode)
+{
+	QString mode_s = "";
+
+	switch (mode)
+	{
+	case TransitModeType::Null:
+		mode_s = "Null";
+		break;
+	case TransitModeType::Fixed:
+		mode_s = "Fixed";
+		break;
+	case TransitModeType::Flexible:
+		mode_s = "Flexible";
+		break;
+	}
+
+	return mode_s;
+}
+
 
 Passenger::Passenger ()
 {
