@@ -263,7 +263,7 @@ void Request::print_state()
     cout << endl;
 }
 
-QString Request::state_to_string(RequestState state)
+QString Request::state_to_QString(RequestState state)
 {
     QString state_s = "";
     switch (state)

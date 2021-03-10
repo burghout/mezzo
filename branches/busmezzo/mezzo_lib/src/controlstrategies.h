@@ -70,7 +70,7 @@ struct Request
 
     void set_state(RequestState);
     void print_state();
-    static QString state_to_string(RequestState state);
+    static QString state_to_QString(RequestState state);
     int get_id() const {return id;}
 
     bool operator == (const Request& rhs) const; //!< default equality comparison of Requests
