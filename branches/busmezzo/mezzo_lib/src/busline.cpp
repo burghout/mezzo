@@ -1861,6 +1861,7 @@ void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, d
 				od = stop_as_origin[(*alighting_passenger)->get_OD_stop()->get_destination()];
 			}
 			(*alighting_passenger)->set_ODstop(od); // set this stop as passenger's new origin
+			(*alighting_passenger)->set_chosen_mode(TransitModeType::Null); //reset the mode chosen of the pass to null (new mode choice is made after each alighting)
 			if (id == (*alighting_passenger)->get_OD_stop()->get_destination()->get_id() || (*alighting_passenger)->get_OD_stop()->check_path_set() == false) // if this stop is passenger's destination
 			{
 				// passenger has no further conection choice
