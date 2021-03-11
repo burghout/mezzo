@@ -61,6 +61,7 @@ private slots:
     void testCreateNetwork(); //!< test loading a network
     void testInitNetwork(); //!< test generating passenger path sets & loading a network
     void testInitParameters(); //!< tests that the parameters for the loaded network are as expected
+    void testInitRoutes(); //!< tests if the routes that are read in are actually possible given the configuration of the network...
     void testPassengerStart(); //!< tests for when a traveler first enters the simulation and makes a connection, transitmode and dropoff decision, sends a request if mode is flexible, changes 'chosen mode' state of traveler...etc
     void testRunNetwork();
     void testPassAssignment_day2day(); //!< tests of resulting pass assignment between days
@@ -204,6 +205,55 @@ void TestFixedWithFlexible_day2day::testInitParameters()
     QVERIFY2(theParameters->max_days == 20, "Failure, max days for day2day is not set to 20.");
 }
 
+void TestFixedWithFlexible_day2day::testInitRoutes()
+{
+    /**
+      @todo
+        1. Loop through all transit_routes (or routes), every transit route is a route (and is included as such) but not every route is a transit route
+        2. Check that all links are connected in the right sequence (innode should match outnode between links)
+        3. Check that each node has a turning movement defined for it that matches the sequence of the links and is active
+    */
+    
+    vector<Busroute*> routes = net->get_busroutes();
+    map<int,Turning*> turningmap = net->get_turningmap();
+    for(Busroute* route : routes)
+    {
+        //test if route found is a connected sequence of links
+        vector<Link*> rlinks = route->get_links();
+        for (Link* rlink : rlinks)
+        {
+            Link* nextlink = route->nextlink(rlink);
+            if (nextlink)
+            {
+                QString msg = QString("Failure, link %1 is not an upstream link to link %2").arg(rlink->get_id()).arg(nextlink->get_id());
+                QVERIFY2(rlink->get_out_node_id() == nextlink->get_in_node_id(), qPrintable(msg)); //outnode of preceding link should be innode of succeeding link
+                
+                //Check that a turning movement is defined for the connected links and is active
+                bool turningfound = false;
+                for(auto val : turningmap)
+                {
+                    Turning* turning = val.second;
+                    if(turning->is_active())
+                    {
+                        Link* inlink = turning->get_inlink();
+                        Link* outlink = turning->get_outlink();
+                        if( (inlink->get_id() == rlink->get_id()) && (outlink->get_id() == nextlink->get_id()) )
+                        {
+                            //check that the turning node matches the links as well
+                            Node* node = turning->get_node();
+                            QVERIFY(rlink->get_out_node_id() == node->get_id());
+                            QVERIFY(nextlink->get_in_node_id() == node->get_id());
+                            turningfound = true;
+                        }
+                    }
+                    
+                }
+                msg = QString("Failure, no active turning exists between link %1 and link %2").arg(rlink->get_id()).arg(nextlink->get_id());
+                QVERIFY2(turningfound, qPrintable(msg));
+            }
+        }
+    }
+}
 
 
 void TestFixedWithFlexible_day2day::testPassengerStart()

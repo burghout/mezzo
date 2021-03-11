@@ -578,6 +578,7 @@ protected:
     @{
 */
 public:
+    map <int, Turning*> get_turningmap() { return turningmap; } //!< currently only used for debugging/testing
     vector<pair<ODstops*, double> > get_empirical_passenger_arrivals() const { return empirical_passenger_arrivals; }
 protected:
     vector <pair<ODstops*, double> > empirical_passenger_arrivals; //!< all empirical passenger arrivals consisting of stop OD and arrival time. Used to generate and initialize passengers between resets. Added to ODstops::passengers_during_simulation in Network::init
