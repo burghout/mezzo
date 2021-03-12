@@ -173,7 +173,7 @@ private:
 */
 class VehicleScheduler
 {
-	enum schedulingStrategyType {Null = 0, Naive = 1}; //!< ids of strategies for scheduling trips that are known to the VehicleScheduler
+	enum schedulingStrategyType {Null = 0, Naive = 1, LatestDeparture = 2}; //!< ids of strategies for scheduling trips that are known to the VehicleScheduler
 
 public:
 	explicit VehicleScheduler(Eventlist* eventlist = nullptr, SchedulingStrategy* SchedulingStrategy = nullptr);

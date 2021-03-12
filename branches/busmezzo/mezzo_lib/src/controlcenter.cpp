@@ -427,7 +427,11 @@ void VehicleScheduler::setSchedulingStrategy(int type)
 	else if (type == schedulingStrategyType::Naive) 
 	{
 		schedulingStrategy_ = new NaiveScheduling();
-	} 
+	}
+	else if (type == schedulingStrategyType::LatestDeparture)
+	{
+		schedulingStrategy_ = new LatestDepartureScheduling();
+	}
 	else
 	{
 		DEBUG_MSG("VehicleScheduler::setSchedulingStrategy() - strategy " << type << " is not recognized! Setting strategy to nullptr. ");
