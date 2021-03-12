@@ -1,8 +1,8 @@
 Stop_ID	Stop_name	Line_ID	Average_headway	Average_dwell_time	Average_abs_schedule_deviation	Average_waiting_time_per_stop	Total_pass_boarding	Standard_deviation_headway	Standard_deviation_dwell_time	Share_on_time	Share_early	Share_late	Total_pass_riding_time	Total_pass_dwell_time	Total_pass_waiting_time	Total_pass_holding_time	Total_pass_weighted_in_vehicle_time	
-1	Stop_1	1	360	2	0.600015	0	0	1.03781e-13	0	1	0	0	0	0	0	0	0	0	
+1	Stop_1	1	360	2	0.600015	0	0.037037	1.03781e-13	0	1	0	0	0	2	180	0	0	0	
 1	Stop_1	8001	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	-0	-0	-nan(ind)	-nan(ind)	-nan(ind)	0	0	0	0	-nan(ind)	0	
 1	Stop_1	8021	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	-0	-0	-nan(ind)	-nan(ind)	-nan(ind)	0	0	0	0	-nan(ind)	0	
-1	Stop_1	8002	3600	2	0.534291	0	1	-nan(ind)	-nan(ind)	1	0	0	0	2	0	0	0	0	
+1	Stop_1	8002	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	-0	-0	-nan(ind)	-nan(ind)	-nan(ind)	0	0	0	0	-nan(ind)	0	
 1	Stop_1	8022	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	-0	-0	-nan(ind)	-nan(ind)	-nan(ind)	0	0	0	0	-nan(ind)	0	
 1	Stop_1	8004	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	-0	-0	-nan(ind)	-nan(ind)	-nan(ind)	0	0	0	0	-nan(ind)	0	
 1	Stop_1	8024	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	-0	-0	-nan(ind)	-nan(ind)	-nan(ind)	0	0	0	0	-nan(ind)	0	
@@ -10,12 +10,12 @@ Stop_ID	Stop_name	Line_ID	Average_headway	Average_dwell_time	Average_abs_schedul
 1	Stop_1	8025	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	-0	-0	-nan(ind)	-nan(ind)	-nan(ind)	0	0	0	0	-nan(ind)	0	
 1	Stop_1	8006	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	-0	-0	-nan(ind)	-nan(ind)	-nan(ind)	0	0	0	0	-nan(ind)	0	
 1	Stop_1	8026	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	-0	-0	-nan(ind)	-nan(ind)	-nan(ind)	0	0	0	0	-nan(ind)	0	
-21	Stop_21	21	360	2	4.10019	0	0	5.51462e-14	0	1	0	0	0	0	0	0	0	0	
-5	Stop_5	5	-0	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	-0	-0	-nan(ind)	-nan(ind)	-nan(ind)	0	0	0	0	-nan(ind)	0	
-25	Stop_25	25	-0	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	-0	-0	-nan(ind)	-nan(ind)	-nan(ind)	0	0	0	0	-nan(ind)	0	
-2	Stop_2	1	360	2	4.10012	0	0	4.64125e-14	0	1	0	0	0	0	0	0	0	0	
-2	Stop_2	5	-0	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	-0	-0	-nan(ind)	-nan(ind)	-nan(ind)	0	0	0	0	-nan(ind)	0	
-2	Stop_2	2	360	2	0.600145	0	0	1.91363e-13	0	1	0	0	0	0	0	0	0	0	
+21	Stop_21	21	360	2	4.10019	0	0	4.64125e-14	0	1	0	0	0	0	0	0	0	0	
+5	Stop_5	5	360	2	0.600625	0	0	2.07563e-13	0	1	0	0	0	0	0	0	0	0	
+25	Stop_25	25	360	2	4.10075	0	0	1.03781e-13	0	1	0	0	0	0	0	0	0	0	
+2	Stop_2	1	360	2	4.10012	0.037037	0	4.64125e-14	0	1	0	0	151.5	0	0	0	0	143.925	
+2	Stop_2	5	360	2	4.10067	0.037037	0	1.03781e-13	0	1	0	0	0	0	0	0	0	0	
+2	Stop_2	2	360	2	0.600145	0	0.037037	1.91363e-13	0	1	0	0	0	2	180	0	0	0	
 2	Stop_2	8001	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	-0	-0	-nan(ind)	-nan(ind)	-nan(ind)	0	0	0	0	-nan(ind)	0	
 2	Stop_2	8021	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	-0	-0	-nan(ind)	-nan(ind)	-nan(ind)	0	0	0	0	-nan(ind)	0	
 2	Stop_2	8004	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	-0	-0	-nan(ind)	-nan(ind)	-nan(ind)	0	0	0	0	-nan(ind)	0	
@@ -25,8 +25,8 @@ Stop_ID	Stop_name	Line_ID	Average_headway	Average_dwell_time	Average_abs_schedul
 22	Stop_22	21	360	2	0.600245	0	0	1.31274e-13	0	1	0	0	0	0	0	0	0	0	
 22	Stop_22	25	360	2	0.600245	0	0	1.31274e-13	0	1	0	0	0	0	0	0	0	0	
 22	Stop_22	22	360	2	4.10037	0	0	1.93905e-13	0	1	0	0	0	0	0	0	0	0	
-3	Stop_3	2	360	2	4.1003	0	0	1.93905e-13	0	1	0	0	0	0	0	0	0	0	
-3	Stop_3	3	360	2	0.600325	0	0	4.64125e-14	0	1	0	0	0	0	0	0	0	0	
+3	Stop_3	2	360	2	4.1003	0.04	0	1.93905e-13	0	1	0	0	601.5	0	0	0	0	571.425	
+3	Stop_3	3	360	2	0.600325	0	0.037037	4.64125e-14	0	1	0	0	0	2	180	0	0	0	
 3	Stop_3	8003	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	-0	-0	-nan(ind)	-nan(ind)	-nan(ind)	0	0	0	0	-nan(ind)	0	
 3	Stop_3	8023	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	-0	-0	-nan(ind)	-nan(ind)	-nan(ind)	0	0	0	0	-nan(ind)	0	
 3	Stop_3	8004	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	-0	-0	-nan(ind)	-nan(ind)	-nan(ind)	0	0	0	0	-nan(ind)	0	
@@ -35,8 +35,8 @@ Stop_ID	Stop_name	Line_ID	Average_headway	Average_dwell_time	Average_abs_schedul
 3	Stop_3	8025	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	-0	-0	-nan(ind)	-nan(ind)	-nan(ind)	0	0	0	0	-nan(ind)	0	
 23	Stop_23	22	360	2	0.600425	0	0	2.27374e-13	0	1	0	0	0	0	0	0	0	0	
 23	Stop_23	23	360	2	4.10051	0	0	1.91363e-13	0	1	0	0	0	0	0	0	0	0	
-4	Stop_4	3	360	2	4.10048	0	0	4.64125e-14	0	1	0	0	0	0	0	0	0	0	
-4	Stop_4	8002	3355.1	2	4.03438	0	0	-nan(ind)	-nan(ind)	1	0	0	901.5	0	0	0	0	856.425	
+4	Stop_4	3	360	2	4.10048	0	0	4.64125e-14	0	1	0	0	151.5	0	0	0	0	143.925	
+4	Stop_4	8002	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	-0	-0	-nan(ind)	-nan(ind)	-nan(ind)	0	0	0	0	-nan(ind)	0	
 4	Stop_4	8022	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	-0	-0	-nan(ind)	-nan(ind)	-nan(ind)	0	0	0	0	-nan(ind)	0	
 4	Stop_4	8003	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	-0	-0	-nan(ind)	-nan(ind)	-nan(ind)	0	0	0	0	-nan(ind)	0	
 4	Stop_4	8023	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	-0	-0	-nan(ind)	-nan(ind)	-nan(ind)	0	0	0	0	-nan(ind)	0	

@@ -1042,6 +1042,8 @@ void TestFixedWithFlexible_walking::testPassAssignment()
         - trace sequence of each vehicle, lifetime of each vehicle from e.g. transit_trajectory.dat
             - print state updates...
         - 
+       @todo need to change how decisions of each passenger are retrieved
+        - Currently done via the initial OD of the traveler, however this of course will change. Perhaps store the history of passenger decisions within the passenger instead and retrieve from there...
     */
     
     vector<ODstops*> odstops_demand = net->get_odstops_demand();
@@ -1080,7 +1082,7 @@ void TestFixedWithFlexible_walking::testPassAssignment()
             
             // collect the first set of decisions for the first passenger for each ODstop with demand
             list<Pass_connection_decision> connection_decisions = od->get_pass_connection_decisions(first_pass);
-            list<Pass_transitmode_decision> mode_decisions = od->get_pass_transitmode_decisions(first_pass);
+            list<Pass_transitmode_decision> mode_decisions = od->get_pass_transitmode_decisions(first_pass); 
             
             if(connection_decisions.front().chosen_connection_stop == od->get_origin()->get_id()) //if chosen connection stop is the same as the original origin the first connection decision was to stay, otherwise walk
             {

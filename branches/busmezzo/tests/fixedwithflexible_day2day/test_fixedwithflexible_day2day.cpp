@@ -154,7 +154,7 @@ void TestFixedWithFlexible_day2day::testInitNetwork()
     QVERIFY2 (AproxEqual(net->get_currenttime(),0.0), "Failure, currenttime should be 0 at start of simulation");
 
     vector<ODstops*> odstops_demand = net->get_odstops_demand();
-    QVERIFY2(odstops_demand.size() == 2, "Failure, network should have 7 od stop pairs (non-zero or defined in transit_demand) ");
+    QVERIFY2(odstops_demand.size() == 1, "Failure, network should have 2 od stop pairs (non-zero or defined in transit_demand) ");
 
     //Check OD stop demand rate between stop 1 and 4
 //    ODstops* stop_1to4 = net->get_ODstop_from_odstops_demand(1,4);
@@ -180,11 +180,11 @@ void TestFixedWithFlexible_day2day::testInitNetwork()
     //Test reading of empirical passenger arrivals
     QVERIFY2(theParameters->empirical_demand == 1, "Failure, empirical demand not set to 1 in parameters");
     vector<pair<ODstops*, double> > empirical_passenger_arrivals = net->get_empirical_passenger_arrivals();
-    QVERIFY2(empirical_passenger_arrivals.size() == 2, "Failure, there should be 2 empirical passenger arrivals");
+    QVERIFY2(empirical_passenger_arrivals.size() == 1, "Failure, there should be 2 empirical passenger arrivals");
     
     all_pass = net->get_all_generated_passengers();
     qDebug() << all_pass.size() << " passengers generated.";
-    QVERIFY(all_pass.size() == 2); //should always get 2 generated passengers
+    QVERIFY(all_pass.size() == 1); //should always get 2 generated passengers
 
 }
 
