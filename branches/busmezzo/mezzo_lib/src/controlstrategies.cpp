@@ -14,11 +14,8 @@ namespace cs_helper_functions
         assert(trip);
         assert(new_starttime >= 0);
 
-        //!< @todo might have to add updates to the driving roster of the trip here now as well....
-
         if (trip && new_starttime >= 0)
         {
-            qDebug() << "Debugging cs_helper_functions::update_schedule()";
             for (auto trip_dispatch : trip->driving_roster) // note that this assumes that the order of the trips in the driving roster is the order of the trips
             {
                 Bustrip* trip = trip_dispatch->first;
@@ -1148,6 +1145,19 @@ bool NaiveScheduling::schedule_trips(Eventlist* eventlist, set<Bustrip*, ptr_les
 
 bool LatestDepartureScheduling::schedule_trips(Eventlist* eventlist, set<Bustrip*, ptr_less<Bustrip*>>& unscheduledTrips, double time)
 {
+    /**
+    * @todo
+    *   - Currently schedules dispatch based on the latest desired departure time of any request in the entire TRIPCHAIN. E.g. a request with a delayed departure might be sent for a vehicle
+    *       that must first make an empty trip to pick up the passenger. The empty trip will then be delayed based on the desired departure even when the vehicle should be dispatched immediately...
+    *   - Might need to change both the behavior of busstrip execute (that always activates trips immediately
+    *   - Either that or add a 'holding at stop' behavior to wait for any matched passengers...
+    * 
+    *   1. Change LatestDepartureScheduling to only delay dispatch based on first trip in chain (done)
+    *   2. Update Busstop::calc_exiting_time() with holding behavior if a flex trip & there are additional matched pass arriving.
+    *       - See how the double call to Busstop::passenger_activity_at_stop() effects outputs and behavior with DRT etc...
+    *       - Perhaps set up some tests or simple demand-supply instances to check this....
+    */
+
     assert(eventlist);
     bool scheduled_trip = false; // true if at least one trip has been scheduled
     set<Bustrip*, compareBustripByEarliestStarttime> sortedTrips(unscheduledTrips.begin(), unscheduledTrips.end()); // process uncheduledTrips in order of earliest to latest starttime
@@ -1161,11 +1171,11 @@ bool LatestDepartureScheduling::schedule_trips(Eventlist* eventlist, set<Bustrip
         //check if the bus associated with this trip is available
         if (bus->get_last_stop_visited()->get_id() == trip->get_last_stop_visited()->get_id()) //vehicle should already be located at the first stop of the trip
         {
-            //find the latest desired departure time among passengers assigned to the tripchain
+            //find the latest desired departure time among passengers assigned to the first trip in the tripchain
             qDebug() << "\tOriginal starttime of trip" << trip->get_id() << ": " << trip->get_starttime();
             double latest_desired_dep = 0.0;
-            vector<Request*> assigned_reqs = cs_helper_functions::getRequestsInTripChain(trip->driving_roster);
-            qDebug() << "\tNumber of requests assigned to tripchain: " << assigned_reqs.size();
+            vector<Request*> assigned_reqs = trip->get_requests();
+            qDebug() << "\tNumber of requests assigned to first trip: " << assigned_reqs.size();
             for (const Request* req : assigned_reqs)
             {
                 assert(req->state == RequestState::Matched); //all requests should be matched at this point
@@ -1183,7 +1193,7 @@ bool LatestDepartureScheduling::schedule_trips(Eventlist* eventlist, set<Bustrip
 
             if (!book_trip_dispatch(eventlist, trip))
             {
-                qDebug() << "Warning, NaiveScheduling::book_trip_dispatch() failed for trip" << trip->get_id() << "at time" << time;
+                qDebug() << "Warning, LatestDepartureScheduling::book_trip_dispatch() failed for trip" << trip->get_id() << "at time" << time;
                 continue;
             }
 
@@ -1192,7 +1202,7 @@ bool LatestDepartureScheduling::schedule_trips(Eventlist* eventlist, set<Bustrip
         }
         else
         {
-            DEBUG_MSG_V("ERROR::NaiveScheduling::schedule_trips - Bus is unavailable for matched trip! Figure out why! Aborting...");
+            DEBUG_MSG_V("ERROR::LatestDepartureScheduling::schedule_trips - Bus is unavailable for matched trip! Figure out why! Aborting...");
             abort();
         }
     }
