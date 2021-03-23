@@ -10,10 +10,10 @@
 #ifndef CONTROLCENTER_H
 #define CONTROLCENTER_H
 
-#include <vector>
 #include <map>
-#include <set>
 #include <qobject.h>
+#include <set>
+#include <vector>
 
 #include "busline.h"
 
@@ -160,7 +160,7 @@ public:
 
 private:
 	set<Bustrip*, ptr_less<Bustrip*> > matchedTrips_; //!< set of trips that have been matched with a transit vehicle but have not yet been dispatched
-	map<int, set<Bus*>> vehicles_per_service_route; //!< maps lineIDs among service routes for this control center to vector of candidate transit vehicles
+	map<int, set<Bus*>> vehicles_per_service_route_; //!< maps lineIDs among service routes for this control center to vector of candidate transit vehicles
 
 	MatchingStrategy* matchingStrategy_; //!< strategy for assigning unmatched trips to candidate transit vehicles
 };
@@ -292,7 +292,8 @@ public slots:
 
 private slots:
 	//request related
-	void receiveRequest(Request* req, double time); //<! delegates to RequestHandler to add the request to its requestSet
+	void receiveRequest(Request* req, double time);
+    //!< delegates to RequestHandler to add the request to its requestSet
 
 	//fleet related
 	void updateFleetState(Bus* bus, BusState oldstate, BusState newstate, double time); //!< updates fleetState every time a connected transit vehicle changes its state
@@ -314,11 +315,11 @@ private slots:
 
 private:
 	//OBS! remember to add all mutable members to reset method, including reset functions of process classes
-	const int id_;	//<! id of control center
-	const int tg_strategy_;	//<! initial trip generation strategy
-	const int ev_strategy_; //<! initial empty vehicle strategy
-	const int tvm_strategy_; //<! initial trip - vehicle matching strategy
-	const int vs_strategy_; //<! initial vehicle scheduling strategy
+	const int id_; //!< id of control center
+	const int tg_strategy_; //!< initial trip generation strategy
+	const int ev_strategy_; //!< initial empty vehicle strategy
+	const int tvm_strategy_; //!< initial trip - vehicle matching strategy
+	const int vs_strategy_; //!< initial vehicle scheduling strategy
 
 	bool generated_direct_routes_ = false; //!< true if direct routes have been generated and added as service routes between all stops in the service area of this control center
 	
