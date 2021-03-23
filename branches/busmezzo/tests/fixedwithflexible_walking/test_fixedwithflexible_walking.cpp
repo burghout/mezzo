@@ -340,7 +340,7 @@ void TestFixedWithFlexible_walking::testFleetState()
     //no vehicles activated yet
     closest = CC->getClosestVehicleToStop(stop1,0.0);
     QVERIFY(closest.first == nullptr); // nullptr returned if no vehicle found
-    QVERIFY(AproxEqual(closest.second,DBL_INF)); // default time until arrival if no vehicle found
+    QVERIFY(AproxEqual(closest.second,numeric_limits<double>::max())); // default time until arrival if no vehicle found
 
     // bus oncall at stop 1
     Bus* bus1 = new Bus(1,4,4,nullptr,nullptr,0.0,true,nullptr);
@@ -931,8 +931,8 @@ void TestFixedWithFlexible_walking::testPassArrivedToWaitingDecisions()
             flex_u += exp(path_utility);
     }
     QVERIFY(pathcount==5);
-    fixed_u = (fixed_u == 0.0) ? -DBL_INF : log(fixed_u);
-    flex_u = (flex_u == 0.0) ? -DBL_INF : log(flex_u);
+    fixed_u = (fixed_u == 0.0) ? -numeric_limits<double>::max() : log(fixed_u);
+    flex_u = (flex_u == 0.0) ? -numeric_limits<double>::max() : log(flex_u);
 
     double MNL_denom = exp(fixed_u) + exp(flex_u);
     double fixed_p = exp(fixed_u) / MNL_denom;
