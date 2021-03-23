@@ -59,7 +59,7 @@
    walking_time_coefficient= -0.07
    average_walking_speed= 66.66
    max_nr_extra_transfers= 2
-   absolute_max_transfers= 2
+   absolute_max_transfers= 3
    max_in_vehicle_time_ratio= 2.0
    max_walking_distance= 500.0
    max_waiting_time= 1800.0
@@ -71,7 +71,7 @@
    stop_pass_generation= 5400.000000
    od_pairs_for_generation= 0
    gate_generation_time_diff= 0
-   empirical_demand= 0
+   empirical_demand= 1
 #transit_control_parameters
    riding_time_weight= 1.0
    dwell_time_weight= 1.0

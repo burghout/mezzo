@@ -32,8 +32,8 @@ void Controlcenter_SummaryData::reset()
 
 
 //RequestHandler
-RequestHandler::RequestHandler(){}
-RequestHandler::~RequestHandler(){}
+RequestHandler::RequestHandler() = default;
+RequestHandler::~RequestHandler() = default;
 
 void RequestHandler::reset()
 {
@@ -281,7 +281,7 @@ void BustripVehicleMatcher::reset(int matching_strategy_type)
 		delete trip;
 	}
 	matchedTrips_.clear();
-	vehicles_per_service_route.clear();
+	vehicles_per_service_route_.clear();
 	setMatchingStrategy(matching_strategy_type);
 }
 
@@ -298,9 +298,9 @@ void BustripVehicleMatcher::addVehicleToServiceRoute(int line_id, Bus* transitve
 {
 	assert(transitveh);
     //TODO need to add check for when line_id that is not included as a service route, maybe move service routes to Controlcenter rather than BustripGenerator
-    if (vehicles_per_service_route[line_id].count(transitveh) == 0)
+    if (vehicles_per_service_route_[line_id].count(transitveh) == 0)
     {
-        vehicles_per_service_route[line_id].insert(transitveh);
+        vehicles_per_service_route_[line_id].insert(transitveh);
         transitveh->add_sroute_id(line_id); //vehicle is also aware of its service routes for now. TODO: probably this is a bit unnecessary at the moment, since the vehicle also knows of its CC
     }
 }
@@ -308,10 +308,10 @@ void BustripVehicleMatcher::addVehicleToServiceRoute(int line_id, Bus* transitve
 void BustripVehicleMatcher::removeVehicleFromServiceRoute(int line_id, Bus * transitveh)
 {
 	assert(transitveh);
-	set<Bus*> candidateVehicles = vehicles_per_service_route[line_id];
+	set<Bus*> candidateVehicles = vehicles_per_service_route_[line_id];
     if (candidateVehicles.count(transitveh) != 0)
     {
-        vehicles_per_service_route[line_id].erase(transitveh);
+        vehicles_per_service_route_[line_id].erase(transitveh);
         transitveh->remove_sroute_id(line_id); //vehicle is also aware of its service routes for now. TODO: probably this is a bit unnecessary at the moment, since the vehicle also knows of its CC
     }
 }
@@ -347,7 +347,7 @@ bool BustripVehicleMatcher::matchVehiclesToTrips(BustripGenerator& tg, double ti
 		for (auto it = tg.unmatchedTrips_.begin(); it != tg.unmatchedTrips_.end();) //attempt to match vehicles to all trips in planned trips
 		{
 			Bustrip* trip = *it;
-			if (matchingStrategy_->find_tripvehicle_match(trip, vehicles_per_service_route, time, matchedTrips_))
+			if (matchingStrategy_->find_tripvehicle_match(trip, vehicles_per_service_route_, time, matchedTrips_))
 			{
 				matchfound = true;
 				it = tg.unmatchedTrips_.erase(it);
@@ -373,7 +373,7 @@ bool BustripVehicleMatcher::matchVehiclesToEmptyVehicleTrips(BustripGenerator& t
 		for (auto it = tg.unmatchedRebalancingTrips_.begin(); it != tg.unmatchedRebalancingTrips_.end();) //attempt to match all trips in planned trips
 		{
 			Bustrip* trip = *it;
-			if (matchingStrategy_->find_tripvehicle_match(trip, vehicles_per_service_route, time, matchedTrips_))
+			if (matchingStrategy_->find_tripvehicle_match(trip, vehicles_per_service_route_, time, matchedTrips_))
 			{
 				matchfound = true;
 				it = tg.unmatchedRebalancingTrips_.erase(it);
@@ -427,7 +427,11 @@ void VehicleScheduler::setSchedulingStrategy(int type)
 	else if (type == schedulingStrategyType::Naive) 
 	{
 		schedulingStrategy_ = new NaiveScheduling();
-	} 
+	}
+	else if (type == schedulingStrategyType::LatestDeparture)
+	{
+		schedulingStrategy_ = new LatestDepartureScheduling();
+	}
 	else
 	{
 		DEBUG_MSG("VehicleScheduler::setSchedulingStrategy() - strategy " << type << " is not recognized! Setting strategy to nullptr. ");
@@ -636,7 +640,7 @@ pair<Bus*,double> Controlcenter::getClosestVehicleToStop(Busstop* stop, double t
 {
 	assert(stop);
 	assert(isInServiceArea(stop));
-	pair<Bus*,double> closest = make_pair(nullptr, DBL_INF);
+	pair<Bus*,double> closest = make_pair(nullptr, numeric_limits<double>::max());
 	
 	//check on-call vehicles
 	set<Bus*> oncall = getOnCallVehiclesAtStop(stop);
@@ -645,7 +649,7 @@ pair<Bus*,double> Controlcenter::getClosestVehicleToStop(Busstop* stop, double t
 
 	//check en-route vehicles
 	set<Bus*> enroute = getVehiclesDrivingToStop(stop);
-	double shortest_tt = DBL_INF;
+	double shortest_tt = numeric_limits<double>::max();
 
 	for (auto veh : enroute)
 	{
@@ -671,8 +675,8 @@ pair<Bus*,double> Controlcenter::getClosestVehicleToStop(Busstop* stop, double t
 
 	for (auto veh : remaining)
 	{
-		double expected_tt = DBL_INF;
-		double time_to_stop = DBL_INF;
+		double expected_tt = numeric_limits<double>::max();
+		double time_to_stop = numeric_limits<double>::max();
 		vector<Link*> shortestpath;
 
 		if (veh->is_driving())

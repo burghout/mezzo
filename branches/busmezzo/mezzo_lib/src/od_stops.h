@@ -395,6 +395,7 @@ public:
 	// methods for filtering the path set of this OD stop pair
 	vector<Pass_path*> get_flex_first_paths(); //!< returns all paths for this OD that have a flexible first transit leg (empty if none exist)
 	vector<Pass_path*> get_fix_first_paths(); //!< returns all paths for this OD that have a fixed first transit leg (empty if none exist)
+	vector<Pass_path*> get_nonflex_first_paths(); //!< returns all paths for this OD that do NOT have a flexible first transit leg (similar to get_fix_first_paths() but also includes walking only paths)
 	vector<Pass_path*> get_nonflex_paths(); //!< returns all paths for this OD that do not contain a flexible transit leg (including walk only paths)
 	/**@}*/
 
@@ -412,7 +413,7 @@ public:
     map <Passenger*,list<Pass_onboard_experience> > get_onboard_output () {return output_pass_onboard_experience;}
 	vector <Passenger*> get_passengers_during_simulation () const {return passengers_during_simulation;}
 	
-	void add_pass_waiting(Passenger* add_pass);
+	void add_pass_waiting(Passenger* add_pass); //!< add passenger to the queue of this OD, called when passenger has arrived to the origin stop of this OD
 	void add_passenger_to_odstop(Passenger* pass) { passengers_during_simulation.push_back(pass); } // used for reading empirical pass arrivals
 	
 	// Passengers processes

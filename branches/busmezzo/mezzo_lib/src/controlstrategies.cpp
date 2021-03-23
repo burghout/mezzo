@@ -14,24 +14,30 @@ namespace cs_helper_functions
         assert(trip);
         assert(new_starttime >= 0);
 
-        //!< @todo might have to add updates to the driving roster of the trip here now as well....
-
         if (trip && new_starttime >= 0)
         {
-            if (trip->get_starttime() != new_starttime)
+            for (auto trip_dispatch : trip->driving_roster) // note that this assumes that the order of the trips in the driving roster is the order of the trips
             {
-                double delta = new_starttime - trip->get_starttime(); //positive to shift the schedule later in time, and negative if it should shift earlier in time
-                vector<Visit_stop*> schedule = trip->stops;
-
-                //add the delta to all the scheduled stop visits
-                for (Visit_stop* stop_arrival : schedule)
+                Bustrip* trip = trip_dispatch->first;
+                if (trip->get_starttime() != new_starttime)
                 {
-                    stop_arrival->second += delta;
-                }
+                    double delta = new_starttime - trip->get_starttime(); //positive to shift the schedule later in time, and negative if it should shift earlier in time
+                    vector<Visit_stop*> schedule = trip->stops;
 
-                trip->set_starttime(new_starttime); //set planned dispatch to new start time
-                trip->add_stops(schedule); //overwrite old schedule with the new scheduled stop visits
-                trip->convert_stops_vector_to_map(); //stops map used in some locations, stops vector used in others
+                    //add the delta to all the scheduled stop visits
+                    for (Visit_stop* stop_arrival : schedule)
+                    {
+                        stop_arrival->second += delta;
+                    }
+
+                    trip_dispatch->second = new_starttime; //update the dispatch time at the tripchain level
+                    trip->set_starttime(new_starttime); //set planned dispatch to new start time
+                    trip->add_stops(schedule); //overwrite old schedule with the new scheduled stop visits
+                    trip->convert_stops_vector_to_map(); //stops map used in some locations, stops vector used in others
+
+                    //move on to next trip in chain
+                    new_starttime = schedule.back()->second; //starttime of next trip in chain is the end time of the preceding trip
+                }
             }
         }
         else
@@ -263,7 +269,7 @@ void Request::print_state()
     cout << endl;
 }
 
-QString Request::state_to_string(RequestState state)
+QString Request::state_to_QString(RequestState state)
 {
     QString state_s = "";
     switch (state)
@@ -1119,7 +1125,10 @@ bool NaiveScheduling::schedule_trips(Eventlist* eventlist, set<Bustrip*, ptr_les
                 cs_helper_functions::update_schedule(trip, time); //update schedule for dispatch and stop visits according to new starttime
 
             if (!book_trip_dispatch(eventlist, trip))
-                return false;
+            {
+                qDebug() << "Warning, NaiveScheduling::book_trip_dispatch() failed for trip" << trip->get_id() << "at time" << time;
+                continue;
+            }
 
             unscheduledTrips.erase(trip); //trip is now scheduled for dispatch
             scheduled_trip = true;
@@ -1127,6 +1136,73 @@ bool NaiveScheduling::schedule_trips(Eventlist* eventlist, set<Bustrip*, ptr_les
         else
         {
             DEBUG_MSG_V("ERROR::NaiveScheduling::schedule_trips - Bus is unavailable for matched trip! Figure out why! Aborting...");
+            abort();
+        }
+    }
+
+    return scheduled_trip;
+}
+
+bool LatestDepartureScheduling::schedule_trips(Eventlist* eventlist, set<Bustrip*, ptr_less<Bustrip*>>& unscheduledTrips, double time)
+{
+    /**
+    * @todo
+    *   - Currently schedules dispatch based on the latest desired departure time of any request in the entire TRIPCHAIN. E.g. a request with a delayed departure might be sent for a vehicle
+    *       that must first make an empty trip to pick up the passenger. The empty trip will then be delayed based on the desired departure even when the vehicle should be dispatched immediately...
+    *   - Might need to change both the behavior of busstrip execute (that always activates trips immediately
+    *   - Either that or add a 'holding at stop' behavior to wait for any matched passengers...
+    * 
+    *   1. Change LatestDepartureScheduling to only delay dispatch based on first trip in chain (done)
+    *   2. Update Busstop::calc_exiting_time() with holding behavior if a flex trip & there are additional matched pass arriving.
+    *       - See how the double call to Busstop::passenger_activity_at_stop() effects outputs and behavior with DRT etc...
+    *       - Perhaps set up some tests or simple demand-supply instances to check this....
+    */
+
+    assert(eventlist);
+    bool scheduled_trip = false; // true if at least one trip has been scheduled
+    set<Bustrip*, compareBustripByEarliestStarttime> sortedTrips(unscheduledTrips.begin(), unscheduledTrips.end()); // process uncheduledTrips in order of earliest to latest starttime
+    assert(sortedTrips.size() == unscheduledTrips.size());
+    qDebug() << "LatestDepartureScheduling trips at time" << time << " size of unscheduledTrips: " << sortedTrips.size();
+
+    for (auto trip : sortedTrips)
+    {
+        Bus* bus = trip->get_busv();
+        
+        //check if the bus associated with this trip is available
+        if (bus->get_last_stop_visited()->get_id() == trip->get_last_stop_visited()->get_id()) //vehicle should already be located at the first stop of the trip
+        {
+            //find the latest desired departure time among passengers assigned to the first trip in the tripchain
+            qDebug() << "\tOriginal starttime of trip" << trip->get_id() << ": " << trip->get_starttime();
+            double latest_desired_dep = 0.0;
+            vector<Request*> assigned_reqs = trip->get_requests();
+            qDebug() << "\tNumber of requests assigned to first trip: " << assigned_reqs.size();
+            for (const Request* req : assigned_reqs)
+            {
+                assert(req->state == RequestState::Matched); //all requests should be matched at this point
+                if (req->time_desired_departure > latest_desired_dep)
+                    latest_desired_dep = req->time_desired_departure;
+            }
+            qDebug() << "\tLatest desired departure of trip" << trip->get_id() << ": " << latest_desired_dep;
+
+            //update the schedule of the trip such that dispatch of the tripchain is either now (if the trip was delayed) or at the latest_desired_departure of assigned passengers
+            if (latest_desired_dep < time) 
+                cs_helper_functions::update_schedule(trip, time); //update schedule for dispatch and stop visits according to new starttime
+            else
+                cs_helper_functions::update_schedule(trip, latest_desired_dep);
+
+
+            if (!book_trip_dispatch(eventlist, trip))
+            {
+                qDebug() << "Warning, LatestDepartureScheduling::book_trip_dispatch() failed for trip" << trip->get_id() << "at time" << time;
+                continue;
+            }
+
+            unscheduledTrips.erase(trip); //trip is now scheduled for dispatch
+            scheduled_trip = true;
+        }
+        else
+        {
+            DEBUG_MSG_V("ERROR::LatestDepartureScheduling::schedule_trips - Bus is unavailable for matched trip! Figure out why! Aborting...");
             abort();
         }
     }

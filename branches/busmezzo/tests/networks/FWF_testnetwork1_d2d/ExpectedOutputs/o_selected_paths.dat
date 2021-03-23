@@ -1,5 +1,2 @@
 Passenger_ID	Origin_stop_ID	Origin_stop_name	Destination_stop_ID	Destination_stop_name	Start_time	Number_transfers	Total_walking_time	Total_waiting_time	Total_waiting_time_due_to_denied_boarding	Total_in_vehicle_time	Total_weighted_in_vehicle_time	End_time	
-0	5	Stop_5	4	Stop_4	2673.43	0	0	1.1682	0	904.5	859.275	3579.1	{5	1	4	4	}	{	800201	}
-2	5	Stop_5	4	Stop_4	3070.93	0	0	0.666853	0	903.5	858.325	3975.1	{5	1	4	4	}	{	800202	}
-3	5	Stop_5	4	Stop_4	2246.65	0	0	427.952	0	904.5	859.275	3579.1	{5	1	4	4	}	{	800201	}
-5	5	Stop_5	4	Stop_4	4666.46	0	0	1.14219	0	903.5	858.325	5571.1	{5	1	4	4	}	{	800203	}
+0	5	Stop_5	4	Stop_4	2102.81	2	253.876	606.912	0	910.5	864.975	3874.1	{5	1	2	2	3	3	4	4	}	{	105	206	308	}

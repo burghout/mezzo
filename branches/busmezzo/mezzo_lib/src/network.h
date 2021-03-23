@@ -162,12 +162,6 @@ struct FWF_vehdata
 
         return *this;
     }
-
-    // @todo calc_VKT, maybe use total driving time (empty), total driving time (full) - dwelltime * avgSpeed?
-    // alt could grab the distance traversed while driving in different states?
-    // NOTE: Turns out this is kindof tricky. Recall that bus instances represent the same bus but there are several of these instances being copied and destroyed over a run....
-    // Instead.....things tend to revolve around trips again?
-
 };
 
 //!< @brief trip output data for fixed with flexible implementation. 
@@ -584,6 +578,7 @@ protected:
     @{
 */
 public:
+    map <int, Turning*> get_turningmap() { return turningmap; } //!< currently only used for debugging/testing
     vector<pair<ODstops*, double> > get_empirical_passenger_arrivals() const { return empirical_passenger_arrivals; }
 protected:
     vector <pair<ODstops*, double> > empirical_passenger_arrivals; //!< all empirical passenger arrivals consisting of stop OD and arrival time. Used to generate and initialize passengers between resets. Added to ODstops::passengers_during_simulation in Network::init

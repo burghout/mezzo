@@ -165,5 +165,6 @@
         <file>networks/SFnetwork/ExpectedOutputs/o_vkt.dat</file>
         <file>networks/SFnetwork_d2d/ExpectedOutputs/o_fwf_summary.dat</file>
         <file>networks/SFnetwork_d2d/ExpectedOutputs/o_vkt.dat</file>
+        <file>networks/PentaFeeder_drt/ExpectedOutputs/o_path_set_generation.dat</file>
     </qresource>
 </RCC>

@@ -1861,6 +1861,7 @@ void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, d
 				od = stop_as_origin[(*alighting_passenger)->get_OD_stop()->get_destination()];
 			}
 			(*alighting_passenger)->set_ODstop(od); // set this stop as passenger's new origin
+			(*alighting_passenger)->set_chosen_mode(TransitModeType::Null); //reset the mode chosen of the pass to null (new mode choice is made after each alighting)
 			if (id == (*alighting_passenger)->get_OD_stop()->get_destination()->get_id() || (*alighting_passenger)->get_OD_stop()->check_path_set() == false) // if this stop is passenger's destination
 			{
 				// passenger has no further conection choice
@@ -1888,12 +1889,13 @@ void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, d
                 {
                     new_od = next_stop->get_stop_od_as_origin_per_stop((*alighting_passenger)->get_OD_stop()->get_destination());
                 }
-                (*alighting_passenger)->set_ODstop(new_od); // set the connected stop as passenger's new origin (new OD)
-                ODstops* odstop = (*alighting_passenger)->get_OD_stop();
+
 				double arrival_time_connected_stop = time;
                 //if (odstop->get_waiting_passengers().size() != 0) //Why was it like this??
                 if (next_stop->get_id() == this->get_id())  // pass stays at the same stop
                 {
+					(*alighting_passenger)->set_ODstop(new_od); // set the connected stop as passenger's new origin (new OD)
+					ODstops* odstop = (*alighting_passenger)->get_OD_stop();
                     odstop->add_pass_waiting((*alighting_passenger));
 
                     (*alighting_passenger)->set_arrival_time_at_stop(arrival_time_connected_stop);
@@ -1919,6 +1921,7 @@ void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, d
                     // booking an event to the arrival time at the new stop
 
                     arrival_time_connected_stop += get_walking_time(next_stop, time);
+					(*alighting_passenger)->set_ODstop(new_od); // set the connected stop as passenger's new origin (new OD)
                     //(*alighting_passenger)->execute(eventlist,arrival_time_connected_stop);
                     eventlist->add_event(arrival_time_connected_stop, *alighting_passenger);
                     pair<Busstop*, double> stop_time;
@@ -2129,7 +2132,7 @@ double Busstop::get_walking_time(Busstop* next_stop, double curr_time)
     
     //otherwise, infer walking time from walking distance
     if (walking_time < 0){
-        walking_time = distances[next_stop] * 60 / random->nrandom(theParameters->average_walking_speed, theParameters->average_walking_speed/4);
+        walking_time = distances[next_stop] * 60 / random->nrandom(theParameters->average_walking_speed, theParameters->average_walking_speed/4); //!< multiplied by 60 since walking speed given in m/min
     }
     
     return walking_time;

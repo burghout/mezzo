@@ -73,6 +73,17 @@ public:
 	double nexttime;
 	int get_id() {return id;}
 	void write(ostream& out);
+
+/**
+ * @ingroup DRT
+ *	Used only for debugging/testing purposes at the moment
+ * @{
+*/
+	Link* get_inlink() const { return inlink; }
+	Link* get_outlink() const { return outlink; }
+	Node* get_node() const { return node; }
+/**@}*/
+
 private:
 	//TurnAction* turnaction;    // performs the action of transferring vehicles at the right times
 	vector <TurnAction*> turnactions; // multiple turnactions per turning. One for each lane...

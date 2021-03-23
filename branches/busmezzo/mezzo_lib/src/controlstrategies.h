@@ -70,7 +70,7 @@ struct Request
 
     void set_state(RequestState);
     void print_state();
-    static QString state_to_string(RequestState state);
+    static QString state_to_QString(RequestState state);
     int get_id() const {return id;}
 
     bool operator == (const Request& rhs) const; //!< default equality comparison of Requests
@@ -272,7 +272,7 @@ public:
 	bool schedule_trips(Eventlist* eventlist, set<Bustrip*, ptr_less<Bustrip*> >& unscheduledTrips, double time) override;
 };
 
-//! @brief Schedules the first trip found in unscheduledTrips to be dispatched at the earliest possible time (i.e. immediately)
+//! @brief Schedules all trips found in unscheduledTrips to be dispatched at the earliest possible time (i.e. immediately)
 /*!
     Currently assumes that the vehicle of an unscheduled trip is already located at the origin stop of the trip. Will call abort otherwise.
 */
@@ -282,6 +282,21 @@ public:
 	~NaiveScheduling() override = default;
 	bool schedule_trips(Eventlist* eventlist, set<Bustrip*, ptr_less<Bustrip*> >& unscheduledTrips, double time) override;
 };
+
+//! @brief Schedules all trips found in unscheduledTrips to be dispatched according to the latest desired departure time among requests assigned to the trip
+/*!
+*   Currently assumes that the vehicle of an unscheduled trip is already located at the origin stop of the trip. Will call abort otherwise.
+*   The vehicle will remain in an 'IdleEmpty' state until dispatched. Note that this vehicle will thus be ignored in trip-generation/matching calls that search for OnCall vehicles
+*   
+*   
+*/
+class LatestDepartureScheduling : public SchedulingStrategy
+{
+public:
+    ~LatestDepartureScheduling() override = default;
+    bool schedule_trips(Eventlist* eventlist, set<Bustrip*, ptr_less<Bustrip*> >& unscheduledTrips, double time) override;
+};
+
 
 #endif // ifndef CONTROLSTRATEGIES_H
 /**@}*/

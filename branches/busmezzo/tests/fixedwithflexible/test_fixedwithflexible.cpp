@@ -59,9 +59,10 @@ public:
 private Q_SLOTS:
     void testCreateNetwork(); //!< test loading a network
     void testInitNetwork(); //!< test generating passenger path sets & loading a network
+    void testPassPathSetDefinitions(); //!< tests if the auto-generated passenger path sets conform to 'valid' path set definitions for each OD stop pair with positive demand rate
     //void testPassengerStates(); //!< test that passengers are being initialized properly,
-    //void testPathSetUtilities(); //!< test navigating generated path-sets, calculating utilities under different circumstances (e.g. access to RTI for different legs)
     void testRunNetwork();
+    void testPassAssignment(); //!< tests path-set-generation + resulting assignment
     void testSaveResults();
     void testDelete(); //!< tests correct deletion
 
@@ -108,13 +109,13 @@ void TestFixedWithFlexible::testInitNetwork()
     QVERIFY2(net->get_nodes().size() == 16, "Failure, network should have 16 nodes ");
     QVERIFY2(net->get_destinations().size() == 4, "Failure, network should have 4 destination nodes ");
     QVERIFY2(net->get_origins().size() == 4, "Failure, network should have 4 origin nodes ");
-    QVERIFY2(net->get_odpairs().size() == 12, "Failure, network should have 12 od pairs ");
+    QVERIFY2(net->get_odpairs().size() == 16, "Failure, network should have 12 od pairs ");
     QVERIFY2(net->get_stopsmap().size() == 8, "Failure, network should have 8 stops defined ");
 
     QVERIFY2 (AproxEqual(net->get_currenttime(),0.0), "Failure, currenttime should be 0 at start of simulation");
 
     vector<ODstops*> odstops_demand = net->get_odstops_demand();
-    QVERIFY2(odstops_demand.size() == 6, "Failure, network should have 6 od stop pairs (non-zero or defined in transit_demand) ");
+    QVERIFY2(odstops_demand.size() == 1, "Failure, network should have 1 od stop pairs (defined in transit_demand) ");
 
     //Check OD stop demand rate between stop 1 and 4
     ODstops* stop_1to4 = net->get_ODstop_from_odstops_demand(1,4);
@@ -152,64 +153,82 @@ void TestFixedWithFlexible::testInitNetwork()
 //    path_set_file.close();
 }
 
-//void TestFixedWithFlexible::testPathSetUtilities()
-//{
-//    /* Test for paths between stop 1 to 4 */
-//    qDebug() << "Checking path-set for ODstops 1 to 4";
-//    vector<ODstops*> odstops_demand = net->get_odstops_demand();
-//    ODstops* stop1to4 = nullptr;
-//    auto stop1to4_it = find_if(odstops_demand.begin(),odstops_demand.end(),[](ODstops* odstop)
-//    {
-//        return (odstop->get_origin()->get_id() == 1 && odstop->get_destination()->get_id() == 4);
-//    });
-//    if(stop1to4_it != odstops_demand.end())
-//        stop1to4 = *stop1to4_it;
-//    QVERIFY2(stop1to4 != nullptr,"Failure, OD stop 1 to 4 is undefined");
+void TestFixedWithFlexible::testPassPathSetDefinitions()
+{
+    /**
+       Want to check the validity of OD stops 1->4 path sets for FWF base network. 
 
-//    //create a passenger to with ODstop 1 to 4 and navigate through paths from the travelers perspective
-//    Passenger* pass1 = new Passenger(1,0,stop1to4,nullptr); //Passenger(id,start_time,ODstop*,QObject* parent)
-//    Busstop* bs_o = pass1->get_OD_stop()->get_origin();
-//    Busstop* bs_d = pass1->get_OD_stop()->get_destination();
-//    vector<Pass_path*> path_set = bs_o->get_stop_od_as_origin_per_stop(bs_d)->get_path_set(); //no idea why we are accessing the path-set in this roundabout way but there is hopefully a good reason for it
+@note 
+       1. Min number of transfers is 0 (drt 2 from s1 to s4)
+       2. Max number of transfers is 2 (fix or drt 1 -> fix2 -> fix or drt 3)
+       3. Bidirectional transit links are defined but we have unidirectional demand
+       4. No walking links, so the connection decision will always be to stay at the same stop, i.e. all pairs of stops should be the same
+            The alt_line structure is fixed
+       5. 14 paths total in 1->4 direction
 
-//    QVERIFY2(stop1to4->check_path_set(), "Failure, no paths defined for stop 1 to 4");
-//    qDebug() << "Number of paths available to traveler: " << stop1to4->get_path_set().size();
-//    QVERIFY2(stop1to4->get_path_set().size() == 5, "Failure, there should be 5 paths defined for stop 1 to 4");
-//    QVERIFY2(path_set.size() == 5, "Failure, traveler with ODstops 1 to 4 should have 5 paths available to them");
-
-//    /*Test for building path (sub)sets in connection decision choice tree */
-//    Busstop* candidate_connection_stops = nullptr;
-//    // make_connection_decision //stop to walk to
-//    // make_mode_decision //given available paths from chosen stop,
+Assertions:
+       1. Check that the stop sequence of a path also matches stops on the lines of each path (if the line is direct, and the only line then this means the start and end stops of that leg)
+       2. There should really be only one line in each 'alt_lines' set i.e. line leg set for this network (no opportunistic boarding)
+       3. Check that each the paths of each actually follows the correct structure (e.g. branch to corridor should have 6 alt_stops and must include transfer stop
+       4. All pairs of stops should be the same (no walking links)
+       5. Each time a line leg
+       
+    */
 
 
+    vector<ODstops*> ods = net->get_odstops_demand();
+    for(auto od : ods)
+    {
+        int ostop = od->get_origin()->get_id();
+        int dstop = od->get_destination()->get_id();
+        qDebug() << "\tChecking paths for OD stop (" << ostop << "," << dstop << ")";  
+        vector<Pass_path*> pathset = od->get_path_set();
+        if(od->get_arrivalrate() > 0)
+            QVERIFY(!pathset.empty()); // there should always be a path for each OD with non-zero demand rate for this network
 
-////    for(auto path : path_set) // check so that all flexible transit legs
-////    {
-////        path->first_transit_leg_flexible();
-////    }
+        for(auto path : pathset)
+        {
+            qDebug() << "\tChecking validity of path: " << path->get_id();
+            vector<vector<Busline*> > alt_lines = path->get_alt_lines();
+            vector<vector<Busstop*> > alt_stops = path->get_alt_transfer_stops();
 
-//    /* TEST PASSENGER INIT */
-//    //Test initialization of passenger with RTI at a network level
-//    //QVERIFY2(pass1->get_pass_RTI_network_level() == false, "Failure, default initilization of passenger network-level RTI should be false");
-//    pass1->init(); //note this both sets the network level RTI for the traveler as well as the anticipated WT and IVT of the traveler if day2day is active
-//    //QVERIFY2(pass1->get_pass_RTI_network_level() == true,"Failure, passenger should have network-level RTI after init with real_time_info=3 and share_RTI_network=1 in parameters");
-//    //QVERIFY2(pass1->has_access_to_flexible() == true, "Failure, passenger with network-level RTI should have access to flexible services");
+            //!< General conditions that should hold for any path
+            // m = number of alt line sets in a path alternative
+            // 2m+2 = number of transit stop sets including OD
+            // m+1 = number of connection (walking) links
+            // m - 1 = number of transfers
+            size_t m = alt_lines.size();
+            int n_transfers = path->get_number_of_transfers();
+            QVERIFY(alt_stops.size() == 2*m + 2);
+            QVERIFY(path->get_walking_distances().size() == m + 1);
+            QVERIFY(n_transfers == static_cast<int>(m) - 1);
 
-//    //Test creation of passenger with no RTI (should be default)
-//    Passenger* pass2 = new Passenger(2,0,stop1to4,nullptr);
-//    QVERIFY(pass2->get_pass_RTI_network_level() == false);
-//    //QVERIFY2(pass2->has_access_to_flexible() == false, "Failure, passenger without network-level RTI should not have access to flexible services");
+            QVERIFY(alt_stops.size() > 2); // this network should not have any walking only legs (since no walking links are defined, and we should not have OD demand from an origin to itself)
+            QVERIFY(alt_stops.size() % 2 == 0); // alt stops sets always come in pairs (alight at stop+walk/stay at stop for departure/destination)
 
-//    //Connection decision for passenger with RTI
-//    Busstop* connection_stop = nullptr;
-//    connection_stop = pass1->make_connection_decision(0.0); //make connection decision with starttime = 0.0
+            vector<pair<Busstop*,Busstop*> > arriving_departing_stop_pairs; // pairs of stops on the path. First in each pair is the stop of arrival/origin, second is stop of departure/destination
 
-//    //Connection decision for passenger without RTI
+            for(auto alt_stops_it = alt_stops.begin(); alt_stops_it != alt_stops.end(); advance(alt_stops_it,2)) // walk over pairs of alt stops
+            {
+                //qDebug() << "\t\tChecking alt_transfer_stops...";
+                auto alt_stops_it2 = alt_stops_it+1;
+                QVERIFY((*alt_stops_it).size() == 1); // only one stop in each alt stop vec for this network
+                QVERIFY((*alt_stops_it2).size() == 1);
 
-//    delete pass1;
-//    delete pass2;
-//}
+                Busstop* arr_stop = (*alt_stops_it).front();
+                Busstop* dep_stop = (*alt_stops_it2).front();
+
+                // every pair of alt stops starting from the first and second should be the same (since we do not have walking links, and we only have one stop in each alt_stop set)
+                QVERIFY(arr_stop->get_id() == dep_stop->get_id());
+
+                arriving_departing_stop_pairs.push_back(make_pair(arr_stop,dep_stop)); // store each pair of arrival and departure locations to compare to alt_lines
+            }
+            QVERIFY(arriving_departing_stop_pairs.size() == m + 1); // there should be as many pairs as walking links
+
+        } //for paths in od
+    } //for ods with demand
+
+}
 
 void TestFixedWithFlexible::testRunNetwork()
 {
@@ -225,6 +244,118 @@ void TestFixedWithFlexible::testRunNetwork()
    // qDebug() << net->get_busstop_from_name("A")->get_last_departures().size();
     // and here you turn it into a test
     //QVERIFY2 ( net->get_busstop_from_name("A")->get_last_departures().size() == 2, "Failure, get_last_departures().size() for stop A should be 2");
+}
+
+void TestFixedWithFlexible::testPassAssignment()
+{
+    /**
+      Check that passengers can reach their destinations for all OD stop pairs with demand associated with them (in this unidirectional demand network)
+
+      @todo
+        Print out first passenger that arrived for each OD, what their request ended up being and how far they managed to get, use the test attribute of ODstops 'first_passenger_start'
+            - Time the passenger arrived
+            - Connection, transitmode and dropoff stop decision made after Passenger::start
+            - State of the request that they generated if transitmode is equal to flexible (Null, Unmatched, Assigned, Matched)
+                - assert that if transitmode equal to fixed, no request was generated
+            - If the passenger reached their final destination or not
+            - If not, where did they end up, what is their current location
+    */
+    
+    vector<ODstops*> odstops_demand = net->get_odstops_demand();
+    //QVERIFY2(odstops_demand.size() == 1, "Failure, network should have 1 od stop pairs (with non-zero demand defined in transit_demand.dat) ");
+
+    for(auto od : odstops_demand)
+    {
+        // verify non-zero demand for this OD
+        QVERIFY2((od->get_arrivalrate() > 0 || od->has_empirical_arrivals()),"Failure, all ODstops in Network::odstops_demand should have positive arrival rate.");
+
+        QVERIFY(!od->get_passengers_during_simulation().empty()); // at least one passenger was generated
+        QVERIFY(od->first_passenger_start != nullptr); // at least one passenger was added to the Eventlist and its Passenger::start action called
+        Passenger* first_pass = od->first_passenger_start;
+        
+        QString orig_s = QString::number(od->get_origin()->get_id());
+        QString dest_s = QString::number(od->get_destination()->get_id());
+
+        // check expected passenger behavior for this network
+        if(first_pass != nullptr)
+        {
+            bool finished_trip = first_pass->get_end_time() > 0;
+            
+            qDebug() << "First passenger for OD " << "(" << orig_s << "," << dest_s << "):";
+            qDebug() << "\t" << "passenger id        : " << (first_pass->get_id());
+            qDebug() << "\t" << "finished trip       : " << finished_trip;
+            qDebug() << "\t" << "start time          : " << first_pass->get_start_time();
+            qDebug() << "\t" << "last stop visited   : " << first_pass->get_chosen_path_stops().back().first->get_id();
+            qDebug() << "\t" << "num denied boardings: " << first_pass->get_nr_denied_boardings();
+            
+            
+            size_t n_transfers = (first_pass->get_selected_path_stops().size() - 4) / 2; // given path definition (direct connection - 4 elements, 1 transfers - 6 elements, 2 transfers - 8 elements, etc.
+            if(finished_trip)
+            {
+                qDebug() << "\t" << "num transfers       : " << n_transfers;
+            }
+            
+            // collect the first set of decisions for the first passenger for each ODstop with demand
+            list<Pass_connection_decision> connection_decisions = od->get_pass_connection_decisions(first_pass);
+            list<Pass_transitmode_decision> mode_decisions = od->get_pass_transitmode_decisions(first_pass);
+            
+            if(mode_decisions.front().chosen_transitmode == TransitModeType::Flexible)
+                list<Pass_dropoff_decision> dropoff_decisions = od->get_pass_dropoff_decisions(first_pass);          
+            
+            QVERIFY(connection_decisions.front().chosen_connection_stop == od->get_origin()->get_id()); // pass always stays (no walking links)
+            QVERIFY(mode_decisions.front().chosen_transitmode != TransitModeType::Null); // A choice of either fixed or flexible should have always been made
+            
+            if(mode_decisions.back().chosen_transitmode == TransitModeType::Fixed) //last chosen mode
+            {
+                QVERIFY(first_pass->get_curr_request() == nullptr); // a request should never have been generated if transit mode choice is fixed
+                
+//                if(finished_trip)
+//                    QVERIFY(n_transfers == 0); // a total of 1 vehicle should have been used to reach final dest. 
+            }
+            else if(mode_decisions.back().chosen_transitmode == TransitModeType::Flexible)
+            {
+                if(finished_trip) // passenger completed their trip
+                {
+                    QVERIFY(first_pass->get_curr_request() == nullptr); // curr request reset to null after a trip is completed
+                }
+                else // the passengers first decision was flexible but they never reached their destination
+                {
+                    Request* request = first_pass->get_curr_request();
+                    QVERIFY(request != nullptr); // not requests should have been rejected or canceled
+                    // Print out the request attributes (maybe create a print member method of Request for this):
+//                    int id;
+//                    int pass_id = -1;    //!< id of passenger that created request
+//                    int ostop_id = -1;   //!< id of origin stop
+//                    int dstop_id = -1;   //!< id of destination stop
+//                    int load = -1;       //!< number of passengers in request
+//                    double desired_departure_time = -1.0;  //!< desired/earliest departure time for passenger
+//                    double time = -1.0;                    //!< time request was generated
+//                    RequestState state = RequestState::Null; //!< current state of the request
+//                    Passenger* pass_owner = nullptr; //!< passenger who sent this request
+//                    Bus* assigned_veh = nullptr; //!< vehicle that has been assigned to this request, nullptr if none has been assigned
+//                    Bustrip* assigned_trip = nullptr; //!< bustrip that has been assigned to this request, nullptr by default, updated when assigned
+                    if(request != nullptr)
+                    {
+                        QVERIFY(request->pass_id == request->pass_owner->get_id());
+                        
+                        qDebug() << "\t\t chose FLEX, did not reach final dest, curr_request: ";
+                        qDebug() << "\t\t pass_id      : " << request->pass_id;
+                        qDebug() << "\t\t ostop_id     : " << request->ostop_id;
+                        qDebug() << "\t\t dstop_id     : " << request->dstop_id;
+                        qDebug() << "\t\t load         : " << request->load;
+                        qDebug() << "\t\t t_desired_dep: " << request->time_desired_departure;
+                        qDebug() << "\t\t t_request_gen: " << request->time_request_generated;
+                        qDebug() << "\t\t request_state: " << Request::state_to_QString(request->state);
+                        //qDebug() << request->assigned_trip-> //empty trip is on its way
+                    }
+                }
+            }
+            
+            // verify that at least one passenger per OD made it to their destination
+            QString failmsg = "Failure, at least one passenger for ODstop (" + orig_s + "," + dest_s + ") with non-zero demand should have reached final destination.";
+            QVERIFY2(first_pass->get_end_time() > 0, qPrintable(failmsg)); // replaced the od->get_nr_pass_completed() call with this since there is some less intuitive dependency between this and calc_pass_measures() after saving results
+        }
+    }
 }
 
 void TestFixedWithFlexible::testSaveResults()

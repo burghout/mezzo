@@ -371,7 +371,7 @@ void TestDRTAlgorithms::testPostRunAssignment()
                     qDebug() << "\t\t load         : " << request->load;
                     qDebug() << "\t\t t_desired_dep: " << request->time_desired_departure;
                     qDebug() << "\t\t t_request_gen: " << request->time_request_generated;
-                    qDebug() << "\t\t request_state: " << Request::state_to_string(request->state);
+                    qDebug() << "\t\t request_state: " << Request::state_to_QString(request->state);
                 }
             }
             
