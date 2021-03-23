@@ -7086,6 +7086,129 @@ bool Network::writeheadways(string name)
     return true;
 }
 
+/** @ingroup PARTC
+* - bunch of stuff used for results output
+* @todo remove
+*/
+namespace PARTC
+{
+    const vector<int> branch_ids_176 = { 217619,217618,217617,217616,217615,217614,217613,217612,217611,217610,217609,217608,217607,217606,217605,217603,217602,217604,217600,277024 };
+    const vector<int> branch_ids_177 = { 277036,277035,277034,277033,277032,277031,277030,277029,277028,277027,277026,277025,277024 };
+    const vector<int> corridor_ids = { 277024,277023,277022,277021,277020,277019,277018,277017,277016,277015,277014,277013,277012,277011,277010,277009,277008,277007,277006,277005,277004,277003,277002,277001 };
+    const int transfer_stop_id = 277024;
+    const int morby_station_id = 277001;
+
+    enum class ODCategory { Null = 0, b2b, b2c, c2c };
+
+    bool is_on_branch176(int stop_id)
+    {
+        return find(branch_ids_176.begin(), branch_ids_176.end(), stop_id) != branch_ids_176.end();
+    }
+    bool is_on_branch177(int stop_id)
+    {
+        return find(branch_ids_177.begin(), branch_ids_177.end(), stop_id) != branch_ids_177.end();
+    }
+    bool is_on_branch(int stop_id) // is on either branch
+    {
+        return is_on_branch176(stop_id) || is_on_branch177(stop_id);
+    }
+    bool is_on_corridor(int stop_id)
+    {
+        return find(corridor_ids.begin(), corridor_ids.end(), stop_id) != corridor_ids.end();
+    }
+    bool is_transfer_stop(int stop_id)
+    {
+        return stop_id == transfer_stop_id;
+    }
+    bool is_branch_to_branch(int ostop_id, int dstop_id) // if OD pair is branch to branch
+    {
+        if (is_on_branch(ostop_id)) // origin of trip starts on a branch
+        {
+            if (is_transfer_stop(dstop_id)) // destination is the transfer stop (which is on both branch and corridor)
+                return true;
+            else
+                return !is_on_corridor(dstop_id); // destination is NOT on corridor
+        }
+        return false;
+    }
+    bool is_branch_to_corridor(int ostop_id, int dstop_id)
+    {
+        if (!is_transfer_stop(ostop_id) && is_on_branch(ostop_id)) // origin is not the transfer stop (which is on corridor) and is on branch
+        {
+            if (!is_transfer_stop(dstop_id) && is_on_corridor(dstop_id)) // destination IS on corridor and is not the transfer stop
+                return true;
+        }
+        return false;
+    }
+    bool is_corridor_to_corridor(int ostop_id, int dstop_id)
+    {
+        return is_on_corridor(ostop_id) && is_on_corridor(dstop_id);
+    }
+    void writeFWFsummary_odcategories(ostream& out, const FWF_passdata& passdata_b2b, const FWF_passdata& passdata_b2c, const FWF_passdata& passdata_c2c, const FWF_passdata& passdata_total, int pass_ignored)
+    {
+        assert(out);
+        out << "### Passenger per OD category summary: \tB2B\tB2C\tC2C\tTotal";
+        out << "\nPassenger journeys completed                 :\t" << passdata_b2b.pass_completed << "\t" << passdata_b2c.pass_completed << "\t" << passdata_c2c.pass_completed << "\t" << passdata_total.pass_completed;
+
+        out << "\n\nAverage GTC:\t" << passdata_b2b.avg_gtc << "\t" << passdata_b2c.avg_gtc << "\t" << passdata_c2c.avg_gtc << "\t" << passdata_total.avg_gtc;
+        out << "\nStdev GTC  :\t" << passdata_b2b.std_gtc << "\t" << passdata_b2c.std_gtc << "\t" << passdata_c2c.std_gtc << "\t" << passdata_total.std_gtc;
+
+        //out << "\n\nTotal walking time             :\t" << passdata_b2b.total_wlkt << "\t" << passdata_b2c.total_wlkt << "\t" << passdata_c2c.total_wlkt << "\t" << passdata_total.total_wlkt;
+        //out << "\nAverage walking time           :\t" << passdata_b2b.avg_total_wlkt << "\t" << passdata_b2c.avg_total_wlkt << "\t" << passdata_c2c.avg_total_wlkt << "\t" << passdata_total.avg_total_wlkt;
+        //out << "\nStdev walking time             :\t" << passdata_b2b.std_total_wlkt << "\t" << passdata_b2c.std_total_wlkt << "\t" << passdata_c2c.std_total_wlkt << "\t" << passdata_total.std_total_wlkt;
+
+        //out << "\n\nTotal waiting time             :\t" << passdata_b2b.total_wt << "\t" << passdata_b2c.total_wt << "\t" << passdata_c2c.total_wt << "\t" << passdata_total.total_wt;
+        out << "\n\nAverage waiting time           :\t" << passdata_b2b.avg_total_wt << "\t" << passdata_b2c.avg_total_wt << "\t" << passdata_c2c.avg_total_wt << "\t" << passdata_total.avg_total_wt;
+        out << "\nStdev waiting time             :\t" << passdata_b2b.std_total_wt << "\t" << passdata_b2c.std_total_wt << "\t" << passdata_c2c.std_total_wt << "\t" << passdata_total.std_total_wt;
+        out << "\nMinimum waiting time           :\t" << passdata_b2b.min_wt << "\t" << passdata_b2c.min_wt << "\t" << passdata_c2c.min_wt << "\t" << passdata_total.min_wt;
+        out << "\nMaximum waiting time           :\t" << passdata_b2b.max_wt << "\t" << passdata_b2c.max_wt << "\t" << passdata_c2c.max_wt << "\t" << passdata_total.max_wt;
+        out << "\nMedian waiting time            :\t" << passdata_b2b.median_wt << "\t" << passdata_b2c.median_wt << "\t" << passdata_c2c.median_wt << "\t" << passdata_total.median_wt;
+
+        out << "\n\nTotal denied waiting time      :\t" << passdata_b2b.total_denied_wt << "\t" << passdata_b2c.total_denied_wt << "\t" << passdata_c2c.total_denied_wt << "\t" << passdata_total.total_denied_wt;
+        out << "\nAverage denied waiting time    :\t" << passdata_b2b.avg_denied_wt << "\t" << passdata_b2c.avg_denied_wt << "\t" << passdata_c2c.avg_denied_wt << "\t" << passdata_total.avg_denied_wt;
+        out << "\nStdev denied waiting time      :\t" << passdata_b2b.std_denied_wt << "\t" << passdata_b2c.std_denied_wt << "\t" << passdata_c2c.std_denied_wt << "\t" << passdata_total.std_denied_wt;
+
+        out << "\n\nTotal in-vehicle time          :\t" << passdata_b2b.total_ivt << "\t" << passdata_b2c.total_ivt << "\t" << passdata_c2c.total_ivt << "\t" << passdata_total.total_ivt;
+        out << "\nAverage in-vehicle time        :\t" << passdata_b2b.avg_total_ivt << "\t" << passdata_b2c.avg_total_ivt << "\t" << passdata_c2c.avg_total_ivt << "\t" << passdata_total.avg_total_ivt;
+        out << "\nStdev in-vehicle time          :\t" << passdata_b2b.std_total_ivt << "\t" << passdata_b2c.std_total_ivt << "\t" << passdata_c2c.std_total_ivt << "\t" << passdata_total.std_total_ivt;
+
+        out << "\n\nTotal crowded in-vehicle time  :\t" << passdata_b2b.total_crowded_ivt << "\t" << passdata_b2c.total_crowded_ivt << "\t" << passdata_c2c.total_crowded_ivt << "\t" << passdata_total.total_crowded_ivt;
+        out << "\nAverage crowded in-vehicle time:\t" << passdata_b2b.avg_total_crowded_ivt << "\t" << passdata_b2c.avg_total_crowded_ivt << "\t" << passdata_c2c.avg_total_crowded_ivt << "\t" << passdata_total.avg_total_crowded_ivt;
+        out << "\nStdev crowded in-vehicle time  :\t" << passdata_b2b.std_total_crowded_ivt << "\t" << passdata_b2c.std_total_crowded_ivt << "\t" << passdata_c2c.std_total_crowded_ivt << "\t" << passdata_total.std_total_crowded_ivt;
+
+        out << "\n\nTotal passengers ignored (trip out of pass-generation start-stop interval):\t" << pass_ignored;
+        out << "\n\n------------------------------------------------------------------\n\n";
+
+       /* out << "\n\n### Branch to Corridor passenger summary ###";
+        out << "\nPassenger journeys completed: " << passdata_b2c.pass_completed;
+
+        out << "\n\nTotal walking time             : " << passdata_b2c.total_wlkt;
+        out << "\nAverage walking time           : " << passdata_b2c.avg_total_wlkt;
+        out << "\nStdev walking time             : " << passdata_b2c.std_total_wlkt;
+
+        out << "\n\nTotal waiting time             : " << passdata_b2c.total_wt;
+        out << "\nAverage total waiting time     : " << passdata_b2c.avg_total_wt;
+        out << "\nStdev total waiting time       : " << passdata_b2c.std_total_wt;
+        out << "\nMinimum waiting time           : " << passdata_b2c.min_wt;
+        out << "\nMaximum waiting time           : " << passdata_b2c.max_wt;
+        out << "\nMedian waiting time            : " << passdata_b2c.median_wt;
+
+        out << "\n\nTotal denied waiting time      : " << passdata_b2c.total_denied_wt;
+        out << "\nAverage denied waiting time    : " << passdata_b2c.avg_denied_wt;
+        out << "\nStdev denied waiting time      : " << passdata_b2c.std_denied_wt;
+
+        out << "\n\nTotal in-vehicle time          : " << passdata_b2c.total_ivt;
+        out << "\nAverage in-vehicle time        : " << passdata_b2c.avg_total_ivt;
+        out << "\nStdev in-vehicle time          : " << passdata_b2c.std_denied_wt;
+
+        out << "\n\nTotal crowded in-vehicle time  : " << passdata_b2c.total_crowded_ivt;
+        out << "\nAverage crowded in-vehicle time: " << passdata_b2c.avg_total_crowded_ivt;
+        out << "\nStdev crowded in-vehicle time  : " << passdata_b2c.std_total_crowded_ivt;
+
+        out << "\n\n### Corridor to Corridor passenger summary ###";*/
+    }
+}
+
 namespace fwf_outputs {
     bool finished_trip_within_pass_generation_interval(Passenger* pass)
     {
@@ -7115,7 +7238,7 @@ namespace fwf_outputs {
     }
 }
 
-bool Network::write_busstop_output(string name1, string name2, string name3, string name4, string name5, string name6, string name7, string name8, string name9, string name10, string name11, string name12, string name13, string name14, string name15, string name16, string name17, string name18, string name19, string name20, string name21)
+bool Network::write_busstop_output(string name1, string name2, string name3, string name4, string name5, string name6, string name7, string name8, string name9, string name10, string name11, string name12, string name13, string name14, string name15, string name16, string name17, string name18, string name19, string name20, string name21, string name22)
 {
     Q_UNUSED(name5)
     Q_UNUSED(name6)
@@ -7135,7 +7258,7 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
     ofstream out12(name12.c_str(),ios_base::app); //"o_od_stop_summary_without_paths.dat"
     ofstream out16(name16.c_str(), ios_base::app); //"o_passenger_trajectory.dat"
     ofstream out17(name17.c_str(), ios_base::app); //"o_passenger_welfare_summary.dat"
-    ofstream out18(name18.c_str(), ios_base::app); // drt+fwf summary filestream, "o_fwf_summary.dat"
+    ofstream out18(name18.c_str(), ios_base::app); // "o_fwf_summary.dat"
     ofstream out21(name21.c_str(), ios_base::app); // "o_vkt.dat"
 
   /*  this->write_busstop_output(
@@ -7181,8 +7304,35 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
     FWF_tripdata drt_tripdata;
 
     FWF_ccdata cc_summarydata;
-
     vector<Passenger*> allpass_within_passgen;
+
+    /** @ingroup PARTC
+    *   @todo Drottningholms OD outputs
+    *   - add temporary flag to recognize whether or not this is a dholm network - if all fixed buslines end at Mörby C...
+    *   - filter 'all_pass' by start & end time
+    *   - also check the category of each od being checked
+    *   - generate a FWF_passdata for each OD category
+    */
+    bool PARTCflag = false;
+    for (auto line : buslines)
+    {
+        if (!line->is_flex_line())
+        {
+            if (line->stops.back()->get_id() == PARTC::morby_station_id) //all fixed lines end at morby station
+                PARTCflag = true;
+            else
+                PARTCflag = false;
+        }
+    }
+
+    FWF_passdata total_passdata_b2b;
+    FWF_passdata total_passdata_b2c;
+    FWF_passdata total_passdata_c2c;
+
+    vector<Passenger*> allpass_b2b;
+    vector<Passenger*> allpass_b2c;
+    vector<Passenger*> allpass_c2c;
+    /**@} PARTC */
 
     // writing the crude data and summary outputs for each bus stop
     write_transitlogout_header(out1);
@@ -7264,26 +7414,94 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
         }
         write_passenger_welfare_summary(out17, total_pass_GTC, pass_counter);
         
-
-        //fill in the fwf summary containers
-        //total_passdata.pass_completed = pass_counter; //passengers that completed trips
-
         vector<Passenger*> all_pass = get_all_generated_passengers(); // includes also pass that did not complete their trip, outside pass gen range etc..
+        int pass_ignored = 0; // passengers ignored from fwf summary output...i.e. did not start and complete trip with pass generation interval
 
         // FWF passenger output
-        int pass_ignored = 0;
-        for (auto pass : all_pass) // only check pass who started and completed trip within the pass generation time interval
+        if (PARTCflag)
         {
-            if (fwf_outputs::finished_trip_within_pass_generation_interval(pass))
+            for (auto pass : all_pass) // only check pass who started and completed trip within the pass generation time interval
             {
-                allpass_within_passgen.push_back(pass);
+                if (fwf_outputs::finished_trip_within_pass_generation_interval(pass))
+                {
+                    allpass_within_passgen.push_back(pass);
+                    PARTC::ODCategory od_category = PARTC::ODCategory::Null;
+                    ODstops* od = pass->get_OD_stop();
+                    int ostop = pass->get_original_origin()->get_id();
+                    int dstop = od->get_destination()->get_id();
+
+                    // divide passengers by od category and print to output file
+                    if (PARTC::is_branch_to_branch(ostop, dstop))
+                    {
+                        od_category = PARTC::ODCategory::b2b;
+                    }
+                    else if (PARTC::is_branch_to_corridor(ostop, dstop))
+                    {
+                        od_category = PARTC::ODCategory::b2c;
+                    }
+                    else if (PARTC::is_corridor_to_corridor(ostop, dstop))
+                    {
+                        od_category = PARTC::ODCategory::c2c;
+                    }
+                    assert(od_category != PARTC::ODCategory::Null); // each od should have a category
+
+                    if (od_category == PARTC::ODCategory::b2b)
+                    {
+                        allpass_b2b.push_back(pass);
+                    }
+                    else if (od_category == PARTC::ODCategory::b2c)
+                    {
+                        allpass_b2c.push_back(pass);
+                    }
+                    else if (od_category == PARTC::ODCategory::c2c)
+                    {
+                        allpass_c2c.push_back(pass);
+                    }
+                }
+                else
+                {
+                    ++pass_ignored;
+                }
             }
-            else
-            {
-                ++pass_ignored;
-            }
+            total_passdata.calc_pass_statistics(allpass_within_passgen);
+            total_passdata_b2b.calc_pass_statistics(allpass_b2b);
+            total_passdata_b2c.calc_pass_statistics(allpass_b2c);
+            total_passdata_c2c.calc_pass_statistics(allpass_c2c);
+
+            ofstream out22(name22.c_str(), ios_base::app); //"o_fwf_summary_odcategory.dat"
+            PARTC::writeFWFsummary_odcategories(out22, total_passdata_b2b, total_passdata_b2c, total_passdata_c2c, total_passdata, pass_ignored);
         }
-        total_passdata.calc_pass_statistics(allpass_within_passgen);
+        else
+        {
+            Q_UNUSED(name22);
+            for (auto pass : all_pass) // only check pass who started and completed trip within the pass generation time interval
+            {
+                if (fwf_outputs::finished_trip_within_pass_generation_interval(pass))
+                {
+                    allpass_within_passgen.push_back(pass);
+                }
+                else
+                {
+                    ++pass_ignored;
+                }
+            }
+            total_passdata.calc_pass_statistics(allpass_within_passgen);
+            //total_passdata.calc_pass_statistics(all_pass);
+        }
+
+        //int pass_ignored = 0; @todo uncomment to return to original pass output collection without PARTC specific passenger grouping
+        //for (auto pass : all_pass) // only check pass who started and completed trip within the pass generation time interval
+        //{
+        //    if (fwf_outputs::finished_trip_within_pass_generation_interval(pass))
+        //    {
+        //        allpass_within_passgen.push_back(pass);
+        //    }
+        //    else
+        //    {
+        //        ++pass_ignored;
+        //    }
+        //}
+        //total_passdata.calc_pass_statistics(allpass_within_passgen);
 
         if (theParameters->drt)
         {
@@ -7570,17 +7788,15 @@ bool Network::writelinktimes(string name)
 bool Network::readlinktimes(string name)
 {
     ifstream inputfile(name.c_str());
-    assert (inputfile);
+    assert(inputfile);
     if (readtimes(inputfile))
     {
         inputfile.close();
         return true;
     }
-    
-    
-        inputfile.close();
-        return false;
-    
+
+    inputfile.close();
+    return false;
 }
 
 bool Network::readtimes(istream& in)
@@ -7590,28 +7806,28 @@ bool Network::readtimes(istream& in)
 #ifdef _DEBUG_NETWORK
     cout << keyword << endl;
 #endif //_DEBUG_NETWORK
-    if (keyword!="links:") {
+    if (keyword != "links:") {
         return false;
-}
+    }
     int nr;
     in >> nr;
     in >> keyword;
 #ifdef _DEBUG_NETWORK
     cout << keyword << endl;
 #endif //_DEBUG_NETWORK
-    if (keyword!="periods:") {
+    if (keyword != "periods:") {
         return false;
-}
+    }
     in >> nrperiods;
     in >> keyword;
 #ifdef _DEBUG_NETWORK
     cout << keyword << endl;
 #endif //_DEBUG_NETWORK
-    if (keyword!="periodlength:") {
+    if (keyword != "periodlength:") {
         return false;
-}
+    }
     in >> periodlength;
-    for (int i=0; i<nr;i++)
+    for (int i = 0; i < nr; i++)
 
     {
         if (!readtime(in))
@@ -7630,20 +7846,20 @@ bool Network::readtimes(istream& in)
         cout << " linkmap.size() " << linkmap.size() << endl;
         cout << " virtuallinks.size() " << virtuallinks.size() << endl;
 #endif //_DEBUG_NETWORK
-        for (auto & iter : linkmap)
+        for (auto& iter : linkmap)
         {
-            double linktime= iter.second->get_freeflow_time();
-            auto* ltime=new LinkTime();
-            ltime->periodlength=periodlength;
-            ltime->nrperiods=nrperiods;
-            ltime->id=iter.second->get_id();
-            for (int i=0;i < nrperiods;i++) {
+            double linktime = iter.second->get_freeflow_time();
+            auto* ltime = new LinkTime();
+            ltime->periodlength = periodlength;
+            ltime->nrperiods = nrperiods;
+            ltime->id = iter.second->get_id();
+            for (int i = 0; i < nrperiods; i++) {
                 //		(ltime->times).push_back(linktime);
-                (ltime->times) [i] = linktime;
-}
+                (ltime->times)[i] = linktime;
+            }
             iter.second->set_hist_time(linktime);
             iter.second->set_histtimes(ltime);
-            linkinfo->times.insert(pair <int,LinkTime*> (iter.second->get_id(),ltime ));
+            linkinfo->times.insert(pair <int, LinkTime*>(iter.second->get_id(), ltime));
         }
     }
     linkinfo->set_graphlink_to_link(graphlink_to_link);
@@ -7756,28 +7972,31 @@ bool Network::readincident (istream & in)
 }
 
 
-bool Network::readincidents (istream & in)
+bool Network::readincidents(istream& in)
 {
     string keyword;
     in >> keyword;
 #ifdef _DEBUG_NETWORK
     cout << keyword << endl;
 #endif //_DEBUG_NETWORK
-    if (keyword!="incidents:") {
+    if (keyword != "incidents:")
+    {
         return false;
-}
+    }
     int nr;
     in >> nr;
-    for (int i=0; i<nr;i++)
+    for (int i = 0; i < nr; i++)
     {
-        if (!readincident(in)) {
+        if (!readincident(in))
+        {
             return false;
-}
+        }
     }
+
     return true;
 }
 
-bool Network::readincidentparams (istream &in)
+bool Network::readincidentparams(istream& in)
 {
     string keyword;
     in >> keyword;
@@ -7785,23 +8004,25 @@ bool Network::readincidentparams (istream &in)
 #ifdef _DEBUG_NETWORK
     cout << keyword << endl;
 #endif //_DEBUG_NETWORK
-    if (keyword!="parameters:") {
+    if (keyword != "parameters:")
+    {
         return false;
-}
+    }
     int nr;
     in >> nr;
-    for (int i=0; i<nr;i++)
+    for (int i = 0; i < nr; i++)
     {
-        if (!readincidentparam(in)) {
+        if (!readincidentparam(in))
+        {
             return false;
-}
-
+        }
     }
+
     return true;
 }
 
 
-bool Network::readincidentparam (istream &in)
+bool Network::readincidentparam(istream& in)
 {
     char bracket;
     double mu;
@@ -7812,7 +8033,7 @@ bool Network::readincidentparam (istream &in)
         cout << "readfile::readincidentparam scanner jammed at " << bracket;
         return false;
     }
-    in  >> mu  >> sd ;
+    in >> mu >> sd;
     in >> bracket;
     if (bracket != '}')
     {
@@ -7826,7 +8047,7 @@ bool Network::readincidentparam (istream &in)
     return true;
 }
 
-bool Network::readx1 (istream &in)
+bool Network::readx1(istream& in)
 {
     string keyword;
     char bracket;
@@ -7834,55 +8055,49 @@ bool Network::readx1 (istream &in)
 #ifdef _DEBUG_NETWORK
     cout << keyword << endl;
 #endif //_DEBUG_NETWORK
-    if (keyword!="X1:") {
+    if (keyword != "X1:") {
         return false;
-}
+    }
     double mu;
     double sd;
     in >> bracket >> mu >> sd >> bracket;
     incident_parameters.push_back(mu);
     incident_parameters.push_back(sd);
+
     return true;
-
-
 }
 
 
 bool Network::readincidentfile(string name)
 {
     ifstream inputfile(name.c_str());
-    assert (inputfile);
-    if (readsdfuncs (inputfile) && readincidents(inputfile) &&readincidentparams(inputfile) && readx1(inputfile))
+    assert(inputfile);
+    if (readsdfuncs(inputfile) && readincidents(inputfile) && readincidentparams(inputfile) && readx1(inputfile))
     {
-        for (auto & incident : incidents)
+        for (auto& incident : incidents)
         {
             incident->set_incident_parameters(incident_parameters);
         }
         inputfile.close();
         return true;
     }
-    
-    
-        inputfile.close();
-        return false;
-    
 
+    inputfile.close();
+    return false;
 }
 
 bool Network::readpathfile(string name)
 {
     ifstream inputfile(name.c_str());
-    assert (inputfile);
+    assert(inputfile);
     if (readroutes(inputfile))
     {
         inputfile.close();
         return true;
     }
-    
-    
-        inputfile.close();
-        return false;
-    
+
+    inputfile.close();
+    return false;
 }
 
 bool Network::writepathfile(string name)
@@ -8032,7 +8247,6 @@ bool Network::init_shortest_path()
         int from = link_to_graphlink[(*iter1)->from_link];
         int to = link_to_graphlink[(*iter1)->to_link];
         graph->set_turning_prohibitor(from, to);
-
     }
 
     theParameters->shortest_paths_initialised= true;
@@ -8079,15 +8293,15 @@ bool Network::shortest_paths_all()
 //calculate the shortest paths for each link emanating from each origin to each destination;
 // and saving them if  there is a new path found (i.e. it's not in the routes vector already)
 {
-    double entrytime=0.0;    // entry time for time-variant shortest path search
-    int nr_reruns=static_cast<int> (runtime/theParameters->update_interval_routes)-1; // except for last period
+    double entrytime = 0.0;    // entry time for time-variant shortest path search
+    int nr_reruns = static_cast<int> (runtime / theParameters->update_interval_routes) - 1; // except for last period
     // determines the number of reruns of the shortest path alg.
-    int routenr=static_cast<int>(routemap.size());
-    for (int i=0; i<nr_reruns; i++)
+    int routenr = static_cast<int>(routemap.size());
+    for (int i = 0; i < nr_reruns; i++)
     {
-        entrytime= i*theParameters->update_interval_routes;
+        entrytime = i * theParameters->update_interval_routes;
         int lastorigin = -1;
-        for (auto iter1=odpairs.begin(); iter1<odpairs.end();)
+        for (auto iter1 = odpairs.begin(); iter1 < odpairs.end();)
         {
             // OD pairs are sorted by origin, destination
             // For each origin in OD pairs, find the destinations that need another route
@@ -8096,25 +8310,26 @@ bool Network::shortest_paths_all()
             cout << "last origin: " << lastorigin << endl;
             vector <Destination*> dests;
             bool exitloop = false;
-            while  (!exitloop)
+            while (!exitloop)
             {
-                double od_rate= (*iter1)->get_rate();
-                double nr_routes= (*iter1)->get_nr_routes();
-                if ( ((od_rate > theParameters->small_od_rate) && ( (od_rate/theParameters->small_od_rate) < nr_routes)) || (nr_routes < 1) ) {
+                double od_rate = (*iter1)->get_rate();
+                double nr_routes = (*iter1)->get_nr_routes();
+                if (((od_rate > theParameters->small_od_rate) && ((od_rate / theParameters->small_od_rate) < nr_routes)) || (nr_routes < 1)) {
                     // if the od pair has not too many routes for its size
                     dests.push_back((*iter1)->get_destination());
-}
+                }
                 iter1++;
                 if (iter1 == odpairs.end()) {
                     exitloop = true;
-                } else
-                    if (((*iter1)->get_origin()->get_id()) != lastorigin ) {
+                }
+                else
+                    if (((*iter1)->get_origin()->get_id()) != lastorigin) {
                         exitloop = true;
-}
+                    }
             }
             cout << " dests size is: " << dests.size() << endl;
-            vector<Link*> outgoing=ori->get_links();
-            for (auto iter2=outgoing.begin();iter2<outgoing.end();iter2++)
+            vector<Link*> outgoing = ori->get_links();
+            for (auto iter2 = outgoing.begin(); iter2 < outgoing.end(); iter2++)
             {
 
                 //	 #ifdef _DEBUG_SP
@@ -8123,61 +8338,63 @@ bool Network::shortest_paths_all()
 #ifndef _USE_VAR_TIMES
                 graph->labelCorrecting((*iter2)->get_id());  // find the shortest path from Link (*iter2) to ALL nodes
 #else
-                if (linkinfo != nullptr) { // if there are link info times
-                    graph->labelCorrecting(link_to_graphlink[(*iter2)->get_id()],entrytime,linkinfo);  // find the shortest path from Link (*iter2) to ALL nodes
-                } else {
+                if (linkinfo != nullptr) 
+                { // if there are link info times
+                    graph->labelCorrecting(link_to_graphlink[(*iter2)->get_id()], entrytime, linkinfo);  // find the shortest path from Link (*iter2) to ALL nodes
+                }
+                else 
+                {
                     graph->labelCorrecting(link_to_graphlink[(*iter2)->get_id()]);  // find the shortest path from Link (*iter2) to ALL nodes NO LINKINFO
-}
+                }
 #endif // _USE_VAR_TIMES
 #ifdef _DEBUG_SP
-                cout << "finished label correcting for root link "<<(*iter2)->get_id() << endl;
+                cout << "finished label correcting for root link " << (*iter2)->get_id() << endl;
 #endif //_DEBUG_SP
-                for (auto iter3=dests.begin();iter3<dests.end();iter3++)
+                for (auto iter3 = dests.begin(); iter3 < dests.end(); iter3++)
                 {
 #ifdef _DEBUG_SP
-                    cout << " see if we can reach destination " << (*iter3)->get_id()<< endl;
+                    cout << " see if we can reach destination " << (*iter3)->get_id() << endl;
 #endif //_DEBUG_SP
                     if (graph->reachable(node_to_graphnode[(*iter3)->get_id()])) // if the destination is reachable from this link...
                     {
 #ifdef _DEBUG_SP
                         cout << " it's reachable.." << endl;
 #endif //_DEBUG_SP
-                        vector<Link*> rlinks=get_path((*iter3)->get_id());
+                        vector<Link*> rlinks = get_path((*iter3)->get_id());
 #ifdef _DEBUG_SP
                         cout << " gotten path" << endl;
 #endif //_DEBUG_SP
                         if (!rlinks.empty())
                         {
-                            int frontid=(rlinks.front())->get_id();
+                            int frontid = (rlinks.front())->get_id();
 #ifdef _DEBUG_SP
                             cout << " gotten front " << endl;
 #endif //_DEBUG_SP
-                            if (frontid!=(*iter2)->get_id()) {
-                                rlinks.insert(rlinks.begin(),(*iter2)); // add the root link to the path
-}
+                            if (frontid != (*iter2)->get_id()) {
+                                rlinks.insert(rlinks.begin(), (*iter2)); // add the root link to the path
+                            }
                             routenr++;
 #ifdef _DEBUG_SP
                             cout << " checking if the routenr does not already exist " << endl;
 #endif //_DEBUG_SP
                             odval val = odval(ori->get_id(), (*iter3)->get_id());
-                            assert (!exists_route(routenr,val)); // Check that no route exists with same routeid, at least for this OD pair
+                            assert(!exists_route(routenr, val)); // Check that no route exists with same routeid, at least for this OD pair
 #ifdef _DEBUG_SP
                             cout << " making route " << endl;
 #endif //_DEBUG_SP
-                            Route* rptr=new  Route(routenr, ori, (*iter3), rlinks);
-                            bool exists=true;
+                            Route* rptr = new  Route(routenr, ori, (*iter3), rlinks);
+                            bool exists = true;
                             if (rptr != nullptr)
                             {
                                 exists = exists_same_route(rptr);
                                 if (!exists)
                                 {
-                                    routemap.insert(routemap.end(),pair <odval, Route*> (val,rptr)); // add the newly found route
+                                    routemap.insert(routemap.end(), pair <odval, Route*>(val, rptr)); // add the newly found route
                                 }
                             }
                             else {
                                 routenr--;
-}
-
+                            }
                         }
                     }
                 }
@@ -8192,75 +8409,79 @@ bool Network::shortest_pathtree_from_origin_link(int lid, double start_time)
 
     if (!theParameters->shortest_paths_initialised) { // initialize shortest path graph if needed
         init_shortest_path(); //sets parameter to initialized if successful
-}
+    }
     if (theParameters->shortest_paths_initialised)
     {
-        if (linkinfo != nullptr) {
-            graph->labelCorrecting(link_to_graphlink[lid],start_time, linkinfo);
-        } else {
-            graph->labelCorrecting(link_to_graphlink[lid],start_time);
-}
+        if (linkinfo != nullptr)
+        {
+            graph->labelCorrecting(link_to_graphlink[lid], start_time, linkinfo);
+        }
+        else 
+        {
+            graph->labelCorrecting(link_to_graphlink[lid], start_time);
+        }
 
-		return true;
+        return true;
     }
-     {
+    {
         return false; // could not init graph, so no search done
-}
+    }
 }
 
 vector<Link*> Network::shortest_path_to_node(int rootlink, int dest_node, double start_time) //!< returns shortest path Links
 {
 
     vector<Link*> rlinks;
-    if (shortest_pathtree_from_origin_link(rootlink,start_time))
+    if (shortest_pathtree_from_origin_link(rootlink, start_time))
     {
         if (graph->reachable(node_to_graphnode[dest_node])) {
             rlinks = get_path(dest_node); // get_path requires original node id
-        } else {
+        }
+        else {
             cout << "shortest_path_to_node : Error: Node " << dest_node << " is not reachable from rootlink "
-                 << rootlink << std::endl;
-}
+                << rootlink << std::endl;
+        }
     }
     return rlinks;
 }
 
-bool Network::find_alternatives_all (int lid, double penalty, Incident* incident)
+bool Network::find_alternatives_all(int lid, double penalty, Incident* incident)
 // Makes sure that each affected link has an alternative
 {
-    map <int, map <int,Link*> > affected_links_per_dest; // indexed by destination, each destination will have a nr of affected links
+    map <int, map <int, Link*> > affected_links_per_dest; // indexed by destination, each destination will have a nr of affected links
     map <int, Origin*> affected_origins; // Simple map of affected origins
     map <int, Link*> affected_links; // simple map of affected links
     map <int, set <int> > links_without_alternative; // all links,dests without a 'ready' alternative. indexed by link_id, dest_id
     // Find all the affected links
-    Link* incident_link=linkmap[lid];
+    Link* incident_link = linkmap[lid];
     multimap <int, Route*> i_routemap = incident_link->get_routes();// get all routes through incident link
     // unsigned int nr_affected_routes = i_routemap.size();
-    auto rmiter=i_routemap.begin();
+    auto rmiter = i_routemap.begin();
     // get all affected (links,destinations) from each route, and store the origins as well
-    for (;rmiter != i_routemap.end(); rmiter++)
+    for (; rmiter != i_routemap.end(); rmiter++)
     {
         Route* r = (*rmiter).second;
-        int dest =(*rmiter).first;
+        int dest = (*rmiter).first;
         vector <Link*> route_affected_links_upstream = r->get_upstream_links(lid);
         vector<Link*>::iterator l_iter;
-        for (l_iter=route_affected_links_upstream.begin();l_iter!=route_affected_links_upstream.end();l_iter++)
+        for (l_iter = route_affected_links_upstream.begin(); l_iter != route_affected_links_upstream.end(); l_iter++)
         {
             Link* link = (*l_iter);
-            int link_id =link->get_id();
-            affected_links_per_dest [dest] [link_id] = link;  // stores all affected links, per destination
-            affected_links [link_id] = link; // stores all affected links, once
+            int link_id = link->get_id();
+            affected_links_per_dest[dest][link_id] = link;  // stores all affected links, per destination
+            affected_links[link_id] = link; // stores all affected links, once
         }
         Origin* ori = r->get_origin();
         int oid = ori->get_id();
-        affected_origins [oid] = ori;
+        affected_origins[oid] = ori;
     }
     // per destination, for all affected links, find out if they have an alternative that does not go through incident link
-    auto lm_iter=affected_links_per_dest.begin();
-    for (; lm_iter!=affected_links_per_dest.end(); lm_iter++)
+    auto lm_iter = affected_links_per_dest.begin();
+    for (; lm_iter != affected_links_per_dest.end(); lm_iter++)
     {
         int dest = (*lm_iter).first;
-        map <int,Link*> thelinks = (*lm_iter).second;
-        auto linkiter=thelinks.begin();
+        map <int, Link*> thelinks = (*lm_iter).second;
+        auto linkiter = thelinks.begin();
         for (; linkiter != thelinks.end(); linkiter++)
         {
             Link* link = linkiter->second;
@@ -8268,11 +8489,11 @@ bool Network::find_alternatives_all (int lid, double penalty, Incident* incident
 #ifndef _NO_GUI
             link->set_selected_color(Qt::green);
 #endif
-            int linkid=link->get_id();
-            int nr_alternatives = link->nr_alternative_routes(dest,lid );
-            if (nr_alternatives == 0 )
+            int linkid = link->get_id();
+            int nr_alternatives = link->nr_alternative_routes(dest, lid);
+            if (nr_alternatives == 0)
             {
-                links_without_alternative [linkid].insert(dest);
+                links_without_alternative[linkid].insert(dest);
 
 #ifndef _NO_GUI
                 link->set_selected_color(Qt::red); // set red colour for Affected links without alternatives
@@ -8287,8 +8508,6 @@ bool Network::find_alternatives_all (int lid, double penalty, Incident* incident
         }
     }
 
-
-
     // Add the affected links & origins to the Incident
     incident->set_affected_links(affected_links);
     incident->set_affected_origins(affected_origins);
@@ -8298,39 +8517,39 @@ bool Network::find_alternatives_all (int lid, double penalty, Incident* incident
     if (!(links_without_alternative.empty()))
     {
         // DO a shortest path init, and a shortest path search wih penalty for incident link to create alternatives for each link.
-        bool initok=false;
+        bool initok = false;
         if (!theParameters->shortest_paths_initialised) {
             initok = init_shortest_path();
-}
+        }
         if (initok)
         {
             auto mi = links_without_alternative.begin();
-            for (; mi != links_without_alternative.end();mi++)
+            for (; mi != links_without_alternative.end(); mi++)
             {
                 // get shortest path and add.
-                double cost=(graph->linkCost (link_to_graphlink [lid])) + penalty;
+                double cost = (graph->linkCost(link_to_graphlink[lid])) + penalty;
                 int root = mi->first;
-                Link* rootlink=linkmap[root];
+                Link* rootlink = linkmap[root];
                 set <int> dests = mi->second;
                 graph->linkCost(link_to_graphlink[lid], cost);
-                graph->labelCorrecting(link_to_graphlink [root]);
+                graph->labelCorrecting(link_to_graphlink[root]);
                 for (auto dest : dests)
                 {
-                    if (graph->reachable (node_to_graphnode[dest]))
+                    if (graph->reachable(node_to_graphnode[dest]))
                     {
 
-                        vector<Link*> rlinks=get_path(dest); // original ID
+                        vector<Link*> rlinks = get_path(dest); // original ID
 #ifdef _DEBUG_SP
                         eout << " network::shortest_alternatives from link " << root << " to destination " << (*di) << endl;
                         graph->printPathToNode((*di));
 #endif //_DEBUG_SP
                         //save the found remainder in the link table
-                        int frontid=(rlinks.front())->get_id();
+                        int frontid = (rlinks.front())->get_id();
                         // let's makes sure the current link is in the path
-                        if (frontid!=root) {
+                        if (frontid != root) {
                             rlinks.insert(rlinks.begin(), rootlink); // add the rddoot link from the path
-}
-                        rootlink->add_alternative(dest,rlinks);
+                        }
+                        rootlink->add_alternative(dest, rlinks);
                         found_links++;
                     }
                 }
@@ -8348,11 +8567,11 @@ void Network::delete_spurious_routes()
 {
 }
 */
-void Network::renum_routes ()
+void Network::renum_routes()
 {
     multimap <odval, Route*>::iterator route;
-    int counter=0;
-    for (route=routemap.begin(); route != routemap.end(); route++, counter++)
+    int counter = 0;
+    for (route = routemap.begin(); route != routemap.end(); route++, counter++)
     {
         (*route).second->set_id(counter);
 
@@ -8364,13 +8583,13 @@ void Network::reset_link_icons() // reset the links to normal color and hide the
 {
 #ifndef _NO_GUI
     auto link = linkmap.begin();
-    for (; link!=linkmap.end(); link++)
+    for (; link != linkmap.end(); link++)
     {
-        link->second->set_selected ( false);
+        link->second->set_selected(false);
 
         (link->second)->set_selected_color(theParameters->selectedcolor);
     }
-    for (auto & incident : incidents)
+    for (auto& incident : incidents)
     {
         incident->set_visible(false);
     }
@@ -8384,176 +8603,176 @@ bool Network::readmaster(string name)
     ifstream inputfile(name.c_str());
     //assert (inputfile);
     inputfile >> temp;
-    if (temp!="#input_files")
+    if (temp != "#input_files")
     {
         inputfile.close();
         return false;
     }
     inputfile >> temp;
-    if (temp!="network=")
+    if (temp != "network=")
     {
         inputfile.close();
         return false;
     }
     inputfile >> temp;
-    filenames.push_back(workingdir+temp); // #0
+    filenames.push_back(workingdir + temp); // #0
     inputfile >> temp;
-    if (temp!="turnings=")
+    if (temp != "turnings=")
     {
         inputfile.close();
         return false;
     }
     inputfile >> temp;
-    filenames.push_back(workingdir+temp); // #1
+    filenames.push_back(workingdir + temp); // #1
     inputfile >> temp;
-    if (temp!="signals=")
+    if (temp != "signals=")
     {
         inputfile.close();
         return false;
     }
     inputfile >> temp;
-    filenames.push_back(workingdir+temp); // #2
+    filenames.push_back(workingdir + temp); // #2
     inputfile >> temp;
-    if (temp!="histtimes=")
+    if (temp != "histtimes=")
     {
         inputfile.close();
         return false;
     }
     inputfile >> temp;
-    filenames.push_back(workingdir+temp); // #3
+    filenames.push_back(workingdir + temp); // #3
     inputfile >> temp;
-    if (temp!="routes=")
+    if (temp != "routes=")
     {
         inputfile.close();
         return false;
     }
     inputfile >> temp;
-    filenames.push_back(workingdir+temp); // #4
+    filenames.push_back(workingdir + temp); // #4
     inputfile >> temp;
-    if (temp!="demand=")
+    if (temp != "demand=")
     {
         inputfile.close();
         return false;
     }
     inputfile >> temp;
-    filenames.push_back(workingdir+temp); //  #5
+    filenames.push_back(workingdir + temp); //  #5
     inputfile >> temp;
-    if (temp!="incident=")
+    if (temp != "incident=")
     {
         inputfile.close();
         return false;
     }
     inputfile >> temp;
-    filenames.push_back(workingdir+temp); // #6
+    filenames.push_back(workingdir + temp); // #6
     inputfile >> temp;
-    if (temp!="vehicletypes=")
+    if (temp != "vehicletypes=")
     {
         inputfile.close();
         return false;
     }
     inputfile >> temp;
-    filenames.push_back(workingdir+temp); // #7
+    filenames.push_back(workingdir + temp); // #7
     inputfile >> temp;
-    if (temp!="virtuallinks=")
+    if (temp != "virtuallinks=")
     {
         inputfile.close();
         return false;
     }
     inputfile >> temp;
-    filenames.push_back(workingdir+temp); // #8
+    filenames.push_back(workingdir + temp); // #8
     inputfile >> temp;
-    if (temp!="serverrates=")
+    if (temp != "serverrates=")
     {
         inputfile.close();
         return false;
     }
     inputfile >> temp;
-    filenames.push_back(workingdir+temp); // #9
+    filenames.push_back(workingdir + temp); // #9
     inputfile >> temp;
-    if (temp!="#output_files")
+    if (temp != "#output_files")
     {
         inputfile.close();
         return false;
     }
     inputfile >> temp;
-    if (temp!="linktimes=")
+    if (temp != "linktimes=")
     {
         inputfile.close();
         return false;
     }
     inputfile >> temp;
-    filenames.push_back(workingdir+temp); // #10
+    filenames.push_back(workingdir + temp); // #10
     inputfile >> temp;
-    if (temp!="output=")
+    if (temp != "output=")
     {
         inputfile.close();
         return false;
     }
     inputfile >> temp;
-    filenames.push_back(workingdir+temp); // #11
+    filenames.push_back(workingdir + temp); // #11
     inputfile >> temp;
-    if (temp!="summary=")
+    if (temp != "summary=")
     {
         inputfile.close();
         return false;
     }
     inputfile >> temp;
-    filenames.push_back(workingdir+temp); //  #12
+    filenames.push_back(workingdir + temp); //  #12
     inputfile >> temp;
-    if (temp!="speeds=")
+    if (temp != "speeds=")
     {
         inputfile.close();
         return false;
     }
     inputfile >> temp;
-    filenames.push_back(workingdir+temp); // #13
+    filenames.push_back(workingdir + temp); // #13
     inputfile >> temp;
-    if (temp!="inflows=")
+    if (temp != "inflows=")
     {
         inputfile.close();
         return false;
     }
     inputfile >> temp;
-    filenames.push_back(workingdir+temp); // #14
+    filenames.push_back(workingdir + temp); // #14
     inputfile >> temp;
-    if (temp!="outflows=")
+    if (temp != "outflows=")
     {
         inputfile.close();
         return false;
     }
     inputfile >> temp;
-    filenames.push_back(workingdir+temp); //  #15
+    filenames.push_back(workingdir + temp); //  #15
     inputfile >> temp;
-    if (temp!="queuelengths=")
+    if (temp != "queuelengths=")
     {
         inputfile.close();
         return false;
     }
     inputfile >> temp;
-    filenames.push_back(workingdir+temp); // #16
+    filenames.push_back(workingdir + temp); // #16
     inputfile >> temp;
-    if (temp!="densities=")
+    if (temp != "densities=")
     {
         inputfile.close();
         return false;
     }
     inputfile >> temp;
-    filenames.push_back(workingdir+temp); // #17
+    filenames.push_back(workingdir + temp); // #17
     inputfile >> temp;
-    if (temp!="#scenario")
+    if (temp != "#scenario")
     {
         inputfile.close();
         return false;
     }
     inputfile >> temp;
-    if (temp!="starttime=")
+    if (temp != "starttime=")
     {
         inputfile.close();
         return false;
     }
     inputfile >> starttime;
     inputfile >> temp;
-    if (temp!="stoptime=") // stoptime==runtime
+    if (temp != "stoptime=") // stoptime==runtime
     {
         inputfile.close();
         return false;
@@ -8561,35 +8780,35 @@ bool Network::readmaster(string name)
     inputfile >> runtime;
     theParameters->running_time = runtime;
     inputfile >> temp;
-    if (temp!="calc_paths=")
+    if (temp != "calc_paths=")
     {
-        calc_paths=false;
+        calc_paths = false;
         inputfile.close();
         return true;
     }
-    
-    
-        inputfile >> calc_paths;
-    
+
+
+    inputfile >> calc_paths;
+
     inputfile >> temp;
-    if (temp!="traveltime_alpha=")
+    if (temp != "traveltime_alpha=")
     {
         inputfile.close();
         return false;
     }
     inputfile >> time_alpha;
     inputfile >> temp;
-    if (temp!="parameters=")
+    if (temp != "parameters=")
     {
         inputfile.close();
         return false;
     }
     inputfile >> temp;
-    filenames.push_back(workingdir+temp);   //  #18 Parameters
+    filenames.push_back(workingdir + temp);   //  #18 Parameters
 
 #ifdef _VISSIMCOM
     inputfile >> temp;
-    if (temp!="vissimfile=")
+    if (temp != "vissimfile=")
     {
         //cout << "No vissimfile specified in masterfile" << endl;
         inputfile.close();
@@ -8602,7 +8821,7 @@ bool Network::readmaster(string name)
     }
 #endif //_VISSIMCOM
     inputfile >> temp;
-    if (temp!="background=")
+    if (temp != "background=")
     {
         //cout << "No background specified in masterfile" << endl;
         inputfile.close();
@@ -8610,38 +8829,38 @@ bool Network::readmaster(string name)
 
     }
     if (inputfile >> temp) {
-        filenames.push_back(workingdir+temp); //  #19
-}
+        filenames.push_back(workingdir + temp); //  #19
+    }
 
     inputfile.close();
     return true;
 }
 
 #ifndef _NO_GUI
-double Network::executemaster(QPixmap * pm_,QMatrix * wm_)
+double Network::executemaster(QPixmap* pm_, QMatrix* wm_)
 {
-    pm=pm_;
-    wm=wm_;
-    time=0.0;
-    if (!readparameters(filenames [18])) {
-        cout << "Problem reading parameters: " << filenames [18] << endl; // read parameters first
-}
+    pm = pm_;
+    wm = wm_;
+    time = 0.0;
+    if (!readparameters(filenames[18])) {
+        cout << "Problem reading parameters: " << filenames[18] << endl; // read parameters first
+    }
 
     if (!readvtypes(filenames[7])) {
-        cout << "Problem reading vtypes: " << filenames [6] << endl; // read the vehicle types first
-}
+        cout << "Problem reading vtypes: " << filenames[6] << endl; // read the vehicle types first
+    }
     if (!readnetwork(filenames[0])) {
-        cout << "Problem reading network: " << filenames [0] << endl; // read the network configuration
-}
-    if(!readvirtuallinks(filenames[8])) {
-        cout << "Problem reading virtuallinks: " << filenames [7] << endl;	//read the virtual links
-}
-    if(!readserverrates(filenames[9])) {
-        cout << "Problem reading serverrates: " << filenames [8] << endl;	//read the virtual links
-}
+        cout << "Problem reading network: " << filenames[0] << endl; // read the network configuration
+    }
+    if (!readvirtuallinks(filenames[8])) {
+        cout << "Problem reading virtuallinks: " << filenames[7] << endl;	//read the virtual links
+    }
+    if (!readserverrates(filenames[9])) {
+        cout << "Problem reading serverrates: " << filenames[8] << endl;	//read the virtual links
+    }
     if (!register_links()) {
-        cout << "Problem reading registering links at nodes "<< endl; // register the links at the destinations, junctions and origins
-}
+        cout << "Problem reading registering links at nodes " << endl; // register the links at the destinations, junctions and origins
+    }
     if (!(readturnings(filenames[1])))
     {
         cout << "no turnings read, making new ones...." << endl;
@@ -8657,25 +8876,25 @@ double Network::executemaster(QPixmap * pm_,QMatrix * wm_)
 
     // 2005-11-28 put the reading of OD matrix before the paths...
     if (!readdemandfile(filenames[5])) {
-        cout << "Problem reading OD matrix " << filenames [5] << endl; // generate the odpairs.
-}
+        cout << "Problem reading OD matrix " << filenames[5] << endl; // generate the odpairs.
+    }
     //Sort the ODpairs
-    sort (odpairs.begin(), odpairs.end(), od_less_than);
+    sort(odpairs.begin(), odpairs.end(), od_less_than);
 
 
     if (!(readpathfile(filenames[4]))) // read the known paths
     {
         cout << "no routes read from the pathfile" << endl;
-        calc_paths=true; // so that new ones are calculated.
+        calc_paths = true; // so that new ones are calculated.
     }
     if (calc_paths)
     {
         if (!init_shortest_path()) {
             cout << "Problem starting init shortest path " << endl; // init the shortest paths
-}
+        }
         if (!shortest_paths_all()) {
             cout << "Problem calculating shortest paths for all OD pairs " << endl; // see if there are new routes based on shortest path
-}
+        }
     }
     // Sort the routes by OD pair
     // NOTE: Obsolete, routemap is always sorted by OD pair
@@ -8696,8 +8915,8 @@ double Network::executemaster(QPixmap * pm_,QMatrix * wm_)
     // NEW 2007_03_08
 #ifdef _BUSES
     // read the transit system input
-    this->readtransitroutes (workingdir + "transit_routes.dat"); //FIX IN THE MAIN READ & WRITE
-    this->readtransitnetwork (workingdir + "transit_network.dat"); //FIX IN THE MAIN READ & WRITE
+    this->readtransitroutes(workingdir + "transit_routes.dat"); //FIX IN THE MAIN READ & WRITE
+    this->readtransitnetwork(workingdir + "transit_network.dat"); //FIX IN THE MAIN READ & WRITE
 
     if (theParameters->drt)
     {
@@ -8708,8 +8927,8 @@ double Network::executemaster(QPixmap * pm_,QMatrix * wm_)
         }
     }
 
-    this->readtransitfleet (workingdir + "transit_fleet.dat");
-    this->readtransitdemand (workingdir + "transit_demand.dat");
+    this->readtransitfleet(workingdir + "transit_fleet.dat");
+    this->readtransitdemand(workingdir + "transit_demand.dat");
 
     if (theParameters->empirical_demand == 1)
     {
@@ -8744,25 +8963,25 @@ double Network::executemaster(QPixmap * pm_,QMatrix * wm_)
     day2day = new Day2day(1);
     if (theParameters->pass_day_to_day_indicator >= 1)
     {
-        this->read_transitday2day (workingdir +"transit_day2day.dat");
+        this->read_transitday2day(workingdir + "transit_day2day.dat");
     }
     if (theParameters->in_vehicle_d2d_indicator >= 1)
     {
-        this->read_IVTT_day2day (workingdir +"transit_day2day_onboard.dat");
+        this->read_IVTT_day2day(workingdir + "transit_day2day_onboard.dat");
     }
 #endif // _BUSES
     if (!init()) {
         cout << "Problem initialising " << endl;
-}
+    }
     if (!readincidentfile(filenames[6])) {
-        cout << "Problem reading incident file " << filenames [5] << endl; // reads the incident file   and makes all the alternative routes at all  links
-}
+        cout << "Problem reading incident file " << filenames[5] << endl; // reads the incident file   and makes all the alternative routes at all  links
+    }
     if (filenames.size() >= 20) {
         drawing->set_background(filenames[19].c_str());
-}
+    }
     if (theParameters->use_ass_matrix)
     {
-        this->readassignmentlinksfile (workingdir + "assign_links.dat"); //FIX IN THE MAIN READ & WRITE
+        this->readassignmentlinksfile(workingdir + "assign_links.dat"); //FIX IN THE MAIN READ & WRITE
     }
 
     return runtime;
@@ -8771,26 +8990,26 @@ double Network::executemaster(QPixmap * pm_,QMatrix * wm_)
 
 double Network::executemaster()
 {
-    time=0.0;
-    if (!readparameters(filenames [18])) {
-        cout << "Problem reading parameters: " << filenames [18] << endl; // read parameters first
-}
+    time = 0.0;
+    if (!readparameters(filenames[18])) {
+        cout << "Problem reading parameters: " << filenames[18] << endl; // read parameters first
+    }
 
     if (!readvtypes(filenames[7])) {
-        cout << "Problem reading vtypes: " << filenames [6] << endl; // read the vehicle types
-}
+        cout << "Problem reading vtypes: " << filenames[6] << endl; // read the vehicle types
+    }
     if (!readnetwork(filenames[0])) {
-        cout << "Problem reading network: " << filenames [0] << endl; // read the network configuration
-}
-    if(!readvirtuallinks(filenames[8])) {
-        cout << "Problem reading virtuallinks: " << filenames [7] << endl;	//read the virtual links
-}
-    if(!readserverrates(filenames[9])) {
-        cout << "Problem reading serverrates: " << filenames [8] << endl;	//read the virtual links
-}
+        cout << "Problem reading network: " << filenames[0] << endl; // read the network configuration
+    }
+    if (!readvirtuallinks(filenames[8])) {
+        cout << "Problem reading virtuallinks: " << filenames[7] << endl;	//read the virtual links
+    }
+    if (!readserverrates(filenames[9])) {
+        cout << "Problem reading serverrates: " << filenames[8] << endl;	//read the virtual links
+    }
     if (!register_links()) {
-        cout << "Problem reading registering links at nodes "<< endl; // register the links at the destinations, junctions and origins
-}
+        cout << "Problem reading registering links at nodes " << endl; // register the links at the destinations, junctions and origins
+    }
     if (!(readturnings(filenames[1])))
     {
         cout << "no turnings read, making new ones...." << endl;
@@ -8804,25 +9023,25 @@ double Network::executemaster()
     }
     // New 2005-11-28 put the reading of OD matrix before the paths...
     if (!readdemandfile(filenames[5])) {
-        cout << "Problem reading OD matrix " << filenames [4] << endl; // generate the odpairs.
-}
+        cout << "Problem reading OD matrix " << filenames[4] << endl; // generate the odpairs.
+    }
     //Sort the ODpairs
-    sort (odpairs.begin(), odpairs.end(), od_less_than);
+    sort(odpairs.begin(), odpairs.end(), od_less_than);
 
 
     if (!(readpathfile(filenames[4]))) // read the known paths
     {
         cout << "no routes read from the pathfile" << endl;
-        calc_paths=true; // so that new ones are calculated.
+        calc_paths = true; // so that new ones are calculated.
     }
     if (calc_paths)
     {
         if (!init_shortest_path()) {
             cout << "Problem starting init shortest path " << endl; // init the shortest paths
-}
+        }
         if (!shortest_paths_all()) {
             cout << "Problem calculating shortest paths for all OD pairs " << endl; // see if there are new routes based on shortest path
-}
+        }
     }
     // Sort the routes by OD pair
     //sort(routes.begin(), routes.end(), route_less_than);
@@ -8841,8 +9060,8 @@ double Network::executemaster()
     readsignalcontrols(filenames[2]);
 #ifdef _BUSES
     // read the transit system input
-    this->readtransitroutes (workingdir + "transit_routes.dat"); //FIX IN THE MAIN READ & WRITE
-    this->readtransitnetwork (workingdir + "transit_network.dat"); //FIX IN THE MAIN READ & WRITE
+    this->readtransitroutes(workingdir + "transit_routes.dat"); //FIX IN THE MAIN READ & WRITE
+    this->readtransitnetwork(workingdir + "transit_network.dat"); //FIX IN THE MAIN READ & WRITE
 
     if (theParameters->drt)
     {
@@ -8853,9 +9072,9 @@ double Network::executemaster()
         }
     }
 
-    this->readtransitfleet (workingdir + "transit_fleet.dat");
-    this->readtransitdemand (workingdir + "transit_demand.dat");
-    
+    this->readtransitfleet(workingdir + "transit_fleet.dat");
+    this->readtransitdemand(workingdir + "transit_demand.dat");
+
     if (theParameters->empirical_demand == 1)
     {
         assert(theParameters->demand_format == 3);
@@ -8888,24 +9107,24 @@ double Network::executemaster()
     day2day = new Day2day(1);
     if (theParameters->pass_day_to_day_indicator >= 1)
     {
-        this->read_transitday2day (workingdir +"transit_day2day.dat");
+        this->read_transitday2day(workingdir + "transit_day2day.dat");
     }
     if (theParameters->in_vehicle_d2d_indicator >= 1)
     {
-        this->read_IVTT_day2day (workingdir +"transit_day2day_onboard.dat");
+        this->read_IVTT_day2day(workingdir + "transit_day2day_onboard.dat");
     }
 
 #endif //_BUSES
 
     if (!init()) {
         cout << "Problem initialising " << endl;
-}
+    }
     if (!readincidentfile(filenames[6])) {
-        cout << "Problem reading incident file " << filenames [5] << endl; // reads the incident file   and makes all the alternative routes at all  links
-}
+        cout << "Problem reading incident file " << filenames[5] << endl; // reads the incident file   and makes all the alternative routes at all  links
+    }
     if (theParameters->use_ass_matrix)
     {
-        this->readassignmentlinksfile (workingdir + "assign_links.dat"); // !!! WE NEED TO FIX THIS INTO THE MAIN READ& WRITE
+        this->readassignmentlinksfile(workingdir + "assign_links.dat"); // !!! WE NEED TO FIX THIS INTO THE MAIN READ& WRITE
     }
 
     return runtime;
@@ -8914,34 +9133,34 @@ double Network::executemaster()
 
 bool Network::writeall(unsigned int repl)
 {
-    replication=repl;
+    replication = repl;
     string rep;
     string cleantimes;
     end_of_simulation();
     string linktimesfile = filenames[10];
-    cleantimes=linktimesfile+".clean";
-    string summaryfile=filenames[12];
-    string vehicleoutputfile=filenames[11];
-    string allmoesfile="allmoes.dat";
-    string assignmentmatfile="assign.dat";
-    string vqueuesfile="v_queues.dat";
-    if (replication >0)
+    cleantimes = linktimesfile + ".clean";
+    string summaryfile = filenames[12];
+    string vehicleoutputfile = filenames[11];
+    string allmoesfile = "allmoes.dat";
+    string assignmentmatfile = "assign.dat";
+    string vqueuesfile = "v_queues.dat";
+    if (replication > 0)
     {
         stringstream repstr;
         repstr << "." << replication;
-        rep=repstr.str();
-        cleantimes=linktimesfile +".clean" +rep;
-        linktimesfile += rep ;
-        summaryfile += rep ;
-        vehicleoutputfile += rep ;
-        allmoesfile += rep ;
+        rep = repstr.str();
+        cleantimes = linktimesfile + ".clean" + rep;
+        linktimesfile += rep;
+        summaryfile += rep;
+        vehicleoutputfile += rep;
+        allmoesfile += rep;
         assignmentmatfile += rep;
         vqueuesfile += rep;
     }
     writelinktimes(linktimesfile);
     // NEW: Write also the non-smoothed times
 
-    time_alpha=1.0;
+    time_alpha = 1.0;
     writelinktimes(cleantimes);
 
     writesummary(summaryfile); // write the summary first because
@@ -8952,28 +9171,29 @@ bool Network::writeall(unsigned int repl)
     writeassmatrices(assignmentmatfile);
     write_v_queues(vqueuesfile);
     this->write_busstop_output(
-                workingdir + "o_transitlog_out.dat",
-                workingdir + "o_transitstop_sum.dat",
-                workingdir + "o_transitline_sum.dat",
-                workingdir + "o_transit_trajectory.dat",
-                workingdir + "o_passenger_boarding.dat",
-                workingdir + "o_passenger_alighting.dat",
-                workingdir + "o_segments_trip_loads.dat",
-                workingdir + "o_selected_paths.dat",
-                workingdir + "o_segments_line_loads.dat",
-                workingdir + "o_od_stops_summary.dat",
-                workingdir + "o_trip_total_travel_time.dat",
-                workingdir + "o_od_stop_summary_without_paths.dat",
-                workingdir + "o_passenger_waiting_experience.dat",
-                workingdir + "o_passenger_onboard_experience.dat",
-                workingdir + "o_passenger_connection.dat",
-                workingdir + "o_passenger_trajectory.dat",
-                workingdir + "o_passenger_welfare_summary.dat",
-                workingdir + "o_fwf_summary.dat",
-                workingdir + "o_passenger_transitmode.dat",
-                workingdir + "o_passenger_dropoff.dat",
-                workingdir + "o_vkt.dat"
-                );
+        workingdir + "o_transitlog_out.dat",
+        workingdir + "o_transitstop_sum.dat",
+        workingdir + "o_transitline_sum.dat",
+        workingdir + "o_transit_trajectory.dat",
+        workingdir + "o_passenger_boarding.dat",
+        workingdir + "o_passenger_alighting.dat",
+        workingdir + "o_segments_trip_loads.dat",
+        workingdir + "o_selected_paths.dat",
+        workingdir + "o_segments_line_loads.dat",
+        workingdir + "o_od_stops_summary.dat",
+        workingdir + "o_trip_total_travel_time.dat",
+        workingdir + "o_od_stop_summary_without_paths.dat",
+        workingdir + "o_passenger_waiting_experience.dat",
+        workingdir + "o_passenger_onboard_experience.dat",
+        workingdir + "o_passenger_connection.dat",
+        workingdir + "o_passenger_trajectory.dat",
+        workingdir + "o_passenger_welfare_summary.dat",
+        workingdir + "o_fwf_summary.dat",
+        workingdir + "o_passenger_transitmode.dat",
+        workingdir + "o_passenger_dropoff.dat",
+        workingdir + "o_vkt.dat",
+        workingdir + "o_fwf_summary_odcategory.dat"
+    );
     write_transitroutes(workingdir + "o_transit_routes.dat");
     return true;
 }
@@ -9022,26 +9242,26 @@ bool Network::writeallmoes(string name)
     return true;
 }
 
-double Network::calc_diff_input_output_linktimes ()
+double Network::calc_diff_input_output_linktimes()
 {
-    double total =0.0;
-    for (auto & iter1 : linkmap)
+    double total = 0.0;
+    for (auto& iter1 : linkmap)
     {
-        if (iter1.second->get_nr_passed() > 0 ) {
-            total+=iter1.second->calc_diff_input_output_linktimes();
-}
+        if (iter1.second->get_nr_passed() > 0) {
+            total += iter1.second->calc_diff_input_output_linktimes();
+        }
     }
     return total;
 }
 
-double Network::calc_sumsq_input_output_linktimes ()
+double Network::calc_sumsq_input_output_linktimes()
 {
-    double total =0.0;
-    for (auto & iter1 : linkmap)
+    double total = 0.0;
+    for (auto& iter1 : linkmap)
     {
-        if (iter1.second->get_nr_passed() > 0 ) {
-            total+=iter1.second->calc_sumsq_input_output_linktimes();
-}
+        if (iter1.second->get_nr_passed() > 0) {
+            total += iter1.second->calc_sumsq_input_output_linktimes();
+        }
     }
     return total;
 }
@@ -9056,7 +9276,7 @@ double Network::calc_rms_input_output_linktimes()
 {
     double n = linkmap.size() * nrperiods;
     double ssq = calc_sumsq_input_output_linktimes();
-    double result= sqrt(ssq/n);
+    double result = sqrt(ssq / n);
     return result;
 }
 
@@ -9067,11 +9287,11 @@ double Network::calc_rmsn_input_output_linktimes()
 
 double Network::calc_mean_input_odtimes()
 {
-    double n= odpairs.size();
+    double n = odpairs.size();
     double sum = 0.0;
-    for (auto & odpair : odpairs)
+    for (auto& odpair : odpairs)
     {
-        sum+=odpair->get_mean_old_odtimes();
+        sum += odpair->get_mean_old_odtimes();
     }
     return sum / n;
 }
@@ -9079,15 +9299,15 @@ double Network::calc_mean_input_odtimes()
 double Network::calc_rms_input_output_odtimes()
 {
     double n = odpairs.size();
-    double diff= 0.0;
+    double diff = 0.0;
     double ssq = 0.0;
-    for (auto & odpair : odpairs)
+    for (auto& odpair : odpairs)
     {
-        diff=odpair->get_diff_odtimes();
-        ssq += diff*diff;
+        diff = odpair->get_diff_odtimes();
+        ssq += diff * diff;
     }
 
-    return sqrt(ssq/n);
+    return sqrt(ssq / n);
 }
 
 double Network::calc_rmsn_input_output_odtimes()
@@ -9097,50 +9317,50 @@ double Network::calc_rmsn_input_output_odtimes()
 
 bool Network::writemoes(string ending)
 {
-    string name=filenames[13] + ending; // speeds
+    string name = filenames[13] + ending; // speeds
     ofstream out(name.c_str());
     //assert(out);
 
-    for (auto & iter : linkmap)
+    for (auto& iter : linkmap)
     {
 
-        iter.second->write_speeds(out,nrperiods);
+        iter.second->write_speeds(out, nrperiods);
     }
     out.close();
-    name=filenames[14] + ending; // inflows
+    name = filenames[14] + ending; // inflows
     out.open(name.c_str());
     //assert(out);
 
-    for (auto & iter1 : linkmap)
+    for (auto& iter1 : linkmap)
     {
-        iter1.second->write_inflows(out,nrperiods);
+        iter1.second->write_inflows(out, nrperiods);
     }
     out.close();
-    name=filenames[15] + ending; // outflows
+    name = filenames[15] + ending; // outflows
     out.open(name.c_str());
     //assert(out);
 
-    for (auto & iter2 : linkmap)
+    for (auto& iter2 : linkmap)
     {
-        iter2.second->write_outflows(out,nrperiods);
+        iter2.second->write_outflows(out, nrperiods);
     }
     out.close();
-    name=filenames[16] + ending; // queues
+    name = filenames[16] + ending; // queues
     out.open(name.c_str());
     //assert(out);
 
-    for (auto & iter3 : linkmap)
+    for (auto& iter3 : linkmap)
     {
-        iter3.second->write_queues(out,nrperiods);
+        iter3.second->write_queues(out, nrperiods);
     }
     out.close();
-    name=filenames[17] + ending; // densities
+    name = filenames[17] + ending; // densities
     out.open(name.c_str());
     //assert(out);
 
-    for (auto & iter4 : linkmap)
+    for (auto& iter4 : linkmap)
     {
-        iter4.second->write_densities(out,nrperiods);
+        iter4.second->write_densities(out, nrperiods);
     }
     out.close();
     return true;
@@ -9151,7 +9371,7 @@ bool Network::write_v_queues(string name)
 {
     ofstream out(name.c_str());
     //assert(out);
-    for (auto & iter : originmap)
+    for (auto& iter : originmap)
     {
         iter.second->write_v_queues(out);
     }
@@ -9167,12 +9387,12 @@ bool Network::writeassmatrices(string name)
     out << "no_obs_links: " << no_ass_links << endl;
     int nr_periods = static_cast<int>(runtime / theParameters->ass_link_period);
     out << "no_link_pers: " << nr_periods << endl;
-    for (int i=0; i < nr_periods; i++)
+    for (int i = 0; i < nr_periods; i++)
     {
         out << "link_period: " << i << endl;
-        for (auto & iter1 : linkmap)
+        for (auto& iter1 : linkmap)
         {
-            iter1.second->write_ass_matrix(out,i);
+            iter1.second->write_ass_matrix(out, i);
         }
         //out << endl;
     }
@@ -9185,28 +9405,28 @@ bool Network::writeassmatrices(string name)
 bool Network::init()
 {
     // initialise the turning events
-    double initvalue =0.1;
-    for(auto & iter : turningmap)
+    double initvalue = 0.1;
+    for (auto& iter : turningmap)
     {
-        iter.second->init(eventlist,initvalue);
+        iter.second->init(eventlist, initvalue);
         initvalue += 0.00001;
     }
     // initialise the signal controllers (they will init the plans and stages)
-    for (auto iter1=signalcontrols.begin(); iter1<signalcontrols.end(); iter1++)
+    for (auto iter1 = signalcontrols.begin(); iter1 < signalcontrols.end(); iter1++)
     {
-        (*iter1)->execute(eventlist,initvalue);
+        (*iter1)->execute(eventlist, initvalue);
         initvalue += 0.000001;
         //	cout << "Signal control initialised " << endl;
     }
 #ifdef _BUSES
     // Initialise the buslines
-    for (auto iter3=buslines.begin(); iter3 < buslines.end(); iter3++)
+    for (auto iter3 = buslines.begin(); iter3 < buslines.end(); iter3++)
     {
-        (*iter3)->execute(eventlist,initvalue);
-        initvalue+=0.00001;
+        (*iter3)->execute(eventlist, initvalue);
+        initvalue += 0.00001;
     }
 
-    if(theParameters->demand_format == 3)
+    if (theParameters->demand_format == 3)
     {
         if (theParameters->empirical_demand == 1)
         {
@@ -9237,15 +9457,15 @@ bool Network::init()
                 }
             }
         }
-        for (auto iter_odstops = odstops_demand.begin(); iter_odstops < odstops_demand.end(); iter_odstops++ )
+        for (auto iter_odstops = odstops_demand.begin(); iter_odstops < odstops_demand.end(); iter_odstops++)
         {
             if ((*iter_odstops)->get_arrivalrate() != 0.0 || (*iter_odstops)->has_empirical_arrivals())
             {
                 if ((*iter_odstops)->check_path_set())
                 {
-                    (*iter_odstops)->execute(eventlist,initvalue); // adds an event for the generation time of the first passenger per OD in terms of stops
+                    (*iter_odstops)->execute(eventlist, initvalue); // adds an event for the generation time of the first passenger per OD in terms of stops
                 }
-                initvalue+=0.00001;
+                initvalue += 0.00001;
             }
         }
     }
@@ -9275,20 +9495,20 @@ bool Network::init()
     cout << "turnings initialised" << endl;
 #endif //_DEBUG_NETWORK
     // initialise the od pairs and their events
-    for(auto iter0=odpairs.begin(); iter0<odpairs.end();)
+    for (auto iter0 = odpairs.begin(); iter0 < odpairs.end();)
     {
         if ((*iter0)->get_nr_routes() == 0) //chuck out the OD pairs without paths
         {
             //#ifdef _DEBUG_NETWORK
             cout << "OD pair " << (*iter0)->get_origin()->get_id() << " - " <<
-                    (*iter0)->get_destination()->get_id() << " does not have any route connecting them. deleting..." << endl;
+                (*iter0)->get_destination()->get_id() << " does not have any route connecting them. deleting..." << endl;
             //#endif //_DEBUG_NETWORK
-            delete *iter0;
-            iter0=odpairs.erase(iter0);
+            delete* iter0;
+            iter0 = odpairs.erase(iter0);
         }
         else // otherwise initialise them
         {
-            (*iter0)->execute(eventlist,initvalue);
+            (*iter0)->execute(eventlist, initvalue);
             initvalue += 0.00001;
             iter0++;
         }
@@ -9296,13 +9516,13 @@ bool Network::init()
 
 #ifdef _DEBUG_NETWORK
     cout << "odpairs initialised" << endl;
-    cout << "number of destinations " <<destinations.size() <<endl;
+    cout << "number of destinations " << destinations.size() << endl;
 #endif //_DEBUG_NETWORK
     // initialise the destination events
     //	register_links();
-    for (auto & iter2 : destinationmap)
+    for (auto& iter2 : destinationmap)
     {
-        iter2.second->execute(eventlist,initvalue);
+        iter2.second->execute(eventlist, initvalue);
         initvalue += 0.00001;
     }
 
@@ -9315,13 +9535,13 @@ bool Network::init()
 #endif //_PVM
 #ifdef _VISSIMCOM
         communicator->register_virtuallinks(&virtuallinks); // register the virtual links
-        communicator->init(vissimfile,runtime);
+        communicator->init(vissimfile, runtime);
 
 #endif // _VISSIMCOM
         communicator->register_boundaryouts(&boundaryouts);          // register the boundary nodes that send messages
         communicator->register_boundaryins(&boundaryins);          // register the boundary nodes that receive messages
 
-        communicator->execute(eventlist,initvalue); // book yourself for the first time.
+        communicator->execute(eventlist, initvalue); // book yourself for the first time.
         initvalue += 0.000001;
     }
 #endif // _MIME
@@ -9335,29 +9555,29 @@ bool Network::run(int period)
 {
     // This part will be transferred to the GUI
 
-    double t0=timestamp();
+    double t0 = timestamp();
     double tc;
-    double next_an_update=t0+an_step;
+    double next_an_update = t0 + an_step;
 #ifndef _NO_GUI
-    drawing->draw(pm,wm);
+    drawing->draw(pm, wm);
 #endif //_NO_GUI
     //eventhandle->startup();
-    double time=0.0;
-    while ((time>-1.0) && (time<period))       // the big loop
+    double time = 0.0;
+    while ((time > -1.0) && (time < period))       // the big loop
     {
-        time=eventlist->next();
-        if (time > (next_an_update-t0)*speedup)  // if the sim has come far enough
+        time = eventlist->next();
+        if (time > (next_an_update - t0) * speedup)  // if the sim has come far enough
         {
-            tc=timestamp();
+            tc = timestamp();
             while (tc < next_an_update)  // wait till the next animation update
             {
-                tc=timestamp();
+                tc = timestamp();
             }
             //	eventhandle->startup();     //update animation
 #ifndef _NO_GUI
-            drawing->draw(pm,wm);
+            drawing->draw(pm, wm);
 #endif // _NO_GUI
-            next_an_update+=an_step;    // update next step.
+            next_an_update += an_step;    // update next step.
         }
     }
     //double tstop=timestamp();
@@ -9499,22 +9719,22 @@ void Network::recenter_image()
     double scale_x = (pm->width()) / width_x;
     double scale_y = (pm->height()) / height_y;
 
-    scale = _MIN (scale_x,scale_y);
+    scale = _MIN(scale_x, scale_y);
     // cout << "scales. x: " << scale_x << " y: " << scale_y <<" scale: " << scale <<  endl;
-    wm->translate(boundaries[0],boundaries[1]); // so that (minx,miny)=(0,0)
+    wm->translate(boundaries[0], boundaries[1]); // so that (minx,miny)=(0,0)
 
     // center the image
     if (scale_x > scale_y)// if the Y dimension determines the scale
     {
-        double move_x = (pm->width() - (width_x*scale_y))/2; //
-        wm->translate (move_x,0);
+        double move_x = (pm->width() - (width_x * scale_y)) / 2; //
+        wm->translate(move_x, 0);
     }
     else
     {
-        double move_y = (pm->height() - (height_y*scale_x))/2; //
-        wm->translate (0,move_y);
+        double move_y = (pm->height() - (height_y * scale_x)) / 2; //
+        wm->translate(0, move_y);
     }
-    wm->scale(scale,scale);
+    wm->scale(scale, scale);
 }
 
 /**
@@ -9543,25 +9763,25 @@ QMatrix Network::netgraphview_init()
     //the overscaled dimension
     width_x = static_cast<double>(boundaries[2]) - static_cast<double>(boundaries[0]);
     height_y = static_cast<double>(boundaries[3]) - static_cast<double>(boundaries[1]);
-    double scale_x = (pm->width())/width_x;
-    double scale_y = (pm->height())/height_y;
+    double scale_x = (pm->width()) / width_x;
+    double scale_y = (pm->height()) / height_y;
 
-    if (scale_x > scale_y){
-        scale=scale_y;
+    if (scale_x > scale_y) {
+        scale = scale_y;
         // the x dimension is overscaled
-        double x_adjust =pm->width()/2-width_x*scale/2;
-        initview_wm.translate(x_adjust,0);
-        initview_wm.scale(scale,scale);
+        double x_adjust = pm->width() / 2 - width_x * scale / 2;
+        initview_wm.translate(x_adjust, 0);
+        initview_wm.scale(scale, scale);
     }
-    else{
-        scale=scale_x;
-        double y_adjust = pm->height()/2-height_y*scale/2;
-        initview_wm.translate(0,y_adjust);
-        initview_wm.scale(scale,scale);
+    else {
+        scale = scale_x;
+        double y_adjust = pm->height() / 2 - height_y * scale / 2;
+        initview_wm.translate(0, y_adjust);
+        initview_wm.scale(scale, scale);
     }
-    initview_wm.translate(-boundaries[0],-boundaries[1]);
+    initview_wm.translate(-boundaries[0], -boundaries[1]);
     // make a copy to "wm"
-    (*wm)=initview_wm;
+    (*wm) = initview_wm;
     // return the information to the canvas
     return initview_wm;
 }
@@ -9569,7 +9789,7 @@ QMatrix Network::netgraphview_init()
 
 void Network::redraw() // redraws the image
 {
-    drawing->draw(pm,wm);
+    drawing->draw(pm, wm);
 }
 
 #endif // _NO_GUI
@@ -9580,32 +9800,32 @@ void Network::set_incident(int lid, int sid, bool blocked, double blocked_until)
 {
     //cout << "incident start on link " << lid << endl;
     //Link* lptr=(*(find_if (links.begin(),links.end(), compare <Link> (lid) ))) ;
-    Link* lptr = linkmap [lid];
+    Link* lptr = linkmap[lid];
     //Sdfunc* sdptr=(*(find_if (sdfuncs.begin(),sdfuncs.end(), compare <Sdfunc> (sid) ))) ;
-    Sdfunc* sdptr = sdfuncmap [sid];
-    lptr->set_incident (sdptr, blocked, blocked_until);
+    Sdfunc* sdptr = sdfuncmap[sid];
+    lptr->set_incident(sdptr, blocked, blocked_until);
 }
 
 void Network::unset_incident(int lid)
 {
     //cout << "end of incident on link  "<< lid << endl;
     //Link* lptr=(*(find_if (links.begin(),links.end(), compare <Link> (lid) ))) ;
-    Link* lptr = linkmap [lid];
-    lptr->unset_incident ();
+    Link* lptr = linkmap[lid];
+    lptr->unset_incident();
 }
 
 void Network::broadcast_incident_start(int lid)
 {
     // for all links inform and if received, apply switch algorithm
     //cout << "BROADCAST incident on link  "<< lid << endl;
-    for (auto & iter : linkmap)
+    for (auto& iter : linkmap)
     {
-        iter.second->broadcast_incident_start(lid,incident_parameters);
+        iter.second->broadcast_incident_start(lid, incident_parameters);
     }
     // for all origins : start the automatic switiching algorithm
-    for (auto & iter1 : originmap)
+    for (auto& iter1 : originmap)
     {
-        iter1.second->broadcast_incident_start(lid,incident_parameters);
+        iter1.second->broadcast_incident_start(lid, incident_parameters);
     }
 
 }
@@ -9614,7 +9834,7 @@ void Network::broadcast_incident_start(int lid)
 void Network::broadcast_incident_stop(int lid)
 {	//cout << "BROADCAST END of incident on link  "<< lid << endl;
     // for all origins: stop the automatic switching stuff
-    for (auto & iter : originmap)
+    for (auto& iter : originmap)
     {
         iter.second->broadcast_incident_stop(lid);
     }
@@ -9624,14 +9844,14 @@ void Network::removeRoute(Route* theroute)
 {
     odval val = theroute->get_oid_did();
 
-    multimap<odval,Route*>::iterator it;
-    multimap<odval,Route*>::iterator lower;
-    multimap<odval,Route*>::iterator upper;
+    multimap<odval, Route*>::iterator it;
+    multimap<odval, Route*>::iterator lower;
+    multimap<odval, Route*>::iterator upper;
     lower = routemap.lower_bound(val);
     upper = routemap.upper_bound(val);
-    for(it=lower; it!=upper; it++)
+    for (it = lower; it != upper; it++)
     {
-        if((*it).second==theroute)
+        if ((*it).second == theroute)
         {
             routemap.erase(it);
             return;
@@ -9639,47 +9859,46 @@ void Network::removeRoute(Route* theroute)
     }
 }
 
-void Network::set_output_moe_thickness ( unsigned int val ) // sets the output moe for the links
+void Network::set_output_moe_thickness(unsigned int val) // sets the output moe for the links
 {
     double maxval = 0.0;
-    double minval=999999.0;
-    pair <double,double> minmax;
+    double minval = 999999.0;
+    pair <double, double> minmax;
     auto iter = linkmap.begin();
-    for (;iter != linkmap.end(); iter++)
+    for (; iter != linkmap.end(); iter++)
     {
         minmax = (*iter).second->set_output_moe_thickness(val);
-        minval = min (minval, minmax.first);
+        minval = min(minval, minmax.first);
         maxval = max(maxval, minmax.second);
 
     }
-    theParameters->min_thickness_value=minval;
-    theParameters->max_thickness_value=maxval;
+    theParameters->min_thickness_value = minval;
+    theParameters->max_thickness_value = maxval;
 }
 
-void Network::set_output_moe_colour ( unsigned int val ) // sets the output moe for the links
+void Network::set_output_moe_colour(unsigned int val) // sets the output moe for the links
 {
     double maxval = 0.0;
-    double minval=999999.0;
-    pair <double,double> minmax;
+    double minval = 999999.0;
+    pair <double, double> minmax;
     auto iter = linkmap.begin();
-    for (;iter != linkmap.end(); iter++)
+    for (; iter != linkmap.end(); iter++)
     {
         minmax = (*iter).second->set_output_moe_colour(val);
-        minval = min (minval, minmax.first);
+        minval = min(minval, minmax.first);
         maxval = max(maxval, minmax.second);
 
     }
-    theParameters->min_colour_value=minval;
-    theParameters->max_colour_value=maxval;
-
+    theParameters->min_colour_value = minval;
+    theParameters->max_colour_value = maxval;
 }
 
 
 
-Incident::Incident (int lid_, int sid_, double start_, double stop_, double info_start_,double info_stop_, Eventlist* eventlist, Network* network_, bool blocked_):start(start_), stop(stop_),
-    info_start(info_start_), info_stop(info_stop_), lid(lid_), sid(sid_),network(network_), blocked (blocked_)
+Incident::Incident(int lid_, int sid_, double start_, double stop_, double info_start_, double info_stop_, Eventlist* eventlist, Network* network_, bool blocked_) :start(start_), stop(stop_),
+info_start(info_start_), info_stop(info_stop_), lid(lid_), sid(sid_), network(network_), blocked(blocked_)
 {
-    eventlist->add_event(start,this);
+    eventlist->add_event(start, this);
 }
 
 bool Incident::execute(Eventlist* eventlist, double time)
@@ -9687,7 +9906,7 @@ bool Incident::execute(Eventlist* eventlist, double time)
     //cout << "incident_execute time: " << time << endl;
 
     // In case no information is Broadcasted:
-    if ((info_start < 0.0) || (info_stop<0.0)) // there is no information broadcast
+    if ((info_start < 0.0) || (info_stop < 0.0)) // there is no information broadcast
     {
         // #1: Start the incident on the link
         if (time < stop)
@@ -9696,7 +9915,7 @@ bool Incident::execute(Eventlist* eventlist, double time)
 #ifndef _NO_GUI
             icon->set_visible(true);
 #endif
-            eventlist->add_event(stop,this);
+            eventlist->add_event(stop, this);
         }
         // #2: End the incident on the link
         else
@@ -9717,14 +9936,14 @@ bool Incident::execute(Eventlist* eventlist, double time)
 #ifndef _NO_GUI
             icon->set_visible(true);
 #endif
-            eventlist->add_event(info_start,this);
+            eventlist->add_event(info_start, this);
         }
         // #2: Start the broadcast of Information
         else if (time < stop)
         {
             broadcast_incident_start(lid);
             // TO DO: Change the broadcast to only include only the affected links and origins
-            eventlist->add_event(stop,this);
+            eventlist->add_event(stop, this);
         }
         // #3: End the incident on the link
         else if (time < info_stop)
@@ -9733,7 +9952,7 @@ bool Incident::execute(Eventlist* eventlist, double time)
 #ifndef _NO_GUI
             icon->set_visible(false);
 #endif
-            eventlist->add_event(info_stop,this);
+            eventlist->add_event(info_stop, this);
         }
         // #4: End the broadcast of Information
         else
@@ -9750,71 +9969,71 @@ void Incident::broadcast_incident_start(int lid)
     auto linkiter = affected_links.begin();
     for (; linkiter != affected_links.end(); linkiter++)
     {
-        (*linkiter).second->broadcast_incident_start (lid,incident_parameters);
+        (*linkiter).second->broadcast_incident_start(lid, incident_parameters);
     }
 
     // for all origins
-    auto oriter= affected_origins.begin();
-    for ( ;oriter != affected_origins.end(); oriter++)
+    auto oriter = affected_origins.begin();
+    for (; oriter != affected_origins.end(); oriter++)
     {
-        (*oriter).second->broadcast_incident_start (lid,incident_parameters);
+        (*oriter).second->broadcast_incident_start(lid, incident_parameters);
     }
 }
 
 void Incident::broadcast_incident_stop(int lid)
 {
 
-    auto oriter= affected_origins.begin();
-    for ( ;oriter != affected_origins.end(); oriter++)
+    auto oriter = affected_origins.begin();
+    for (; oriter != affected_origins.end(); oriter++)
     {
-        (*oriter).second->broadcast_incident_stop (lid);
+        (*oriter).second->broadcast_incident_stop(lid);
     }
 }
 
 
 // ODMATRIX CLASSES
 
-ODMatrix::ODMatrix ()= default;
+ODMatrix::ODMatrix() = default;
 
-void ODMatrix::reset(Eventlist* eventlist, vector <ODpair*> * odpairs)
+void ODMatrix::reset(Eventlist * eventlist, vector <ODpair*> *odpairs)
 {
-    auto s_iter=slices.begin();
-    for ( ;s_iter != slices.end(); s_iter++)
+    auto s_iter = slices.begin();
+    for (; s_iter != slices.end(); s_iter++)
     {
         //create and book the MatrixAction
         double loadtime = (*s_iter).first;
         ODSlice* odslice = (*s_iter).second;
-        auto* mptr=new MatrixAction(eventlist, loadtime, odslice, odpairs);
-        assert (mptr != nullptr);
+        auto* mptr = new MatrixAction(eventlist, loadtime, odslice, odpairs);
+        assert(mptr != nullptr);
 
     }
 }
 
 
-void ODMatrix::add_slice(double time, ODSlice* slice)
+void ODMatrix::add_slice(double time, ODSlice * slice)
 {
-    slices.insert(slices.end(), (pair <double,ODSlice*> (time,slice)) );
+    slices.insert(slices.end(), (pair <double, ODSlice*>(time, slice)));
 }
 
 // MATRIXACTION CLASSES
 
-MatrixAction::MatrixAction(Eventlist* eventlist, double time, ODSlice* slice_, vector<ODpair*> *ods_)
+MatrixAction::MatrixAction(Eventlist * eventlist, double time, ODSlice * slice_, vector<ODpair*> *ods_)
 {
-    slice=slice_;
-    ods=ods_;
+    slice = slice_;
+    ods = ods_;
     eventlist->add_event(time, this);
 }
 
-bool MatrixAction::execute(Eventlist* eventlist, double   /*time*/)
+bool MatrixAction::execute(Eventlist * eventlist, double   /*time*/)
 {
-    assert (eventlist != nullptr);
+    assert(eventlist != nullptr);
     //cout << time << " : MATRIXACTION:: set new rates "<< endl;
     // for all odpairs in slice
 
-    for (auto iter=slice->rates.begin();iter<slice->rates.end();iter++)
+    for (auto iter = slice->rates.begin(); iter < slice->rates.end(); iter++)
     {
         // find odpair
-        ODpair* odptr=(*(find_if (ods->begin(),ods->end(), compareod (iter->odid) )));
+        ODpair* odptr = (*(find_if(ods->begin(), ods->end(), compareod(iter->odid))));
         //init new rate
         odptr->set_rate(iter->rate);
     }
@@ -9822,14 +10041,14 @@ bool MatrixAction::execute(Eventlist* eventlist, double   /*time*/)
 }
 
 /* Experienced passenger LoS based on output collectors of passengers */
-void FWF_passdata::calc_pass_statistics(const vector<Passenger*>& passengers)
+void FWF_passdata::calc_pass_statistics(const vector<Passenger*>&passengers)
 {
     vector<double> waiting_times;
     vector<double> waiting_denied_times;
     vector<double> walking_times;
     vector<double> inveh_times;
     vector<double> inveh_crowded_times;
-    
+
     vector<double> gtcs;
 
     double wlkt = 0.0;
@@ -9842,7 +10061,7 @@ void FWF_passdata::calc_pass_statistics(const vector<Passenger*>& passengers)
     double drt_vkt = 0.0;
     double fix_vkt = 0.0;
 
-    for(Passenger* pass : passengers)
+    for (Passenger* pass : passengers)
     {
         if (pass->get_end_time() > 0) // will cause a crash otherwise when searching through incomplete output rows, so for now only passengers that completed their trip will count
         {
@@ -9892,7 +10111,7 @@ void FWF_passdata::calc_pass_statistics(const vector<Passenger*>& passengers)
         pair<double, double> ivt_stats = fwf_stats::calcMeanAndStdev(inveh_times);
         pair<double, double> ivtc_stats = fwf_stats::calcMeanAndStdev(inveh_crowded_times);
         pair<double, double> gtc_stats = fwf_stats::calcMeanAndStdev(gtcs);
-        
+
         avg_total_wlkt = wlkt_stats.first;
         std_total_wlkt = wlkt_stats.second;
 
@@ -9915,7 +10134,7 @@ void FWF_passdata::calc_pass_statistics(const vector<Passenger*>& passengers)
     pass_completed = npass; //!< @todo pass_completed and npass kindof redundant at the moment
 }
 
-void FWF_tripdata::calc_trip_statistics(const vector<Bustrip*>& trips)
+void FWF_tripdata::calc_trip_statistics(const vector<Bustrip*>&trips)
 {
     vector<double> trip_boardings;
     double trip_total_boarding;

@@ -273,7 +273,10 @@ protected:
 		@{
 	*/
 public:
-	bool is_dummylink() { return sdfunc->get_vfree() > ::dummy_link_freeflow_speed; } //!< returns true if this link is a dummy link (i.e. used purely for implementation/nefarious hacky purposes), and false otherwise
+	bool is_dummylink() { 
+		//return sdfunc->get_vfree() > ::dummy_link_freeflow_speed; 
+		return (length == 10) || (sdfunc->get_vfree() > ::dummy_link_freeflow_speed); //!< @todo PARTC paper specific dummylink indicator, remove
+	} //!< returns true if this link is a dummy link (i.e. used purely for implementation/nefarious hacky purposes), and false otherwise
 	/**@}*/
 };
 
