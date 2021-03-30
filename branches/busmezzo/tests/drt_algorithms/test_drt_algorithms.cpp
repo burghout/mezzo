@@ -306,7 +306,6 @@ void TestDRTAlgorithms::testRunNetwork()
 void TestDRTAlgorithms::testPostRunAssignment()
 {
     vector<ODstops*> odstops_demand = net->get_odstops_demand();
-    //QVERIFY2(odstops_demand.size() == 140, "Failure, network should have 140 od stop pairs (with non-zero demand defined in transit_demand.dat) ");
 
     for(auto od : odstops_demand)
     {
@@ -323,10 +322,20 @@ void TestDRTAlgorithms::testPostRunAssignment()
         // check expected passenger behavior for this network
         if(first_pass != nullptr)
         {
+            bool finished_trip = first_pass->get_end_time() > 0;
+            
             qDebug() << "First passenger for OD " << "(" << orig_s << "," << dest_s << "):";
-            qDebug() << "\t" << "finished trip    : " << (first_pass->get_end_time() > 0);
-            qDebug() << "\t" << "start time       : " << first_pass->get_start_time();
-            qDebug() << "\t" << "last stop visited: " << first_pass->get_chosen_path_stops().back().first->get_id();
+            qDebug() << "\t" << "passenger id        : " << (first_pass->get_id());
+            qDebug() << "\t" << "finished trip       : " << finished_trip;
+            qDebug() << "\t" << "start time          : " << first_pass->get_start_time();
+            qDebug() << "\t" << "last stop visited   : " << first_pass->get_chosen_path_stops().back().first->get_id();
+            qDebug() << "\t" << "num denied boardings: " << first_pass->get_nr_denied_boardings();
+            
+            size_t n_transfers = (first_pass->get_selected_path_stops().size() - 4) / 2; // given path definition (direct connection - 4 elements, 1 transfers - 6 elements, 2 transfers - 8 elements, etc.
+            if(finished_trip)
+            {
+                qDebug() << "\t" << "num transfers       : " << n_transfers;
+            }
             
             // collect the first set of decisions for the first passenger for each ODstop with demand
             list<Pass_connection_decision> connection_decisions = od->get_pass_connection_decisions(first_pass);
@@ -340,7 +349,7 @@ void TestDRTAlgorithms::testPostRunAssignment()
             QVERIFY(mode_decisions.front().chosen_transitmode != TransitModeType::Null); // A choice of either fixed or flexible should have always been made
             QVERIFY(mode_decisions.front().chosen_transitmode == TransitModeType::Flexible); //! only flexible modes available
         
-            if(first_pass->get_end_time() > 0) // passenger completed their trip
+            if(finished_trip) // passenger completed their trip
             {
                 QVERIFY(first_pass->get_curr_request() == nullptr); // curr request reset to null after a trip is completed
             }
@@ -372,6 +381,7 @@ void TestDRTAlgorithms::testPostRunAssignment()
                     qDebug() << "\t\t t_desired_dep: " << request->time_desired_departure;
                     qDebug() << "\t\t t_request_gen: " << request->time_request_generated;
                     qDebug() << "\t\t request_state: " << Request::state_to_QString(request->state);
+                    //qDebug() << request->assigned_trip-> //empty trip is on its way
                 }
             }
             
