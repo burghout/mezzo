@@ -7037,6 +7037,8 @@ bool Network::writeFWFsummary(
         out << "\nFixed driving time          : " << fix_vehdata.total_driving_time;
         out << "\nFixed idle time             : " << fix_vehdata.total_idle_time;
         out << "\nFixed oncall time           : " << fix_vehdata.total_oncall_time; //should always be zero...fixed schedule buses are currently always assigned a trip
+        out << "\nFixed occ/total VKT ratio   : " << fix_vehdata.total_occupied_vkt / fix_vehdata.total_vkt;
+        out << "\nFixed PKT/VKT ratio         : " << total_passdata.total_pass_fix_vkt / fix_vehdata.total_vkt; //should match average occupancy somewhat
 
         out << "\n\n### DRT vehicle summary ###";
         out << "\nDRT VKT                     : " << drt_vehdata.total_vkt;
@@ -7047,6 +7049,9 @@ bool Network::writeFWFsummary(
         out << "\nDRT driving time            : " << drt_vehdata.total_driving_time;
         out << "\nDRT idle time               : " << drt_vehdata.total_idle_time;
         out << "\nDRT oncall time             : " << drt_vehdata.total_oncall_time;
+        out << "\nDRT occ/total VKT ratio     : " << drt_vehdata.total_occupied_vkt / drt_vehdata.total_vkt;
+        out << "\nDRT PKT/VKT ratio           : " << total_passdata.total_pass_drt_vkt / drt_vehdata.total_vkt; //should match average occupancy somewhat
+
 
         out << "\n\n### DRT trip summary ###";
         out << "\nTotal trips                            : " << drt_tripdata.total_trips;
@@ -10041,7 +10046,7 @@ bool MatrixAction::execute(Eventlist * eventlist, double   /*time*/)
 }
 
 /* Experienced passenger LoS based on output collectors of passengers */
-void FWF_passdata::calc_pass_statistics(const vector<Passenger*>&passengers)
+void FWF_passdata::calc_pass_statistics(const vector<Passenger*>& passengers)
 {
     vector<double> waiting_times;
     vector<double> waiting_denied_times;
@@ -10134,7 +10139,7 @@ void FWF_passdata::calc_pass_statistics(const vector<Passenger*>&passengers)
     pass_completed = npass; //!< @todo pass_completed and npass kindof redundant at the moment
 }
 
-void FWF_tripdata::calc_trip_statistics(const vector<Bustrip*>&trips)
+void FWF_tripdata::calc_trip_statistics(const vector<Bustrip*>& trips)
 {
     vector<double> trip_boardings;
     double trip_total_boarding;
