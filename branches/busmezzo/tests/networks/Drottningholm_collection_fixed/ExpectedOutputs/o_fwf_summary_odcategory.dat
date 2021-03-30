@@ -77,3 +77,143 @@ Total passengers ignored (trip out of pass-generation start-stop interval):	452
 
 ------------------------------------------------------------------
 
+### Passenger per OD category summary: 	B2B	B2C	C2C	Total
+Passenger journeys completed                 :	21	64	55	140
+
+Average GTC:	-73.7892	-106.471	-53.0781	-80.5927
+Stdev GTC  :	18.1849	31.3693	26.9756	37.3606
+
+Average waiting time           :	416.523	299.563	171.64	266.852
+Stdev waiting time             :	172.099	205.865	128.82	194.285
+Minimum waiting time           :	57.269	17.2798	18.3051	17.2798
+Maximum waiting time           :	602.197	640.079	643.249	643.249
+Median waiting time            :	487.059	259.477	172.498	202.242
+
+Total denied waiting time      :	0	0	0	0
+Average denied waiting time    :	0	0	0	0
+Stdev denied waiting time      :	0	0	0	0
+
+Total in-vehicle time          :	24665.4	144002	59433.7	228101
+Average in-vehicle time        :	1174.54	2250.03	1080.61	1629.29
+Stdev in-vehicle time          :	379.731	610.564	643.785	824.805
+
+Total crowded in-vehicle time  :	23432.1	136802	56462	216696
+Average crowded in-vehicle time:	1115.81	2137.53	1026.58	1547.83
+Stdev crowded in-vehicle time  :	360.744	580.036	611.596	783.565
+
+Total passengers ignored (trip out of pass-generation start-stop interval):	0
+
+------------------------------------------------------------------
+
+### Passenger per OD category summary: 	B2B	B2C	C2C	Total
+Passenger journeys completed                 :	21	64	55	140
+
+Average GTC:	-73.7892	-106.471	-53.0781	-80.5927
+Stdev GTC  :	18.1849	31.3693	26.9756	37.3606
+
+Average waiting time           :	416.523	299.563	171.64	266.852
+Stdev waiting time             :	172.099	205.865	128.82	194.285
+Minimum waiting time           :	57.269	17.2798	18.3051	17.2798
+Maximum waiting time           :	602.197	640.079	643.249	643.249
+Median waiting time            :	487.059	259.477	172.498	202.242
+
+Total denied waiting time      :	0	0	0	0
+Average denied waiting time    :	0	0	0	0
+Stdev denied waiting time      :	0	0	0	0
+
+Total in-vehicle time          :	24665.4	144002	59433.7	228101
+Average in-vehicle time        :	1174.54	2250.03	1080.61	1629.29
+Stdev in-vehicle time          :	379.731	610.564	643.785	824.805
+
+Total crowded in-vehicle time  :	23432.1	136802	56462	216696
+Average crowded in-vehicle time:	1115.81	2137.53	1026.58	1547.83
+Stdev crowded in-vehicle time  :	360.744	580.036	611.596	783.565
+
+Total passengers ignored (trip out of pass-generation start-stop interval):	0
+
+------------------------------------------------------------------
+
+### Passenger per OD category summary: 	B2B	B2C	C2C	Total
+Passenger journeys completed                 :	21	64	55	140
+
+Average GTC:	-73.7892	-106.471	-53.0781	-80.5927
+Stdev GTC  :	18.1849	31.3693	26.9756	37.3606
+
+Average waiting time           :	416.523	299.563	171.64	266.852
+Stdev waiting time             :	172.099	205.865	128.82	194.285
+Minimum waiting time           :	57.269	17.2798	18.3051	17.2798
+Maximum waiting time           :	602.197	640.079	643.249	643.249
+Median waiting time            :	487.059	259.477	172.498	202.242
+
+Total denied waiting time      :	0	0	0	0
+Average denied waiting time    :	0	0	0	0
+Stdev denied waiting time      :	0	0	0	0
+
+Total in-vehicle time          :	24665.4	144002	59433.7	228101
+Average in-vehicle time        :	1174.54	2250.03	1080.61	1629.29
+Stdev in-vehicle time          :	379.731	610.564	643.785	824.805
+
+Total crowded in-vehicle time  :	23432.1	136802	56462	216696
+Average crowded in-vehicle time:	1115.81	2137.53	1026.58	1547.83
+Stdev crowded in-vehicle time  :	360.744	580.036	611.596	783.565
+
+Total passengers ignored (trip out of pass-generation start-stop interval):	0
+
+------------------------------------------------------------------
+
+### Passenger per OD category summary: 	B2B	B2C	C2C	Total
+Passenger journeys completed                 :	21	64	55	140
+
+Average GTC:	-73.7892	-106.471	-53.0781	-80.5927
+Stdev GTC  :	18.1849	31.3693	26.9756	37.3606
+
+Average waiting time           :	416.523	299.563	171.64	266.852
+Stdev waiting time             :	172.099	205.865	128.82	194.285
+Minimum waiting time           :	57.269	17.2798	18.3051	17.2798
+Maximum waiting time           :	602.197	640.079	643.249	643.249
+Median waiting time            :	487.059	259.477	172.498	202.242
+
+Total denied waiting time      :	0	0	0	0
+Average denied waiting time    :	0	0	0	0
+Stdev denied waiting time      :	0	0	0	0
+
+Total in-vehicle time          :	24665.4	144002	59433.7	228101
+Average in-vehicle time        :	1174.54	2250.03	1080.61	1629.29
+Stdev in-vehicle time          :	379.731	610.564	643.785	824.805
+
+Total crowded in-vehicle time  :	23432.1	136802	56462	216696
+Average crowded in-vehicle time:	1115.81	2137.53	1026.58	1547.83
+Stdev crowded in-vehicle time  :	360.744	580.036	611.596	783.565
+
+Total passengers ignored (trip out of pass-generation start-stop interval):	0
+
+------------------------------------------------------------------
+
+### Passenger per OD category summary: 	B2B	B2C	C2C	Total
+Passenger journeys completed                 :	21	64	55	140
+
+Average GTC:	-73.7892	-106.471	-53.0781	-80.5927
+Stdev GTC  :	18.1849	31.3693	26.9756	37.3606
+
+Average waiting time           :	416.523	299.563	171.64	266.852
+Stdev waiting time             :	172.099	205.865	128.82	194.285
+Minimum waiting time           :	57.269	17.2798	18.3051	17.2798
+Maximum waiting time           :	602.197	640.079	643.249	643.249
+Median waiting time            :	487.059	259.477	172.498	202.242
+
+Total denied waiting time      :	0	0	0	0
+Average denied waiting time    :	0	0	0	0
+Stdev denied waiting time      :	0	0	0	0
+
+Total in-vehicle time          :	24665.4	144002	59433.7	228101
+Average in-vehicle time        :	1174.54	2250.03	1080.61	1629.29
+Stdev in-vehicle time          :	379.731	610.564	643.785	824.805
+
+Total crowded in-vehicle time  :	23432.1	136802	56462	216696
+Average crowded in-vehicle time:	1115.81	2137.53	1026.58	1547.83
+Stdev crowded in-vehicle time  :	360.744	580.036	611.596	783.565
+
+Total passengers ignored (trip out of pass-generation start-stop interval):	0
+
+------------------------------------------------------------------
+

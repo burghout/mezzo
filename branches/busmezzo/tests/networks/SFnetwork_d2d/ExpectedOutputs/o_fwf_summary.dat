@@ -48,6 +48,8 @@ Fixed empty time            : 140458
 Fixed driving time          : 202165
 Fixed idle time             : 121
 Fixed oncall time           : 0
+Fixed occ/total VKT ratio   : 0.712297
+Fixed PKT/VKT ratio         : 5.31323
 
 ### DRT vehicle summary ###
 DRT VKT                     : 0
@@ -58,6 +60,8 @@ DRT empty time              : 0
 DRT driving time            : 0
 DRT idle time               : 0
 DRT oncall time             : 0
+DRT occ/total VKT ratio     : -nan(ind)
+DRT PKT/VKT ratio           : -nan(ind)
 
 ### DRT trip summary ###
 Total trips                            : 0
