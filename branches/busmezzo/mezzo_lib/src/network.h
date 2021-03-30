@@ -135,11 +135,11 @@ struct FWF_vehdata
 {
     // Vehicles
     double total_vkt = 0.0; // total empty + occupied VKT
-    double total_empty_vkt = 0.0; // total empty VKT
     double total_occupied_vkt = 0.0; // total occupied VKT
-
-    double total_empty_time = 0.0;
+    double total_empty_vkt = 0.0; // total empty VKT
+    
     double total_occupied_time = 0.0;
+    double total_empty_time = 0.0;
 
     double total_driving_time = 0.0;
     double total_idle_time = 0.0;
@@ -153,15 +153,36 @@ struct FWF_vehdata
         total_occupied_vkt += rhs.total_occupied_vkt; // total occupied VKT
         total_empty_vkt += rhs.total_empty_vkt; // total empty VKT
 
-        total_empty_time = rhs.total_empty_time;
-        total_occupied_time = rhs.total_occupied_time;
+        total_empty_time += rhs.total_empty_time;
+        total_occupied_time += rhs.total_occupied_time;
 
-        total_driving_time = rhs.total_driving_time;
-        total_idle_time = rhs.total_idle_time;
-        total_oncall_time = rhs.total_oncall_time;
+        total_driving_time += rhs.total_driving_time;
+        total_idle_time += rhs.total_idle_time;
+        total_oncall_time += rhs.total_oncall_time;
+
+        num_vehdata += num_vehdata;
 
         return *this;
     }
+
+    void clear() //resets FWF_vehdata to default initial values
+    {
+        total_vkt = 0.0; 
+        total_occupied_vkt = 0.0;
+        total_empty_vkt = 0.0; 
+        
+        total_occupied_time = 0.0;
+        total_empty_time = 0.0;
+
+        total_driving_time = 0.0;
+        total_idle_time = 0.0;
+        total_oncall_time = 0.0;
+
+        num_vehdata = 0;
+    }
+
+    void calc_total_vehdata(const vector<Bus*>& vehicles); //!< sum over vehicle metrics based on whatever vector of Bus vehicles, @note different Bus pointers may have the same ID
+    size_t num_vehdata = 0; //!< number of vehicles, including cloned vehicles, calc_total_vehdata was called for (i.e. size of vehicles vector input to calc_total_vehdata)
 };
 
 //!< @brief trip output data for fixed with flexible implementation. 
@@ -203,10 +224,10 @@ struct FWF_tripdata
 // @todo Note, probably only one cc will be used, but still this is implemented as if there could be several. Not tested for this case.
 struct FWF_ccdata
 {
-    int total_requests_recieved=0;
-    int total_requests_rejected=0;
-    int total_requests_accepted=0;
-    int total_requests_served=0;
+    unsigned int total_requests_recieved = 0;
+    unsigned int total_requests_rejected = 0;
+    unsigned int total_requests_accepted = 0;
+    unsigned int total_requests_served = 0;
 };
 
 class ODRate
@@ -394,7 +415,7 @@ public:
 
     // Public transport
 
-    bool write_busstop_output(string name1, string name2, string name3, string name4, string name5, string name6, string name7, string name8, string name9, string name10, string name11, string name12, string name13, string name14, string name15, string name16, string name17, string name18, string name19, string name20, string name21, string name22); //<! writes all the bus-related output
+    bool write_busstop_output(string name1, string name2, string name3, string name4, string name5, string name6, string name7, string name8, string name9, string name10, string name11, string name12, string name13, string name14, string name15, string name16, string name17, string name18, string name19, string name20, string name21, string name22, string name23); //<! writes all the bus-related output
     void write_passenger_welfare_summary(ostream& out, double total_gtc, int total_pass);
     bool write_path_set (string name1); //!< writes the path-set generated at the initialization process (aimed to be used as an input file for other runs with the same network)
     bool write_path_set_per_stop (string name1, Busstop* stop);

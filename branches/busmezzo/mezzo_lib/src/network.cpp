@@ -121,16 +121,18 @@ FWF_vehdata operator+(const FWF_vehdata& lhs, const FWF_vehdata& rhs)
 {
     FWF_vehdata sum;
     sum.total_vkt = lhs.total_vkt + rhs.total_vkt;
-    sum.total_empty_vkt = lhs.total_empty_vkt + rhs.total_empty_vkt;
     sum.total_occupied_vkt = lhs.total_occupied_vkt + rhs.total_occupied_vkt;
+    sum.total_empty_vkt = lhs.total_empty_vkt + rhs.total_empty_vkt;
 
-    sum.total_empty_time = lhs.total_empty_time + rhs.total_empty_time;
     sum.total_occupied_time = lhs.total_occupied_time + rhs.total_occupied_time;
+    sum.total_empty_time = lhs.total_empty_time + rhs.total_empty_time;
 
     sum.total_driving_time = lhs.total_driving_time + rhs.total_driving_time;
     sum.total_idle_time = lhs.total_idle_time + rhs.total_idle_time;
     sum.total_oncall_time = lhs.total_oncall_time + rhs.total_oncall_time;
-    
+
+    sum.num_vehdata = lhs.num_vehdata + rhs.num_vehdata;
+
     return sum;
 }
 
@@ -7241,9 +7243,31 @@ namespace fwf_outputs {
     out << "\nDRT idle time               : " << drt_vehdata.total_idle_time;
     out << "\nDRT oncall time             : " << drt_vehdata.total_oncall_time;*/
     }
+
+    //!< @brief write out time and vkt spent in different states for a DRT vehicle for e.g. analysis of distributions. Corresponds to one row of "o_fwf_drtvehicle_states.dat"
+    //!< @todo PARTC addition perhaps remove
+    void writeDRTVehicleState_row(ostream& out, int bus_id, const FWF_vehdata& drt_vehdata)
+    {
+            out << bus_id << "\t"
+                << drt_vehdata.total_vkt << "\t" << drt_vehdata.total_occupied_vkt << "\t" << drt_vehdata.total_empty_vkt << "\t"
+                << drt_vehdata.total_occupied_time << "\t" << drt_vehdata.total_empty_time << "\t"
+                << drt_vehdata.total_driving_time << "\t" << drt_vehdata.total_idle_time << "\t" << drt_vehdata.total_oncall_time << endl;
+    }
+    void writeDRTVehicleState_header(ostream& out)
+    {
+        out << "Bus_ID" << '\t'
+            << "Total_VKT" << '\t'
+            << "Total_Occ_VKT" << '\t'
+            << "Total_Emp_VKT" << '\t'
+            << "Total_Occ_Time" << '\t'
+            << "Total_Emp_Time" << '\t'
+            << "Total_Driving_Time" << '\t'
+            << "Total_Idle_Time" << '\t'
+            << "Total_OnCall_Time" << endl;
+    }
 }
 
-bool Network::write_busstop_output(string name1, string name2, string name3, string name4, string name5, string name6, string name7, string name8, string name9, string name10, string name11, string name12, string name13, string name14, string name15, string name16, string name17, string name18, string name19, string name20, string name21, string name22)
+bool Network::write_busstop_output(string name1, string name2, string name3, string name4, string name5, string name6, string name7, string name8, string name9, string name10, string name11, string name12, string name13, string name14, string name15, string name16, string name17, string name18, string name19, string name20, string name21, string name22, string name23)
 {
     Q_UNUSED(name5)
     Q_UNUSED(name6)
@@ -7364,17 +7388,8 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
     for (auto & busvehicle : busvehicles)
     {
         busvehicle->write_output(out4);
-
-        fix_vehdata.total_driving_time += busvehicle->get_total_time_driving();
-        fix_vehdata.total_idle_time += busvehicle->get_total_time_idle(); 
-        fix_vehdata.total_oncall_time += busvehicle->get_total_time_oncall();
-        fix_vehdata.total_empty_time += busvehicle->get_total_time_empty();
-        fix_vehdata.total_occupied_time += busvehicle->get_total_time_occupied();
-
-        fix_vehdata.total_vkt += busvehicle->get_total_vkt();
-        fix_vehdata.total_empty_vkt += busvehicle->get_total_empty_vkt();
-        fix_vehdata.total_occupied_vkt += busvehicle->get_total_occupied_vkt();
     }
+    fix_vehdata.calc_total_vehdata(busvehicles);
 
     // writing the aggregate summary output for each bus line
     write_transitlinesum_header(out3);
@@ -7530,9 +7545,10 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
 
             //write outputs for objects owned by control centers
             vector<Bustrip*> all_completed_trips; // all completed drt trip from any control center
-            for (const auto& cc : ccmap) //writing trajectory output for each drt vehicle
+            vector<Bus*> all_drtvehicles; //!< vector of all generated vehicles (including cloned vehicles)
+            map<int, vector<Bus*> > drt_vehdata_per_vehicle; // disaggregate drt vehicle based on unique vehicle (or more specifically bus vehicle) ids, each vector corresponds to vehicle data for one vehicle id
+            for (const auto& cc : ccmap) //writing trajectory output for each drt vehicle and calculating trip summary stats
             {
-                
                 cc_summarydata.total_requests_recieved += cc.second->summarydata_.requests_recieved;
                 cc_summarydata.total_requests_rejected += cc.second->summarydata_.requests_rejected;
                 cc_summarydata.total_requests_accepted += cc.second->summarydata_.requests_accepted;
@@ -7540,18 +7556,13 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
 
                 for (const auto& vehtrip : cc.second->completedVehicleTrips_)
                 {
-                    Bus* drtveh = vehtrip.first;
+                    all_drtvehicles.push_back(vehtrip.first);
                     all_completed_trips.push_back(vehtrip.second);
 
-                    drt_vehdata.total_driving_time += drtveh->get_total_time_driving();
-                    drt_vehdata.total_idle_time += drtveh->get_total_time_idle();
-                    drt_vehdata.total_oncall_time += drtveh->get_total_time_oncall();
-                    drt_vehdata.total_empty_time += drtveh->get_total_time_empty();
-                    drt_vehdata.total_occupied_time += drtveh->get_total_time_occupied();
-
-                    drt_vehdata.total_vkt += drtveh->get_total_vkt();
-                    drt_vehdata.total_empty_vkt += drtveh->get_total_empty_vkt();
-                    drt_vehdata.total_occupied_vkt += drtveh->get_total_occupied_vkt();
+                    //!< @todo PARTC also try and distinguish between DRT vehicles for disaggregate trip analysis (vehicle time in state distributions, vkt etc...)
+                    {
+                        drt_vehdata_per_vehicle[vehtrip.first->get_bus_id()].push_back(vehtrip.first); //sort bus objects into bus id buckets
+                    }
 
                     vehtrip.first->write_output(out4); //write trajectory output for each bus vehicle that completed a trip
                     vehtrip.second->write_assign_segments_output(out7); // writing the assignment results in terms of each segment on individual trips
@@ -7559,23 +7570,29 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
 
                 for (const auto& veh : cc.second->connectedVeh_)
                 {
-                    Bus* drtveh = veh.second;
-                    drt_vehdata.total_driving_time += drtveh->get_total_time_driving();
-                    drt_vehdata.total_idle_time += drtveh->get_total_time_idle();
-                    drt_vehdata.total_oncall_time += drtveh->get_total_time_oncall();
-                    drt_vehdata.total_empty_time += drtveh->get_total_time_empty();
-                    drt_vehdata.total_occupied_time += drtveh->get_total_time_occupied();
-
-                    drt_vehdata.total_vkt += drtveh->get_total_vkt();
-                    drt_vehdata.total_empty_vkt += drtveh->get_total_empty_vkt();
-                    drt_vehdata.total_occupied_vkt += drtveh->get_total_occupied_vkt();
+                    all_drtvehicles.push_back(veh.second);
 
                     veh.second->write_output(out4); //write trajectory output for each bus vehicle that has not completed a trip
                 }
             }
+            drt_vehdata.calc_total_vehdata(all_drtvehicles);
             drt_tripdata.calc_trip_statistics(all_completed_trips);
-        }
 
+            //!< @todo PARTC maybe remove
+            {
+                ofstream out23(name23.c_str(), ios_base::app); // "o_fwf_drtvehicle_states.dat"
+                fwf_outputs::writeDRTVehicleState_header(out23);
+
+                for (const auto& vehid_data : drt_vehdata_per_vehicle)
+                {
+                    FWF_vehdata temp_vehdata;
+                    temp_vehdata.calc_total_vehdata(vehid_data.second); // calculate vehdata for vector of bus objects in id bucket
+                    fwf_outputs::writeDRTVehicleState_row(out23, vehid_data.first, temp_vehdata);
+                    temp_vehdata.clear();
+                }
+            }
+        }
+        
         fwf_outputs::writeVKT(out21, fix_vehdata, drt_vehdata);// out21 "o_drtvkt.dat" 
 
         total_vehdata = fix_vehdata + drt_vehdata;
@@ -9197,7 +9214,8 @@ bool Network::writeall(unsigned int repl)
         workingdir + "o_passenger_transitmode.dat",
         workingdir + "o_passenger_dropoff.dat",
         workingdir + "o_vkt.dat",
-        workingdir + "o_fwf_summary_odcategory.dat"
+        workingdir + "o_fwf_summary_odcategory.dat",
+        workingdir + "o_fwf_drtvehicle_states.dat"
     );
     write_transitroutes(workingdir + "o_transit_routes.dat");
     return true;
@@ -10137,6 +10155,23 @@ void FWF_passdata::calc_pass_statistics(const vector<Passenger*>& passengers)
         std_gtc = gtc_stats.second;
     }
     pass_completed = npass; //!< @todo pass_completed and npass kindof redundant at the moment
+}
+
+void FWF_vehdata::calc_total_vehdata(const vector<Bus*>& vehicles)
+{
+    for(auto* veh : vehicles)
+    {
+        total_driving_time += veh->get_total_time_driving();
+        total_idle_time += veh->get_total_time_idle();
+        total_oncall_time += veh->get_total_time_oncall();
+        total_empty_time += veh->get_total_time_empty();
+        total_occupied_time += veh->get_total_time_occupied();
+
+        total_vkt += veh->get_total_vkt();
+        total_empty_vkt += veh->get_total_empty_vkt();
+        total_occupied_vkt += veh->get_total_occupied_vkt();
+    }
+    num_vehdata = vehicles.size();
 }
 
 void FWF_tripdata::calc_trip_statistics(const vector<Bustrip*>& trips)
