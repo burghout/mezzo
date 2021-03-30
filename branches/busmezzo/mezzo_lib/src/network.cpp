@@ -7580,15 +7580,18 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
 
             //!< @todo PARTC maybe remove
             {
-                ofstream out23(name23.c_str(), ios_base::app); // "o_fwf_drtvehicle_states.dat"
-                fwf_outputs::writeDRTVehicleState_header(out23);
-
-                for (const auto& vehid_data : drt_vehdata_per_vehicle)
+                if (!drt_vehdata_per_vehicle.empty()) //only generate output if we have drt vehicles
                 {
-                    FWF_vehdata temp_vehdata;
-                    temp_vehdata.calc_total_vehdata(vehid_data.second); // calculate vehdata for vector of bus objects in id bucket
-                    fwf_outputs::writeDRTVehicleState_row(out23, vehid_data.first, temp_vehdata);
-                    temp_vehdata.clear();
+                    ofstream out23(name23.c_str(), ios_base::app); // "o_fwf_drtvehicle_states.dat"
+                    fwf_outputs::writeDRTVehicleState_header(out23);
+
+                    for (const auto& vehid_data : drt_vehdata_per_vehicle)
+                    {
+                        FWF_vehdata temp_vehdata;
+                        temp_vehdata.calc_total_vehdata(vehid_data.second); // calculate vehdata for vector of bus objects in id bucket
+                        fwf_outputs::writeDRTVehicleState_row(out23, vehid_data.first, temp_vehdata);
+                        temp_vehdata.clear();
+                    }
                 }
             }
         }
