@@ -3,7 +3,7 @@ drt_first_rep_waiting_utility: 10
 drt_min_occupancy: 1
 
 controlcenters: 1
-{  1   2   2   1   2
+{  1   2   4   1   2
 	 0
 	 4 { 1 2 3 4 }
 	 12 { 8001 8021 8002 8022 8003 8023 8004 8024 8005 8025 8006 8026 }
