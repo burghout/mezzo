@@ -259,6 +259,24 @@ void BustripGenerator::setEmptyVehicleStrategy(int type)
 		}
 		emptyVehicleStrategy_ = new SimpleEmptyVehicleTripGeneration(theNetwork_);
 	}
+	else if (type == emptyVehicleStrategyType::EVMaxWait)
+	{
+		if (theNetwork_ == nullptr)
+		{
+			DEBUG_MSG_V("Problem with BustripGenerator::setEmptyVehicleStrategy - switching to " << type << " strategy failed due to theNetwork nullptr. Aborting...");
+			abort();
+		}
+		emptyVehicleStrategy_ = new MaxWaitEmptyVehicleTripGeneration(theNetwork_);
+	}
+	else if (type == emptyVehicleStrategyType::EVCumWait)
+	{
+		if (theNetwork_ == nullptr)
+		{
+			DEBUG_MSG_V("Problem with BustripGenerator::setEmptyVehicleStrategy - switching to " << type << " strategy failed due to theNetwork nullptr. Aborting...");
+			abort();
+		}
+		emptyVehicleStrategy_ = new CumulativeWaitEmptyVehicleTripGeneration(theNetwork_);
+	}
 	else
 	{
 		DEBUG_MSG("BustripGenerator::setEmptyVehicleStrategy() - strategy " << type << " is not recognized! Setting strategy to nullptr. ");

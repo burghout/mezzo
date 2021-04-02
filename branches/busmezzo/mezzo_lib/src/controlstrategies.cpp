@@ -729,7 +729,6 @@ bool SimpleTripGeneration::calc_trip_generation(const set<Request*,ptr_less<Requ
 
 //Empty vehicle trip generation
 NaiveEmptyVehicleTripGeneration::NaiveEmptyVehicleTripGeneration(Network* theNetwork) : theNetwork_(theNetwork){}
-
 bool NaiveEmptyVehicleTripGeneration::calc_trip_generation(const set<Request*,ptr_less<Request*>>& requestSet, const vector<Busline*>& candidateServiceRoutes, const map<BusState, set<Bus*>>& fleetState, 
                                                            const double time, set<Bustrip*>& unmatchedTripSet, set<Bustrip*>& unmatchedEmptyTripSet)
 {
@@ -840,7 +839,6 @@ bool NaiveEmptyVehicleTripGeneration::calc_trip_generation(const set<Request*,pt
 
 // SimpleEmptyVehicleTripGeneration
 SimpleEmptyVehicleTripGeneration::SimpleEmptyVehicleTripGeneration(Network *theNetwork):theNetwork_(theNetwork) {}
-
 bool SimpleEmptyVehicleTripGeneration::calc_trip_generation(const set<Request *, ptr_less<Request *> > &requestSet, const vector<Busline *> &candidateServiceRoutes, const map<BusState, set<Bus *> > &fleetState, double time, set<Bustrip *> &unmatchedTripSet, set<Bustrip*>& unmatchedEmptyTripSet)
 {
     Q_UNUSED(requestSet)
@@ -854,9 +852,9 @@ bool SimpleEmptyVehicleTripGeneration::calc_trip_generation(const set<Request *,
     if (fleetState.at(BusState::OnCall).empty())  //a drt vehicle must be available
         return false;
     // 2. sort unMatchedTrips (by nr of requests)
-    //set<Bustrip*,compareBustripByNrRequests> sortedTrips (unmatchedTripSet.begin(), unmatchedTripSet.end());
+    set<Bustrip*,compareBustripByNrRequests> sortedTrips (unmatchedTripSet.begin(), unmatchedTripSet.end());
     //set<Bustrip*,compareBustripByMaxWait> sortedTrips (unmatchedTripSet.begin(), unmatchedTripSet.end(),time) ;
-    set<Bustrip*,compareBustripByCumulativeWait> sortedTrips (unmatchedTripSet.begin(), unmatchedTripSet.end(),time) ;
+    //set<Bustrip*,compareBustripByCumulativeWait> sortedTrips (unmatchedTripSet.begin(), unmatchedTripSet.end(),time) ;
 
     // 3. find nearest vehicle to the unMatchedTrip location (For now: hope for the best :)
     auto selectedTrip = *(sortedTrips.begin());
@@ -905,7 +903,7 @@ bool MaxWaitEmptyVehicleTripGeneration::calc_trip_generation(const set<Request *
         return false;
     if (fleetState.at(BusState::OnCall).empty())  //a drt vehicle must be available
         return false;
-    // 2. sort unMatchedTrips (by nr of requests)
+    // 2. sort unMatchedTrips (by maximum waiting time)
     set<Bustrip*,compareBustripByMaxWait> sortedTrips (unmatchedTripSet.begin(), unmatchedTripSet.end(),time) ;
 
     // 3. find nearest vehicle to the unMatchedTrip location (For now: hope for the best :)
@@ -941,8 +939,54 @@ bool MaxWaitEmptyVehicleTripGeneration::calc_trip_generation(const set<Request *
     return true; // emits Signal that empty trip was generated, matcher does the rest.
 }
 
+CumulativeWaitEmptyVehicleTripGeneration::CumulativeWaitEmptyVehicleTripGeneration(Network *theNetwork):theNetwork_(theNetwork) {}
+bool CumulativeWaitEmptyVehicleTripGeneration::calc_trip_generation(const set<Request *, ptr_less<Request *> > &requestSet, const vector<Busline *> &candidateServiceRoutes, const map<BusState, set<Bus *> > &fleetState, double time, set<Bustrip *> &unmatchedTripSet, set<Bustrip*>& unmatchedEmptyTripSet)
+{
+    Q_UNUSED(requestSet)
 
+    // 0. if no unmatched Trips, exit
+    if (unmatchedTripSet.empty())
+        return false;
+    // 1. see if any vehicles are available, if no, exit
+    if (fleetState.find(BusState::OnCall) == fleetState.end())  //a drt vehicle must have been initialized
+        return false;
+    if (fleetState.at(BusState::OnCall).empty())  //a drt vehicle must be available
+        return false;
+    // 2. sort unMatchedTrips (by cumulative waiting time)
+    set<Bustrip*,compareBustripByCumulativeWait> sortedTrips (unmatchedTripSet.begin(), unmatchedTripSet.end(),time);
 
+    // 3. find nearest vehicle to the unMatchedTrip location (For now: hope for the best :)
+    auto selectedTrip = *(sortedTrips.begin());
+    Busstop*  tripStartStop = selectedTrip->stops.front()->first;
+    auto onCallVehicles = fleetState.at(BusState::OnCall);
+    auto nearestOnCall = get_nearest_vehicle(tripStartStop,onCallVehicles,theNetwork_,time);
+    if (nearestOnCall.first == nullptr)
+        return false;
+    // 4. generate the empty trip
+    Busstop* vehicleStartStop = nearestOnCall.first->get_last_stop_visited();
+    auto vehicle_serviceRoutes = find_lines_connecting_stops(candidateServiceRoutes,vehicleStartStop->get_id(),tripStartStop->get_id());
+    Busline* line = find_shortest_busline(vehicle_serviceRoutes, time);
+    assert(line);
+
+    auto schedule = create_schedule(time,line->get_delta_at_stops());
+    Bustrip* newTrip = create_unassigned_trip(line,time,schedule);
+
+    // 5. associate the chained trips by modifying Bustrip::driving_roster
+    vector<Bustrip*> tripchain = { newTrip, selectedTrip };
+    cs_helper_functions::update_schedule(selectedTrip, newTrip->stops.back()->second); // Get last stop arrival time of newtrip, and then update the chained selectedTrip with this as dispatch time
+    cs_helper_functions::add_driving_roster_to_tripchain(tripchain); // newTrip and selectedTrip now have pointers to eachother as well as info of which order they are in
+
+    // 6. Add newTrip to the unmatchedEmptyTripset
+    unmatchedEmptyTripSet.insert(newTrip); // now unmatchedEmptyTripSet will signal matcher to match vehicle to both trips via Bustrip::driving_roster
+
+    // 7. remove selectedTrip from unMatchedTripset
+    unmatchedTripSet.erase(selectedTrip);
+
+    // 8. adding potential requests to the empty trip
+    cs_helper_functions::assignRequestsToTrip(requestSet,newTrip);
+
+    return true; // emits Signal that empty trip was generated, matcher does the rest.
+}
 
 
 //MatchingStrategy
