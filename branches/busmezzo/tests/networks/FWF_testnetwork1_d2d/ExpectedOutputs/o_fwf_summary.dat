@@ -28,15 +28,18 @@ Total DRT PKT  : 0
 PKT mode split (FIX / Total, DRT / Total)     : 1, 0
 
 Total passengers ignored (trip out of pass-generation start-stop interval): 0
+start_pass_generation= 1800
+stop_pass_generation= 5400
+stoptime= 10800
 
 ### Total vehicle summary ###
 Total VKT                   : 543
 Total occupied VKT          : 9
 Total empty VKT             : 534
 Total occupied time         : 910.5
-Total empty time            : 1.32477e+06
-Total driving time          : 1.32483e+06
-Total idle time             : 856
+Total empty time            : 951778
+Total driving time          : 952368
+Total idle time             : 320
 Total oncall time           : 0
 
 ### Fixed vehicle summary ###
@@ -44,9 +47,9 @@ Fixed VKT                   : 543
 Fixed occupied VKT          : 9
 Fixed empty VKT             : 534
 Fixed occupied time         : 910.5
-Fixed empty time            : 1.32477e+06
-Fixed driving time          : 1.32483e+06
-Fixed idle time             : 856
+Fixed empty time            : 951778
+Fixed driving time          : 952368
+Fixed idle time             : 320
 Fixed oncall time           : 0
 Fixed occ/total VKT ratio   : 0.0165746
 Fixed PKT/VKT ratio         : 0.0165746
