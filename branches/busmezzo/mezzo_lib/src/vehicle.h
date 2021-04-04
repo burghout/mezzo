@@ -224,6 +224,8 @@ public:
 	Bus* progressFlexVehicle(Bus* oldbus, double time); //!< clones the oldbus into newbus, sets oldbus to null, disconnects it, removes it from service routes. Newbus inherits state from oldbus (DrivingEmpty), and is connected to cc, with same service routes as oldbus. Returns the new bus
 	void assignBusToTrip(Bus* bus, Bustrip* trip); //!< performs operations necessary to connect a bus with no trip with an 'unassigned' bustrip (for example the next trip of the driving_roster)
 
+    double get_init_time() const { return init_time; }
+    void set_init_time(double time) { init_time = time; }
 	void set_flex_vehicle(bool flex_vehicle) { flex_vehicle_ = flex_vehicle; }
 	bool is_flex_vehicle() const { return flex_vehicle_; }
 	void add_sroute_id(int sroute_id) { sroute_ids_.insert(sroute_id); } 
@@ -262,6 +264,8 @@ protected:
 	int total_meters_traveled = 0; //!< cumulative meters traveled (excluding dummy links)
 	int total_empty_meters_traveled = 0; //!< cumulative meters traveled without any passengers onboard
 	int total_occupied_meters_traveled = 0; //!< cumulative meters traveled with at least one passenger onboard
+
+	double init_time = 0.0; //!< time the vehicle is generated and made available, i.e. the time in which this vehicle was initially set to 'on-call' if a flex vehicle, set to zero by default if vehicle is not flex when read on input
 /**@}*/
 };
 

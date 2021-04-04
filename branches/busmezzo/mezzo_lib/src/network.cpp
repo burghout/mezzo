@@ -7010,6 +7010,9 @@ bool Network::writeFWFsummary(
         out << "\nPKT mode split (FIX / Total, DRT / Total)     : " << total_passdata.total_pass_fix_vkt / total_passdata.total_pass_vkt << ", " << total_passdata.total_pass_drt_vkt / total_passdata.total_pass_vkt;
 
         out << "\n\nTotal passengers ignored (trip out of pass-generation start-stop interval): " << pass_ignored;
+        out << "\nstart_pass_generation= " << theParameters->start_pass_generation;
+        out << "\nstop_pass_generation= " << theParameters->stop_pass_generation;
+        out << "\nstoptime= " << runtime;
  /*       out << "\n\n### Fixed passenger summary ###";
         out << "\n\nTotal walking time             : " << fix_passdata.total_wlkt;
         out << "\nAverage walking time           : " << fix_passdata.avg_total_wlkt;
@@ -7246,9 +7249,10 @@ namespace fwf_outputs {
 
     //!< @brief write out time and vkt spent in different states for a DRT vehicle for e.g. analysis of distributions. Corresponds to one row of "o_fwf_drtvehicle_states.dat"
     //!< @todo PARTC addition perhaps remove
-    void writeDRTVehicleState_row(ostream& out, int bus_id, const FWF_vehdata& drt_vehdata)
+    void writeDRTVehicleState_row(ostream& out, int bus_id, double init_time, const FWF_vehdata& drt_vehdata)
     {
             out << bus_id << "\t"
+                << init_time << "\t"
                 << drt_vehdata.total_vkt << "\t" << drt_vehdata.total_occupied_vkt << "\t" << drt_vehdata.total_empty_vkt << "\t"
                 << drt_vehdata.total_occupied_time << "\t" << drt_vehdata.total_empty_time << "\t"
                 << drt_vehdata.total_driving_time << "\t" << drt_vehdata.total_idle_time << "\t" << drt_vehdata.total_oncall_time << endl;
@@ -7256,6 +7260,7 @@ namespace fwf_outputs {
     void writeDRTVehicleState_header(ostream& out)
     {
         out << "Bus_ID" << '\t'
+            << "Init_Time" << '\t'
             << "Total_VKT" << '\t'
             << "Total_Occ_VKT" << '\t'
             << "Total_Emp_VKT" << '\t'
@@ -7570,6 +7575,7 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
 
                 for (const auto& veh : cc.second->connectedVeh_)
                 {
+                    drt_vehdata_per_vehicle[veh.second->get_bus_id()].push_back(veh.second);
                     all_drtvehicles.push_back(veh.second);
 
                     veh.second->write_output(out4); //write trajectory output for each bus vehicle that has not completed a trip
@@ -7589,7 +7595,7 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
                     {
                         FWF_vehdata temp_vehdata;
                         temp_vehdata.calc_total_vehdata(vehid_data.second); // calculate vehdata for vector of bus objects in id bucket
-                        fwf_outputs::writeDRTVehicleState_row(out23, vehid_data.first, temp_vehdata);
+                        fwf_outputs::writeDRTVehicleState_row(out23, vehid_data.first, vehid_data.second.front()->get_init_time(), temp_vehdata); // use the init time of the first bus object associated with id bucket
                         temp_vehdata.clear();
                     }
                 }
@@ -9514,6 +9520,7 @@ bool Network::init()
             cc->addVehicleToAllServiceRoutes(bus); //initially, each vehicle of this control center can be assigned to any service route of the control center
             cc->addInitialVehicle(bus);
             stop->book_unassigned_bus_arrival(eventlist, bus, init_time); //should be in a Null state until their init_time (also adds a Busstop event scheduled for the init_time of vehicle  to switch state of bus to IdleEmpty from Null)
+            bus->set_init_time(init_time);
         }
     }
 #endif //_BUSES
@@ -9641,6 +9648,28 @@ double Network::step(double timestep)
 
 #endif //_NO_GUI
             }
+
+
+            if (time >= runtime) // quick and dirty way of updating vehicle state timers after sim run is over
+            {
+                // update final states of all vehicles to 'Null' for 'time in vehicle state' output
+                for (auto bus : this->busvehicles) // fixed vehicles
+                {
+                    bus->set_state(BusState::Null, runtime);
+                }
+                if (theParameters->drt)
+                {
+                    for (auto cc : this->ccmap)
+                    {
+                        map<int, Bus*> drtvehicles = cc.second->getConnectedVehicles();
+                        for (auto veh : drtvehicles)
+                        {
+                            veh.second->set_state(BusState::Null, runtime);
+                        }
+                    }
+                }
+            }
+
             return time;
         }
         else
@@ -9687,6 +9716,25 @@ double Network::step(double timestep)
                 return time;
             }
 
+            if (time >= runtime) // quick and dirty way of updating vehicle state timers after sim run is over
+            {
+                // update final states of all vehicles to 'Null' for 'time in vehicle state' output
+                for (auto bus : this->busvehicles) // fixed vehicles
+                {
+                    bus->set_state(BusState::Null, runtime);
+                }
+                if (theParameters->drt)
+                {
+                    for (auto cc : this->ccmap)
+                    {
+                        map<int, Bus*> drtvehicles = cc.second->getConnectedVehicles();
+                        for (auto veh : drtvehicles)
+                        {
+                            veh.second->set_state(BusState::Null, runtime);
+                        }
+                    }
+                }
+            }
 #endif //_NO_GUI
         }
 
