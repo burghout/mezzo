@@ -379,6 +379,16 @@ public:
 	int passenger_load;
 };
 
+//!< @brief Categories of Bustrip, used mainly in the drt assignment pipeline used mainly if the BusTrip is a flex trip @todo maybe theres an easier way of bookeeping these, feels a bit redundant at the moment
+enum class BustripStatus
+{
+    Null = 0, // default status, if not a flex trip this should always be Null
+	Unmatched, // preliminary trip consisting of a route and sequence of stops (Busline), not associated with any vehicle yet
+	Matched, // trip has been matched to a vehicle (i.e. the vehicle has the
+	Scheduled, // trip has been scheduled for dispatch (i.e. a Busline event has been added for it)
+	Activated, // trip has been activated (dispatched), in other words a vehicle has started to perform this trip
+	Completed, // trip is finished
+};
 class Bustrip 
 {
 public:
@@ -394,7 +404,7 @@ public:
 // GETS & SETS
 	int get_id () const {return id;}											  //!< returns id, used in the compare <..> functions for find and find_if algorithms
 	Bus* get_busv () {return busv;}
-	void set_busv (Bus* busv_) {busv = busv_;}
+    void set_busv(Bus* busv_);
 	void set_bustype (Bustype* btype_) {btype = btype_;}
 	Bustype* get_bustype () {return btype;}
 	void set_line (Busline* line_) {line = line_;}
@@ -454,9 +464,9 @@ public:
     double get_cumulative_wait_requests(double cur_time) const; //!< returns sum of all the waiting times for requests for this trip
 
     void set_starttime(double starttime_) { starttime = starttime_; }
-	void set_scheduled_for_dispatch(bool scheduled_for_dispatch_) { scheduled_for_dispatch = scheduled_for_dispatch_; }
+    void set_scheduled_for_dispatch(bool scheduled_for_dispatch_);
 	bool is_scheduled_for_dispatch() const { return scheduled_for_dispatch; }
-	void set_activated(bool activated_) { activated = activated_; }
+    void set_activated(bool activated_);
 	bool is_activated() const { return activated; }
 	void set_flex_trip(bool flex_trip_) { flex_trip = flex_trip_; }
 	bool is_flex_trip() const { return flex_trip; }
@@ -468,6 +478,9 @@ public:
 	void update_total_alightings(int n_alighting) { total_alighting += n_alighting; }
 	int get_total_boarding() const { return total_boarding; }
 	int get_total_alighting() const { return total_alighting; }
+
+	void set_status(BustripStatus newstatus);
+    BustripStatus get_status()const { return status_; }
 /**@}*/
 
 protected:
@@ -498,6 +511,7 @@ protected:
 	bool scheduled_for_dispatch = false; //!< true if this trip has been scheduled for dispatch (i.e. a busline event has been created with for the starttime of this trip) for its respective line, false otherwise
 	bool activated = false; //!< true if this trip has been successfully activated (i.e. a bus has started this trip), false otherwise
 	bool flex_trip = false; //!< true if this trip was generated dynamically
+	BustripStatus status_ = BustripStatus::Null;
 	int total_boarding = 0;
 	int total_alighting = 0;
     /**@}*/

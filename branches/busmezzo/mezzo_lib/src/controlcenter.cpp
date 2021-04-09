@@ -896,9 +896,9 @@ void Controlcenter::addCompletedVehicleTrip(Bus* transitveh, Bustrip * trip)
 {
 	assert(transitveh);
 	assert(trip);
-	if(trip)
-		assert(trip->get_next_stop() == trip->stops.end()); //currently a trip is considered completed via Bustrip::advance_next_stop -> Bus::advance_curr_trip
+	
 	completedVehicleTrips_.emplace_back(transitveh, trip);
+	trip->set_status(BustripStatus::Completed); // update status of trip
 }
 
 double Controlcenter::calc_expected_ivt(Busline* service_route, Busstop* start_stop, Busstop* end_stop, bool first_line_leg, double time)

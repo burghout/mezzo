@@ -81,6 +81,15 @@ namespace cs_helper_functions
         //result should be that each trip in "tripchain" knows of eachother and we can throw this into the Busline::execute, Bustrip::activate, Bus::advance_curr_trip loop
     }
 
+    //!< Takes a trip chain (Bustrip::driving_roster) and sets the trip status of each trip in this chain to newstatus
+    void set_status_of_tripchain(const vector<Start_trip*>& driving_roster, BustripStatus newstatus)
+    {
+        for (auto trip_dispatch : driving_roster)
+        {
+            trip_dispatch->first->set_status(newstatus);
+        }
+    }
+
     //!< Takes a trip chain (Bustrip::driving_roster) and returns a vector of ALL requests scheduled to any trip in this chain. 
     vector<Request*> getRequestsInTripChain(const vector<Start_trip*>& driving_roster)
     {
@@ -418,6 +427,8 @@ Bustrip* TripGenerationStrategy::create_unassigned_trip(Busline* line, double de
     trip->convert_stops_vector_to_map(); // TODO(MrLeffler): not sure why this is necessary but is done for other trips so
     trip->set_last_stop_visited(trip->stops.front()->first);  //sets last stop visited to the origin stop of the trip
     trip->set_flex_trip(true);
+    trip->set_status(BustripStatus::Unmatched);
+
     return trip;
 
 }
@@ -1029,6 +1040,8 @@ void MatchingStrategy::assign_oncall_vehicle_to_trip(Busstop* currentStop, Bus* 
             assert(rq->state == RequestState::Assigned); //should have been set to assigned when trip was generated
             rq->set_state(RequestState::Matched);
         }
+
+        cs_helper_functions::set_status_of_tripchain(trip->driving_roster,BustripStatus::Matched); //update status of trips in chain to matched
     }
 }
 

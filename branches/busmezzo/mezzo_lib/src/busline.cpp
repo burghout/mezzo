@@ -925,6 +925,12 @@ void Bustrip::reset ()
 	activated = false;
 	total_boarding = 0;
 	total_alighting = 0;
+	status_ = BustripStatus::Null;
+}
+
+void Bustrip::set_busv(Bus* busv_)
+{
+    busv = busv_;
 }
 
 void Bustrip::convert_stops_vector_to_map ()
@@ -990,8 +996,7 @@ bool Bustrip::advance_next_stop (double time, Eventlist* eventlist)
 			{
 				curr_trip = trip;
 				break;
-			}
-				
+			}	
 		}
 		
 		vector <Start_trip*>::iterator last_trip = driving_roster.end()-1;
@@ -1165,6 +1170,42 @@ bool Bustrip::remove_request(const Request* req)
 	return false;
 }
 
+void Bustrip::set_status(BustripStatus newstatus)
+{
+	if(!is_flex_trip()) // only update status of flex trips, fixed stay at Null @todo expand to bookkeep fixed trips as well
+		return;
+
+	if(status_ != newstatus)
+    {
+        switch (newstatus) // sanity checks for set status call
+        {
+        case BustripStatus::Completed:
+            assert(get_next_stop() == stops.end()); //currently a trip is considered completed via Bustrip::advance_next_stop -> Bus::advance_curr_trip
+            assert(status_ == BustripStatus::Activated);
+            break;
+        case BustripStatus::Activated:
+            assert(is_activated()); // bustrip should be flagged as activated
+            assert(get_busv()->get_on_trip()); // vehicle should be flagged as busy
+            assert(status_ == BustripStatus::Scheduled);
+            break;
+        case BustripStatus::Scheduled:
+            assert(is_scheduled_for_dispatch()); // bustrip should be flagged as activated
+            break;
+        case BustripStatus::Matched:
+            //assert(get_busv() != nullptr); // trip later on in a chain of trips may not have a vehicle yet, since this is passed between trips via the driving roster
+			assert(status_ == BustripStatus::Unmatched);
+            break;
+        case BustripStatus::Unmatched:
+            assert(get_busv() == nullptr); // no vehicle should be matched to this trip yet
+            break;
+        case BustripStatus::Null:
+            break;
+        }
+
+        status_ = newstatus;
+	}
+}
+
 double Bustrip::get_max_wait_requests(double cur_time) const
 {
     double max_wait = 0.0;
@@ -1186,6 +1227,18 @@ double Bustrip::get_cumulative_wait_requests(double cur_time) const
         total_wait += wait;
     }
     return total_wait;
+}
+
+void Bustrip::set_scheduled_for_dispatch(bool scheduled_for_dispatch_)
+{
+    scheduled_for_dispatch = scheduled_for_dispatch_;
+	if(scheduled_for_dispatch_) set_status(BustripStatus::Scheduled);
+}
+
+void Bustrip::set_activated(bool activated_)
+{
+    activated = activated_;
+    if (activated_) set_status(BustripStatus::Activated);
 }
 
 double Bustrip::find_crowding_coeff (Passenger* pass)
