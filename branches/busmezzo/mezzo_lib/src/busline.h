@@ -379,15 +379,15 @@ public:
 	int passenger_load;
 };
 
-//!< @brief Categories of Bustrip, used mainly in the drt assignment pipeline used mainly if the BusTrip is a flex trip @todo maybe theres an easier way of bookeeping these, feels a bit redundant at the moment
+//!< @brief Categories of Bustrip, used mainly in the drt assignment pipeline used mainly if the BusTrip is a flex trip @todo maybe theres an easier way of bookeeping these, feels a bit redundant at the moment with all the 'flag' attributes
 enum class BustripStatus
 {
     Null = 0, // default status, if not a flex trip this should always be Null
 	Unmatched, // preliminary trip consisting of a route and sequence of stops (Busline), not associated with any vehicle yet
-	Matched, // trip has been matched to a vehicle (i.e. the vehicle has the
+	Matched, // trip has been matched to a vehicle (i.e. the vehicle has been assigned to the trip somehow, either directly or as part of a trip-chain)
 	Scheduled, // trip has been scheduled for dispatch (i.e. a Busline event has been added for it)
 	Activated, // trip has been activated (dispatched), in other words a vehicle has started to perform this trip
-	Completed, // trip is finished
+	Completed, // trip is finished (i.e. added to completed trips of a ControlCenter)
 };
 class Bustrip 
 {
