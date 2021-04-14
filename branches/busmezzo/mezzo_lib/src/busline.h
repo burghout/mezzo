@@ -479,6 +479,11 @@ public:
 	int get_total_boarding() const { return total_boarding; }
 	int get_total_alighting() const { return total_alighting; }
 
+	bool is_rebalancing_trip() const; //!< check that the trip purpose is not a pickup-trip or a passenger-carrying one, i.e. not assigned to any requests and not part of any trip-chain
+	bool is_empty_pickup_trip() const; //!< check if the trip purpose is to pick-up travelers at the destination of the trip, i.e. not assigned to any requests, is part of a trip-chain, and the following trip is assigned to requests
+
+	Bustrip* get_next_trip_in_chain() const; //!< returns the Bustrip that follows this one in the driving roster, nullptr if no Bustrip follows this one
+
 	void set_status(BustripStatus newstatus);
     BustripStatus get_status()const { return status_; }
 /**@}*/

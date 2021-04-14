@@ -70,6 +70,7 @@ public:
 private Q_SLOTS:
     void testCreateNetwork(); //!< test loading a network
     void testInitNetwork(); //!< test generating passenger path sets & loading a network
+    void testBustripFilters(); //!< test for filtering collections of Bustrips by status, type, conditions etc.. 
     void testSortedBustrips();
     void testAssignment();//!< test asssignment of passengers
     void testRunNetwork();
@@ -159,6 +160,103 @@ void TestDRTAlgorithms::testInitNetwork()
 
     ex_path_set_file.close();
     path_set_file.close();
+}
+
+
+namespace helpers 
+{
+    //!< Takes a vector of Bustrips and connects them via their driving_roster attribute in the order of the tripchain (i.e. index 0 is first trip, index 1 the second etc.) @todo just copy-pasted from controlstrategies.h for now
+    void add_driving_roster_to_tripchain(const vector<Bustrip*>& tripchain)
+    {
+        //!< @todo assumes that the trip starttimes make sense I suppose. Not sure if this matters yet, but could in case a trip is 'early for dispatch'
+        vector<Start_trip*> driving_roster;
+        // build the driving roster (expected dispatch of chained trips between different lines)
+        for (auto trip : tripchain)
+        {
+            // delete old driving roster if it exists
+            if (!trip->driving_roster.empty() && !trip->deleted_driving_roster) //!< ugly hack to ensure that we do not delete driving roster twice, in case delete has been called for two trips in the same driving roster
+            {
+                for (auto trip_start : trip->driving_roster)
+                {
+                    trip_start->first->deleted_driving_roster = true;
+                }
+                for (Start_trip* trip_start : trip->driving_roster)
+                {
+                    delete trip_start;
+                }
+            }
+            trip->driving_roster.clear();
+            trip->deleted_driving_roster = false; // now reset driving roster deletion flag to false
+
+            Start_trip* st = new Start_trip(trip, trip->get_starttime());
+            driving_roster.push_back(st);
+        }
+        // save the driving roster at the trip level for each trip on the chain
+        for (auto it = driving_roster.begin(); it != driving_roster.end(); ++it)
+        {
+            (*it)->first->add_trips(driving_roster);
+        }
+
+        //result should be that each trip in "tripchain" knows of eachother and we can throw this into the Busline::execute, Bustrip::activate, Bus::advance_curr_trip loop
+    }
+}
+
+void TestDRTAlgorithms::testBustripFilters()
+{
+    // test Bustrip supporting methods is_rebalancing_trip, is_empty_pickup_trip and get_next_trip_in_chain
+    auto busline = net->get_buslines().front();
+    Bustrip* t1 = new Bustrip(1,1.0,busline); // dummy rebalancing trip
+    Bustrip* t2 = new Bustrip(2,1.0,busline); // dummy empty pickup trip
+    Bustrip* t3 = new Bustrip(3,1.0,busline); // dummy passenger carrying trip with t2 chained before
+    Bustrip* t4 = new Bustrip(4,1.0,busline); // dummy fixed trip
+    
+    t1->set_flex_trip(true);
+    t2->set_flex_trip(true);
+    t3->set_flex_trip(true);
+    t4->set_flex_trip(false);
+    
+    t1->set_status(BustripStatus::Unmatched); // @note could be any other status besides BustripStatus::Null at the moment
+    t2->set_status(BustripStatus::Unmatched);
+    t3->set_status(BustripStatus::Unmatched);
+    
+    // add some requests to the passenger carrying trip (t3), the rest should be empty
+    auto rq1 = new Request();
+    auto rq2 = new Request();
+    t3->add_request(rq1);
+    t3->add_request(rq2);    
+    
+    QVERIFY(!t3->is_rebalancing_trip()); // should fail because assigned to requests
+    QVERIFY(!t3->is_empty_pickup_trip()); // should fail because assigned to requests
+    
+    // chain t2 and t3 via their driving roster..
+    vector<Bustrip*> tripchain = {t2, t3};
+    helpers::add_driving_roster_to_tripchain(tripchain);
+    
+    // check if get next trip works as expected...
+    QVERIFY(t1->get_next_trip_in_chain() == nullptr);
+    QVERIFY(t2->get_next_trip_in_chain() == t3);
+    QVERIFY(t3->get_next_trip_in_chain() == nullptr);
+    QVERIFY(t4->get_next_trip_in_chain() == nullptr);
+    
+    // check if categorization of trip types work as expected...
+    QVERIFY(t1->is_rebalancing_trip()); //is a flex trip, is not Null, is not part of a trip-chain, and is not assigned to any requests
+    QVERIFY(!t1->is_empty_pickup_trip()); //should fail due to not being part of a trip-chain
+    
+    QVERIFY(t2->is_empty_pickup_trip()); //is a flex trip, is not Null, is part of a trip-chain, and is not assigned to any requests
+    QVERIFY(!t2->is_rebalancing_trip()); //should fail due to being part of a trip-chain
+    
+    QVERIFY(!t3->is_rebalancing_trip()); // should fail because part of a trip chain
+    QVERIFY(!t3->is_empty_pickup_trip()); // should fail because assigned to requests
+    
+    QVERIFY(!t4->is_rebalancing_trip()); // should fail due to being a fixed trip
+    QVERIFY(!t4->is_empty_pickup_trip()); // should fail due to being a fixed trip
+    
+    delete t1;
+    delete t2;
+    delete t3;
+    delete t4;
+    delete rq1;
+    delete rq2;
 }
 
 

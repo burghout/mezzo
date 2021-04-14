@@ -1206,6 +1206,61 @@ void Bustrip::set_status(BustripStatus newstatus)
 	}
 }
 
+bool Bustrip::is_rebalancing_trip() const
+{
+	if(!is_flex_trip()) // no fixed schedule trip is a rebalancing trip
+		return false;
+	if(status_ == BustripStatus::Null)
+		return false;
+    if(!get_requests().empty()) // not a rebalancing trip if planned to pick up passengers
+		return false;
+	if(driving_roster.size() != 1) // not a rebalancing trip if part of a trip-chain
+		return false;
+	
+    return true;
+}
+
+bool Bustrip::is_empty_pickup_trip() const
+{
+	if(!is_flex_trip()) // no fixed schedule trip is a pick-up trip
+		return false;
+	if(status_ == BustripStatus::Null)
+		return false;
+    if(!get_requests().empty()) // not an empty pick-up trip if assigned to requests
+		return false;
+	if(driving_roster.size() <= 1) // a pick-up trip should be part of a trip-chain
+		return false;
+	
+	Bustrip* next_trip = get_next_trip_in_chain();
+	if(next_trip == nullptr) // a succeding trip should exist
+		return false;
+	if(next_trip->get_requests().empty()) // following trip should be assigned to requests
+		return false;
+
+	return true;
+}
+
+Bustrip* Bustrip::get_next_trip_in_chain() const
+{
+    Bustrip* next_trip = nullptr;
+    if (!driving_roster.empty())
+    {
+        //find position of this trip in driving roster
+		int this_trip_id = get_id();
+		const auto this_trip_it = find_if(driving_roster.begin(),driving_roster.end(),[this_trip_id](const Start_trip* st)->bool { return st->first->get_id() == this_trip_id; } );
+		
+		if(this_trip_it != driving_roster.end()) 
+		{
+		    //check if there is any following trip
+			const auto next_trip_it = next(this_trip_it);
+
+			if(next_trip_it != driving_roster.end())
+				next_trip = (*next_trip_it)->first;
+		}
+    }
+    return next_trip;
+}
+
 double Bustrip::get_max_wait_requests(double cur_time) const
 {
     double max_wait = 0.0;
