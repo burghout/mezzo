@@ -1214,7 +1214,7 @@ bool Bustrip::is_rebalancing_trip() const
 		return false;
     if(!get_requests().empty()) // not a rebalancing trip if planned to pick up passengers
 		return false;
-	if(driving_roster.size() != 1) // not a rebalancing trip if part of a trip-chain
+	if(is_part_of_tripchain()) // not a rebalancing trip if part of a trip-chain
 		return false;
 	
     return true;
@@ -1228,7 +1228,7 @@ bool Bustrip::is_empty_pickup_trip() const
 		return false;
     if(!get_requests().empty()) // not an empty pick-up trip if assigned to requests
 		return false;
-	if(driving_roster.size() <= 1) // a pick-up trip should be part of a trip-chain
+	if(!is_part_of_tripchain()) // a pick-up trip should be part of a trip-chain
 		return false;
 	
 	Bustrip* next_trip = get_next_trip_in_chain();
@@ -1238,6 +1238,11 @@ bool Bustrip::is_empty_pickup_trip() const
 		return false;
 
 	return true;
+}
+
+bool Bustrip::is_part_of_tripchain() const
+{
+	return driving_roster.size() > 1;
 }
 
 Bustrip* Bustrip::get_next_trip_in_chain() const
