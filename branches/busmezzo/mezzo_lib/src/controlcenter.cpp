@@ -10,7 +10,12 @@
 #include <iterator>
 #include <cassert>
 
+void DRTAssignmentData::reset()
 {
+    // @todo maybe delete and handle cleanups here as well...currently spread accross CC and member process classes
+    active_trips.clear();
+    fleet_state.clear();
+    //all_requests.clear(); 
 }
 
 void Controlcenter_SummaryData::reset()
@@ -508,7 +513,8 @@ void Controlcenter::reset()
 	
 	connectedVeh_.clear();
 	connectedPass_.clear();
-	fleetState_.clear();
+
+	assignment_data_.reset();
 	
 	shortestPathCache.clear(); //TODO: Perhaps also cache over runs as well
 	summarydata_.reset(); //TODO: either aggregate over resets or save between them.
@@ -558,8 +564,8 @@ set<Bus*> Controlcenter::getVehiclesDrivingToStop(Busstop* end_stop)
 	//get driving vehicles
 	for (auto state : { BusState::DrivingEmpty, BusState::DrivingPartiallyFull, BusState::DrivingFull })
 	{
-		if(fleetState_.count(state) != 0)
-			vehs_driving.insert(fleetState_[state].begin(), fleetState_[state].end());
+		if(assignment_data_.fleet_state.count(state) != 0)
+			vehs_driving.insert(assignment_data_.fleet_state[state].begin(), assignment_data_.fleet_state[state].end());
 	}
 	
 	//see which ones are currently headed to end_stop
@@ -582,9 +588,9 @@ set<Bus*> Controlcenter::getOnCallVehiclesAtStop(Busstop* stop)
 	assert(stop);
 	set<Bus*> vehs_atstop;
 
-	if (fleetState_.count(BusState::OnCall) != 0)
+	if (assignment_data_.fleet_state.count(BusState::OnCall) != 0)
 	{
-		for (auto veh : fleetState_[BusState::OnCall])
+		for (auto veh : assignment_data_.fleet_state[BusState::OnCall])
 		{
 			Busstop* curr_stop = veh->get_last_stop_visited();
 			if (curr_stop != nullptr && curr_stop->get_id() == stop->get_id())
@@ -728,12 +734,12 @@ map<int, Bus *> Controlcenter::getConnectedVehicles() const
 
 map<BusState, set<Bus*>> Controlcenter::getFleetState() const
 {
-	return fleetState_;
+	return assignment_data_.fleet_state;
 }
 
 void Controlcenter::printFleetState() const
 {
-	for (const auto& state : fleetState_)
+	for (const auto& state : assignment_data_.fleet_state)
 	{
 		for (auto veh : state.second)
 		{
@@ -1024,11 +1030,11 @@ void Controlcenter::updateFleetState(Bus* bus, BusState oldstate, BusState newst
 	//update the fleet state map, vehicles should be null before they are available, and null when they finish a trip and are copied
 	if(oldstate != BusState::Null) 
 	{
-		fleetState_[oldstate].erase(bus);
+		assignment_data_.fleet_state[oldstate].erase(bus);
     }
 	if(newstate != BusState::Null) 
 	{
-		fleetState_[newstate].insert(bus);
+		assignment_data_.fleet_state[newstate].insert(bus);
     }
 
 	if (newstate == BusState::OnCall)
@@ -1039,7 +1045,7 @@ void Controlcenter::updateFleetState(Bus* bus, BusState oldstate, BusState newst
 
 void Controlcenter::requestTrip(double time)
 {
-	if (tg_.requestTrip(rh_, fleetState_, time)) 
+	if (tg_.requestTrip(rh_, assignment_data_.fleet_state, time)) 
 	{
 		emit tripGenerated(time);
 	}
@@ -1047,7 +1053,7 @@ void Controlcenter::requestTrip(double time)
 
 void Controlcenter::requestRebalancingTrip(double time)
 {
-	if (tg_.requestRebalancingTrip(rh_, fleetState_, time)) 
+	if (tg_.requestRebalancingTrip(rh_, assignment_data_.fleet_state, time)) 
 	{
 		emit emptyVehicleTripGenerated(time);
 	}

@@ -37,6 +37,7 @@ class Bustrip;
  */
 struct DRTAssignmentData
 {
+	void reset();
     set<Bustrip*,ptr_less<Bustrip*> > active_trips; //!< all trips that have ever been generated and where not completed, including e.g. cancelled trips or trips unmatched to any vehicle
     map<BusState, set<Bus*> > fleet_state; //!< all candidate vehicles to be assigned, or reassigned to activeTrips
     // activeRequests //!< all requests for which activeTrips might be generated for
@@ -338,7 +339,6 @@ private:
 	//maps for bookkeeping connected passengers and vehicles
 	map<int, Passenger*> connectedPass_; //!< passengers currently connected to Controlcenter 
 	map<int, Bus*> connectedVeh_; //!< transit vehicles currently connected to Controlcenter
-	map<BusState, set<Bus*>> fleetState_; //!< holds set of connected transit vehicles per transit vehicle state 
 
 	/**
 	 * Functions for askng RequestHandler for unserved Requests to map to passengers etc... matched Requests 
@@ -358,6 +358,7 @@ private:
     set<Busstop*, ptr_less<Busstop*>> serviceArea_; //!< set of stops in the service area of this control center's fleet of vehicles. In other words the stops for which this control center can generate trips between
     set<Bus*> initialVehicles_; //!< vehicles assigned to this control center on input (that should be preserved between resets)
 	vector<pair<Bus*, Bustrip*>> completedVehicleTrips_; //!< used for bookkeeping dynamically generated buses and bustrips (similar to busvehicles and bustrips in network) for writing output and deleting between resets
+	DRTAssignmentData assignment_data_; //!< stores dynamic vehicle, trip and request data used in assignment pipeline
 
 	map<Controlcenter_OD, vector<Link*> > shortestPathCache; //!< cache for the first shortest path calls made between stops of this Controlcenter @todo add time-dependent caches maybe, currently only the initial calls are stored
 	Controlcenter_SummaryData summarydata_; //!< collection of data for summarizing Controlcenter performance.

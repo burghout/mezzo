@@ -386,7 +386,7 @@ void TestFixedWithFlexible_walking::testFleetState()
     QVERIFY(AproxEqual(closest.second,54.0));
 
     CC->disconnectVehicle(bus2);
-    CC->fleetState_.clear();
+    CC->assignment_data_.fleet_state.clear();
 
     delete bus1;
     delete bus2;
