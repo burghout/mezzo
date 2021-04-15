@@ -849,6 +849,35 @@ Bustrip::Bustrip ()
 	}
 }
 
+QString bustripstatus_to_QString(BustripStatus status)
+{
+	QString status_s = "";
+
+    switch (status)
+    {
+    case BustripStatus::Completed:
+        status_s = "Completed";
+        break;
+    case BustripStatus::Activated:
+        status_s = "Activated";
+        break;
+    case BustripStatus::Scheduled:
+        status_s = "Scheduled";
+        break;
+    case BustripStatus::Matched:
+        status_s = "Matched";
+        break;
+    case BustripStatus::Unmatched:
+        status_s = "Unmatched";
+        break;
+    case BustripStatus::Null:
+		status_s = "Null";
+        break;
+    }
+	return status_s;
+}
+
+
 Bustrip::Bustrip (int id_, double start_time_, Busline* line_): id(id_), line(line_), starttime(start_time_)
 {
 	init_occup_per_stop = line->get_init_occup_per_stop();
