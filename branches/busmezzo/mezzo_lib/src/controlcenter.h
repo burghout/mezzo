@@ -38,9 +38,16 @@ class Bustrip;
 struct DRTAssignmentData
 {
 	void reset();
-    set<Bustrip*,ptr_less<Bustrip*> > active_trips; //!< all trips that have ever been generated and where not completed, including e.g. cancelled trips or trips unmatched to any vehicle
+	set<Bustrip*,ptr_less<Bustrip*> > unmatched_trips;
+	set<Bustrip*,ptr_less<Bustrip*> > unmatched_rebalancing_trips;
+	set<Bustrip*,ptr_less<Bustrip*> > unscheduled_trips;
+
+    set<Bustrip*,ptr_less<Bustrip*> > active_trips; //!< all matched and scheduled trips that have ever been generated have not completed
+
     map<BusState, set<Bus*> > fleet_state; //!< all candidate vehicles to be assigned, or reassigned to activeTrips
     // activeRequests //!< all requests for which activeTrips might be generated for
+
+	void addTrip(Bustrip* trip); //!< adds trip to the appropriate container, depends on trip status and purpose
 };
 
 struct Controlcenter_SummaryData

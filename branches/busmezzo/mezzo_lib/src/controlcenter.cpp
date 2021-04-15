@@ -13,9 +13,37 @@
 void DRTAssignmentData::reset()
 {
     // @todo maybe delete and handle cleanups here as well...currently spread accross CC and member process classes
-    active_trips.clear();
+	unmatched_trips.clear();
+	unmatched_rebalancing_trips.clear();
+	unscheduled_trips.clear();
+
+	active_trips.clear();
+
+    //active_trips.clear();
     fleet_state.clear();
     //all_requests.clear(); 
+}
+
+void DRTAssignmentData::addTrip(Bustrip* trip)
+{
+	// sorts the new trip into the right set
+    switch (trip->get_status())
+    {
+    case BustripStatus::Unmatched:
+		if(trip->is_request_assigned_trip())
+			unmatched_trips.insert(trip);
+		else if(trip->is_empty_pickup_trip() || trip->is_rebalancing_trip())
+			unmatched_rebalancing_trips.insert(trip);
+        break;
+    case BustripStatus::Matched:
+		unscheduled_trips.insert(trip);
+        break;
+    case BustripStatus::Scheduled:
+		active_trips.insert(trip);
+        break;
+	default:
+		qDebug() << "Warning - ignoring adding trip" << trip->get_id() << "with status" << bustripstatus_to_QString(trip->get_status()) << "to assignment data";
+    }
 }
 
 void Controlcenter_SummaryData::reset()
