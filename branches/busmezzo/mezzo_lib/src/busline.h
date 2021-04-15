@@ -483,7 +483,8 @@ public:
 
 	bool is_rebalancing_trip() const; //!< check that the trip purpose is not a pickup-trip or a passenger-carrying one, i.e. not assigned to any requests and not part of any trip-chain
 	bool is_empty_pickup_trip() const; //!< check if the trip purpose is to pick-up travelers at the destination of the trip, i.e. not assigned to any requests, is part of a trip-chain, and the following trip is assigned to requests
-	bool is_part_of_tripchain() const; //!< check if trip is a member of a trip-chain
+    bool is_request_assigned_trip() const; //!< returns true if trip was assigned to specific requests
+    bool is_part_of_tripchain() const; //!< check if trip is a member of a trip-chain
 
 	Bustrip* get_next_trip_in_chain() const; //!< returns the Bustrip that follows this one in the driving roster, nullptr if no Bustrip follows this one
 

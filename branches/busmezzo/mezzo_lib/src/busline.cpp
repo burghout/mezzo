@@ -1269,6 +1269,18 @@ bool Bustrip::is_empty_pickup_trip() const
 	return true;
 }
 
+bool Bustrip::is_request_assigned_trip() const
+{
+    if(!is_flex_trip()) // no fixed schedule trip is assigned to specific passengers
+		return false;
+	if(status_ == BustripStatus::Null)
+		return false;
+    if(get_requests().empty()) // trip should be assigned to requests
+		return false;
+
+    return true;
+}
+
 bool Bustrip::is_part_of_tripchain() const
 {
 	return driving_roster.size() > 1;
