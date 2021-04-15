@@ -39,7 +39,7 @@ struct DRTAssignmentData
 {
 	void reset();
 	set<Bustrip*,ptr_less<Bustrip*> > unmatched_trips;
-	set<Bustrip*,ptr_less<Bustrip*> > unmatched_rebalancing_trips;
+	set<Bustrip*,ptr_less<Bustrip*> > unmatched_empty_trips;
 	set<Bustrip*,ptr_less<Bustrip*> > unscheduled_trips;
 
     set<Bustrip*,ptr_less<Bustrip*> > active_trips; //!< all matched and scheduled trips that have ever been generated have not completed
@@ -47,7 +47,7 @@ struct DRTAssignmentData
     map<BusState, set<Bus*> > fleet_state; //!< all candidate vehicles to be assigned, or reassigned to activeTrips
     // activeRequests //!< all requests for which activeTrips might be generated for
 
-	void addTrip(Bustrip* trip); //!< adds trip to the appropriate container, depends on trip status and purpose
+	//void addTrip(Bustrip* trip); //!< adds trip to the appropriate container, depends on trip status and purpose
 };
 
 struct Controlcenter_SummaryData
@@ -129,8 +129,8 @@ public:
 
     void reset(int generation_strategy_type, int empty_vehicle_strategy_type); //!< resets members and trip generation strategies
 
-	bool requestTrip(const RequestHandler& rh, const map<BusState, set<Bus*>>& fleetState, double time); //!< returns true if an unassigned trip has been generated and added to unmatchedTrips_ and false otherwise
-	bool requestRebalancingTrip(const RequestHandler& rh, const map<BusState,set<Bus*>>& fleetState, double time); //!< returns true if an unassigned rebalancing trip has been generated and added to unmatchedRebalancingTrips_ and false otherwise
+	bool requestTrip(const RequestHandler& rh, DRTAssignmentData& assignment_data, double time); //!< returns true if an unassigned trip has been generated and added to unmatchedTrips_ and false otherwise
+	bool requestRebalancingTrip(const RequestHandler& rh, DRTAssignmentData& assignment_data, double time); //!< returns true if an unassigned rebalancing trip has been generated and added to unmatchedRebalancingTrips_ and false otherwise
 
 	void setTripGenerationStrategy(int type); //!< destroy current generationStrategy_ and set to new type
 	void setEmptyVehicleStrategy(int type); //!< destroy current emptyVehicleStrategy_ and set to new type
@@ -138,13 +138,11 @@ public:
 	void addServiceRoute(Busline* line); //!< add a potential service route that this BustripGenerator can plan trips for
     vector<Busline*> getServiceRoutes() const;
 
-	void cancelUnmatchedTrip(Bustrip* trip); //!< destroy and remove trip from set of unmatchedTrips_
-	void cancelRebalancingTrip(Bustrip* trip); //!< destroy and remove rebalancing trip from set of unmatchedRebalancingTrips_
+	//void cancelUnmatchedTrip(Bustrip* trip); //!< destroy and remove trip from set of unmatchedTrips_
+	//void cancelRebalancingTrip(Bustrip* trip); //!< destroy and remove rebalancing trip from set of unmatchedRebalancingTrips_
 
 private:
-	set<Bustrip*> unmatchedTrips_; //!< set of planned passenger carrying trips to be performed that have not been matched to vehicles yet
-	set<Bustrip*> unmatchedRebalancingTrips_; //!< set of planned empty-vehicle rebalancing trips to be performed that have not been matched to vehicles yet
-	vector<Busline*> serviceRoutes_; //!< lines (i.e. routes and stops to visit along the route) that this BustripGenerator can create trips for (TODO: do other process classes need to know about this? Currently we never reset this either)
+    vector<Busline*> serviceRoutes_; //!< lines (i.e. routes and stops to visit along the route) that this BustripGenerator can create trips for (TODO: do other process classes need to know about this? Currently we never reset this either)
 
 	TripGenerationStrategy* generationStrategy_; //!< strategy for generating planned passenger carrying trips
 	TripGenerationStrategy* emptyVehicleStrategy_; //!< strategy for generating planned empty-vehicle rebalancing trips
@@ -175,11 +173,11 @@ public:
 	void removeVehicleFromServiceRoute(int line_id, Bus* transitveh); //!< remove vehicle from vector of vehicles assigned to serve the given line
 	void setMatchingStrategy(int type); //!< destroy current matchingStrategy_ and set to new type
 
-	bool matchVehiclesToTrips(BustripGenerator& tg, double time); //!< returns true if at LEAST one unmatched trip was assigned to a vehicle
-	bool matchVehiclesToEmptyVehicleTrips(BustripGenerator& tg, double time); //!< returns true if at LEAST one unmatched rebalancing trip was assigned to a vehicle
+	bool matchVehiclesToTrips(BustripGenerator& tg, DRTAssignmentData& assignment_data, double time); //!< returns true if at LEAST one unmatched trip was assigned to a vehicle
+	bool matchVehiclesToEmptyVehicleTrips(BustripGenerator& tg, DRTAssignmentData& assignment_data, double time); //!< returns true if at LEAST one unmatched rebalancing trip was assigned to a vehicle
 
 private:
-	set<Bustrip*, ptr_less<Bustrip*> > matchedTrips_; //!< set of trips that have been matched with a transit vehicle but have not yet been dispatched
+	//set<Bustrip*, ptr_less<Bustrip*> > matchedTrips_; //!< set of trips that have been matched with a transit vehicle but have not yet been dispatched
 	map<int, set<Bus*>> vehicles_per_service_route_; //!< maps lineIDs among service routes for this control center to vector of candidate transit vehicles
 
 	MatchingStrategy* matchingStrategy_; //!< strategy for assigning unmatched trips to candidate transit vehicles
@@ -201,7 +199,7 @@ public:
 
 	void reset(int scheduling_strategy_type); //!< resets members and scheduling strategy
 
-	bool scheduleMatchedTrips(BustripVehicleMatcher& tvm, double time); //!< returns true if a trip has successfully been scheduled and booked for dispatch on its line/service route in the eventlist
+	bool scheduleMatchedTrips(BustripVehicleMatcher& tvm, DRTAssignmentData& assignment_data, double time); //!< returns true if a trip has successfully been scheduled and booked for dispatch on its line/service route in the eventlist
 	void setSchedulingStrategy(int type); //!< destroy current schedulingStrategy_ and set to new type
 
 private:

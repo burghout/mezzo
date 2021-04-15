@@ -22,17 +22,21 @@ namespace cc_helper_functions
  // Helper functions for controlstrategies
 namespace cs_helper_functions
 {
+    // Update trip/trip-chain with new data
     void update_schedule(Bustrip* trip, double new_starttime); //!< takes trip that already has a preliminary schedule for both dispatch and stop visits, and updates this schedule given a new start time    
     void add_driving_roster_to_tripchain(const vector<Bustrip*>& tripchain); //!< Takes a vector of Bustrips and connects them via their driving_roster attribute in the order of the tripchain (i.e. index 0 is first trip, index 1 the second etc.)
     void set_status_of_tripchain(const vector<Start_trip*>& driving_roster, BustripStatus newstatus); //!< Takes a trip chain (Bustrip::driving_roster) and sets the trip status of each trip in this chain to newstatus
 
+    // Find requests by condition
     vector<Request*> getRequestsInTripChain(const vector<Start_trip*>& driving_roster); //!< Takes a trip chain (Bustrip::driving_roster) and returns a vector of ALL requests scheduled to any trip in this chain. 
     bool requestExistsInTripChain(const Request* req, const vector<Start_trip*>& driving_roster);
-    std::set<Request*, ptr_less<Request*> > filterRequestsByState(const set<Request*, ptr_less<Request*> >& oldSet, RequestState state);
-    std::set<Request*, ptr_less<Request*> > filterRequestsByOD(const set<Request*, ptr_less<Request*> >& oldSet, int o_id, int d_id);
+    set<Request*, ptr_less<Request*> > filterRequestsByState(const set<Request*, ptr_less<Request*> >& oldSet, RequestState state);
+    set<Request*, ptr_less<Request*> > filterRequestsByOD(const set<Request*, ptr_less<Request*> >& oldSet, int o_id, int d_id);
 
-    void assignRequestsToTrip(const set<Request*, ptr_less<Request*>>& requestSet, Bustrip* tr); // Assign requests to trips
-    void assignRequestsToTripSet(const set<Request*, ptr_less<Request*>>& requestSet, const set<Bustrip*>& tripSet);
+    // Assign requests to trips
+    void assignRequestsToTrip(const set<Request*, ptr_less<Request*> >& requestSet, Bustrip* tr); // Assign requests to trips
+    void assignRequestsToTripSet(const set<Request*, ptr_less<Request*> >& requestSet, const set<Bustrip*, ptr_less<Bustrip*> >& tripSet);
+
 } // end namespace helper_functions
 
 

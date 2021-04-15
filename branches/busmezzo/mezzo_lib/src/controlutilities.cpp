@@ -110,13 +110,13 @@ namespace cs_helper_functions
         auto it = find(all_req.begin(), all_req.end(), req);
         return (it != all_req.end());
     }
-    std::set<Request*, ptr_less<Request*>> filterRequestsByState(const set<Request*, ptr_less<Request*>>& oldSet, RequestState state)
+    set<Request*, ptr_less<Request*>> filterRequestsByState(const set<Request*, ptr_less<Request*> >& oldSet, RequestState state)
     {
-        set <Request*, ptr_less<Request*>> newSet;
-        std::copy_if(oldSet.begin(), oldSet.end(), std::inserter(newSet, newSet.end()), [state](Request* value) {return value->state == state; });
+        set <Request*, ptr_less<Request*> > newSet;
+        copy_if(oldSet.begin(), oldSet.end(), inserter(newSet, newSet.end()), [state](Request* value) {return value->state == state; });
         return newSet;
     }
-    std::set<Request*, ptr_less<Request*>> filterRequestsByOD(const set<Request*, ptr_less<Request*>>& oldSet, int o_id, int d_id)
+    set<Request*, ptr_less<Request*>> filterRequestsByOD(const set<Request*, ptr_less<Request*> >& oldSet, int o_id, int d_id)
     {
         set <Request*, ptr_less<Request*>> newSet;
         std::copy_if(oldSet.begin(), oldSet.end(), std::inserter(newSet, newSet.end()), [o_id, d_id](Request* value) {return (value->ostop_id == o_id) && (value->dstop_id == d_id); });
@@ -124,7 +124,7 @@ namespace cs_helper_functions
     }
 
     // Assign requests to trips
-    void assignRequestsToTrip(const set<Request*, ptr_less<Request*>>& requestSet, Bustrip* tr)
+    void assignRequestsToTrip(const set<Request*, ptr_less<Request*> >& requestSet, Bustrip* tr)
     {
         auto unassignedRequests = cs_helper_functions::filterRequestsByState(requestSet, RequestState::Unmatched); // redo the filtering each time
         // TODO Add also for emptyTrips followed by a "selectedTrip"
@@ -146,7 +146,7 @@ namespace cs_helper_functions
         }
 
     }
-    void assignRequestsToTripSet(const set<Request*, ptr_less<Request*>>& requestSet, const set<Bustrip*>& tripSet)
+    void assignRequestsToTripSet(const set<Request*, ptr_less<Request*> >& requestSet, const set<Bustrip*, ptr_less<Bustrip*> >& tripSet)
     {
         for (auto tr : tripSet)
         {
