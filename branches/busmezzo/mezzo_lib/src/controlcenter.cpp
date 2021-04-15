@@ -1,4 +1,5 @@
 #include "controlstrategies.h"
+#include "controlutilities.h"
 #include "passenger.h"
 #include "vehicle.h"
 #include "controlcenter.h"
@@ -9,17 +10,7 @@
 #include <iterator>
 #include <cassert>
 
-
-namespace cc_helper_functions
 {
-	//!< Removes request from 'Bustrip::scheduled_requests' for any bustrip in driving_roster
-	void removeRequestFromTripChain(const Request* req, const vector<Start_trip*>& driving_roster)
-	{
-		for (auto trip_dispatch : driving_roster)
-		{
-			trip_dispatch->first->remove_request(req);
-		}
-	}
 }
 
 void Controlcenter_SummaryData::reset()
@@ -527,35 +518,24 @@ void Controlcenter::connectInternal()
 {
 	//Note: the order in which the signals are connected to the slots matters! For example when newUnassignedVehicle is signaled, requestTrip will be called before matchVehiclesToTrips
 	//signal slots for debug messages TODO: remove later
-	bool ok;
-	ok = (QObject::connect(this, &Controlcenter::requestRejected, this, &Controlcenter::on_requestRejected, Qt::DirectConnection) != nullptr);
-	assert(ok);
-	ok = (QObject::connect(this, &Controlcenter::requestAccepted, this, &Controlcenter::on_requestAccepted, Qt::DirectConnection) != nullptr);
-	assert(ok);
-    ok = (QObject::connect(this, &Controlcenter::tripVehicleMatchFound, this, &Controlcenter::on_tripVehicleMatchFound, Qt::DirectConnection) != nullptr);
-    assert(ok);
+	QObject::connect(this, &Controlcenter::requestRejected, this, &Controlcenter::on_requestRejected, Qt::DirectConnection);
+	QObject::connect(this, &Controlcenter::requestAccepted, this, &Controlcenter::on_requestAccepted, Qt::DirectConnection);
+    QObject::connect(this, &Controlcenter::tripVehicleMatchFound, this, &Controlcenter::on_tripVehicleMatchFound, Qt::DirectConnection);
 
 	//Triggers to generate trips via BustripGenerator
-	ok = (QObject::connect(this, &Controlcenter::requestAccepted, this, &Controlcenter::requestTrip, Qt::DirectConnection) != nullptr); 
-	assert(ok);
-	ok = (QObject::connect(this, &Controlcenter::newUnassignedVehicle, this, &Controlcenter::requestTrip, Qt::DirectConnection) != nullptr);
-	assert(ok);
-	ok = (QObject::connect(this, &Controlcenter::tripVehicleMatchNotFound, this, &Controlcenter::requestRebalancingTrip, Qt::DirectConnection) != nullptr);
-	assert(ok);
+	QObject::connect(this, &Controlcenter::requestAccepted, this, &Controlcenter::requestTrip, Qt::DirectConnection); 
+	QObject::connect(this, &Controlcenter::newUnassignedVehicle, this, &Controlcenter::requestTrip, Qt::DirectConnection);
+	QObject::connect(this, &Controlcenter::tripVehicleMatchNotFound, this, &Controlcenter::requestRebalancingTrip, Qt::DirectConnection);
 
 	//Triggers to match vehicles in trips via BustripVehicleMatcher
-	ok = (QObject::connect(this, &Controlcenter::tripGenerated, this, &Controlcenter::on_tripGenerated, Qt::DirectConnection) != nullptr); //currently used for debugging only
-	assert(ok);
-	ok = (QObject::connect(this, &Controlcenter::tripGenerated, this, &Controlcenter::matchVehiclesToTrips, Qt::DirectConnection) != nullptr);
-	assert(ok);
+	QObject::connect(this, &Controlcenter::tripGenerated, this, &Controlcenter::on_tripGenerated, Qt::DirectConnection); //currently used for debugging only
+	QObject::connect(this, &Controlcenter::tripGenerated, this, &Controlcenter::matchVehiclesToTrips, Qt::DirectConnection);
 	//ok = QObject::connect(this, &Controlcenter::newUnassignedVehicle, this, &Controlcenter::matchVehiclesToTrips, Qt::DirectConnection); //removed to avoid double call to matchVehicleToTrips
 	//assert(ok);
-	ok = (QObject::connect(this, &Controlcenter::emptyVehicleTripGenerated, this, &Controlcenter::matchEmptyVehiclesToTrips, Qt::DirectConnection) != nullptr);
-	assert(ok);
+	QObject::connect(this, &Controlcenter::emptyVehicleTripGenerated, this, &Controlcenter::matchEmptyVehiclesToTrips, Qt::DirectConnection);
 
 	//Triggers to schedule vehicle - trip pairs via VehicleScheduler
-	ok = (QObject::connect(this, &Controlcenter::tripVehicleMatchFound, this, &Controlcenter::scheduleMatchedTrips, Qt::DirectConnection) != nullptr);
-	assert(ok);
+	QObject::connect(this, &Controlcenter::tripVehicleMatchFound, this, &Controlcenter::scheduleMatchedTrips, Qt::DirectConnection);
 }
 
 set<Bus*> Controlcenter::getAllVehicles()

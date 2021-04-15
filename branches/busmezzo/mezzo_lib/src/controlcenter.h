@@ -30,6 +30,18 @@ class Busline;
 class Busstop;
 class Bustrip;
 
+/**
+ * @ingroup DRT
+ *
+ * @brief data used in strategies for assigning vehicles to dynamically generated trips
+ */
+struct DRTAssignmentData
+{
+    set<Bustrip*,ptr_less<Bustrip*> > active_trips; //!< all trips that have ever been generated and where not completed, including e.g. cancelled trips or trips unmatched to any vehicle
+    map<BusState, set<Bus*> > fleet_state; //!< all candidate vehicles to be assigned, or reassigned to activeTrips
+    // activeRequests //!< all requests for which activeTrips might be generated for
+};
+
 struct Controlcenter_SummaryData
 {
 	void reset();
@@ -190,7 +202,7 @@ private:
 	SchedulingStrategy* schedulingStrategy_; //!< strategy that is used to determine the start time (for dispatch) of flexible transit vehicle trips and scheduled visits to stops
 };
 
-//*! @brief groups together objects that control or modify demand-responsive transit objects
+//*! @brief groups together objects that control or modify demand-responsive transit objects @todo update description, alot of refactoring has been done, the signal slot calls are the same but the ownership and responsibilities of process classes have changed
 /*!
     Controlcenter functions as a facade for four process classes ((1) RequestHandler, (2) BustripGenerator, (3), BustripVehicleMatcher, (4) VehicleScheduler)
     used for dynamically assigning transit vehicles to passenger travel requests. The Controlcenter registers (unregisters) service vehicles and passengers, and

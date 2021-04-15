@@ -43,6 +43,7 @@ HEADERS += ../mezzo_lib/src/busline.h \
            ../mezzo_lib/src/pass_route.h \
 		   ../mezzo_lib/src/controlcenter.h \
 		   ../mezzo_lib/src/controlstrategies.h \
+           ../mezzo_lib/src/controlutilities.h \
            ../mezzo_lib/src/csvfile.h
 
 SOURCES += ../mezzo_lib/src/busline.cpp \
@@ -74,4 +75,5 @@ SOURCES += ../mezzo_lib/src/busline.cpp \
            ../mezzo_lib/src/pass_route.cpp \
 		   ../mezzo_lib/src/controlcenter.cpp \
 		   ../mezzo_lib/src/controlstrategies.cpp \
+           ../mezzo_lib/src/controlutilities.cpp \
 		    ../mezzo_lib/src/main.cpp

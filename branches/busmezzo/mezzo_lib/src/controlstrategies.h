@@ -30,6 +30,7 @@ class Network;
 class Link;
 class Passenger;
 
+
 /**
  * @ingroup DRT
  * 
@@ -44,9 +45,6 @@ class Passenger;
  *  Cancelled - request was cancelled by traveler
  * 
  * @todo currently not all states used besides Null and Unmatched. Requests are currently removed upon passenger boarding a vehicle
- *       1. Add bookeeping methods to update RequestState, associated vehicles to requests, requests to vehicles...
- *       2. Maybe use pointers to Requests rather than copies in Passenger-Controlcenter communication. Need to doublecheck how qt default signal-slots connections work with multiple threads this is however (even if we are only creating one other thread from main)
- *       3. Replace ostop_id and dstop_id with pointers to the actual stops maybe
  */
 enum class RequestState { Null = 0, Unmatched, Assigned, Matched }; //  ServedUnfinished, ServedFinished, Rejected, Cancelled };
 

@@ -44,6 +44,7 @@ HEADERS += src/busline.h \
            src/pass_route.h \
 		   src/controlcenter.h \
 		   src/controlstrategies.h \
+           src/controlutilities.h \
            src/csvfile.h
   #         src/Graph.cpp
 SOURCES += src/busline.cpp \
@@ -74,4 +75,5 @@ SOURCES += src/busline.cpp \
            src/od_stops.cpp \
            src/pass_route.cpp \
 		   src/controlcenter.cpp \
-		   src/controlstrategies.cpp
+		   src/controlstrategies.cpp \
+           src/controlutilities.cpp \
