@@ -37,6 +37,10 @@ namespace cs_helper_functions
     void assignRequestsToTrip(const set<Request*, ptr_less<Request*> >& requestSet, Bustrip* tr); // Assign requests to trips
     void assignRequestsToTripSet(const set<Request*, ptr_less<Request*> >& requestSet, const set<Bustrip*, ptr_less<Bustrip*> >& tripSet);
 
+    // Find trip by condition
+    set<Bustrip*, ptr_less<Bustrip*> > filterBustripsByStatus(const set<Bustrip*, ptr_less<Bustrip*> >& oldSet, BustripStatus status);
+    set<Bustrip*, ptr_less<Bustrip*> > filterRequestAssignedTrips(const set<Bustrip*, ptr_less<Bustrip*> >& oldSet, BustripStatus status); //!< returns trips that are members of oldset with <status> and non-empty scheduled requests members
+
 } // end namespace helper_functions
 
 

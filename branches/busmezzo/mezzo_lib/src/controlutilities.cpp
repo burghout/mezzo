@@ -154,4 +154,30 @@ namespace cs_helper_functions
         }
     }
 
+    // Find trips by condition
+    set<Bustrip*, ptr_less<Bustrip*> > filterBustripsByStatus(const set<Bustrip*, ptr_less<Bustrip*> >& oldSet, BustripStatus status)
+    {
+        set <Bustrip*, ptr_less<Bustrip*>> newSet;
+        copy_if(oldSet.begin(), oldSet.end(), inserter(newSet, newSet.end()), [status](Bustrip* trip) {return trip->get_status() == status; });
+        return newSet;
+    }
+    set<Bustrip*, ptr_less<Bustrip*> > filterRequestAssignedTrips(const set<Bustrip*, ptr_less<Bustrip*> >& oldSet, BustripStatus status)
+    {
+        set <Bustrip*, ptr_less<Bustrip*>> newSet = filterBustripsByStatus(oldSet, status);
+        auto it = newSet.begin();
+        while (it != newSet.end())
+        {
+            if (!(*it)->is_assigned_to_requests())
+            {
+                it = newSet.erase(it);
+            }
+            else
+            {
+                ++it;
+            }
+        }
+
+        return newSet;
+    }
+
 } // end namespace cs_helper_functions
