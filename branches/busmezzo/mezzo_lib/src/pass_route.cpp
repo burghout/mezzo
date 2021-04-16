@@ -74,7 +74,7 @@ int Pass_path::find_number_of_transfers ()
 	return nr_trans-1; // omitting origin and destination stops
 }
 
-double Pass_path::calc_total_scheduled_in_vehicle_time (double time)
+double Pass_path::calc_total_scheduled_in_vehicle_time(double time)//, Passenger* pass)
 {
 	IVT.clear();
 	double sum_in_vehicle_time = 0.0;
@@ -82,7 +82,16 @@ double Pass_path::calc_total_scheduled_in_vehicle_time (double time)
 	iter_alt_transfer_stops++; // starting from the second stop
 	for (vector<vector <Busline*> >::iterator iter_alt_lines = alt_lines.begin(); iter_alt_lines < alt_lines.end(); iter_alt_lines++)
 	{
-		IVT.push_back((*iter_alt_lines).front()->calc_curr_line_ivt((*iter_alt_transfer_stops).front(),(*(iter_alt_transfer_stops+1)).front(),alt_transfer_stops.front().front()->get_rti(),time));
+		////RTCI Melina
+		//if (time > 0.0) // check if pass. has RTCI access during simulation -> weighted IVT * RTCI
+		//{
+		//	IVT.push_back((*iter_alt_lines).front()->calc_curr_line_car_ivt((*iter_alt_transfer_stops).front(), (*(iter_alt_transfer_stops + 1)).front(), alt_transfer_stops.front().front()->get_rti(), time, pass->get_pass_car(), pass, pass->get_pass_carRTCI()));
+		//	cout << "scheduled time car: " << pass->get_pass_car() << endl;
+		//}
+		//else // otherwise -> absolute IVT
+		//{
+			IVT.push_back((*iter_alt_lines).front()->calc_curr_line_ivt((*iter_alt_transfer_stops).front(), (*(iter_alt_transfer_stops + 1)).front(), alt_transfer_stops.front().front()->get_rti(), time));
+		//}
 		sum_in_vehicle_time += IVT.back();
 		iter_alt_transfer_stops++;
 		iter_alt_transfer_stops++; 
@@ -145,6 +154,234 @@ double Pass_path::calc_total_in_vehicle_time (double time, Passenger* pass)
 	return (sum_in_vehicle_time/60); // minutes
 }
 
+// Erik 18-11-26: Made car-specific //Melina RTCI 
+double Pass_path::calc_total_in_vehicle_time(double time, Passenger* pass, int section)
+{
+	IVT.clear();
+	double sum_in_vehicle_time = 0.0;
+	vector<vector <Busstop*> >::iterator iter_alt_transfer_stops = alt_transfer_stops.begin();
+	iter_alt_transfer_stops++; // starting from the second stop
+	//Melina RTCI 20-12-15
+	bool leg_has_RTCI;
+	int RTCI_availability = theParameters->include_car_RTCI;
+	switch (RTCI_availability)
+	{
+	case 0:
+		// all legs are calculated based on headway or time-table
+		leg_has_RTCI = false;
+		break;
+	case 3:
+		if (pass->get_pass_carRTCI() == 1)
+		{
+			leg_has_RTCI = true;
+		}
+		else
+		{
+			leg_has_RTCI = false;
+		}
+		break;
+	case 4:
+		leg_has_RTCI = alt_transfer_stops.front().front()->get_rtci();
+		break;
+	}
+
+	for (vector<vector <Busline*> >::iterator iter_alt_lines = alt_lines.begin(); iter_alt_lines < alt_lines.end(); iter_alt_lines++)
+	{
+		double ivtt = 0;
+
+		if (theParameters->in_vehicle_d2d_indicator)
+		{
+			bool has_reached_boarding_stop = false;
+
+			for (vector<Busstop*>::iterator iter_leg_stops = iter_alt_lines->front()->stops.begin(); iter_leg_stops < iter_alt_lines->front()->stops.end(); iter_leg_stops++)
+			{ //the anticipated in vehicle travel time is specific for each leg of the trip
+				if (has_reached_boarding_stop)
+				{
+					double leg_ivtt;
+					if (pass->any_previous_exp_ivtt(iter_alt_transfer_stops->front(), iter_alt_lines->front(), *iter_leg_stops, section/*pass->get_pass_car() *//*Erik 18-11-25*/))
+					{
+						if (leg_has_RTCI = true) //Melina 2021-04-16 travel time based on both RTCI and experience
+						{
+							leg_ivtt = theParameters->RTCI_alpha * (pass->get_anticipated_ivtt(iter_alt_transfer_stops->front(), iter_alt_lines->front(), *iter_leg_stops, section)) + (1 - theParameters->RTCI_alpha) * (iter_alt_lines->front()->calc_curr_line_car_ivt(*(iter_leg_stops - 1), *iter_leg_stops, alt_transfer_stops.front().front()->get_rti(), time, section, leg_has_RTCI, alt_transfer_stops.front().front())); //Melina 2021-04-16 travel time based on both RTCI and experience
+						}
+						else
+						{
+							leg_ivtt = pass->get_anticipated_ivtt(iter_alt_transfer_stops->front(), iter_alt_lines->front(), *iter_leg_stops, section/*pass->get_pass_car()*//*Erik 18-11-25*/);
+						}
+					}
+					else
+					{
+						//if (theParameters->include_car_RTCI/*crowding_info*/ == 1)
+						//{
+						//	leg_ivtt = iter_alt_lines->front()->calc_curr_line_car_ivt(*(iter_leg_stops - 1), *iter_leg_stops, alt_transfer_stops.front().front()->get_rti(), time, section, pass, alt_transfer_stops.front().front()->get_rtci());
+						//}
+						//else //if (theParameters->include_car_RTCI/*crowding_info*/ == 2)
+						//{
+							leg_ivtt = iter_alt_lines->front()->calc_curr_line_car_ivt(*(iter_leg_stops - 1), *iter_leg_stops, alt_transfer_stops.front().front()->get_rti(), time, section, /*pass,*/ leg_has_RTCI, alt_transfer_stops.front().front());
+						//}
+					}
+
+					//cout << "pass car: " << pass->get_pass_car() << " " << "section: " << section << endl;
+					ivtt += leg_ivtt;
+
+					if ((*iter_leg_stops)->get_id() == (iter_alt_transfer_stops + 1)->front()->get_id()) break; //Break if the alighting stop is reached
+				}
+				else if ((*iter_leg_stops)->get_id() == iter_alt_transfer_stops->front()->get_id())
+				{
+					has_reached_boarding_stop = true;
+				}
+			}
+		}
+		else
+		{
+			//if (theParameters->include_car_RTCI/*crowding_info*/ == 1)
+			//{
+			//	ivtt = iter_alt_lines->front()->calc_curr_line_car_ivt(
+			//		iter_alt_transfer_stops->front(),
+			//		(iter_alt_transfer_stops + 1)->front(),
+			//		alt_transfer_stops.front().front()->get_rti(),
+			//		time, section, pass, /*pass->get_pass_carRTCI(),*/ alt_transfer_stops.front().front()->get_rtci());
+			//}
+			//else //if (theParameters->include_car_RTCI/*crowding_info*/ == 2)
+			//{
+				ivtt = iter_alt_lines->front()->calc_curr_line_car_ivt(
+					iter_alt_transfer_stops->front(),
+					(iter_alt_transfer_stops + 1)->front(),
+					alt_transfer_stops.front().front()->get_rti(),
+					time, section, /*pass,*/ leg_has_RTCI/*pass->get_pass_carRTCI()*/, alt_transfer_stops.front().front());
+			/*}*/
+		}
+		IVT.push_back(ivtt);
+		sum_in_vehicle_time += IVT.back();
+		iter_alt_transfer_stops++;
+		iter_alt_transfer_stops++;
+	}
+		//cout << "passenger " << pass->get_id() << " first section " << section << " total in vehicle time " << sum_in_vehicle_time / 60 << endl;
+	return (sum_in_vehicle_time / 60); // minutes
+}
+
+// Erik 18-11-26: Made car-specific //Melina RTCI 2021-01-19 Made RTCI specific for the transfer car
+double Pass_path::calc_total_in_vehicle_time(double time, Passenger* pass, int section, int transfer_section, Busstop* transfer_stop)
+{
+	IVT.clear();
+	double sum_in_vehicle_time = 0.0;
+	vector<vector <Busstop*> >::iterator iter_alt_transfer_stops = alt_transfer_stops.begin();
+	iter_alt_transfer_stops++; // starting from the second stop
+							   //Melina RTCI 20-12-15
+	bool leg_has_RTCI;
+	int RTCI_availability = theParameters->include_car_RTCI;
+	switch (RTCI_availability)
+	{
+	case 0:
+		// all legs are calculated based on headway or time-table
+		leg_has_RTCI = false;
+		break;
+	case 3:
+		if (pass->get_pass_carRTCI() == 1)
+		{
+			leg_has_RTCI = true;
+		}
+		else
+		{
+			leg_has_RTCI = false;
+		}
+		break;
+	case 4:
+		leg_has_RTCI = alt_transfer_stops.front().front()->get_rtci();
+		break;
+	}
+
+	for (vector<vector <Busline*> >::iterator iter_alt_lines = alt_lines.begin(); iter_alt_lines < alt_lines.end(); iter_alt_lines++)
+	{
+		double ivtt = 0;
+
+		if (theParameters->in_vehicle_d2d_indicator)
+		{
+			bool has_reached_boarding_stop = false;
+
+			for (vector<Busstop*>::iterator iter_leg_stops = iter_alt_lines->front()->stops.begin(); iter_leg_stops < iter_alt_lines->front()->stops.end(); iter_leg_stops++)
+			{ //the anticipated in vehicle travel time is specific for each leg of the trip
+				if (has_reached_boarding_stop)
+				{
+					double leg_ivtt;
+					//if (pass->any_previous_exp_ivtt(iter_alt_transfer_stops->front(), iter_alt_lines->front(), *iter_leg_stops, section/*pass->get_pass_car() *//*Erik 18-11-25*/))
+					//{
+					//	leg_ivtt = pass->get_anticipated_ivtt(iter_alt_transfer_stops->front(), iter_alt_lines->front(), *iter_leg_stops, pass->get_pass_car()/*Erik 18-11-25*/);
+					//}
+					if (iter_alt_transfer_stops->front() == alt_transfer_stops.front().front())
+					{
+						if (pass->any_previous_exp_ivtt(iter_alt_transfer_stops->front(), iter_alt_lines->front(), *iter_leg_stops, section/*pass->get_pass_car() *//*Erik 18-11-25*/))
+						{
+							if (leg_has_RTCI = true) //Melina 2021-04-16
+							{
+								leg_ivtt = theParameters->RTCI_alpha * (pass->get_anticipated_ivtt(iter_alt_transfer_stops->front(), iter_alt_lines->front(), *iter_leg_stops, section)) + (1 - theParameters->RTCI_alpha)* (leg_ivtt = iter_alt_lines->front()->calc_curr_line_car_ivt(*(iter_leg_stops - 1), *iter_leg_stops, alt_transfer_stops.front().front()->get_rti(), time, section, leg_has_RTCI, alt_transfer_stops.front().front(), transfer_section, transfer_stop));
+							}
+							else
+							{
+								leg_ivtt = pass->get_anticipated_ivtt(iter_alt_transfer_stops->front(), iter_alt_lines->front(), *iter_leg_stops, section/*pass->get_pass_car()*//*Erik 18-11-25*/);
+							}
+						}
+						else
+						{
+							leg_ivtt = iter_alt_lines->front()->calc_curr_line_car_ivt(*(iter_leg_stops - 1), *iter_leg_stops, alt_transfer_stops.front().front()->get_rti(), time, section, /*pass,*/ leg_has_RTCI, alt_transfer_stops.front().front(), transfer_section, transfer_stop);
+						}
+					}
+					if (iter_alt_transfer_stops->front()->get_id() == transfer_stop->get_id())
+					{
+						if (pass->any_previous_exp_ivtt(iter_alt_transfer_stops->front(), iter_alt_lines->front(), *iter_leg_stops, transfer_section/*pass->get_pass_car() *//*Erik 18-11-25*/))
+						{
+							if (leg_has_RTCI = true)
+							{
+								leg_ivtt = theParameters->RTCI_alpha * (pass->get_anticipated_ivtt(iter_alt_transfer_stops->front(), iter_alt_lines->front(), *iter_leg_stops, transfer_section)) + (1 - theParameters->RTCI_alpha) * (iter_alt_lines->front()->calc_curr_line_car_ivt(*(iter_leg_stops - 1), *iter_leg_stops, alt_transfer_stops.front().front()->get_rti(), time, section, /*pass,*/ leg_has_RTCI, alt_transfer_stops.front().front(), transfer_section, transfer_stop));
+							}
+							else
+							{
+								leg_ivtt = pass->get_anticipated_ivtt(iter_alt_transfer_stops->front(), iter_alt_lines->front(), *iter_leg_stops, transfer_section/*pass->get_pass_car()*//*Erik 18-11-25*/);
+							}
+						}
+						else
+						{
+							leg_ivtt = iter_alt_lines->front()->calc_curr_line_car_ivt(*(iter_leg_stops - 1), *iter_leg_stops, alt_transfer_stops.front().front()->get_rti(), time, section, /*pass,*/ leg_has_RTCI, alt_transfer_stops.front().front(), transfer_section, transfer_stop);
+						}
+					}
+					ivtt += leg_ivtt;
+
+					if ((*iter_leg_stops)->get_id() == (iter_alt_transfer_stops + 1)->front()->get_id()) break; //Break if the alighting stop is reached
+				}
+				else if ((*iter_leg_stops)->get_id() == iter_alt_transfer_stops->front()->get_id())
+				{
+					has_reached_boarding_stop = true;
+				}
+			}
+		}
+		else
+		{
+			//if (theParameters->include_car_RTCI/*crowding_info*/ == 1)
+			//{
+			//	ivtt = iter_alt_lines->front()->calc_curr_line_car_ivt(
+			//		iter_alt_transfer_stops->front(),
+			//		(iter_alt_transfer_stops + 1)->front(),
+			//		alt_transfer_stops.front().front()->get_rti(),
+			//		time, section, pass, /*pass->get_pass_carRTCI(),*/ alt_transfer_stops.front().front()->get_rtci());
+			//}
+			//else //if (theParameters->include_car_RTCI/*crowding_info*/ == 2)
+			//{
+			ivtt = iter_alt_lines->front()->calc_curr_line_car_ivt(
+				iter_alt_transfer_stops->front(),
+				(iter_alt_transfer_stops + 1)->front(),
+				alt_transfer_stops.front().front()->get_rti(),
+				time, section, /*pass,*/ leg_has_RTCI/*pass->get_pass_carRTCI()*/, alt_transfer_stops.front().front(), transfer_section, transfer_stop); //Melina 21-01-20
+			/*}*/
+		}
+		IVT.push_back(ivtt);
+		sum_in_vehicle_time += IVT.back();
+		iter_alt_transfer_stops++;
+		iter_alt_transfer_stops++;
+	}
+	//cout << "passenger " << pass->get_id() << " first section " << section << " total in vehicle time " << sum_in_vehicle_time / 60 << endl;
+	return (sum_in_vehicle_time / 60); // minutes
+}
+
 
 // Erik 18-12-01
 double Pass_path::calc_total_walking_distance(int from_section)
@@ -178,10 +415,10 @@ double Pass_path::calc_total_walking_distance(int from_section, int dest_section
 	//double sum_in_vehicle_time = 0.0;
 	vector<vector <Busstop*> >::iterator iter_alt_transfer_stops = alt_transfer_stops.begin();
 	iter_alt_transfer_stops++; // starting from the second stop
-	//cout << iter_alt_transfer_stops->front()->get_id() << endl;
-	int to_section = from_section;
+	//int to_section = from_section;
 	//int to_section = iter_alt_transfer_stops->front()->get_shortest_walk_between_stops((iter_alt_transfer_stops)->front()).first;
 	double sum_walking_distance = 0.0;
+
 		sum_walking_distance += /*iter_alt_transfer_stops->front()->get_walking_distance_stop_section(from_section, iter_alt_transfer_stops->front(), to_section) +*/ iter_alt_transfer_stops->front()->get_walking_distance_stop_section(from_section, iter_alt_transfer_stops->front(), dest_section);
 
 		for (vector <double>::iterator iter_walking = walking_distances.begin(); iter_walking < walking_distances.end(); iter_walking++)
@@ -189,8 +426,51 @@ double Pass_path::calc_total_walking_distance(int from_section, int dest_section
 			sum_walking_distance += (*iter_walking);
 		}
 
+		//cout << " first section " << from_section << " dest section " << dest_section << " total walking time " << sum_walking_distance << endl;
+
 		return sum_walking_distance; // meters
+}
+
+// Melina 2020-10-27 Added distance at the transfer stop. 
+double Pass_path::calc_total_walking_distance(int from_section, int dest_section, int next_transfer_section)
+{
+	//IVT.clear();
+	//double sum_in_vehicle_time = 0.0;
+	vector<vector <Busstop*> >::iterator iter_alt_transfer_stops = alt_transfer_stops.begin();
+	double sum_walking_distance = 0.0;
+	//Melina 2020-10-27
+	if (alt_transfer_stops.size() == 6)
+	{
+		iter_alt_transfer_stops++; // starting from the second stop
+		//vector< vector<Busstop*> >::iterator row;
+		//vector<Busstop*>::iterator col;
+		//for (row = alt_transfer_stops.begin(); row != alt_transfer_stops.end(); row++)
+		//{
+		//	for (col = row->begin(); col != row->end(); col++) 
+		//	{
+		//for (
+		//	auto it = iter_alt_transfer_stops[2].begin();
+		//	it != iter_alt_transfer_stops[2].end(); it++)
+		//{
+				sum_walking_distance = alt_transfer_stops[2].front()->get_walking_distance_stop_section(from_section, alt_transfer_stops[3].front(), next_transfer_section) + alt_transfer_stops[4].front()->get_walking_distance_stop_section(next_transfer_section, alt_transfer_stops[5].front(), dest_section);
+				//sum_walking_distance = iter_alt_transfer_stops->front()->get_walking_distance_stop_section(from_section, (iter_alt_transfer_stops + 1)->front(), next_transfer_section) + (iter_alt_transfer_stops + 2)->front()->get_walking_distance_stop_section(next_transfer_section, (iter_alt_transfer_stops + 3)->front(), dest_section);
+			//}
+		//}
 	}
+	else if (alt_transfer_stops.size() == 4)
+	{
+		//sum_walking_distance = iter_alt_transfer_stops->front()->get_walking_distance_stop_section(from_section, iter_alt_transfer_stops->front(), dest_section);
+		//sum_walking_distance = iter_alt_transfer_stops->front()->get_walking_distance_stop_section(from_section, (iter_alt_transfer_stops + 1)->front(), next_transfer_section) + (iter_alt_transfer_stops + 2)->front()->get_walking_distance_stop_section(next_transfer_section, (iter_alt_transfer_stops + 3)->front(), dest_section);
+		sum_walking_distance = iter_alt_transfer_stops->front()->get_walking_distance_stop_section(from_section, alt_transfer_stops[1].front(), next_transfer_section) + alt_transfer_stops[2].front()->get_walking_distance_stop_section(next_transfer_section, alt_transfer_stops[3].front(), dest_section);
+	}
+
+	for (vector <double>::iterator iter_walking = walking_distances.begin(); iter_walking < walking_distances.end(); iter_walking++)
+	{
+		sum_walking_distance += (*iter_walking);
+	}
+		//cout << " first section " << from_section << " transfer section " << next_transfer_section << " dest section " << dest_section << " total walking time " << sum_walking_distance << endl;
+	return sum_walking_distance; // meters
+}
 // Erik 18-09-16: Depends on walking distances
 double Pass_path::calc_total_walking_distance()
 {
@@ -200,6 +480,159 @@ double Pass_path::calc_total_walking_distance()
 		sum_walking_distance += (*iter_walking);
 	}
 	return (sum_walking_distance); // meters
+}
+
+double Pass_path::calc_total_waiting_time (double time, bool without_first_waiting, bool alighting_decision, double avg_walking_speed, Passenger* pass, int next_section, int next_transfer_section) //Melina 20-10-29
+{
+	double sum_waiting_time = 0.0;
+	bool first_line = true;
+	vector <vector <Busstop*> >::iterator alt_transfer_stops_iter = alt_transfer_stops.begin() + 1;
+	vector <vector <Busstop*> >::iterator transfer_stops_iter = alt_transfer_stops.begin() + 2;
+	vector<Busstop*> first_stops = alt_transfer_stops.front();
+	vector<Busstop*> second_stops = (*alt_transfer_stops_iter);
+	vector<vector <Busline*> >::iterator iter_alt_lines = alt_lines.begin();
+	if (without_first_waiting == true) // if it is calculated for an arriving vehicle, don't include waiting time for the first leg in the calculations
+	{
+		alt_transfer_stops_iter++;
+		alt_transfer_stops_iter++;
+		iter_alt_lines++;
+		first_line = false;
+	}
+	bool first_entrance = true;
+	if (alighting_decision == true) //  besides in case the calculation is for an alighting decision
+	{
+		first_line = false;
+	}
+	vector<double>::iterator iter_IVT = IVT.begin();
+	vector<double>::iterator iter_walk = walking_distances.begin();
+	double pass_arrival_time_at_next_stop;
+	double sum_IVT = 0.0;
+	double sum_walking_times = 0.0;
+	//Melina 2020-02-18
+	int from_section = pass->get_pass_section();
+	for (; iter_alt_lines < alt_lines.end(); iter_alt_lines++)
+	{
+			double wt_pk = 0.0;
+			double wt_rti = 0.0;
+			double leg_waiting_time = 0.0;
+			if (first_entrance == false) // in all cases beside the first entrance
+			{
+				first_line = false;
+				alt_transfer_stops_iter++;
+				alt_transfer_stops_iter++;
+				sum_IVT += (*iter_IVT);
+				iter_IVT++;
+				iter_walk++;
+			}
+			if (alt_transfer_stops_iter->front()== pass->get_original_origin()) //Melina 20-10-30
+			{
+				sum_walking_times += (((*iter_walk) / avg_walking_speed) * 60 + ((alt_transfer_stops.front().front()->get_walking_distance_stop_section(from_section, alt_transfer_stops_iter->front()/*pass->get_original_origin()*/, next_section)) / avg_walking_speed) * 60);
+			}
+			else
+			{
+				sum_walking_times += (((*iter_walk) / avg_walking_speed) * 60 + ((/*alt_transfer_stops_iter->front()->*/transfer_stops_iter->front()->get_walking_distance_stop_section(next_section, alt_transfer_stops_iter->front()/*pass->get_original_origin()*/, next_transfer_section)) / avg_walking_speed) * 60);
+			}
+			//sum_walking_times += (((*iter_walk) / avg_walking_speed) * 60 + ((alt_transfer_stops_iter->front()->get_walking_distance_stop_section(from_section, alt_transfer_stops_iter->front(), next_section)) / avg_walking_speed) * 60); //Melina 2020-10-29 
+			//sum_walking_times += (((*iter_walk) / avg_walking_speed) * 60 + ((alt_transfer_stops_iter->front()->get_walking_distance_stop_section(from_section, alt_transfer_stops_iter->front()/*pass->get_original_origin()*/, next_section)) / avg_walking_speed) * 60); //Melina 2020-02-20 Is it valid when there are transfers? Check that!
+			pass_arrival_time_at_next_stop = time + (sum_waiting_time * 60) + sum_walking_times + sum_IVT;
+			wt_pk = (calc_curr_leg_headway((*iter_alt_lines), alt_transfer_stops_iter, pass_arrival_time_at_next_stop) / 2);
+			first_entrance = false;
+			bool leg_has_RTI;
+			int RTI_availability = theParameters->real_time_info;
+			if (theParameters->real_time_info == 4)
+			{
+				RTI_availability = first_stops.front()->get_rti();
+			}
+			if (pass->get_pass_RTI_network_level() == 1)
+			{
+				RTI_availability = 3;
+			}
+			switch (RTI_availability)
+			{
+			case 0:
+				// all legs are calculated based on headway or time-table
+				leg_has_RTI = false;
+				break;
+			case 1:
+				// first leg is calculated based on real-time if it is an alternative of staying at the same stop (stop1==stop2),
+				//otherwise (involves connection) - based on headway or time-table, while downstream legs are estimated based on headway or time-table	
+				if (first_line == true)
+				{
+					if (second_stops.size() == 1 && first_stops.front() == second_stops.front()) // staying at the same stop
+					{
+						leg_has_RTI = true;
+						wt_rti = calc_curr_leg_waiting_RTI((*iter_alt_lines), alt_transfer_stops_iter, pass_arrival_time_at_next_stop);
+					}
+					else // using a connected stop
+					{
+						leg_has_RTI = false;
+					}
+				}
+				else
+				{
+					leg_has_RTI = false;
+					break;
+				}
+
+			case 2:
+				// first leg is calculated based on real-time, while other legs are estimated based on headway or time-table
+				if (first_line == true)
+				{
+					leg_has_RTI = true;
+					wt_rti = calc_curr_leg_waiting_RTI((*iter_alt_lines), alt_transfer_stops_iter, pass_arrival_time_at_next_stop);
+					break;
+				}
+				else
+				{
+					leg_has_RTI = false;
+					break;
+				}
+			case 3:
+				// all legs are estimated based on real-time info
+				leg_has_RTI = true;
+				wt_rti = calc_curr_leg_waiting_RTI((*iter_alt_lines), alt_transfer_stops_iter, pass_arrival_time_at_next_stop);
+				break;
+			}
+			if (theParameters->pass_day_to_day_indicator == false) // only for no previous day operations
+			{
+				if (leg_has_RTI == true)
+				{
+					leg_waiting_time = theParameters->default_alpha_RTI * wt_rti + (1 - theParameters->default_alpha_RTI) * wt_pk;
+				}
+				else
+				{
+					leg_waiting_time = wt_pk; // VALID only when RTI level is stable over days
+				}
+			}
+			else //if (theParameters->pass_day_to_day_indicator == true) // only for Day2Day operations
+			{
+				double alpha_exp, alpha_RTI;
+				bool previous_exp_ODSL = pass->any_previous_exp_ODSL((*alt_transfer_stops_iter).front(), (*iter_alt_lines).front());
+				if (previous_exp_ODSL == false)
+				{
+					alpha_exp = 0;
+					alpha_RTI = theParameters->default_alpha_RTI;
+				}
+				else
+				{
+					alpha_exp = pass->get_alpha_exp((*alt_transfer_stops_iter).front(), (*iter_alt_lines).front());
+					alpha_RTI = pass->get_alpha_RTI((*alt_transfer_stops_iter).front(), (*iter_alt_lines).front());
+				}
+
+				if (leg_has_RTI == true)
+				{
+					leg_waiting_time = alpha_exp * pass->get_anticipated_waiting_time((*alt_transfer_stops_iter).front(), (*iter_alt_lines).front()) + alpha_RTI * wt_rti + (1 - alpha_RTI - alpha_exp)*wt_pk;
+				}
+				else
+				{
+					//leg_waiting_time = alpha_exp * pass->get_anticipated_waiting_time((*alt_transfer_stops_iter).front(),(*iter_alt_lines).front()) + (1-alpha_exp)*wt_pk; // VALID only when RTI level is stable over days
+					leg_waiting_time = alpha_exp / (1 - alpha_RTI) * pass->get_anticipated_waiting_time((*alt_transfer_stops_iter).front(), (*iter_alt_lines).front()) + (1 - alpha_exp - alpha_RTI) / (1 - alpha_RTI) * wt_pk; //Changed by Jens 2014-06-24
+				}
+			}
+			sum_waiting_time += leg_waiting_time;
+	}
+		//cout << "passenger " << pass->get_id() << " first section " << next_section << " transfer section " << next_transfer_section << " total waiting time " << sum_waiting_time << endl;
+	return sum_waiting_time; // minutes
 }
 
 double Pass_path::calc_total_waiting_time (double time, bool without_first_waiting, bool alighting_decision, double avg_walking_speed, Passenger* pass, int next_section)
@@ -244,7 +677,7 @@ double Pass_path::calc_total_waiting_time (double time, bool without_first_waiti
 				iter_walk++;
 			}
 
-			sum_walking_times += (((*iter_walk) / avg_walking_speed) * 60 + ((alt_transfer_stops_iter->front()->get_walking_distance_stop_section(from_section, pass->get_original_origin(), next_section)) / avg_walking_speed) * 60); //Melina 2020-02-20 Is it valid when there are transfers? Check that!
+			sum_walking_times += (((*iter_walk) / avg_walking_speed) * 60 + ((alt_transfer_stops_iter->front()->get_walking_distance_stop_section(from_section, alt_transfer_stops_iter->front()/*pass->get_original_origin()*/, next_section)) / avg_walking_speed) * 60); //Melina 2020-02-20 Is it valid when there are transfers? Check that!
 			pass_arrival_time_at_next_stop = time + (sum_waiting_time * 60) + sum_walking_times + sum_IVT;
 			wt_pk = (calc_curr_leg_headway((*iter_alt_lines), alt_transfer_stops_iter, pass_arrival_time_at_next_stop) / 2);
 			first_entrance = false;
@@ -343,6 +776,7 @@ double Pass_path::calc_total_waiting_time (double time, bool without_first_waiti
 			}
 			sum_waiting_time += leg_waiting_time;
 		}
+		//cout << "passenger " << pass->get_id() << " first section " << next_section << " total waiting time " << sum_waiting_time << endl;
 	return sum_waiting_time; // minutes
 }
 
@@ -594,9 +1028,20 @@ double Pass_path::calc_arriving_utility(int section, double time, Passenger* pas
 {
 	double avg_walking_speed = random->nrandom(theParameters->average_walking_speed, theParameters->average_walking_speed / 4);
 	return (random->nrandom(theParameters->transfer_coefficient, theParameters->transfer_coefficient / 4) * number_of_transfers
-		+ random->nrandom(theParameters->in_vehicle_time_coefficient, theParameters->in_vehicle_time_coefficient / 4) * calc_total_in_vehicle_time(time, pass)
+		+ random->nrandom(theParameters->in_vehicle_time_coefficient, theParameters->in_vehicle_time_coefficient / 4) * calc_total_in_vehicle_time(time, pass, section)
 		+ random->nrandom(theParameters->waiting_time_coefficient, theParameters->waiting_time_coefficient / 4) * calc_total_waiting_time(time, true, false, avg_walking_speed, pass, section)  //Melina 2020-02-19
 		+ random->nrandom(theParameters->walking_time_coefficient, theParameters->walking_time_coefficient / 4) * (calc_total_walking_distance(section, pass->get_dest_section()) / avg_walking_speed)); //Melina 2020-02-06
+}
+
+// Erik 18-12-01
+double Pass_path::calc_arriving_utility(int section, double time, Passenger* pass, int next_transfer_section) //melina 20-10-29
+// taking into account: transfer penalty + future waiting times + in-vehicle time + walking times
+{
+	double avg_walking_speed = random->nrandom(theParameters->average_walking_speed, theParameters->average_walking_speed / 4);
+	return (random->nrandom(theParameters->transfer_coefficient, theParameters->transfer_coefficient / 4) * number_of_transfers
+		+ random->nrandom(theParameters->in_vehicle_time_coefficient, theParameters->in_vehicle_time_coefficient / 4) * calc_total_in_vehicle_time(time, pass, section)
+		+ random->nrandom(theParameters->waiting_time_coefficient, theParameters->waiting_time_coefficient / 4) * calc_total_waiting_time(time, true, false, avg_walking_speed, pass, section, next_transfer_section) 
+		+ random->nrandom(theParameters->walking_time_coefficient, theParameters->walking_time_coefficient / 4) * (calc_total_walking_distance(section, pass->get_dest_section(), next_transfer_section) / avg_walking_speed));
 }
 
 double Pass_path::calc_waiting_utility (vector <vector <Busstop*> >::iterator stop_iter, double time, bool alighting_decision, Passenger* pass)
@@ -667,7 +1112,7 @@ double Pass_path::calc_waiting_utility(vector <vector <Busstop*> >::iterator sto
 		if ((*next_trip_iter).first != NULL) //Changed by Jens 2015-03-23 to avoid weird effects when the schedule is too pessimistic
 											 // a dynamic filtering rule - if there is at least one line in the first leg which is available - then this waiting alternative is relevant
 		{
-			double ivt = calc_total_in_vehicle_time(time, pass);
+			double ivt = calc_total_in_vehicle_time(time, pass, section);
 			double avg_walking_speed = random->nrandom(theParameters->average_walking_speed, theParameters->average_walking_speed / 4);
 			double wt = calc_total_waiting_time(time, false, alighting_decision, avg_walking_speed, pass, section);
 
@@ -676,10 +1121,56 @@ double Pass_path::calc_waiting_utility(vector <vector <Busstop*> >::iterator sto
 				return (random->nrandom(theParameters->transfer_coefficient, theParameters->transfer_coefficient / 4) * number_of_transfers
 					+ random->nrandom(theParameters->in_vehicle_time_coefficient, theParameters->in_vehicle_time_coefficient / 4) * ivt
 					+ random->nrandom(theParameters->waiting_time_coefficient, theParameters->waiting_time_coefficient / 4) * wt
-					+ random->nrandom(theParameters->walking_time_coefficient, theParameters->walking_time_coefficient / 4) * calc_total_walking_distance(section, pass->get_dest_section()) /*Erik 18-12-02 Melina 2020-02-03*/ / avg_walking_speed);
+					+ random->nrandom(theParameters->walking_time_coefficient, theParameters->walking_time_coefficient / 4) * calc_total_walking_distance(section, pass->get_dest_section()) /*Erik 18-12-02 Melina 2020-10-27*/ / avg_walking_speed);
 			}
 		}
 	}
+	// if none of the lines in the first leg is available - then the waiting alternative is irrelevant
+	return -10.0;
+}
+
+//Melina 20-02-03: Added destination section dependency
+//Melina 20-10-28: Added transfer section dependency
+//Melina 21-01-19 Added transfer stop for expected car in-vehicle time RTCI
+double Pass_path::calc_waiting_utility(vector <vector <Busstop*> >::iterator stop_iter, int section, double time, bool alighting_decision, Passenger* pass, int next_transfer_section, Busstop* transfer_stop)
+{
+	stop_iter++;
+	if (alt_transfer_stops.size() == 2) // in case is is walking-only path
+	{
+		return (random->nrandom(theParameters->walking_time_coefficient, theParameters->walking_time_coefficient / 4)
+			* calc_total_walking_distance(section, pass->get_dest_section())
+			/ random->nrandom(theParameters->average_walking_speed, theParameters->average_walking_speed / 4)
+			);
+	}
+	vector<vector <Busline*> >::iterator iter_alt_lines = alt_lines.begin(); // Erik 18-11-27: alt_lines contains all line sequences in path set
+	for (vector <Busline*>::iterator iter_lines = (*iter_alt_lines).begin(); iter_lines < (*iter_alt_lines).end(); iter_lines++)
+	{
+		// erik 18-11-25: iter_lines points to a Busline*
+		vector<Start_trip>::iterator next_trip_iter = (*iter_lines)->find_next_expected_trip_at_stop((*stop_iter).front());
+		if (pass->line_is_rejected((*iter_lines)->get_id())) // in case the line was already rejected once before, added by Jens 2014-10-16
+		{
+			return -10.0;
+		}
+
+		//if ((*next_trip_iter).first != NULL && (*next_trip_iter).first->stops_map[(*stop_iter).front()] - time < theParameters->max_waiting_time)
+		if ((*next_trip_iter).first != NULL) //Changed by Jens 2015-03-23 to avoid weird effects when the schedule is too pessimistic
+											 // a dynamic filtering rule - if there is at least one line in the first leg which is available - then this waiting alternative is relevant
+		{
+			double ivt = calc_total_in_vehicle_time(time, pass, section, next_transfer_section, transfer_stop); //Melina 21-01-19
+			double avg_walking_speed = random->nrandom(theParameters->average_walking_speed, theParameters->average_walking_speed / 4);
+			double wt = calc_total_waiting_time(time, false, alighting_decision, avg_walking_speed, pass, section, next_transfer_section);
+
+			if (wt < theParameters->max_waiting_time) //Changed by Jens 2015-03-23 to avoid weird effects when the schedule is too pessimistic
+			{
+				return (random->nrandom(theParameters->transfer_coefficient, theParameters->transfer_coefficient / 4) * number_of_transfers
+					+ random->nrandom(theParameters->in_vehicle_time_coefficient, theParameters->in_vehicle_time_coefficient / 4) * ivt
+					+ random->nrandom(theParameters->waiting_time_coefficient, theParameters->waiting_time_coefficient / 4) * wt
+					+ random->nrandom(theParameters->walking_time_coefficient, theParameters->walking_time_coefficient / 4) * calc_total_walking_distance(section, pass->get_dest_section(), next_transfer_section) /*Erik 18-12-02 Melina 2020-10-27*/ / avg_walking_speed);
+			}
+		}
+		//cout << "total walking " << calc_total_walking_distance(section, pass->get_dest_section(), next_transfer_section) << "waiting time " << wt << "in vehicle time " << calc_total_in_vehicle_time(time, pass, section) << endl;
+	}
+
 	// if none of the lines in the first leg is available - then the waiting alternative is irrelevant
 	return -10.0;
 }

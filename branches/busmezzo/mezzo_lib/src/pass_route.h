@@ -34,13 +34,17 @@ class Pass_path
 
 	// Attributes of path alternative
 	int find_number_of_transfers ();
-	double calc_total_scheduled_in_vehicle_time (double time);
+	double calc_total_scheduled_in_vehicle_time(double time);//, Passenger* pass = NULL); //RTCI Melina
 	double calc_total_in_vehicle_time (double time, Passenger* pass);
+	double calc_total_in_vehicle_time(double time, Passenger* pass, int section); //RTCI Melina
+	double calc_total_in_vehicle_time(double time, Passenger* pass, int section, int transfer_section, Busstop* transfer_stop); //RTCI Melina 21-01-19
 	double calc_total_walking_distance(int from_section);
 	double calc_total_walking_distance(int from_section, int to_section); //Melina 20-02-03
+	double calc_total_walking_distance(int from_section, int to_section, int transfer_section); //Melina 20-10-27
 	double calc_total_walking_distance ();
 	double calc_total_waiting_time (double time, bool without_first_waiting, bool alighting_decision, double avg_walking_speed, Passenger* pass);
 	double calc_total_waiting_time(double time, bool without_first_waiting, bool alighting_decision, double avg_walking_speed, Passenger* pass, int next_section); //Melina 2020-02-19
+	double calc_total_waiting_time(double time, bool without_first_waiting, bool alighting_decision, double avg_walking_speed, Passenger* pass, int next_section, int transfer_section); // Melina 20-10-29
 //	double calc_total_scheduled_waiting_time (double time, bool without_first_waiting);
     double calc_curr_leg_headway (vector<Busline*> leg_lines, vector <vector <Busstop*> >::iterator stop_iter, double time);
 //	double calc_curr_leg_waiting_schedule (vector<Busline*> leg_lines, vector <vector <Busstop*> >::iterator stop_iter, double arriving_time);
@@ -48,8 +52,10 @@ class Pass_path
 
 	double calc_arriving_utility (double time, Passenger* pass);
 	double calc_arriving_utility(int section, double time, Passenger* pass);
+	double calc_arriving_utility(int section, double time, Passenger* pass, int transfer_section); //Melina 20-10-29
 	double calc_waiting_utility (vector <vector <Busstop*> >::iterator stop_iter, double time, bool alighting_decision, Passenger* pass);
 	double calc_waiting_utility(vector <vector <Busstop*> >::iterator stop_iter, int section, double time, bool alighting_decision, Passenger* pass); // Erik 18-11-27
+	double calc_waiting_utility(vector <vector <Busstop*> >::iterator stop_iter, int section, double time, bool alighting_decision, Passenger* pass, int transfer_section, Busstop* transfer_stop); // Melina 20-10-28, 21-01-19
 	map<Busline*, bool> check_maybe_worthwhile_to_wait (vector<Busline*> leg_lines, vector <vector <Busstop*> >::iterator stop_iter, bool dynamic_indicator); // returns false for lines which are not worthwhile to wait for in any case
 
 protected:

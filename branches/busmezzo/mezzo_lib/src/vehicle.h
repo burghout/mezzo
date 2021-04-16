@@ -210,26 +210,6 @@ public:
 	int get_car_occupancy(int car_) { return car_occupancy[car_]; }
 	//int get_occupancy() {return occupancy;}
 	//void set_occupancy (const int occup) {occupancy=occup;}
-	/*void set_occupancy(const int occup) {
-		if (occup <= get_car_capacity()) {
-			occupancy[1] = occup;
-			for (int car_id =2; car_id <= get_number_cars(); car_id++) { 
-				occupancy[car_id] = 0; 
-			}
-		} else {
-			occupancy[1] = get_car_capacity();
-			occupancy[2] = occup - occupancy[1];
-			for (int car_id = 3; car_id <= get_number_cars(); car_id++) { 
-				occupancy[car_id] = 0; 
-			}
-		}
-	}*/
-	//void set_occupancy(const int occup) {
-	//	if (occup <= get_car_capacity()) {
-	//		occupancy[3] = occup; for (int car_id = 1; car_id <= 2; car_id++) { occupancy[car_id] = 0; }
-	//	}
-	//	else { occupancy[3] = get_car_capacity(); occupancy[2] = occup - occupancy[3]; occupancy[1] = 0; }
-	//}
 
 	int get_number_seats () {return number_cars*car_number_seats;}
 	int get_car_number_seats() { return car_number_seats; }
@@ -250,7 +230,6 @@ public:
 	void set_occupancy(const int occup);
 	void set_car_occupancy(const map<int, int> car_occup);
 	void set_car_occupancy(int car_, int occ_) { car_occupancy[car_] = occ_; }
-	int get_car_id(); //FOR_DELETE
 
 // output-related functions
 	void record_busvehicle_location (Bustrip* trip,  Busstop* stop, double time);

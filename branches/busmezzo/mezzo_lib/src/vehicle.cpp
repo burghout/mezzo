@@ -177,7 +177,6 @@ int Bus::get_occupancy() {
 	return occupancy;
 }
 
-//Melina
 void Bus::set_occupancy(const int occup) {
 
 	int occup_remainder{ occup };
@@ -196,24 +195,6 @@ void Bus::set_occupancy(const int occup) {
 			occup_remainder -= car_occupancy[car_id];
 		}
 	}
-}
-/* Returns the car id in which the passenger will board
-*  IMPORTANT! It must be called before "set_occupancy"
-*  function.
-*/
-int Bus::get_car_id()
-{
-	int result{ 1 };
-
-	for (int car_id = 1; car_id <= this->number_cars; car_id++)
-	{
-		if (car_occupancy[car_id] < this->car_capacity)
-		{
-			result = car_id;
-			break;
-		}
-	}
-	return result;
 }
 
 void Bus::set_car_occupancy(const map<int, int> car_occup)

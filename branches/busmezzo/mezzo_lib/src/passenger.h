@@ -79,6 +79,8 @@ public:
     vector <pair<Busstop*,double> > get_selected_path_stops() {return selected_path_stops;}
 	//vector <pair<Busstop*, int> > get_selected_car() { return selected_car; } //Melina
 
+	bool get_pass_carRTCI() { return car_RTCI; } //RTCI Melina
+
 	bool execute(Eventlist* eventlist, double time); //!< called every time passengers choose to walk to another stop (origin/transfer), puts the passenger at the waiting list at the right timing
 	void walk(double time);
 	void start(Eventlist* eventlist);
@@ -196,6 +198,7 @@ protected:
 	//bool left_behind_before;
 	map<pair<Busstop*, Busline*>,double> memory_projected_RTI; 
 	double AWT_first_leg_boarding;
+	bool car_RTCI; //RTCI Melina
 	
 	// relevant only in case of day2day procedures
 	map<pair<Busstop*, Busline*>,double> anticipated_waiting_time;

@@ -1609,7 +1609,7 @@ bool Network::readtransitnetwork(string name) //!< reads the stops, distances be
 bool Network::readbusstop (istream& in) // reads a busstop
 {
     char bracket;
-    int stop_id, link_id, RTI_stop;
+    int stop_id, link_id, RTI_stop, RTCI_stop; //Melina 20-11-18
 	int num_sections; // Erik 18-09-15
     double position, length, min_DT;
     string name;
@@ -1622,7 +1622,7 @@ bool Network::readbusstop (istream& in) // reads a busstop
         return false;
     }
 	// Erik 18-09-15
-    in >> stop_id >> name >> link_id >> position >> length >> num_sections >> has_bay >> can_overtake >> min_DT >> RTI_stop >> non_Ramdon_Pass_Generation;
+	in >> stop_id >> name >> link_id >> position >> length >> num_sections >> has_bay >> can_overtake >> min_DT >> RTI_stop >> RTCI_stop >> non_Ramdon_Pass_Generation;
 
     if (linkmap.find(link_id) == linkmap.end())
     {
@@ -1630,7 +1630,7 @@ bool Network::readbusstop (istream& in) // reads a busstop
 		return false;
     }
 
-    Busstop* st= new Busstop (stop_id, name, link_id, position, length, num_sections, has_bay, can_overtake, min_DT, RTI_stop, non_Ramdon_Pass_Generation);
+    Busstop* st= new Busstop (stop_id, name, link_id, position, length, num_sections, has_bay, can_overtake, min_DT, RTI_stop, RTCI_stop, non_Ramdon_Pass_Generation);
     st->add_distance_between_stops(st,0.0);
     in >> bracket;
     if (bracket != '}')
@@ -6140,6 +6140,11 @@ void Network::write_transitlogout_header(ostream& out)
         << "Time_since_arrival" << '\t'
         << "Time_since_departure" << '\t'
         << "Nr_alighting_pass" << '\t'
+		<< "{" << '\t'
+		<< "Nr_alighting_pass_car1" << '\t'
+		<< "Nr_alighting_pass_car2" << '\t'
+		<< "Nr_alighting_pass_car3" << '\t'
+		<< "}" << '\t'
         << "Nr_boarding_pass" << '\t'
 		<< "{" << '\t'
 		<< "Nr_boarding_pass_car1" << '\t'

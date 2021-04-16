@@ -248,13 +248,23 @@ public:
 	double check_subline_disruption (Busstop* last_visited_stop, Busstop* pass_stop, double time);	//!< check if this pair of stops is included in the disruption area and return extra time due to disrupution
 	double extra_disruption_on_segment (Busstop* next_stop, double time);
 
+	//RTCI Melina
+	void generate_car_RTCI(Bustrip* recorded_trip, Busstop* recorded_stop, int section);		// generate RTCI of veh trip at each stop-exit instance
+	void generate_RTCI(Bustrip* recorded_trip, Busstop* recorded_stop);		// generate RTCI of veh trip at each stop-exit instance
+	vector <Start_trip>::iterator Busline::get_pointer_to_curr_trip(Bustrip* recorded_trip);
+	vector <Start_trip>::iterator Busline::get_pointer_to_next_incoming_trip(Bustrip* recorded_trip);
+	double get_arrival_time_at_next_stop(Bustrip* incoming_trip, Busstop* this_stop);	// returns the projected arrival time at the next stop of this trip
+	double get_anticipated_segment_car_RTCI(Bustrip* expected_trip, Busstop* dep_stop, int section, Busstop* start_stop);	// used to access the current (valid) car-specific RTCI prediction at each pass. decision instance
+	double get_anticipated_segment_RTCI(Bustrip* expected_trip, Busstop* dep_stop, Busstop* start_stop);	// used to access the current (valid) vehicle-specific RTCI prediction at each pass. decision instance
 	bool execute(Eventlist* eventlist, double time); //!< re-implemented from virtual function in Action this function does the real work. It initiates the current Bustrip and books the next one
 
 	// calc attributes (for pass_paths)
 	double calc_curr_line_headway ();
 	double calc_curr_line_headway_forward ();
 	double calc_max_headway ();
-	double calc_curr_line_ivt (Busstop* start_stop, Busstop* end_stop, int rti, double time);
+	double calc_curr_line_ivt (Busstop* start_stop, Busstop* end_stop, int rti, double time); 
+	double calc_curr_line_car_ivt(Busstop* start_stop, Busstop* end_stop, int rti, double time, int section, /*Passenger* pass, */bool include_ivt_RTCI/* = false*/, Busstop* origin); //RTCI Melina
+	double calc_curr_line_car_ivt(Busstop* start_stop, Busstop* end_stop, int rti, double time, int section, /*Passenger* pass, */bool include_ivt_RTCI/* = false*/, Busstop* origin, int transfer_section, Busstop* transfer_stop); //RTCI Melina
 
 	// output-related functions
 	void calculate_sum_output_line();
@@ -427,6 +437,7 @@ public:
 	void convert_stops_vector_to_map();													//!< building stops_map
 	double find_crowding_coeff (Passenger* pass);										//!< returns the crowding coefficeint based on lod factor and pass. seating/standing
 	static double find_crowding_coeff (bool sits, double load_factor);					//!< returns the crowding coefficeint based on lod factor and pass. seating/standing
+	static double find_crowding_coeff(bool sits, double load_factor_seatcap, double load_factor_totalcap); // RTCI Melina - overloaded version 
 	//pair<double, double> crowding_dt_factor (double nr_boarding, double nr_alighting);
 	pair<int, int> crowding_dt_factor(int nr_boarding, int nr_alighting);
 	vector <Busstop*> get_downstream_stops(); //!< return the remaining stops to be visited starting from 'next_stop', returns empty Busstop vector if there are none
@@ -449,6 +460,13 @@ public:
 	map <Busstop*, int> assign_segements;			//!< contains the number of pass. travelling between trip segments
 	//Erik 18-09-16
 	map<Busstop*, map<int,int>> assign_car_segments; //!< contains the number of pass. travelling in each car between trip segments
+
+	// RTCI Melina - crowding factors' maps 
+	double record_RTCI(double load_factor_seatcap, double load_factor_totalcap);	// function used to generate (update) the current RTCI prediction of a given car of a trip segment
+	map <Busstop*, std::pair<int, double>> observed_marginal_car_RTCI_factors;		// map containing "raw" crowding factors per car, recorded at each stop-exit instance
+	map <Busstop*, double> observed_marginal_RTCI_factors;		// map containing "raw" crowding factors per vehicle, recorded at each stop-exit instance
+	map <Busstop*, map<int, double>> predicted_car_RTCI_factors; // map containing currently valid crowding factors per car, updated in real-time
+	map <Busstop*, double> predicted_RTCI_factors; // map containing currently valid crowding factors per vehicle, updated in real-time
 
 protected:
 	int id;										  //!< course nr
@@ -500,17 +518,18 @@ public:
 		double	time_since_arr_,
 		double	time_since_dep_,
 		int		nr_alighting_,
+		std::map<int, int> nr_alighting_section_,
 		int		nr_boarding_,
+		std::map<int, int> car_nr_boarding_,
 		int		occupancy_,
 		map<int, int> car_occupancy_,
-		std::map<int, int> car_nr_boarding_,
 		int		nr_waiting_,
 		double	total_waiting_time_,
 		double	holding_time_
 	): line_id(line_id_),trip_id(trip_id_),vehicle_id(vehicle_id_), stop_id(stop_id_), stop_name(stop_name_), entering_time(entering_time_),sched_arr_time(sched_arr_time_),dwell_time(dwell_time_),
 	   lateness(lateness_), exit_time (exit_time_),riding_time (riding_time_), riding_pass_time (riding_pass_time_), crowded_pass_riding_time (crowded_pass_riding_time_),
 	   crowded_pass_dwell_time (crowded_pass_dwell_time_), crowded_pass_holding_time (crowded_pass_holding_time_), time_since_arr(time_since_arr_),time_since_dep(time_since_dep_),
-	   nr_alighting(nr_alighting_),nr_boarding(nr_boarding_), occupancy(occupancy_), car_occupancy(car_occupancy_), car_nr_boarding(car_nr_boarding_),
+	   nr_alighting(nr_alighting_), nr_alighting_section(nr_alighting_section_), nr_boarding(nr_boarding_), car_nr_boarding(car_nr_boarding_), occupancy(occupancy_), car_occupancy(car_occupancy_),
 		nr_waiting(nr_waiting_), total_waiting_time(total_waiting_time_),holding_time(holding_time_) {}
 
 	virtual ~Busstop_Visit(); //!< destructor
@@ -530,6 +549,15 @@ public:
 			<< time_since_arr << '\t'
 			<< time_since_dep << '\t'
 			<< nr_alighting << '\t'
+			<< '{' << '\t';
+
+		for (std::map<int, int>::iterator car_id = nr_alighting_section.begin(); car_id != nr_alighting_section.end(); car_id++)
+
+		{
+			out << (*car_id).second << '\t';
+		}
+
+		out << '}' << '\t'
 			<< nr_boarding << '\t'
 			<< '{' << '\t';
 
@@ -600,6 +628,7 @@ public:
 	double time_since_dep;
 	int nr_alighting;
 	int nr_boarding;
+	std::map<int, int> nr_alighting_section; // Number of alighting passengers per car
 	int occupancy;
 	map<int, int> car_occupancy;
 	std::map<int, int> car_nr_boarding; // Number of boarding passengers per car
@@ -687,6 +716,7 @@ public:
 		bool	can_overtake_,
 		double	min_DT_,
 		int		rti_,
+		int     rtci_,
         bool    non_random_pass_generation_
 	);
 
@@ -697,6 +727,7 @@ public:
 	int get_link_id() {return link_id;}
 	string get_name() {return name;}
 	int get_rti () {return rti;}
+	bool get_rtci() { return rtci; } //Melina 20-11-19 
 	double get_arrival_rates (Bustrip* trip) {return arrival_rates[trip->get_line()];}
 	double get_alighting_fractions (Bustrip* trip) {return alighting_fractions[trip->get_line()];}
 	const ODs_for_stop & get_stop_as_origin () {return stop_as_origin;}
@@ -813,7 +844,7 @@ protected:
 	bool can_overtake;			//!< 0 - can't overtake, 1 - can overtake freely; TRUE if it is possible for a bus to overtake another bus that stops in front of it (if FALSE - dwell time is subject to the exit time of a blocking bus)
     double min_DT;
     int rti;					//!< indicates the level of real-time information at this stop: 0 - none; 1 - for all lines stoping at each stop; 2 - for all lines stoping at all connected stop; 3 - for the entire network.
-
+	int rtci;					//!< indicates the level of real-time crowding information at this stop: 0 - none; 1 - for the next arriving line stoping at each stop;
     bool gate_flag; //!< gate flag. If set true, passenger generation subject to timetable of transport services
 
 	double avaliable_length;	//!< length of the busstop minus occupied length

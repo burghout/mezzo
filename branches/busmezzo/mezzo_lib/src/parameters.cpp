@@ -111,6 +111,11 @@ Parameters::Parameters ()
 
 // day2day assignment
    default_alpha_RTI = 0.5;
+
+//RTCI Melina
+   include_car_RTCI = false;
+   //crowding_info = 0;
+   share_car_RTCI = 0.5;
 }
 
 bool Parameters::read_parameters (istream & in )
@@ -686,16 +691,7 @@ bool Parameters::read_parameters (istream & in )
             cout << "ERROR reading Parameters file, expecting: gate_generation_time_diff=, read: " << keyword << endl;
             return false;
         }
-        in >> gate_generation_time_diff;
-
-		//in >> keyword;
-		//if (keyword != "car_unit_modelling=")
-		//{
-			//cout << "ERROR reading Parameters file, expecting: car_unit_modelling=, read: " << keyword << endl;
-			//return false;
-		//}
-		//in >> car_unit_modelling;
-        
+        in >> gate_generation_time_diff;   
 	}
 	in >> keyword;
 	if (keyword!= "#transit_control_parameters")
@@ -759,6 +755,66 @@ bool Parameters::read_parameters (istream & in )
 		return false;
 	}
 	in >> default_alpha_RTI;
+
+	// read car RTCI-related (real-time car crowding information) parameters .MELINA
+	in >> keyword;
+	if (keyword != "#car_RTCI_parameters")
+	{
+		cout << "ERROR reading Parameters file, expecting: #car_RTCI_parameters, read: " << keyword << endl;
+		return false;
+	}
+	in >> keyword;
+	if (keyword != "RTCI_generation_scheme=")
+	{
+		cout << "ERROR reading Parameters file, expecting: RTCI_generation_scheme=, read: " << keyword << endl;
+		return false;
+	}
+	in >> RTCI_generation_scheme;
+	in >> keyword;
+	if (keyword != "RTCI_smoothing_alpha=")
+	{
+		cout << "ERROR reading Parameters file, expecting: RTCI_smoothing_alpha=, read: " << keyword << endl;
+		return false;
+	}
+	in >> RTCI_smoothing_alpha;
+	in >> keyword;
+	if (keyword != "RTCI_alpha=")
+	{
+		cout << "ERROR reading Parameters file, expecting: RTCI_alpha=, read: " << keyword << endl;
+		return false;
+	}
+	in >> RTCI_alpha;
+	//in >> keyword;
+	//if (keyword != "RTCI_level=")
+	//{
+	//	cout << "ERROR reading Parameters file, expecting: RTCI_level=, read: " << keyword << endl;
+	//	return false;
+	//}
+	//in >> RTCI_level;
+
+	in >> keyword;
+	if (keyword != "include_car_RTCI=")
+	{
+		cout << "ERROR reading Parameters file, expecting: include_car_RTCI=, read: " << keyword << endl;
+		return false;
+	}
+	in >> include_car_RTCI;
+
+	//in >> keyword;
+	//if (keyword != "crowding_info=")
+	//{
+	//	cout << "ERROR reading Parameters file, expecting: crowding_info=, read: " << keyword << endl;
+	//	return false;
+	//}
+	//in >> crowding_info;
+
+	in >> keyword;
+	if (keyword != "share_car_RTCI=")
+	{
+		cout << "ERROR reading Parameters file, expecting: share_carRTCI=, read: " << keyword << endl;
+		return false;
+	}
+	in >> share_car_RTCI;
 	return true;
 }
 

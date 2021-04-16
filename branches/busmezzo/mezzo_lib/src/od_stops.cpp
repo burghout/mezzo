@@ -352,6 +352,7 @@ double ODstops::calc_boarding_probability (Busline* arriving_bus, double time, P
 		for (vector<Pass_path*>::iterator iter_paths = path_set.begin(); iter_paths < path_set.end(); iter_paths++)
 		{
 			(*iter_paths)->set_arriving_bus_rellevant(false);
+			vector<vector<Busstop*> > alt_stops = (*iter_paths)->get_alt_transfer_stops(); //Melina 20-11-10
 			if ((*iter_paths)->get_alt_lines().empty() == false) //  in case it is not a walking-only alternative
 			{
 				first_leg_lines = (*iter_paths)->get_alt_lines().front();
@@ -359,13 +360,29 @@ double ODstops::calc_boarding_probability (Busline* arriving_bus, double time, P
 				{
 					if ((*iter_first_leg_lines)->get_id() == arriving_bus->get_id()) // if the arriving bus is a possible first leg for this path alternative
 					{
-						path_utility = (*iter_paths)->calc_arriving_utility(pass->get_pass_section(), time, pass); // Erik 18-12-01
-						set_utilities[(*iter_paths)].first = true;
-						set_utilities[(*iter_paths)].second = path_utility;
-						boarding_utility += exp(path_utility); 
-						arriving_paths.push_back((*iter_paths));
-						(*iter_paths)->set_arriving_bus_rellevant(true);
-						break;
+						if (alt_stops.size() == 6) //Melina 20-11-10
+						{
+							for (int next_transfer_section = 1; next_transfer_section <= alt_stops[3].front()->get_num_sections(); ++next_transfer_section)//Melina 20-10-28
+							{
+								path_utility = (*iter_paths)->calc_arriving_utility(pass->get_pass_section(), time, pass, next_transfer_section); // Erik 18-12-01
+								set_utilities[(*iter_paths)].first = true;
+								set_utilities[(*iter_paths)].second = path_utility;
+								boarding_utility += exp(path_utility);
+								arriving_paths.push_back((*iter_paths));
+								(*iter_paths)->set_arriving_bus_rellevant(true);
+								break;
+							}
+						}
+						else
+						{
+							path_utility = (*iter_paths)->calc_arriving_utility(pass->get_pass_section(), time, pass); // Erik 18-12-01
+							set_utilities[(*iter_paths)].first = true;
+							set_utilities[(*iter_paths)].second = path_utility;
+							boarding_utility += exp(path_utility);
+							arriving_paths.push_back((*iter_paths));
+							(*iter_paths)->set_arriving_bus_rellevant(true);
+							break;
+						}
 					}
 				}
 			}
@@ -374,18 +391,33 @@ double ODstops::calc_boarding_probability (Busline* arriving_bus, double time, P
 		for (vector<Pass_path*>::iterator iter_paths = path_set.begin(); iter_paths < path_set.end(); iter_paths++)
 		{
 			Busstop* first_boarding_stop = (*iter_paths)->get_alt_transfer_stops()[1].front(); //Added by Jens 2014-06-12 to increase the chance of boarding. Now only paths starting from this stop are evaluated.
+			vector<vector<Busstop*> > alt_stops = (*iter_paths)->get_alt_transfer_stops(); //Melina 20-11-10
 
 			if ((*iter_paths)->get_arriving_bus_rellevant() == false && first_boarding_stop == origin_stop)
 			{
 				// logsum calculation
 				if (check_if_path_is_dominated((*iter_paths), arriving_paths) == false)
 				{
-					//path_utility = (*iter_paths)->calc_waiting_utility((*iter_paths)->get_alt_transfer_stops().begin(), time, false, pass); //Changed by Jens 2014-10-16, transfer penalty is added to disutility of staying to help passengers make up their mind faster
-					path_utility = (*iter_paths)->calc_waiting_utility((*iter_paths)->get_alt_transfer_stops().begin(), pass->get_pass_section(), time, false, pass) // Erik 18-12-01
-						+ random->nrandom(theParameters->transfer_coefficient, theParameters->transfer_coefficient / 4);
-					set_utilities[(*iter_paths)].first = false;
-					set_utilities[(*iter_paths)].second = path_utility;
-					staying_utility += exp(path_utility);
+					if (alt_stops.size() == 6) //Melina 20-11-10
+					{
+						for (int next_transfer_section = 1; next_transfer_section <= alt_stops[3].front()->get_num_sections(); ++next_transfer_section)//Melina 20-10-28
+						{
+							//path_utility = (*iter_paths)->calc_waiting_utility((*iter_paths)->get_alt_transfer_stops().begin(), time, false, pass); //Changed by Jens 2014-10-16, transfer penalty is added to disutility of staying to help passengers make up their mind faster
+							path_utility = (*iter_paths)->calc_waiting_utility((*iter_paths)->get_alt_transfer_stops().begin(), pass->get_pass_section(), time, false, pass, next_transfer_section, alt_stops[3].front()) // Erik 18-12-01
+								+ random->nrandom(theParameters->transfer_coefficient, theParameters->transfer_coefficient / 4);
+							set_utilities[(*iter_paths)].first = false;
+							set_utilities[(*iter_paths)].second = path_utility;
+							staying_utility += exp(path_utility);
+						}
+					}
+					else
+					{
+						path_utility = (*iter_paths)->calc_waiting_utility((*iter_paths)->get_alt_transfer_stops().begin(), pass->get_pass_section(), time, false, pass) // Erik 18-12-01 
+							+ random->nrandom(theParameters->transfer_coefficient, theParameters->transfer_coefficient / 4);
+						set_utilities[(*iter_paths)].first = false;
+						set_utilities[(*iter_paths)].second = path_utility;
+						staying_utility += exp(path_utility);
+					}
 				}
 			}
 		}
@@ -622,11 +654,54 @@ double ODstops::calc_combined_set_utility_for_alighting (Passenger* pass, Bustri
 	}
 	for (vector <Pass_path*>::iterator paths = path_set.begin(); paths < path_set.end(); paths++)
 	{
-		double time_till_transfer = bus_on_board->get_line()->calc_curr_line_ivt(pass->get_OD_stop()->get_origin(),origin_stop,pass->get_OD_stop()->get_origin()->get_rti(), time); // in seconds
-		staying_utility += exp(random->nrandom(theParameters->in_vehicle_time_coefficient, theParameters->in_vehicle_time_coefficient / 4 ) * (time_till_transfer/60) 
-			+ random->nrandom(theParameters->transfer_coefficient, theParameters->transfer_coefficient / 4 )  
-			+  (*paths)->calc_waiting_utility((*paths)->get_alt_transfer_stops().begin(), pass->get_pass_car() /*Erik 18-12-02*/, time + time_till_transfer, true, pass));
-		// taking into account IVT till this intermediate stop, transfer penalty and the utility of the path from this transfer stop till the final destination
+		if (theParameters->include_car_RTCI/*crowding_info*/ == 4)
+		{
+			vector<vector<Busstop*> > alt_stops = (*paths)->get_alt_transfer_stops(); //Melina 20-11-10
+			if (alt_stops.size() == 4) //Melina 20-11-10
+			{
+				for (int next_transfer_section = 1; next_transfer_section <= alt_stops[1].front()->get_num_sections(); ++next_transfer_section)//Melina 20-10-28
+				{
+					double time_till_transfer = bus_on_board->get_line()->calc_curr_line_car_ivt(pass->get_OD_stop()->get_origin(), origin_stop, pass->get_OD_stop()->get_origin()->get_rti(), time, pass->get_pass_car(), /*pass,*/ /*pass->get_pass_carRTCI(),*/ pass->get_OD_stop()->get_origin()->get_rtci(), pass->get_OD_stop()->get_origin()); // RTCI Melina // in seconds
+					staying_utility += exp(random->nrandom(theParameters->in_vehicle_time_coefficient, theParameters->in_vehicle_time_coefficient / 4) * (time_till_transfer / 60)
+						+ random->nrandom(theParameters->transfer_coefficient, theParameters->transfer_coefficient / 4)
+						+ (*paths)->calc_waiting_utility((*paths)->get_alt_transfer_stops().begin(), pass->get_pass_car() /*Erik 18-12-02*/, time + time_till_transfer, true, pass, next_transfer_section, alt_stops[1].front()));
+					// taking into account IVT till this intermediate stop, transfer penalty and the utility of the path from this transfer stop till the final destination
+				}
+				//cout << "pass car alighting utility: " << pass->get_pass_car() << endl;
+			}
+			else
+			{
+				double time_till_transfer = bus_on_board->get_line()->calc_curr_line_car_ivt(pass->get_OD_stop()->get_origin(), origin_stop, pass->get_OD_stop()->get_origin()->get_rti(), time, pass->get_pass_car(), /*pass,*/ /*pass->get_pass_carRTCI(),*/ pass->get_OD_stop()->get_origin()->get_rtci(), pass->get_OD_stop()->get_origin()); // RTCI Melina // in seconds
+				staying_utility += exp(random->nrandom(theParameters->in_vehicle_time_coefficient, theParameters->in_vehicle_time_coefficient / 4) * (time_till_transfer / 60)
+					+ random->nrandom(theParameters->transfer_coefficient, theParameters->transfer_coefficient / 4)
+					+ (*paths)->calc_waiting_utility((*paths)->get_alt_transfer_stops().begin(), pass->get_pass_car() /*Erik 18-12-02*/, time + time_till_transfer, true, pass));
+				// taking into account IVT till this intermediate stop, transfer penalty and the utility of the path from this transfer stop till the final destination
+			}
+		}
+		else //if (theParameters->include_car_RTCI/*crowding_info*/ == 2)
+		{
+			vector<vector<Busstop*> > alt_stops = (*paths)->get_alt_transfer_stops(); //Melina 20-11-10
+			if (alt_stops.size() == 4) //Melina 20-11-10
+			{
+				for (int next_transfer_section = 1; next_transfer_section <= alt_stops[1].front()->get_num_sections(); ++next_transfer_section)//Melina 20-10-28
+				{
+					double time_till_transfer = bus_on_board->get_line()->calc_curr_line_car_ivt(pass->get_OD_stop()->get_origin(), origin_stop, pass->get_OD_stop()->get_origin()->get_rti(), time, pass->get_pass_car(), /*pass,*/ pass->get_pass_carRTCI(), pass->get_OD_stop()->get_origin()); // RTCI Melina // in seconds
+					staying_utility += exp(random->nrandom(theParameters->in_vehicle_time_coefficient, theParameters->in_vehicle_time_coefficient / 4) * (time_till_transfer / 60)
+						+ random->nrandom(theParameters->transfer_coefficient, theParameters->transfer_coefficient / 4)
+						+ (*paths)->calc_waiting_utility((*paths)->get_alt_transfer_stops().begin(), pass->get_pass_car() /*Erik 18-12-02*/, time + time_till_transfer, true, pass, next_transfer_section, alt_stops[1].front()));
+					// taking into account IVT till this intermediate stop, transfer penalty and the utility of the path from this transfer stop till the final destination
+				}
+				//cout << "pass car alighting utility: " << pass->get_pass_car() << endl;
+			}
+			else
+			{
+				double time_till_transfer = bus_on_board->get_line()->calc_curr_line_car_ivt(pass->get_OD_stop()->get_origin(), origin_stop, pass->get_OD_stop()->get_origin()->get_rti(), time, pass->get_pass_car(), /*pass,*/ pass->get_pass_carRTCI(), pass->get_OD_stop()->get_origin()); // RTCI Melina // in seconds
+				staying_utility += exp(random->nrandom(theParameters->in_vehicle_time_coefficient, theParameters->in_vehicle_time_coefficient / 4) * (time_till_transfer / 60)
+					+ random->nrandom(theParameters->transfer_coefficient, theParameters->transfer_coefficient / 4)
+					+ (*paths)->calc_waiting_utility((*paths)->get_alt_transfer_stops().begin(), pass->get_pass_car() /*Erik 18-12-02*/, time + time_till_transfer, true, pass));
+				// taking into account IVT till this intermediate stop, transfer penalty and the utility of the path from this transfer stop till the final destination
+			}
+		}
 	}
 	return log(staying_utility);
 }
@@ -695,7 +770,45 @@ double ODstops::calc_combined_set_utility_for_connection (double walking_distanc
 	return log(connection_utility);
 }
 
-// Erik 18-11-27: Added section input
+//// Erik 18-11-27: Added section input
+//double ODstops::calc_combined_set_utility_for_connection(double walking_distance, int section, double time, Passenger* pass) 
+//{
+//	// calc logsum over all the paths from this origin stop
+//	double connection_utility = 0.0;
+//	if (check_path_set() == false)
+//	{
+//		return -10000;
+//	}
+//	for (vector <Pass_path*>::iterator paths = path_set.begin(); paths < path_set.end(); paths++) // Erik 18-11-25: loop over OD path set
+//	{
+//		bool without_walking_first = false;
+//		// go only through paths that does not include walking to another stop from this connection stop
+//		vector<vector<Busstop*> > alt_stops = (*paths)->get_alt_transfer_stops();
+//		vector<vector<Busstop*> >::iterator alt_stops_iter = alt_stops.begin();
+//		alt_stops_iter++;
+//		// check if the first (connected) stop is also included in the second element (no further walking)
+//		for (vector<Busstop*>::iterator stop_iter = (*alt_stops_iter).begin(); stop_iter < (*alt_stops_iter).end(); stop_iter++)
+//		{
+//			if ((*stop_iter)->get_id() == (origin_stop->get_id()))
+//			{
+//				without_walking_first = true;
+//			}
+//		}
+//		if (without_walking_first == true) // considering only no multi-walking alternatives
+//		{
+//			double time_till_connected_stop = walking_distance
+//				/ random->nrandom(theParameters->average_walking_speed, theParameters->average_walking_speed / 4); // in minutes
+//			connection_utility += exp(random->nrandom(theParameters->walking_time_coefficient, theParameters->walking_time_coefficient / 4) * time_till_connected_stop 
+//				+ (*paths)->calc_waiting_utility(alt_stops_iter, section, time + (time_till_connected_stop * 60), false, pass) 
+//			);
+//			// taking into account CT (walking time) till this connected stop and the utility of the path from this connected stop till the final destination
+//			// Erik 18-11-27: Utility of the path from this connected stop till the final destination should take choice of car in consideration
+//		}
+//	}
+//	return log(connection_utility);
+//}
+
+// Melina 20-10-28 Update for including walking time at transfer 
 double ODstops::calc_combined_set_utility_for_connection(double walking_distance, int section, double time, Passenger* pass)
 {
 	// calc logsum over all the paths from this origin stop
@@ -721,18 +834,35 @@ double ODstops::calc_combined_set_utility_for_connection(double walking_distance
 		}
 		if (without_walking_first == true) // considering only no multi-walking alternatives
 		{
-			double time_till_connected_stop = walking_distance
-				/ random->nrandom(theParameters->average_walking_speed, theParameters->average_walking_speed / 4); // in minutes
-			connection_utility += exp(random->nrandom(theParameters->walking_time_coefficient, theParameters->walking_time_coefficient / 4) * time_till_connected_stop 
-				+ (*paths)->calc_waiting_utility(alt_stops_iter, section, time + (time_till_connected_stop * 60), false, pass)
-			);
-			// taking into account CT (walking time) till this connected stop and the utility of the path from this connected stop till the final destination
-			// Erik 18-11-27: Utility of the path from this connected stop till the final destination should take choice of car in consideration
+			if (alt_stops.size() == 6) //Melina 20-11-02
+			{
+						for (int next_transfer_section = 1; next_transfer_section <= alt_stops_iter[2].front()->get_num_sections(); ++next_transfer_section)//Melina 20-10-28
+						{
+							//cout << "alt transfer: " << alt_stops_iter[2].front()->get_id() << endl;
+							double time_till_connected_stop = walking_distance
+								/ random->nrandom(theParameters->average_walking_speed, theParameters->average_walking_speed / 4); // in minutes
+							connection_utility += exp(random->nrandom(theParameters->walking_time_coefficient, theParameters->walking_time_coefficient / 4) * time_till_connected_stop
+								+ (*paths)->calc_waiting_utility(alt_stops_iter, section, time + (time_till_connected_stop * 60), false, pass, next_transfer_section, alt_stops_iter[2].front()) //Melina 21-01-19
+							);
+							//cout << "walking utility" << (*paths)->calc_waiting_utility(alt_stops_iter, section, time + (time_till_connected_stop * 60), false, pass, next_transfer_section) << endl;
+							// taking into account CT (walking time) till this connected stop and the utility of the path from this connected stop till the final destination
+							// Erik 18-11-27: Utility of the path from this connected stop till the final destination should take choice of car in consideration
+						}
+			}
+			else
+			{
+				double time_till_connected_stop = walking_distance
+					/ random->nrandom(theParameters->average_walking_speed, theParameters->average_walking_speed / 4); // in minutes
+				connection_utility += exp(random->nrandom(theParameters->walking_time_coefficient, theParameters->walking_time_coefficient / 4) * time_till_connected_stop
+					+ (*paths)->calc_waiting_utility(alt_stops_iter, section, time + (time_till_connected_stop * 60), false, pass)
+				);
+				//cout << "walking utility" << (*paths)->calc_waiting_utility(alt_stops_iter, section, time + (time_till_connected_stop * 60), false, pass) << endl;
+				//cout << "walking: " << (*paths)->calc_total_walking_distance(section, pass->get_dest_section()) << endl;
+			}
 		}
 	}
 	return log(connection_utility);
 }
-
 
 double ODstops::calc_combined_set_utility_for_connection_zone (Passenger* pass, double walking_distance, double time)
 {

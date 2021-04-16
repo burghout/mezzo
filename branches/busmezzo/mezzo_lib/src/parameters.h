@@ -203,6 +203,15 @@ public:
 // day2day assignment
    double default_alpha_RTI; //!< Initial value of the real-time information credibility coefficient set for all travellers
 
+//RTCI Melina
+   int RTCI_generation_scheme; //Indicates the RTCI generation scheme
+   double RTCI_smoothing_alpha; 
+   int RTCI_level; //1 for train specific RTCI, 2 for car specific RTCI
+   double RTCI_alpha; //value of the real-time crowding information credibility coefficient set for all travellers //Melina 2021-04-16
+   int include_car_RTCI; //Indicates whether car specific RTCI is included in the simulation 
+   //int crowding_info; //Indicates how RTCI is provided to the passengers 
+   double share_car_RTCI; //RTCI penentration rate among passengers
+
 // TODO: Implement the use of the following paramaters
    double vissim_step; //!< time step for the VISSIM micro model
    double sim_speed_factor; //!< REALTIME factor to keep the hybrid model running at a fixed speed

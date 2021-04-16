@@ -5,6 +5,9 @@
 #include "MMath.h"
 #include <sstream>
 #include <stddef.h>
+#include <vector>
+#include <algorithm>
+#include <utility>
 
 template<class T>
 struct compare
@@ -181,6 +184,60 @@ bool Busline::check_last_trip (Bustrip* trip)
 return false;
 }
 
+// RTCI - generation function
+// each time a (recorded) trip departs from stop, update the RTCI prediction of all further trips for this line segment (stop)
+void Busline::generate_car_RTCI(Bustrip* recorded_trip, Busstop* curr_stop, int section)
+{
+	//// exponential smoothing only - read alpha parameter
+	double alpha = theParameters->RTCI_smoothing_alpha;
+
+	for (vector<Start_trip>::iterator update_trip_RTCI = get_pointer_to_curr_trip(recorded_trip); update_trip_RTCI < trips.end(); update_trip_RTCI++)
+	{
+		// SCHEME 1 - latest-run RTCI only -> simply overwrite the RTCI value
+		if (theParameters->RTCI_generation_scheme == 1)
+		{
+			update_trip_RTCI->first->predicted_car_RTCI_factors[curr_stop][section] = recorded_trip->observed_marginal_car_RTCI_factors[curr_stop].second;
+		}
+		//// SCHEME 2 - exponential smoothing RTCI -> multiply by the previous RTCI prediction
+		if (theParameters->RTCI_generation_scheme == 2)
+		{
+			double prev_trip_RTCI_prediction = update_trip_RTCI->first->predicted_car_RTCI_factors[curr_stop][section];
+			if (prev_trip_RTCI_prediction == 0.0) // exception required for 1st line departures
+			{
+				prev_trip_RTCI_prediction = 1.0;
+			}
+			update_trip_RTCI->first->predicted_car_RTCI_factors[curr_stop][section] = (1 - alpha) * prev_trip_RTCI_prediction + alpha * recorded_trip->observed_marginal_car_RTCI_factors[curr_stop].second;
+		}
+	}
+}
+
+// RTCI - generation function
+// each time a (recorded) trip departs from stop, update the RTCI prediction of all further trips for this line segment (stop)
+void Busline::generate_RTCI(Bustrip* recorded_trip, Busstop* curr_stop)
+{
+	//// exponential smoothing only - read alpha parameter
+	double alpha = theParameters->RTCI_smoothing_alpha;
+
+	for (vector<Start_trip>::iterator update_trip_RTCI = get_pointer_to_curr_trip(recorded_trip); update_trip_RTCI < trips.end(); update_trip_RTCI++)
+	{
+		// SCHEME 1 - latest-run RTCI only -> simply overwrite the RTCI value
+		if (theParameters->RTCI_generation_scheme == 1)
+		{
+			update_trip_RTCI->first->predicted_RTCI_factors[curr_stop] = recorded_trip->observed_marginal_RTCI_factors[curr_stop];
+		}
+		//// SCHEME 2 - exponential smoothing RTCI -> multiply by the previous RTCI prediction
+		if (theParameters->RTCI_generation_scheme == 2)
+		{
+			double prev_trip_RTCI_prediction = update_trip_RTCI->first->predicted_RTCI_factors[curr_stop];
+			if (prev_trip_RTCI_prediction == 0.0) // exception required for 1st line departures
+			{
+				prev_trip_RTCI_prediction = 1.0;
+			}
+			update_trip_RTCI->first->predicted_RTCI_factors[curr_stop] = (1 - alpha) * prev_trip_RTCI_prediction + alpha * recorded_trip->observed_marginal_RTCI_factors[curr_stop];
+		}
+	}
+}
+
 /*
 double Busline::calc_next_scheduled_arrival_at_stop (Busstop* stop, double time)
 {
@@ -353,6 +410,94 @@ Bustrip* Busline::get_next_trip (Bustrip* reference_trip) //!< returns the trip 
 	return trips.back().first;
 }
 
+// RTCI Melina
+vector <Start_trip>::iterator Busline::get_pointer_to_curr_trip(Bustrip* recorded_trip) //<<! returns the trip after the reference trip on the trips' vector
+{
+	for (vector<Start_trip>::iterator trips_iter = trips.begin(); trips_iter < trips.end(); trips_iter++)
+	{
+		if (trips_iter->first->get_id() == recorded_trip->get_id())
+		{
+			return trips_iter;
+		}
+	}
+}
+
+// RTCI
+vector <Start_trip>::iterator Busline::get_pointer_to_next_incoming_trip(Bustrip* recorded_trip) //<<! returns the trip after the reference trip on the trips' vector
+{
+	for (vector<Start_trip>::iterator trips_iter = trips.begin(); trips_iter < trips.end(); trips_iter++)
+	{
+		if (trips_iter->first->get_id() == recorded_trip->get_id())
+		{
+			return trips_iter + 1;
+		}
+	}
+}
+
+// RTCI
+double Busline::get_arrival_time_at_next_stop(Bustrip* incoming_trip, Busstop* this_stop) // returns the projected arrival time of this trip at the next downstream stop
+{
+	for (vector <Visit_stop*>::iterator stops_iter = incoming_trip->stops.begin(); stops_iter < incoming_trip->stops.end(); stops_iter++)
+	{
+		if ((*stops_iter)->first->get_id() == this_stop->get_id())
+		{
+			return (*(stops_iter + 1))->second;
+		}
+	}
+}
+
+// RTCI - used to extract the currently valid car-specific RTCI prediction for each considered IVT path segment
+double Busline::get_anticipated_segment_car_RTCI(Bustrip* expected_trip, Busstop* dep_stop, int section, Busstop* start_stop)
+{
+	double toReturn;
+	if (theParameters->include_car_RTCI == 4)
+	{ 
+		if (dep_stop == /*pass->get_original_origin()*/start_stop)
+		{
+			toReturn = expected_trip->predicted_car_RTCI_factors[dep_stop][section];
+		}
+		else
+		{
+			toReturn = 1.0;
+		}
+	}
+	else if (theParameters->include_car_RTCI == 3)
+	{
+			toReturn = expected_trip->predicted_car_RTCI_factors[dep_stop][section];
+	}
+	if (toReturn == 0.0)	// exception in case no RTCI value is provided yet (assume = 1.0)
+	{
+		toReturn = 1.0;
+	}
+	return toReturn;
+}
+
+// RTCI - used to extract the currently valid car-specific RTCI prediction for each considered IVT path segment
+double Busline::get_anticipated_segment_RTCI(Bustrip* expected_trip, Busstop* dep_stop, Busstop* start_stop)
+{
+	double toReturn;
+	if (theParameters->include_car_RTCI == 4)
+	{
+		if (dep_stop == /*pass->get_original_origin()*/start_stop)
+		{
+			toReturn = expected_trip->predicted_RTCI_factors[dep_stop];
+		}
+		else
+		{
+			toReturn = 1.0;
+		}
+	}
+	else if (theParameters->include_car_RTCI == 3)
+	{
+		toReturn = expected_trip->predicted_RTCI_factors[dep_stop];
+	}
+	if (toReturn == 0.0)	// exception in case no RTCI value is provided yet (assume = 1.0)
+	{
+		toReturn = 1.0;
+	}
+	return toReturn;
+}
+
 Bustrip* Busline::get_previous_trip (Bustrip* reference_trip) //!< returns the trip before the reference trip on the trips vector
 {
 	for (vector <Start_trip>::iterator trips_iter = trips.begin(); trips_iter < trips.end(); trips_iter++)
@@ -402,6 +547,171 @@ double Busline::calc_curr_line_ivt (Busstop* start_stop, Busstop* end_stop, int 
 	if (found_board == false || found_alight == false)
 	{
 		return 10000; // default in case no matching
+	}
+	return ((*alight_stop)->second - (*board_stop)->second) + extra_travel_time; // in seconds
+}
+
+double Busline::calc_curr_line_car_ivt(Busstop* start_stop, Busstop* end_stop, int rti, double time, int section, /*Passenger* pass,*/ bool include_ivt_RTCI, Busstop* origin)
+{
+	double extra_travel_time = 0.0;
+	//RTCI Melina
+	double total_beta_CL = 1.0; // average crowding factor for the whole ivt path
+	double ivtt = 0; // raw IVT time
+	double ivtt_CL = 0; // weighted IVT time * RTCI
+
+	if (rti == 3)
+	{
+		extra_travel_time = check_subline_disruption(start_stop, end_stop, time);
+	}
+	vector<Visit_stop*>::iterator board_stop;
+	vector<Visit_stop*>::iterator alight_stop;
+	bool found_board = false;
+	bool found_alight = false;
+	vector <Start_trip>::iterator check_trip;
+	if (curr_trip == trips.end())
+	{
+		check_trip = curr_trip - 1;
+	}
+	else
+	{
+		check_trip = curr_trip;
+	}
+	for (vector<Visit_stop*>::iterator stop = (*check_trip).first->stops.begin(); stop < (*check_trip).first->stops.end(); stop++)
+	{
+		if ((*stop)->first->get_id() == start_stop->get_id() || (*stop)->first->get_name() == start_stop->get_name())
+		{
+			board_stop = stop;
+			found_board = true;
+		}
+		if ((*stop)->first->get_id() == end_stop->get_id() || (*stop)->first->get_name() == end_stop->get_name())
+		{
+			alight_stop = stop;
+			found_alight = true;
+			break;
+		}
+		// RTCI Melina - update weighted ivt for each consecutive IVT segment 
+			//if (/*(theParameters->include_car_RTCI > 0) &*/ (time > 0.0) & ((theParameters->include_car_RTCI==1 & start_stop->get_rtci() == true /*& pass->get_pass_carRTCI()==true*/) || (theParameters->include_car_RTCI == 2 & pass->get_pass_carRTCI() == true /*theParameters->include_car_RTCI == true ||*/ /*pass->get_original_origin()->get_rtci()==true*/)) & (found_board == true)) // access only once simulation has started (time > 0)
+		if ((include_ivt_RTCI == true) & (time > 0.0) & (found_board == true)) // access only once simulation has started (time > 0)
+		{
+			double next_stop_arrival_time;
+			next_stop_arrival_time = get_arrival_time_at_next_stop((*check_trip).first, (*stop)->first);
+			//cout << "stop " << (*stop)->first->get_id() << endl;
+			//if (theParameters->RTCI_level == 1)
+			//{
+			//	ivtt_CL += (next_stop_arrival_time - (*stop)->second) * get_anticipated_segment_RTCI((*check_trip).first, (*stop)->first, origin);
+			//	//cout  << " " << "Stop: "<< start_stop->get_id() << " " << "destination: " << end_stop->get_id() << " " << "In vehicle time: " << ivtt_CL << " " <<  "RTCI: " << get_anticipated_segment_RTCI((*check_trip).first, (*stop)->first, origin) << "TRIP"<< (*check_trip).first->get_id() << "first trip" << endl;
+			//	// partial_ivtt_CL = segment_IVTT * segment RTCI
+			//}
+			//else if (theParameters->RTCI_level == 2)
+			//{
+				ivtt_CL += (next_stop_arrival_time - (*stop)->second) * get_anticipated_segment_car_RTCI((*check_trip).first, (*stop)->first, section, origin);
+				//cout  << " " << "Stop: "<< start_stop->get_id() << " " << "destination: " << end_stop->get_id() << " " << "section: " << section << " " << "In vehicle time: " << ivtt_CL << " " <<  "RTCI: " << get_anticipated_segment_RTCI((*check_trip).first, (*stop)->first, section, origin) << "TRIP"<< (*check_trip).first->get_id() << "first trip" << endl;
+				// partial_ivtt_CL = segment_IVTT * segment RTCI
+			//}
+		}
+	}
+	if (found_board == false || found_alight == false)
+	{
+		return 10000; // default in case no matching
+	}
+	// RTCI - return total IVT weighted by total RTCI
+	if (time > 0.0 & include_ivt_RTCI == true)
+	{
+		//total_beta_CL = ivtt_CL / (((*alight_stop)->second - (*board_stop)->second)); 
+		return ivtt_CL;
+	}
+	// otherwise - return absolute IVT	
+	else
+	{
+		ivtt = ((*alight_stop)->second - (*board_stop)->second) + extra_travel_time; // in seconds
+		return ivtt;
+	}
+	return ((*alight_stop)->second - (*board_stop)->second) + extra_travel_time; // in seconds
+}
+
+double Busline::calc_curr_line_car_ivt(Busstop* start_stop, Busstop* end_stop, int rti, double time, int section, /*Passenger* pass,*/ bool include_ivt_RTCI, Busstop* origin, int transfer_section, Busstop* transfer_stop)
+{
+	double extra_travel_time = 0.0;
+	//RTCI Melina
+	double total_beta_CL = 1.0; // average crowding factor for the whole ivt path
+	double ivtt = 0; // raw IVT time
+	double ivtt_CL = 0; // weighted IVT time * RTCI
+
+	if (rti == 3)
+	{
+		extra_travel_time = check_subline_disruption(start_stop, end_stop, time);
+	}
+	vector<Visit_stop*>::iterator board_stop;
+	vector<Visit_stop*>::iterator alight_stop;
+	bool found_board = false;
+	bool found_alight = false;
+	vector <Start_trip>::iterator check_trip;
+	if (curr_trip == trips.end())
+	{
+		check_trip = curr_trip - 1;
+	}
+	else
+	{
+		check_trip = curr_trip;
+	}
+	for (vector<Visit_stop*>::iterator stop = (*check_trip).first->stops.begin(); stop < (*check_trip).first->stops.end(); stop++)
+	{
+		if ((*stop)->first->get_id() == start_stop->get_id() || (*stop)->first->get_name() == start_stop->get_name())
+		{
+			board_stop = stop;
+			found_board = true;
+		}
+		if ((*stop)->first->get_id() == end_stop->get_id() || (*stop)->first->get_name() == end_stop->get_name())
+		{
+			alight_stop = stop;
+			found_alight = true;
+			break;
+		}
+		// RTCI Melina - update weighted ivt for each consecutive IVT segment 
+		//if (/*(theParameters->include_car_RTCI > 0) &*/ (time > 0.0) & ((theParameters->include_car_RTCI==1 & start_stop->get_rtci() == true /*& pass->get_pass_carRTCI()==true*/) || (theParameters->include_car_RTCI == 2 & pass->get_pass_carRTCI() == true /*theParameters->include_car_RTCI == true ||*/ /*pass->get_original_origin()->get_rtci()==true*/)) & (found_board == true)) // access only once simulation has started (time > 0)
+		if ((include_ivt_RTCI == true) & (time > 0.0) & (found_board == true)) // access only once simulation has started (time > 0)
+		{
+			double next_stop_arrival_time;
+			next_stop_arrival_time = get_arrival_time_at_next_stop((*check_trip).first, (*stop)->first);
+			//cout << "stop " << (*stop)->first->get_id() << endl;
+			//if (theParameters->RTCI_level == 1)
+			//{
+			//	ivtt_CL += (next_stop_arrival_time - (*stop)->second) * get_anticipated_segment_RTCI((*check_trip).first, (*stop)->first, origin); //Melina 21-01-19																																				   //cout << "Passenger: "<< pass->get_id() << " " << "Stop: "<< start_stop->get_id() << " " << "destination: " << end_stop->get_id() << " " << "section: " << section << " " << "In vehicle time: " << ivtt_CL << " " <<  "RTCI: " << get_anticipated_segment_RTCI((*check_trip).first, (*stop)->first, section, pass, start_stop) << "TRIP"<< (*check_trip).first->get_id() << endl;	// partial_ivtt_CL = segment_IVTT * segment RTCI
+			//}
+			//else if (theParameters->RTCI_level == 2)
+			//{
+				if (theParameters->include_car_RTCI == 3)
+				{
+					if ((*stop)->first == transfer_stop)
+					{
+						section = transfer_section;
+					}
+					int newsection = section;
+					ivtt_CL += (next_stop_arrival_time - (*stop)->second) * get_anticipated_segment_car_RTCI((*check_trip).first, (*stop)->first, newsection, origin); //Melina 21-01-19
+					//cout << "Passenger: "<< pass->get_id() << " " << "Stop: "<< start_stop->get_id() << " " << "destination: " << end_stop->get_id() << " " << "section: " << section << " " << "In vehicle time: " << ivtt_CL << " " <<  "RTCI: " << get_anticipated_segment_RTCI((*check_trip).first, (*stop)->first, section, pass, start_stop) << "TRIP"<< (*check_trip).first->get_id() << endl;	// partial_ivtt_CL = segment_IVTT * segment RTCI
+				}
+				else if (theParameters->include_car_RTCI == 4)
+				{
+					ivtt_CL += (next_stop_arrival_time - (*stop)->second) * get_anticipated_segment_car_RTCI((*check_trip).first, (*stop)->first, section, origin); //Melina 21-01-19
+				}
+			//}
+		}
+	}
+	if (found_board == false || found_alight == false)
+	{
+		return 10000; // default in case no matching
+	}
+	// RTCI - return total IVT weighted by total RTCI
+	if (time > 0.0 & include_ivt_RTCI == true)
+	{
+		//total_beta_CL = ivtt_CL / (((*alight_stop)->second - (*board_stop)->second)); 
+		return ivtt_CL;
+	}
+	// otherwise - return absolute IVT	
+	else
+	{
+		ivtt = ((*alight_stop)->second - (*board_stop)->second) + extra_travel_time; // in seconds
+		return ivtt;
 	}
 	return ((*alight_stop)->second - (*board_stop)->second) + extra_travel_time; // in seconds
 }
@@ -622,6 +932,14 @@ Bustrip::Bustrip ()
 	{
 		random->randomize();
 	}
+	// RTCI-Melina - initialise the RTCI maps of crowding factors
+	for (vector <Visit_stop*>::iterator visit_stops = stops.begin(); visit_stops < stops.end(); visit_stops++)
+	{
+		for (auto i = 1; i <= busv->get_number_cars(); i++) { // Melina
+			observed_marginal_car_RTCI_factors[(*visit_stops)->first].second = 0.0;
+			predicted_car_RTCI_factors[(*visit_stops)->first][i] = 1.0;
+		}
+	}
 }
 
 Bustrip::Bustrip(int id_, double start_time_, Busline* line_) : id(id_), line(line_), starttime(start_time_)
@@ -651,6 +969,14 @@ Bustrip::Bustrip(int id_, double start_time_, Busline* line_) : id(id_), line(li
 	else
 	{
 		random->randomize();
+	}
+	// RTCI- Melina - initialise the RTCI maps of crowding factors
+	for (vector <Visit_stop*>::iterator visit_stops = stops.begin(); visit_stops < stops.end(); visit_stops++)
+	{
+		for (auto i = 1; i <= busv->get_number_cars(); i++) { // Melina
+			observed_marginal_car_RTCI_factors[(*visit_stops)->first].second = 0.0;
+			predicted_car_RTCI_factors[(*visit_stops)->first][i] = 1.0;
+		}
 	}
 	/*  will be relevant only when time points will be trip-specific
 	for (map<Busstop*,bool>::iterator tp = trips_timepoint.begin(); tp != trips_timepoint.end(); tp++)
@@ -1092,10 +1418,57 @@ double Bustrip::find_crowding_coeff (bool sits, double load_factor)
 	}
 }
 
+// RTCI Melina - Overloaded version.
+double Bustrip::find_crowding_coeff(bool sits, double load_factor_seatcap, double load_factor_totalcap)
+{
+	if (load_factor_seatcap < 0.81)
+	{
+		return 1.0;
+	}
+	else if (load_factor_seatcap < 1.00)
+	{
+		return 1.20;
+	}
+	else if (load_factor_totalcap < 0.51/*0.81*/)
+	{
+		if (sits == true)
+		{
+			return 1.20;
+		}
+		else
+		{
+			return 1.50;
+		}
+	}
+	else
+	{
+		if (sits == true)
+		{
+			return 1.20;
+		}
+		else
+		{
+			return 1.8;
+		}
+	}
+}
+
+// RTCI Melina- record car-specific crowding information when a given trip departs from the stop
+double Bustrip::record_RTCI(double load_factor_seatcap, double load_factor_totalcap)
+{
+	if (load_factor_seatcap > 1.00) // if pass. volume > seat capacity
+	{
+		return find_crowding_coeff(false, load_factor_seatcap, load_factor_totalcap);
+	}
+	else // if on-board volume does not exceed seat capacity
+	{
+		return find_crowding_coeff(true, load_factor_seatcap, load_factor_totalcap);
+	}
+}
 
 pair<int, int> Bustrip::crowding_dt_factor(int nr_boarding, int nr_alighting)
 {
-	pair<double, double> crowding_factor;
+	pair<int, int> crowding_factor;
 	//if (busv->get_car_capacity() == busv->get_number_seats())
 	if (busv->get_capacity() == busv->get_number_seats())
 	{
@@ -1170,8 +1543,8 @@ Busstop::Busstop()
 }
 
 // Erik 18-09-15
-Busstop::Busstop (int id_, string name_, int link_id_, double position_, double length_, int num_sections_, bool has_bay_, bool can_overtake_, double min_DT_, int rti_, bool gate_flag_):
-id(id_), name(name_), link_id(link_id_), position (position_), length(length_), num_sections(num_sections_), has_bay(has_bay_), can_overtake(can_overtake_), min_DT(min_DT_), rti (rti_), gate_flag (gate_flag_)
+Busstop::Busstop (int id_, string name_, int link_id_, double position_, double length_, int num_sections_, bool has_bay_, bool can_overtake_, double min_DT_, int rti_, int rtci_, bool gate_flag_):
+id(id_), name(name_), link_id(link_id_), position (position_), length(length_), num_sections(num_sections_), has_bay(has_bay_), can_overtake(can_overtake_), min_DT(min_DT_), rti (rti_), rtci (rtci_), gate_flag (gate_flag_)
 {
 	avaliable_length = length;
 	nr_boarding = 0;
@@ -1777,6 +2150,7 @@ void Busstop::passenger_activity_at_stop(Eventlist* eventlist, Bustrip* trip, do
 						section_time.second = arrival_time_connected_stop_section; // Erik 18-11-30
 						(*alighting_passenger)->add_to_selected_path_stop(stop_time);
 						(*alighting_passenger)->add_to_selected_path_sections(section_time); // Erik 18-11-30
+						(*alighting_passenger)->set_pass_section(next_section); //Melina 20-11-04
 
 					}
 				}
@@ -1919,11 +2293,6 @@ void Busstop::passenger_activity_at_stop(Eventlist* eventlist, Bustrip* trip, do
 							{
 								trip->passengers_on_board[(*check_pass)->make_alighting_decision(trip, time)].push_back((*check_pass));
 							}
-
-							// Sets the car_id to the passenger. Added by Melina
-							//(*check_pass)->add_to_selected_car(make_pair(trip, trip->get_busv()->get_car_id()));
-
-							//trip->get_busv()->set_occupancy(trip->get_busv()->get_occupancy() + 1);
 							// Erik 18-09-16
 							trip->get_busv()->set_car_occupancy(pass_car,trip->get_busv()->get_car_occupancy(pass_car) + 1);
 							if (check_pass < pass_waiting_od.end() - 1)
@@ -1941,24 +2310,224 @@ void Busstop::passenger_activity_at_stop(Eventlist* eventlist, Bustrip* trip, do
 							}
 						}
 						else
-						{
-							// if the passenger CAN NOT board
-							if ((*check_pass)->empty_denied_boarding() == true || this->get_id() != (*check_pass)->get_last_denied_boarding_stop_id()) // no double registration
+						{ 
+							if ((*check_pass)->get_pass_section() == 1 )
 							{
-								pair<Busstop*, double> denied_boarding;
-								denied_boarding.first = this;
-								denied_boarding.second = time;
-								(*check_pass)->add_to_denied_boarding(denied_boarding);
+								pass_car = (*check_pass)->get_pass_section() + 1;
+								if (trip->get_busv()->get_car_occupancy(pass_car) < trip->get_busv()->get_car_capacity())
+								{
+									(*check_pass)->record_waiting_experience(trip, time);
+									nr_boarding++;
+									nr_boarding_section[pass_car] += 1;
+									car_nr_boarding[pass_car] += 1;
+									pair<Bustrip*, double> trip_time;
+									trip_time.first = trip;
+									trip_time.second = time;
+									(*check_pass)->add_to_selected_path_trips(trip_time);
+									pair<int, double> car_time;
+									car_time.first = pass_car;
+									car_time.second = time;
+									(*check_pass)->add_to_selected_path_cars(car_time);
+									(*check_pass)->set_pass_car(pass_car);
+
+									if (trip->get_busv()->get_car_occupancy(pass_car) > trip->get_busv()->get_car_number_seats()) // the passenger stands
+									{
+										(*check_pass)->set_pass_sitting(false);
+									}
+									else // the passenger sits
+									{
+										(*check_pass)->set_pass_sitting(true);
+									}
+									if (theParameters->demand_format == 3)
+									{
+										trip->passengers_on_board[(*check_pass)->make_alighting_decision(trip, time)].push_back((*check_pass));
+									}
+									trip->get_busv()->set_car_occupancy(pass_car, trip->get_busv()->get_car_occupancy(pass_car) + 1);
+									if (check_pass < pass_waiting_od.end() - 1)
+									{
+										check_pass++;
+										next_pass = (*check_pass);
+										pass_waiting_od.erase(check_pass - 1);
+										check_pass = find(pass_waiting_od.begin(), pass_waiting_od.end(), next_pass);
+									}
+									else
+									{
+										last_waiting_pass = true;
+										pass_waiting_od.erase(check_pass);
+										break;
+									}
+								}
+								else
+								{
+									if ((*check_pass)->empty_denied_boarding() == true || this->get_id() != (*check_pass)->get_last_denied_boarding_stop_id()) // no double registration
+									{
+										pair<Busstop*, double> denied_boarding;
+										denied_boarding.first = this;
+										denied_boarding.second = time;
+										(*check_pass)->add_to_denied_boarding(denied_boarding);
+									}
+									if (check_pass < pass_waiting_od.end() - 1)
+									{
+										check_pass++;
+									}
+									else
+									{
+										last_waiting_pass = true;
+										break;
+									}
+								}
 							}
-							if (check_pass < pass_waiting_od.end() - 1)
+							else if ((*check_pass)->get_pass_section() == trip->get_busv()->get_number_cars())
 							{
-								check_pass++;
+								pass_car = (*check_pass)->get_pass_section() - 1;
+								if (trip->get_busv()->get_car_occupancy(pass_car) < trip->get_busv()->get_car_capacity())
+								{
+									(*check_pass)->record_waiting_experience(trip, time);
+									nr_boarding++;
+									nr_boarding_section[pass_car] += 1;
+									car_nr_boarding[pass_car] += 1;
+									pair<Bustrip*, double> trip_time;
+									trip_time.first = trip;
+									trip_time.second = time;
+									(*check_pass)->add_to_selected_path_trips(trip_time);
+									pair<int, double> car_time;
+									car_time.first = pass_car;
+									car_time.second = time;
+									(*check_pass)->add_to_selected_path_cars(car_time);
+									(*check_pass)->set_pass_car(pass_car);
+
+									if (trip->get_busv()->get_car_occupancy(pass_car) > trip->get_busv()->get_car_number_seats()) // the passenger stands
+									{
+										(*check_pass)->set_pass_sitting(false);
+									}
+									else // the passenger sits
+									{
+										(*check_pass)->set_pass_sitting(true);
+									}
+									if (theParameters->demand_format == 3)
+									{
+										trip->passengers_on_board[(*check_pass)->make_alighting_decision(trip, time)].push_back((*check_pass));
+									}
+									trip->get_busv()->set_car_occupancy(pass_car, trip->get_busv()->get_car_occupancy(pass_car) + 1);
+									if (check_pass < pass_waiting_od.end() - 1)
+									{
+										check_pass++;
+										next_pass = (*check_pass);
+										pass_waiting_od.erase(check_pass - 1);
+										check_pass = find(pass_waiting_od.begin(), pass_waiting_od.end(), next_pass);
+									}
+									else
+									{
+										last_waiting_pass = true;
+										pass_waiting_od.erase(check_pass);
+										break;
+									}
+								}
+								else
+								{
+									if ((*check_pass)->empty_denied_boarding() == true || this->get_id() != (*check_pass)->get_last_denied_boarding_stop_id()) // no double registration
+									{
+										pair<Busstop*, double> denied_boarding;
+										denied_boarding.first = this;
+										denied_boarding.second = time;
+										(*check_pass)->add_to_denied_boarding(denied_boarding);
+									}
+									if (check_pass < pass_waiting_od.end() - 1)
+									{
+										check_pass++;
+									}
+									else
+									{
+										last_waiting_pass = true;
+										break;
+									}
+								}
 							}
-							else
+							else if ((*check_pass)->get_pass_section() != trip->get_busv()->get_number_cars() && (*check_pass)->get_pass_section() != 1)
 							{
-								last_waiting_pass = true;
-								break;
+								//pass_car = rand() % (((*check_pass)->get_pass_section() + 1)- ((*check_pass)->get_pass_section() - 1) + 1) + ((*check_pass)->get_pass_section() - 1);
+								pass_car = (rand() > RAND_MAX / 2) ? ((*check_pass)->get_pass_section() + 1) : ((*check_pass)->get_pass_section() - 1);
+								if (trip->get_busv()->get_car_occupancy(pass_car) < trip->get_busv()->get_car_capacity())
+								{
+									(*check_pass)->record_waiting_experience(trip, time);
+									nr_boarding++;
+									nr_boarding_section[pass_car] += 1;
+									car_nr_boarding[pass_car] += 1;
+									pair<Bustrip*, double> trip_time;
+									trip_time.first = trip;
+									trip_time.second = time;
+									(*check_pass)->add_to_selected_path_trips(trip_time);
+									pair<int, double> car_time;
+									car_time.first = pass_car;
+									car_time.second = time;
+									(*check_pass)->add_to_selected_path_cars(car_time);
+									(*check_pass)->set_pass_car(pass_car);
+
+									if (trip->get_busv()->get_car_occupancy(pass_car) > trip->get_busv()->get_car_number_seats()) // the passenger stands
+									{
+										(*check_pass)->set_pass_sitting(false);
+									}
+									else // the passenger sits
+									{
+										(*check_pass)->set_pass_sitting(true);
+									}
+									if (theParameters->demand_format == 3)
+									{
+										trip->passengers_on_board[(*check_pass)->make_alighting_decision(trip, time)].push_back((*check_pass));
+									}
+									trip->get_busv()->set_car_occupancy(pass_car, trip->get_busv()->get_car_occupancy(pass_car) + 1);
+									if (check_pass < pass_waiting_od.end() - 1)
+									{
+										check_pass++;
+										next_pass = (*check_pass);
+										pass_waiting_od.erase(check_pass - 1);
+										check_pass = find(pass_waiting_od.begin(), pass_waiting_od.end(), next_pass);
+									}
+									else
+									{
+										last_waiting_pass = true;
+										pass_waiting_od.erase(check_pass);
+										break;
+									}
+								}
+								else
+								{
+									if ((*check_pass)->empty_denied_boarding() == true || this->get_id() != (*check_pass)->get_last_denied_boarding_stop_id()) // no double registration
+									{
+										pair<Busstop*, double> denied_boarding;
+										denied_boarding.first = this;
+										denied_boarding.second = time;
+										(*check_pass)->add_to_denied_boarding(denied_boarding);
+									}
+									if (check_pass < pass_waiting_od.end() - 1)
+									{
+										check_pass++;
+									}
+									else
+									{
+										last_waiting_pass = true;
+										break;
+									}
+								}
 							}
+						
+							//// if the passenger CAN NOT board
+							//if ((*check_pass)->empty_denied_boarding() == true || this->get_id() != (*check_pass)->get_last_denied_boarding_stop_id()) // no double registration
+							//{
+							//	pair<Busstop*, double> denied_boarding;
+							//	denied_boarding.first = this;
+							//	denied_boarding.second = time;
+							//	(*check_pass)->add_to_denied_boarding(denied_boarding);
+							//}
+							//if (check_pass < pass_waiting_od.end() - 1)
+							//{
+							//	check_pass++;
+							//}
+							//else
+							//{
+							//	last_waiting_pass = true;
+							//	break;
+							//}
 						}
 					}
 					else
@@ -1984,6 +2553,56 @@ void Busstop::passenger_activity_at_stop(Eventlist* eventlist, Bustrip* trip, do
 		{
 			trip->get_busv()->set_occupancy(starting_occupancy + get_nr_boarding() - get_nr_alighting()); // updating the occupancy
 		}
+		
+		// RTCI Melina - record and update crowding info/predictions
+		if (theParameters->include_car_RTCI > 0)
+		{
+			//if (theParameters->RTCI_level == 1)
+			//{
+			//	double RTCI_load_factor_seatcap;
+			//	double RTCI_load_factor_totalcap;
+			//	RTCI_load_factor_seatcap = 1.0 * (trip->get_busv()->get_occupancy()) / (trip->get_busv()->get_number_seats());
+			//	RTCI_load_factor_totalcap = 1.0 * (trip->get_busv()->get_occupancy()) / (trip->get_busv()->get_capacity());
+			//	// RTCI - step 1. - record the observed RTCI for a single trip (currently exiting the stop)
+			//	trip->observed_marginal_RTCI_factors[this] = trip->record_RTCI(RTCI_load_factor_seatcap, RTCI_load_factor_totalcap);
+			//	// RTCI - step 2. - generate (update) the predicted RTCI for all remaining (incoming) trips
+			//	trip->get_line()->generate_RTCI(trip, this);
+			//	//cout << "Trip id: " << trip->get_id()
+			//	//	<< ", Bus id: " << trip->get_busv()->get_bus_id()
+			//	//	<< ", Bus stop: " << this->get_id()
+			//	//	<< ", car_occupancy: " << trip->get_busv()->get_occupancy()
+			//	//	<< "\n\tRTCI_load_factor_seatcap: " << RTCI_load_factor_seatcap
+			//	//	<< "\n\tRTCI_load_factor_totalcap: " << RTCI_load_factor_totalcap
+			//	//	<< "\n\tRTCI observed factors: " << trip->observed_marginal_RTCI_factors[this]
+			//	//<< "\n\tRTCI predicted factors: " << trip->predicted_RTCI_factors[this]
+			//	//	<< "\n" << endl;
+			//}
+			//else if (theParameters->RTCI_level == 2)
+			//{
+				for (int car_id = 1; car_id <= num_sections; ++car_id)
+				{
+					double RTCI_load_factor_seatcap;
+					double RTCI_load_factor_totalcap;
+					RTCI_load_factor_seatcap = 1.0 * (trip->get_busv()->get_car_occupancy(car_id)) / (trip->get_busv()->get_car_number_seats());
+					RTCI_load_factor_totalcap = 1.0 * (trip->get_busv()->get_car_occupancy(car_id)) / (trip->get_busv()->get_car_capacity());
+					// RTCI - step 1. - record the observed RTCI for a single trip (currently exiting the stop)
+					trip->observed_marginal_car_RTCI_factors[this] = std::make_pair(car_id, trip->record_RTCI(RTCI_load_factor_seatcap, RTCI_load_factor_totalcap));
+					// RTCI - step 2. - generate (update) the predicted RTCI for all remaining (incoming) trips
+					trip->get_line()->generate_car_RTCI(trip, this, car_id);
+					//cout << "Trip id: " << trip->get_id()
+					//	<< ", Bus id: " << trip->get_busv()->get_bus_id()
+					//	<< ", Bus stop: " << this->get_id()
+					//	<< ", Car id: " << car_id << " (" << trip->observed_marginal_car_RTCI_factors[this].first << ")"
+					//	<< ", car_occupancy: " << trip->get_busv()->get_car_occupancy(car_id)
+					//	<< "\n\tRTCI_load_factor_seatcap: " << RTCI_load_factor_seatcap
+					//	<< "\n\tRTCI_load_factor_totalcap: " << RTCI_load_factor_totalcap
+					//	<< "\n\tRTCI observed factors: " << trip->observed_marginal_car_RTCI_factors[this].second
+					//<< "\n\tRTCI predicted factors: " << trip->predicted_car_RTCI_factors[this][car_id] 
+					//	<< "\n" << endl;
+				}
+			//}
+		}
+		
 		if (id != trip->stops.back()->first->get_id()) // if it is not the last stop for this trip
 		{
 			// Erik 18-09-16: Change to car-specific loads
@@ -2046,7 +2665,6 @@ double Busstop::get_walking_time(int curr_section, Busstop* next_stop, int next_
 	return walking_time;
 }
 
-
 // Erik 18-09-27
 double Busstop::get_walking_distance_stop_section(int curr_section, Busstop* next_stop, int next_section) //in meters
 {
@@ -2058,7 +2676,7 @@ double Busstop::get_walking_distance_stop_section(int curr_section, Busstop* nex
 		double curr_section_diff = abs(shortest_walks[next_stop].first - curr_section);
 		double next_section_diff = abs(shortest_walks[next_stop].second - next_section);
 		double next_section_length = next_stop->get_length() / next_stop->get_num_sections();
-		walking_distance = distances[next_stop];
+		//walking_distance = distances[next_stop];
 		// Adds walking distance along each platform
 		walking_distance += (curr_section_diff * curr_section_length + next_section_diff * next_section_length);// / 1000.0;
 		//cout << "walk distance: " << walking_distance << endl;
@@ -2074,7 +2692,6 @@ double Busstop::get_walking_distance_stop_section(int curr_section, Busstop* nex
 	return walking_distance;
 }
 
-
 double Busstop::calc_dwelltime (Bustrip* trip)  //!< calculates the dwelltime of each bus serving this stop. currently includes: passenger service times ,out of stop, bay/lane
 {
 	// double crowdedness_ratio = 0;
@@ -2083,6 +2700,7 @@ double Busstop::calc_dwelltime (Bustrip* trip)  //!< calculates the dwelltime of
 	double boarding_front_door;
 	bool crowded = 0;
 	double time_front_door, time_rear_door, time_per_other_doors;
+	std::vector<double> dwelltimes{};
 	/* Lin & Wilson version of dwell time function
 	// calculating standees
 	if (trip->get_busv()->get_occupancy() > trip->get_busv()->get_number_seats())	// Calculating alighting standees
@@ -2145,6 +2763,24 @@ double Busstop::calc_dwelltime (Bustrip* trip)  //!< calculates the dwelltime of
 				boarding_front_door = alighting_time / (dt_func->boarding_coefficient * crowding_factor.first);
 				dwelltime = dwell_constant + alighting_time + random->urandom(0.6, 1.0) * dt_func->boarding_coefficient * crowding_factor.first * (nr_boarding - boarding_front_door);
 			}
+			break;
+		case 16:
+			for (std::size_t car = 1; car <= trip->get_busv()->get_number_cars(); car++) 
+			{
+				double carDwelltime = 15.0 + (1.4 * (1.0 + (1.0 / 35.0)
+					* ((trip->get_busv()->get_car_occupancy(car) - trip->get_busv()->get_car_number_seats()) / 7.0)))
+					* (pow((1.0 / 7.0) * car_nr_boarding[car], 0.7) + pow((1.0 / 7.0) * nr_alighting_section[car], 0.7)
+						+ (0.027 * ((1.0 / 7.0) * car_nr_boarding[car]) * ((1.0 / 7.0) * nr_alighting_section[car])));
+
+				dwelltimes.push_back(carDwelltime);
+				/*cout << "car occupancy-" << car << ": " << trip->get_busv()->get_car_occupancy(car)
+				<< ", boarding: " << car_nr_boarding[car]
+				<< ", alighting: " << nr_alighting_section[car] << "\n";
+				std::cout << "dwell time " << car << ": " << carDwelltime << "\n";*/
+			}
+
+			dwelltime = *std::max_element(dwelltimes.begin(), dwelltimes.end());
+			//cout << "max dwell time: " << dwelltime << endl;
 			break;
 		case 21:
 			if (trip->get_busv()->get_occupancy() > trip->get_busv()->get_number_seats())
@@ -2569,7 +3205,7 @@ void Busstop::record_busstop_visit (Bustrip* trip, double enter_time)  // create
 	}
 	output_stop_visits.push_back(Busstop_Visit(trip->get_line()->get_id(), trip->get_id() , trip->get_busv()->get_bus_id() , get_id() , get_name(), enter_time,
 		trip->scheduled_arrival_time (this),dwelltime,(enter_time - trip->scheduled_arrival_time (this)), exit_time, riding_time, riding_time * nr_riders, crowded_pass_riding_time, crowded_pass_dwell_time, crowded_pass_holding_time,
-		arrival_headway, get_time_since_departure (trip , exit_time), nr_alighting , nr_boarding , occupancy, car_occupancy, car_nr_boarding, calc_total_nr_waiting(), (arrival_headway * nr_boarding)/2, holdingtime));
+		arrival_headway, get_time_since_departure (trip , exit_time), nr_alighting , nr_alighting_section, nr_boarding , car_nr_boarding, occupancy, car_occupancy, calc_total_nr_waiting(), (arrival_headway * nr_boarding)/2, holdingtime));
 }
 
 double Busstop::calc_crowded_travel_time (double travel_time, int nr_riders, int nr_seats) //Returns the sum of the travel time weighted by the crowding factors

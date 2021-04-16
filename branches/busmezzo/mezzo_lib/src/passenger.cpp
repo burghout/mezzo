@@ -112,6 +112,17 @@ void Passenger::reset ()
 void Passenger::init ()
 {
 	RTI_network_level = theRandomizers[0]->brandom(theParameters->share_RTI_network);
+	
+	//RTCI Melina
+	//if (/*theParameters->include_car_RTCI == true && */theParameters->include_car_RTCI/*crowding_info*/ == 2)
+	//if (theParameters->include_car_RTCI == 2)
+	//{
+		car_RTCI = theRandomizers[0]->brandom(theParameters->share_car_RTCI);
+	//}
+	//else
+	//{
+	//	car_RTCI = false; // if not included in parameters then no-one has access to RTCI anyway
+	//}
 	if (theParameters->pass_day_to_day_indicator == 1)
 	{
 		anticipated_waiting_time = OD_stop->get_anticipated_waiting_time(); //Changed by Jens 2014-06-27, here a local object with the same name was initialized, so the Passenger object was not updated
@@ -357,11 +368,12 @@ void Passenger::start (Eventlist* eventlist)
 		section_time.second = start_time;
 		add_to_selected_path_sections(section_time);
 
+		//cout << "passenger " << passenger_id << " orig " << OD_stop->get_origin()->get_id() << " origin section " << orig_section << ", dest " << OD_stop->get_destination()->get_id() << endl;
 		pair<Busstop*, int> stop_section = make_connection_decision(start_time);
 		Busstop* connection_stop = stop_section.first; 
 		int connection_section = stop_section.second;
-		//cout << "orig " << OD_stop->get_origin()->get_id() << ", dest " << connection_stop->get_id();
-		//cout << " orig_section " << orig_section << ", connection_section " << connection_section << endl;
+		
+		//cout << "passenger " << passenger_id << " connected section " << stop_section.second << endl;
 		stop_time.first = connection_stop;
 		if (connection_stop->get_id() != OD_stop->get_origin()->get_id()) // if the pass. walks to another stop
 		{
@@ -545,7 +557,7 @@ Busstop* Passenger::make_alighting_decision (Bustrip* boarding_bus, double time)
 						if ((*first_transfer_stops)->get_id() == OD_stop->get_destination()->get_id())
 						// in case it is the final destination for this passeneger
 						{
-							candidate_transfer_stops_u[(*first_transfer_stops)] = theParameters->in_vehicle_time_coefficient * ((boarding_bus->get_line()->calc_curr_line_ivt(OD_stop->get_origin(),OD_stop->get_destination(),OD_stop->get_origin()->get_rti(), time))/60);
+							candidate_transfer_stops_u[(*first_transfer_stops)] = theParameters->in_vehicle_time_coefficient * ((boarding_bus->get_line()->calc_curr_line_ivt(OD_stop->get_origin(),OD_stop->get_destination(),OD_stop->get_origin()->get_rti(), time))/60); //Melina RTCI Check that!
 							// the only utility component is the IVT till the destination
 						}
 						else
@@ -808,17 +820,17 @@ pair<Busstop*,int> Passenger::make_connection_decision(double time)
 					double logsum = 0.0;
 
 					int connected_stop_num_sections = (*connected_stop)->get_num_sections();
-					for (int section_id = 1; section_id <= connected_stop_num_sections; ++section_id)
-					{
-						connected_stop_section_walking_distance = get_walking_distance(*connected_stop, section_id);
-						connected_stop_section_u[section_id] =
-							left_od_stop->calc_combined_set_utility_for_connection(
-								connected_stop_section_walking_distance, section_id, time, this);
+						for (int section_id = 1; section_id <= connected_stop_num_sections; ++section_id)
+						{
+							connected_stop_section_walking_distance = get_walking_distance(*connected_stop, section_id);
+							connected_stop_section_u[section_id] =
+								left_od_stop->calc_combined_set_utility_for_connection(
+									connected_stop_section_walking_distance, section_id, time, this);
 
-						logsum += exp(connected_stop_section_u[section_id]);
-						//cout << "walk dist = " << connected_stop_section_walking_distance << " ";
-					}
-					//cout << endl;
+							logsum += exp(connected_stop_section_u[section_id]);
+							//cout << "section id " << section_id << "walk dist = " << connected_stop_section_walking_distance << "utility " << logsum << endl;
+							//cout << "walking: " << (*path_iter)->get_walking_distances().front() << endl;
+						}
 					logsum = log(logsum);
 
 					// Change from getting walking distances from path to getting them from busstops??
