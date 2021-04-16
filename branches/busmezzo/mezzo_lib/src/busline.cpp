@@ -1213,7 +1213,7 @@ void Bustrip::set_status(BustripStatus newstatus)
 			break;
         case BustripStatus::Matched:
             //assert(get_busv() != nullptr); // trip later on in a chain of trips may not have a vehicle yet, since this is passed between trips via the driving roster
-			assert(status_ == BustripStatus::Unmatched);
+			//assert(status_ == BustripStatus::Unmatched);
             break;
         case BustripStatus::Unmatched:
             assert(get_busv() == nullptr); // no vehicle should be matched to this trip yet
@@ -1255,6 +1255,25 @@ Bustrip* Bustrip::get_next_trip_in_chain() const
 		}
     }
     return next_trip;
+}
+
+Bustrip* Bustrip::get_prev_trip_in_chain() const
+{
+	Bustrip* prev_trip = nullptr;
+    if (!driving_roster.empty())
+    {
+        //find position of this trip in driving roster
+		int this_trip_id = get_id();
+		const auto this_trip_it = find_if(driving_roster.begin(),driving_roster.end(),[this_trip_id](const Start_trip* st)->bool { return st->first->get_id() == this_trip_id; } );
+		
+		if(this_trip_it != driving_roster.begin()) 
+		{
+		    //check if there is any following trip
+			const auto prev_trip_it = prev(this_trip_it);
+            prev_trip = (*prev_trip_it)->first;
+		}
+    }
+    return prev_trip;
 }
 
 double Bustrip::get_max_wait_requests(double cur_time) const

@@ -172,45 +172,61 @@ void TestDRTAlgorithms::testBustripFilters()
     Bustrip* t2 = new Bustrip(2,1.0,busline); // dummy empty pickup trip
     Bustrip* t3 = new Bustrip(3,1.0,busline); // dummy passenger carrying trip with t2 chained before
     Bustrip* t4 = new Bustrip(4,1.0,busline); // dummy fixed trip
-    
+    Bustrip* t5 = new Bustrip(5,1.0,busline); // dummy fixed trip
+    Bustrip* t6 = new Bustrip(6,1.0,busline); // dummy fixed trip
+
+
     t1->set_flex_trip(true);
     t2->set_flex_trip(true);
     t3->set_flex_trip(true);
     t4->set_flex_trip(false);
-    
+
     t1->set_status(BustripStatus::Unmatched); // @note could be any other status besides BustripStatus::Null at the moment
     t2->set_status(BustripStatus::Matched);
     t3->set_status(BustripStatus::Matched);
-    
+
     // add some requests to the passenger carrying trip (t3), the rest should be empty
     auto rq1 = new Request();
     auto rq2 = new Request();
     t3->add_request(rq1);
-    t3->add_request(rq2);    
-    
+    t3->add_request(rq2);
+
     // chain t2 and t3 via their driving roster..
     vector<Bustrip*> tripchain = {t2, t3};
     cs_helper_functions::add_driving_roster_to_tripchain(tripchain);
-    
+
+    // chain all fixed trips as well...
+    tripchain = {t4, t5, t6};
+    cs_helper_functions::add_driving_roster_to_tripchain(tripchain);
+
     // check if get next trip works as expected...
     QVERIFY(t1->get_next_trip_in_chain() == nullptr);
     QVERIFY(t2->get_next_trip_in_chain() == t3);
     QVERIFY(t3->get_next_trip_in_chain() == nullptr);
-    QVERIFY(t4->get_next_trip_in_chain() == nullptr);
-    
+    QVERIFY(t4->get_next_trip_in_chain() == t5);
+    QVERIFY(t5->get_next_trip_in_chain() == t6);
+    QVERIFY(t6->get_next_trip_in_chain() == nullptr);
+
+    // check also if get prev trip works as expected...
+    QVERIFY(t1->get_prev_trip_in_chain() == nullptr);
+    QVERIFY(t2->get_prev_trip_in_chain() == nullptr);
+    QVERIFY(t3->get_prev_trip_in_chain() == t2);
+    QVERIFY(t4->get_prev_trip_in_chain() == nullptr);
+    QVERIFY(t5->get_prev_trip_in_chain() == t4);
+    QVERIFY(t6->get_prev_trip_in_chain() == t5);
+
     // check if categorization of trip types work as expected...
-    QVERIFY(!t1->is_assigned_to_requests()); //should fail due to not being assigned to any requests
-    
-    QVERIFY(!t2->is_assigned_to_requests()); //should fail due to not being assigned to any requests
-    
-    QVERIFY(t3->is_assigned_to_requests()); //is a flex trip, not Null, and assigned to requests
-    
-    QVERIFY(!t4->is_assigned_to_requests()); //should fail due to not being assigned to any requests
-    
+    QVERIFY(!t1->is_assigned_to_requests());
+    QVERIFY(!t2->is_assigned_to_requests());
+    QVERIFY(t3->is_assigned_to_requests());
+    QVERIFY(!t4->is_assigned_to_requests());
+
     delete t1;
     delete t2;
     delete t3;
     delete t4;
+    delete t5;
+    delete t6;
     delete rq1;
     delete rq2;
 }

@@ -481,7 +481,8 @@ public:
 
     bool is_assigned_to_requests() const; //!< returns true if trip was assigned to requests
     bool is_part_of_tripchain() const; //!< returns true if trip is a member of a trip-chain (driving_roster that includes more than one trip on it)
-	Bustrip* get_next_trip_in_chain() const; //!< returns the Bustrip that follows this one in the driving roster, nullptr if no Bustrip follows this one
+	Bustrip* get_next_trip_in_chain() const; //!< returns the Bustrip that follows this one in the driving roster, nullptr otherwise
+	Bustrip* get_prev_trip_in_chain() const; //!< returns the Bustrip that precedes this one in the driving roster, nullptr otherwise
 
 	void set_status(BustripStatus newstatus);
     BustripStatus get_status()const { return status_; }
