@@ -269,7 +269,7 @@ public:
 	virtual bool schedule_trips(DRTAssignmentData& assignment_data, Eventlist* eventlist, double time) = 0; //!< returns true if an unscheduled trip has been given a dispatch time and added to the eventlist as a Busline action. This trip is then removed from the set of unscheduledTrips
 
 protected:
-	bool book_trip_dispatch(Eventlist* eventlist, Bustrip* trip); //!< add a matched and scheduled trip (i.e., Bustrip that has a Bus, a Busline, a schedule and a start time) to the trips list of its Busline and add a Busline event to dispatch this trip its given start time
+	bool book_trip_dispatch(DRTAssignmentData& assignment_data, Eventlist* eventlist, Bustrip* trip); //!< add a matched and scheduled trip (i.e., Bustrip that has a Bus, a Busline, a schedule and a start time) to the trips list of its Busline and add a Busline event to dispatch this trip its given start time
 };
 
 //! @brief Null scheduling strategy that always returns false

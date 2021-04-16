@@ -889,7 +889,7 @@ bool NaiveMatching::find_tripvehicle_match(DRTAssignmentData& assignment_data, B
 }
 
 //SchedulingStrategy
-bool SchedulingStrategy::book_trip_dispatch(Eventlist* eventlist, Bustrip* trip)
+bool SchedulingStrategy::book_trip_dispatch(DRTAssignmentData& assignment_data, Eventlist* eventlist, Bustrip* trip)
 {
     assert(eventlist);
     assert(trip);
@@ -910,7 +910,6 @@ bool SchedulingStrategy::book_trip_dispatch(Eventlist* eventlist, Bustrip* trip)
 
                 //DEBUG_MSG("INFO::SchedulingStrategy::book_trip_dispatch is scheduling trip " << trip->get_id() << " with start time " << starttime);
 
-                line->add_flex_trip(unscheduled_trip); //add trip as a flex trip of line for bookkeeping
                 line->add_trip(unscheduled_trip, starttime); //insert trip into the main trips list of the line
                 
                 if (trip_dispatch == trip->driving_roster.front()) // Busline event added only for first trip in chain, the others handled by Bus::advance_curr_trip
@@ -918,12 +917,16 @@ bool SchedulingStrategy::book_trip_dispatch(Eventlist* eventlist, Bustrip* trip)
                     eventlist->add_event(starttime, line); //book the activation of this trip in the eventlist
                     unscheduled_trip->set_scheduled_for_dispatch(true); //scheduled for dispatch is set in Busline::execute?
                     scheduled_trip_success = true;
+                    assignment_data.unscheduled_trips.erase(trip); //trip is now scheduled for dispatch
+                    assignment_data.active_trips.insert(trip); //trip should now be added as an active trip
                 }
                 else
                 {
                     //!< @todo Kindof hacky, but add an 'ambitious' dispatch event from Busline for now to mimic previous behavior as closely as possible, activated Busline and have Busline::curr_trip always pointing to the correct trip to be dispatched
                     eventlist->add_event(trip->get_starttime()+0.0001, line); // adds a busline event with the starttime of the first trip in chain + 0.0001 seconds.... Should activate the line if not activated, but ignore activation of the trip (with busv == nullptr)
                     unscheduled_trip->set_scheduled_for_dispatch(true); // this unscheduled trip (chained) is guaranteed to be activated via Bus::advance_curr_trip
+                    assignment_data.unscheduled_trips.erase(trip); //trip is now scheduled for dispatch
+                    assignment_data.active_trips.insert(trip); //trip should now be added as an active trip
                 }
             }
         }
@@ -959,14 +962,11 @@ bool NaiveScheduling::schedule_trips(DRTAssignmentData& assignment_data, Eventli
             if (trip->get_starttime() < time)  //if scheduling call was made after the original planned dispatch of the trip
                 cs_helper_functions::update_schedule(trip, time); //update schedule for dispatch and stop visits according to new starttime
 
-            if (!book_trip_dispatch(eventlist, trip))
+            if (!book_trip_dispatch(assignment_data, eventlist, trip))
             {
                 qDebug() << "Warning, NaiveScheduling::book_trip_dispatch() failed for trip" << trip->get_id() << "at time" << time;
                 continue;
             }
-
-            assignment_data.unscheduled_trips.erase(trip); //trip is now scheduled for dispatch
-            assignment_data.active_trips.insert(trip); //trip should now be added as an active trip
             scheduled_trip = true;
         }
         else
@@ -1027,14 +1027,12 @@ bool LatestDepartureScheduling::schedule_trips(DRTAssignmentData& assignment_dat
                 cs_helper_functions::update_schedule(trip, latest_desired_dep);
 
 
-            if (!book_trip_dispatch(eventlist, trip))
+            if (!book_trip_dispatch(assignment_data, eventlist, trip))
             {
                 qDebug() << "Warning, LatestDepartureScheduling::book_trip_dispatch() failed for trip" << trip->get_id() << "at time" << time;
                 continue;
             }
 
-            assignment_data.unscheduled_trips.erase(trip); //trip is now scheduled for dispatch
-            assignment_data.active_trips.insert(trip); //trip should now be added as an active trip
             scheduled_trip = true;
         }
         else

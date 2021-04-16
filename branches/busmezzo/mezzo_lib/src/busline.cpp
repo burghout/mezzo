@@ -73,10 +73,6 @@ void Busline::reset ()
 {
 	if (flex_line)
 	{
-		for (Bustrip* trip : flex_trips) //clean up flex_trips that did not complete yet
-			delete trip;
-
-		flex_trips.clear(); //clear all dynamically generated trips that have not completed yet
 		trip_count = static_cast<int>(static_trips.size()); //reset trip counter to the original number of trips that were generated from input files
 		trips = static_trips; //reset trips vector to initial trips
 	}
@@ -783,18 +779,6 @@ void Busline::write_ttt_output(ostream & out)
 	}
 }
 
-void Busline::add_flex_trip(Bustrip* trip)
-{
-	assert(flex_trips.count(trip) == 0); //trips are only added once
-	flex_trips.insert(trip);
-}
-
-void Busline::remove_flex_trip(Bustrip * trip)
-{
-	assert(flex_trips.count(trip) == 1);
-	flex_trips.erase(trip);
-}
-
 bool Busline::is_unique_tripid(int trip_id)
 {
 	list <Start_trip>::iterator it;
@@ -864,6 +848,9 @@ QString bustripstatus_to_QString(BustripStatus status)
     case BustripStatus::Scheduled:
         status_s = "Scheduled";
         break;
+	case BustripStatus::ScheduledWaitingForVehicle:
+		status_s = "ScheduledWaitingForVehicle";
+		break;
     case BustripStatus::Matched:
         status_s = "Matched";
         break;
@@ -1220,6 +1207,10 @@ void Bustrip::set_status(BustripStatus newstatus)
         case BustripStatus::Scheduled:
             assert(is_scheduled_for_dispatch()); // bustrip should be flagged as activated
             break;
+		case BustripStatus::ScheduledWaitingForVehicle:
+			assert(is_scheduled_for_dispatch());
+			assert(get_busv() == nullptr);
+			break;
         case BustripStatus::Matched:
             //assert(get_busv() != nullptr); // trip later on in a chain of trips may not have a vehicle yet, since this is passed between trips via the driving roster
 			assert(status_ == BustripStatus::Unmatched);
@@ -1292,7 +1283,13 @@ double Bustrip::get_cumulative_wait_requests(double cur_time) const
 void Bustrip::set_scheduled_for_dispatch(bool scheduled_for_dispatch_)
 {
     scheduled_for_dispatch = scheduled_for_dispatch_;
-	if(scheduled_for_dispatch_) set_status(BustripStatus::Scheduled);
+	if(scheduled_for_dispatch_)
+	{
+		if(!get_busv())
+			set_status(BustripStatus::ScheduledWaitingForVehicle);
+		else
+			set_status(BustripStatus::Scheduled);
+    }
 }
 
 void Bustrip::set_activated(bool activated_)

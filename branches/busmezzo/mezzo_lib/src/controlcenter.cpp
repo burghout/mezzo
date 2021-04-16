@@ -17,13 +17,15 @@ void DRTAssignmentData::reset()
 	{
 		delete trip;
 	}
-
 	for (Bustrip* trip : unmatched_empty_trips)
 	{
 		delete trip;
 	}
-
 	for (Bustrip* trip : unscheduled_trips) //clean up matched trips that were not dispatched. Note: currently network reset is called even after the last simulation replication
+	{
+		delete trip;
+	}
+	for (Bustrip* trip : active_trips) //clean up scheduled trips that were never completed, ControlCenter manages cleanups of completed trips
 	{
 		delete trip;
 	}
@@ -31,10 +33,8 @@ void DRTAssignmentData::reset()
 	unmatched_trips.clear();
 	unmatched_empty_trips.clear();
 	unscheduled_trips.clear();
+	active_trips.clear();
 
-	active_trips.clear(); // @todo see Busline destructor cleanup of flex-trips, could maybe move cleanup in here as well
-
-    //active_trips.clear();
     fleet_state.clear();
     //all_requests.clear(); 
 }
