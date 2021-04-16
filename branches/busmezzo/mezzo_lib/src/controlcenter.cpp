@@ -38,28 +38,6 @@ void DRTAssignmentData::reset()
     fleet_state.clear();
     //all_requests.clear(); 
 }
-//
-//void DRTAssignmentData::addTrip(Bustrip* trip)
-//{
-//	// sorts the new trip into the right set
-//    switch (trip->get_status())
-//    {
-//    case BustripStatus::Unmatched:
-//		if(trip->is_request_assigned_trip())
-//			unmatched_trips.insert(trip);
-//		else if(trip->is_empty_pickup_trip() || trip->is_rebalancing_trip())
-//			unmatched_empty_trips.insert(trip);
-//        break;
-//    case BustripStatus::Matched:
-//		unscheduled_trips.insert(trip);
-//        break;
-//    case BustripStatus::Scheduled:
-//		active_trips.insert(trip);
-//        break;
-//	default:
-//		qDebug() << "Warning - ignoring adding trip" << trip->get_id() << "with status" << bustripstatus_to_QString(trip->get_status()) << "to assignment data";
-//    }
-//}
 
 void Controlcenter_SummaryData::reset()
 {
@@ -338,11 +316,8 @@ void BustripVehicleMatcher::addVehicleToServiceRoute(int line_id, Bus* transitve
 {
 	assert(transitveh);
     //TODO need to add check for when line_id that is not included as a service route, maybe move service routes to Controlcenter rather than BustripGenerator
-    if (vehicles_per_service_route_[line_id].count(transitveh) == 0)
-    {
-        vehicles_per_service_route_[line_id].insert(transitveh);
-        transitveh->add_sroute_id(line_id); //vehicle is also aware of its service routes for now. TODO: probably this is a bit unnecessary at the moment, since the vehicle also knows of its CC
-    }
+    vehicles_per_service_route_[line_id].insert(transitveh);
+    transitveh->add_sroute_id(line_id); //vehicle is also aware of its service routes for now. TODO: probably this is a bit unnecessary at the moment, since the vehicle also knows of its CC
 }
 
 void BustripVehicleMatcher::removeVehicleFromServiceRoute(int line_id, Bus * transitveh)
@@ -800,16 +775,8 @@ void Controlcenter::connectPassenger(Passenger* pass)
 	
 	connectedPass_[pid] = pass;
 
-	if (QObject::connect(pass, &Passenger::sendRequest, this, &Controlcenter::receiveRequest, Qt::DirectConnection) == nullptr)
-	{
-		DEBUG_MSG_V(Q_FUNC_INFO << " connecting Passenger::sendRequest to Controlcenter::receiveRequest failed!");
-		abort();
-	}
-	if (QObject::connect(pass, &Passenger::boardedBus, this, &Controlcenter::removeRequest, Qt::DirectConnection) == nullptr)
-	{
-		DEBUG_MSG_V(Q_FUNC_INFO << " connecting Passenger::boardedBus to Controlcenter::removeRequest failed!");
-		abort();
-	}
+	QObject::connect(pass, &Passenger::sendRequest, this, &Controlcenter::receiveRequest, Qt::DirectConnection);
+	QObject::connect(pass, &Passenger::boardedBus, this, &Controlcenter::removeRequest, Qt::DirectConnection);
 }
 void Controlcenter::disconnectPassenger(Passenger* pass)
 {
@@ -818,10 +785,9 @@ void Controlcenter::disconnectPassenger(Passenger* pass)
 	assert(connectedPass_.count(pid) != 0);
 
 	connectedPass_.erase(connectedPass_.find(pid));
-	bool ok = QObject::disconnect(pass, &Passenger::sendRequest, this, &Controlcenter::receiveRequest);
-	assert(ok);
-	ok = QObject::disconnect(pass, &Passenger::boardedBus, this, &Controlcenter::removeRequest);
-	assert(ok);
+
+    QObject::disconnect(pass, &Passenger::sendRequest, this, &Controlcenter::receiveRequest);
+	QObject::disconnect(pass, &Passenger::boardedBus, this, &Controlcenter::removeRequest);
 }
 
 void Controlcenter::connectVehicle(Bus* transitveh)
@@ -834,11 +800,7 @@ void Controlcenter::connectVehicle(Bus* transitveh)
 		connectedVeh_[bvid] = transitveh;
 
 		//connect bus state changes to control center
-		if (QObject::connect(transitveh, &Bus::stateChanged, this, &Controlcenter::updateFleetState, Qt::DirectConnection) == nullptr)
-		{
-			DEBUG_MSG_V(Q_FUNC_INFO << " connecting Bus::stateChanged with Controlcenter::updateFleetState failed!");
-			abort();
-		}
+		QObject::connect(transitveh, &Bus::stateChanged, this, &Controlcenter::updateFleetState, Qt::DirectConnection);
 
 		transitveh->set_control_center(this);
 	}
@@ -852,8 +814,7 @@ void Controlcenter::disconnectVehicle(Bus* transitveh)
 		assert(connectedVeh_.count(bvid) != 0); //only disconnect vehicles that have been added
 
 		connectedVeh_.erase(connectedVeh_.find(bvid));
-		bool ok = QObject::disconnect(transitveh, &Bus::stateChanged, this, &Controlcenter::updateFleetState);
-		assert(ok);
+		QObject::disconnect(transitveh, &Bus::stateChanged, this, &Controlcenter::updateFleetState);
 
 		transitveh->set_control_center(nullptr);
 	}
@@ -896,12 +857,9 @@ void Controlcenter::addInitialVehicle(Bus* transitveh)
 {
 	assert(transitveh);
 	if(transitveh)
-	{
-		if (initialVehicles_.count(transitveh) == 0)
-		{
-			initialVehicles_.insert(transitveh);
-		}
-	}
+    {
+        initialVehicles_.insert(transitveh);
+    }
 }
 
 void Controlcenter::addCompletedVehicleTrip(Bus* transitveh, Bustrip * trip)
@@ -968,7 +926,7 @@ double Controlcenter::calc_exploration_ivt(Busline* service_route, Busstop* star
 		}
 	}
 	if (found_board == false || found_alight == false)
-		return 10000; //default in case of no matching
+		return ::drt_default_large_ivt; //default in case of no matching
 
 	return cumulative_arrival_time - earliest_time_ostop; //OBS waiting time is returned in seconds
 }

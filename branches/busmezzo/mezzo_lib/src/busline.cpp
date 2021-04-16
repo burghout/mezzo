@@ -1235,50 +1235,9 @@ void Bustrip::set_status(BustripStatus newstatus)
 	}
 }
 
-bool Bustrip::is_rebalancing_trip() const
+bool Bustrip::is_assigned_to_requests() const
 {
-	if(!is_flex_trip()) // no fixed schedule trip is a rebalancing trip
-		return false;
-	if(status_ == BustripStatus::Null)
-		return false;
-    if(!get_requests().empty()) // not a rebalancing trip if planned to pick up passengers
-		return false;
-	if(is_part_of_tripchain()) // not a rebalancing trip if part of a trip-chain
-		return false;
-	
-    return true;
-}
-
-bool Bustrip::is_empty_pickup_trip() const
-{
-	if(!is_flex_trip()) // no fixed schedule trip is a pick-up trip
-		return false;
-	if(status_ == BustripStatus::Null)
-		return false;
-    if(!get_requests().empty()) // not an empty pick-up trip if assigned to requests
-		return false;
-	if(!is_part_of_tripchain()) // a pick-up trip should be part of a trip-chain
-		return false;
-	
-	Bustrip* next_trip = get_next_trip_in_chain();
-	if(next_trip == nullptr) // a succeding trip should exist
-		return false;
-	if(next_trip->get_requests().empty()) // following trip should be assigned to requests
-		return false;
-
-	return true;
-}
-
-bool Bustrip::is_request_assigned_trip() const
-{
-    if(!is_flex_trip()) // no fixed schedule trip is assigned to specific passengers
-		return false;
-	if(status_ == BustripStatus::Null)
-		return false;
-    if(get_requests().empty()) // trip should be assigned to requests
-		return false;
-
-    return true;
+    return !scheduled_requests.empty();
 }
 
 bool Bustrip::is_part_of_tripchain() const
