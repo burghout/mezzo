@@ -17,15 +17,29 @@ Request::Request(Passenger * pass_owner, int pass_id, int ostop_id, int dstop_id
 
 void Request::set_state(RequestState newstate)
 {
+    // @todo still need to add set state for servedunfinished, served finished, cancelled, rejected etc...
     if (state != newstate)
     {
         switch (newstate) //keep track of currently 'legal' state transitions @todo remove
         {
+        case RequestState::Null:
+            break;
+        case RequestState::Unmatched:
+            break;
         case RequestState::Assigned:
             assert(state == RequestState::Unmatched);
             break;
         case RequestState::Matched:
             assert(state == RequestState::Assigned);
+            break;
+        case RequestState::ServedUnfinished:
+            break;
+        case RequestState::ServedFinished:
+            assert(state == RequestState::ServedUnfinished);
+            break;
+        case RequestState::Cancelled:
+            break;
+        case RequestState::Rejected:
             break;
         }
         //RequestState oldstate = state;
@@ -40,27 +54,7 @@ void Request::set_state(RequestState newstate)
 
 void Request::print_state()
 {
-    cout << endl << "Request " << pass_id << " is ";
-    //qDebug() << Request::state_to_string(state);
-    switch (state)
-    {
-    case RequestState::Unmatched:
-        cout << "Unmatched";
-        break;
-    case RequestState::Null:
-        cout << "Null";
-        break;
-    case RequestState::Assigned:
-        cout << "Assigned";
-        break;
-    case RequestState::Matched:
-        cout << "Matched";
-        break;
-        //	default:
-        //		DEBUG_MSG_V("Something went very wrong");
-        //		abort();
-    }
-    cout << endl;
+    qDebug() << "Request" << id << "for passenger" << pass_id  << "is" << state_to_QString(state);
 }
 
 QString Request::state_to_QString(RequestState state)
@@ -79,6 +73,18 @@ QString Request::state_to_QString(RequestState state)
         break;
     case RequestState::Assigned:
         state_s = "Assigned";
+        break;
+    case RequestState::ServedUnfinished:
+        state_s = "ServedUnfinished";
+        break;
+    case RequestState::ServedFinished:
+        state_s = "ServedFinished";
+        break;
+    case RequestState::Cancelled:
+        state_s = "Cancelled";
+        break;
+    case RequestState::Rejected:
+        state_s = "Rejected";
         break;
     }
 
@@ -332,30 +338,24 @@ pair <Bus*, double> TripGenerationStrategy::get_nearest_vehicle(const Busstop* t
     return closest;
 }
 
-bool NullTripGeneration::calc_trip_generation(DRTAssignmentData& assignment_data, const set<Request*, ptr_less<Request*>>& requestSet, const vector<Busline*>& candidateServiceRoutes, double time)
+bool NullTripGeneration::calc_trip_generation(DRTAssignmentData& assignment_data, const vector<Busline*>& candidateServiceRoutes, double time)
 {
     Q_UNUSED(assignment_data)
-    Q_UNUSED(requestSet)
     Q_UNUSED(candidateServiceRoutes)
     Q_UNUSED(time)
 
     return false;
 }
 
-bool NaiveTripGeneration::calc_trip_generation(DRTAssignmentData& assignment_data, const set<Request*,ptr_less<Request*>>& requestSet, const vector<Busline*>& candidateServiceRoutes, double time)
+bool NaiveTripGeneration::calc_trip_generation(DRTAssignmentData& assignment_data, const vector<Busline*>& candidateServiceRoutes, double time)
 {
-    //Q_UNUSED(fleetState)
-    //Q_UNUSED(unmatchedEmptyTripSet)
-    //
-    // UPDATE TO ONLY unmatched requests
-    if (!requestSet.empty() && !candidateServiceRoutes.empty())
+    auto unassignedRequests = cs_helper_functions::filterRequestsByState(assignment_data.active_requests, RequestState::Unmatched);
+    if (!unassignedRequests.empty() && !candidateServiceRoutes.empty())
     {
-        if (requestSet.size() >= static_cast<std::size_t>(drt_min_occupancy)) //do not attempt to generate trip unless requestSet is greater than the desired occupancy
+        if (unassignedRequests.size() >= static_cast<std::size_t>(drt_min_occupancy)) //do not attempt to generate trip unless requestSet is greater than the desired occupancy
         {
-            //DEBUG_MSG(endl << "INFO::NaiveTripGeneration::calc_trip_generation - finding possible passenger carrying trip at time " << time);
-
             //find od pair with the highest frequency in requestSet
-            map<pair<int, int>, int> odcounts = countRequestsPerOD(requestSet);
+            map<pair<int, int>, int> odcounts = countRequestsPerOD(unassignedRequests);
             typedef pair<pair<int, int>, int> od_count;
             vector<od_count> sortedODcounts;
 
@@ -368,7 +368,7 @@ bool NaiveTripGeneration::calc_trip_generation(DRTAssignmentData& assignment_dat
 
             if (sortedODcounts.front().second < ::drt_min_occupancy)
             {
-                DEBUG_MSG("No trip generated! Maximum OD count in request set " << sortedODcounts.front().second << " is smaller than min occupancy " << ::drt_min_occupancy);
+                qDebug() << "Warning - Ignored trip generation call, maximum OD count in request set " << sortedODcounts.front().second << " is smaller than min occupancy" << ::drt_min_occupancy;
                 return false;
             }
 
@@ -415,16 +415,13 @@ bool NaiveTripGeneration::calc_trip_generation(DRTAssignmentData& assignment_dat
 
                 if (found)
                 {
-                    assert(line);
                     if (line)
                     {
-                        //DEBUG_MSG("INFO::NaiveTripGeneration::calc_trip_generation - Trip found! Generating trip for line " << line->get_id());
-
                         vector<Visit_stop*> schedule = create_schedule(time, line->get_delta_at_stops()); //build the schedule of stop visits for this trip (we visit all stops along the candidate line)
                         Bustrip* newtrip = create_unassigned_trip(line, time, schedule); //create a new trip for this line using now as the dispatch time
                         assignment_data.unmatched_trips.insert(newtrip);//add this trip to the unmatchedTripSet
                         
-                        auto affectedRequests = cs_helper_functions::filterRequestsByOD(requestSet,ostop_id, dstop_id);
+                        auto affectedRequests = cs_helper_functions::filterRequestsByOD(unassignedRequests,ostop_id, dstop_id);
                         for (auto rq : affectedRequests)
                         {
                             rq->assigned_trip = newtrip;
@@ -436,31 +433,29 @@ bool NaiveTripGeneration::calc_trip_generation(DRTAssignmentData& assignment_dat
                     }
                 }
             }
-            //DEBUG_MSG("INFO::NaiveTripGeneration::calc_trip_generation - No trip found!");
         }
     }
     return false;
 }
 
-bool SimpleTripGeneration::calc_trip_generation(DRTAssignmentData& assignment_data, const set<Request*,ptr_less<Request*>>& requestSet, const vector<Busline*>& candidateServiceRoutes, double time)
+bool SimpleTripGeneration::calc_trip_generation(DRTAssignmentData& assignment_data, const vector<Busline*>& candidateServiceRoutes, double time)
 {
     // Steps:
     // 1. get unassigned requests
     // 2. get trips (i don't care if they are matched or unmatched...) and assign requests to existing trips
     // 3. create trips for those requests for which I have not found a trip
     // 4. assign requests to new trips
-    //Q_UNUSED(fleetState)
-    //Q_UNUSED(unmatchedEmptyTripSet)
+    
     bool trip_generated = false; // true if at least one trip has been generated
     // 1. get unassigned requests
-    auto unassignedRequests = cs_helper_functions::filterRequestsByState(requestSet, RequestState::Unmatched);
+    auto unassignedRequests = cs_helper_functions::filterRequestsByState(assignment_data.active_requests, RequestState::Unmatched);
     //qDebug() << "Size of unassignedRequests: " << unassignedRequests.size();
     if (!unassignedRequests.empty() && !candidateServiceRoutes.empty())
     {
         // 2. get trips (i don't care if they are matched or unmatched...) and assign requests to existing trips
 
-        cs_helper_functions::assignRequestsToTripSet(requestSet, assignment_data.unmatched_trips);
-        unassignedRequests = cs_helper_functions::filterRequestsByState(requestSet, RequestState::Unmatched); // redo the filtering after assignRequestsToTripSet
+        cs_helper_functions::assignRequestsToTripSet(assignment_data.active_requests, assignment_data.unmatched_trips);
+        unassignedRequests = cs_helper_functions::filterRequestsByState(assignment_data.active_requests, RequestState::Unmatched); // redo the filtering after assignRequestsToTripSet
         // TODO: here we want to call it with the emptyTripset as well
 
         if (unassignedRequests.empty())
@@ -508,7 +503,7 @@ bool SimpleTripGeneration::calc_trip_generation(DRTAssignmentData& assignment_da
             newtrip->add_request(rq);
             rq->set_state(RequestState::Assigned);
             // TODO: now check all the remaining requests to see if they can be assigned as well.
-            cs_helper_functions::assignRequestsToTrip(requestSet,newtrip);
+            cs_helper_functions::assignRequestsToTrip(assignment_data.active_requests,newtrip);
             
         }
     }
@@ -518,11 +513,9 @@ bool SimpleTripGeneration::calc_trip_generation(DRTAssignmentData& assignment_da
 
 //Empty vehicle trip generation
 NaiveEmptyVehicleTripGeneration::NaiveEmptyVehicleTripGeneration(Network* theNetwork) : theNetwork_(theNetwork){}
-bool NaiveEmptyVehicleTripGeneration::calc_trip_generation(DRTAssignmentData& assignment_data, const set<Request*, ptr_less<Request*>>& requestSet, const vector<Busline*>& candidateServiceRoutes, double time)
+bool NaiveEmptyVehicleTripGeneration::calc_trip_generation(DRTAssignmentData& assignment_data, const vector<Busline*>& candidateServiceRoutes, double time)
 {
-    //Q_UNUSED(unmatchedEmptyTripSet)
-
-    if (!requestSet.empty() && !candidateServiceRoutes.empty()) //Reactive strategy so only when requests exist
+    if (!assignment_data.active_requests.empty() && !candidateServiceRoutes.empty()) //Reactive strategy so only when requests exist
     {
         if (assignment_data.fleet_state.find(BusState::OnCall) == assignment_data.fleet_state.end())  //a drt vehicle must have been initialized
             return false;
@@ -530,9 +523,8 @@ bool NaiveEmptyVehicleTripGeneration::calc_trip_generation(DRTAssignmentData& as
         if (assignment_data.fleet_state.at(BusState::OnCall).empty())  //a drt vehicle must be available
             return false;
 
-        //DEBUG_MSG(endl << "INFO::NaiveEmptyVehicleTripGeneration::calc_trip_generation - finding possible rebalancing trip at time " << time);
         //find od pair with the highest frequency in requestSet (highest source of shareable demand)
-        map<pair<int, int>, int> odcounts = countRequestsPerOD(requestSet);
+        map<pair<int, int>, int> odcounts = countRequestsPerOD(assignment_data.active_requests);
         typedef pair<pair<int, int>, int> od_count;
 
         vector<od_count> sortedODcounts; //long-winded way to sort odcounts map by value rather than key
@@ -545,12 +537,12 @@ bool NaiveEmptyVehicleTripGeneration::calc_trip_generation(DRTAssignmentData& as
 
         if (sortedODcounts.front().second < ::drt_min_occupancy)
         {
-            DEBUG_MSG("No trip generated! Maximum OD count in request set " << sortedODcounts.front().second << " is smaller than min occupancy " << ::drt_min_occupancy);
+            qDebug() << "Warning - Ignored trip generation call, maximum OD count in request set " << sortedODcounts.front().second << " is smaller than min occupancy" << ::drt_min_occupancy;
             return false;
         }
 
         int largest_demand_stop_id = sortedODcounts.front().first.first; //id of stop with largest source of demand
-        map<int, Busstop*> stopsmap = theNetwork_->get_stopsmap();
+        const map<int, Busstop*> stopsmap = theNetwork_->get_stopsmap();
         assert(stopsmap.count(largest_demand_stop_id) != 0); //stop with the highest demand should be known to network
 
         Busstop* largest_demand_stop = theNetwork_->get_stopsmap()[largest_demand_stop_id];
@@ -571,11 +563,6 @@ bool NaiveEmptyVehicleTripGeneration::calc_trip_generation(DRTAssignmentData& as
         for (Bus* veh : vehOnCall)
         {
             Busstop* vehloc = veh->get_last_stop_visited(); //location of on call vehicle
-            if (vehloc == largest_demand_stop)
-            {
-                DEBUG_MSG_V("ERROR::NaiveEmptyVehicleTripgeneration::calc_trip_generation - vehicle location is already at the source of demand when planning empty vehicle trips. Aborting...");
-                //abort();
-            }
             vector<Busline*> vehicle_serviceRoutes; //all service routes between the vehicle location (current stop and opposing stop) and the demand source (current stop and opposing stop)
 
             //collect a vector of all possible service routes between the vehicles current location and the demand source
@@ -619,18 +606,14 @@ bool NaiveEmptyVehicleTripGeneration::calc_trip_generation(DRTAssignmentData& as
                 return true;
             }
         }
-
-        //DEBUG_MSG("INFO::NaiveEmptyVehicleTripGeneration::calc_trip_generation - No rebalancing trip found!");
     }
     return false;
 }
 
 // SimpleEmptyVehicleTripGeneration
 SimpleEmptyVehicleTripGeneration::SimpleEmptyVehicleTripGeneration(Network *theNetwork):theNetwork_(theNetwork) {}
-bool SimpleEmptyVehicleTripGeneration::calc_trip_generation(DRTAssignmentData& assignment_data, const set<Request*, ptr_less<Request*> >& requestSet, const vector<Busline*>& candidateServiceRoutes, double time)
+bool SimpleEmptyVehicleTripGeneration::calc_trip_generation(DRTAssignmentData& assignment_data, const vector<Busline*>& candidateServiceRoutes, double time)
 {
-    Q_UNUSED(requestSet)
-
     // 0. if no unmatched Trips, exit
     if (assignment_data.unmatched_trips.empty())
         return false;
@@ -672,17 +655,15 @@ bool SimpleEmptyVehicleTripGeneration::calc_trip_generation(DRTAssignmentData& a
     assignment_data.unmatched_trips.erase(selectedTrip); 
 
     // 8. adding potential requests to the empty trip
-    cs_helper_functions::assignRequestsToTrip(requestSet,newTrip);
+    cs_helper_functions::assignRequestsToTrip(assignment_data.active_requests,newTrip);
 
     return true; // emits Signal that empty trip was generated, matcher does the rest.
 }
 
 //MaxWaitEmptyVehicleTripGeneration
 MaxWaitEmptyVehicleTripGeneration::MaxWaitEmptyVehicleTripGeneration(Network *theNetwork):theNetwork_(theNetwork) {}
-bool MaxWaitEmptyVehicleTripGeneration::calc_trip_generation(DRTAssignmentData& assignment_data, const set<Request*, ptr_less<Request*> >& requestSet, const vector<Busline*>& candidateServiceRoutes, double time)
+bool MaxWaitEmptyVehicleTripGeneration::calc_trip_generation(DRTAssignmentData& assignment_data, const vector<Busline*>& candidateServiceRoutes, double time)
 {
-    Q_UNUSED(requestSet)
-
     // 0. if no unmatched Trips, exit
     if (assignment_data.unmatched_trips.empty())
         return false;
@@ -722,16 +703,14 @@ bool MaxWaitEmptyVehicleTripGeneration::calc_trip_generation(DRTAssignmentData& 
     assignment_data.unmatched_trips.erase(selectedTrip);
 
     // 8. adding potential requests to the empty trip
-    cs_helper_functions::assignRequestsToTrip(requestSet,newTrip);
+    cs_helper_functions::assignRequestsToTrip(assignment_data.active_requests,newTrip);
 
     return true; // emits Signal that empty trip was generated, matcher does the rest.
 }
 
 CumulativeWaitEmptyVehicleTripGeneration::CumulativeWaitEmptyVehicleTripGeneration(Network *theNetwork):theNetwork_(theNetwork) {}
-bool CumulativeWaitEmptyVehicleTripGeneration::calc_trip_generation(DRTAssignmentData& assignment_data, const set<Request*, ptr_less<Request*> >& requestSet, const vector<Busline*>& candidateServiceRoutes, double time)
+bool CumulativeWaitEmptyVehicleTripGeneration::calc_trip_generation(DRTAssignmentData& assignment_data, const vector<Busline*>& candidateServiceRoutes, double time)
 {
-    Q_UNUSED(requestSet)
-
     // 0. if no unmatched Trips, exit
     if (assignment_data.unmatched_trips.empty())
         return false;
@@ -771,7 +750,7 @@ bool CumulativeWaitEmptyVehicleTripGeneration::calc_trip_generation(DRTAssignmen
     assignment_data.unmatched_trips.erase(selectedTrip);
 
     // 8. adding potential requests to the empty trip
-    cs_helper_functions::assignRequestsToTrip(requestSet,newTrip);
+    cs_helper_functions::assignRequestsToTrip(assignment_data.active_requests,newTrip);
 
     return true; // emits Signal that empty trip was generated, matcher does the rest.
 }
@@ -827,11 +806,10 @@ Bustrip* MatchingStrategy::find_earliest_planned_trip(const set<Bustrip*>& trips
     Bustrip* latest = nullptr;
     if (!trips.empty())
     {
-        auto maxit = max_element(trips.begin(), trips.end(),
-                                 [](const Bustrip* t1, const Bustrip* t2)->bool
-        {
-            return t1->get_starttime() < t2->get_starttime();
-        }
+        auto maxit = max_element(trips.begin(), trips.end(), [](const Bustrip* t1, const Bustrip* t2)->bool
+            {
+                return t1->get_starttime() < t2->get_starttime();
+            }
         );
         latest = *maxit;
     }
@@ -851,14 +829,11 @@ bool NullMatching::find_tripvehicle_match(DRTAssignmentData& assignment_data, Bu
 
 bool NaiveMatching::find_tripvehicle_match(DRTAssignmentData& assignment_data, Bustrip* unmatchedTrip, map<int, set<Bus*>>& veh_per_sroute, const double time)
 {
-    //Q_UNUSED(matchedTrips)
     Q_UNUSED(assignment_data);
 
     //attempt to match unmatchedTrip with first on-call vehicle found at the origin stop of the trip
     if ((unmatchedTrip != nullptr) && !veh_per_sroute.empty())
     {
-        //DEBUG_MSG(endl << "INFO::NaiveMatching::find_tripvehicle_match - finding vehicles to match to planned trips at time " << time);
-        Bus* veh = nullptr; //the transit veh that we wish to match to a trip
         Busline* sroute = unmatchedTrip->get_line(); //get the line/service route of this trip
         set<Bus*> candidate_buses = veh_per_sroute[sroute->get_id()]; //get all transit vehicles that have this route in their service area
 
@@ -875,15 +850,13 @@ bool NaiveMatching::find_tripvehicle_match(DRTAssignmentData& assignment_data, B
 
                 if (c_bus_it != candidate_buses.end()) //a bus match has been found
                 {
-                    //DEBUG_MSG("INFO::NaiveMatching::find_tripvehicle_match - Match found!");
-                    veh = (*c_bus_it);
+                    Bus* veh = (*c_bus_it);
                     assign_oncall_vehicle_to_trip(origin_stop, veh, unmatchedTrip, time); //schedule the vehicle to perform the trip at this time
 
                     return true;
                 }
             }
         }
-        //DEBUG_MSG("INFO::NaiveMatching::find_tripvehicle_match - No trip - vehicle match found!");
     }
     return false;
 }

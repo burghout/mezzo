@@ -40,15 +40,14 @@ class Passenger;
  *  Null - default uninitialized request
  *  Unmatched - request not matched to any vehicle trip
  *  Assigned - request is assigned to a vehicle trip, but not yet matched to a vehicle
- *  Matched - request is matched but not picked-up yet
+ *  Matched - request is matched to a vehicle-trip pair but not picked-up yet
  *  ServedUnfinished - request has been picked-up but not dropped off
  *  ServedFinished - request has been picked-up and dropped off
  *  Rejected - request was rejected by DRT operator
  *  Cancelled - request was cancelled by traveler
  * 
- * @todo currently not all states used besides Null and Unmatched. Requests are currently removed upon passenger boarding a vehicle
  */
-enum class RequestState { Null = 0, Unmatched, Assigned, Matched }; //  ServedUnfinished, ServedFinished, Rejected, Cancelled };
+enum class RequestState { Null = 0, Unmatched, Assigned, Matched, ServedUnfinished, ServedFinished, Rejected, Cancelled };
 
 //! @brief structure representing a passenger message to a control center requesting transport between an origin stop and a destination stop with a desired time of departure
 struct Request
@@ -65,19 +64,18 @@ struct Request
     Passenger* pass_owner = nullptr; //!< passenger who sent this request
     Bus* assigned_veh = nullptr; //!< vehicle that has been assigned to this request, nullptr if none has been assigned
     Bustrip* assigned_trip = nullptr; //!< bustrip that has been assigned to this request, nullptr by default, updated when assigned
-    Request() {id = ++id_counter;}
-    Request(Passenger * pass_owner, int pass_id, int ostop_id, int dstop_id, int load, double t_departure, double t_generated);
+    Request() { id = ++id_counter; }
+    Request(Passenger* pass_owner, int pass_id, int ostop_id, int dstop_id, int load, double t_departure, double t_generated);
 
-    void set_state(RequestState);
+    void set_state(RequestState state);
     void print_state();
     static QString state_to_QString(RequestState state);
-    int get_id() const {return id;}
+    int get_id() const { return id; }
 
     bool operator == (const Request& rhs) const; //!< default equality comparison of Requests
     bool operator < (const Request& rhs) const; //!< default less-than comparison of Requests in the order of smallest departure time, smallest time, smallest load, smallest origin stop id, smallest destination stop id and finally smallest passenger id
 
 };
-
 Q_DECLARE_METATYPE(Request)
 
 
@@ -97,8 +95,7 @@ class TripGenerationStrategy
 public:
     virtual ~TripGenerationStrategy() = default;
     virtual bool calc_trip_generation(
-        DRTAssignmentData& assignment_data,
-        const set<Request*,ptr_less<Request*> >& requestSet, //!< set of requests that motivate the potential generation of a trip
+        DRTAssignmentData& assignment_data, //!< set of requests that motivate the potential generation of a trip
         const vector<Busline*>& candidateServiceRoutes, //!< state of all vehicles that are potentially available to serve the requests
         double time
     ) = 0; //!< returns true if a trip was generated and added to assignment_data.active_trips and false otherwise
@@ -128,7 +125,7 @@ class NullTripGeneration : public TripGenerationStrategy
 {
 public:
 	~NullTripGeneration() override = default;
-    bool calc_trip_generation(DRTAssignmentData& assignment_data, const set<Request*, ptr_less<Request*>> & requestSet, const vector<Busline*>& candidateServiceRoutes, double time) override;
+    bool calc_trip_generation(DRTAssignmentData& assignment_data, const vector<Busline*>& candidateServiceRoutes, double time) override;
 };
 
 //! @brief prioritizes generating trips for OD stop pair with the highest demand and most direct (in terms of scheduled in-vehicle time) service route
@@ -141,7 +138,7 @@ class NaiveTripGeneration : public TripGenerationStrategy
 {
 public:
 	~NaiveTripGeneration() override = default;
-    bool calc_trip_generation(DRTAssignmentData& assignment_data, const set<Request*, ptr_less<Request*>>& requestSet, const vector<Busline*>& candidateServiceRoutes, double time) override;
+    bool calc_trip_generation(DRTAssignmentData& assignment_data, const vector<Busline*>& candidateServiceRoutes, double time) override;
 };
 
 //! @brief Attempts to improve upon NaiveTripGeneration by taking into account matched requests, add bookkeeping to requests - trips - matched vehicles. Only send vehicles to unmatched requests, take capacity into account.
@@ -158,7 +155,7 @@ class SimpleTripGeneration : public TripGenerationStrategy
 {
 public:
     ~SimpleTripGeneration() override = default;
-    bool calc_trip_generation(DRTAssignmentData& assignment_data, const set<Request*, ptr_less<Request*>>& requestSet, const vector<Busline*>& candidateServiceRoutes, double time) override;
+    bool calc_trip_generation(DRTAssignmentData& assignment_data, const vector<Busline*>& candidateServiceRoutes, double time) override;
 };
 
 
@@ -173,7 +170,7 @@ class NaiveEmptyVehicleTripGeneration : public TripGenerationStrategy
 public:
 	explicit NaiveEmptyVehicleTripGeneration(Network* theNetwork = nullptr);
 	~NaiveEmptyVehicleTripGeneration() override = default;
-    bool calc_trip_generation(DRTAssignmentData& assignment_data, const set<Request*, ptr_less<Request*> >& requestSet, const vector<Busline*>& candidateServiceRoutes, double time) override;
+    bool calc_trip_generation(DRTAssignmentData& assignment_data, const vector<Busline*>& candidateServiceRoutes, double time) override;
 
 private:
 	Network* theNetwork_; //!< currently needs access to the network to find the closest on-call Bus to origin stop of highest OD demand
@@ -184,7 +181,7 @@ class SimpleEmptyVehicleTripGeneration : public TripGenerationStrategy
 public:
     explicit SimpleEmptyVehicleTripGeneration(Network* theNetwork = nullptr);
     ~SimpleEmptyVehicleTripGeneration() override = default;
-    bool calc_trip_generation(DRTAssignmentData& assignment_data, const set<Request*, ptr_less<Request*> >& requestSet, const vector<Busline*>& candidateServiceRoutes, double time) override;
+    bool calc_trip_generation(DRTAssignmentData& assignment_data, const vector<Busline*>& candidateServiceRoutes, double time) override;
 
 private:
     Network* theNetwork_; //!< currently needs access to the network to find the closest on-call Bus to origin stop of highest OD demand
@@ -195,7 +192,7 @@ class MaxWaitEmptyVehicleTripGeneration : public TripGenerationStrategy
 public:
     explicit MaxWaitEmptyVehicleTripGeneration(Network* theNetwork = nullptr);
     ~MaxWaitEmptyVehicleTripGeneration() override = default;
-    bool calc_trip_generation(DRTAssignmentData& assignment_data, const set<Request*, ptr_less<Request*>>& requestSet, const vector<Busline*>& candidateServiceRoutes, double time) override;
+    bool calc_trip_generation(DRTAssignmentData& assignment_data, const vector<Busline*>& candidateServiceRoutes, double time) override;
 
 private:
     Network* theNetwork_; //!< currently needs access to the network to find the closest on-call Bus to origin stop of highest OD demand
@@ -206,7 +203,7 @@ class CumulativeWaitEmptyVehicleTripGeneration : public TripGenerationStrategy
 public:
     explicit CumulativeWaitEmptyVehicleTripGeneration(Network* theNetwork = nullptr);
     ~CumulativeWaitEmptyVehicleTripGeneration() override = default;
-    bool calc_trip_generation(DRTAssignmentData& assignment_data, const set<Request*, ptr_less<Request*>>& requestSet, const vector<Busline*>& candidateServiceRoutes, double time) override;
+    bool calc_trip_generation(DRTAssignmentData& assignment_data, const vector<Busline*>& candidateServiceRoutes, double time) override;
 
 private:
     Network* theNetwork_; //!< currently needs access to the network to find the closest on-call Bus to origin stop of highest OD demand

@@ -43,6 +43,9 @@ struct DRTAssignmentData
 	set<Bustrip*,ptr_less<Bustrip*> > unscheduled_trips;
     set<Bustrip*,ptr_less<Bustrip*> > active_trips; //!< all matched and scheduled trips that have ever been generated have not completed
 
+	set<Request*, ptr_less<Request*> > active_requests; //!< all active requests sent to ControlCenter @todo currently only accepted requests that have not been served yet, will include e.g. served requests in the future
+	set<Request*, ptr_less<Request*> > rejected_requests; //!< all requests rejected by ControlCenter
+
     map<BusState, set<Bus*> > fleet_state; //!< all candidate vehicles to be assigned, or reassigned to activeTrips
     // activeRequests //!< all requests for which activeTrips might be generated for
 };
@@ -60,7 +63,6 @@ struct Controlcenter_SummaryData
 //!< just used as key for caching shortest path calls for now
 struct Controlcenter_OD
 {
-	
 	Controlcenter_OD() = default;
 	~Controlcenter_OD() = default;
 	Controlcenter_OD(Busstop* orig, Busstop* dest);
@@ -72,11 +74,9 @@ struct Controlcenter_OD
 	Busstop* dest = nullptr;
 };
 
-//! @brief responsible for adding and removing a passenger Request to/from a requestSet as well as sorting and distributing requests in the requestSet to process classes of a Controlcenter
+//! @brief responsible for adding and removing a passenger Request to/from a set of requests as well as sorting and distributing requests to process classes of a Controlcenter
 /*!
-    groups the request handling processes of a Controlcenter. The responsibilities of the RequestHandler are to
-    add a passenger travel request to a requestSet, as well as sorting and distributing this
-    requestSet to dynamically generate demand-responsive trips via the Controlcenter's BustripGenerator.
+    Groups the request handling processes of a Controlcenter. 
 
     @todo 
           1. Add strategy pattern for bundling requests to RequestHandler, extract all request bundling supporting methods from BustripGenerator and move these to e.g. RequestBundlingStrategy
@@ -85,40 +85,29 @@ struct Controlcenter_OD
 */
 class RequestHandler
 {
-	friend class TestControlcenter; //!< for writing unit tests for RequestHandler
-	friend class BustripGenerator; //!< BustripGenerator receives access to the requestSet_ as input to trip generation decisions
-
 public:
 	RequestHandler();
 	~RequestHandler();
 
 	void reset(); //!< resets members between simulation replications
 
-    bool addRequest(Request* req, const set<Busstop*, ptr_less<Busstop*> > &serviceArea); //!< adds request passenger Request to the requestSet
-	void removeRequest(int pass_id); //!< removes requests with pass_id from the requestSet if it exists
+    bool addRequest(DRTAssignmentData& assignment_data, Request* req, const set<Busstop*, ptr_less<Busstop*> > &serviceArea); //!< adds request passenger Request to the requestSet
+	void removeActiveRequest(DRTAssignmentData& assignment_data, int pass_id); //!< removes requests with pass_id from the requestSet if it exists
     bool isFeasibleRequest(const Request* req, const set<Busstop*, ptr_less<Busstop*>>& serviceArea) const; //!< returns true if request is feasible for a given service area, false otherwise
-
-private:
-    set<Request*, ptr_less<Request*>> requestSet_; //!< set of received requests sorted by desired departure time
-	//	Filtering methods for:
-	// unmatchedRequestSet
-	// matchedRequestSet that havent been served
-	// servedRequests unfinished (enroute)
-	// servedRequests finished
 };
 
 //! @brief responsible for generating an unassigned trip for any Busline (in this context a line is equivalent a sequence of scheduled Busstops along a Busroute) within a given service area
 /*!
     BustripGenerator is responsible for generating planned trips for a given service area (i.e. lines within serviceRoutes_) and adding these to a set of unmatched trips.
-    These planned/unmatched trips are later assigned vehicles via a BustripVehicleMatcher. Transit supply rebalancing trips may also be generated.
-    Conditions and algorithms (TripGenerationStrategy) that determine the generation of a planned passenger carrying or empty-vehicle rebalancing trips are governed by
+    These planned/unmatched trips are later assigned vehicles via a BustripVehicleMatcher.
+    Conditions and algorithms (TripGenerationStrategy) that determine the generation of a planned passenger carrying or empty-vehicle pick-up/rebalancing trips are governed by
     the BustripGenerator's generationStrategy_ and emptyVehicleStrategy_.
 */
 class BustripGenerator
 {
     enum generationStrategyType { Null = 0, Naive, Simple }; //!< ids of passenger trip generation strategies known to BustripGenerator
 	enum emptyVehicleStrategyType {	EVNull = 0, EVNaive, EVSimple, EVMaxWait, EVCumWait }; //!< ids of empty-vehicle redistribution strategies known to BustripGenerator
-	friend class BustripVehicleMatcher; //!< give matcher class access to unmatchedTrips_. May remove trip from this set without destroying it if it has been matched. Also gives VehicleMatcher access to serviceRoutes for initializing vehicles
+	friend class BustripVehicleMatcher; //!< gives BustripVehicleMatcher access to serviceRoutes for initializing vehicles
 
 public:
 	explicit BustripGenerator(Network* theNetwork = nullptr, TripGenerationStrategy* generationStrategy = nullptr, TripGenerationStrategy* emptyVehicleStrategy = nullptr);
@@ -126,8 +115,8 @@ public:
 
     void reset(int generation_strategy_type, int empty_vehicle_strategy_type); //!< resets members and trip generation strategies
 
-	bool requestTrip(const RequestHandler& rh, DRTAssignmentData& assignment_data, double time); //!< returns true if an unassigned trip has been generated and added to unmatchedTrips_ and false otherwise
-	bool requestRebalancingTrip(const RequestHandler& rh, DRTAssignmentData& assignment_data, double time); //!< returns true if an unassigned rebalancing trip has been generated and added to unmatchedRebalancingTrips_ and false otherwise
+	bool requestTrip(DRTAssignmentData& assignment_data, double time); //!< returns true if an unassigned trip has been generated and false otherwise
+	bool requestEmptyTrip(DRTAssignmentData& assignment_data, double time); //!< returns true if an unassigned empty pick-up or rebalancing trip has been generated and false otherwise
 
 	void setTripGenerationStrategy(int type); //!< destroy current generationStrategy_ and set to new type
 	void setEmptyVehicleStrategy(int type); //!< destroy current emptyVehicleStrategy_ and set to new type
@@ -135,28 +124,24 @@ public:
 	void addServiceRoute(Busline* line); //!< add a potential service route that this BustripGenerator can plan trips for
     vector<Busline*> getServiceRoutes() const;
 
-	//void cancelUnmatchedTrip(Bustrip* trip); //!< destroy and remove trip from set of unmatchedTrips_
-	//void cancelRebalancingTrip(Bustrip* trip); //!< destroy and remove rebalancing trip from set of unmatchedRebalancingTrips_
-
 private:
     vector<Busline*> serviceRoutes_; //!< lines (i.e. routes and stops to visit along the route) that this BustripGenerator can create trips for (TODO: do other process classes need to know about this? Currently we never reset this either)
 
 	TripGenerationStrategy* generationStrategy_; //!< strategy for generating planned passenger carrying trips
-	TripGenerationStrategy* emptyVehicleStrategy_; //!< strategy for generating planned empty-vehicle rebalancing trips
+	TripGenerationStrategy* emptyVehicleStrategy_; //!< strategy for generating planned empty-vehicle trips
 
-	Network* theNetwork_; //!< ugly hopefully temporary solution but a reference to the network is kept by each control center for calculating shortest paths with dynamic travel times
+	Network* theNetwork_; //!< for calculating shortest paths
 };
 
 //! @brief assigns transit vehicles to planned/unmatched trips
 /*!
-   BustripVehicleMatcher is responsible for assigning planned/unmatched trips to candidate transit vehicles and adding these to a set of matchedTrips_. What is considered
-   a candidate vehicle as well as the conditions that determine the vehicle - trip match are governed by the BustripVehicleMatcher's MatchingStrategy. These matched but unscheduled trips
+   BustripVehicleMatcher is responsible for assigning planned/unmatched trips to candidate transit vehicles and adding these to a set of unscheduled_trips. What is considered
+   a candidate vehicle as well as the conditions that determine the vehicle - trip match are governed by the BustripVehicleMatcher's MatchingStrategy. Matched but unscheduled trips
    are later scheduled for dispatch via a VehicleScheduler
 */
 class BustripVehicleMatcher
 {
 	enum matchingStrategyType { Null = 0, Naive }; //!< ids of each MatchingStrategy known to BustripVehicleMatcher
-	friend class VehicleScheduler; //!< give VehicleScheduler access to matchedTrips_, will remove trips from this set when they are scheduled for dispatch
 
 public:
 	explicit BustripVehicleMatcher(MatchingStrategy* matchingStrategy = nullptr);
@@ -170,11 +155,10 @@ public:
 	void removeVehicleFromServiceRoute(int line_id, Bus* transitveh); //!< remove vehicle from vector of vehicles assigned to serve the given line
 	void setMatchingStrategy(int type); //!< destroy current matchingStrategy_ and set to new type
 
-	bool matchVehiclesToTrips(BustripGenerator& tg, DRTAssignmentData& assignment_data, double time); //!< returns true if at LEAST one unmatched trip was assigned to a vehicle
-	bool matchVehiclesToEmptyVehicleTrips(BustripGenerator& tg, DRTAssignmentData& assignment_data, double time); //!< returns true if at LEAST one unmatched rebalancing trip was assigned to a vehicle
+	bool matchVehiclesToTrips(DRTAssignmentData& assignment_data, double time); //!< returns true if at LEAST one unmatched trip was assigned to a vehicle
+	bool matchVehiclesToEmptyVehicleTrips(DRTAssignmentData& assignment_data, double time); //!< returns true if at LEAST one unmatched empty trip was assigned to a vehicle
 
 private:
-	//set<Bustrip*, ptr_less<Bustrip*> > matchedTrips_; //!< set of trips that have been matched with a transit vehicle but have not yet been dispatched
 	map<int, set<Bus*>> vehicles_per_service_route_; //!< maps lineIDs among service routes for this control center to vector of candidate transit vehicles
 
 	MatchingStrategy* matchingStrategy_; //!< strategy for assigning unmatched trips to candidate transit vehicles
@@ -196,7 +180,7 @@ public:
 
 	void reset(int scheduling_strategy_type); //!< resets members and scheduling strategy
 
-	bool scheduleMatchedTrips(BustripVehicleMatcher& tvm, DRTAssignmentData& assignment_data, double time); //!< returns true if a trip has successfully been scheduled and booked for dispatch on its line/service route in the eventlist
+	bool scheduleMatchedTrips(DRTAssignmentData& assignment_data, double time); //!< returns true if a trip has successfully been scheduled and booked for dispatch on its line/service route in the eventlist
 	void setSchedulingStrategy(int type); //!< destroy current schedulingStrategy_ and set to new type
 
 private:
@@ -213,9 +197,9 @@ private:
 
     The process of recieving a passenger request to assigning a vehicle to this request via the control center roughly follows the following sequence:
        RequestHandler -> [requestSet]
-    -> BustripGenerator -> [unmatchedTrips] & [unmatchedRebalancingTrips]
-    -> BustripVehicleMatcher -> [matchedTrips]
-    -> VehicleScheduler -> scheduled trip
+    -> BustripGenerator -> [unmatched_trips] & [unmatched_empty_trips]
+    -> BustripVehicleMatcher -> [unscheduled_trips]
+    -> VehicleScheduler -> [active_trips]
 */
 class Controlcenter : public QObject
 {
@@ -296,37 +280,36 @@ signals:
 
 	void newUnassignedVehicle(double time); //!< emitted when a connected transit vehicle has changed its state to OnCall
 
-	void tripGenerated(double time); //!< emitted when a planned passenger carrying trip (unmatched trip) has been generated by BustripGenerator
-	void emptyVehicleTripGenerated(double time); //!< emitted when a planned empty-vehicle rebalancing (unmatched rebalancing trip) has been generated by BustripGenerator
+	void tripGenerated(double time); 
+	void emptyVehicleTripGenerated(double time);
 
-	void tripVehicleMatchFound(double time); //!< emitted when a vehicle has been assigned to an unmatched passenger carrying trip or an unmatched rebalancing trip
-	void tripVehicleMatchNotFound(double time); //!< emitted when an attempt to match vehicles to unmatched passenger carrying trips has been made but no match was found
+	void tripVehicleMatchFound(double time); 
+	void tripVehicleMatchNotFound(double time);
 public slots:
-    void removeRequest(int pass_id); //!< remove request with pass_id from requestSet in RequestHandler
+    void removeActiveRequest(int pass_id); //!< remove active request with pass_id
 
 
 private slots:
 	//request related
-	void receiveRequest(Request* req, double time);
-    //!< delegates to RequestHandler to add the request to its requestSet
+	void receiveRequest(Request* req, double time); //!< checks if request is feasible and decides to either accept or reject it
 
 	//fleet related
 	void updateFleetState(Bus* bus, BusState oldstate, BusState newstate, double time); //!< updates fleetState every time a connected transit vehicle changes its state
 	
 	void requestTrip(double time); //!< delegates to BustripGenerator to generate a planned passenger carrying trip
-	void requestRebalancingTrip(double time); //!< delegates to BustripGenerator to generate a planned empty-vehicle rebalancing trip
+	void requestEmptyTrip(double time); //!< delegates to BustripGenerator to generate a planned empty-vehicle trip
 
 	void matchVehiclesToTrips(double time); //!< delegates to BustripVehicleMatcher to assign connected transit vehicles to planned passenger carrying trips
-	void matchEmptyVehiclesToTrips(double time); //!< delegates to BustripVehicleMatcher to assign connected transit vehicles to planned empty-vehicle rebalancing trips
+	void matchEmptyVehiclesToTrips(double time); //!< delegates to BustripVehicleMatcher to assign connected transit vehicles to planned empty-vehicle trips
 
 	void scheduleMatchedTrips(double time); //!< delegates to VehicleScheduler to schedule matched trip - vehicle pairs for dispatch on their service route
 
     //for debug output
-    void on_requestAccepted(double time); //!< currently only used for debug messaging to console
-    void on_requestRejected(double time); //!< currently only used for debug messaging to console
+    void on_requestAccepted(double time); 
+    void on_requestRejected(double time); 
 
-    void on_tripGenerated(double time); //!< currently only used for debug messaging to console
-    void on_tripVehicleMatchFound(double time); //!< currently only used for debug messaging to console
+    void on_tripGenerated(double time); 
+    void on_tripVehicleMatchFound(double time);
 
 private:
 	//OBS! remember to add all mutable members to reset method, including reset functions of process classes

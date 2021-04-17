@@ -126,7 +126,7 @@ namespace cs_helper_functions
     // Assign requests to trips
     void assignRequestsToTrip(const set<Request*, ptr_less<Request*> >& requestSet, Bustrip* tr)
     {
-        auto unassignedRequests = cs_helper_functions::filterRequestsByState(requestSet, RequestState::Unmatched); // redo the filtering each time
+        auto unassignedRequests = filterRequestsByState(requestSet, RequestState::Unmatched); // redo the filtering each time
         // TODO Add also for emptyTrips followed by a "selectedTrip"
         for (auto rq : unassignedRequests)
         {
@@ -135,8 +135,7 @@ namespace cs_helper_functions
             if (startstop->get_id() == rq->ostop_id)
             {
                 auto downstreamstops = tr->get_downstream_stops();
-                if (downstreamstops.end() != find_if(downstreamstops.begin(), downstreamstops.end(),
-                    [rq](const Busstop* st) { return rq->dstop_id == st->get_id(); }))
+                if (downstreamstops.end() != find_if(downstreamstops.begin(), downstreamstops.end(),[rq](const Busstop* st) { return rq->dstop_id == st->get_id(); }))
                 { // if rq destination stop is in the downstream stops
                     rq->assigned_trip = tr;
                     rq->set_state(RequestState::Assigned);
