@@ -891,16 +891,16 @@ bool SchedulingStrategy::book_trip_dispatch(DRTAssignmentData& assignment_data, 
                     eventlist->add_event(starttime, line); //book the activation of this trip in the eventlist
                     unscheduled_trip->set_scheduled_for_dispatch(true); //scheduled for dispatch is set in Busline::execute?
                     scheduled_trip_success = true;
-                    assignment_data.unscheduled_trips.erase(trip); //trip is now scheduled for dispatch
-                    assignment_data.active_trips.insert(trip); //trip should now be added as an active trip
+                    assignment_data.unscheduled_trips.erase(unscheduled_trip); //trip is now scheduled for dispatch
+                    assignment_data.active_trips.insert(unscheduled_trip); //trip should now be added as an active trip
                 }
                 else
                 {
                     //!< @todo Kindof hacky, but add an 'ambitious' dispatch event from Busline for now to mimic previous behavior as closely as possible, activated Busline and have Busline::curr_trip always pointing to the correct trip to be dispatched
                     eventlist->add_event(trip->get_starttime()+0.0001, line); // adds a busline event with the starttime of the first trip in chain + 0.0001 seconds.... Should activate the line if not activated, but ignore activation of the trip (with busv == nullptr)
                     unscheduled_trip->set_scheduled_for_dispatch(true); // this unscheduled trip (chained) is guaranteed to be activated via Bus::advance_curr_trip
-                    assignment_data.unscheduled_trips.erase(trip); //trip is now scheduled for dispatch
-                    assignment_data.active_trips.insert(trip); //trip should now be added as an active trip
+                    assignment_data.unscheduled_trips.erase(unscheduled_trip); //trip is now scheduled for dispatch
+                    assignment_data.active_trips.insert(unscheduled_trip); //trip should now be added as an active trip
                 }
             }
         }
