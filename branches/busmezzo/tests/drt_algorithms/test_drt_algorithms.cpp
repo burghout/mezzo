@@ -249,14 +249,14 @@ void TestDRTAlgorithms::testSortedBustrips()
     auto firstSorted = *sorted.begin();
     QVERIFY(firstOrig->get_id() == 1);
     QVERIFY(firstSorted->get_id() == 2);
-    QVERIFY(t1->get_requests().size() < t2->get_requests().size()) ;
+    QVERIFY(t1->get_assigned_requests().size() < t2->get_assigned_requests().size()) ;
     
     //check equivalence relation, lowest id first as tiebreaker
     auto rq3 = new Request();
     auto rq4 = new Request();
     t1->add_request(rq3);
     t1->add_request(rq4);
-    QVERIFY(t1->get_requests().size() == t2->get_requests().size());
+    QVERIFY(t1->get_assigned_requests().size() == t2->get_assigned_requests().size());
     
     set<Bustrip*,compareBustripByNrRequests> sorted2 (original.begin(), original.end());
     auto firstSorted2 = *sorted2.begin();

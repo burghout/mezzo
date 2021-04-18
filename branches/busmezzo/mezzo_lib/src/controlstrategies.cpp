@@ -798,6 +798,7 @@ void MatchingStrategy::assign_oncall_vehicle_to_trip(Busstop* currentStop, Bus* 
         }
 
         cs_helper_functions::set_status_of_tripchain(trip->driving_roster,BustripStatus::Matched); //update status of trips in chain to matched
+        cs_helper_functions::set_planned_capacity_of_tripchain(trip->driving_roster, trip->get_planned_capacity()); // update the planned capacity of all trips in chain
     }
 }
 
@@ -983,7 +984,7 @@ bool LatestDepartureScheduling::schedule_trips(DRTAssignmentData& assignment_dat
             //find the latest desired departure time among passengers assigned to the first trip in the tripchain
             qDebug() << "\tOriginal starttime of trip" << trip->get_id() << ": " << trip->get_starttime();
             double latest_desired_dep = 0.0;
-            vector<Request*> assigned_reqs = trip->get_requests();
+            vector<Request*> assigned_reqs = trip->get_assigned_requests();
             qDebug() << "\tNumber of requests assigned to first trip: " << assigned_reqs.size();
             for (const Request* req : assigned_reqs)
             {

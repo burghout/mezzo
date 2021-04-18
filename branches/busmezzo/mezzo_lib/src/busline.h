@@ -470,8 +470,8 @@ public:
 	bool is_activated() const { return activated; }
 	void set_flex_trip(bool flex_trip_) { flex_trip = flex_trip_; }
 	bool is_flex_trip() const { return flex_trip; }
-    vector <Request*> get_requests() const { return scheduled_requests;}
-    void add_request (Request* req) { scheduled_requests.push_back((req));}
+    vector <Request*> get_assigned_requests() const { return assigned_requests;}
+    void add_request (Request* req) { assigned_requests.push_back((req));}
 	bool remove_request(const Request* req); //!< removes request from scheduled requests if it exists, returns true if successful, false otherwise
 
 	void update_total_boardings(int n_boarding) { total_boarding += n_boarding; }
@@ -479,6 +479,9 @@ public:
 	int get_total_boarding() const { return total_boarding; }
 	int get_total_alighting() const { return total_alighting; }
 
+    int get_planned_capacity() const { return planned_capacity_; }
+    void set_planned_capacity(int planned_capacity) { planned_capacity_ = planned_capacity; }
+	bool has_reserve_capacity() const; //!< returns true if the number of requests currently assigned to this trip does not exceed planned capacity of the vehicle assigned to this trip
     bool is_assigned_to_requests() const; //!< returns true if trip was assigned to requests
     bool is_part_of_tripchain() const; //!< returns true if trip is a member of a trip-chain (driving_roster that includes more than one trip on it)
 	Bustrip* get_next_trip_in_chain() const; //!< returns the Bustrip that follows this one in the driving roster, nullptr otherwise
@@ -512,13 +515,18 @@ protected:
 	/** @ingroup DRT
         @{
     */
-    vector <Request*> scheduled_requests;
+    vector <Request*> assigned_requests;
 	bool scheduled_for_dispatch = false; //!< true if this trip has been scheduled for dispatch (i.e. a busline event has been created with for the starttime of this trip) for its respective line, false otherwise
 	bool activated = false; //!< true if this trip has been successfully activated (i.e. a bus has started this trip), false otherwise
 	bool flex_trip = false; //!< true if this trip was generated dynamically
 	BustripStatus status_ = BustripStatus::Null;
 	int total_boarding = 0;
 	int total_alighting = 0;
+
+	//!< @todo quick and dirty solution to assign requests that respect capacity constraints of a trip. Busv is nullptr until a vehicle is available, and is used in checks for this, but
+	//!<	we also want to know what the occupancy of each trip in a chain is, even those with nullptr busv. So update this when a vehicle is assigned (or re-assigned to a trip chain. The entire chain
+	//!<	will then be updated....
+	int planned_capacity_ = 0;
     /**@}*/
 };
 

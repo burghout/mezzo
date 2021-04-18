@@ -3,7 +3,7 @@
 //Helper functions for controlcenter
 namespace cc_helper_functions
 {
-	void removeRequestFromTripChain(const Request* req, const vector<Start_trip*>& driving_roster) //!< Removes request from 'Bustrip::scheduled_requests' for any bustrip in driving_roster
+	void removeRequestFromTripChain(const Request* req, const vector<Start_trip*>& driving_roster) //!< Removes request from 'Bustrip::assigned_requests' for any bustrip in driving_roster
 	{
 		for (auto trip_dispatch : driving_roster)
 		{
@@ -93,29 +93,40 @@ namespace cs_helper_functions
         }
     }
 
+    void set_planned_capacity_of_tripchain(const vector<Start_trip*>& driving_roster, int planned_capacity)
+    {
+        for (auto trip_dispatch : driving_roster)
+        {
+            trip_dispatch->first->set_planned_capacity(planned_capacity);
+        }
+    }
+
     // Find requests by condition
     vector<Request*> getRequestsInTripChain(const vector<Start_trip*>& driving_roster)
     {
         vector<Request*> all_scheduled_requests;
         for (auto trip_dispatch : driving_roster)
         {
-            vector<Request*> trip_requests = trip_dispatch->first->get_requests();
+            vector<Request*> trip_requests = trip_dispatch->first->get_assigned_requests();
             all_scheduled_requests.insert(all_scheduled_requests.end(), trip_requests.begin(), trip_requests.end());
         }
         return all_scheduled_requests;
     }
+
     bool requestExistsInTripChain(const Request* req, const vector<Start_trip*>& driving_roster)
     {
         vector<Request*> all_req = getRequestsInTripChain(driving_roster);
         auto it = find(all_req.begin(), all_req.end(), req);
         return (it != all_req.end());
     }
+
     set<Request*, ptr_less<Request*>> filterRequestsByState(const set<Request*, ptr_less<Request*> >& oldSet, RequestState state)
     {
         set <Request*, ptr_less<Request*> > newSet;
         copy_if(oldSet.begin(), oldSet.end(), inserter(newSet, newSet.end()), [state](Request* value) {return value->state == state; });
         return newSet;
     }
+
     set<Request*, ptr_less<Request*>> filterRequestsByOD(const set<Request*, ptr_less<Request*> >& oldSet, int o_id, int d_id)
     {
         set <Request*, ptr_less<Request*>> newSet;

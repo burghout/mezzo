@@ -942,11 +942,19 @@ void Bustrip::reset ()
 	total_boarding = 0;
 	total_alighting = 0;
 	status_ = BustripStatus::Null;
+    planned_capacity_ = 0;
 }
 
 void Bustrip::set_busv(Bus* busv_)
 {
+	assert(busv_);
     busv = busv_;
+	planned_capacity_ = busv_->get_capacity();
+	if(flex_trip)
+	{
+	    if(status_ == BustripStatus::ScheduledWaitingForVehicle)
+		    set_status(BustripStatus::Scheduled); // now the scheduled trip has a vehicle
+	}
 }
 
 void Bustrip::convert_stops_vector_to_map ()
@@ -1040,12 +1048,12 @@ bool Bustrip::advance_next_stop (double time, Eventlist* eventlist)
 
 bool Bustrip::activate (double time, Route* route, ODpair* odpair, Eventlist* eventlist_)
 {
-	if (get_busv() == nullptr) // this can happen if the Bustrip activation call is for a dynamically generated chained trip, and this is not the first trip in the chain, 
+	if (get_status() == BustripStatus::ScheduledWaitingForVehicle) // this can happen if the Bustrip activation call is for a dynamically generated chained trip, and this is not the first trip in the chain, 
 							   // the 'cloned bus' is assigned to the chained trip dynamically when the previous trip has finished (see Bus::advance_curr_trip)
-							   // basically see busv == nullptr as another indicator that a bus is not available for this trip (yet) if this trip is a flex_trip
 	{
 		assert(theParameters->drt);
 		assert(is_flex_trip()); //should only happen for flex-trips
+		assert(get_busv() == nullptr); // basically see busv == nullptr as another indicator that a bus is not available for this trip (yet) if this trip is a flex_trip
 		return false; // ignore this call
 	}
 
@@ -1173,15 +1181,15 @@ void Bustrip::record_passenger_loads (vector <Visit_stop*>::iterator start_stop)
 bool Bustrip::remove_request(const Request* req)
 {
 	assert(req);
-	vector<Request*>::iterator rq_it = find(scheduled_requests.begin(), scheduled_requests.end(), req);
-	if (rq_it != scheduled_requests.end())
+	vector<Request*>::iterator rq_it = find(assigned_requests.begin(), assigned_requests.end(), req);
+	if (rq_it != assigned_requests.end())
 	{
-		scheduled_requests.erase(rq_it);
+		assigned_requests.erase(rq_it);
 		return true;
 	}
 	/*else
 	{
-		qDebug() << "Warning - request " << req->id << " does not exist in scheduled_requests of trip " << id;
+		qDebug() << "Warning - request " << req->id << " does not exist in assigned_requests of trip " << id;
 	}*/
 	return false;
 }
@@ -1226,9 +1234,14 @@ void Bustrip::set_status(BustripStatus newstatus)
 	}
 }
 
+bool Bustrip::has_reserve_capacity() const
+{
+	return assigned_requests.size() < planned_capacity_;
+}
+
 bool Bustrip::is_assigned_to_requests() const
 {
-    return !scheduled_requests.empty();
+    return !assigned_requests.empty();
 }
 
 bool Bustrip::is_part_of_tripchain() const
@@ -1279,10 +1292,10 @@ Bustrip* Bustrip::get_prev_trip_in_chain() const
 double Bustrip::get_max_wait_requests(double cur_time) const
 {
     double max_wait = 0.0;
-    for (Request* r:scheduled_requests)
+    for (Request* r : assigned_requests)
     {
         double wait = (cur_time - r->time_desired_departure);
-        if ( wait < max_wait)
+        if (wait < max_wait)
             max_wait = wait;
     }
     return max_wait;
@@ -1291,7 +1304,7 @@ double Bustrip::get_max_wait_requests(double cur_time) const
 double Bustrip::get_cumulative_wait_requests(double cur_time) const
 {
     double total_wait = 0.0;
-    for (Request* r:scheduled_requests)
+    for (Request* r : assigned_requests)
     {
         double wait = (cur_time - r->time_desired_departure);
         total_wait += wait;
