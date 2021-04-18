@@ -20,7 +20,7 @@ void Request::set_state(RequestState newstate)
     // @todo still need to add set state for servedunfinished, served finished, cancelled, rejected etc...
     if (state != newstate)
     {
-        switch (newstate) //keep track of currently 'legal' state transitions @todo remove
+        switch (newstate) //keep track of currently 'legal' state transitions @todo remove after debugging
         {
         case RequestState::Null:
             break;
@@ -30,17 +30,20 @@ void Request::set_state(RequestState newstate)
             assert(state == RequestState::Unmatched);
             break;
         case RequestState::Matched:
-            assert(state == RequestState::Assigned);
+            //assert(state == RequestState::Assigned);
             break;
-        case RequestState::ServedUnfinished:
-            break;
-        case RequestState::ServedFinished:
-            assert(state == RequestState::ServedUnfinished);
-            break;
-        case RequestState::Cancelled:
-            break;
-        case RequestState::Rejected:
-            break;
+        //case RequestState::ServedUnfinished:
+        //    break;
+        //case RequestState::ServedFinished:
+        //    assert(state == RequestState::ServedUnfinished);
+        //    break;
+        //case RequestState::Cancelled:
+        //    break;
+        //case RequestState::Rejected:
+        //    break;
+        default:
+            qDebug() << "Error - invalid state update - aborting...";
+            abort();
         }
         //RequestState oldstate = state;
         state = newstate;
@@ -881,9 +884,6 @@ bool SchedulingStrategy::book_trip_dispatch(DRTAssignmentData& assignment_data, 
             if (line)
             {
                 assert(line->is_flex_line());
-
-                //DEBUG_MSG("INFO::SchedulingStrategy::book_trip_dispatch is scheduling trip " << trip->get_id() << " with start time " << starttime);
-
                 line->add_trip(unscheduled_trip, starttime); //insert trip into the main trips list of the line
                 
                 if (trip_dispatch == trip->driving_roster.front()) // Busline event added only for first trip in chain, the others handled by Bus::advance_curr_trip
@@ -929,7 +929,7 @@ bool NaiveScheduling::schedule_trips(DRTAssignmentData& assignment_data, Eventli
     for (auto trip : sortedTrips)
     {
         Bus* bus = trip->get_busv();
-        //DEBUG_MSG(endl << "INFO::NaiveScheduling::schedule_trips - scheduling matched trips for dispatch at time " << time);
+        
         //check if the bus associated with this trip is available
         if (bus->get_last_stop_visited()->get_id() == trip->get_last_stop_visited()->get_id()) //vehicle should already be located at the first stop of the trip
         {
