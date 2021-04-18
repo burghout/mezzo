@@ -198,7 +198,7 @@ namespace cs_helper_functions
         }
     }
 
-    void assignRequestsToActiveTripSet(const set<Request*, ptr_less<Request*> >& requestSet, const set<Bustrip*, ptr_less<Bustrip*> >& tripSet)
+    void assignRequestsToScheduledTrips(const set<Request*, ptr_less<Request*> >& requestSet, const set<Bustrip*, ptr_less<Bustrip*> >& tripSet)
     {
         if (!tripSet.empty() && !requestSet.empty())
         {
