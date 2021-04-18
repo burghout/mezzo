@@ -235,7 +235,7 @@ void TestDRTAlgorithms::testSortedBustrips()
 {
     //compare by num scheduled requests
     auto busline = net->get_buslines().front();
-    set<Bustrip*> original;
+    set<Bustrip*, ptr_less<Bustrip*> > original;
     Bustrip* t1 = new Bustrip(1,1.0,busline);
     Bustrip* t2 = new Bustrip(2,1.0,busline);
     auto rq1 = new Request();
