@@ -1,16 +1,16 @@
 Line_ID	Average_headway	Average_dwell_time	Average_abs_schedule_deviation	Average_waiting_time_per_stop	Total_pass_boarding	Standard_deviation_headway(averaged_over_stops)	Standard_deviation_dwell_time(averaged_over_stops)	Share_on_time	Share_early	Share_late	Total_pass_riding_time	Total_pass_dwell_time	Total_pass_waiting_time	Total_pass_holding_time	Control_objective_functon_value	Total_pass_weighted_in_vehicle_time	
 10000	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	0	0	-nan(ind)	-nan(ind)	-nan(ind)	0	0	0	0	0	0	
-10001	395.554	2	1.74398	0	1	-nan(ind)	-nan(ind)	1	0	0	291.007	2	0	0	293.007	276.457	
+10001	396.554	3	2.24398	0	2	-nan(ind)	-nan(ind)	1	0	0	582.015	6	0	0	588.015	552.914	
 10002	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	0	0	-nan(ind)	-nan(ind)	-nan(ind)	0	0	0	0	0	0	
 10003	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	0	0	-nan(ind)	-nan(ind)	-nan(ind)	0	0	0	0	0	0	
-10004	247.55	2	0.827912	0.5	0	-nan(ind)	-nan(ind)	1	0	0	0	0	0	0	0	0	
+10004	247.55	2	0.827912	1	0	-nan(ind)	-nan(ind)	1	0	0	0	0	0	0	0	0	
 10005	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	0	0	-nan(ind)	-nan(ind)	-nan(ind)	0	0	0	0	0	0	
 10006	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	0	0	-nan(ind)	-nan(ind)	-nan(ind)	0	0	0	0	0	0	
 10007	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	0	0	-nan(ind)	-nan(ind)	-nan(ind)	0	0	0	0	0	0	
 10008	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	0	0	-nan(ind)	-nan(ind)	-nan(ind)	0	0	0	0	0	0	
 10009	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	0	0	-nan(ind)	-nan(ind)	-nan(ind)	0	0	0	0	0	0	
 10010	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	0	0	-nan(ind)	-nan(ind)	-nan(ind)	0	0	0	0	0	0	
-10011	343.277	2	1.12222	0.5	0.5	81.0018	0	1	0	0	291.007	2	0	0	293.007	276.457	
+10011	344.277	2	1.12222	0.5	0.5	79.5876	0	1	0	0	291.007	2	0	0	293.007	276.457	
 10012	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	0	0	-nan(ind)	-nan(ind)	-nan(ind)	0	0	0	0	0	0	
 10013	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	0	0	-nan(ind)	-nan(ind)	-nan(ind)	0	0	0	0	0	0	
 10014	252.55	2	0.827537	0.5	0	-nan(ind)	-nan(ind)	1	0	0	0	0	0	0	0	0	
@@ -18,4 +18,4 @@ Line_ID	Average_headway	Average_dwell_time	Average_abs_schedule_deviation	Averag
 10016	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	0	0	-nan(ind)	-nan(ind)	-nan(ind)	0	0	0	0	0	0	
 10017	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	0	0	-nan(ind)	-nan(ind)	-nan(ind)	0	0	0	0	0	0	
 10018	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	-nan(ind)	0	0	-nan(ind)	-nan(ind)	-nan(ind)	0	0	0	0	0	0	
-10019	636.55	2	3.05807	0	1	-nan(ind)	-nan(ind)	1	0	0	181	2	0	0	183	171.95	
+10019	637.55	2	3.05807	0	1	-nan(ind)	-nan(ind)	1	0	0	181	2	0	0	183	171.95	
