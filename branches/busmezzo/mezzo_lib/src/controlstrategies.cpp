@@ -39,8 +39,8 @@ void Request::set_state(RequestState newstate)
         //    break;
         //case RequestState::Cancelled:
         //    break;
-        //case RequestState::Rejected:
-        //    break;
+        case RequestState::Rejected:
+            break;
         default:
             qDebug() << "Error - invalid state update - aborting...";
             abort();
