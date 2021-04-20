@@ -29,6 +29,7 @@ class Network;
 class Busline;
 class Busstop;
 class Bustrip;
+class Controlcenter;
 
 /**
  * @ingroup DRT
@@ -47,7 +48,11 @@ struct DRTAssignmentData
 	set<Request*, ptr_less<Request*> > rejected_requests; //!< all requests rejected by ControlCenter
 
     map<BusState, set<Bus*> > fleet_state; //!< all candidate vehicles to be assigned, or reassigned to activeTrips
+    //
     // activeRequests //!< all requests for which activeTrips might be generated for
+
+	Controlcenter* cc_owner = nullptr;
+	void print_state(double time) const;
 };
 
 struct Controlcenter_SummaryData

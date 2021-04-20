@@ -7,7 +7,8 @@
   *
   */
 
-#pragma once
+#ifndef CONTROLUTILITIES_H
+#define CONTROLUTILITIES_H
 
 #include "controlstrategies.h"
 #include "vehicle.h"
@@ -109,3 +110,6 @@ struct compareBustripByEarliestStarttime
             return lhs->get_id() < rhs->get_id(); // tiebreaker return trip with smallest id
     }
 };
+
+#endif
+/**@}*/

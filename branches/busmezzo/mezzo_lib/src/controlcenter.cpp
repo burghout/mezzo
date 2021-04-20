@@ -50,6 +50,18 @@ void DRTAssignmentData::reset()
     fleet_state.clear();
 }
 
+void DRTAssignmentData::print_state(double time) const
+{
+	qDebug() << "Controlcenter"<< cc_owner->getID() <<"assignment_data at time" << time;
+    qDebug() << "\tunmatched_trips      :" << unmatched_trips.size();
+	qDebug() << "\tunmatched_empty_trips:" << unmatched_empty_trips.size();
+	qDebug() << "\tunscheduled_trips    :" << unscheduled_trips.size();
+	qDebug() << "\tactive_trips         :" << active_trips.size() << endl;
+
+	qDebug() << "\trejected_requests    :" << rejected_requests.size();
+    qDebug() << "\tactive_requests      :" << active_requests.size() << endl;
+}
+
 void Controlcenter_SummaryData::reset()
 {
 	requests_recieved = 0;
@@ -404,6 +416,7 @@ Controlcenter::Controlcenter(Eventlist* eventlist, Network* theNetwork, int id, 
 	this->setObjectName(qname); //name of control center does not really matter but useful for debugging purposes
 
 	theNetwork_ = theNetwork;
+	assignment_data_.cc_owner = this;
 
 	tg_.setTripGenerationStrategy(tg_strategy); //set the initial generation strategy of BustripGenerator
 	tg_.setEmptyVehicleStrategy(ev_strategy); //set the initial empty vehicle strategy of BustripGenerator
