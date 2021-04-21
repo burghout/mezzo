@@ -832,6 +832,11 @@ void Controlcenter::addCompletedVehicleTrip(Bus* transitveh, Bustrip * trip)
 	assignment_data_.active_trips.erase(trip); 
 }
 
+vector<pair<Bus*,Bustrip*> > Controlcenter::getCompletedVehicleTrips() const
+{
+    return completedVehicleTrips_;
+}
+
 double Controlcenter::calc_expected_ivt(Busline* service_route, Busstop* start_stop, Busstop* end_stop, bool first_line_leg, double time)
 {
 	assert(service_route->is_flex_line()); //otherwise kindof pointless to ask the CC about ivt
