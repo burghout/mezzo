@@ -271,8 +271,9 @@ public:
 
 	void addInitialVehicle(Bus* transitveh); //!< add vehicle assigned to this control center on input (that should be preserved between resets)
 	void addCompletedVehicleTrip(Bus* transitveh, Bustrip* trip); //!< add vehicle - trip pair to vector of completed trips
+    vector<pair<Bus*, Bustrip*> > getCompletedVehicleTrips() const;
 
-	// Methods to retrieve level of service attributes for an individual 'line' or trip
+    // Methods to retrieve level of service attributes for an individual 'line' or trip
 	double calc_expected_ivt(Busline* service_route, Busstop* start_stop, Busstop* end_stop, bool first_line_leg, double time); //!< first_line_leg = false if the exploration estimate should be returned and true if calculated based on fleet state/rti etc..
 	double calc_exploration_ivt(Busline* service_route, Busstop* start_stop, Busstop* end_stop); //!< returns an optimistic exploration estimate of IVT for a given line leg (shortest IVT between the stops), independent of time or RTI level
 	double calc_expected_wt(Busline* service_route, Busstop* start_stop, Busstop* end_stop, bool first_line_leg, double walking_time_to_start_stop, double arrival_time_to_start_stop); //!< first_line_leg = false if the exploration estimate should be returned and true if calculated based on fleet state/rti etc.., Returns wt in seconds, walking time argument also in seconds

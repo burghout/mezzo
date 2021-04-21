@@ -56,10 +56,14 @@ void DRTAssignmentData::print_state(double time) const
     qDebug() << "\tunmatched_trips      :" << unmatched_trips.size();
 	qDebug() << "\tunmatched_empty_trips:" << unmatched_empty_trips.size();
 	qDebug() << "\tunscheduled_trips    :" << unscheduled_trips.size();
-	qDebug() << "\tactive_trips         :" << active_trips.size() << endl;
+	qDebug() << "\tactive_trips         :" << active_trips.size(); 
+	qDebug() << "\tcompleted_trips      :" << cc_owner->getCompletedVehicleTrips().size()<< endl;
 
 	qDebug() << "\trejected_requests    :" << rejected_requests.size();
-    qDebug() << "\tactive_requests      :" << active_requests.size() << endl;
+    qDebug() << "\tactive_requests      :" << active_requests.size();
+	qDebug() << "\tcompleted_requests   :" << cc_owner->getSummaryData().requests_served << endl;
+
+	qDebug() << "\toncall_vehicles      :" << cc_owner->getFleetState().at(BusState::OnCall).size() << endl;
 }
 
 void Controlcenter_SummaryData::reset()
