@@ -28,6 +28,41 @@ QString transitmodetype_to_QString(TransitModeType mode)
 	return mode_s;
 }
 
+QString passengerstate_toQString(PassengerState state)
+{
+	QString state_s = "";
+
+	switch (state)
+	{
+	case PassengerState::Null:
+		state_s = "Null";
+		break;
+    case PassengerState::ArrivedToStop:
+        state_s = "ArrivedToStop";
+        break;
+    case PassengerState::Walking:
+        state_s = "Walking";
+        break;
+	case PassengerState::WaitingForFixed:
+        state_s = "WaitingForFixed";
+        break;
+    case PassengerState::WaitingForFlex:
+        state_s = "WaitingForFlex";
+        break;
+    case PassengerState::WaitingForFixedDenied:
+        state_s = "WaitingForFixedDenied";
+        break;
+    case PassengerState::WaitingForFlexDenied:
+        state_s = "WaitingForFlexDenied";
+        break;
+    case PassengerState::OnBoard:
+        state_s = "OnBoard";
+        break;
+    }
+
+    return state_s;
+}
+
 
 Passenger::Passenger ()
 {
@@ -82,11 +117,12 @@ Passenger::~Passenger()
 
 void Passenger::reset ()
 {
-	boarding_decision = false;
-	already_walked = false;
-	chosen_mode_ = TransitModeType::Null;
+    boarding_decision = false;
+    already_walked = false;
+    chosen_mode_ = TransitModeType::Null;
+    state_ = PassengerState::Null;
     curr_request_ = nullptr;
-	temp_connection_path_utilities.clear();
+    temp_connection_path_utilities.clear();
 
 	total_vehicle_meters_traveled = 0;
 	total_fixvehicle_meters_traveled = 0;
@@ -334,9 +370,13 @@ void Passenger::walk (double time)
 					this->set_memory_projected_RTI(OD_stop->get_origin(),(*line_iter),(*line_iter)->time_till_next_arrival_at_stop_after_time(OD_stop->get_origin(),time));
 					//this->set_AWT_first_leg_boarding();
 				}
-			}
-		}
-	}
+            }
+        }
+        if (chosen_mode_ == TransitModeType::Fixed)
+            set_state(PassengerState::WaitingForFixed, time);
+        if (chosen_mode_ == TransitModeType::Flexible)
+            set_state(PassengerState::WaitingForFlex, time);
+    }
 }
 
 
@@ -350,92 +390,109 @@ void Passenger::walk (double time)
  *  Connected stop is set as new origin
  *  Calculates expected arrival to stop, adds a passenger event to walk to the next stop
  *  Passenger output collectors collect decision data
- *    
+ *
  *  @todo
- *		Need to connect the traveler to the Controlcenter of their new origin directly after the transitmode decision, rather than when added to waiting queue....check that this makes 
+ *		Need to connect the traveler to the Controlcenter of their new origin directly after the transitmode decision, rather than when added to waiting queue....check that this makes
  *		Need to move request sending to before the traveler walks (i.e. directly after the event has been added)
- *		
- * 
+ *
+ *
  */
-void Passenger::start (Eventlist* eventlist, double time)
+void Passenger::start(Eventlist* eventlist, double time)
 {
-		pair<Busstop*,double> stop_time;
-		stop_time.first = OD_stop->get_origin();
-		stop_time.second = start_time;
-		add_to_selected_path_stop(stop_time);
-		Busstop* connection_stop = make_connection_decision(start_time);
+    pair<Busstop*, double> stop_time;
+    stop_time.first = OD_stop->get_origin();
+    stop_time.second = start_time;
+    add_to_selected_path_stop(stop_time);
+    Busstop* connection_stop = make_connection_decision(start_time);
+	bool chose_to_walk = connection_stop->get_id() != OD_stop->get_origin()->get_id();
 
-		stop_time.first = connection_stop;
-		double arrival_time_to_connected_stop = start_time;
+    stop_time.first = connection_stop;
+    double arrival_time_to_connected_stop = start_time;
 
-		if (OD_stop->first_passenger_start == nullptr)
-			OD_stop->first_passenger_start = this;
+    if (OD_stop->first_passenger_start == nullptr)
+        OD_stop->first_passenger_start = this;
 
-		if (connection_stop->get_id() != OD_stop->get_origin()->get_id()) // if the pass. walks to another stop
-		{
-			// set connected_stop as the new origin
-			if (connection_stop->check_stop_od_as_origin_per_stop(OD_stop->get_destination()) == false)
-			{
-				ODstops* od_stop = new ODstops (connection_stop,OD_stop->get_destination());
-				connection_stop->add_odstops_as_origin(OD_stop->get_destination(), od_stop);
-				OD_stop->get_destination()->add_odstops_as_destination(connection_stop, od_stop);
-			}
-			Busstop* currstop = OD_stop->get_origin();
-			
-			double walking_time = get_walking_time(connection_stop, start_time);
-			arrival_time_to_connected_stop += walking_time;
-			set_ODstop(connection_stop->get_stop_od_as_origin_per_stop(OD_stop->get_destination())); // set this stop as his new origin (new OD)
-			eventlist->add_event(arrival_time_to_connected_stop, this);
+    if (chose_to_walk) // if the pass. walks to another stop
+    {
+        // set connected_stop as the new origin
+        if (connection_stop->check_stop_od_as_origin_per_stop(OD_stop->get_destination()) == false)
+        {
+            ODstops* od_stop = new ODstops(connection_stop, OD_stop->get_destination());
+            connection_stop->add_odstops_as_origin(OD_stop->get_destination(), od_stop);
+            OD_stop->get_destination()->add_odstops_as_destination(connection_stop, od_stop);
+        }
 
-            pair<Busstop*,double> stop_time;
-			stop_time.first = connection_stop;
-			stop_time.second = arrival_time_to_connected_stop;
-			add_to_selected_path_stop(stop_time);
-		}
-		else // if the pass. stays at the same stop
-		{
-			OD_stop->add_pass_waiting(this); // store the new passenger at the list of waiting passengers with this OD
+        double walking_time = get_walking_time(connection_stop, start_time);
+        arrival_time_to_connected_stop += walking_time;
+        set_ODstop(connection_stop->get_stop_od_as_origin_per_stop(OD_stop->get_destination())); // set this stop as his new origin (new OD)
+        eventlist->add_event(arrival_time_to_connected_stop, this);
 
-			set_arrival_time_at_stop(start_time);
-			add_to_selected_path_stop(stop_time);
-			if (get_pass_RTI_network_level() == true || OD_stop->get_origin()->get_rti() > 0)
-			{
-				vector<Busline*> lines_at_stop = OD_stop->get_origin()->get_lines();
-				for (vector <Busline*>::iterator line_iter = lines_at_stop.begin(); line_iter < lines_at_stop.end(); line_iter++)
-				{
-					pair<Busstop*, Busline*> stopline;
-					stopline.first = OD_stop->get_origin();
-					stopline.second = (*line_iter);
-					set_memory_projected_RTI(OD_stop->get_origin(),(*line_iter),(*line_iter)->time_till_next_arrival_at_stop_after_time(OD_stop->get_origin(),start_time));
-					//set_AWT_first_leg_boarding();
-				}
-			}
-		}
+        pair<Busstop*, double> stop_time;
+        stop_time.first = connection_stop;
+        stop_time.second = arrival_time_to_connected_stop;
+        add_to_selected_path_stop(stop_time);
+    }
+    else // if the pass. stays at the same stop
+    {
+        OD_stop->add_pass_waiting(this); // store the new passenger at the list of waiting passengers with this OD
 
-		if (theParameters->drt) // if drt there are mode choice options following connection decision
-		{
-			TransitModeType chosen_mode = make_transitmode_decision(connection_stop, start_time); //also sets chosen mode...
-			set_chosen_mode(chosen_mode); //important that this is set before dropoff_decision call
+        set_arrival_time_at_stop(start_time);
+        add_to_selected_path_stop(stop_time);
+        if (get_pass_RTI_network_level() == true || OD_stop->get_origin()->get_rti() > 0)
+        {
+            vector<Busline*> lines_at_stop = OD_stop->get_origin()->get_lines();
+            for (vector <Busline*>::iterator line_iter = lines_at_stop.begin(); line_iter < lines_at_stop.end(); line_iter++)
+            {
+                pair<Busstop*, Busline*> stopline;
+                stopline.first = OD_stop->get_origin();
+                stopline.second = (*line_iter);
+                set_memory_projected_RTI(OD_stop->get_origin(), (*line_iter), (*line_iter)->time_till_next_arrival_at_stop_after_time(OD_stop->get_origin(), start_time));
+                //set_AWT_first_leg_boarding();
+            }
+        }
+    }
 
-			if (chosen_mode == TransitModeType::Flexible)
-			{
-				Busstop* dropoff_stop = make_dropoff_decision(connection_stop, start_time);
+    TransitModeType chosen_mode = make_transitmode_decision(connection_stop, start_time); //also sets chosen mode...
+    if (!theParameters->drt)
+        assert(chosen_mode == TransitModeType::Fixed);
+    set_chosen_mode(chosen_mode); //important that this is set before dropoff_decision call
 
-				Controlcenter* CC = connection_stop->get_CC();
-				assert(CC != nullptr);
-				CC->connectPassenger(this); //connect passenger to the CC of the stop they decided to stay at/walk to, send a request to this CC	
+    if (chosen_mode == TransitModeType::Flexible)
+    {
+        Busstop* dropoff_stop = make_dropoff_decision(connection_stop, start_time);
 
-				Request* req = createRequest(connection_stop, dropoff_stop, 1, arrival_time_to_connected_stop, start_time); //create request with load 1 at current time 
-				if (req != nullptr) //if a connection, or partial connection was found within the CC service of origin stop
-				{
-					assert(this->get_curr_request() == nullptr); // @note RequestHandler responsible for resetting this to nullptr if request is rejected or after a pass has boarded a bus and request is removed
-					set_curr_request(req); 
-					emit sendRequest(req, time); //send request to any controlcenter that is connected
-				}
-				else
-					DEBUG_MSG_V("WARNING - Passenger::start() - failed request creation for stops "<< connection_stop->get_id() << "->" << dropoff_stop->get_id() << " with desired departure time " << arrival_time_to_connected_stop << " at time " << time);
-			}
-		}
+        Request* req = createRequest(connection_stop, dropoff_stop, 1, arrival_time_to_connected_stop, start_time); //create request with load 1 at current time 
+        if (req != nullptr) //if a connection, or partial connection was found within the CC service of origin stop
+        {
+            assert(this->get_curr_request() == nullptr); // @note RequestHandler responsible for resetting this to nullptr if request is rejected or after a pass has boarded a bus and request is removed
+            set_curr_request(req);
+
+            Controlcenter* CC = connection_stop->get_CC();
+            assert(CC != nullptr);
+            CC->connectPassenger(this); //connect passenger to the CC of the stop they decided to stay at/walk to, send a request to this CC	
+
+            emit sendRequest(req, time); //send request to any controlcenter that is connected
+        }
+        else
+            DEBUG_MSG_V("WARNING - Passenger::start() - failed request creation for stops " << connection_stop->get_id() << "->" << dropoff_stop->get_id() << " with desired departure time " << arrival_time_to_connected_stop << " at time " << time);
+    }
+    if (chose_to_walk) // if pass walks delay state update until after walking is completed
+        this->set_state(PassengerState::Walking, time);
+    else
+    {
+        if (chosen_mode == TransitModeType::Fixed)
+            set_state(PassengerState::WaitingForFixed, time);
+        if (chosen_mode == TransitModeType::Flexible)
+            set_state(PassengerState::WaitingForFlex, time);
+    }
+}
+
+void Passenger::print_state()
+{
+	qDebug() << "Passenger" << get_id() << "is" << passengerstate_toQString(get_state());
+	//qDebug() << "\tlast stop visited: " << get_chosen_path_stops().back().first->get_id();
+	qDebug() << "\tlast stop visited: " << OD_stop->get_origin()->get_id();
+	qDebug() << "\tmode choice      : " << transitmodetype_to_QString(get_chosen_mode());
 }
 
 Request* Passenger::createRequest(Busstop* origin_stop, Busstop* dest_stop, int load, double desired_departure_time, double current_time)
@@ -1063,6 +1120,9 @@ TransitModeType Passenger::make_transitmode_decision(Busstop* pickup_stop, doubl
 	else if (chosen_mode == TransitModeType::Flexible)
 		assert(pickup_stop->get_CC() != nullptr); // should only choose flexible mode if there is actually a service for the pickup-stop of the traveler
 
+	if(!theParameters->drt)
+		assert(chosen_mode != TransitModeType::Flexible);
+
 	return chosen_mode;
 }
 
@@ -1593,6 +1653,14 @@ void Passenger::write_passenger_trajectory(ostream& out)
 	out << '}' << endl;
 }
 
+Bustrip* Passenger::get_last_selected_path_trip() const
+{
+    Bustrip* trip = nullptr;
+    if (!selected_path_trips.empty()) // if any trip has been boarded
+        trip = selected_path_trips.back().first;
+    return trip;
+}
+
 void Passenger::increment_nr_denied_boardings()
 {
 	++nr_denied_boardings;
@@ -1636,4 +1704,58 @@ double Passenger::get_walking_time(Busstop* busstop_dest_ptr, double curr_time)
     Busstop* busstop_orig_ptr = OD_stop->get_origin();
 
     return busstop_orig_ptr->get_walking_time(busstop_dest_ptr, curr_time);
+}
+
+void Passenger::set_state(PassengerState newstate, double time)
+{
+	//Sanity checks
+	if(newstate == PassengerState::Walking)
+	{
+	    assert(state_ == PassengerState::ArrivedToStop || state_ == PassengerState::Null);
+	}
+    if (newstate == PassengerState::ArrivedToStop)
+	{
+		if(chosen_mode_ == TransitModeType::Fixed)
+		    assert(curr_request_ == nullptr);
+	    if(chosen_mode_ == TransitModeType::Flexible)
+			assert(curr_request_ != nullptr);
+		/*if(chosen_mode_ == TransitModeType::Null)
+		    assert(curr_request_ == nullptr);*/
+	}
+	if(newstate == PassengerState::WaitingForFixed)
+	{
+	    assert(curr_request_ == nullptr);
+		assert(chosen_mode_ == TransitModeType::Fixed);
+	}
+	if(newstate == PassengerState::WaitingForFlex)
+	{
+	    assert(curr_request_ != nullptr);
+		assert(chosen_mode_ == TransitModeType::Flexible);
+	}
+	if(newstate == PassengerState::WaitingForFixedDenied)
+	{
+	    assert(state_ == PassengerState::WaitingForFixed || state_ == PassengerState::WaitingForFixedDenied);
+		assert(chosen_mode_ == TransitModeType::Fixed);
+	}
+    if(newstate == PassengerState::WaitingForFlexDenied)
+	{
+	    assert(state_ == PassengerState::WaitingForFlex || state_ == PassengerState::WaitingForFlexDenied);
+		assert(chosen_mode_ == TransitModeType::Flexible);
+	}
+	if(newstate == PassengerState::OnBoard)
+	{
+	    assert(chosen_mode_ != TransitModeType::Null);
+	}
+
+	if (state_ != newstate)
+	{
+		PassengerState oldstate = state_;
+		state_ = newstate;
+
+		/*print_state();
+		qDebug() << "\tOldstate:" << passengerstate_toQString(oldstate);
+		qDebug() << "\tTime	   :" << time;*/
+
+		emit stateChanged(this, oldstate, state_, time);
+	}
 }

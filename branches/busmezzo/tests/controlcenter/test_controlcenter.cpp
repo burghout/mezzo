@@ -86,6 +86,7 @@ void TestControlcenter::testRequestHandler()
     set<Request*,ptr_less<Request*> >& request_set = ccPtr->assignment_data_.active_requests;
 
     Request* req1 = pass->createRequest(origin, destination, 1, 1.0, 1.0); //request with pass_id of passenger
+    pass->set_curr_request(req1);
     QVERIFY2(req1->ostop_id == oid, "Failure, createRequest returning incorrect origin stop id");
     QVERIFY2(req1->dstop_id == did, "Failure, createRequest returning incorrect destination stop id");
 
@@ -109,17 +110,20 @@ void TestControlcenter::testRequestHandler()
     Passenger* pass2 = new Passenger(2,0.0,OD_stop,nullptr);
     pass2->set_chosen_mode(TransitModeType::Flexible); // passenger is a flexible transit user
     Request* invalidreq = new Request(pass2,2, 1, 1000, 1, 0.0, 0.0); //creates request with destination stop outside of controlcenter service area
+    pass2->set_curr_request(invalidreq);
 	rhPtr->addRequest(ccPtr->assignment_data_,invalidreq, ccPtr->serviceArea_);
 	QVERIFY2(request_set.size() == 2, "Failure, request accepted even though destination is outside of Controlcenter service area");
     QVERIFY2(pass2->get_curr_request() == nullptr, "Failure, RequestHandler did not reset passengers curr request to nullptr when rejecting request");
 
 	//test remove Request
 	ccPtr->disconnectPassenger(pass);
-	emit pass->boardedBus(pass->get_id()); //should not be heard by controlcenter after disconnect
+	pass->set_state(PassengerState::OnBoard,0.0);
+    pass->set_state(PassengerState::ArrivedToStop,0.0); // Onboard->ArrivedToStop when passenger is a flexible transit user should remove the request
 	QVERIFY2(request_set.size() == 2, "Failure, there should be 2 requests in requestSet after unheard boarded bus signal from disconnected passenger");
-
+    
 	ccPtr->connectPassenger(pass);
-	emit pass->boardedBus(pass->get_id());
+	pass->set_state(PassengerState::OnBoard,0.0);
+    pass->set_state(PassengerState::ArrivedToStop,0.0); // Onboard->ArrivedToStop when passenger is a flexible transit user should remove the request
 	QVERIFY2(request_set.size() == 1, "Failure, there should be 1 requests in requestSet after connected passenger sends boarded bus signal");
     QVERIFY2(pass->get_curr_request() == nullptr, "Failure, RequestHandler did not reset passengers curr request to nullptr when removing request after boardedBus signal");
 	

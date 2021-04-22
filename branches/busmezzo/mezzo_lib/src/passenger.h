@@ -21,6 +21,19 @@ enum class TransitModeType { Null = 0, Fixed, Flexible }; //!< used mainly for t
 ostream& operator << (ostream& os, const TransitModeType& obj);
 QString transitmodetype_to_QString(TransitModeType mode); //!< helper print function for debug output
 
+
+enum class PassengerState
+{
+    Null = 0, //Null before the passenger has started their journey, and after their journey is completed
+    Walking, //In the process of walking in between stops
+    ArrivedToStop, //After Passenger::start (journey start) and after passenger_activity_at_stop (alighting at stop that is not final destination), but before connection decision
+    WaitingForFixed, //After connection/mode decision waiting for fixed vehicles
+    WaitingForFlex, //After connection/mode/dropoff decision waiting for flex
+    WaitingForFixedDenied, //if waiting after experiencing at least one denied boarding
+    WaitingForFlexDenied,
+    OnBoard //After boarding a bus
+};
+QString passengerstate_toQString(PassengerState state);
 class Passenger : public QObject, public Action
 {
     Q_OBJECT
@@ -98,6 +111,7 @@ public:
     void write_passenger_trajectory(ostream& out);
 
     void add_to_selected_path_trips(pair<Bustrip*, double> trip_time) { selected_path_trips.push_back(trip_time); }
+    Bustrip* get_last_selected_path_trip() const; //!< returns the latest trip boarded by the passenger, returns nullptr if none exists
     void add_to_selected_path_stop(pair<Busstop*, double> stop_time) { selected_path_stops.push_back(stop_time); }
     void add_to_experienced_crowding_levels(pair<double, double> riding_coeff) { experienced_crowding_levels.push_back(riding_coeff); }
     void add_to_denied_boarding(pair<Busstop*, double> denied_time) { waiting_time_due_denied_boarding.push_back(denied_time); }
@@ -141,6 +155,10 @@ public:
         @{
     */
     //Controlcenter
+    void set_state(PassengerState newstate, double time);
+    PassengerState get_state() const { return state_; }
+
+    void print_state();
     Request* createRequest(Busstop* origin_stop, Busstop* dest_stop, int load = 1, double desired_departure_time = -1, double current_time = -1); /*!< creates a request for this passenger between origin stop and destination stop
                                                                                                    with a given load and a given time. If origin stop and destination stop are not within the same service area
                                                                                                    then attempts to create a request to travel to the first transfer stop found within the service area instead.
@@ -152,6 +170,7 @@ protected:
     int total_vehicle_meters_traveled = 0; //!< total meters traveled using a transit vehicle (so basically everything but walking right now)
     int total_flexvehicle_meters_traveled = 0; //!< total meters traveled using a transit vehicle that was dynamically scheduled and/or routed
     int total_fixvehicle_meters_traveled = 0; //!< total meters traveled using a transit vehicle that followed a fixed schedule and route
+    PassengerState state_ = PassengerState::Null;
 
 public:
     map<ODstops*, map<Pass_path*, double> > temp_connection_path_utilities; //!< cached exp(path utilities) calculated for a given connection/transitmode/dropoff decision. Cleared at the beginning of each make_connection_decision call and filled via calls from this method
@@ -168,7 +187,7 @@ public:
     double get_total_fix_vkt();
 signals:
     void sendRequest(Request* req, double time); //!< signal to send Request message to Controlcenter along with time in which signal is sent
-    void boardedBus(int pass_id); //!< signal that a passenger with pass_id (this passenger's id) has just boarded a bus
+    void stateChanged(Passenger* pass, PassengerState oldstate, PassengerState newstate, double time);
 /**@}*/
 
 protected:

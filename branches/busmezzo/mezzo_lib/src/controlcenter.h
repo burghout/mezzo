@@ -20,6 +20,7 @@
 struct Request;
 class Bus;
 enum class BusState;
+enum class PassengerState;
 class TripGenerationStrategy;
 class MatchingStrategy;
 class SchedulingStrategy;
@@ -46,6 +47,7 @@ struct DRTAssignmentData
 
 	set<Request*, ptr_less<Request*> > active_requests; //!< all active requests sent to ControlCenter @todo currently only accepted requests that have not been served yet, removed when boarding a vehicle, will include e.g. served requests in the future
 	set<Request*, ptr_less<Request*> > rejected_requests; //!< all requests rejected by ControlCenter
+	set<Request*, ptr_less<Request*> > completed_requests; //!< all requests that were picked up and dropped off
 
     map<BusState, set<Bus*> > fleet_state; //!< all candidate vehicles to be assigned, or reassigned to activeTrips
     //
@@ -279,6 +281,7 @@ public:
 	double calc_expected_wt(Busline* service_route, Busstop* start_stop, Busstop* end_stop, bool first_line_leg, double walking_time_to_start_stop, double arrival_time_to_start_stop); //!< first_line_leg = false if the exploration estimate should be returned and true if calculated based on fleet state/rti etc.., Returns wt in seconds, walking time argument also in seconds
 	double calc_exploration_wt(); //!< returns an optimistic exploration estimate of WT (currently zero seconds, immediate service) for a given line leg, independent of time or RTI level
 
+    void removeActiveRequest(int pass_id); //!< remove active request with pass_id
 
 signals:
 	void requestAccepted(double time); //!< emitted when request has been recieved by RequestHandler
@@ -291,13 +294,11 @@ signals:
 
 	void tripVehicleMatchFound(double time); 
 	void tripVehicleMatchNotFound(double time);
-public slots:
-    void removeActiveRequest(int pass_id); //!< remove active request with pass_id
-
 
 private slots:
 	//request related
 	void receiveRequest(Request* req, double time); //!< checks if request is feasible and decides to either accept or reject it
+	void updateRequestState(Passenger* pass, PassengerState oldstate, PassengerState newstate, double time);
 
 	//fleet related
 	void updateFleetState(Bus* bus, BusState oldstate, BusState newstate, double time); //!< updates fleetState every time a connected transit vehicle changes its state

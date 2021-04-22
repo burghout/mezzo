@@ -58,14 +58,16 @@ struct Request
     int ostop_id = -1;   //!< id of origin stop
     int dstop_id = -1;   //!< id of destination stop
     int load = -1;       //!< number of passengers in request
-    double time_desired_departure = -1.0;  //!< desired/earliest departure time for passenger
-    double time_request_generated = -1.0;                    //!< time request was generated
+    double time_desired_departure = -1.0; //!< desired/earliest departure time for passenger
+    double time_request_generated = -1.0; //!< time request was generated
     RequestState state = RequestState::Null; //!< current state of the request
     Passenger* pass_owner = nullptr; //!< passenger who sent this request
     Bus* assigned_veh = nullptr; //!< vehicle that has been assigned to this request, nullptr if none has been assigned
     Bustrip* assigned_trip = nullptr; //!< bustrip that has been assigned to this request, nullptr by default, updated when assigned
     Request() { id = ++id_counter; }
     Request(Passenger* pass_owner, int pass_id, int ostop_id, int dstop_id, int load, double t_departure, double t_generated);
+
+    void set_assigned_trip(Bustrip* newtrip); //!< sets the assigned trip of this request to newtrip and adds this as a 'assigned_request' to that trip. If previously assigned to a trip, the request is removed from that trip
 
     void set_state(RequestState state);
     void print_state();

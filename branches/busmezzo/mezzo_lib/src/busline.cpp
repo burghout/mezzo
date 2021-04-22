@@ -2003,7 +2003,17 @@ void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, d
 				od = stop_as_origin[(*alighting_passenger)->get_OD_stop()->get_destination()];
 			}
 			(*alighting_passenger)->set_ODstop(od); // set this stop as passenger's new origin
+
+            (*alighting_passenger)->set_state(PassengerState::ArrivedToStop, time); // if the pass just alighted a flex trip this should be heard by Controlcenter, should remove request from active_requests
+            if ((*alighting_passenger)->get_chosen_mode() == TransitModeType::Flexible)
+            {
+				assert(theParameters->drt);
+                assert(CC);
+                CC->disconnectPassenger(*alighting_passenger); //now disconnect this passenger from the control center of this stop (should be the destination of the request of the traveler)
+            }
+
 			(*alighting_passenger)->set_chosen_mode(TransitModeType::Null); //reset the mode chosen of the pass to null (new mode choice is made after each alighting)
+			
 			if (id == (*alighting_passenger)->get_OD_stop()->get_destination()->get_id() || (*alighting_passenger)->get_OD_stop()->check_path_set() == false) // if this stop is passenger's destination
 			{
 				// passenger has no further conection choice
@@ -2032,9 +2042,11 @@ void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, d
                     new_od = next_stop->get_stop_od_as_origin_per_stop((*alighting_passenger)->get_OD_stop()->get_destination());
                 }
 
-				double arrival_time_connected_stop = time;
+                double arrival_time_connected_stop = time;
+				bool chose_to_walk = next_stop->get_id() != this->get_id();
                 //if (odstop->get_waiting_passengers().size() != 0) //Why was it like this??
-                if (next_stop->get_id() == this->get_id())  // pass stays at the same stop
+
+                if (!chose_to_walk)  // pass stays at the same stop
                 {
 					(*alighting_passenger)->set_ODstop(new_od); // set the connected stop as passenger's new origin (new OD)
 					ODstops* odstop = (*alighting_passenger)->get_OD_stop();
@@ -2072,35 +2084,45 @@ void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, d
                     (*alighting_passenger)->add_to_selected_path_stop(stop_time);
                 }
 
-                if (theParameters->drt)
-                {
-                    TransitModeType chosen_mode = (*alighting_passenger)->make_transitmode_decision(next_stop, time); //also sets chosen mode...
-					(*alighting_passenger)->set_chosen_mode(chosen_mode); //important that this is set before dropoff_decision call
+                TransitModeType chosen_mode = (*alighting_passenger)->make_transitmode_decision(next_stop, time); //also sets chosen mode...
+                if (!theParameters->drt)
+                    assert(chosen_mode == TransitModeType::Fixed);
+                (*alighting_passenger)->set_chosen_mode(chosen_mode); //important that this is set before dropoff_decision call
 
-                    if (chosen_mode == TransitModeType::Flexible)
+                if (chosen_mode == TransitModeType::Flexible)
+                {
+                    Busstop* dropoff_stop = (*alighting_passenger)->make_dropoff_decision(next_stop, time);
+
+                    Request* req = (*alighting_passenger)->createRequest(next_stop, dropoff_stop, 1, arrival_time_connected_stop, time); //create request with load 1 at current time 
+                    if (req != nullptr) //if a connection, or partial connection was found within the CC service of origin stop
                     {
-                        Busstop* dropoff_stop = (*alighting_passenger)->make_dropoff_decision(next_stop, time);
+                        assert((*alighting_passenger)->get_curr_request() == nullptr); // @note RequestHandler responsible for resetting this to nullptr if request is rejected
+                        (*alighting_passenger)->set_curr_request(req);
 
                         Controlcenter* CC = next_stop->get_CC();
                         assert(CC != nullptr);
                         CC->connectPassenger((*alighting_passenger)); //connect passenger to the CC of the stop they decided to stay at/walk to, send a request to this CC	
 
-                        Request* req = (*alighting_passenger)->createRequest(next_stop, dropoff_stop, 1, arrival_time_connected_stop, time); //create request with load 1 at current time 
-						if (req != nullptr) //if a connection, or partial connection was found within the CC service of origin stop
-						{
-							assert((*alighting_passenger)->get_curr_request() == nullptr); // @note RequestHandler responsible for resetting this to nullptr if request is rejected or after a pass has boarded a bus and request is removed
-							(*alighting_passenger)->set_curr_request(req);
-							emit(*alighting_passenger)->sendRequest(req, time); //send request to any controlcenter that is connected
-						}
-                        else
-                            DEBUG_MSG_V("WARNING - Busstop::passenger_activity_at_stop() - failed request creation for stops " << next_stop->get_id() << "->" << dropoff_stop->get_id() << " with desired departure time " << arrival_time_connected_stop << " at time " << time);
+                        emit(*alighting_passenger)->sendRequest(req, time); //send request to any controlcenter that is connected
                     }
+                    else
+                        DEBUG_MSG_V("WARNING - Busstop::passenger_activity_at_stop() - failed request creation for stops " << next_stop->get_id() << "->" << dropoff_stop->get_id() << " with desired departure time " << arrival_time_connected_stop << " at time " << time);
                 }
-			}
-		}
-		trip->passengers_on_board[this].clear(); // clear passengers with this stop as their alighting stop
-		trip->get_busv()->set_occupancy(trip->get_busv()->get_occupancy()-nr_alighting);	// update occupancy on bus
-		trip->update_total_alightings(nr_alighting);
+
+                if (chose_to_walk)
+                    (*alighting_passenger)->set_state(PassengerState::Walking, time);
+                else
+                {
+                    if (chosen_mode == TransitModeType::Fixed)
+                        (*alighting_passenger)->set_state(PassengerState::WaitingForFixed, time);
+                    if (chosen_mode == TransitModeType::Flexible)
+                        (*alighting_passenger)->set_state(PassengerState::WaitingForFlex, time);
+                }
+            }
+        }
+        trip->passengers_on_board[this].clear(); // clear passengers with this stop as their alighting stop
+        trip->get_busv()->set_occupancy(trip->get_busv()->get_occupancy() - nr_alighting);	// update occupancy on bus
+        trip->update_total_alightings(nr_alighting);
 
 		// * Passengers on-board
 		//int avialable_seats = trip->get_busv()->get_occupancy() - trip->get_busv()->get_number_seats();
@@ -2188,16 +2210,7 @@ void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, d
 							}
 							trip->get_busv()->set_occupancy(trip->get_busv()->get_occupancy()+1);
 							trip->update_total_boardings(1);
-							
-							if (theParameters->drt && CC != nullptr)
-							{
-								if((*check_pass)->is_flexible_user()) //!< @todo boarded bus signal currently removes the request of the passenger from the request set of the Controlcenter. Travelers are currently always disconnected directly afterwards
-								{
-									emit (*check_pass)->boardedBus((*check_pass)->get_id()); //boarding passenger signals control center that they have just boarded, should be ignored if pass is not a flexible user
-									CC->disconnectPassenger((*check_pass)); //now disconnect this passenger from the control center of this stop
-								}
-								(*check_pass)->set_chosen_mode(TransitModeType::Null); // reset travelers chosen mode. A new mode will be chosen when the traveler has chosen to alight
-							}
+							(*check_pass)->set_state(PassengerState::OnBoard, time); // @note dependent on being called after (*check_pass)->add_to_selected_path_trips
 
 							if (check_pass < pass_waiting_od.end()-1)
 							{
@@ -2215,8 +2228,13 @@ void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, d
 						}
 						else
 						{		
-							// if the passenger CAN NOT board
-							(*check_pass)->increment_nr_denied_boardings();
+                            // if the passenger CAN NOT board
+                            (*check_pass)->increment_nr_denied_boardings();
+                            if ((*check_pass)->get_chosen_mode() == TransitModeType::Fixed)
+                                (*check_pass)->set_state(PassengerState::WaitingForFixedDenied, time);
+                            if ((*check_pass)->get_chosen_mode() == TransitModeType::Flexible)
+                                (*check_pass)->set_state(PassengerState::WaitingForFlexDenied, time);
+
 							if ((*check_pass)->empty_denied_boarding() == true || this->get_id() != (*check_pass)->get_last_denied_boarding_stop_id()) // no double registration 
 							{
 								pair<Busstop*,double> denied_boarding;

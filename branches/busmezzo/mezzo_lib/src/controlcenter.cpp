@@ -43,9 +43,14 @@ void DRTAssignmentData::reset()
     {
         delete req;
     }
+	for (auto req : completed_requests)
+	{
+	    delete req;
+	}
 
 	active_requests.clear();
 	rejected_requests.clear();
+	completed_requests.clear();
 
     fleet_state.clear();
 }
@@ -735,7 +740,8 @@ void Controlcenter::connectPassenger(Passenger* pass)
 	connectedPass_[pid] = pass;
 
 	QObject::connect(pass, &Passenger::sendRequest, this, &Controlcenter::receiveRequest, Qt::DirectConnection);
-	QObject::connect(pass, &Passenger::boardedBus, this, &Controlcenter::removeActiveRequest, Qt::DirectConnection);
+	//QObject::connect(pass, &Passenger::boardedBus, this, &Controlcenter::removeActiveRequest, Qt::DirectConnection);
+	QObject::connect(pass, &Passenger::stateChanged, this, &Controlcenter::updateRequestState, Qt::DirectConnection);
 }
 void Controlcenter::disconnectPassenger(Passenger* pass)
 {
@@ -746,7 +752,8 @@ void Controlcenter::disconnectPassenger(Passenger* pass)
 	connectedPass_.erase(connectedPass_.find(pid));
 
     QObject::disconnect(pass, &Passenger::sendRequest, this, &Controlcenter::receiveRequest);
-	QObject::disconnect(pass, &Passenger::boardedBus, this, &Controlcenter::removeActiveRequest);
+	//QObject::disconnect(pass, &Passenger::boardedBus, this, &Controlcenter::removeActiveRequest);
+	QObject::disconnect(pass, &Passenger::stateChanged, this, &Controlcenter::updateRequestState);
 }
 
 void Controlcenter::connectVehicle(Bus* transitveh)
@@ -929,6 +936,57 @@ void Controlcenter::receiveRequest(Request* req, double time)
 	assert(req->time_desired_departure >= 0 && req->time_request_generated >= 0 && req->load > 0); //assert that request is valid
 	summarydata_.requests_recieved += 1;
 	rh_.addRequest(assignment_data_, req, serviceArea_) ? emit requestAccepted(time) : emit requestRejected(time);
+}
+
+void Controlcenter::updateRequestState(Passenger* pass, PassengerState oldstate, PassengerState newstate, double time)
+{
+	Q_UNUSED(time) // @todo might be useful to update request states in the future
+
+    // Sanity checks
+    assert(pass->get_state() == newstate); //the newstate should be the current state of the passenger
+    assert(pass->is_flexible_user()); // fixed users are not connected to a cc
+	assert(newstate != PassengerState::WaitingForFixed);
+    assert(connectedPass_.count(pass->get_id()) != 0); //assert that pass is connected to this control center (otherwise state change signal should have never been heard)
+
+	Request* req = pass->get_curr_request();
+	assert(req != nullptr);
+
+    //update passengers request, depending on the passenger state change
+	switch(newstate)
+	{
+    case PassengerState::Null: break;
+    case PassengerState::Walking: break;
+    case PassengerState::ArrivedToStop:
+        assert(oldstate == PassengerState::Null || oldstate == PassengerState::OnBoard); // passenger either just started or alighted
+        if (oldstate == PassengerState::OnBoard) // Passenger just alighted at a stop
+        {
+            //assert(pass->get_OD_stop()->get_origin()->get_id() == req->dstop_id); // the stop the passenger just alighted at (and set its new od to) should be the destination of the request
+			if(req->assigned_trip)
+			    req->assigned_trip->remove_request(req);
+            req->set_state(RequestState::ServedFinished);
+            //removeActiveRequest(pass->get_id()); //!< @todo remove and delete via assignment_data instead, just testing incrementally if we can repeat results this way
+            assignment_data_.active_requests.erase(req);
+            assignment_data_.completed_requests.insert(req);
+            pass->set_curr_request(nullptr);
+            summarydata_.requests_served += 1;
+        }
+        break;
+    case PassengerState::WaitingForFixed: abort(); break;
+	case PassengerState::WaitingForFlex: assert(req->state == RequestState::Matched || req->state == RequestState::Assigned || req->state == RequestState::Unmatched); break;
+    case PassengerState::WaitingForFixedDenied: abort(); break;
+    case PassengerState::WaitingForFlexDenied: break;
+    case PassengerState::OnBoard:
+		// passengers may board vehicles opportunistically, check if they boarded their assigned trip or another one
+		// if a different trip was boarded, remove the passenger from the one they were originally assigned to and reassign it to the new one
+		Bustrip* trip_boarded = pass->get_last_selected_path_trip();
+		if(trip_boarded != req->assigned_trip) 
+		{
+		    req->set_assigned_trip(trip_boarded);
+		}
+        req->set_state(RequestState::ServedUnfinished);
+        break;
+
+    }
 }
 
 void Controlcenter::removeActiveRequest(int pass_id)

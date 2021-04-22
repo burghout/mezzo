@@ -148,9 +148,8 @@ namespace cs_helper_functions
                 auto downstreamstops = tr->get_downstream_stops();
                 if (downstreamstops.end() != find_if(downstreamstops.begin(), downstreamstops.end(),[rq](const Busstop* st) { return rq->dstop_id == st->get_id(); }))
                 { // if rq destination stop is in the downstream stops
-                    rq->assigned_trip = tr;
+                    rq->set_assigned_trip(tr);
                     rq->set_state(RequestState::Assigned);
-                    tr->add_request(rq);
                 }
             }
         }
@@ -189,9 +188,8 @@ namespace cs_helper_functions
                     auto downstreamstops = tr->get_downstream_stops();
                     if (downstreamstops.end() != find_if(downstreamstops.begin(), downstreamstops.end(), [rq](const Busstop* st) { return rq->dstop_id == st->get_id(); }))
                     { // if rq destination stop is in the downstream stops
-                        rq->assigned_trip = tr;
+                        rq->set_assigned_trip(tr);
                         rq->set_state(RequestState::Matched); //update to matched since the trip already has a vehicle
-                        tr->add_request(rq);
                     }
                 }
             }

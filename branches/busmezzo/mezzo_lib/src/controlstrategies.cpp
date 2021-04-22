@@ -15,9 +15,22 @@ Request::Request(Passenger * pass_owner, int pass_id, int ostop_id, int dstop_id
     qRegisterMetaType<Request>(); //register Request as a metatype for QT signal arguments
 }
 
+void Request::set_assigned_trip(Bustrip* newtrip)
+{
+    if (newtrip != assigned_trip)
+    {
+        if (assigned_trip)
+        {
+            assigned_trip->remove_request(this);
+        }
+        newtrip->add_request(this);
+        assigned_trip = newtrip;
+    }
+}
+
 void Request::set_state(RequestState newstate)
 {
-    // @todo still need to add set state for servedunfinished, served finished, cancelled, rejected etc...
+    // @todo still need to add set state cancelled etc...
     if (state != newstate)
     {
         switch (newstate) //keep track of currently 'legal' state transitions @todo remove after debugging
@@ -32,11 +45,11 @@ void Request::set_state(RequestState newstate)
         case RequestState::Matched:
             //assert(state == RequestState::Assigned);
             break;
-        //case RequestState::ServedUnfinished:
-        //    break;
-        //case RequestState::ServedFinished:
-        //    assert(state == RequestState::ServedUnfinished);
-        //    break;
+        case RequestState::ServedUnfinished:
+            break;
+        case RequestState::ServedFinished:
+            assert(state == RequestState::ServedUnfinished);
+            break;
         //case RequestState::Cancelled:
         //    break;
         case RequestState::Rejected:
@@ -427,7 +440,7 @@ bool NaiveTripGeneration::calc_trip_generation(DRTAssignmentData& assignment_dat
                         auto affectedRequests = cs_helper_functions::filterRequestsByOD(unassignedRequests,ostop_id, dstop_id);
                         for (auto rq : affectedRequests)
                         {
-                            rq->assigned_trip = newtrip;
+                            rq->set_assigned_trip(newtrip);
                             rq->set_state(RequestState::Assigned);
                         }
                         vector<Bustrip* > tripchain = { newtrip }; //tripchain is only one trip long
@@ -502,8 +515,7 @@ bool SimpleTripGeneration::calc_trip_generation(DRTAssignmentData& assignment_da
             trip_generated = true;
 
          // 4. assign the request
-            rq->assigned_trip = newtrip;
-            newtrip->add_request(rq);
+            rq->set_assigned_trip(newtrip);
             rq->set_state(RequestState::Assigned);
             // TODO: now check all the remaining requests to see if they can be assigned as well.
             cs_helper_functions::assignRequestsToTrip(assignment_data.active_requests,newtrip);
@@ -972,7 +984,7 @@ bool LatestDepartureScheduling::schedule_trips(DRTAssignmentData& assignment_dat
     bool scheduled_trip = false; // true if at least one trip has been scheduled
     set<Bustrip*, compareBustripByEarliestStarttime> sortedTrips(assignment_data.unscheduled_trips.begin(), assignment_data.unscheduled_trips.end()); // process uncheduledTrips in order of earliest to latest starttime
     assert(sortedTrips.size() == assignment_data.unscheduled_trips.size());
-    qDebug() << "LatestDepartureScheduling trips at time" << time << " size of unscheduledTrips: " << sortedTrips.size();
+    //qDebug() << "LatestDepartureScheduling trips at time" << time << " size of unscheduledTrips: " << sortedTrips.size();
 
     for (auto trip : sortedTrips)
     {
@@ -982,17 +994,17 @@ bool LatestDepartureScheduling::schedule_trips(DRTAssignmentData& assignment_dat
         if (bus->get_last_stop_visited()->get_id() == trip->get_last_stop_visited()->get_id()) //vehicle should already be located at the first stop of the trip
         {
             //find the latest desired departure time among passengers assigned to the first trip in the tripchain
-            qDebug() << "\tOriginal starttime of trip" << trip->get_id() << ": " << trip->get_starttime();
+            //qDebug() << "\tOriginal starttime of trip" << trip->get_id() << ": " << trip->get_starttime();
             double latest_desired_dep = 0.0;
             vector<Request*> assigned_reqs = trip->get_assigned_requests();
-            qDebug() << "\tNumber of requests assigned to first trip: " << assigned_reqs.size();
+            //qDebug() << "\tNumber of requests assigned to first trip: " << assigned_reqs.size();
             for (const Request* req : assigned_reqs)
             {
                 assert(req->state == RequestState::Matched); //all requests should be matched at this point
                 if (req->time_desired_departure > latest_desired_dep)
                     latest_desired_dep = req->time_desired_departure;
             }
-            qDebug() << "\tLatest desired departure of trip" << trip->get_id() << ": " << latest_desired_dep;
+            //qDebug() << "\tLatest desired departure of trip" << trip->get_id() << ": " << latest_desired_dep;
 
             //update the schedule of the trip such that dispatch of the tripchain is either now (if the trip was delayed) or at the latest_desired_departure of assigned passengers
             if (latest_desired_dep < time) 
