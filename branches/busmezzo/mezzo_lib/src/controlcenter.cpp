@@ -66,9 +66,12 @@ void DRTAssignmentData::print_state(double time) const
 
 	qDebug() << "\trejected_requests    :" << rejected_requests.size();
     qDebug() << "\tactive_requests      :" << active_requests.size();
-	qDebug() << "\tcompleted_requests   :" << cc_owner->getSummaryData().requests_served << endl;
+	qDebug() << "\tcompleted_requests   :" << completed_requests.size() << endl;
 
-	qDebug() << "\toncall_vehicles      :" << cc_owner->getFleetState().at(BusState::OnCall).size() << endl;
+    if(fleet_state.find(BusState::OnCall) != fleet_state.end())
+        qDebug() << "\toncall_vehicles      :" << fleet_state.at(BusState::OnCall).size() << endl;
+    else
+        qDebug() << "\tno vehicles intialized!";
 }
 
 void Controlcenter_SummaryData::reset()
