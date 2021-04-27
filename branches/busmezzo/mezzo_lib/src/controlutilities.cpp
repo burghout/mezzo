@@ -222,9 +222,9 @@ namespace cs_helper_functions
         copy_if(oldSet.begin(), oldSet.end(), inserter(newSet, newSet.end()), [status](Bustrip* trip) {return trip->get_status() == status; });
         return newSet;
     }
-    set<Bustrip*, ptr_less<Bustrip*> > filterRequestAssignedTrips(const set<Bustrip*, ptr_less<Bustrip*> >& oldSet, BustripStatus status)
+    set<Bustrip*, ptr_less<Bustrip*> > filterRequestAssignedTrips(const set<Bustrip*, ptr_less<Bustrip*> >& oldSet)
     {
-        set <Bustrip*, ptr_less<Bustrip*>> newSet = filterBustripsByStatus(oldSet, status);
+        set <Bustrip*, ptr_less<Bustrip*> > newSet = oldSet;
         auto it = newSet.begin();
         while (it != newSet.end())
         {

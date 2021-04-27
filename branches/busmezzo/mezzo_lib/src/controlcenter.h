@@ -289,11 +289,15 @@ signals:
 
 	void newUnassignedVehicle(double time); //!< emitted when a connected transit vehicle has changed its state to OnCall
 
-	void tripGenerated(double time); 
-	void emptyVehicleTripGenerated(double time);
+	void tripGenerated(double time);
+	void tripNotGenerated(double time);
+	void emptyTripGenerated(double time);
+	void emptyTripNotGenerated(double time);
 
 	void tripVehicleMatchFound(double time); 
 	void tripVehicleMatchNotFound(double time);
+
+	void emptyTripVehicleMatchNotFound(double time);
 
 private slots:
 	//request related
@@ -315,8 +319,12 @@ private slots:
     void on_requestAccepted(double time); 
     void on_requestRejected(double time); 
 
-    void on_tripGenerated(double time); 
+    void on_tripGenerated(double time);
+    void on_tripNotGenerated(double time);
+    void on_emptyTripNotGenerated(double time);
     void on_tripVehicleMatchFound(double time);
+    void on_tripVehicleMatchNotFound(double time);
+	void on_emptyTripVehicleMatchNotFound(double time);
 
 private:
 	//OBS! remember to add all mutable members to reset method, including reset functions of process classes

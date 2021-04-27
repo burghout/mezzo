@@ -44,7 +44,7 @@ namespace cs_helper_functions
 
     // Find trip by condition
     set<Bustrip*, ptr_less<Bustrip*> > filterBustripsByStatus(const set<Bustrip*, ptr_less<Bustrip*> >& oldSet, BustripStatus status);
-    set<Bustrip*, ptr_less<Bustrip*> > filterRequestAssignedTrips(const set<Bustrip*, ptr_less<Bustrip*> >& oldSet, BustripStatus status); //!< returns trips that are members of oldset with <status> and non-empty scheduled requests members
+    set<Bustrip*, ptr_less<Bustrip*> > filterRequestAssignedTrips(const set<Bustrip*, ptr_less<Bustrip*> >& oldSet); //!< returns trips that are members of oldset with <status> and non-empty scheduled requests members
 
 } // end namespace helper_functions
 

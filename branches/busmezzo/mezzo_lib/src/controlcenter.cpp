@@ -57,18 +57,24 @@ void DRTAssignmentData::reset()
 
 void DRTAssignmentData::print_state(double time) const
 {
-	qDebug() << "Controlcenter"<< cc_owner->getID() <<"assignment_data at time" << time;
+    qDebug() << "Controlcenter" << cc_owner->getID() << "assignment_data at time" << time;
     qDebug() << "\tunmatched_trips      :" << unmatched_trips.size();
-	qDebug() << "\tunmatched_empty_trips:" << unmatched_empty_trips.size();
-	qDebug() << "\tunscheduled_trips    :" << unscheduled_trips.size();
-	qDebug() << "\tactive_trips         :" << active_trips.size(); 
-	qDebug() << "\tcompleted_trips      :" << cc_owner->getCompletedVehicleTrips().size()<< endl;
+    qDebug() << "\tunmatched_empty_trips:" << unmatched_empty_trips.size();
+    qDebug() << "\tunscheduled_trips    :" << unscheduled_trips.size();
+    qDebug() << "\tactive_trips         :" << active_trips.size();
+	qDebug() << "\t\tpassenger_trips:" << cs_helper_functions::filterRequestAssignedTrips(active_trips).size(); // @note the number of active passenger carrying trips should pretty much always match the number of busy vehicles without rebalancing (unless the vehicle-trip hasnt been scheduled yet)
+	qDebug() << "\t\tempty_trips    :" << active_trips.size() - cs_helper_functions::filterRequestAssignedTrips(active_trips).size();
+    qDebug() << "\tcompleted_trips      :" << cc_owner->getCompletedVehicleTrips().size() << endl;
 
-	qDebug() << "\trejected_requests    :" << rejected_requests.size();
+    qDebug() << "\trejected_requests    :" << rejected_requests.size();
     qDebug() << "\tactive_requests      :" << active_requests.size();
-	qDebug() << "\tcompleted_requests   :" << completed_requests.size() << endl;
+	qDebug() << "\t\tunmatched_requests :" << cs_helper_functions::filterRequestsByState(active_requests,RequestState::Unmatched).size();
+	qDebug() << "\t\tassigned_requests  :" << cs_helper_functions::filterRequestsByState(active_requests,RequestState::Assigned).size();
+	qDebug() << "\t\tmatched_requests   :" << cs_helper_functions::filterRequestsByState(active_requests,RequestState::Matched).size();
+	qDebug() << "\t\tin_service_requests:" << cs_helper_functions::filterRequestsByState(active_requests,RequestState::ServedUnfinished).size();
+    qDebug() << "\tcompleted_requests   :" << completed_requests.size() << endl;
 
-    if(fleet_state.find(BusState::OnCall) != fleet_state.end())
+    if (fleet_state.find(BusState::OnCall) != fleet_state.end())
         qDebug() << "\toncall_vehicles      :" << fleet_state.at(BusState::OnCall).size() << endl;
     else
         qDebug() << "\tno vehicles intialized!";
@@ -494,7 +500,11 @@ void Controlcenter::connectInternal()
 	//signal slots for debug messages TODO: remove later
 	QObject::connect(this, &Controlcenter::requestRejected, this, &Controlcenter::on_requestRejected, Qt::DirectConnection);
 	QObject::connect(this, &Controlcenter::requestAccepted, this, &Controlcenter::on_requestAccepted, Qt::DirectConnection);
+	QObject::connect(this, &Controlcenter::tripNotGenerated, this, &Controlcenter::on_tripNotGenerated, Qt::DirectConnection);
+	QObject::connect(this, &Controlcenter::emptyTripNotGenerated, this, &Controlcenter::on_emptyTripNotGenerated, Qt::DirectConnection);
     QObject::connect(this, &Controlcenter::tripVehicleMatchFound, this, &Controlcenter::on_tripVehicleMatchFound, Qt::DirectConnection);
+	QObject::connect(this, &Controlcenter::tripVehicleMatchNotFound, this, &Controlcenter::on_tripVehicleMatchNotFound, Qt::DirectConnection);
+	QObject::connect(this, &Controlcenter::emptyTripVehicleMatchNotFound, this, &Controlcenter::on_emptyTripVehicleMatchNotFound, Qt::DirectConnection);
 
 	//Triggers to generate trips via BustripGenerator
 	QObject::connect(this, &Controlcenter::requestAccepted, this, &Controlcenter::requestTrip, Qt::DirectConnection); 
@@ -506,7 +516,7 @@ void Controlcenter::connectInternal()
 	QObject::connect(this, &Controlcenter::tripGenerated, this, &Controlcenter::matchVehiclesToTrips, Qt::DirectConnection);
 	//ok = QObject::connect(this, &Controlcenter::newUnassignedVehicle, this, &Controlcenter::matchVehiclesToTrips, Qt::DirectConnection); //removed to avoid double call to matchVehicleToTrips
 	//assert(ok);
-	QObject::connect(this, &Controlcenter::emptyVehicleTripGenerated, this, &Controlcenter::matchEmptyVehiclesToTrips, Qt::DirectConnection);
+	QObject::connect(this, &Controlcenter::emptyTripGenerated, this, &Controlcenter::matchEmptyVehiclesToTrips, Qt::DirectConnection);
 
 	//Triggers to schedule vehicle - trip pairs via VehicleScheduler
 	QObject::connect(this, &Controlcenter::tripVehicleMatchFound, this, &Controlcenter::scheduleMatchedTrips, Qt::DirectConnection);
@@ -949,6 +959,7 @@ void Controlcenter::updateRequestState(Passenger* pass, PassengerState oldstate,
     assert(pass->get_state() == newstate); //the newstate should be the current state of the passenger
     assert(pass->is_flexible_user()); // fixed users are not connected to a cc
 	assert(newstate != PassengerState::WaitingForFixed);
+	assert(newstate != PassengerState::WaitingForFixedDenied);
     assert(connectedPass_.count(pass->get_id()) != 0); //assert that pass is connected to this control center (otherwise state change signal should have never been heard)
 
 	Request* req = pass->get_curr_request();
@@ -1019,11 +1030,36 @@ void Controlcenter::on_tripGenerated(double time)
     Q_UNUSED(time)
 }
 
+void Controlcenter::on_tripNotGenerated(double time)
+{
+ //   qDebug() << "Trip not generated at time" << time;
+	//assignment_data_.print_state(time);
+}
+
+void Controlcenter::on_emptyTripNotGenerated(double time)
+{
+ //   qDebug() << "Empty-trip not generated at time" << time;
+	//assignment_data_.print_state(time);
+}
+
 void Controlcenter::on_tripVehicleMatchFound(double time)
 {
 	//qDebug() << ": Vehicle - Trip match found at time " << time;
     Q_UNUSED(time)
 }
+
+void Controlcenter::on_tripVehicleMatchNotFound(double time)
+{
+	//qDebug() << ": Vehicle - Trip match not found at time " << time;
+    //assignment_data_.print_state(time);
+}
+
+void Controlcenter::on_emptyTripVehicleMatchNotFound(double time)
+{
+    /*qDebug() << ": Vehicle - Trip match not found at time " << time;
+    assignment_data_.print_state(time);*/
+}
+
 
 void Controlcenter::updateFleetState(Bus* bus, BusState oldstate, BusState newstate, double time)
 {
@@ -1049,18 +1085,12 @@ void Controlcenter::updateFleetState(Bus* bus, BusState oldstate, BusState newst
 
 void Controlcenter::requestTrip(double time)
 {
-    if (tg_.requestTrip(assignment_data_, time))
-    {
-        emit tripGenerated(time);
-    }
+    tg_.requestTrip(assignment_data_, time) ? emit tripGenerated(time) : emit tripNotGenerated(time);    
 }
 
 void Controlcenter::requestEmptyTrip(double time)
 {
-    if (tg_.requestEmptyTrip(assignment_data_, time))
-    {
-        emit emptyVehicleTripGenerated(time);
-    }
+    tg_.requestEmptyTrip(assignment_data_, time) ? emit emptyTripGenerated(time) : emit emptyTripNotGenerated(time);
 }
 
 void Controlcenter::matchVehiclesToTrips(double time)
@@ -1070,10 +1100,7 @@ void Controlcenter::matchVehiclesToTrips(double time)
 
 void Controlcenter::matchEmptyVehiclesToTrips(double time)
 {
-    if (tvm_.matchVehiclesToEmptyVehicleTrips(assignment_data_, time))
-    {
-        emit tripVehicleMatchFound(time);
-    }
+    tvm_.matchVehiclesToEmptyVehicleTrips(assignment_data_, time) ? emit tripVehicleMatchFound(time) : emit emptyTripVehicleMatchNotFound(time);
 }
 
 void Controlcenter::scheduleMatchedTrips(double time)
