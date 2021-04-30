@@ -95,6 +95,21 @@ bool is_corridor_to_corridor(int ostop_id, int dstop_id)
     return is_on_corridor(ostop_id) && is_on_corridor(dstop_id);
 }
 
+ODCategory get_od_category(int o, int d)
+{
+    ODCategory category = ODCategory::Null;
+
+    if (is_branch_to_branch(o, d))
+        category = ODCategory::b2b;
+    if (is_branch_to_corridor(o, d))
+        category = ODCategory::b2c;
+    if (is_corridor_to_corridor(o, d))
+        category = ODCategory::c2c;
+
+    return category;
+}
+
+
 class TestDrottningholmCollection_drt : public QObject
 {
     Q_OBJECT
@@ -214,20 +229,7 @@ void TestDrottningholmCollection_drt::testPathSetTransfers()
         int ostop = od->get_origin()->get_id();
         int dstop = od->get_destination()->get_id();
         //qDebug() << "Checking path set transfers for OD: ("<<ostop<<","<<dstop<<")";
-        ODCategory od_category = ODCategory::Null;
-
-        if(is_branch_to_branch(ostop,dstop))
-        {
-            od_category = ODCategory::b2b;
-        }
-        else if (is_branch_to_corridor(ostop,dstop))
-        {
-            od_category = ODCategory::b2c;
-        }
-        else if (is_corridor_to_corridor(ostop,dstop))
-        {
-            od_category = ODCategory::c2c;
-        }
+        ODCategory od_category = get_od_category(ostop,dstop);
         QVERIFY(od_category != ODCategory::Null); // each od should have a category
 
         vector<Pass_path*> pathset = od->get_path_set();
@@ -347,23 +349,7 @@ Assertions:
     {
         int ostop = od->get_origin()->get_id();
         int dstop = od->get_destination()->get_id();
-        ODCategory od_category = ODCategory::Null;
-
-        if(is_branch_to_branch(ostop,dstop))
-        {
-            //qDebug() << "Branch to branch ";
-            od_category = ODCategory::b2b;
-        }
-        else if (is_branch_to_corridor(ostop,dstop))
-        {
-            //qDebug() << "Branch to corridor ";
-            od_category = ODCategory::b2c;
-        }
-        else if (is_corridor_to_corridor(ostop,dstop))
-        {
-            //qDebug() << "Corridor to corridor ";
-            od_category = ODCategory::c2c;
-        }
+        ODCategory od_category = get_od_category(ostop,dstop);
         QVERIFY(od_category != ODCategory::Null); // each od should have a category
 
         vector<Pass_path*> pathset = od->get_path_set();
@@ -503,23 +489,7 @@ void TestDrottningholmCollection_drt::testPassAssignment()
         
         int ostop = od->get_origin()->get_id();
         int dstop = od->get_destination()->get_id();
-        ODCategory od_category = ODCategory::Null;
-
-        if(is_branch_to_branch(ostop,dstop))
-        {
-            //qDebug() << "Branch to branch ";
-            od_category = ODCategory::b2b;
-        }
-        else if (is_branch_to_corridor(ostop,dstop))
-        {
-            //qDebug() << "Branch to corridor ";
-            od_category = ODCategory::b2c;
-        }
-        else if (is_corridor_to_corridor(ostop,dstop))
-        {
-            //qDebug() << "Corridor to corridor ";
-            od_category = ODCategory::c2c;
-        }
+        ODCategory od_category = get_od_category(ostop,dstop);
         QVERIFY(od_category != ODCategory::Null); // each od should have a category
         
         // verify non-zero demand for this OD

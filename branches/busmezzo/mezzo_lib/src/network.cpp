@@ -7265,58 +7265,6 @@ bool Network::writeheadways(string name)
 */
 namespace PARTC
 {
-    const vector<int> branch_ids_176 = { 217619,217618,217617,217616,217615,217614,217613,217612,217611,217610,217609,217608,217607,217606,217605,217603,217602,217604,217600,277024 };
-    const vector<int> branch_ids_177 = { 277036,277035,277034,277033,277032,277031,277030,277029,277028,277027,277026,277025,277024 };
-    const vector<int> corridor_ids = { 277024,277023,277022,277021,277020,277019,277018,277017,277016,277015,277014,277013,277012,277011,277010,277009,277008,277007,277006,277005,277004,277003,277002,277001 };
-    const int transfer_stop_id = 277024;
-    const int morby_station_id = 277001;
-
-    enum class ODCategory { Null = 0, b2b, b2c, c2c };
-
-    bool is_on_branch176(int stop_id)
-    {
-        return find(branch_ids_176.begin(), branch_ids_176.end(), stop_id) != branch_ids_176.end();
-    }
-    bool is_on_branch177(int stop_id)
-    {
-        return find(branch_ids_177.begin(), branch_ids_177.end(), stop_id) != branch_ids_177.end();
-    }
-    bool is_on_branch(int stop_id) // is on either branch
-    {
-        return is_on_branch176(stop_id) || is_on_branch177(stop_id);
-    }
-    bool is_on_corridor(int stop_id)
-    {
-        return find(corridor_ids.begin(), corridor_ids.end(), stop_id) != corridor_ids.end();
-    }
-    bool is_transfer_stop(int stop_id)
-    {
-        return stop_id == transfer_stop_id;
-    }
-    bool is_branch_to_branch(int ostop_id, int dstop_id) // if OD pair is branch to branch
-    {
-        if (is_on_branch(ostop_id)) // origin of trip starts on a branch
-        {
-            if (is_transfer_stop(dstop_id)) // destination is the transfer stop (which is on both branch and corridor)
-                return true;
-            else
-                return !is_on_corridor(dstop_id); // destination is NOT on corridor
-        }
-        return false;
-    }
-    bool is_branch_to_corridor(int ostop_id, int dstop_id)
-    {
-        if (!is_transfer_stop(ostop_id) && is_on_branch(ostop_id)) // origin is not the transfer stop (which is on corridor) and is on branch
-        {
-            if (!is_transfer_stop(dstop_id) && is_on_corridor(dstop_id)) // destination IS on corridor and is not the transfer stop
-                return true;
-        }
-        return false;
-    }
-    bool is_corridor_to_corridor(int ostop_id, int dstop_id)
-    {
-        return is_on_corridor(ostop_id) && is_on_corridor(dstop_id);
-    }
     void writeFWFsummary_odcategories(ostream& out, const FWF_passdata& passdata_b2b, const FWF_passdata& passdata_b2c, const FWF_passdata& passdata_c2c, const FWF_passdata& passdata_total, int pass_ignored)
     {
         assert(out);
