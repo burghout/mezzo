@@ -2206,7 +2206,7 @@ Busline* Network::create_busline(
     return bl;
 }
 
-bool Network::createControlcenterDRTLines(Controlcenter* cc)
+bool Network::createAllDRTLines(Controlcenter* cc)
 {
     assert(theParameters->drt);
     assert(cc);
@@ -2262,7 +2262,7 @@ bool Network::createControlcenterDRTLines(Controlcenter* cc)
                     {
                         od_pair = new ODpair(startstop->get_origin_node(), endstop->get_dest_node(), 0.0, &vehtypes);
                         odpairs.push_back(od_pair);
-                        /*qDebug() << "createControlcenterDRTLines:----Missing OD pair, creating for Origin " << ori_id <<
+                        /*qDebug() << "createAllDRTLines:----Missing OD pair, creating for Origin " << ori_id <<
                             ", destination " << dest_id;*/
                     }
 
@@ -2286,6 +2286,125 @@ bool Network::createControlcenterDRTLines(Controlcenter* cc)
 
                         // create busLine
                         Busline* newLine = create_busline(busLineIdCounter, 0, "DRT Line", newRoute, stops, vtype, od_pair, 0, 0.0, 0.0, 0, true);
+                        if (newLine != nullptr)
+                        {
+                            newLine->set_planned_headway(::drt_first_rep_max_headway); //add a planned headway (associated with CC) for this line. Used when applying dominancy rules in CSGM and for prior knowledge calculations in pass decisions
+                            buslinesFound.push_back(newLine);
+                            busLineIdCounter++;
+                            od_pair->add_route(newRoute); //add route to OD pair so it does not get deleted in Network::init
+                        }
+                    }
+                    else
+                        qDebug() << "DTR create buslines: no route found from stop " << startstop->get_id() << " to " << endstop->get_id();
+
+                }
+            }
+        }
+        // add the routes found to the busroutes
+        busroutes.insert(busroutes.end(), routesFound.begin(), routesFound.end());
+        // add the buslines
+        buslines.insert(buslines.end(), buslinesFound.begin(), buslinesFound.end());
+
+        //add buslines to cc
+        for (auto line : buslinesFound)
+        {
+            cc->addServiceRoute(line);
+        }
+    } //if cc
+
+    return true;
+}
+
+
+bool Network::createAllDRTLinesWithIntermediateStops(Controlcenter* cc)
+{
+    assert(theParameters->drt);
+    assert(cc);
+
+    //@todo PARTC kindof case specific, maybe remove
+
+    if (cc)
+    {
+        set<Busstop*, ptr_less<Busstop*>> serviceArea = cc->getServiceArea();
+        vector <Busstop*> stops;
+        vector<Busroute*> routesFound;
+        vector<Busline*>  buslinesFound;
+
+        //*** begin dummy values
+        Vtype* vtype = new Vtype(888, "octobus", 1.0, 20.0);
+        int routeIdCounter = 10000; // TODO: update to find max routeId from busroutes vector
+        int busLineIdCounter = 10000; //  TODO: update later
+       //*** end of dummy values
+
+        ODpair* od_pair = nullptr;
+        Origin* ori = nullptr;
+        Destination* dest = nullptr;
+
+        for (auto startstop : serviceArea)
+        {
+            for (auto endstop : serviceArea)
+            {
+                if (startstop != endstop)
+                {
+                    // find best origin for startstop if it does not exist
+                    if (startstop->get_origin_node() == nullptr)
+                    {
+                        // find  origin node
+                        ori = findNearestOriginToStop(startstop);
+                        if (ori != nullptr)
+                            startstop->set_origin_node(ori);
+                    }
+                    // find best destination for endstop if it does not exist
+                    if (endstop->get_dest_node() == nullptr)
+                    {
+                        // find  destination node
+                        dest = findNearestDestinationToStop(endstop);
+                        if (dest != nullptr)
+                            endstop->set_dest_node(dest);
+                    }
+                
+                    // find best odpair
+                    int ori_id = startstop->get_origin_node()->get_id();
+                    int dest_id = endstop->get_dest_node()->get_id();
+                    odval odid(ori_id, dest_id);
+                    auto od_it = find_if(odpairs.begin(), odpairs.end(), compareod(odid));
+                    if (od_it != odpairs.end())
+                        od_pair = *od_it;
+                    else // create new OD pair
+                    {
+                        od_pair = new ODpair(startstop->get_origin_node(), endstop->get_dest_node(), 0.0, &vehtypes);
+                        odpairs.push_back(od_pair);
+                        /*qDebug() << "createAllDRTLinesWithIntermediateStops:----Missing OD pair, creating for Origin " << ori_id <<
+                            ", destination " << dest_id;*/
+                    }
+
+                    // start and end stops included only.... but now we also grab intermediate ones from the generated busroute...
+                    stops.clear();
+                    stops.push_back(startstop);
+                    stops.push_back(endstop);
+
+                    Busroute* newRoute = create_busroute_from_stops(routeIdCounter, od_pair->get_origin(), od_pair->get_destination(), stops);
+
+                    if (newRoute != nullptr)
+                    {
+                        //do not add busroutes that already exist
+                        auto existing_route_it = find_if(busroutes.begin(), busroutes.end(), [newRoute](Busroute* broute) -> bool { return (Route*)newRoute->equals((Route)*broute); });
+                        if (existing_route_it == busroutes.end())
+                        {
+                            routesFound.push_back(newRoute);
+                            routeIdCounter++;
+                        }
+                        else {
+                            newRoute = *existing_route_it;
+                        }
+
+                        // grab all the intermediate busstops including the start and end stops
+                        vector<Busstop*> allstops = get_busstops_on_busroute(newRoute); // all stops that we happen to pass by on the route found.
+                        assert(allstops.front() == startstop);
+                        assert(allstops.back() == endstop);
+
+                        // create busLine
+                        Busline* newLine = create_busline(busLineIdCounter, 0, "DRT Line", newRoute, allstops, vtype, od_pair, 0, 0.0, 0.0, 0, true);
                         if (newLine != nullptr)
                         {
                             newLine->set_planned_headway(::drt_first_rep_max_headway); //add a planned headway (associated with CC) for this line. Used when applying dominancy rules in CSGM and for prior knowledge calculations in pass decisions
@@ -6185,6 +6304,50 @@ Pass_path* Network::get_pass_path_from_id(int path_id) const
     }
     
     return target_path;
+}
+
+vector<Busstop*> Network::get_busstops_on_link(Link* link) const
+{
+    vector<Busstop*> stops_on_link;
+    // collect all stops with matching link id
+    for(auto stop : busstops)
+    {
+        if(stop->get_link_id() == link->get_id())
+            stops_on_link.push_back(stop);
+    }
+    // sort by the position of the stop on the link (closest to upstream node first)
+    sort(stops_on_link.begin(), stops_on_link.end(), [](const Busstop* s1, const Busstop* s2) -> bool
+        {
+            if (s1->get_position() != s2->get_position())
+                return s1->get_position() < s2->get_position();
+            else
+                return s1->get_id() < s2->get_id(); // if positions are equal the stop with the lowest id is considered earlier on the link
+        }
+    );
+
+    return stops_on_link;
+}
+
+vector<Busstop*> Network::get_busstops_on_busroute(Busroute* route) const
+{
+    vector<Busstop*> stops_on_route;
+    cout << "checking for stops on route " << route->get_id() << endl;
+    for (auto link : route->get_links())
+    {
+        cout << "\tchecking for stops on link " << link->get_id() << endl;
+        vector<Busstop*> stops_on_link = get_busstops_on_link(link);
+        cout << "\tfound stops:";
+        for(auto stop : stops_on_link)
+            cout << " " << stop->get_id();
+        cout << endl;
+        stops_on_route.insert(stops_on_route.end(), stops_on_link.begin(), stops_on_link.end());
+    }
+    cout << "found stops on route:";
+    for (auto stop : stops_on_route)
+        cout << " " << stop->get_id();
+    cout << endl;
+
+    return stops_on_route;
 }
 
 // read traffic control
