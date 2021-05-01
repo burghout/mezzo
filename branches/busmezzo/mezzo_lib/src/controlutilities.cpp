@@ -163,6 +163,43 @@ namespace cs_helper_functions
         }
     }
 
+    void assignRequestsToActivatedTrip(const set<Request*, ptr_less<Request*> >& requestSet, Bustrip* tr)
+    {
+        assert(tr->get_status() == BustripStatus::Activated);
+        int cap = tr->get_planned_capacity();
+        assert(cap > 0); // should only be 0 if unassigned to a vehicle, in which case this trip should not have been scheduled
+
+        auto unassignedRequests = filterRequestsByState(requestSet, RequestState::Unmatched); // redo the filtering each time
+        /**
+         *   Check feasibility of stuffing each request into activated trip-chains. Conditions
+         *     1. The trip has remaining capacity to pickup the assigned request... @todo feels like even more bookeeping of bus, active trip and following trip-chain is needed. But quickly gets complex
+         *     2. Origin stop somewhere downstream 
+         *     3. Destination stop is somewhere downstream
+         *     4. Origin stop is before destination stop downstream
+         */
+        if (tr->has_reserve_capacity())
+        {
+            for (auto rq : unassignedRequests)
+            {
+                assert(rq->state == RequestState::Unmatched);
+                // auto startstop = tr->stops.front()->first; // if trip starts at same stop
+
+                auto downstreamstops = tr->get_downstream_stops(); // all downstream stops of the current trip
+                //check if origin is downstream
+                auto orig_it = find_if(downstreamstops.begin(), downstreamstops.end(), [rq](const Busstop* st) { return rq->ostop_id == st->get_id(); });
+                auto dest_it = find_if(downstreamstops.begin(), downstreamstops.end(), [rq](const Busstop* st) { return rq->dstop_id == st->get_id(); });
+                if (orig_it != downstreamstops.end() && dest_it != downstreamstops.end())
+                {
+                    assert(orig_it != dest_it);
+                    if (orig_it < dest_it) //check if destination is downstream from origin
+                    {
+                        rq->set_assigned_trip(tr);
+                        rq->set_state(RequestState::Matched); //update to matched since the trip already has a vehicle    
+                    }
+                }
+            }
+        }
+    }
 
     void assignRequestsToScheduledTrip(const set<Request*, ptr_less<Request*> >& requestSet, Bustrip* tr)
     {

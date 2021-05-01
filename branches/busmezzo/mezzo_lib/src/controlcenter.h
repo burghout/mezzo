@@ -45,13 +45,11 @@ struct DRTAssignmentData
 	set<Bustrip*,ptr_less<Bustrip*> > unscheduled_trips;
     set<Bustrip*,ptr_less<Bustrip*> > active_trips; //!< all matched and scheduled trips that have ever been generated have not completed
 
-	set<Request*, ptr_less<Request*> > active_requests; //!< all active requests sent to ControlCenter @todo currently only accepted requests that have not been served yet, removed when boarding a vehicle, will include e.g. served requests in the future
+	set<Request*, ptr_less<Request*> > active_requests; //!< all non-completed requests sent to and accepted by the ControlCenter
 	set<Request*, ptr_less<Request*> > rejected_requests; //!< all requests rejected by ControlCenter
 	set<Request*, ptr_less<Request*> > completed_requests; //!< all requests that were picked up and dropped off
 
     map<BusState, set<Bus*> > fleet_state; //!< all candidate vehicles to be assigned, or reassigned to activeTrips
-    //
-    // activeRequests //!< all requests for which activeTrips might be generated for
 
 	Controlcenter* cc_owner = nullptr;
 	void print_state(double time) const;

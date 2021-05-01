@@ -2497,7 +2497,7 @@ double Busstop::calc_exiting_time (Eventlist* eventlist, Bustrip* trip, double t
 	//check if holding strategy is used for this trip
 	if (trip->get_complying() == true)
 	{
-		holding_departure_time = calc_holding_departure_time(trip, time); //David added 2016-04-01
+		holding_departure_time = calc_holding_departure_time(trip, time); 
 	}
 	double ready_to_depart = max(time + dwelltime, holding_departure_time);
 
