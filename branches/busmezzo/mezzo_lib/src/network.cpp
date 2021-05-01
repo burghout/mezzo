@@ -22,6 +22,9 @@ double drt_first_rep_max_headway=0;
 double drt_first_rep_waiting_utility=10; //default is to evaluate waiting utility for drt service positively in the first rep
 int drt_min_occupancy=0;
 
+bool PARTC::drottningholm_case = false;
+Busstop* PARTC::transfer_stop = nullptr;
+
 long int randseed=0;
 int vid=0;
 int pid=0;
@@ -7458,17 +7461,6 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
     *   - also check the category of each od being checked
     *   - generate a FWF_passdata for each OD category
     */
-    bool PARTCflag = false;
-    for (auto line : buslines)
-    {
-        if (!line->is_flex_line())
-        {
-            if (line->stops.back()->get_id() == PARTC::morby_station_id) //all fixed lines end at morby station
-                PARTCflag = true;
-            else
-                PARTCflag = false;
-        }
-    }
 
     FWF_passdata total_passdata_b2b;
     FWF_passdata total_passdata_b2c;
@@ -7554,7 +7546,7 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
         int pass_ignored = 0; // passengers ignored from fwf summary output...i.e. did not start and complete trip with pass generation interval
 
         // FWF passenger output
-        if (PARTCflag)
+        if (PARTC::drottningholm_case)
         {
             for (auto pass : all_pass) // only check pass who started and completed trip within the pass generation time interval
             {
@@ -9567,6 +9559,22 @@ bool Network::init()
     {
         (*iter3)->execute(eventlist, initvalue);
         initvalue += 0.00001;
+    }
+
+    //!< @todo PARTC specific, remove
+    for (auto line : buslines)
+    {
+        if (!line->is_flex_line())
+        {
+            if (line->stops.back()->get_id() == PARTC::morby_station_id) //all fixed lines end at morby station
+            {
+                PARTC::drottningholm_case = true;
+                PARTC::transfer_stop = busstopsmap[PARTC::transfer_stop_id];
+                assert(PARTC::transfer_stop->get_id() == PARTC::transfer_stop_id);
+            }
+            else
+                PARTC::drottningholm_case = false;
+        }
     }
 
     if (theParameters->demand_format == 3)

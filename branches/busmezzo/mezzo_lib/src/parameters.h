@@ -91,8 +91,12 @@ const double dummy_link_freeflow_speed = 1000.0;
 * - bunch of stuff used for results output
 * @todo remove
 */
+class Busstop;
+
 namespace PARTC
 {
+    extern bool drottningholm_case; //true if this is the drottningholm case
+    extern Busstop* transfer_stop; 
     const vector<int> branch_ids_176 = { 217619,217618,217617,217616,217615,217614,217613,217612,217611,217610,217609,217608,217607,217606,217605,217603,217602,217604,217600,277024 };
     const vector<int> branch_ids_177 = { 277036,277035,277034,277033,277032,277031,277030,277029,277028,277027,277026,277025,277024 };
     const vector<int> corridor_ids = { 277024,277023,277022,277021,277020,277019,277018,277017,277016,277015,277014,277013,277012,277011,277010,277009,277008,277007,277006,277005,277004,277003,277002,277001 };
