@@ -452,7 +452,7 @@ void Passenger::start(Eventlist* eventlist, double time)
         }
     }
 
-    TransitModeType chosen_mode = make_transitmode_decision(connection_stop, start_time); //also sets chosen mode...
+    TransitModeType chosen_mode = make_transitmode_decision(connection_stop, start_time); 
     if (!theParameters->drt)
         assert(chosen_mode == TransitModeType::Fixed);
     set_chosen_mode(chosen_mode); //important that this is set before dropoff_decision call
@@ -698,38 +698,58 @@ void Passenger::record_waiting_experience(Bustrip* arriving_bus, double time)
 
 Busstop* Passenger::make_alighting_decision (Bustrip* boarding_bus, double time) // assuming that all passenger paths involve only direct trips
 {
-	if (theParameters->drt && chosen_mode_ == TransitModeType::Flexible)
-	{
-		assert(curr_request_->assigned_veh == nullptr); // have not started assigning vehicles to requests yet, otherwise can use this instead
-		
-		Busstop* final_stop = boarding_bus->stops.back()->first;
-		assert(curr_request_->dstop_id == final_stop->get_id()); //otherwise the traveler has boarded a bus they should not have boarded, final stop of boarded bus should be guarantee match chosen dropoff stop of traveler
+    if (theParameters->drt && chosen_mode_ == TransitModeType::Flexible)
+    {
+        assert(curr_request_->assigned_veh == nullptr); // have not started assigning vehicles to requests yet, otherwise can use this instead
 
-		if (final_stop->get_id() != OD_stop->get_destination()->get_id()) // in case the alighting stop is not the passengers final destination
-		{
-			ODstops* left_od_stop;
-			if (final_stop->check_stop_od_as_origin_per_stop(this->get_OD_stop()->get_destination()) == false) 
-			{
-				left_od_stop = new ODstops(final_stop, this->get_OD_stop()->get_destination());
-				final_stop->add_odstops_as_origin(this->get_OD_stop()->get_destination(), left_od_stop);
-				this->get_OD_stop()->get_destination()->add_odstops_as_destination(final_stop, left_od_stop);
-			}
-			else
-			{
-				left_od_stop = final_stop->get_stop_od_as_origin_per_stop(this->get_OD_stop()->get_destination());
-			}
-			left_od_stop->set_staying_utility(::large_positive_utility); // not sure if necessary, but doing to match behavior for fixed buses via left_od_stop->calc_combined_set_utility_for_alighting. A fluffy teddy bear
-		}
+        //Busstop* alight_stop = boarding_bus->stops.back()->first;
+        //assert(curr_request_->dstop_id == alight_stop->get_id()); //otherwise the traveler has boarded a bus they should not have boarded, final stop of boarded bus should be guarantee match chosen dropoff stop of traveler
 
-		map<Busstop*, pair<double, double> > alighting_MNL; // utility followed by probability per stop
-		alighting_MNL[final_stop].first = ::large_positive_utility;
-		alighting_MNL[final_stop].second = 1.0;
-		OD_stop->record_passenger_alighting_decision(this, boarding_bus, time, final_stop, alighting_MNL);
+        // find the alighting stop of the traveler on the boarded bus, choice is already made with drop-off decision when request was sent
+        Busstop* alight_stop = nullptr;
+        int did = curr_request_->dstop_id;
+        vector<Visit_stop*> stops = boarding_bus->stops;
+        auto alight_stop_it = find_if(stops.begin(), stops.end(), [did](Visit_stop* vs1)->bool
+            {
+                return vs1->first->get_id() == did;
+            }
+        );
+        if (alight_stop_it != stops.end()) // destination stop should guaranteed exist for the trip that the traveler just boarded
+        {
+            alight_stop = (*alight_stop_it)->first;
+        }
+        else
+        {
+            qDebug() << "Passenger" << this->get_id() << "boarded flex trip" << boarding_bus->get_id() << "that does not match request. Aborting...";
+            abort();
+        }
 
-		// qDebug() << "Passenger boarding Veh " << boarding_bus->get_busv()->get_bus_id() << " at stop " << QString::fromStdString(this->get_OD_stop()->get_origin()->get_name()) << ", time " << time << " made decision to alight at " <<  QString::fromStdString(final_stop->get_name());
 
-		return final_stop;
-	}
+        if (alight_stop->get_id() != OD_stop->get_destination()->get_id()) // in case the alighting stop is not the passengers final destination
+        {
+            ODstops* left_od_stop;
+            if (alight_stop->check_stop_od_as_origin_per_stop(this->get_OD_stop()->get_destination()) == false)
+            {
+                left_od_stop = new ODstops(alight_stop, this->get_OD_stop()->get_destination());
+                alight_stop->add_odstops_as_origin(this->get_OD_stop()->get_destination(), left_od_stop);
+                this->get_OD_stop()->get_destination()->add_odstops_as_destination(alight_stop, left_od_stop);
+            }
+            else
+            {
+                left_od_stop = alight_stop->get_stop_od_as_origin_per_stop(this->get_OD_stop()->get_destination());
+            }
+            left_od_stop->set_staying_utility(::large_positive_utility); // not sure if necessary, but doing to match behavior for fixed buses via left_od_stop->calc_combined_set_utility_for_alighting. A fluffy teddy bear
+        }
+
+        map<Busstop*, pair<double, double> > alighting_MNL; // utility followed by probability per stop
+        alighting_MNL[alight_stop].first = ::large_positive_utility;
+        alighting_MNL[alight_stop].second = 1.0;
+        OD_stop->record_passenger_alighting_decision(this, boarding_bus, time, alight_stop, alighting_MNL);
+
+        // qDebug() << "Passenger boarding Veh " << boarding_bus->get_busv()->get_bus_id() << " at stop " << QString::fromStdString(this->get_OD_stop()->get_origin()->get_name()) << ", time " << time << " made decision to alight at " <<  QString::fromStdString(final_stop->get_name());
+
+        return alight_stop;
+    }
 
 	// assuming that a pass. boards only paths from his path set
 	map <Busstop*, double> candidate_transfer_stops_u; // the double value is the utility associated with the respective stop
