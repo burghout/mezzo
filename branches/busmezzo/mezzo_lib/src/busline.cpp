@@ -2336,7 +2336,20 @@ double Busstop::calc_dwelltime (Bustrip* trip)  //!< calculates the dwelltime of
 	double crowdedness_coefficient = 0.0078;
 	double out_of_stop_coefficient = 3.0; // Taking in consideration the increasing dwell time when bus stops out of the stop
 	double bay_coefficient = 4.0;
-	*/
+    */
+    if (PARTC::drottningholm_case) //!> @todo PARTC remove
+    {
+        if (trip->is_flex_trip())
+        {
+            assert(theParameters->drt);
+            if ((nr_boarding == 0) && (nr_alighting == 0)) //skip dwell times for stops passed by with no requests
+            {
+                dwelltime = 0.0;
+                return dwelltime;
+            }
+        }
+    }
+
     Dwell_time_function* dt_func = trip->get_bustype()->get_dt_function();
 	dwell_constant = has_bay * dt_func->bay_coefficient + dt_func->over_stop_capacity_coefficient * check_out_of_stop(trip->get_busv()) + dt_func->dwell_constant;
 

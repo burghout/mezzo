@@ -1537,14 +1537,23 @@ bool Network::readcontrolcenters(const string& name)
         //create and add all direct lines to cc
         if (generate_direct_routes == 1)
         {
-            cout << "readcontrolcenters:: generating direct lines for control center " << cc->getID() << endl;
-            if (!createControlcenterDRTLines(cc))
+            //@todo PARTC temporary change create direct lines with intermediate stops
+            //cout << "readcontrolcenters:: generating direct lines for control center " << cc->getID() << endl;
+            if (!createAllDRTLinesWithIntermediateStops(cc))
             {
                 cout << "readcontrolcenters:: problem generating direct lines for control center " << id;
                 in.close();
                 return false;
             }
             cc->setGeneratedDirectRoutes(generate_direct_routes);
+            //cout << "readcontrolcenters:: generating direct lines for control center " << cc->getID() << endl;
+            //if (!createAllDRTLines(cc))
+            //{
+            //    cout << "readcontrolcenters:: problem generating direct lines for control center " << id;
+            //    in.close();
+            //    return false;
+            //}
+            //cc->setGeneratedDirectRoutes(generate_direct_routes);
         }
         
         //read lines associated with this cc 
@@ -6334,21 +6343,21 @@ vector<Busstop*> Network::get_busstops_on_link(Link* link) const
 vector<Busstop*> Network::get_busstops_on_busroute(Busroute* route) const
 {
     vector<Busstop*> stops_on_route;
-    cout << "checking for stops on route " << route->get_id() << endl;
+    //cout << "checking for stops on route " << route->get_id() << endl;
     for (auto link : route->get_links())
     {
-        cout << "\tchecking for stops on link " << link->get_id() << endl;
+    //    cout << "\tchecking for stops on link " << link->get_id() << endl;
         vector<Busstop*> stops_on_link = get_busstops_on_link(link);
-        cout << "\tfound stops:";
+    /*    cout << "\tfound stops:";
         for(auto stop : stops_on_link)
             cout << " " << stop->get_id();
-        cout << endl;
+        cout << endl;*/
         stops_on_route.insert(stops_on_route.end(), stops_on_link.begin(), stops_on_link.end());
     }
-    cout << "found stops on route:";
+    /*cout << "found stops on route:";
     for (auto stop : stops_on_route)
         cout << " " << stop->get_id();
-    cout << endl;
+    cout << endl;*/
 
     return stops_on_route;
 }

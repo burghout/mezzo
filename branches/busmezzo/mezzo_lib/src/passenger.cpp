@@ -1157,6 +1157,31 @@ Busstop* Passenger::make_dropoff_decision(Busstop* pickup_stop, double time)
     assert(chosen_mode_ == TransitModeType::Flexible); //dropoff decision really only makes sense for on-demand/flexible modes
     Busstop* dropoff_stop = nullptr;
 
+    //* @todo PARTC force case specific drop-off stop dependent on OD category (if using drt)
+    if (PARTC::drottningholm_case)
+    {
+        using namespace PARTC;
+        ODCategory category = get_od_category(this->original_origin->get_id(), this->get_OD_stop()->get_destination()->get_id());
+		ODstops* targetOD = pickup_stop->get_stop_od_as_origin_per_stop(OD_stop->get_destination());
+
+        switch (category)
+        {
+        case ODCategory::Null: abort(); break; //all ods should have a category
+        case ODCategory::b2b: // force no transfers
+            dropoff_stop = OD_stop->get_destination();
+            break;
+        case ODCategory::b2c: // force request to transfer point
+            dropoff_stop = PARTC::transfer_stop;
+            break;
+        case ODCategory::c2c: abort(); break; //should never have chosen flexible
+        }
+		map<Busstop*, pair<double, double> > dropoff_MNL; //!< for output collector at ODstops level, first double utility of choosing dropoff stop, second probability
+
+		dropoff_MNL[dropoff_stop] = make_pair(::large_positive_utility, 1.0); // fill in output structure
+		targetOD->record_passenger_dropoff_decision(this, time, pickup_stop, dropoff_stop, dropoff_MNL);
+		return dropoff_stop;
+    }
+
     assert(pickup_stop->check_stop_od_as_origin_per_stop(OD_stop->get_destination()) != false); //!< checked already in make_connection_decision which should always be called
     //DEBUG_MSG("Passenger::make_dropoff_decision() - pass " << this->get_id() << " choosing dropoff stop for pickup stop " << pickup_stop->get_id() << " at time " << time);
 

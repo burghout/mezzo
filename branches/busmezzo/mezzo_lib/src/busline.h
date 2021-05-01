@@ -789,7 +789,7 @@ public:
 	
 // dwell-time calculation related functions	
 	double calc_dwelltime (Bustrip* trip);								//!< calculates the dwelltime of each bus serving this stop. currently includes: passenger service times ,out of stop, bay/lane		
-	double calc_holding_departure_time(Bustrip* trip, double time);		// David added 2016-04-01 calculates departure time from stop when holding is used, returns dwelltime + time if no holding is used
+	double calc_holding_departure_time(Bustrip* trip, double time);		//!< calculates departure time from stop when holding is used, returns dwelltime + time if no holding is used
 	bool check_out_of_stop (Bus* bus);									//!< returns TRUE if there is NO available space for the bus at the stop (meaning the bus is out of the stop)
 	void occupy_length (Bus* bus);										//!< update available length when bus arrives
 	void free_length (Bus* bus);										//!< update available length when bus leaves
