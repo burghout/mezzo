@@ -1234,6 +1234,20 @@ void Bustrip::set_status(BustripStatus newstatus)
 	}
 }
 
+size_t Bustrip::get_planned_occupancy_at_stop(Busstop* target_stop) const
+{
+    auto stop_it = find_if(stops.begin(), stops.end(), [target_stop](const Visit_stop* stop) {return stop->first->get_id() == target_stop->get_id(); });
+    assert(stop_it != stops.end()); // target stop must exist on the planned stop visits of the bustrip
+    size_t n_dropoffs = get_num_assigned_requests_with_destination(target_stop->get_id());
+
+    if ((*stop_it) == stops.back()) // the target stop is the final stop of the trip
+        return n_dropoffs;
+
+    size_t n_pickups = get_num_assigned_requests_with_origin(target_stop->get_id());
+    ++stop_it; // now points to stop after target_stop
+
+    return get_planned_occupancy_at_stop((*stop_it)->first) - n_pickups + n_dropoffs; // calculate stop occupancy recursively if not final stop of trip
+}
 bool Bustrip::has_reserve_capacity() const
 {
 	return assigned_requests.size() < planned_capacity_;
@@ -1242,6 +1256,50 @@ bool Bustrip::has_reserve_capacity() const
 bool Bustrip::is_assigned_to_requests() const
 {
     return !assigned_requests.empty();
+}
+
+vector<Request*> Bustrip::get_assigned_requests_with_destination(int dstop_id) const
+{
+	vector<Request*> reqs;
+	for(auto req : assigned_requests)
+	{
+	    if(req->dstop_id == dstop_id)
+			reqs.push_back(req);
+	}
+	return reqs;
+}
+
+vector<Request*> Bustrip::get_assigned_requests_with_origin(int ostop_id) const
+{
+	vector<Request*> reqs;
+	for(auto req : assigned_requests)
+	{
+	    if(req->ostop_id == ostop_id)
+			reqs.push_back(req);
+	}
+	return reqs;
+}
+
+size_t Bustrip::get_num_assigned_requests_with_destination(int dstop_id) const
+{
+	size_t count = 0;
+	for(auto req : assigned_requests)
+	{
+	    if(req->dstop_id == dstop_id)
+			++count;
+	}
+	return count;
+}
+
+size_t Bustrip::get_num_assigned_requests_with_origin(int ostop_id) const
+{
+	size_t count = 0;
+	for(auto req : assigned_requests)
+	{
+	    if(req->ostop_id == ostop_id)
+			++count;
+	}
+	return count;
 }
 
 bool Bustrip::is_part_of_tripchain() const

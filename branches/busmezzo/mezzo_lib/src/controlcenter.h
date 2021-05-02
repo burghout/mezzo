@@ -126,6 +126,8 @@ public:
 	void setTripGenerationStrategy(int type); //!< destroy current generationStrategy_ and set to new type
 	void setEmptyVehicleStrategy(int type); //!< destroy current emptyVehicleStrategy_ and set to new type
 
+	TripGenerationStrategy* getGenerationStratgy() const;
+
 	void addServiceRoute(Busline* line); //!< add a potential service route that this BustripGenerator can plan trips for
     vector<Busline*> getServiceRoutes() const;
 
@@ -210,6 +212,7 @@ class Controlcenter : public QObject
 {
 	Q_OBJECT
     friend class TestControlcenter; //!< for writing unit tests for Controlcenter
+	friend class TestDRTAlgorithms;
 	friend class TestFixedWithFlexible_walking; //!< for writing integration tests for FWF network
 	friend class Network; //!< for writing results of completed trips to output files, and for generating direct lines between connectedStops_
 

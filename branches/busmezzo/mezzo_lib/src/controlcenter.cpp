@@ -272,6 +272,11 @@ void BustripGenerator::setEmptyVehicleStrategy(int type)
 	}
 }
 
+TripGenerationStrategy* BustripGenerator::getGenerationStratgy() const
+{
+	return generationStrategy_;
+}
+
 //BustripVehicleMatcher
 BustripVehicleMatcher::BustripVehicleMatcher(MatchingStrategy* matchingStrategy): matchingStrategy_(matchingStrategy){}
 BustripVehicleMatcher::~BustripVehicleMatcher()
