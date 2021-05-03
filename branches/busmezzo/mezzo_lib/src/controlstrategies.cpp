@@ -354,6 +354,27 @@ pair <Bus*, double> TripGenerationStrategy::get_nearest_vehicle(const Busstop* t
     return closest;
 }
 
+vector<pair<Bus*, double> > TripGenerationStrategy::find_nearest_vehicles(const Busstop* targetStop, set<Bus*> vehicles, Network* theNetwork, double time)
+{
+    vector<pair<Bus*, double> > closest_vehicles;
+
+    // label all the vehicles with their expected ivt to target stop
+    for (auto v : vehicles)
+    {
+        Busstop* laststop = v->get_last_stop_visited(); //current stop if not driving
+        vector<Link*> shortestpath = find_shortest_path_between_stops(theNetwork, laststop, targetStop, time);
+        double expected_tt = calc_route_travel_time(shortestpath, time);
+        if(v->is_driving()) // subtract time since departure from last stop if driving
+            expected_tt -= time - v->get_curr_trip()->get_last_stop_exit_time();
+        assert(expected_tt >= 0);
+
+        closest_vehicles.push_back(make_pair(v, expected_tt));
+    }
+    sort(closest_vehicles.begin(), closest_vehicles.end(), [](const pair<Bus*, double>& veh1, const pair<Bus*, double>& veh2) { return veh1.second < veh2.second; });
+
+    return closest_vehicles;
+}
+
 bool NullTripGeneration::calc_trip_generation(DRTAssignmentData& assignment_data, const vector<Busline*>& candidateServiceRoutes, double time)
 {
     Q_UNUSED(assignment_data)

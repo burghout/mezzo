@@ -248,7 +248,8 @@ public:
 	void printFleetState() const; //!< for printing the state of the entire fleet for debugging
 
 	set<Bus*> getAllVehicles();
-	set<Bus*> getVehiclesDrivingToStop(Busstop* end_stop); //!< get connected vehicles that are driving to target end_stop
+	set<Bus*> getVehiclesDrivingToStop(Busstop* stop); //!< get connected vehicles that are driving to target stop
+	set<Bus*> getVehiclesEnRouteToStop(Busstop* stop); //!< get connected vehicles that are assigned to a trip with stop included in their downstream route
 	set<Bus*> getOnCallVehiclesAtStop(Busstop* stop); //!< get connected vehicles that are currently on-call at target stop
 	pair<Bus*,double> getClosestVehicleToStop(Busstop* stop, double time); //returns closest vehicle to stop and shortest expected time to get there
 	

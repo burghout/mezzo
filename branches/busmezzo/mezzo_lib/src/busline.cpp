@@ -1544,6 +1544,14 @@ vector <Visit_stop*> Bustrip::get_downstream_stops_till_horizon(Visit_stop *targ
 	}
 	return remaining_stops;
 }
+
+bool Bustrip::has_stop_downstream(Busstop* target_stop)
+{
+	vector<Busstop*> ds_stops = get_downstream_stops();
+	auto stop_it = find(ds_stops.begin(),ds_stops.end(), target_stop);
+	return stop_it != ds_stops.end();
+}
+
 /* will be relevant only when time points will be trip-specific
 bool Bustrip::is_trip_timepoint (Busstop* stop)
 {
@@ -1761,10 +1769,10 @@ bool Busstop::execute(Eventlist* eventlist, double time) // is executed by the e
 	if (bus_exit == true) 
 	// if there is an exiting bus
 	{
-		if(exiting_trip->get_holding_at_stop()) //David added 2016-05-26: the exiting trip is holding and needs to account for additional passengers that board during the holding period
+		if(exiting_trip->get_holding_at_stop()) // the exiting trip is holding and needs to account for additional passengers that board during the holding period
 		{
 			passenger_activity_at_stop(eventlist,exiting_trip,time);
-			exiting_trip->set_holding_at_stop(false); //exiting trip is not holding anymore
+			exiting_trip->set_holding_at_stop(false); // exiting trip is not holding anymore
 		}
 
 		Vehicle* veh =  (Vehicle*)(exiting_trip->get_busv()); // so we can do vehicle operations

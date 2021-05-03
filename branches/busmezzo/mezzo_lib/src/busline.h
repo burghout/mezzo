@@ -443,6 +443,7 @@ public:
 	pair<double, double> crowding_dt_factor (double nr_boarding, double nr_alighting);
 	vector <Busstop*> get_downstream_stops(); //!< return the remaining stops to be visited starting from 'next_stop', returns empty Busstop vector if there are none
 	vector <Visit_stop*> get_downstream_stops_till_horizon(Visit_stop* target_stop); //!< return the remaining stops to be visited starting from 'next_stop'
+	bool has_stop_downstream(Busstop* target_stop); // returns true if target_stop exists downstream for this trip, false otherwise
 
 // output-related functions
 	void write_assign_segments_output(ostream & out);

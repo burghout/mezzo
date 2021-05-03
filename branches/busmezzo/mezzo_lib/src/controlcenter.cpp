@@ -12,7 +12,6 @@
 
 void DRTAssignmentData::reset()
 {
-    // @todo maybe delete and handle cleanups here as well...currently spread accross CC and member process classes
     for (Bustrip* trip : unmatched_trips) //clean up planned trips that were never matched. Note: currently network reset is called even after the last simulation replication
 	{
 		delete trip;
@@ -563,6 +562,38 @@ set<Bus*> Controlcenter::getVehiclesDrivingToStop(Busstop* end_stop)
 			vehs_enroute.insert(veh);
 	}
 
+	return vehs_enroute;
+}
+
+set<Bus*> Controlcenter::getVehiclesEnRouteToStop(Busstop* stop)
+{
+	assert(stop);
+	set<Bus*> vehs_enroute;
+	for(const auto& vehs_in_state : assignment_data_.fleet_state)
+	{
+	    if(vehs_in_state.first != BusState::Null && vehs_in_state.first != BusState::OnCall) // if not Null or Oncall then assigned to trip
+	    {
+			for(auto veh : vehs_in_state.second)
+			{
+				Bustrip* trip = veh->get_curr_trip();
+
+			    // add if vehicle is Idle, and at the current stop or has it downstream on trip
+				if(veh->is_idle())
+				{
+				    if(trip->get_last_stop_visited() == stop)
+						vehs_enroute.insert(veh);
+					if(trip->has_stop_downstream(stop))
+						vehs_enroute.insert(veh);
+				}			    
+			    // add if vehicle is Driving, and has the stop downstream on trip
+			    if(veh->is_driving())
+			    {
+			        if(trip->has_stop_downstream(stop))
+						vehs_enroute.insert(veh);
+			    }   
+			}
+	    }
+	}
 	return vehs_enroute;
 }
 
