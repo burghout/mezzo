@@ -1194,6 +1194,31 @@ bool Bustrip::remove_request(const Request* req)
 	return false;
 }
 
+bool Bustrip::is_feasible_request_assignment(Request* req, size_t planned_capacity)
+{
+	vector<Request*> candidate_reqs = assigned_requests; //make temp copy of currently assigned requests
+	candidate_reqs.push_back(req); // check feasibility of new request vector
+	
+    //find pickup stop of req and dropoff stop of req
+    auto ostop_it = find_if(stops.begin(), stops.end(), [req](const Visit_stop* stop) {return stop->first->get_id() == req->ostop_id; });
+    auto dstop_it = find_if(stops.begin(), stops.end(), [req](const Visit_stop* stop) {return stop->first->get_id() == req->dstop_id; });
+    if (ostop_it != stops.end() && dstop_it != stops.end())
+    {
+        if (ostop_it < dstop_it)
+        {
+            for (auto stop_visit = ostop_it; stop_visit != stops.end(); ++stop_visit) // check if there is available capacity for the request by anticipating expected capacity until from the pickup of the request
+            {
+                Busstop* target_stop = (*stop_visit)->first;
+                size_t planned_occ = get_planned_occupancy_at_stop(candidate_reqs, target_stop);
+                if (planned_occ > planned_capacity)
+                    return false;
+            }
+            return true;
+        }
+    }
+    return false;
+}
+
 void Bustrip::set_status(BustripStatus newstatus)
 {
 	if(!is_flex_trip()) // only update status of flex trips, fixed stay at Null @todo expand to bookkeep fixed trips as well
@@ -1234,23 +1259,24 @@ void Bustrip::set_status(BustripStatus newstatus)
 	}
 }
 
-size_t Bustrip::get_planned_occupancy_at_stop(Busstop* target_stop) const
+size_t Bustrip::get_planned_occupancy_at_stop(const vector<Request*>& planned_requests, Busstop* target_stop) const
 {
     auto stop_it = find_if(stops.begin(), stops.end(), [target_stop](const Visit_stop* stop) {return stop->first->get_id() == target_stop->get_id(); });
     assert(stop_it != stops.end()); // target stop must exist on the planned stop visits of the bustrip
-    size_t n_dropoffs = get_num_assigned_requests_with_destination(target_stop->get_id());
+    size_t n_dropoffs = get_num_assigned_requests_with_destination(planned_requests, target_stop->get_id());
 
     if ((*stop_it) == stops.back()) // the target stop is the final stop of the trip
         return n_dropoffs;
 
-    size_t n_pickups = get_num_assigned_requests_with_origin(target_stop->get_id());
+    size_t n_pickups = get_num_assigned_requests_with_origin(planned_requests, target_stop->get_id());
     ++stop_it; // now points to stop after target_stop
 
-    return get_planned_occupancy_at_stop((*stop_it)->first) - n_pickups + n_dropoffs; // calculate stop occupancy recursively if not final stop of trip
+    return get_planned_occupancy_at_stop(planned_requests, (*stop_it)->first) - n_pickups + n_dropoffs; // calculate stop occupancy recursively if not final stop of trip
 }
+
 bool Bustrip::has_reserve_capacity() const
 {
-	return assigned_requests.size() < planned_capacity_;
+    return assigned_requests.size() < planned_capacity_;
 }
 
 bool Bustrip::is_assigned_to_requests() const
@@ -1280,10 +1306,10 @@ vector<Request*> Bustrip::get_assigned_requests_with_origin(int ostop_id) const
 	return reqs;
 }
 
-size_t Bustrip::get_num_assigned_requests_with_destination(int dstop_id) const
+size_t Bustrip::get_num_assigned_requests_with_destination(const vector<Request*>& requests, int dstop_id) const
 {
 	size_t count = 0;
-	for(auto req : assigned_requests)
+	for(auto req : requests)
 	{
 	    if(req->dstop_id == dstop_id)
 			++count;
@@ -1291,10 +1317,10 @@ size_t Bustrip::get_num_assigned_requests_with_destination(int dstop_id) const
 	return count;
 }
 
-size_t Bustrip::get_num_assigned_requests_with_origin(int ostop_id) const
+size_t Bustrip::get_num_assigned_requests_with_origin(const vector<Request*>& requests, int ostop_id) const
 {
 	size_t count = 0;
-	for(auto req : assigned_requests)
+	for(auto req : requests)
 	{
 	    if(req->ostop_id == ostop_id)
 			++count;

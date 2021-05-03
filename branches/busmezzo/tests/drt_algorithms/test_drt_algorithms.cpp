@@ -227,12 +227,20 @@ void TestDRTAlgorithms::testGetPlannedOccupancy()
     QVERIFY(t1->get_assigned_requests_with_destination(3).size() == 0);
     QVERIFY(t1->get_assigned_requests_with_destination(4).size() == 1);
     QVERIFY(t1->get_assigned_requests_with_destination(5).size() == 2);
+    auto reqs = t1->get_assigned_requests();
+    QVERIFY(t1->get_planned_occupancy_at_stop(reqs,s1) == 0); //2 pickups 0 dropoffs
+    QVERIFY(t1->get_planned_occupancy_at_stop(reqs,s2) == 2); //2 pickups 1 dropoff
+    QVERIFY(t1->get_planned_occupancy_at_stop(reqs,s3) == 3); //0 pickups 0 dropoffs
+    QVERIFY(t1->get_planned_occupancy_at_stop(reqs,s4) == 3); //0 pickups 1 dropoff
+    QVERIFY(t1->get_planned_occupancy_at_stop(reqs,s5) == 2); //0 pickups 2 dropoffs
     
-    QVERIFY(t1->get_planned_occupancy_at_stop(s1) == 0); //2 pickups 0 dropoffs
-    QVERIFY(t1->get_planned_occupancy_at_stop(s2) == 2); //2 pickups 1 dropoff
-    QVERIFY(t1->get_planned_occupancy_at_stop(s3) == 3); //0 pickups 0 dropoffs
-    QVERIFY(t1->get_planned_occupancy_at_stop(s4) == 3); //0 pickups 1 dropoff
-    QVERIFY(t1->get_planned_occupancy_at_stop(s5) == 2); //0 pickups 2 dropoffs
+    //Check feasibility of adding a request given a planned capacity of a vehicle assigned to this trip
+    Request* newrq = new Request(nullptr,888,1,5,1,0.0,0.0); //odstop(1,5)
+    QVERIFY(!t1->is_feasible_request_assignment(newrq,3)); //Should be infeasible for planned cap == 3
+    newrq->dstop_id = 2; 
+    QVERIFY(t1->is_feasible_request_assignment(newrq,3)); //Should be feasible since dropoff is before highest occ
+    newrq->ostop_id = 4; newrq->dstop_id = 5; 
+    QVERIFY(t1->is_feasible_request_assignment(newrq,3)); //Should be feasible since pickup is after highest occ
     
     delete line;
     delete t1;
@@ -240,6 +248,7 @@ void TestDRTAlgorithms::testGetPlannedOccupancy()
     delete rq2;
     delete rq3;
     delete rq4;
+    delete newrq;
 }
 
 void TestDRTAlgorithms::testBustripFilters()

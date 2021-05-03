@@ -473,21 +473,22 @@ public:
     vector <Request*> get_assigned_requests() const { return assigned_requests;}
     void add_request (Request* req) { assigned_requests.push_back((req));}
 	bool remove_request(const Request* req); //!< removes request from scheduled requests if it exists, returns true if successful, false otherwise
+	bool is_feasible_request_assignment(Request* req, size_t planned_capacity); //!< returns true if adding request does not exceed planned cap
 
 	void update_total_boardings(int n_boarding) { total_boarding += n_boarding; }
 	void update_total_alightings(int n_alighting) { total_alighting += n_alighting; }
 	int get_total_boarding() const { return total_boarding; }
 	int get_total_alighting() const { return total_alighting; }
 
-    size_t get_planned_occupancy_at_stop(Busstop* stop) const; //!< returns the currently anticipated occupancy upon entering a stop along the route of this trip, based on number of assigned request pickups and dropoffs upstream from each stop on the trip
+    size_t get_planned_occupancy_at_stop(const vector<Request*>& planned_requests, Busstop* stop) const; //!< returns the currently anticipated occupancy upon entering a stop along the route of this trip, based on planned request pickups and dropoffs upstream from each stop on the trip
     int get_planned_capacity() const { return planned_capacity_; }
-    void set_planned_capacity(int planned_capacity) { planned_capacity_ = planned_capacity; }
-	bool has_reserve_capacity() const; //!< returns true if the number of requests currently assigned to this trip does not exceed planned capacity of the vehicle assigned to this trip
+    void set_planned_capacity(int planned_capacity) { planned_capacity_ = planned_capacity; } 
+    bool has_reserve_capacity() const; //!< returns true if the number of requests currently assigned to this trip does not exceed planned capacity of the vehicle assigned to this trip
     bool is_assigned_to_requests() const; //!< returns true if trip was assigned to requests
 	vector<Request*> get_assigned_requests_with_destination(int dest_id) const; //!< returns vector of requests currently assigned to this trip whos destination matches dest_id
 	vector<Request*> get_assigned_requests_with_origin(int orig_id) const; //!< returns vector of requests currently assigned to this trip whos origin matches orig_id
-	size_t get_num_assigned_requests_with_destination(int dest_id) const;
-	size_t get_num_assigned_requests_with_origin(int orig_id) const;
+	size_t get_num_assigned_requests_with_destination(const vector<Request*>& requests, int dest_id) const;
+	size_t get_num_assigned_requests_with_origin(const vector<Request*>& requests, int orig_id) const;
 
     bool is_part_of_tripchain() const; //!< returns true if trip is a member of a trip-chain (driving_roster that includes more than one trip on it)
 	Bustrip* get_next_trip_in_chain() const; //!< returns the Bustrip that follows this one in the driving roster, nullptr otherwise
