@@ -1196,24 +1196,27 @@ bool Bustrip::remove_request(const Request* req)
 
 bool Bustrip::is_feasible_request_assignment(Request* req, size_t planned_capacity)
 {
-	vector<Request*> candidate_reqs = assigned_requests; //make temp copy of currently assigned requests
-	candidate_reqs.push_back(req); // check feasibility of new request vector
-	
-    //find pickup stop of req and dropoff stop of req
-    auto ostop_it = find_if(stops.begin(), stops.end(), [req](const Visit_stop* stop) {return stop->first->get_id() == req->ostop_id; });
-    auto dstop_it = find_if(stops.begin(), stops.end(), [req](const Visit_stop* stop) {return stop->first->get_id() == req->dstop_id; });
-    if (ostop_it != stops.end() && dstop_it != stops.end())
+    if (has_stop_downstream(req->ostop_id) && has_stop_downstream(req->dstop_id)) // if trip is active, check so that pickup and dropoff stops have not been passed by already
     {
-        if (ostop_it < dstop_it)
+		//find pickup stop of req and dropoff stop of req
+        auto ostop_it = find_if(stops.begin(), stops.end(), [req](const Visit_stop* stop) {return stop->first->get_id() == req->ostop_id; });
+        auto dstop_it = find_if(stops.begin(), stops.end(), [req](const Visit_stop* stop) {return stop->first->get_id() == req->dstop_id; });
+        if (ostop_it != stops.end() && dstop_it != stops.end())
         {
-            for (auto stop_visit = ostop_it; stop_visit != stops.end(); ++stop_visit) // check if there is available capacity for the request by anticipating expected capacity until from the pickup of the request
+            if (ostop_it < dstop_it) // origin is visited before destination
             {
-                Busstop* target_stop = (*stop_visit)->first;
-                size_t planned_occ = get_planned_occupancy_at_stop(candidate_reqs, target_stop);
-                if (planned_occ > planned_capacity)
-                    return false;
+                vector<Request*> candidate_reqs = assigned_requests; //make temp copy of currently assigned requests
+                candidate_reqs.push_back(req); // check feasibility of new request vector
+
+                for (auto stop_visit = ostop_it; stop_visit != stops.end(); ++stop_visit) // check if there is available capacity for the request by anticipating expected capacity until from the pickup of the request
+                {
+                    Busstop* target_stop = (*stop_visit)->first;
+                    size_t planned_occ = get_planned_occupancy_at_stop(candidate_reqs, target_stop);
+                    if (planned_occ > planned_capacity)
+                        return false;
+                }
+                return true;
             }
-            return true;
         }
     }
     return false;
@@ -1549,6 +1552,13 @@ bool Bustrip::has_stop_downstream(Busstop* target_stop)
 {
 	vector<Busstop*> ds_stops = get_downstream_stops();
 	auto stop_it = find(ds_stops.begin(),ds_stops.end(), target_stop);
+	return stop_it != ds_stops.end();
+}
+
+bool Bustrip::has_stop_downstream(int target_stop_id)
+{
+	vector<Busstop*> ds_stops = get_downstream_stops();
+    auto stop_it = find_if(ds_stops.begin(), ds_stops.end(), [target_stop_id](const Busstop* stop) { return stop->get_id() == target_stop_id; });
 	return stop_it != ds_stops.end();
 }
 
