@@ -352,7 +352,7 @@ void Bus::advance_curr_trip (double time, Eventlist* eventlist) // progresses tr
 			next_trip->set_starttime(time); // for calculating output as well as the activation check below, this now represents actual starttime and not just the 'expected one'
 			assignBusToTrip(busclone, next_trip); //the trip has not started yet however, on_trip set to true in Bustrip::activate
 			assert(busclone->get_curr_trip() == next_trip); //should now point to the same once assigned
-			next_trip->set_scheduled_for_dispatch(true); // probably unnecessary, but just to make sure the trip is not double activated via Busline::execute, you never know
+			next_trip->set_scheduled_for_dispatch(true); // updates the status of the trip a well, should be called after cloned bus is assigned to next trip
 
 		}
 		if (next_trip->get_starttime() <= time) // if the bus is already late for the next trip (or dynamically generated trip that starts immediately)

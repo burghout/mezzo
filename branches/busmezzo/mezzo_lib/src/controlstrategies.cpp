@@ -25,6 +25,10 @@ void Request::set_assigned_trip(Bustrip* newtrip)
         }
         newtrip->add_request(this);
         assigned_trip = newtrip;
+        if(newtrip->get_busv()) // if newtrip is also matched to a vehicle
+            this->set_state(RequestState::Matched);
+        else
+            this->set_state(RequestState::Assigned);
     }
 }
 
@@ -40,7 +44,7 @@ void Request::set_state(RequestState newstate)
         case RequestState::Unmatched:
             break;
         case RequestState::Assigned:
-            assert(state == RequestState::Unmatched);
+            //assert(state == RequestState::Unmatched);
             break;
         case RequestState::Matched:
             //assert(state == RequestState::Assigned);
@@ -231,7 +235,7 @@ Bustrip* TripGenerationStrategy::create_unassigned_trip(Busline* line, double de
 
     //initialize trip
     trip->add_stops(desired_schedule); //add scheduled stop visits to trip
-    trip->convert_stops_vector_to_map(); // TODO(MrLeffler): not sure why this is necessary but is done for other trips so
+    trip->convert_stops_vector_to_map(); 
     trip->set_last_stop_visited(trip->stops.front()->first);  //sets last stop visited to the origin stop of the trip
     trip->set_flex_trip(true);
     trip->set_status(BustripStatus::Unmatched);
@@ -243,7 +247,7 @@ Bustrip* TripGenerationStrategy::create_unassigned_trip(Busline* line, double de
 set<Bus*> TripGenerationStrategy::get_driving_vehicles(const map<BusState, set<Bus*> >& fleetState) const
 {
     set<Bus*> drivingvehicles;
-    for (auto vehgroup : fleetState) //collect all driving buses. TODO create a function for this, decide who gets to own it
+    for (auto vehgroup : fleetState) //collect all driving buses. 
     {
         BusState state = vehgroup.first;
         switch (state)
@@ -335,7 +339,7 @@ Busline* TripGenerationStrategy::find_shortest_busline(const vector<Busline*>& l
     return shortestline;
 }
 
-pair <Bus*, double> TripGenerationStrategy::get_nearest_vehicle(const Busstop* targetStop, set<Bus*> vehicles, Network* theNetwork, double time)
+pair <Bus*, double> TripGenerationStrategy::get_nearest_vehicle(const Busstop* targetStop, const set<Bus*>& vehicles, Network* theNetwork, double time)
 {
     pair<Bus*, double> closest(nullptr, numeric_limits<double>::max());
 
@@ -354,16 +358,13 @@ pair <Bus*, double> TripGenerationStrategy::get_nearest_vehicle(const Busstop* t
     return closest;
 }
 
-vector<pair<Bus*, double> > TripGenerationStrategy::find_nearest_vehicles(const Busstop* targetStop, set<Bus*> vehicles, Network* theNetwork, double time)
+vector<pair<Bus*, double> > TripGenerationStrategy::find_nearest_vehicles(const Busstop* targetStop, const set<Bus*>& vehicles, Network* theNetwork, double time)
 {
     vector<pair<Bus*, double> > closest_vehicles;
 
     // label all the vehicles with their expected ivt to target stop
     for (auto v : vehicles)
     {
-        if(v->is_full()) //skip vehicles that have reached their cap
-            continue;
-
         Busstop* laststop = v->get_last_stop_visited(); //current stop if not driving
         vector<Link*> shortestpath = find_shortest_path_between_stops(theNetwork, laststop, targetStop, time);
         double expected_tt = calc_route_travel_time(shortestpath, time);
@@ -465,7 +466,6 @@ bool NaiveTripGeneration::calc_trip_generation(DRTAssignmentData& assignment_dat
                         for (auto rq : affectedRequests)
                         {
                             rq->set_assigned_trip(newtrip);
-                            rq->set_state(RequestState::Assigned);
                         }
                         vector<Bustrip* > tripchain = { newtrip }; //tripchain is only one trip long
                         cs_helper_functions::add_driving_roster_to_tripchain(tripchain); 
@@ -540,7 +540,7 @@ bool SimpleTripGeneration::calc_trip_generation(DRTAssignmentData& assignment_da
 
          // 4. assign the request
             rq->set_assigned_trip(newtrip);
-            rq->set_state(RequestState::Assigned);
+
             // TODO: now check all the remaining requests to see if they can be assigned as well.
             cs_helper_functions::assignRequestsToTrip(assignment_data.active_requests,newtrip);
             
