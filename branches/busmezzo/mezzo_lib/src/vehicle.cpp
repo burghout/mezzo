@@ -379,6 +379,10 @@ void Bus::advance_curr_trip (double time, Eventlist* eventlist) // progresses tr
         {
 			vid++; // still have no clue if this is important but sticking basically to what is done in Network::read_busvehicle
 			Bus* busclone = progressFlexVehicle(this, time);
+			/** @todo Currently there is a lag between when a vehicle finishes a trip and is re initiated as 'on-call' at the current stop. Setting to oncall here directly will trigger assignment pipeline too early
+			 *	on the other hand in between finishing a trip and being reinitiated at a stop the vehicle will 'disappear' when considering e.g. the closest enroute or oncall vehicles to a stop which although it should
+			 *	happen rarely is inaccurate.
+			 */
 
             //initialize busclone as unassigned at the final stop of the trip
             if (last_stop_visited_->get_origin_node() == nullptr) //bus cannot currently be assigned a new trip starting from this stop unless there is an origin node associated with it

@@ -574,22 +574,25 @@ set<Bus*> Controlcenter::getVehiclesEnRouteToStop(Busstop* stop)
 	    {
 			for(auto veh : vehs_in_state.second)
 			{
-				Bustrip* trip = veh->get_curr_trip();
+                Bustrip* trip = veh->get_curr_trip();
 
-			    // add if vehicle is Idle, and at the current stop or has it downstream on trip
-				if(veh->is_idle())
-				{
-				    if(trip->get_last_stop_visited() == stop)
-						vehs_enroute.insert(veh);
-					if(trip->has_stop_downstream(stop))
-						vehs_enroute.insert(veh);
-				}			    
-			    // add if vehicle is Driving, and has the stop downstream on trip
-			    if(veh->is_driving())
-			    {
-			        if(trip->has_stop_downstream(stop))
-						vehs_enroute.insert(veh);
-			    }   
+                if (trip) // @todo figure out a better way to handle this. A vehicle might not be on-call or null, but will be IdleEmpty and have no trip when they are finishing a trip and being 'reinitialized' as on-call, see Bustrip::advance_curr_trip
+                {
+                    // add if vehicle is Idle, and at the current stop or has it downstream on trip
+                    if (veh->is_idle())
+                    {
+                        if (trip->get_last_stop_visited() == stop)
+                            vehs_enroute.insert(veh);
+                        if (trip->has_stop_downstream(stop))
+                            vehs_enroute.insert(veh);
+                    }
+                    // add if vehicle is Driving, and has the stop downstream on trip
+                    if (veh->is_driving())
+                    {
+                        if (trip->has_stop_downstream(stop))
+                            vehs_enroute.insert(veh);
+                    }
+                }
 			}
 	    }
 	}
