@@ -389,61 +389,61 @@ enum class BustripStatus
 };
 QString bustripstatus_to_QString(BustripStatus status);
 
-class Bustrip 
+class Bustrip
 {
 public:
-	Bustrip (
-		int			id_, 
-		double		start_time_, 
-		Busline*	line_
-	);
-	Bustrip ();
-	~Bustrip ();
-	void reset ();
+    Bustrip(
+        int			id_,
+        double		start_time_,
+        Busline* line_
+    );
+    Bustrip();
+    ~Bustrip();
+    void reset();
 
-// GETS & SETS
-	int get_id () const {return id;}											  //!< returns id, used in the compare <..> functions for find and find_if algorithms
-	Bus* get_busv () {return busv;}
+    // GETS & SETS
+    int get_id() const { return id; }											  //!< returns id, used in the compare <..> functions for find and find_if algorithms
+    Bus* get_busv() { return busv; }
     void set_busv(Bus* busv_);
-	void set_bustype (Bustype* btype_) {btype = btype_;}
-	Bustype* get_bustype () {return btype;}
-	void set_line (Busline* line_) {line = line_;}
-	Busline* get_line () {return line;}
-	double get_starttime () const {return starttime;}
-	double get_init_occup_per_stop () {return init_occup_per_stop;}
-	int get_nr_stops_init_occup () {return nr_stops_init_occup;}
-	vector <Visit_stop*> :: iterator& get_next_stop() {return next_stop;} //!< returns pointer to next stop
-	void set_enter_time (double enter_time_) {enter_time = enter_time_;}
-	double get_enter_time () {return enter_time;}
-	list <Bustrip_assign> get_output_passenger_load() {return output_passenger_load;}
-	double get_last_stop_exit_time() {return last_stop_exit_time;}
-	void set_last_stop_exit_time (double last_stop_exit_time_) {last_stop_exit_time = last_stop_exit_time_;}
-	void set_last_stop_visited (Busstop* last_stop_visited_) {last_stop_visited = last_stop_visited_;}
-	Busstop* get_last_stop_visited() {return last_stop_visited;}
-	double get_actual_dispatching_time () {return actual_dispatching_time;}
-    map <Busstop*, passengers,ptr_less<Busstop*>> get_passengers_on_board () {return passengers_on_board;}
+    void set_bustype(Bustype* btype_) { btype = btype_; }
+    Bustype* get_bustype() { return btype; }
+    void set_line(Busline* line_) { line = line_; }
+    Busline* get_line() { return line; }
+    double get_starttime() const { return starttime; }
+    double get_init_occup_per_stop() { return init_occup_per_stop; }
+    int get_nr_stops_init_occup() { return nr_stops_init_occup; }
+    vector <Visit_stop*> ::iterator& get_next_stop() { return next_stop; } //!< returns pointer to next stop
+    void set_enter_time(double enter_time_) { enter_time = enter_time_; }
+    double get_enter_time() { return enter_time; }
+    list <Bustrip_assign> get_output_passenger_load() { return output_passenger_load; }
+    double get_last_stop_exit_time() { return last_stop_exit_time; }
+    void set_last_stop_exit_time(double last_stop_exit_time_) { last_stop_exit_time = last_stop_exit_time_; }
+    void set_last_stop_visited(Busstop* last_stop_visited_) { last_stop_visited = last_stop_visited_; }
+    Busstop* get_last_stop_visited() { return last_stop_visited; }
+    double get_actual_dispatching_time() { return actual_dispatching_time; }
+    map <Busstop*, passengers, ptr_less<Busstop*>> get_passengers_on_board() { return passengers_on_board; }
 
-	void set_holding_at_stop(bool holding_at_stop_){holding_at_stop = holding_at_stop_;} //David added 2016-05-26
-	bool get_holding_at_stop(){return holding_at_stop;} //David added 2016-05-26
-	bool get_complying(){return complying_bustrip;}
+    void set_holding_at_stop(bool holding_at_stop_) { holding_at_stop = holding_at_stop_; }
+    bool get_holding_at_stop() { return holding_at_stop; }
+    bool get_complying() { return complying_bustrip; }
 
-// other functions:	
-//	bool is_trip_timepoint(Busstop* stop); //!< returns 1 if true, 0 if false, -1 if busstop not found
-	bool activate (double time, Route* route, ODpair* odpair, Eventlist* eventlist_);	//!< activates the trip. Generates the bus and inserts in net.
-	bool advance_next_stop (double time, Eventlist* eventlist_);						//!< advances the pointer to the next stop (checking bounds)
-	void add_stops (vector <Visit_stop*>  st) {stops = st; next_stop = stops.begin();}
-	void add_trips (vector <Start_trip*>  st) {driving_roster = st;} 
-	double scheduled_arrival_time (Busstop* stop);										//!< finds the scheduled arrival time for a given bus stop
-	void book_stop_visit (double time);													//!< books a visit to the stop
-	bool check_end_trip ();																//!< returns 1 if true, 0 if false
-	double calc_departure_time (double time);											//!< calculates departure time from origin according to arrival time and schedule (including layover effect)
-	void convert_stops_vector_to_map();													//!< building stops_map
-	double find_crowding_coeff (Passenger* pass);										//!< returns the crowding coefficient based on load factor and pass. seating/standing
-	static double find_crowding_coeff (bool sits, double load_factor);					//!< returns the crowding coefficient based on load factor and pass. seating/standing
-	pair<double, double> crowding_dt_factor (double nr_boarding, double nr_alighting);
-	vector <Busstop*> get_downstream_stops(); //!< return the remaining stops to be visited starting from 'next_stop', returns empty Busstop vector if there are none
-	vector <Visit_stop*> get_downstream_stops_till_horizon(Visit_stop* target_stop); //!< return the remaining stops to be visited starting from 'next_stop'
-	bool has_stop_downstream(Busstop* target_stop); // returns true if target_stop exists downstream for this trip, false otherwise
+    // other functions:	
+    //	bool is_trip_timepoint(Busstop* stop); //!< returns 1 if true, 0 if false, -1 if busstop not found
+    bool activate(double time, Route* route, ODpair* odpair, Eventlist* eventlist_);	//!< activates the trip. Generates the bus and inserts in net.
+    bool advance_next_stop(double time, Eventlist* eventlist_);						//!< advances the pointer to the next stop (checking bounds)
+    void add_stops(vector <Visit_stop*>  st) { stops = st; next_stop = stops.begin(); }
+    void add_trips(vector <Start_trip*>  st) { driving_roster = st; }
+    double scheduled_arrival_time(Busstop* stop);										//!< finds the scheduled arrival time for a given bus stop
+    void book_stop_visit(double time);													//!< books a visit to the stop
+    bool check_end_trip();																//!< returns 1 if true, 0 if false
+    double calc_departure_time(double time);											//!< calculates departure time from origin according to arrival time and schedule (including layover effect)
+    void convert_stops_vector_to_map();													//!< building stops_map
+    double find_crowding_coeff(Passenger* pass);										//!< returns the crowding coefficient based on load factor and pass. seating/standing
+    static double find_crowding_coeff(bool sits, double load_factor);					//!< returns the crowding coefficient based on load factor and pass. seating/standing
+    pair<double, double> crowding_dt_factor(double nr_boarding, double nr_alighting);
+    vector <Busstop*> get_downstream_stops(); //!< return the remaining stops to be visited starting from 'next_stop', returns empty Busstop vector if there are none
+    vector <Visit_stop*> get_downstream_stops_till_horizon(Visit_stop* target_stop); //!< return the remaining stops to be visited starting from 'next_stop'
+    bool has_stop_downstream(Busstop* target_stop); // returns true if target_stop exists downstream for this trip, false otherwise
 
 // output-related functions
 	void write_assign_segments_output(ostream & out);
@@ -466,38 +466,38 @@ public:
 
     void set_starttime(double starttime_) { starttime = starttime_; }
     void set_scheduled_for_dispatch(bool scheduled_for_dispatch_);
-	bool is_scheduled_for_dispatch() const { return scheduled_for_dispatch; }
+    bool is_scheduled_for_dispatch() const { return scheduled_for_dispatch; }
     void set_activated(bool activated_);
-	bool is_activated() const { return activated; }
-	void set_flex_trip(bool flex_trip_) { flex_trip = flex_trip_; }
-	bool is_flex_trip() const { return flex_trip; }
-    vector <Request*> get_assigned_requests() const { return assigned_requests;}
-    void add_request (Request* req) { assigned_requests.push_back((req));}
-	bool remove_request(const Request* req); //!< removes request from scheduled requests if it exists, returns true if successful, false otherwise
-	bool is_feasible_request_assignment(Request* req, size_t planned_capacity); //!< returns true if adding request does not exceed planned cap
+    bool is_activated() const { return activated; }
+    void set_flex_trip(bool flex_trip_) { flex_trip = flex_trip_; }
+    bool is_flex_trip() const { return flex_trip; }
+    vector <Request*> get_assigned_requests() const { return assigned_requests; }
+    void add_request(Request* req) { assigned_requests.push_back((req)); }
+    bool remove_request(const Request* req); //!< removes request from scheduled requests if it exists, returns true if successful, false otherwise
+    bool is_feasible_request_assignment(Request* req, size_t planned_capacity); //!< returns true if adding request does not exceed planned cap
 
-	void update_total_boardings(int n_boarding) { total_boarding += n_boarding; }
-	void update_total_alightings(int n_alighting) { total_alighting += n_alighting; }
-	int get_total_boarding() const { return total_boarding; }
-	int get_total_alighting() const { return total_alighting; }
+    void update_total_boardings(int n_boarding) { total_boarding += n_boarding; }
+    void update_total_alightings(int n_alighting) { total_alighting += n_alighting; }
+    int get_total_boarding() const { return total_boarding; }
+    int get_total_alighting() const { return total_alighting; }
 
     size_t get_planned_occupancy_at_stop(const vector<Request*>& planned_requests, Busstop* stop) const; //!< returns the currently anticipated occupancy upon entering a stop along the route of this trip, based on planned request pickups and dropoffs upstream from each stop on the trip
     int get_planned_capacity() const { return planned_capacity_; }
-    void set_planned_capacity(int planned_capacity) { planned_capacity_ = planned_capacity; } 
+    void set_planned_capacity(int planned_capacity) { planned_capacity_ = planned_capacity; }
     bool has_reserve_capacity() const; //!< returns true if the number of requests currently assigned to this trip does not exceed planned capacity of the vehicle assigned to this trip
     bool is_assigned_to_requests() const; //!< returns true if trip was assigned to requests
-	vector<Request*> get_assigned_requests_with_destination(int dest_id) const; //!< returns vector of requests currently assigned to this trip whos destination matches dest_id
-	vector<Request*> get_assigned_requests_with_origin(int orig_id) const; //!< returns vector of requests currently assigned to this trip whos origin matches orig_id
-	size_t get_num_assigned_requests_with_destination(const vector<Request*>& requests, int dest_id) const;
-	size_t get_num_assigned_requests_with_origin(const vector<Request*>& requests, int orig_id) const;
+    vector<Request*> get_assigned_requests_with_destination(int dest_id) const; //!< returns vector of requests currently assigned to this trip whos destination matches dest_id
+    vector<Request*> get_assigned_requests_with_origin(int orig_id) const; //!< returns vector of requests currently assigned to this trip whos origin matches orig_id
+    size_t get_num_assigned_requests_with_destination(const vector<Request*>& requests, int dest_id) const;
+    size_t get_num_assigned_requests_with_origin(const vector<Request*>& requests, int orig_id) const;
 
     bool is_part_of_tripchain() const; //!< returns true if trip is a member of a trip-chain (driving_roster that includes more than one trip on it)
-	Bustrip* get_next_trip_in_chain() const; //!< returns the Bustrip that follows this one in the driving roster, nullptr otherwise
-	Bustrip* get_prev_trip_in_chain() const; //!< returns the Bustrip that precedes this one in the driving roster, nullptr otherwise
+    Bustrip* get_next_trip_in_chain() const; //!< returns the Bustrip that follows this one in the driving roster, nullptr otherwise
+    Bustrip* get_prev_trip_in_chain() const; //!< returns the Bustrip that precedes this one in the driving roster, nullptr otherwise
 
-	void set_status(BustripStatus newstatus);
+    void set_status(BustripStatus newstatus);
     BustripStatus get_status()const { return status_; }
-/**@}*/
+    /**@}*/
 
 protected:
     int id = -1;									//!< course nr
@@ -516,7 +516,7 @@ protected:
     double last_stop_exit_time = 0.0;				//!< the time stamp of the exit time from the last stop that had been visited by this trip
     double last_stop_enter_time = 0.0;
     Busstop* last_stop_visited = nullptr;
-    bool holding_at_stop = false;					//!< David added 2016-05-26: true if the trip is currently holding at a stop, false otherwise (used for progressing passengers in case of holding for demand format 3, should always be false for other formats)
+    bool holding_at_stop = false;					//!< true if the trip is currently holding at a stop, false otherwise (used for progressing passengers in case of holding for demand format 3, should always be false for other formats)
     //	map <Busstop*,bool> trips_timepoint;		//!< will be relevant only when time points are trip-specific. binary map with time point indicatons for stops on route only (according to the schedule input file)  
     Eventlist* eventlist = nullptr;					//!< for use by busstops etc to book themselves.
 	
@@ -766,7 +766,7 @@ public:
     bool get_gate_flag () {return gate_flag;}
 
 	//transfer related checks
-	bool is_awaiting_transfers(Bustrip* trip); //David added 2016-05-30: returns true if trip is currently awaiting transfers at stop
+	bool is_awaiting_transfers(Bustrip* trip); // returns true if trip is currently awaiting transfers at stop
 
 	Output_Summary_Stop_Line get_output_summary (int line_id) {return output_summary[line_id];}
 
@@ -918,7 +918,7 @@ protected:
 
 
 	// transfer synchronization
-	vector<pair<Bustrip*, int> > trips_awaiting_transfers;	//!< David added 2016-05-30: contains trips that are currently waiting to synchronize transfers with a connecting trip, paired with the line ID of the connecting trip
+	vector<pair<Bustrip*, int> > trips_awaiting_transfers;	//!< contains trips that are currently waiting to synchronize transfers with a connecting trip, paired with the line ID of the connecting trip
 
 	// output structures
 	list <Busstop_Visit> output_stop_visits;			//!< list of output data for buses visiting stops

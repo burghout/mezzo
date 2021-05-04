@@ -822,7 +822,7 @@ bool Parameters::read_parameters (istream & in )
 		return false;
 	}
 	in >> compliance_rate;
-	in >> keyword; //transfer_sync parameter, David added 2016-04-18
+	in >> keyword; //transfer_sync parameter
 	if (keyword!= "transfer_sync=")
 	{
 		cout << "ERROR reading Parameters file, expecting: transfer_sync=, read: " << keyword << endl;

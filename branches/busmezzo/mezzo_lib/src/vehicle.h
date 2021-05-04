@@ -255,7 +255,7 @@ protected:
 	Busstop* last_stop_visited_ = nullptr; //!< the last busstop (if no stop has been visited then initialized to nullptr) that this transit vehicle has entered (or exited)
 	BusState state_ = BusState::Null; //!< current BusState of the transit vehicle
 	bool flex_vehicle_ = false; //!< true if vehicle can be assigned trips dynamically, false otherwise
-	set<int> sroute_ids_; //!< ids of service routes (buslines) that this bus can be assigned dynamically generated trips for
+	set<int> sroute_ids_; //!< ids of service routes (buslines) that this bus can be assigned dynamically generated trips for @todo remove, vehicle now knows of its CC if flex vehicle anyways
     Controlcenter* CC_ = nullptr; //!< control center that this vehicle is currently connected to. nullptr if not connected to any control center
 
 	// output attributes

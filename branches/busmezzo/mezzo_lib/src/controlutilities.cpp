@@ -25,11 +25,11 @@ namespace cs_helper_functions
         {
             for (auto trip_dispatch : trip->driving_roster) // note that this assumes that the order of the trips in the driving roster is the order of the trips
             {
-                Bustrip* trip = trip_dispatch->first;
-                if (trip->get_starttime() != new_starttime)
+                Bustrip* scheduled_trip = trip_dispatch->first;
+                if (scheduled_trip->get_starttime() != new_starttime)
                 {
-                    double delta = new_starttime - trip->get_starttime(); //positive to shift the schedule later in time, and negative if it should shift earlier in time
-                    vector<Visit_stop*> schedule = trip->stops;
+                    double delta = new_starttime - scheduled_trip->get_starttime(); //positive to shift the schedule later in time, and negative if it should shift earlier in time
+                    vector<Visit_stop*> schedule = scheduled_trip->stops;
 
                     //add the delta to all the scheduled stop visits
                     for (Visit_stop* stop_arrival : schedule)
@@ -38,9 +38,9 @@ namespace cs_helper_functions
                     }
 
                     trip_dispatch->second = new_starttime; //update the dispatch time at the tripchain level
-                    trip->set_starttime(new_starttime); //set planned dispatch to new start time
-                    trip->add_stops(schedule); //overwrite old schedule with the new scheduled stop visits
-                    trip->convert_stops_vector_to_map(); //stops map used in some locations, stops vector used in others
+                    scheduled_trip->set_starttime(new_starttime); //set planned dispatch to new start time
+                    scheduled_trip->add_stops(schedule); //overwrite old schedule with the new scheduled stop visits
+                    scheduled_trip->convert_stops_vector_to_map(); //stops map used in some locations, stops vector used in others
 
                     //move on to next trip in chain
                     new_starttime = schedule.back()->second; //starttime of next trip in chain is the end time of the preceding trip
@@ -120,14 +120,14 @@ namespace cs_helper_functions
         return (it != all_req.end());
     }
 
-    set<Request*, ptr_less<Request*>> filterRequestsByState(const set<Request*, ptr_less<Request*> >& oldSet, RequestState state)
+    set<Request*, ptr_less<Request*> > filterRequestsByState(const set<Request*, ptr_less<Request*> >& oldSet, RequestState state)
     {
         set <Request*, ptr_less<Request*> > newSet;
         copy_if(oldSet.begin(), oldSet.end(), inserter(newSet, newSet.end()), [state](Request* value) {return value->state == state; });
         return newSet;
     }
 
-    set<Request*, ptr_less<Request*>> filterRequestsByOD(const set<Request*, ptr_less<Request*> >& oldSet, int o_id, int d_id)
+    set<Request*, ptr_less<Request*> > filterRequestsByOD(const set<Request*, ptr_less<Request*> >& oldSet, int o_id, int d_id)
     {
         set <Request*, ptr_less<Request*>> newSet;
         std::copy_if(oldSet.begin(), oldSet.end(), std::inserter(newSet, newSet.end()), [o_id, d_id](Request* value) {return (value->ostop_id == o_id) && (value->dstop_id == d_id); });

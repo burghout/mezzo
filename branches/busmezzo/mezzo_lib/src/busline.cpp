@@ -1169,7 +1169,7 @@ void Bustrip::record_passenger_loads (vector <Visit_stop*>::iterator start_stop)
 		output_passenger_load.push_back(Bustrip_assign(line->get_id(), id, busv->get_id(), (*start_stop)->first->get_id(), (*start_stop)->first->get_name(), (*(start_stop + 1))->first->get_id(), (*(start_stop + 1))->first->get_name(), assign_segements[(*start_stop)->first]));
 		this->get_line()->add_record_passenger_loads_line((*start_stop)->first, (*(start_stop+1))->first,assign_segements[(*start_stop)->first]);
 	}
-	else //David added 2016-05-26: overwrite previous record_passenger_loads if this is the second call to pass_activity_at_stop
+	else // overwrite previous record_passenger_loads if this is the second call to pass_activity_at_stop
 	{
 		--start_stop; //decrement start stop since we have already advanced 'next_stop'
 		output_passenger_load.pop_back();
@@ -2611,7 +2611,7 @@ double Busstop::calc_exiting_time (Eventlist* eventlist, Bustrip* trip, double t
 		if(ready_to_depart > time + dwelltime)
 		{
 			assert(!theParameters->drt); //holding at time points is not supported at the moment
-			trip->set_holding_at_stop(true); //David added 2016-05-26: set indicator that additional passengers that board whil bus is held at time point need to be accounting for at the bus's exit time
+			trip->set_holding_at_stop(true); // set indicator that additional passengers that board whil bus is held at time point need to be accounting for at the bus's exit time
 		}
 	}
 
