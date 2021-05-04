@@ -117,7 +117,7 @@ public:
     vector<Link*> find_shortest_path_between_stops(Network* theNetwork, const Busstop* origin_stop, const Busstop* destination_stop, double start_time); //!< returns the shortest route between a pair of stops for a given time, returns empty vector if none exists
 	Busline* find_shortest_busline(const vector<Busline*>& lines, double time) const; //!< returns shortest busline in terms of scheduled in-vehicle time among lines
     pair <Bus*,double> get_nearest_vehicle(const Busstop* targetStop, set<Bus *> vehicles, Network *theNetwork, double time); //!< returns nearest vehicle, returns pair(nullptr,0.0) if none
-    vector<pair<Bus*,double> > find_nearest_vehicles(const Busstop* targetStop, set<Bus*> vehicles, Network *theNetwork, double time); //!< returns vector of vehicles in order of closest expected ivt to targetStop to furthest, returns empty vector if none exists
+    vector<pair<Bus*,double> > find_nearest_vehicles(const Busstop* targetStop, set<Bus*> vehicles, Network *theNetwork, double time); //!< returns vector of (non-full) vehicles in order of closest expected ivt to targetStop to furthest, returns empty vector if none exists
 
 protected:
     map<int, map<int, vector<Busline*> > > cached_lines_connecting_stops; //!< cached results of TripGenerationStrategy::find_lines_connecting_stops
