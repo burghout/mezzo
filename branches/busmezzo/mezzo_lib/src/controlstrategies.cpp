@@ -361,6 +361,9 @@ vector<pair<Bus*, double> > TripGenerationStrategy::find_nearest_vehicles(const 
     // label all the vehicles with their expected ivt to target stop
     for (auto v : vehicles)
     {
+        if(v->is_full()) //skip vehicles that have reached their cap
+            continue;
+
         Busstop* laststop = v->get_last_stop_visited(); //current stop if not driving
         vector<Link*> shortestpath = find_shortest_path_between_stops(theNetwork, laststop, targetStop, time);
         double expected_tt = calc_route_travel_time(shortestpath, time);

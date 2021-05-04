@@ -700,6 +700,11 @@ bool Bus::is_empty() const
 	return occupancy == 0;
 }
 
+bool Bus::is_full() const
+{
+	return occupancy >= capacity;
+}
+
 bool Bus::is_null() const
 {
 	if (state_ == BusState::Null)
