@@ -53,6 +53,8 @@ struct DRTAssignmentData
 
 	Controlcenter* cc_owner = nullptr;
 	void print_state(double time) const;
+
+	int planned_capacity = 0; //!< @todo PARTC specific, assumes the entire drt fleet of each Controlcenter has the same capacity, remove
 };
 
 struct Controlcenter_SummaryData

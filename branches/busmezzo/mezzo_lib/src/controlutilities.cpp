@@ -135,117 +135,24 @@ namespace cs_helper_functions
     }
 
     // Assign requests to trips
-    void assignRequestsToTrip(const set<Request*, ptr_less<Request*> >& requestSet, Bustrip* tr)
+    void assignRequestsToTrip(const set<Request*, ptr_less<Request*> >& requestSet, Bustrip* tr, int planned_capacity)
     {
         auto unassignedRequests = filterRequestsByState(requestSet, RequestState::Unmatched); // redo the filtering each time
-        // TODO Add also for emptyTrips followed by a "selectedTrip"
         for (auto rq : unassignedRequests)
         {
             assert(rq->state == RequestState::Unmatched);
-            auto startstop = tr->stops.front()->first; // if trip starts at same stop
-            if (startstop->get_id() == rq->ostop_id)
-            {
-                auto downstreamstops = tr->get_downstream_stops();
-                if (downstreamstops.end() != find_if(downstreamstops.begin(), downstreamstops.end(),[rq](const Busstop* st) { return rq->dstop_id == st->get_id(); }))
-                { // if rq destination stop is in the downstream stops
-                    rq->set_assigned_trip(tr);
-                }
+            if (tr->is_feasible_request_assignment(rq, planned_capacity))
+            { // if rq destination stop is in the downstream stops
+                rq->set_assigned_trip(tr);
             }
         }
-
     }
-    void assignRequestsToTripSet(const set<Request*, ptr_less<Request*> >& requestSet, const set<Bustrip*, ptr_less<Bustrip*> >& tripSet)
+
+    void assignRequestsToTripSet(const set<Request*, ptr_less<Request*> >& requestSet, const set<Bustrip*, ptr_less<Bustrip*> >& tripSet, int planned_capacity)
     {
         for (auto tr : tripSet)
         {
-            assignRequestsToTrip(requestSet, tr);
-        }
-    }
-
-    void assignRequestsToActivatedTrip(const set<Request*, ptr_less<Request*> >& requestSet, Bustrip* tr)
-    {
-        assert(tr->get_status() == BustripStatus::Activated);
-        int cap = tr->get_planned_capacity();
-        assert(cap > 0); // should only be 0 if unassigned to a vehicle, in which case this trip should not have been scheduled
-
-        auto unassignedRequests = filterRequestsByState(requestSet, RequestState::Unmatched); // redo the filtering each time
-        /**
-         *   Check feasibility of stuffing each request into activated trip-chains. Conditions
-         *     1. The trip has remaining capacity to pickup the assigned request... @todo feels like even more bookeeping of bus, active trip and following trip-chain is needed. But quickly gets complex
-         *     2. Origin stop somewhere downstream 
-         *     3. Destination stop is somewhere downstream
-         *     4. Origin stop is before destination stop downstream
-         */
-        if (tr->has_reserve_capacity())
-        {
-            for (auto rq : unassignedRequests)
-            {
-                assert(rq->state == RequestState::Unmatched);
-                // auto startstop = tr->stops.front()->first; // if trip starts at same stop
-
-                auto downstreamstops = tr->get_downstream_stops(); // all downstream stops of the current trip
-                //check if origin is downstream
-                auto orig_it = find_if(downstreamstops.begin(), downstreamstops.end(), [rq](const Busstop* st) { return rq->ostop_id == st->get_id(); });
-                auto dest_it = find_if(downstreamstops.begin(), downstreamstops.end(), [rq](const Busstop* st) { return rq->dstop_id == st->get_id(); });
-                if (orig_it != downstreamstops.end() && dest_it != downstreamstops.end())
-                {
-                    assert(orig_it != dest_it);
-                    if (orig_it < dest_it) //check if destination is downstream from origin
-                    {
-                        rq->set_assigned_trip(tr);
-                    }
-                }
-            }
-        }
-    }
-
-    void assignRequestsToScheduledTrip(const set<Request*, ptr_less<Request*> >& requestSet, Bustrip* tr)
-    {
-        assert(tr->get_status() == BustripStatus::Scheduled || tr->get_status() == BustripStatus::ScheduledWaitingForVehicle);
-        int cap = tr->get_planned_capacity();
-        assert(cap > 0); // should only be 0 if unassigned to a vehicle, in which case this trip should not have been scheduled
-
-        auto unassignedRequests = filterRequestsByState(requestSet, RequestState::Unmatched); // redo the filtering each time
-        /**
-         *   Check feasibility of stuffing each request into scheduled trip-chains. Conditions
-         *     1. The trip has remaining capacity to pickup the assigned request... @todo feels like even more bookeeping of bus, active trip and following trip-chain is needed. But quickly gets complex
-         *     2. Origin stop is at the origin of the trip @todo PARTC maybe change this later to origin stop anywhere on the route.....
-         *     3. Destination stop is somewhere downstream @todo PARTC ntoe that all the travelers using DRT have the same destination (the transfer stop) for the case study anyways
-         */
-        if (tr->has_reserve_capacity())
-        {
-            for (auto rq : unassignedRequests)
-            {
-                assert(rq->state == RequestState::Unmatched);
-                auto startstop = tr->stops.front()->first; // if trip starts at same stop
-                if (startstop->get_id() == rq->ostop_id)
-                {
-                    auto downstreamstops = tr->get_downstream_stops();
-                    if (downstreamstops.end() != find_if(downstreamstops.begin(), downstreamstops.end(), [rq](const Busstop* st) { return rq->dstop_id == st->get_id(); }))
-                    { // if rq destination stop is in the downstream stops
-                        rq->set_assigned_trip(tr);
-                    }
-                }
-            }
-        }
-    }
-
-    void assignRequestsToScheduledTrips(const set<Request*, ptr_less<Request*> >& requestSet, const set<Bustrip*, ptr_less<Bustrip*> >& tripSet)
-    {
-        if (!tripSet.empty() && !requestSet.empty())
-        {
-            auto scheduled_trips = filterBustripsByStatus(tripSet, BustripStatus::Scheduled); // scheduled but with a vehicle attached to them
-            auto scheduled_chained_trips = filterBustripsByStatus(tripSet, BustripStatus::ScheduledWaitingForVehicle); //scheduled but waiting for a vehicle performing an earlier trip in chain
-
-            // @todo note that here we do not care how trips are connected, just what their current capacity is regardless of if they are assigned to the same vehicle or not. 
-            for (auto trip : scheduled_trips) // prioritize scheduled trips with an available vehicle first
-            {
-                assignRequestsToScheduledTrip(requestSet, trip);
-            }
-            for (auto trip : scheduled_chained_trips)
-            {
-                assignRequestsToScheduledTrip(requestSet, trip);
-            }
+            assignRequestsToTrip(requestSet, tr, planned_capacity);
         }
     }
 

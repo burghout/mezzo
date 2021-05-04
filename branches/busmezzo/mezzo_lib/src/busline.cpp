@@ -1196,7 +1196,7 @@ bool Bustrip::remove_request(const Request* req)
 
 bool Bustrip::is_feasible_request_assignment(Request* req, size_t planned_capacity)
 {
-    if (has_stop_downstream(req->ostop_id) && has_stop_downstream(req->dstop_id)) // if trip is active, check so that pickup and dropoff stops have not been passed by already
+    if (has_stop_downstream(req->ostop_id) && has_stop_downstream(req->dstop_id)) // in case trip is already active, check so that pickup and dropoff stops have not been passed by already
     {
 		//find pickup stop of req and dropoff stop of req
         auto ostop_it = find_if(stops.begin(), stops.end(), [req](const Visit_stop* stop) {return stop->first->get_id() == req->ostop_id; });
@@ -1208,7 +1208,7 @@ bool Bustrip::is_feasible_request_assignment(Request* req, size_t planned_capaci
                 vector<Request*> candidate_reqs = assigned_requests; //make temp copy of currently assigned requests
                 candidate_reqs.push_back(req); // check feasibility of new request vector
 
-                for (auto stop_visit = ostop_it; stop_visit != stops.end(); ++stop_visit) // check if there is available capacity for the request by anticipating expected capacity until from the pickup of the request
+                for (auto stop_visit = ostop_it; stop_visit != stops.end(); ++stop_visit) // check if there is available capacity for the request by anticipating expected capacity starting from the pickup stop of the request
                 {
                     Busstop* target_stop = (*stop_visit)->first;
                     size_t planned_occ = get_planned_occupancy_at_stop(candidate_reqs, target_stop);

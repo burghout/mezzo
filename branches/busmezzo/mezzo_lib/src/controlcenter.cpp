@@ -195,7 +195,6 @@ bool BustripGenerator::requestTrip(DRTAssignmentData& assignment_data, double ti
 {
     if (generationStrategy_ != nullptr)
     {
-        cs_helper_functions::assignRequestsToScheduledTrips(cs_helper_functions::filterRequestsByState(assignment_data.active_requests, RequestState::Unmatched), assignment_data.active_trips);
         bool trip_found = generationStrategy_->calc_trip_generation(assignment_data, serviceRoutes_, time); //returns true if trip has been generated and added to the unmatchedTrips_
 
         if (!trip_found && !assignment_data.unmatched_trips.empty()) //if no trip was found but an unmatched trip remains in the unmatchedTrips set
@@ -818,6 +817,9 @@ void Controlcenter::connectVehicle(Bus* transitveh)
 		QObject::connect(transitveh, &Bus::stateChanged, this, &Controlcenter::updateFleetState, Qt::DirectConnection);
 
 		transitveh->set_control_center(this);
+
+		if(assignment_data_.planned_capacity == 0) //!< @todo PARTC specific remove
+			assignment_data_.planned_capacity = transitveh->get_capacity();
 	}
 }
 void Controlcenter::disconnectVehicle(Bus* transitveh)

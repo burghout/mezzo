@@ -493,15 +493,13 @@ bool SimpleTripGeneration::calc_trip_generation(DRTAssignmentData& assignment_da
     if (!unassignedRequests.empty() && !candidateServiceRoutes.empty())
     {
         // 2. get trips (i don't care if they are matched or unmatched...) and assign requests to existing trips
-
-        cs_helper_functions::assignRequestsToTripSet(assignment_data.active_requests, assignment_data.unmatched_trips);
+        cs_helper_functions::assignRequestsToTripSet(assignment_data.active_requests, assignment_data.unmatched_trips, assignment_data.planned_capacity);
         unassignedRequests = cs_helper_functions::filterRequestsByState(assignment_data.active_requests, RequestState::Unmatched); // redo the filtering after assignRequestsToTripSet
-        // TODO: here we want to call it with the emptyTripset as well
 
         if (unassignedRequests.empty())
             return true;
         // 3. create trips for those requests for which I have not found a trip
-        for (auto rq:unassignedRequests)
+        for (auto rq : unassignedRequests)
         {
             auto  lines_between_stops = find_lines_connecting_stops(candidateServiceRoutes, rq->ostop_id, rq->dstop_id); //check if any candidate service route connects the OD pair (even for segments of the route)
             if (lines_between_stops.empty())
@@ -542,7 +540,7 @@ bool SimpleTripGeneration::calc_trip_generation(DRTAssignmentData& assignment_da
             rq->set_assigned_trip(newtrip);
 
             // TODO: now check all the remaining requests to see if they can be assigned as well.
-            cs_helper_functions::assignRequestsToTrip(assignment_data.active_requests,newtrip);
+            cs_helper_functions::assignRequestsToTrip(assignment_data.active_requests, newtrip, assignment_data.planned_capacity);
             
         }
     }
@@ -694,7 +692,7 @@ bool SimpleEmptyVehicleTripGeneration::calc_trip_generation(DRTAssignmentData& a
     assignment_data.unmatched_trips.erase(selectedTrip); 
 
     // 8. adding potential requests to the empty trip
-    cs_helper_functions::assignRequestsToTrip(assignment_data.active_requests,newTrip);
+    cs_helper_functions::assignRequestsToTrip(assignment_data.active_requests, newTrip, assignment_data.planned_capacity);
 
     return true; // emits Signal that empty trip was generated, matcher does the rest.
 }
@@ -742,7 +740,7 @@ bool MaxWaitEmptyVehicleTripGeneration::calc_trip_generation(DRTAssignmentData& 
     assignment_data.unmatched_trips.erase(selectedTrip);
 
     // 8. adding potential requests to the empty trip
-    cs_helper_functions::assignRequestsToTrip(assignment_data.active_requests,newTrip);
+    cs_helper_functions::assignRequestsToTrip(assignment_data.active_requests, newTrip, assignment_data.planned_capacity);
 
     return true; // emits Signal that empty trip was generated, matcher does the rest.
 }
