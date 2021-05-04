@@ -612,10 +612,8 @@ bool Passenger:: make_boarding_decision (Bustrip* arriving_bus, double time)
 	{
 		if (curr_request_->assigned_veh == nullptr) // if we are not associating requests with specific vehicles
 		{
-			Busstop* dest_stop = arriving_bus->stops.back()->first; // get final destination of arriving bus
-			if (arriving_bus->is_flex_trip() && curr_request_->dstop_id == dest_stop->get_id()) // @todo for now passenger always boards the first available flexible trip that is finishing trip at passengers destination
+			if (arriving_bus->is_flex_trip() && arriving_bus->has_stop_downstream(curr_request_->dstop_id)) // passengers board any trip that matches request destination downstream @todo maybe update this to only board vehicles that the pass was assigned to
 			{
-				//always attempt to board flexible buses with destination of the passenger
 				OD_stop->set_staying_utility(::large_negative_utility); //we set these utilities just to record boarding output
 				OD_stop->set_boarding_utility(::large_positive_utility);
 				boarding_prob = 1.0;
