@@ -122,6 +122,24 @@ VehicleRecycler::	~VehicleRecycler()
 
 }
 
+QString BusState_to_QString(BusState state)
+{
+	QString state_s = "";
+
+    switch (state)
+    {
+    case BusState::Null: state_s = "Null"; break;
+    case BusState::IdleEmpty: state_s = "IdleEmpty"; break;
+    case BusState::IdlePartiallyFull: state_s = "IdlePartiallyFull"; break;
+    case BusState::IdleFull: state_s = "IdleFull"; break;
+    case BusState::DrivingEmpty: state_s = "DrivingEmpty"; break;
+    case BusState::DrivingPartiallyFull: state_s = "DrivingPartiallyFull"; break;
+    case BusState::DrivingFull: state_s = "DrivingFull"; break;
+    case BusState::OnCall: state_s = "OnCall"; break;
+    }
+	return state_s;
+}
+
 Bus::Bus(QObject* parent) : QObject(parent), Vehicle()
 {
 	occupancy = 0;

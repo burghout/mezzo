@@ -141,7 +141,9 @@ enum class BusState
 	//Loading/Unloading
 	//Refeuling
 	OnCall //!< 'oncall' refers to if the vehicle is not currently assigned any trip and is standing still
-}; 
+};
+QString BusState_to_QString(BusState state);
+
 class Bus : public QObject, public Vehicle
 {
 	Q_OBJECT
