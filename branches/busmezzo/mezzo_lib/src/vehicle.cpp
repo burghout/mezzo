@@ -338,9 +338,6 @@ void Bus::advance_curr_trip (double time, Eventlist* eventlist) // progresses tr
 {
     if (theParameters->drt)
     {
-        //if (flex_vehicle_)
-        //    DEBUG_MSG("----------Bus " << id << " finishing trip " << curr_trip->get_id() << " at time " << time);
-
         if (flex_vehicle_ && curr_trip->is_flex_trip()) //if the trip that just finished was dynamically scheduled then the controlcenter is in charge of bookkeeping the completed trip and bus for writing outputs
         {
             if (last_stop_visited_->get_dest_node() == nullptr)
@@ -348,11 +345,6 @@ void Bus::advance_curr_trip (double time, Eventlist* eventlist) // progresses tr
                 DEBUG_MSG_V("Problem when ending trip in Bus::advance_curr_trip - final stop " << last_stop_visited_->get_id() << " does not have a destination node associated with it. Aborting...");
                 abort();
             }
-
-            //double trip_time = curr_trip->get_enter_time() - curr_trip->get_starttime();
-            //Q_UNUSED(trip_time);
-            //DEBUG_MSG("\t Total trip time: " << trip_time);
-            
             CC_->addCompletedVehicleTrip(this, curr_trip); //save bus - bustrip pair in control center of last stop 
         }
     }
@@ -390,17 +382,13 @@ void Bus::advance_curr_trip (double time, Eventlist* eventlist) // progresses tr
 		// if the bus is early for the next trip, then it will be activated at the scheduled time from Busline
 	}
 
-	//busvehicle should be unassigned at opposing stop after completing its trip, then mimic the initialization process for DRT vehicles from network reader
+	//busvehicle should be unassigned after completing its trip
     if (theParameters->drt)
     {
         if (flex_vehicle_ && curr_trip->is_flex_trip())
         {
 			vid++; // still have no clue if this is important but sticking basically to what is done in Network::read_busvehicle
 			Bus* busclone = progressFlexVehicle(this, time);
-			/** @todo Currently there is a lag between when a vehicle finishes a trip and is re initiated as 'on-call' at the current stop. Setting to oncall here directly will trigger assignment pipeline too early
-			 *	on the other hand in between finishing a trip and being reinitiated at a stop the vehicle will 'disappear' when considering e.g. the closest enroute or oncall vehicles to a stop which although it should
-			 *	happen rarely is inaccurate.
-			 */
 
             //initialize busclone as unassigned at the final stop of the trip
             if (last_stop_visited_->get_origin_node() == nullptr) //bus cannot currently be assigned a new trip starting from this stop unless there is an origin node associated with it
@@ -409,7 +397,9 @@ void Bus::advance_curr_trip (double time, Eventlist* eventlist) // progresses tr
                                 ", Busstop does not have an origin node associated with it. Aborting...");
                 abort();
             }
-            last_stop_visited_->book_unassigned_bus_arrival(eventlist, busclone, time);
+
+            last_stop_visited_->add_unassigned_bus(busclone, time); // bus is immediately unassigned at the final stop of the trip
+            //last_stop_visited_->book_unassigned_bus_arrival(eventlist, busclone, time);
 
         }
     }

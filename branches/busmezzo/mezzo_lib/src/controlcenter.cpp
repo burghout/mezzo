@@ -576,7 +576,7 @@ set<Bus*> Controlcenter::getVehiclesEnRouteToStop(Busstop* stop)
 			{
                 Bustrip* trip = veh->get_curr_trip();
 
-                if (trip) // @todo figure out a better way to handle this. A vehicle might not be on-call or null, but will be IdleEmpty and have no trip when they are finishing a trip and being 'reinitialized' as on-call, see Bustrip::advance_curr_trip
+                if (trip)
                 {
                     // add if vehicle is Idle, and at the current stop or has it downstream on trip
                     if (veh->is_idle())
@@ -593,6 +593,10 @@ set<Bus*> Controlcenter::getVehiclesEnRouteToStop(Busstop* stop)
                             vehs_enroute.insert(veh);
                     }
                 }
+				else
+				{
+				    qDebug() << "Warning - ignoring vehicle" << veh->get_bus_id() << "in state" << BusState_to_QString(veh->get_state()) << "without a trip assigned to it, when searching for vehicles enroute to stop" << stop->get_id();
+				}
 			}
 	    }
 	}

@@ -1898,16 +1898,14 @@ bool Busstop::execute(Eventlist* eventlist, double time) // is executed by the e
 		return true;
 	}
 	
-	//check if busstop event is the availability of an unassigned vehicle
+	//check if busstop event is the initialization (or delayed availability) of an unassigned vehicle
 	for (vector<pair<Bus*, double>>::iterator ua_bus_it = unassigned_bus_arrivals.begin(); ua_bus_it != unassigned_bus_arrivals.end(); ++ua_bus_it )
 	{
 		if ((*ua_bus_it).second == time)
 		{
 			Bus* ua_bus = (*ua_bus_it).first;
-			//DEBUG_MSG("Activating unassigned bus " << ua_bus->get_bus_id() << " at time " << time << " at stop " << name);
-			ua_bus->set_last_stop_visited(this); //update this here before setting state
 			unassigned_bus_arrivals.erase(ua_bus_it); //vehicle is no longer arriving 
-			add_unassigned_bus(ua_bus, time); //add vehicle to vector of unassigned buses at this stop with current time as arrival time
+			add_unassigned_bus(ua_bus, time); //add vehicle to vector of unassigned buses at this stop with current time as arrival time, emits 'BusState::OnCall signal
 			
 			return true;
 		} 
@@ -2863,6 +2861,7 @@ void Busstop::add_unassigned_bus(Bus* bus, double arrival_time)
 			return left.second < right.second; //keep vector sorted by arrival time (smallest at the back of the vector)
 		}
 	);
+	bus->set_last_stop_visited(this); //update this here before setting state
 	bus->set_state(BusState::OnCall, arrival_time); //emits state change signal to control center
 }
 
