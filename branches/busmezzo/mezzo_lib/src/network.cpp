@@ -7293,20 +7293,20 @@ namespace PARTC
         //out << "\n\nTotal waiting time             :\t" << passdata_b2b.total_wt << "\t" << passdata_b2c.total_wt << "\t" << passdata_c2c.total_wt << "\t" << passdata_total.total_wt;
         out << "\n\nAverage waiting time           :\t" << passdata_b2b.avg_total_wt << "\t" << passdata_b2c.avg_total_wt << "\t" << passdata_c2c.avg_total_wt << "\t" << passdata_total.avg_total_wt;
         out << "\nStdev waiting time             :\t" << passdata_b2b.std_total_wt << "\t" << passdata_b2c.std_total_wt << "\t" << passdata_c2c.std_total_wt << "\t" << passdata_total.std_total_wt;
-        out << "\nMinimum waiting time           :\t" << passdata_b2b.min_wt << "\t" << passdata_b2c.min_wt << "\t" << passdata_c2c.min_wt << "\t" << passdata_total.min_wt;
+        //out << "\nMinimum waiting time           :\t" << passdata_b2b.min_wt << "\t" << passdata_b2c.min_wt << "\t" << passdata_c2c.min_wt << "\t" << passdata_total.min_wt;
         out << "\nMaximum waiting time           :\t" << passdata_b2b.max_wt << "\t" << passdata_b2c.max_wt << "\t" << passdata_c2c.max_wt << "\t" << passdata_total.max_wt;
         out << "\nMedian waiting time            :\t" << passdata_b2b.median_wt << "\t" << passdata_b2c.median_wt << "\t" << passdata_c2c.median_wt << "\t" << passdata_total.median_wt;
 
-        out << "\n\nTotal denied waiting time      :\t" << passdata_b2b.total_denied_wt << "\t" << passdata_b2c.total_denied_wt << "\t" << passdata_c2c.total_denied_wt << "\t" << passdata_total.total_denied_wt;
-        out << "\nAverage denied waiting time    :\t" << passdata_b2b.avg_denied_wt << "\t" << passdata_b2c.avg_denied_wt << "\t" << passdata_c2c.avg_denied_wt << "\t" << passdata_total.avg_denied_wt;
+        //out << "\n\nTotal denied waiting time      :\t" << passdata_b2b.total_denied_wt << "\t" << passdata_b2c.total_denied_wt << "\t" << passdata_c2c.total_denied_wt << "\t" << passdata_total.total_denied_wt;
+        out << "\n\nAverage denied waiting time    :\t" << passdata_b2b.avg_denied_wt << "\t" << passdata_b2c.avg_denied_wt << "\t" << passdata_c2c.avg_denied_wt << "\t" << passdata_total.avg_denied_wt;
         out << "\nStdev denied waiting time      :\t" << passdata_b2b.std_denied_wt << "\t" << passdata_b2c.std_denied_wt << "\t" << passdata_c2c.std_denied_wt << "\t" << passdata_total.std_denied_wt;
 
-        out << "\n\nTotal in-vehicle time          :\t" << passdata_b2b.total_ivt << "\t" << passdata_b2c.total_ivt << "\t" << passdata_c2c.total_ivt << "\t" << passdata_total.total_ivt;
-        out << "\nAverage in-vehicle time        :\t" << passdata_b2b.avg_total_ivt << "\t" << passdata_b2c.avg_total_ivt << "\t" << passdata_c2c.avg_total_ivt << "\t" << passdata_total.avg_total_ivt;
+        //out << "\n\nTotal in-vehicle time          :\t" << passdata_b2b.total_ivt << "\t" << passdata_b2c.total_ivt << "\t" << passdata_c2c.total_ivt << "\t" << passdata_total.total_ivt;
+        out << "\n\nAverage in-vehicle time        :\t" << passdata_b2b.avg_total_ivt << "\t" << passdata_b2c.avg_total_ivt << "\t" << passdata_c2c.avg_total_ivt << "\t" << passdata_total.avg_total_ivt;
         out << "\nStdev in-vehicle time          :\t" << passdata_b2b.std_total_ivt << "\t" << passdata_b2c.std_total_ivt << "\t" << passdata_c2c.std_total_ivt << "\t" << passdata_total.std_total_ivt;
 
-        out << "\n\nTotal crowded in-vehicle time  :\t" << passdata_b2b.total_crowded_ivt << "\t" << passdata_b2c.total_crowded_ivt << "\t" << passdata_c2c.total_crowded_ivt << "\t" << passdata_total.total_crowded_ivt;
-        out << "\nAverage crowded in-vehicle time:\t" << passdata_b2b.avg_total_crowded_ivt << "\t" << passdata_b2c.avg_total_crowded_ivt << "\t" << passdata_c2c.avg_total_crowded_ivt << "\t" << passdata_total.avg_total_crowded_ivt;
+        //out << "\n\nTotal crowded in-vehicle time  :\t" << passdata_b2b.total_crowded_ivt << "\t" << passdata_b2c.total_crowded_ivt << "\t" << passdata_c2c.total_crowded_ivt << "\t" << passdata_total.total_crowded_ivt;
+        out << "\n\nAverage crowded in-vehicle time:\t" << passdata_b2b.avg_total_crowded_ivt << "\t" << passdata_b2c.avg_total_crowded_ivt << "\t" << passdata_c2c.avg_total_crowded_ivt << "\t" << passdata_total.avg_total_crowded_ivt;
         out << "\nStdev crowded in-vehicle time  :\t" << passdata_b2b.std_total_crowded_ivt << "\t" << passdata_b2c.std_total_crowded_ivt << "\t" << passdata_c2c.std_total_crowded_ivt << "\t" << passdata_total.std_total_crowded_ivt;
 
         out << "\n\nTotal passengers ignored (trip out of pass-generation start-stop interval):\t" << pass_ignored;
@@ -7371,7 +7371,6 @@ namespace fwf_outputs {
     }
 
     //!< @brief write out time and vkt spent in different states for a DRT vehicle for e.g. analysis of distributions. Corresponds to one row of "o_fwf_drtvehicle_states.dat"
-    //!< @todo PARTC addition perhaps remove
     void writeDRTVehicleState_row(ostream& out, int bus_id, double init_time, const FWF_vehdata& drt_vehdata)
     {
             out << bus_id << "\t"
