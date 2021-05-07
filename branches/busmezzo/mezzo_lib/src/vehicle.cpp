@@ -122,6 +122,24 @@ VehicleRecycler::	~VehicleRecycler()
 
 }
 
+QString BusState_to_QString(BusState state)
+{
+	QString state_s = "";
+
+    switch (state)
+    {
+    case BusState::Null: state_s = "Null"; break;
+    case BusState::IdleEmpty: state_s = "IdleEmpty"; break;
+    case BusState::IdlePartiallyFull: state_s = "IdlePartiallyFull"; break;
+    case BusState::IdleFull: state_s = "IdleFull"; break;
+    case BusState::DrivingEmpty: state_s = "DrivingEmpty"; break;
+    case BusState::DrivingPartiallyFull: state_s = "DrivingPartiallyFull"; break;
+    case BusState::DrivingFull: state_s = "DrivingFull"; break;
+    case BusState::OnCall: state_s = "OnCall"; break;
+    }
+	return state_s;
+}
+
 Bus::Bus(QObject* parent) : QObject(parent), Vehicle()
 {
 	occupancy = 0;
@@ -320,9 +338,6 @@ void Bus::advance_curr_trip (double time, Eventlist* eventlist) // progresses tr
 {
     if (theParameters->drt)
     {
-        //if (flex_vehicle_)
-        //    DEBUG_MSG("----------Bus " << id << " finishing trip " << curr_trip->get_id() << " at time " << time);
-
         if (flex_vehicle_ && curr_trip->is_flex_trip()) //if the trip that just finished was dynamically scheduled then the controlcenter is in charge of bookkeeping the completed trip and bus for writing outputs
         {
             if (last_stop_visited_->get_dest_node() == nullptr)
@@ -330,11 +345,6 @@ void Bus::advance_curr_trip (double time, Eventlist* eventlist) // progresses tr
                 DEBUG_MSG_V("Problem when ending trip in Bus::advance_curr_trip - final stop " << last_stop_visited_->get_id() << " does not have a destination node associated with it. Aborting...");
                 abort();
             }
-
-            //double trip_time = curr_trip->get_enter_time() - curr_trip->get_starttime();
-            //Q_UNUSED(trip_time);
-            //DEBUG_MSG("\t Total trip time: " << trip_time);
-            
             CC_->addCompletedVehicleTrip(this, curr_trip); //save bus - bustrip pair in control center of last stop 
         }
     }
@@ -352,7 +362,7 @@ void Bus::advance_curr_trip (double time, Eventlist* eventlist) // progresses tr
 			next_trip->set_starttime(time); // for calculating output as well as the activation check below, this now represents actual starttime and not just the 'expected one'
 			assignBusToTrip(busclone, next_trip); //the trip has not started yet however, on_trip set to true in Bustrip::activate
 			assert(busclone->get_curr_trip() == next_trip); //should now point to the same once assigned
-			next_trip->set_scheduled_for_dispatch(true); // probably unnecessary, but just to make sure the trip is not double activated via Busline::execute, you never know
+			next_trip->set_scheduled_for_dispatch(true); // updates the status of the trip a well, should be called after cloned bus is assigned to next trip
 
 		}
 		if (next_trip->get_starttime() <= time) // if the bus is already late for the next trip (or dynamically generated trip that starts immediately)
@@ -372,7 +382,7 @@ void Bus::advance_curr_trip (double time, Eventlist* eventlist) // progresses tr
 		// if the bus is early for the next trip, then it will be activated at the scheduled time from Busline
 	}
 
-	//busvehicle should be unassigned at opposing stop after completing its trip, then mimic the initialization process for DRT vehicles from network reader
+	//busvehicle should be unassigned after completing its trip
     if (theParameters->drt)
     {
         if (flex_vehicle_ && curr_trip->is_flex_trip())
@@ -387,7 +397,9 @@ void Bus::advance_curr_trip (double time, Eventlist* eventlist) // progresses tr
                                 ", Busstop does not have an origin node associated with it. Aborting...");
                 abort();
             }
-            last_stop_visited_->book_unassigned_bus_arrival(eventlist, busclone, time);
+
+            last_stop_visited_->add_unassigned_bus(busclone, time); // bus is immediately unassigned at the final stop of the trip
+            //last_stop_visited_->book_unassigned_bus_arrival(eventlist, busclone, time);
 
         }
     }
@@ -698,6 +710,11 @@ bool Bus::is_oncall() const
 bool Bus::is_empty() const
 {
 	return occupancy == 0;
+}
+
+bool Bus::is_full() const
+{
+	return occupancy >= capacity;
 }
 
 bool Bus::is_null() const

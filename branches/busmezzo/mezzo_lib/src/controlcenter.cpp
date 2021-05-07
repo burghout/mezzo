@@ -12,7 +12,6 @@
 
 void DRTAssignmentData::reset()
 {
-    // @todo maybe delete and handle cleanups here as well...currently spread accross CC and member process classes
     for (Bustrip* trip : unmatched_trips) //clean up planned trips that were never matched. Note: currently network reset is called even after the last simulation replication
 	{
 		delete trip;
@@ -196,7 +195,6 @@ bool BustripGenerator::requestTrip(DRTAssignmentData& assignment_data, double ti
 {
     if (generationStrategy_ != nullptr)
     {
-        cs_helper_functions::assignRequestsToScheduledTrips(cs_helper_functions::filterRequestsByState(assignment_data.active_requests, RequestState::Unmatched), assignment_data.active_trips);
         bool trip_found = generationStrategy_->calc_trip_generation(assignment_data, serviceRoutes_, time); //returns true if trip has been generated and added to the unmatchedTrips_
 
         if (!trip_found && !assignment_data.unmatched_trips.empty()) //if no trip was found but an unmatched trip remains in the unmatchedTrips set
@@ -270,6 +268,11 @@ void BustripGenerator::setEmptyVehicleStrategy(int type)
 		DEBUG_MSG("BustripGenerator::setEmptyVehicleStrategy() - strategy " << type << " is not recognized! Setting strategy to nullptr. ");
 		emptyVehicleStrategy_ = nullptr;
 	}
+}
+
+TripGenerationStrategy* BustripGenerator::getGenerationStratgy() const
+{
+	return generationStrategy_;
 }
 
 //BustripVehicleMatcher
@@ -561,6 +564,45 @@ set<Bus*> Controlcenter::getVehiclesDrivingToStop(Busstop* end_stop)
 	return vehs_enroute;
 }
 
+set<Bus*> Controlcenter::getVehiclesEnRouteToStop(Busstop* stop)
+{
+	assert(stop);
+	set<Bus*> vehs_enroute;
+	for(const auto& vehs_in_state : assignment_data_.fleet_state)
+	{
+	    if(vehs_in_state.first != BusState::Null && vehs_in_state.first != BusState::OnCall) // if not Null or Oncall then assigned to trip
+	    {
+			for(auto veh : vehs_in_state.second)
+			{
+                Bustrip* trip = veh->get_curr_trip();
+
+                if (trip)
+                {
+                    // add if vehicle is Idle, and at the current stop or has it downstream on trip
+                    if (veh->is_idle())
+                    {
+                        if (trip->get_last_stop_visited() == stop)
+                            vehs_enroute.insert(veh);
+                        if (trip->has_stop_downstream(stop))
+                            vehs_enroute.insert(veh);
+                    }
+                    // add if vehicle is Driving, and has the stop downstream on trip
+                    if (veh->is_driving())
+                    {
+                        if (trip->has_stop_downstream(stop))
+                            vehs_enroute.insert(veh);
+                    }
+                }
+				else
+				{
+				    qDebug() << "Warning - ignoring vehicle" << veh->get_bus_id() << "in state" << BusState_to_QString(veh->get_state()) << "without a trip assigned to it, when searching for vehicles enroute to stop" << stop->get_id();
+				}
+			}
+	    }
+	}
+	return vehs_enroute;
+}
+
 set<Bus*> Controlcenter::getOnCallVehiclesAtStop(Busstop* stop)
 {
 	assert(stop);
@@ -782,6 +824,9 @@ void Controlcenter::connectVehicle(Bus* transitveh)
 		QObject::connect(transitveh, &Bus::stateChanged, this, &Controlcenter::updateFleetState, Qt::DirectConnection);
 
 		transitveh->set_control_center(this);
+
+		if(assignment_data_.planned_capacity == 0) //!< @todo PARTC specific remove
+			assignment_data_.planned_capacity = transitveh->get_capacity();
 	}
 }
 void Controlcenter::disconnectVehicle(Bus* transitveh)

@@ -72,6 +72,7 @@ public:
 private Q_SLOTS:
     void testCreateNetwork(); //!< test loading a network
     void testInitNetwork(); //!< test generating passenger path sets & loading a network
+    void testGetPlannedOccupancy(); //!< test for extracting occupancy of planned trips that have not started yet based on assigned requests
     void testBustripFilters(); //!< test for filtering collections of Bustrips by status, type, conditions etc.. 
     void testSortedBustrips();
     void testAssignment();//!< test asssignment of passengers
@@ -164,6 +165,91 @@ void TestDRTAlgorithms::testInitNetwork()
     path_set_file.close();
 }
 
+void TestDRTAlgorithms::testGetPlannedOccupancy()
+{
+    //create a busline that visits 5 stops
+    //create a planned trip for this busline that visits these stops
+    //assign requests in different combinations and check the output of different bustrip methods
+    
+    Origin* o_node = net->get_origins()[100]; //origin by stop A
+    Destination* d_node = net->get_destinations()[1010]; //destination by stop E
+    ODpair* od_node = (*find_if(net->get_odpairs().begin(), net->get_odpairs().end(),[o_node,d_node](ODpair* od){return (od->get_origin() == o_node) && (od->get_destination() == d_node);}));
+    Busstop* s1 = net->get_busstop_from_name("A");
+    Busstop* s2 = net->get_busstop_from_name("B");
+    Busstop* s3 = net->get_busstop_from_name("C");
+    Busstop* s4 = net->get_busstop_from_name("D");
+    Busstop* s5 = net->get_busstop_from_name("E");
+    vector<Busstop*> stops = {s1,s2,s3,s4,s5};
+    double t_now = 0.0; //dummy sim time
+    
+    //get route via stops A,B,C,D,E in that order
+    Busroute* route = net->create_busroute_from_stops(1, o_node, d_node, stops, t_now); 
+    QVERIFY(route!=nullptr); //route should exist
+    
+    //Create a Busline with this route
+    Busline* line = new Busline(1,21,"testline",route,stops,nullptr,od_node,0,0,0,0,true);
+    line->set_delta_at_stops(net->calc_interstop_freeflow_ivt(route,stops));
+    
+    Controlcenter* cc = net->get_controlcenters().begin()->second;
+    TripGenerationStrategy* tg = cc->tg_.getGenerationStratgy(); //borrow the tg of cc for creating trips etc.
+    
+    auto schedule = tg->create_schedule(0.0,line->get_delta_at_stops());
+    Bustrip* t1 = tg->create_unassigned_trip(line,0.0,schedule); //create a trip plan
+    
+    //assign requests along planned trip
+    Request* rq1 = new Request(nullptr,1,1,2,1,0.0,0.0); // odstop(1,2)
+    Request* rq2 = new Request(nullptr,2,1,5,1,0.0,0.0); // odstop(1,5)
+    Request* rq3 = new Request(nullptr,3,2,5,1,0.0,0.0); // odstop(2,5)
+    Request* rq4 = new Request(nullptr,4,2,4,1,0.0,0.0); // odstop(2,4)
+    vector<Request*> allreq = {rq1,rq2,rq3,rq4};
+    
+    for(auto req : allreq)
+    {
+        t1->add_request(req);
+    }
+    
+    /**
+        Check the expected occupancy at each stop along the trip:
+            Assign 2 requests with orig stop A with (ostop,dstop) (1,2) & (1,5), occupancy of trip when entering A should be 0
+            Assign 2 requests with orig stop B with (2,5),(2,4), occupancy when entering B should be 2
+            Assign no requests with orig stop C, occupancy when entering C should be 3 (1 req from A [one drops off at B] and 2 from B
+            Assign no requests with orig stop D, occupancy when entering D should be 3
+            Final stop E should have occupancy 2, one from A and one from B
+    */
+    QVERIFY(t1->get_assigned_requests_with_origin(1).size() == 2);
+    QVERIFY(t1->get_assigned_requests_with_origin(2).size() == 2);
+    QVERIFY(t1->get_assigned_requests_with_origin(3).size() == 0);
+    QVERIFY(t1->get_assigned_requests_with_origin(4).size() == 0);
+    QVERIFY(t1->get_assigned_requests_with_origin(5).size() == 0);
+    
+    QVERIFY(t1->get_assigned_requests_with_destination(1).size() == 0);
+    QVERIFY(t1->get_assigned_requests_with_destination(2).size() == 1);
+    QVERIFY(t1->get_assigned_requests_with_destination(3).size() == 0);
+    QVERIFY(t1->get_assigned_requests_with_destination(4).size() == 1);
+    QVERIFY(t1->get_assigned_requests_with_destination(5).size() == 2);
+    auto reqs = t1->get_assigned_requests();
+    QVERIFY(t1->get_planned_occupancy_at_stop(reqs,s1) == 0); //2 pickups 0 dropoffs
+    QVERIFY(t1->get_planned_occupancy_at_stop(reqs,s2) == 2); //2 pickups 1 dropoff
+    QVERIFY(t1->get_planned_occupancy_at_stop(reqs,s3) == 3); //0 pickups 0 dropoffs
+    QVERIFY(t1->get_planned_occupancy_at_stop(reqs,s4) == 3); //0 pickups 1 dropoff
+    QVERIFY(t1->get_planned_occupancy_at_stop(reqs,s5) == 2); //0 pickups 2 dropoffs
+    
+    //Check feasibility of adding a request given a planned capacity of a vehicle assigned to this trip
+    Request* newrq = new Request(nullptr,888,1,5,1,0.0,0.0); //odstop(1,5)
+    QVERIFY(!t1->is_feasible_request_assignment(newrq,3)); //Should be infeasible for planned cap == 3
+    newrq->dstop_id = 2; 
+    QVERIFY(t1->is_feasible_request_assignment(newrq,3)); //Should be feasible since dropoff is before highest occ
+    newrq->ostop_id = 4; newrq->dstop_id = 5; 
+    QVERIFY(t1->is_feasible_request_assignment(newrq,3)); //Should be feasible since pickup is after highest occ
+    
+    delete line;
+    delete t1;
+    delete rq1;
+    delete rq2;
+    delete rq3;
+    delete rq4;
+    delete newrq;
+}
 
 void TestDRTAlgorithms::testBustripFilters()
 {
@@ -175,7 +261,6 @@ void TestDRTAlgorithms::testBustripFilters()
     Bustrip* t4 = new Bustrip(4,1.0,busline); // dummy fixed trip
     Bustrip* t5 = new Bustrip(5,1.0,busline); // dummy fixed trip
     Bustrip* t6 = new Bustrip(6,1.0,busline); // dummy fixed trip
-
 
     t1->set_flex_trip(true);
     t2->set_flex_trip(true);

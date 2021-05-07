@@ -22,6 +22,9 @@ double drt_first_rep_max_headway=0;
 double drt_first_rep_waiting_utility=10; //default is to evaluate waiting utility for drt service positively in the first rep
 int drt_min_occupancy=0;
 
+bool PARTC::drottningholm_case = false;
+Busstop* PARTC::transfer_stop = nullptr;
+
 long int randseed=0;
 int vid=0;
 int pid=0;
@@ -1534,14 +1537,23 @@ bool Network::readcontrolcenters(const string& name)
         //create and add all direct lines to cc
         if (generate_direct_routes == 1)
         {
-            cout << "readcontrolcenters:: generating direct lines for control center " << cc->getID() << endl;
-            if (!createControlcenterDRTLines(cc))
+            //@todo PARTC temporary change create direct lines with intermediate stops
+            //cout << "readcontrolcenters:: generating direct lines for control center " << cc->getID() << endl;
+            if (!createAllDRTLinesWithIntermediateStops(cc))
             {
                 cout << "readcontrolcenters:: problem generating direct lines for control center " << id;
                 in.close();
                 return false;
             }
             cc->setGeneratedDirectRoutes(generate_direct_routes);
+            //cout << "readcontrolcenters:: generating direct lines for control center " << cc->getID() << endl;
+            //if (!createAllDRTLines(cc))
+            //{
+            //    cout << "readcontrolcenters:: problem generating direct lines for control center " << id;
+            //    in.close();
+            //    return false;
+            //}
+            //cc->setGeneratedDirectRoutes(generate_direct_routes);
         }
         
         //read lines associated with this cc 
@@ -2206,7 +2218,7 @@ Busline* Network::create_busline(
     return bl;
 }
 
-bool Network::createControlcenterDRTLines(Controlcenter* cc)
+bool Network::createAllDRTLines(Controlcenter* cc)
 {
     assert(theParameters->drt);
     assert(cc);
@@ -2262,7 +2274,7 @@ bool Network::createControlcenterDRTLines(Controlcenter* cc)
                     {
                         od_pair = new ODpair(startstop->get_origin_node(), endstop->get_dest_node(), 0.0, &vehtypes);
                         odpairs.push_back(od_pair);
-                        /*qDebug() << "createControlcenterDRTLines:----Missing OD pair, creating for Origin " << ori_id <<
+                        /*qDebug() << "createAllDRTLines:----Missing OD pair, creating for Origin " << ori_id <<
                             ", destination " << dest_id;*/
                     }
 
@@ -2286,6 +2298,125 @@ bool Network::createControlcenterDRTLines(Controlcenter* cc)
 
                         // create busLine
                         Busline* newLine = create_busline(busLineIdCounter, 0, "DRT Line", newRoute, stops, vtype, od_pair, 0, 0.0, 0.0, 0, true);
+                        if (newLine != nullptr)
+                        {
+                            newLine->set_planned_headway(::drt_first_rep_max_headway); //add a planned headway (associated with CC) for this line. Used when applying dominancy rules in CSGM and for prior knowledge calculations in pass decisions
+                            buslinesFound.push_back(newLine);
+                            busLineIdCounter++;
+                            od_pair->add_route(newRoute); //add route to OD pair so it does not get deleted in Network::init
+                        }
+                    }
+                    else
+                        qDebug() << "DTR create buslines: no route found from stop " << startstop->get_id() << " to " << endstop->get_id();
+
+                }
+            }
+        }
+        // add the routes found to the busroutes
+        busroutes.insert(busroutes.end(), routesFound.begin(), routesFound.end());
+        // add the buslines
+        buslines.insert(buslines.end(), buslinesFound.begin(), buslinesFound.end());
+
+        //add buslines to cc
+        for (auto line : buslinesFound)
+        {
+            cc->addServiceRoute(line);
+        }
+    } //if cc
+
+    return true;
+}
+
+
+bool Network::createAllDRTLinesWithIntermediateStops(Controlcenter* cc)
+{
+    assert(theParameters->drt);
+    assert(cc);
+
+    //@todo PARTC kindof case specific, maybe remove
+
+    if (cc)
+    {
+        set<Busstop*, ptr_less<Busstop*>> serviceArea = cc->getServiceArea();
+        vector <Busstop*> stops;
+        vector<Busroute*> routesFound;
+        vector<Busline*>  buslinesFound;
+
+        //*** begin dummy values
+        Vtype* vtype = new Vtype(888, "octobus", 1.0, 20.0);
+        int routeIdCounter = 10000; // TODO: update to find max routeId from busroutes vector
+        int busLineIdCounter = 10000; //  TODO: update later
+       //*** end of dummy values
+
+        ODpair* od_pair = nullptr;
+        Origin* ori = nullptr;
+        Destination* dest = nullptr;
+
+        for (auto startstop : serviceArea)
+        {
+            for (auto endstop : serviceArea)
+            {
+                if (startstop != endstop)
+                {
+                    // find best origin for startstop if it does not exist
+                    if (startstop->get_origin_node() == nullptr)
+                    {
+                        // find  origin node
+                        ori = findNearestOriginToStop(startstop);
+                        if (ori != nullptr)
+                            startstop->set_origin_node(ori);
+                    }
+                    // find best destination for endstop if it does not exist
+                    if (endstop->get_dest_node() == nullptr)
+                    {
+                        // find  destination node
+                        dest = findNearestDestinationToStop(endstop);
+                        if (dest != nullptr)
+                            endstop->set_dest_node(dest);
+                    }
+                
+                    // find best odpair
+                    int ori_id = startstop->get_origin_node()->get_id();
+                    int dest_id = endstop->get_dest_node()->get_id();
+                    odval odid(ori_id, dest_id);
+                    auto od_it = find_if(odpairs.begin(), odpairs.end(), compareod(odid));
+                    if (od_it != odpairs.end())
+                        od_pair = *od_it;
+                    else // create new OD pair
+                    {
+                        od_pair = new ODpair(startstop->get_origin_node(), endstop->get_dest_node(), 0.0, &vehtypes);
+                        odpairs.push_back(od_pair);
+                        /*qDebug() << "createAllDRTLinesWithIntermediateStops:----Missing OD pair, creating for Origin " << ori_id <<
+                            ", destination " << dest_id;*/
+                    }
+
+                    // start and end stops included only.... but now we also grab intermediate ones from the generated busroute...
+                    stops.clear();
+                    stops.push_back(startstop);
+                    stops.push_back(endstop);
+
+                    Busroute* newRoute = create_busroute_from_stops(routeIdCounter, od_pair->get_origin(), od_pair->get_destination(), stops);
+
+                    if (newRoute != nullptr)
+                    {
+                        //do not add busroutes that already exist
+                        auto existing_route_it = find_if(busroutes.begin(), busroutes.end(), [newRoute](Busroute* broute) -> bool { return (Route*)newRoute->equals((Route)*broute); });
+                        if (existing_route_it == busroutes.end())
+                        {
+                            routesFound.push_back(newRoute);
+                            routeIdCounter++;
+                        }
+                        else {
+                            newRoute = *existing_route_it;
+                        }
+
+                        // grab all the intermediate busstops including the start and end stops
+                        vector<Busstop*> allstops = get_busstops_on_busroute(newRoute); // all stops that we happen to pass by on the route found.
+                        assert(allstops.front() == startstop);
+                        assert(allstops.back() == endstop);
+
+                        // create busLine
+                        Busline* newLine = create_busline(busLineIdCounter, 0, "DRT Line", newRoute, allstops, vtype, od_pair, 0, 0.0, 0.0, 0, true);
                         if (newLine != nullptr)
                         {
                             newLine->set_planned_headway(::drt_first_rep_max_headway); //add a planned headway (associated with CC) for this line. Used when applying dominancy rules in CSGM and for prior knowledge calculations in pass decisions
@@ -6187,6 +6318,50 @@ Pass_path* Network::get_pass_path_from_id(int path_id) const
     return target_path;
 }
 
+vector<Busstop*> Network::get_busstops_on_link(Link* link) const
+{
+    vector<Busstop*> stops_on_link;
+    // collect all stops with matching link id
+    for(auto stop : busstops)
+    {
+        if(stop->get_link_id() == link->get_id())
+            stops_on_link.push_back(stop);
+    }
+    // sort by the position of the stop on the link (closest to upstream node first)
+    sort(stops_on_link.begin(), stops_on_link.end(), [](const Busstop* s1, const Busstop* s2) -> bool
+        {
+            if (s1->get_position() != s2->get_position())
+                return s1->get_position() < s2->get_position();
+            else
+                return s1->get_id() < s2->get_id(); // if positions are equal the stop with the lowest id is considered earlier on the link
+        }
+    );
+
+    return stops_on_link;
+}
+
+vector<Busstop*> Network::get_busstops_on_busroute(Busroute* route) const
+{
+    vector<Busstop*> stops_on_route;
+    //cout << "checking for stops on route " << route->get_id() << endl;
+    for (auto link : route->get_links())
+    {
+    //    cout << "\tchecking for stops on link " << link->get_id() << endl;
+        vector<Busstop*> stops_on_link = get_busstops_on_link(link);
+    /*    cout << "\tfound stops:";
+        for(auto stop : stops_on_link)
+            cout << " " << stop->get_id();
+        cout << endl;*/
+        stops_on_route.insert(stops_on_route.end(), stops_on_link.begin(), stops_on_link.end());
+    }
+    /*cout << "found stops on route:";
+    for (auto stop : stops_on_route)
+        cout << " " << stop->get_id();
+    cout << endl;*/
+
+    return stops_on_route;
+}
+
 // read traffic control
 bool Network::readsignalcontrols(string name)
 {
@@ -7102,58 +7277,6 @@ bool Network::writeheadways(string name)
 */
 namespace PARTC
 {
-    const vector<int> branch_ids_176 = { 217619,217618,217617,217616,217615,217614,217613,217612,217611,217610,217609,217608,217607,217606,217605,217603,217602,217604,217600,277024 };
-    const vector<int> branch_ids_177 = { 277036,277035,277034,277033,277032,277031,277030,277029,277028,277027,277026,277025,277024 };
-    const vector<int> corridor_ids = { 277024,277023,277022,277021,277020,277019,277018,277017,277016,277015,277014,277013,277012,277011,277010,277009,277008,277007,277006,277005,277004,277003,277002,277001 };
-    const int transfer_stop_id = 277024;
-    const int morby_station_id = 277001;
-
-    enum class ODCategory { Null = 0, b2b, b2c, c2c };
-
-    bool is_on_branch176(int stop_id)
-    {
-        return find(branch_ids_176.begin(), branch_ids_176.end(), stop_id) != branch_ids_176.end();
-    }
-    bool is_on_branch177(int stop_id)
-    {
-        return find(branch_ids_177.begin(), branch_ids_177.end(), stop_id) != branch_ids_177.end();
-    }
-    bool is_on_branch(int stop_id) // is on either branch
-    {
-        return is_on_branch176(stop_id) || is_on_branch177(stop_id);
-    }
-    bool is_on_corridor(int stop_id)
-    {
-        return find(corridor_ids.begin(), corridor_ids.end(), stop_id) != corridor_ids.end();
-    }
-    bool is_transfer_stop(int stop_id)
-    {
-        return stop_id == transfer_stop_id;
-    }
-    bool is_branch_to_branch(int ostop_id, int dstop_id) // if OD pair is branch to branch
-    {
-        if (is_on_branch(ostop_id)) // origin of trip starts on a branch
-        {
-            if (is_transfer_stop(dstop_id)) // destination is the transfer stop (which is on both branch and corridor)
-                return true;
-            else
-                return !is_on_corridor(dstop_id); // destination is NOT on corridor
-        }
-        return false;
-    }
-    bool is_branch_to_corridor(int ostop_id, int dstop_id)
-    {
-        if (!is_transfer_stop(ostop_id) && is_on_branch(ostop_id)) // origin is not the transfer stop (which is on corridor) and is on branch
-        {
-            if (!is_transfer_stop(dstop_id) && is_on_corridor(dstop_id)) // destination IS on corridor and is not the transfer stop
-                return true;
-        }
-        return false;
-    }
-    bool is_corridor_to_corridor(int ostop_id, int dstop_id)
-    {
-        return is_on_corridor(ostop_id) && is_on_corridor(dstop_id);
-    }
     void writeFWFsummary_odcategories(ostream& out, const FWF_passdata& passdata_b2b, const FWF_passdata& passdata_b2c, const FWF_passdata& passdata_c2c, const FWF_passdata& passdata_total, int pass_ignored)
     {
         assert(out);
@@ -7170,20 +7293,20 @@ namespace PARTC
         //out << "\n\nTotal waiting time             :\t" << passdata_b2b.total_wt << "\t" << passdata_b2c.total_wt << "\t" << passdata_c2c.total_wt << "\t" << passdata_total.total_wt;
         out << "\n\nAverage waiting time           :\t" << passdata_b2b.avg_total_wt << "\t" << passdata_b2c.avg_total_wt << "\t" << passdata_c2c.avg_total_wt << "\t" << passdata_total.avg_total_wt;
         out << "\nStdev waiting time             :\t" << passdata_b2b.std_total_wt << "\t" << passdata_b2c.std_total_wt << "\t" << passdata_c2c.std_total_wt << "\t" << passdata_total.std_total_wt;
-        out << "\nMinimum waiting time           :\t" << passdata_b2b.min_wt << "\t" << passdata_b2c.min_wt << "\t" << passdata_c2c.min_wt << "\t" << passdata_total.min_wt;
+        //out << "\nMinimum waiting time           :\t" << passdata_b2b.min_wt << "\t" << passdata_b2c.min_wt << "\t" << passdata_c2c.min_wt << "\t" << passdata_total.min_wt;
         out << "\nMaximum waiting time           :\t" << passdata_b2b.max_wt << "\t" << passdata_b2c.max_wt << "\t" << passdata_c2c.max_wt << "\t" << passdata_total.max_wt;
         out << "\nMedian waiting time            :\t" << passdata_b2b.median_wt << "\t" << passdata_b2c.median_wt << "\t" << passdata_c2c.median_wt << "\t" << passdata_total.median_wt;
 
-        out << "\n\nTotal denied waiting time      :\t" << passdata_b2b.total_denied_wt << "\t" << passdata_b2c.total_denied_wt << "\t" << passdata_c2c.total_denied_wt << "\t" << passdata_total.total_denied_wt;
-        out << "\nAverage denied waiting time    :\t" << passdata_b2b.avg_denied_wt << "\t" << passdata_b2c.avg_denied_wt << "\t" << passdata_c2c.avg_denied_wt << "\t" << passdata_total.avg_denied_wt;
+        //out << "\n\nTotal denied waiting time      :\t" << passdata_b2b.total_denied_wt << "\t" << passdata_b2c.total_denied_wt << "\t" << passdata_c2c.total_denied_wt << "\t" << passdata_total.total_denied_wt;
+        out << "\n\nAverage denied waiting time    :\t" << passdata_b2b.avg_denied_wt << "\t" << passdata_b2c.avg_denied_wt << "\t" << passdata_c2c.avg_denied_wt << "\t" << passdata_total.avg_denied_wt;
         out << "\nStdev denied waiting time      :\t" << passdata_b2b.std_denied_wt << "\t" << passdata_b2c.std_denied_wt << "\t" << passdata_c2c.std_denied_wt << "\t" << passdata_total.std_denied_wt;
 
-        out << "\n\nTotal in-vehicle time          :\t" << passdata_b2b.total_ivt << "\t" << passdata_b2c.total_ivt << "\t" << passdata_c2c.total_ivt << "\t" << passdata_total.total_ivt;
-        out << "\nAverage in-vehicle time        :\t" << passdata_b2b.avg_total_ivt << "\t" << passdata_b2c.avg_total_ivt << "\t" << passdata_c2c.avg_total_ivt << "\t" << passdata_total.avg_total_ivt;
+        //out << "\n\nTotal in-vehicle time          :\t" << passdata_b2b.total_ivt << "\t" << passdata_b2c.total_ivt << "\t" << passdata_c2c.total_ivt << "\t" << passdata_total.total_ivt;
+        out << "\n\nAverage in-vehicle time        :\t" << passdata_b2b.avg_total_ivt << "\t" << passdata_b2c.avg_total_ivt << "\t" << passdata_c2c.avg_total_ivt << "\t" << passdata_total.avg_total_ivt;
         out << "\nStdev in-vehicle time          :\t" << passdata_b2b.std_total_ivt << "\t" << passdata_b2c.std_total_ivt << "\t" << passdata_c2c.std_total_ivt << "\t" << passdata_total.std_total_ivt;
 
-        out << "\n\nTotal crowded in-vehicle time  :\t" << passdata_b2b.total_crowded_ivt << "\t" << passdata_b2c.total_crowded_ivt << "\t" << passdata_c2c.total_crowded_ivt << "\t" << passdata_total.total_crowded_ivt;
-        out << "\nAverage crowded in-vehicle time:\t" << passdata_b2b.avg_total_crowded_ivt << "\t" << passdata_b2c.avg_total_crowded_ivt << "\t" << passdata_c2c.avg_total_crowded_ivt << "\t" << passdata_total.avg_total_crowded_ivt;
+        //out << "\n\nTotal crowded in-vehicle time  :\t" << passdata_b2b.total_crowded_ivt << "\t" << passdata_b2c.total_crowded_ivt << "\t" << passdata_c2c.total_crowded_ivt << "\t" << passdata_total.total_crowded_ivt;
+        out << "\n\nAverage crowded in-vehicle time:\t" << passdata_b2b.avg_total_crowded_ivt << "\t" << passdata_b2c.avg_total_crowded_ivt << "\t" << passdata_c2c.avg_total_crowded_ivt << "\t" << passdata_total.avg_total_crowded_ivt;
         out << "\nStdev crowded in-vehicle time  :\t" << passdata_b2b.std_total_crowded_ivt << "\t" << passdata_b2c.std_total_crowded_ivt << "\t" << passdata_c2c.std_total_crowded_ivt << "\t" << passdata_total.std_total_crowded_ivt;
 
         out << "\n\nTotal passengers ignored (trip out of pass-generation start-stop interval):\t" << pass_ignored;
@@ -7248,7 +7371,6 @@ namespace fwf_outputs {
     }
 
     //!< @brief write out time and vkt spent in different states for a DRT vehicle for e.g. analysis of distributions. Corresponds to one row of "o_fwf_drtvehicle_states.dat"
-    //!< @todo PARTC addition perhaps remove
     void writeDRTVehicleState_row(ostream& out, int bus_id, double init_time, const FWF_vehdata& drt_vehdata)
     {
             out << bus_id << "\t"
@@ -7347,17 +7469,6 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
     *   - also check the category of each od being checked
     *   - generate a FWF_passdata for each OD category
     */
-    bool PARTCflag = false;
-    for (auto line : buslines)
-    {
-        if (!line->is_flex_line())
-        {
-            if (line->stops.back()->get_id() == PARTC::morby_station_id) //all fixed lines end at morby station
-                PARTCflag = true;
-            else
-                PARTCflag = false;
-        }
-    }
 
     FWF_passdata total_passdata_b2b;
     FWF_passdata total_passdata_b2c;
@@ -7443,7 +7554,7 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
         int pass_ignored = 0; // passengers ignored from fwf summary output...i.e. did not start and complete trip with pass generation interval
 
         // FWF passenger output
-        if (PARTCflag)
+        if (PARTC::drottningholm_case)
         {
             for (auto pass : all_pass) // only check pass who started and completed trip within the pass generation time interval
             {
@@ -9456,6 +9567,22 @@ bool Network::init()
     {
         (*iter3)->execute(eventlist, initvalue);
         initvalue += 0.00001;
+    }
+
+    //!< @todo PARTC specific, remove
+    for (auto line : buslines)
+    {
+        if (!line->is_flex_line())
+        {
+            if (line->stops.back()->get_id() == PARTC::morby_station_id) //all fixed lines end at morby station
+            {
+                PARTC::drottningholm_case = true;
+                PARTC::transfer_stop = busstopsmap[PARTC::transfer_stop_id];
+                assert(PARTC::transfer_stop->get_id() == PARTC::transfer_stop_id);
+            }
+            else
+                PARTC::drottningholm_case = false;
+        }
     }
 
     if (theParameters->demand_format == 3)

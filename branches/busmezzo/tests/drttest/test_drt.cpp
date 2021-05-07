@@ -338,7 +338,7 @@ void TestDRT::testCreateControlcenterDRTLines()
     QVERIFY (busroutes.size() == 22);
     QVERIFY (buslines.size() == 22);
 
-    net->createControlcenterDRTLines(cc);
+    net->createAllDRTLines(cc);
 
     //routes should not be duplicated, buslines can be duplicated
     busroutes = net->get_busroutes();

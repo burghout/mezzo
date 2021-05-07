@@ -695,7 +695,7 @@ bool Pass_path::check_all_flexible_lines(const vector<Busline*>& line_vec) const
 			return false;
 	}
 
-	assert(line_vec.size() == 1); // currently all flexible lines are considered distinct from one another, i.e. never merged into a set of lines a traveler will board opportunisticly.
+	//assert(line_vec.size() == 1); // currently all flexible lines are considered distinct from one another, i.e. never merged into a set of lines a traveler will board opportunisticly.
 	return true;
 }
 

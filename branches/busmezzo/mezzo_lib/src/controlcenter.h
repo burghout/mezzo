@@ -45,16 +45,16 @@ struct DRTAssignmentData
 	set<Bustrip*,ptr_less<Bustrip*> > unscheduled_trips;
     set<Bustrip*,ptr_less<Bustrip*> > active_trips; //!< all matched and scheduled trips that have ever been generated have not completed
 
-	set<Request*, ptr_less<Request*> > active_requests; //!< all active requests sent to ControlCenter @todo currently only accepted requests that have not been served yet, removed when boarding a vehicle, will include e.g. served requests in the future
+	set<Request*, ptr_less<Request*> > active_requests; //!< all non-completed requests sent to and accepted by the ControlCenter
 	set<Request*, ptr_less<Request*> > rejected_requests; //!< all requests rejected by ControlCenter
 	set<Request*, ptr_less<Request*> > completed_requests; //!< all requests that were picked up and dropped off
 
     map<BusState, set<Bus*> > fleet_state; //!< all candidate vehicles to be assigned, or reassigned to activeTrips
-    //
-    // activeRequests //!< all requests for which activeTrips might be generated for
 
 	Controlcenter* cc_owner = nullptr;
 	void print_state(double time) const;
+
+	int planned_capacity = 0; //!< @todo PARTC specific, assumes the entire drt fleet of each Controlcenter has the same capacity, remove
 };
 
 struct Controlcenter_SummaryData
@@ -127,6 +127,8 @@ public:
 
 	void setTripGenerationStrategy(int type); //!< destroy current generationStrategy_ and set to new type
 	void setEmptyVehicleStrategy(int type); //!< destroy current emptyVehicleStrategy_ and set to new type
+
+	TripGenerationStrategy* getGenerationStratgy() const;
 
 	void addServiceRoute(Busline* line); //!< add a potential service route that this BustripGenerator can plan trips for
     vector<Busline*> getServiceRoutes() const;
@@ -212,6 +214,7 @@ class Controlcenter : public QObject
 {
 	Q_OBJECT
     friend class TestControlcenter; //!< for writing unit tests for Controlcenter
+	friend class TestDRTAlgorithms;
 	friend class TestFixedWithFlexible_walking; //!< for writing integration tests for FWF network
 	friend class Network; //!< for writing results of completed trips to output files, and for generating direct lines between connectedStops_
 
@@ -247,7 +250,8 @@ public:
 	void printFleetState() const; //!< for printing the state of the entire fleet for debugging
 
 	set<Bus*> getAllVehicles();
-	set<Bus*> getVehiclesDrivingToStop(Busstop* end_stop); //!< get connected vehicles that are driving to target end_stop
+	set<Bus*> getVehiclesDrivingToStop(Busstop* stop); //!< get connected vehicles that are driving to target stop
+	set<Bus*> getVehiclesEnRouteToStop(Busstop* stop); //!< get connected vehicles that are assigned to a trip with stop included in their downstream route
 	set<Bus*> getOnCallVehiclesAtStop(Busstop* stop); //!< get connected vehicles that are currently on-call at target stop
 	pair<Bus*,double> getClosestVehicleToStop(Busstop* stop, double time); //returns closest vehicle to stop and shortest expected time to get there
 	

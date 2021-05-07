@@ -25,6 +25,10 @@ void Request::set_assigned_trip(Bustrip* newtrip)
         }
         newtrip->add_request(this);
         assigned_trip = newtrip;
+        if(newtrip->get_busv()) // if newtrip is also matched to a vehicle
+            this->set_state(RequestState::Matched);
+        else
+            this->set_state(RequestState::Assigned);
     }
 }
 
@@ -40,7 +44,7 @@ void Request::set_state(RequestState newstate)
         case RequestState::Unmatched:
             break;
         case RequestState::Assigned:
-            assert(state == RequestState::Unmatched);
+            //assert(state == RequestState::Unmatched);
             break;
         case RequestState::Matched:
             //assert(state == RequestState::Assigned);
@@ -231,7 +235,7 @@ Bustrip* TripGenerationStrategy::create_unassigned_trip(Busline* line, double de
 
     //initialize trip
     trip->add_stops(desired_schedule); //add scheduled stop visits to trip
-    trip->convert_stops_vector_to_map(); // TODO(MrLeffler): not sure why this is necessary but is done for other trips so
+    trip->convert_stops_vector_to_map(); 
     trip->set_last_stop_visited(trip->stops.front()->first);  //sets last stop visited to the origin stop of the trip
     trip->set_flex_trip(true);
     trip->set_status(BustripStatus::Unmatched);
@@ -243,7 +247,7 @@ Bustrip* TripGenerationStrategy::create_unassigned_trip(Busline* line, double de
 set<Bus*> TripGenerationStrategy::get_driving_vehicles(const map<BusState, set<Bus*> >& fleetState) const
 {
     set<Bus*> drivingvehicles;
-    for (auto vehgroup : fleetState) //collect all driving buses. TODO create a function for this, decide who gets to own it
+    for (auto vehgroup : fleetState) //collect all driving buses. 
     {
         BusState state = vehgroup.first;
         switch (state)
@@ -335,7 +339,7 @@ Busline* TripGenerationStrategy::find_shortest_busline(const vector<Busline*>& l
     return shortestline;
 }
 
-pair <Bus*, double> TripGenerationStrategy::get_nearest_vehicle(const Busstop* targetStop, set<Bus*> vehicles, Network* theNetwork, double time)
+pair <Bus*, double> TripGenerationStrategy::get_nearest_vehicle(const Busstop* targetStop, const set<Bus*>& vehicles, Network* theNetwork, double time)
 {
     pair<Bus*, double> closest(nullptr, numeric_limits<double>::max());
 
@@ -352,6 +356,27 @@ pair <Bus*, double> TripGenerationStrategy::get_nearest_vehicle(const Busstop* t
     }
 
     return closest;
+}
+
+vector<pair<Bus*, double> > TripGenerationStrategy::find_nearest_vehicles(const Busstop* targetStop, const set<Bus*>& vehicles, Network* theNetwork, double time)
+{
+    vector<pair<Bus*, double> > closest_vehicles;
+
+    // label all the vehicles with their expected ivt to target stop
+    for (auto v : vehicles)
+    {
+        Busstop* laststop = v->get_last_stop_visited(); //current stop if not driving
+        vector<Link*> shortestpath = find_shortest_path_between_stops(theNetwork, laststop, targetStop, time);
+        double expected_tt = calc_route_travel_time(shortestpath, time);
+        //if(v->is_driving()) // @todo if vehicle is currently driving between stops, subtract from expected tt the time between stops already driven
+        //    expected_tt -= time - v->get_curr_trip()->get_last_stop_exit_time();
+        //assert(expected_tt >= 0);
+
+        closest_vehicles.push_back(make_pair(v, expected_tt));
+    }
+    sort(closest_vehicles.begin(), closest_vehicles.end(), [](const pair<Bus*, double>& veh1, const pair<Bus*, double>& veh2) { return veh1.second < veh2.second; });
+
+    return closest_vehicles;
 }
 
 bool NullTripGeneration::calc_trip_generation(DRTAssignmentData& assignment_data, const vector<Busline*>& candidateServiceRoutes, double time)
@@ -441,7 +466,6 @@ bool NaiveTripGeneration::calc_trip_generation(DRTAssignmentData& assignment_dat
                         for (auto rq : affectedRequests)
                         {
                             rq->set_assigned_trip(newtrip);
-                            rq->set_state(RequestState::Assigned);
                         }
                         vector<Bustrip* > tripchain = { newtrip }; //tripchain is only one trip long
                         cs_helper_functions::add_driving_roster_to_tripchain(tripchain); 
@@ -469,15 +493,13 @@ bool SimpleTripGeneration::calc_trip_generation(DRTAssignmentData& assignment_da
     if (!unassignedRequests.empty() && !candidateServiceRoutes.empty())
     {
         // 2. get trips (i don't care if they are matched or unmatched...) and assign requests to existing trips
-
-        cs_helper_functions::assignRequestsToTripSet(assignment_data.active_requests, assignment_data.unmatched_trips);
+        cs_helper_functions::assignRequestsToTripSet(assignment_data.active_requests, assignment_data.unmatched_trips, assignment_data.planned_capacity);
         unassignedRequests = cs_helper_functions::filterRequestsByState(assignment_data.active_requests, RequestState::Unmatched); // redo the filtering after assignRequestsToTripSet
-        // TODO: here we want to call it with the emptyTripset as well
 
         if (unassignedRequests.empty())
             return true;
         // 3. create trips for those requests for which I have not found a trip
-        for (auto rq:unassignedRequests)
+        for (auto rq : unassignedRequests)
         {
             auto  lines_between_stops = find_lines_connecting_stops(candidateServiceRoutes, rq->ostop_id, rq->dstop_id); //check if any candidate service route connects the OD pair (even for segments of the route)
             if (lines_between_stops.empty())
@@ -516,9 +538,9 @@ bool SimpleTripGeneration::calc_trip_generation(DRTAssignmentData& assignment_da
 
          // 4. assign the request
             rq->set_assigned_trip(newtrip);
-            rq->set_state(RequestState::Assigned);
+
             // TODO: now check all the remaining requests to see if they can be assigned as well.
-            cs_helper_functions::assignRequestsToTrip(assignment_data.active_requests,newtrip);
+            cs_helper_functions::assignRequestsToTrip(assignment_data.active_requests, newtrip, assignment_data.planned_capacity);
             
         }
     }
@@ -635,44 +657,89 @@ bool SimpleEmptyVehicleTripGeneration::calc_trip_generation(DRTAssignmentData& a
     // 1. see if any vehicles are available, if no, exit
     if (assignment_data.fleet_state.find(BusState::OnCall) == assignment_data.fleet_state.end())  //a drt vehicle must have been initialized
         return false;
-    if (assignment_data.fleet_state.at(BusState::OnCall).empty())  //a drt vehicle must be available
-        return false;
+    //if (assignment_data.fleet_state.at(BusState::OnCall).empty())  //a drt vehicle must be available
+    //    return false;
     // 2. sort unMatchedTrips (by nr of requests)
     set<Bustrip*,compareBustripByNrRequests> sortedTrips (assignment_data.unmatched_trips.begin(), assignment_data.unmatched_trips.end());
-    //set<Bustrip*,compareBustripByMaxWait> sortedTrips (unmatchedTripSet.begin(), unmatchedTripSet.end(),time) ;
-    //set<Bustrip*,compareBustripByCumulativeWait> sortedTrips (unmatchedTripSet.begin(), unmatchedTripSet.end(),time) ;
 
-    // 3. find nearest vehicle to the unMatchedTrip location (For now: hope for the best :)
-    auto selectedTrip = *(sortedTrips.begin());
-    Busstop*  tripStartStop = selectedTrip->stops.front()->first;
-    auto onCallVehicles = assignment_data.fleet_state.at(BusState::OnCall);
-    auto nearestOnCall = get_nearest_vehicle(tripStartStop,onCallVehicles,theNetwork_,time);
-    if (nearestOnCall.first == nullptr)
-        return false;
-    // 4. generate the empty trip
-    Busstop* vehicleStartStop = nearestOnCall.first->get_last_stop_visited();
-    auto vehicle_serviceRoutes = find_lines_connecting_stops(candidateServiceRoutes,vehicleStartStop->get_id(),tripStartStop->get_id());
-    Busline* line = find_shortest_busline(vehicle_serviceRoutes, time);
-    assert(line);
- 
-    auto schedule = create_schedule(time,line->get_delta_at_stops());
-    Bustrip* newTrip = create_unassigned_trip(line,time,schedule);
+    bool trip_generated = false;
+    for (auto unmatched_trip : sortedTrips) // loop through unmatched trips in order of priority
+    {
+        Busstop* tripStartStop = unmatched_trip->stops.front()->first;
+        //assignment_data.print_state(time);
 
-    // 5. associate the chained trips by modifying Bustrip::driving_roster
-    vector<Bustrip*> tripchain = { newTrip, selectedTrip };
-    cs_helper_functions::update_schedule(selectedTrip, newTrip->stops.back()->second); // Get last stop arrival time of newtrip, and then update the chained selectedTrip with this as dispatch time
-    cs_helper_functions::add_driving_roster_to_tripchain(tripchain); // newTrip and selectedTrip now have pointers to eachother as well as info of which order they are in
+        // now find closest vehicles to this trip (on-call or en-route), no on-call vehicles will be at the stop of the trip since this is already checked after trip-plan was generated
+        set<Bus*> oncall_vehs = assignment_data.fleet_state.at(BusState::OnCall);
+        set<Bus*> enroute_vehs = assignment_data.cc_owner->getVehiclesEnRouteToStop(tripStartStop);
+        set<Bus*> candidate_vehs;
+        set_union(begin(oncall_vehs), end(oncall_vehs),
+            begin(enroute_vehs), end(enroute_vehs),
+            inserter(candidate_vehs, begin(candidate_vehs)));
+        
+        auto nearestVehicles = find_nearest_vehicles(tripStartStop, candidate_vehs, theNetwork_, time); // all candidate vehicles for carrying any request sorted by time to reach trip start stop
+        for(auto veh : nearestVehicles) // loop through vehicles by closest, now want to check capacity for carrying trip-plan
+        {
+            if (veh.first->is_oncall()) // if nearest vehicle is on-call then create and empty trip and chain it.....
+            {
+                //!< @todo PARTC assumes that each empty vehicle has capacity to satisfy the unmatched trip, kindof an implicit assumption that trips are bundled into unmatched trips purely by shared OD, cap handled now by
 
-    // 6. Add newTrip to the unmatchedEmptyTripset
-    assignment_data.unmatched_empty_trips.insert(newTrip); // now unmatchedEmptyTripSet will signal matcher to match vehicle to both trips via Bustrip::driving_roster 
+                // 4. generate the empty trip
+                Busstop* vehicleStartStop = veh.first->get_last_stop_visited();
+                auto vehicle_serviceRoutes = find_lines_connecting_stops(candidateServiceRoutes, vehicleStartStop->get_id(), tripStartStop->get_id());
+                Busline* line = find_shortest_busline(vehicle_serviceRoutes, time);
+                assert(line);
 
-    // 7. remove selectedTrip from unMatchedTripset
-    assignment_data.unmatched_trips.erase(selectedTrip); 
+                auto schedule = create_schedule(time, line->get_delta_at_stops());
+                Bustrip* newTrip = create_unassigned_trip(line, time, schedule);
 
-    // 8. adding potential requests to the empty trip
-    cs_helper_functions::assignRequestsToTrip(assignment_data.active_requests,newTrip);
+                // 5. associate the chained trips by modifying Bustrip::driving_roster
+                vector<Bustrip*> tripchain = { newTrip, unmatched_trip };
+                cs_helper_functions::update_schedule(unmatched_trip, newTrip->stops.back()->second); // Get last stop arrival time of newtrip, and then update the chained selectedTrip with this as dispatch time
+                cs_helper_functions::add_driving_roster_to_tripchain(tripchain); // newTrip and selectedTrip now have pointers to eachother as well as info of which order they are in
 
-    return true; // emits Signal that empty trip was generated, matcher does the rest.
+                // 6. Add newTrip to the unmatchedEmptyTripset
+                assignment_data.unmatched_empty_trips.insert(newTrip); // now unmatchedEmptyTripSet will signal matcher to match vehicle to both trips via Bustrip::driving_roster
+
+                // 7. remove selectedTrip from unMatchedTripset
+                assignment_data.unmatched_trips.erase(unmatched_trip);
+
+                // 8. adding potential requests to the empty trip
+                cs_helper_functions::assignRequestsToTrip(assignment_data.active_requests, newTrip, assignment_data.planned_capacity);
+
+                trip_generated = true;
+                break; //break out of vehicle loop and move to next trip
+            }
+            else // if nearest vehicle is not on call attempt to merge the unmatched trip with the current trip of that vehicle, at this point basically a trip represents the assigned requests and a route...
+            {
+                Bustrip* active_trip = veh.first->get_curr_trip();
+                Bustrip* chained_trip = active_trip->get_next_trip_in_chain();
+
+                assert(active_trip); // if not on-call, the vehicle should have a trip
+                vector<Request* > bundled_requests = unmatched_trip->get_assigned_requests();
+
+                // loop through unmatched the requests and attempt to assign them to already scheduled/activated trips
+                for(auto req : bundled_requests)
+                {
+                    if (active_trip->is_feasible_request_assignment(req, veh.first->get_capacity()))
+                        req->set_assigned_trip(active_trip); // reassign the request to active trip, @note will remove the request from unmatched_trip->assigned_requests as well
+                    else if(chained_trip) //also check if insertion can be performed for the next trip in the chain (if there is one) instead @todo kindof PARTC specific, maybe remove
+                    {
+                        if(chained_trip->is_feasible_request_assignment(req,veh.first->get_capacity()))
+                            req->set_assigned_trip(chained_trip); // reassign the request to chained trip, @note will remove the request from unmatched_trip->assigned_requests as well
+                    }
+                }
+
+                // if the unmatched_trip is now empty then we can remove it
+                if(unmatched_trip->get_assigned_requests().empty())
+                {
+                    assignment_data.unmatched_trips.erase(unmatched_trip);
+                    break; // break out of vehicle loop and move to next trip
+                }
+            }
+        } // for veh : nearestVehicles
+    } // for trip : sortedTrips
+
+    return trip_generated; // emits Signal that empty trip was generated, matcher does the rest.
 }
 
 //MaxWaitEmptyVehicleTripGeneration
@@ -685,89 +752,186 @@ bool MaxWaitEmptyVehicleTripGeneration::calc_trip_generation(DRTAssignmentData& 
     // 1. see if any vehicles are available, if no, exit
     if (assignment_data.fleet_state.find(BusState::OnCall) == assignment_data.fleet_state.end())  //a drt vehicle must have been initialized
         return false;
-    if (assignment_data.fleet_state.at(BusState::OnCall).empty())  //a drt vehicle must be available
-        return false;
+    //if (assignment_data.fleet_state.at(BusState::OnCall).empty())  //a drt vehicle must be available
+    //    return false;
     // 2. sort unMatchedTrips (by maximum waiting time)
     set<Bustrip*,compareBustripByMaxWait> sortedTrips (assignment_data.unmatched_trips.begin(), assignment_data.unmatched_trips.end(),time) ;
 
-    // 3. find nearest vehicle to the unMatchedTrip location (For now: hope for the best :)
-    auto selectedTrip = *(sortedTrips.begin());
-    Busstop*  tripStartStop = selectedTrip->stops.front()->first;
-    auto onCallVehicles = assignment_data.fleet_state.at(BusState::OnCall);
-    auto nearestOnCall = get_nearest_vehicle(tripStartStop,onCallVehicles,theNetwork_,time);
-    if (nearestOnCall.first == nullptr)
-        return false;
-    // 4. generate the empty trip
-    Busstop* vehicleStartStop = nearestOnCall.first->get_last_stop_visited();
-    auto vehicle_serviceRoutes = find_lines_connecting_stops(candidateServiceRoutes,vehicleStartStop->get_id(),tripStartStop->get_id());
-    Busline* line = find_shortest_busline(vehicle_serviceRoutes, time);
-    assert(line);
+   bool trip_generated = false;
+    for (auto unmatched_trip : sortedTrips) // loop through unmatched trips in order of priority
+    {
+        Busstop* tripStartStop = unmatched_trip->stops.front()->first;
+        //assignment_data.print_state(time);
 
-    auto schedule = create_schedule(time,line->get_delta_at_stops());
-    Bustrip* newTrip = create_unassigned_trip(line,time,schedule);
+        // now find closest vehicles to this trip (on-call or en-route), no on-call vehicles will be at the stop of the trip since this is already checked after trip-plan was generated
+        set<Bus*> oncall_vehs = assignment_data.fleet_state.at(BusState::OnCall);
+        set<Bus*> enroute_vehs = assignment_data.cc_owner->getVehiclesEnRouteToStop(tripStartStop);
+        set<Bus*> candidate_vehs;
+        set_union(begin(oncall_vehs), end(oncall_vehs),
+            begin(enroute_vehs), end(enroute_vehs),
+            inserter(candidate_vehs, begin(candidate_vehs)));
+        
+        auto nearestVehicles = find_nearest_vehicles(tripStartStop, candidate_vehs, theNetwork_, time); // all candidate vehicles for carrying any request sorted by time to reach trip start stop
+        for(auto veh : nearestVehicles) // loop through vehicles by closest, now want to check capacity for carrying trip-plan
+        {
+            if (veh.first->is_oncall()) // if nearest vehicle is on-call then create and empty trip and chain it.....
+            {
+                //!< @todo PARTC assumes that each empty vehicle has capacity to satisfy the unmatched trip, kindof an implicit assumption that trips are bundled into unmatched trips purely by shared OD, cap handled now by
 
-    // 5. associate the chained trips by modifying Bustrip::driving_roster
-    vector<Bustrip*> tripchain = { newTrip, selectedTrip };
-    cs_helper_functions::update_schedule(selectedTrip, newTrip->stops.back()->second); // Get last stop arrival time of newtrip, and then update the chained selectedTrip with this as dispatch time
-    cs_helper_functions::add_driving_roster_to_tripchain(tripchain); // newTrip and selectedTrip now have pointers to eachother as well as info of which order they are in
+                // 4. generate the empty trip
+                Busstop* vehicleStartStop = veh.first->get_last_stop_visited();
+                auto vehicle_serviceRoutes = find_lines_connecting_stops(candidateServiceRoutes, vehicleStartStop->get_id(), tripStartStop->get_id());
+                Busline* line = find_shortest_busline(vehicle_serviceRoutes, time);
+                assert(line);
 
-    // 6. Add newTrip to the unmatchedEmptyTripset
-    assignment_data.unmatched_empty_trips.insert(newTrip); // now unmatchedEmptyTripSet will signal matcher to match vehicle to both trips via Bustrip::driving_roster
+                auto schedule = create_schedule(time, line->get_delta_at_stops());
+                Bustrip* newTrip = create_unassigned_trip(line, time, schedule);
 
-    // 7. remove selectedTrip from unMatchedTripset
-    assignment_data.unmatched_trips.erase(selectedTrip);
+                // 5. associate the chained trips by modifying Bustrip::driving_roster
+                vector<Bustrip*> tripchain = { newTrip, unmatched_trip };
+                cs_helper_functions::update_schedule(unmatched_trip, newTrip->stops.back()->second); // Get last stop arrival time of newtrip, and then update the chained selectedTrip with this as dispatch time
+                cs_helper_functions::add_driving_roster_to_tripchain(tripchain); // newTrip and selectedTrip now have pointers to eachother as well as info of which order they are in
 
-    // 8. adding potential requests to the empty trip
-    cs_helper_functions::assignRequestsToTrip(assignment_data.active_requests,newTrip);
+                // 6. Add newTrip to the unmatchedEmptyTripset
+                assignment_data.unmatched_empty_trips.insert(newTrip); // now unmatchedEmptyTripSet will signal matcher to match vehicle to both trips via Bustrip::driving_roster
 
-    return true; // emits Signal that empty trip was generated, matcher does the rest.
+                // 7. remove selectedTrip from unMatchedTripset
+                assignment_data.unmatched_trips.erase(unmatched_trip);
+
+                // 8. adding potential requests to the empty trip
+                cs_helper_functions::assignRequestsToTrip(assignment_data.active_requests, newTrip, assignment_data.planned_capacity);
+
+                trip_generated = true;
+                break; //break out of vehicle loop and move to next trip
+            }
+            else // if nearest vehicle is not on call attempt to merge the unmatched trip with the current trip of that vehicle, at this point basically a trip represents the assigned requests and a route...
+            {
+                Bustrip* active_trip = veh.first->get_curr_trip();
+                Bustrip* chained_trip = active_trip->get_next_trip_in_chain();
+
+                assert(active_trip); // if not on-call, the vehicle should have a trip
+                vector<Request* > bundled_requests = unmatched_trip->get_assigned_requests();
+
+                // loop through unmatched the requests and attempt to assign them to already scheduled/activated trips
+                for(auto req : bundled_requests)
+                {
+                    if (active_trip->is_feasible_request_assignment(req, veh.first->get_capacity()))
+                        req->set_assigned_trip(active_trip); // reassign the request to active trip, @note will remove the request from unmatched_trip->assigned_requests as well
+                    else if(chained_trip) //also check if insertion can be performed for the next trip in the chain (if there is one) instead @todo kindof PARTC specific, maybe remove
+                    {
+                        if(chained_trip->is_feasible_request_assignment(req,veh.first->get_capacity()))
+                            req->set_assigned_trip(chained_trip); // reassign the request to chained trip, @note will remove the request from unmatched_trip->assigned_requests as well
+                    }
+                }
+
+                // if the unmatched_trip is now empty then we can remove it
+                if(unmatched_trip->get_assigned_requests().empty())
+                {
+                    assignment_data.unmatched_trips.erase(unmatched_trip);
+                    break; // break out of vehicle loop and move to next trip
+                }
+            }
+        } // for veh : nearestVehicles
+    } // for trip : sortedTrips
+
+    return trip_generated; // emits Signal that empty trip was generated, matcher does the rest.
 }
 
 CumulativeWaitEmptyVehicleTripGeneration::CumulativeWaitEmptyVehicleTripGeneration(Network *theNetwork):theNetwork_(theNetwork) {}
 bool CumulativeWaitEmptyVehicleTripGeneration::calc_trip_generation(DRTAssignmentData& assignment_data, const vector<Busline*>& candidateServiceRoutes, double time)
 {
+
     // 0. if no unmatched Trips, exit
     if (assignment_data.unmatched_trips.empty())
         return false;
     // 1. see if any vehicles are available, if no, exit
     if (assignment_data.fleet_state.find(BusState::OnCall) == assignment_data.fleet_state.end())  //a drt vehicle must have been initialized
         return false;
-    if (assignment_data.fleet_state.at(BusState::OnCall).empty())  //a drt vehicle must be available
-        return false;
+
+    //if (assignment_data.fleet_state.at(BusState::OnCall).empty())  //a drt vehicle must be available
+    //    return false;
+
     // 2. sort unMatchedTrips (by cumulative waiting time)
     set<Bustrip*,compareBustripByCumulativeWait> sortedTrips (assignment_data.unmatched_trips.begin(), assignment_data.unmatched_trips.end(),time);
 
-    // 3. find nearest vehicle to the unMatchedTrip location (For now: hope for the best :)
-    auto selectedTrip = *(sortedTrips.begin());
-    Busstop*  tripStartStop = selectedTrip->stops.front()->first;
-    auto onCallVehicles = assignment_data.fleet_state.at(BusState::OnCall);
-    auto nearestOnCall = get_nearest_vehicle(tripStartStop,onCallVehicles,theNetwork_,time);
-    if (nearestOnCall.first == nullptr)
-        return false;
-    // 4. generate the empty trip
-    Busstop* vehicleStartStop = nearestOnCall.first->get_last_stop_visited();
-    auto vehicle_serviceRoutes = find_lines_connecting_stops(candidateServiceRoutes,vehicleStartStop->get_id(),tripStartStop->get_id());
-    Busline* line = find_shortest_busline(vehicle_serviceRoutes, time);
-    assert(line);
+    bool trip_generated = false;
+    for (auto unmatched_trip : sortedTrips) // loop through unmatched trips in order of priority
+    {
+        Busstop* tripStartStop = unmatched_trip->stops.front()->first;
+        //assignment_data.print_state(time);
 
-    auto schedule = create_schedule(time,line->get_delta_at_stops());
-    Bustrip* newTrip = create_unassigned_trip(line,time,schedule);
+        // now find closest vehicles to this trip (on-call or en-route), no on-call vehicles will be at the stop of the trip since this is already checked after trip-plan was generated
+        set<Bus*> oncall_vehs = assignment_data.fleet_state.at(BusState::OnCall);
+        set<Bus*> enroute_vehs = assignment_data.cc_owner->getVehiclesEnRouteToStop(tripStartStop);
+        set<Bus*> candidate_vehs;
+        set_union(begin(oncall_vehs), end(oncall_vehs),
+            begin(enroute_vehs), end(enroute_vehs),
+            inserter(candidate_vehs, begin(candidate_vehs)));
+        
+        auto nearestVehicles = find_nearest_vehicles(tripStartStop, candidate_vehs, theNetwork_, time); // all candidate vehicles for carrying any request sorted by time to reach trip start stop
+        for(auto veh : nearestVehicles) // loop through vehicles by closest, now want to check capacity for carrying trip-plan
+        {
+            if (veh.first->is_oncall()) // if nearest vehicle is on-call then create and empty trip and chain it.....
+            {
+                //!< @todo PARTC assumes that each empty vehicle has capacity to satisfy the unmatched trip, kindof an implicit assumption that trips are bundled into unmatched trips purely by shared OD, cap handled now by
 
-    // 5. associate the chained trips by modifying Bustrip::driving_roster
-    vector<Bustrip*> tripchain = { newTrip, selectedTrip };
-    cs_helper_functions::update_schedule(selectedTrip, newTrip->stops.back()->second); // Get last stop arrival time of newtrip, and then update the chained selectedTrip with this as dispatch time
-    cs_helper_functions::add_driving_roster_to_tripchain(tripchain); // newTrip and selectedTrip now have pointers to eachother as well as info of which order they are in
+                // 4. generate the empty trip
+                Busstop* vehicleStartStop = veh.first->get_last_stop_visited();
+                auto vehicle_serviceRoutes = find_lines_connecting_stops(candidateServiceRoutes, vehicleStartStop->get_id(), tripStartStop->get_id());
+                Busline* line = find_shortest_busline(vehicle_serviceRoutes, time);
+                assert(line);
 
-    // 6. Add newTrip to the unmatchedEmptyTripset
-    assignment_data.unmatched_empty_trips.insert(newTrip); // now unmatchedEmptyTripSet will signal matcher to match vehicle to both trips via Bustrip::driving_roster
+                auto schedule = create_schedule(time, line->get_delta_at_stops());
+                Bustrip* newTrip = create_unassigned_trip(line, time, schedule);
 
-    // 7. remove selectedTrip from unMatchedTripset
-    assignment_data.unmatched_trips.erase(selectedTrip);
+                // 5. associate the chained trips by modifying Bustrip::driving_roster
+                vector<Bustrip*> tripchain = { newTrip, unmatched_trip };
+                cs_helper_functions::update_schedule(unmatched_trip, newTrip->stops.back()->second); // Get last stop arrival time of newtrip, and then update the chained selectedTrip with this as dispatch time
+                cs_helper_functions::add_driving_roster_to_tripchain(tripchain); // newTrip and selectedTrip now have pointers to eachother as well as info of which order they are in
 
-    // 8. adding potential requests to the empty trip
-    cs_helper_functions::assignRequestsToTrip(assignment_data.active_requests,newTrip);
+                // 6. Add newTrip to the unmatchedEmptyTripset
+                assignment_data.unmatched_empty_trips.insert(newTrip); // now unmatchedEmptyTripSet will signal matcher to match vehicle to both trips via Bustrip::driving_roster
 
-    return true; // emits Signal that empty trip was generated, matcher does the rest.
+                // 7. remove selectedTrip from unMatchedTripset
+                assignment_data.unmatched_trips.erase(unmatched_trip);
+
+                // 8. adding potential requests to the empty trip
+                cs_helper_functions::assignRequestsToTrip(assignment_data.active_requests, newTrip, assignment_data.planned_capacity);
+
+                trip_generated = true;
+                break; //break out of vehicle loop and move to next trip
+            }
+            else // if nearest vehicle is not on call attempt to merge the unmatched trip with the current trip of that vehicle, at this point basically a trip represents the assigned requests and a route...
+            {
+                Bustrip* active_trip = veh.first->get_curr_trip();
+                Bustrip* chained_trip = active_trip->get_next_trip_in_chain();
+
+                assert(active_trip); // if not on-call, the vehicle should have a trip
+                vector<Request* > bundled_requests = unmatched_trip->get_assigned_requests();
+
+                // loop through unmatched the requests and attempt to assign them to already scheduled/activated trips
+                for(auto req : bundled_requests)
+                {
+                    if (active_trip->is_feasible_request_assignment(req, veh.first->get_capacity()))
+                        req->set_assigned_trip(active_trip); // reassign the request to active trip, @note will remove the request from unmatched_trip->assigned_requests as well
+                    else if(chained_trip) //also check if insertion can be performed for the next trip in the chain (if there is one) instead @todo kindof PARTC specific, maybe remove
+                    {
+                        if(chained_trip->is_feasible_request_assignment(req,veh.first->get_capacity()))
+                            req->set_assigned_trip(chained_trip); // reassign the request to chained trip, @note will remove the request from unmatched_trip->assigned_requests as well
+                    }
+                }
+
+                // if the unmatched_trip is now empty then we can remove it
+                if(unmatched_trip->get_assigned_requests().empty())
+                {
+                    assignment_data.unmatched_trips.erase(unmatched_trip);
+                    break; // break out of vehicle loop and move to next trip
+                }
+            }
+        } // for veh : nearestVehicles
+    } // for trip : sortedTrips
+
+    return trip_generated; // emits Signal that empty trip was generated, matcher does the rest.
 }
 
 

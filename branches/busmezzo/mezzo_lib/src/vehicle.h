@@ -141,7 +141,9 @@ enum class BusState
 	//Loading/Unloading
 	//Refeuling
 	OnCall //!< 'oncall' refers to if the vehicle is not currently assigned any trip and is standing still
-}; 
+};
+QString BusState_to_QString(BusState state);
+
 class Bus : public QObject, public Vehicle
 {
 	Q_OBJECT
@@ -214,6 +216,7 @@ public:
 	bool is_driving() const; //!< returns true if bus is driving between stops
 	bool is_oncall() const; //!< returns true if bus is unassigned to any trip and is available for assignment
 	bool is_empty() const; //!< returns true if bus occupancy is currently 0 and false otherwise
+	bool is_full() const; //!< returns true if bus occupancy has reached max capacity and false otherwise
 	bool is_null() const;
 
 	Busstop* get_last_stop_visited() const { return last_stop_visited_; }
@@ -255,7 +258,7 @@ protected:
 	Busstop* last_stop_visited_ = nullptr; //!< the last busstop (if no stop has been visited then initialized to nullptr) that this transit vehicle has entered (or exited)
 	BusState state_ = BusState::Null; //!< current BusState of the transit vehicle
 	bool flex_vehicle_ = false; //!< true if vehicle can be assigned trips dynamically, false otherwise
-	set<int> sroute_ids_; //!< ids of service routes (buslines) that this bus can be assigned dynamically generated trips for
+	set<int> sroute_ids_; //!< ids of service routes (buslines) that this bus can be assigned dynamically generated trips for @todo remove, vehicle now knows of its CC if flex vehicle anyways
     Controlcenter* CC_ = nullptr; //!< control center that this vehicle is currently connected to. nullptr if not connected to any control center
 
 	// output attributes

@@ -36,11 +36,8 @@ namespace cs_helper_functions
     set<Request*, ptr_less<Request*> > filterRequestsByOD(const set<Request*, ptr_less<Request*> >& oldSet, int o_id, int d_id);
 
     // Assign requests to trips
-    void assignRequestsToTrip(const set<Request*, ptr_less<Request*> >& requestSet, Bustrip* tr); // Assign requests to trips
-    void assignRequestsToTripSet(const set<Request*, ptr_less<Request*> >& requestSet, const set<Bustrip*, ptr_less<Bustrip*> >& tripSet);
-
-    void assignRequestsToScheduledTrips(const set<Request*, ptr_less<Request*> >& requestSet, const set<Bustrip*, ptr_less<Bustrip*> >& tripSet); //!< attemps to assign requests to trips that have already been scheduled and matched to a vehicle
-    void assignRequestsToScheduledTrip(const set<Request*, ptr_less<Request*> >& requestSet, Bustrip* tr); // Assign requests to trips that already have been scheduled for dispatch and have a vehicle associated with them, @todo pretty PARTC specific at the moment...
+    void assignRequestsToTrip(const set<Request*, ptr_less<Request*> >& requestSet, Bustrip* tr, int planned_capacity); // Assign requests to trips
+    void assignRequestsToTripSet(const set<Request*, ptr_less<Request*> >& requestSet, const set<Bustrip*, ptr_less<Bustrip*> >& tripSet, int planned_capacity);
 
     // Find trip by condition
     set<Bustrip*, ptr_less<Bustrip*> > filterBustripsByStatus(const set<Bustrip*, ptr_less<Bustrip*> >& oldSet, BustripStatus status);
