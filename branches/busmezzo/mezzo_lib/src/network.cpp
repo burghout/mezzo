@@ -1488,9 +1488,11 @@ bool Network::readcontrolcenters(const string& name)
         int ev_strategy; //id of empty vehicle strategy
         int tvm_strategy; //id of trip vehicle matching strategy
         int vs_strategy; //id of vehicle scheduling strategy
+        double rebalancing_interval; // time elapsed between calls to rebalancing on-call vehicles
         int generate_direct_routes; // 1 if all direct routes between should be added as service routes to this cc and 0 otherwise
 
         int nr_stops; //number of stops in the control center's service area
+        int nr_collection_stops; //number of collection stops in the control center's service area used for rebalancing strategies, @note each collection stop must also be a member of the control center's service area
         int nr_lines; //number of lines (given as input) in the control center's service area
 
         char bracket;
@@ -1501,9 +1503,9 @@ bool Network::readcontrolcenters(const string& name)
             in.close();
             return false;
         }
-        in >> id >> tg_strategy >> ev_strategy >> tvm_strategy >> vs_strategy >> generate_direct_routes;
+        in >> id >> tg_strategy >> ev_strategy >> tvm_strategy >> vs_strategy >> rebalancing_interval >> generate_direct_routes;
 
-        auto* cc = new Controlcenter(eventlist, this, id, tg_strategy, ev_strategy, tvm_strategy, vs_strategy);
+        auto* cc = new Controlcenter(eventlist, this, id, tg_strategy, ev_strategy, tvm_strategy, vs_strategy, rebalancing_interval);
 
         //read stops associated with this cc
         in >> nr_stops;
@@ -1524,6 +1526,36 @@ bool Network::readcontrolcenters(const string& name)
 
             cc->addStopToServiceArea(stop);
             stop->add_CC(cc);
+        }
+        bracket = ' ';
+        in >> bracket;
+        if (bracket != '}')
+        {
+            cout << "readcontrolcenters:: controlcenter scanner expected '}', read: " << bracket << endl;
+            in.close();
+            return false;
+        }
+
+        //read collection stops associated with this cc used for rebalancing
+        in >> nr_collection_stops;
+        bracket = ' ';
+        in >> bracket;
+        if (bracket != '{')
+        {
+            cout << "readcontrolcenters:: controlcenter scanner expected '{', read: " << bracket << endl;
+            in.close();
+            return false;
+        }
+        for (int i = 0; i < nr_collection_stops; ++i)
+        {
+            int stopid;
+            Busstop* stop;
+            in >> stopid;
+            stop = (*find_if(busstops.begin(), busstops.end(), compare<Busstop>(stopid)));
+            if(cc->isInServiceArea(stop))
+                cc->add_collection_stop(stop);
+            else
+                qDebug() << "Warning - ignoring adding collection stop " << stopid << " to controlcenter " << id << ", collection stop does not exist in service area";
         }
         bracket = ' ';
         in >> bracket;

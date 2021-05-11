@@ -227,6 +227,7 @@ public:
 		int ev_strategy = 0,
 		int tvm_strategy = 0,
 		int vs_strategy = 0,
+		double rebalancing_interval = 0.0,
 		QObject* parent = nullptr
 	);
 	~Controlcenter();
@@ -262,6 +263,10 @@ public:
 	bool getGeneratedDirectRoutes();
 	void setGeneratedDirectRoutes(bool generate_direct_routes);
 
+	//methods related to rebalancing
+    double get_rebalancing_interval () const { return rebalancing_interval_; }
+	void add_collection_stop(Busstop* stop); //!< add stop to collection_stops_ the set of stops within the service of this control center's fleet that are used as targets for rebalancing
+
 	//methods for connecting passengers, vehicles, stops and lines
 	void connectPassenger(Passenger* pass); //!< connects passenger signals to control center slots
 	void disconnectPassenger(Passenger* pass); //!< disconnects passenger signals from control center slots
@@ -269,7 +274,7 @@ public:
 	void connectVehicle(Bus* transitveh); //!< connects transit vehicle signals to control center slots
 	void disconnectVehicle(Bus* transitveh); //!< disconnects transit vehicle signals from control center slots
 
-    void addStopToServiceArea(Busstop* stop); //!< add stop to stations_ the set of stops within the service area of this control center's fleet
+    void addStopToServiceArea(Busstop* stop); //!< add stop to serviceArea_ the set of stops within the service area of this control center's fleet
 	void addServiceRoute(Busline* line); //!< add line to BustripGenerator's map of possible lines to create trips for
     void addVehicleToAllServiceRoutes(Bus* transitveh); //!< add transit vehicle as a candidate vehicle to be assigned trips for to all service routes in BustripGenerator
 	void addVehicleToServiceRoute(int line_id, Bus* transitveh); //!< add transit vehicle to vector of candidate vehicles that may be assigned trips for a given line/service route
@@ -339,7 +344,10 @@ private:
 	const int vs_strategy_; //!< initial vehicle scheduling strategy
 
 	bool generated_direct_routes_ = false; //!< true if direct routes have been generated and added as service routes between all stops in the service area of this control center
-	
+
+	const double rebalancing_interval_; //!< time interval in between each rebalancing call @note e.g. first rebalancing call will be <rebalancing_interval_> seconds after start_pass_generation, <rebalancing_interval_> seconds after that etc..
+	set<Busstop*,ptr_less<Busstop*> > collection_stops_; //!< set of stops used as targets for rebalancing
+
 	//maps for bookkeeping connected passengers and vehicles
 	map<int, Passenger*> connectedPass_; //!< passengers currently connected to Controlcenter 
 	map<int, Bus*> connectedVeh_; //!< transit vehicles currently connected to Controlcenter
@@ -359,9 +367,9 @@ private:
 	BustripVehicleMatcher tvm_;
 	VehicleScheduler vs_;
 
-    set<Busstop*, ptr_less<Busstop*>> serviceArea_; //!< set of stops in the service area of this control center's fleet of vehicles. In other words the stops for which this control center can generate trips between
+    set<Busstop*, ptr_less<Busstop*> > serviceArea_; //!< set of stops in the service area of this control center's fleet of vehicles. In other words the stops for which this control center can generate trips between
     set<Bus*> initialVehicles_; //!< vehicles assigned to this control center on input (that should be preserved between resets)
-	vector<pair<Bus*, Bustrip*>> completedVehicleTrips_; //!< used for bookkeeping dynamically generated buses and bustrips (similar to busvehicles and bustrips in network) for writing output and deleting between resets
+	vector<pair<Bus*, Bustrip*> > completedVehicleTrips_; //!< used for bookkeeping dynamically generated buses and bustrips (similar to busvehicles and bustrips in network) for writing output and deleting between resets
 	DRTAssignmentData assignment_data_; //!< stores dynamic vehicle, trip and request data used in assignment pipeline
 
 	map<Controlcenter_OD, vector<Link*> > shortestPathCache; //!< cache for the first shortest path calls made between stops of this Controlcenter @todo add time-dependent caches maybe, currently only the initial calls are stored

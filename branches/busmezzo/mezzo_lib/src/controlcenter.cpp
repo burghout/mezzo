@@ -431,8 +431,17 @@ void VehicleScheduler::setSchedulingStrategy(int type)
 }
 
 //Controlcenter
-Controlcenter::Controlcenter(Eventlist* eventlist, Network* theNetwork, int id, int tg_strategy, int ev_strategy, int tvm_strategy, int vs_strategy, QObject* parent)
-    : QObject(parent), id_(id), tg_strategy_(tg_strategy), ev_strategy_(ev_strategy), tvm_strategy_(tvm_strategy), vs_strategy_(vs_strategy), tg_(theNetwork), vs_(eventlist)
+Controlcenter::Controlcenter(
+	Eventlist* eventlist, 
+	Network* theNetwork, 
+	int id, 
+	int tg_strategy, 
+	int ev_strategy, 
+	int tvm_strategy, 
+	int vs_strategy, 
+	double rebalancing_interval, 
+	QObject* parent)
+    : QObject(parent), id_(id), tg_strategy_(tg_strategy), ev_strategy_(ev_strategy), tvm_strategy_(tvm_strategy), vs_strategy_(vs_strategy), rebalancing_interval_(rebalancing_interval), tg_(theNetwork), vs_(eventlist)
 {
 	QString qname = QString::fromStdString(to_string(id));
 	this->setObjectName(qname); //name of control center does not really matter but useful for debugging purposes
@@ -784,6 +793,13 @@ bool Controlcenter::getGeneratedDirectRoutes()
 void Controlcenter::setGeneratedDirectRoutes(bool generate_direct_routes)
 {
 	generated_direct_routes_ = generate_direct_routes;
+}
+
+void Controlcenter::add_collection_stop(Busstop* stop)
+{
+	//check existance in service area first
+	assert(isInServiceArea(stop));
+	collection_stops_.insert(stop);
 }
 
 void Controlcenter::connectPassenger(Passenger* pass)
