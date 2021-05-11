@@ -535,7 +535,7 @@ protected:
 	//!< @todo quick and dirty solution to assign requests that respect capacity constraints of a trip. Busv is nullptr until a vehicle is available, and is used in checks for this, but
 	//!<	we also want to know what the occupancy of each trip in a chain is, even those with nullptr busv. So update this when a vehicle is assigned (or re-assigned to a trip chain. The entire chain
 	//!<	will then be updated....
-	int planned_capacity_ = 0;
+    unsigned int planned_capacity_ = 0;
     /**@}*/
 };
 
