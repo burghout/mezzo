@@ -213,6 +213,19 @@ private:
     Network* theNetwork_; //!< currently needs access to the network to find the closest on-call Bus to origin stop of highest OD demand
 };
 
+
+//Rebalancing Strategies
+class NaiveRebalancing : public TripGenerationStrategy
+{
+public:
+    explicit NaiveRebalancing(Network* theNetwork = nullptr);
+    ~NaiveRebalancing() override = default;
+    bool calc_trip_generation(DRTAssignmentData& assignment_data, const vector<Busline*>& candidateServiceRoutes, double time) override;
+
+private:
+    Network* theNetwork_; //!< currently needs access to the network to find the closest on-call Bus to origin stop of highest OD demand
+};
+
 //Matching Strategies
 //! @brief Base class for algorithms for assigning a Bus to an unmatched Bustrip.
 /*!

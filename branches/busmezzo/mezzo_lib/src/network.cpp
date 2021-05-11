@@ -1488,6 +1488,7 @@ bool Network::readcontrolcenters(const string& name)
         int ev_strategy; //id of empty vehicle strategy
         int tvm_strategy; //id of trip vehicle matching strategy
         int vs_strategy; //id of vehicle scheduling strategy
+        int rb_strategy; //id of the rebalancing strategy
         double rebalancing_interval; // time elapsed between calls to rebalancing on-call vehicles
         int generate_direct_routes; // 1 if all direct routes between should be added as service routes to this cc and 0 otherwise
 
@@ -1503,9 +1504,9 @@ bool Network::readcontrolcenters(const string& name)
             in.close();
             return false;
         }
-        in >> id >> tg_strategy >> ev_strategy >> tvm_strategy >> vs_strategy >> rebalancing_interval >> generate_direct_routes;
+        in >> id >> tg_strategy >> ev_strategy >> tvm_strategy >> vs_strategy >> rb_strategy >> rebalancing_interval >> generate_direct_routes;
 
-        auto* cc = new Controlcenter(eventlist, this, id, tg_strategy, ev_strategy, tvm_strategy, vs_strategy, rebalancing_interval);
+        auto* cc = new Controlcenter(eventlist, this, id, tg_strategy, ev_strategy, tvm_strategy, vs_strategy, rb_strategy, rebalancing_interval);
 
         //read stops associated with this cc
         in >> nr_stops;

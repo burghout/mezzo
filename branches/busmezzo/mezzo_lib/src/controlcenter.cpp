@@ -164,20 +164,22 @@ bool RequestHandler::isFeasibleRequest(const Request* req, const set<Busstop*, p
 }
 
 //BustripGenerator
-BustripGenerator::BustripGenerator(Network* theNetwork, TripGenerationStrategy* generationStrategy, TripGenerationStrategy* emptyVehicleStrategy) :
-                                  generationStrategy_(generationStrategy), emptyVehicleStrategy_(emptyVehicleStrategy), theNetwork_(theNetwork)
+BustripGenerator::BustripGenerator(Network* theNetwork, TripGenerationStrategy* generationStrategy, TripGenerationStrategy* emptyVehicleStrategy, TripGenerationStrategy* rebalancingStrategy) :
+                                  generationStrategy_(generationStrategy), emptyVehicleStrategy_(emptyVehicleStrategy), rebalancingStrategy_(rebalancingStrategy), theNetwork_(theNetwork)
 {}
 
 BustripGenerator::~BustripGenerator()
 {
     delete generationStrategy_;
     delete emptyVehicleStrategy_;
+	delete rebalancingStrategy_;
 }
 
-void BustripGenerator::reset(int generation_strategy_type, int empty_vehicle_strategy_type)
+void BustripGenerator::reset(int generation_strategy_type, int empty_vehicle_strategy_type, int rebalancing_strategy_type)
 {
 	setTripGenerationStrategy(generation_strategy_type);
 	setEmptyVehicleStrategy(empty_vehicle_strategy_type);
+	setRebelancingStrategy(rebalancing_strategy_type);
 }
 
 void BustripGenerator::addServiceRoute(Busline* line)
@@ -212,6 +214,15 @@ bool BustripGenerator::requestEmptyTrip(DRTAssignmentData& assignment_data, doub
 	if (emptyVehicleStrategy_ != nullptr)
 	{
 		return emptyVehicleStrategy_->calc_trip_generation(assignment_data, serviceRoutes_, time); //returns true if trip has been generated and added to the unmatchedRebalancingTrips_
+	}
+	return false;
+}
+
+bool BustripGenerator::requestRebalancingTrip(DRTAssignmentData& assignment_data, double time)
+{
+	if(rebalancingStrategy_ != nullptr)
+	{
+	    return rebalancingStrategy_->calc_trip_generation(assignment_data,serviceRoutes_,time);
 	}
 	return false;
 }
@@ -267,6 +278,24 @@ void BustripGenerator::setEmptyVehicleStrategy(int type)
 	{
 		DEBUG_MSG("BustripGenerator::setEmptyVehicleStrategy() - strategy " << type << " is not recognized! Setting strategy to nullptr. ");
 		emptyVehicleStrategy_ = nullptr;
+	}
+}
+
+void BustripGenerator::setRebelancingStrategy(int type)
+{
+	delete rebalancingStrategy_;
+	if (type == rebalancingStrategyType::RBNull) 
+	{
+		rebalancingStrategy_ = new NullTripGeneration();
+	} 
+	else if (type == rebalancingStrategyType::RBNaive)
+	{
+		rebalancingStrategy_ = new NaiveRebalancing(theNetwork_);
+	}
+	else
+	{
+		DEBUG_MSG("BustripGenerator::setEmptyVehicleStrategy() - strategy " << type << " is not recognized! Setting strategy to nullptr. ");
+		rebalancingStrategy_ = nullptr;
 	}
 }
 
@@ -438,10 +467,11 @@ Controlcenter::Controlcenter(
 	int tg_strategy, 
 	int ev_strategy, 
 	int tvm_strategy, 
-	int vs_strategy, 
+	int vs_strategy,
+	int rb_strategy,
 	double rebalancing_interval, 
 	QObject* parent)
-    : QObject(parent), id_(id), tg_strategy_(tg_strategy), ev_strategy_(ev_strategy), tvm_strategy_(tvm_strategy), vs_strategy_(vs_strategy), rebalancing_interval_(rebalancing_interval), tg_(theNetwork), vs_(eventlist)
+    : QObject(parent), id_(id), tg_strategy_(tg_strategy), ev_strategy_(ev_strategy), tvm_strategy_(tvm_strategy), vs_strategy_(vs_strategy), rb_strategy_(rb_strategy), rebalancing_interval_(rebalancing_interval), tg_(theNetwork), vs_(eventlist)
 {
 	QString qname = QString::fromStdString(to_string(id));
 	this->setObjectName(qname); //name of control center does not really matter but useful for debugging purposes
@@ -451,6 +481,7 @@ Controlcenter::Controlcenter(
 
 	tg_.setTripGenerationStrategy(tg_strategy); //set the initial generation strategy of BustripGenerator
 	tg_.setEmptyVehicleStrategy(ev_strategy); //set the initial empty vehicle strategy of BustripGenerator
+	tg_.setRebelancingStrategy(rb_strategy); //set the initial rebalancing strategy of BustripGenerator
 	tvm_.setMatchingStrategy(tvm_strategy);	//set initial matching strategy of BustripVehicleMatcher
 	vs_.setSchedulingStrategy(vs_strategy); //set initial scheduling strategy of VehicleScheduler
 	connectInternal(); //connect internal signal slots
@@ -465,7 +496,7 @@ void Controlcenter::reset()
 
 	//Reset all process classes
 	rh_.reset();
-	tg_.reset(tg_strategy_, ev_strategy_); 
+	tg_.reset(tg_strategy_, ev_strategy_, rb_strategy_); 
 	tvm_.reset(tvm_strategy_);
 	vs_.reset(vs_strategy_);
 
@@ -793,6 +824,16 @@ bool Controlcenter::getGeneratedDirectRoutes()
 void Controlcenter::setGeneratedDirectRoutes(bool generate_direct_routes)
 {
 	generated_direct_routes_ = generate_direct_routes;
+}
+
+double Controlcenter::get_rebalancing_interval() const
+{
+    return rebalancing_interval_;
+}
+
+set<Busstop*, ptr_less<Busstop*> > Controlcenter::get_collection_stops() const
+{
+    return collection_stops_;
 }
 
 void Controlcenter::add_collection_stop(Busstop* stop)
@@ -1152,6 +1193,11 @@ void Controlcenter::requestTrip(double time)
 void Controlcenter::requestEmptyTrip(double time)
 {
     tg_.requestEmptyTrip(assignment_data_, time) ? emit emptyTripGenerated(time) : emit emptyTripNotGenerated(time);
+}
+
+void Controlcenter::requestRebalancingTrip(double time)
+{
+	tg_.requestRebalancingTrip(assignment_data_, time) ? emit emptyTripGenerated(time) : emit emptyTripNotGenerated(time);
 }
 
 void Controlcenter::matchVehiclesToTrips(double time)
