@@ -1620,8 +1620,8 @@ void Busstop::reset()
 	nr_alighting = 0;
 	is_origin = false;
 	is_destination = false;
-	dwelltime = 0;
-	exit_time = 0;
+	dwelltime = 0.0;
+	exit_time = 0.0;
 	expected_arrivals.clear();
 	expected_bus_arrivals.clear();
 	buses_at_stop.clear();
@@ -1634,6 +1634,7 @@ void Busstop::reset()
 	nr_waiting.clear();
 	output_stop_visits.clear();
 	output_summary.clear();
+	total_time_oncall = 0.0;
 }
 
 Busstop_Visit::~Busstop_Visit()

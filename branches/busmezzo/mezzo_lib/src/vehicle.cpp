@@ -233,6 +233,7 @@ void Bus::reset ()
     }
 
 	total_time_spent_in_state.clear();
+	total_time_spent_in_state_per_stop.clear();
 	time_state_last_entered.clear();
 	total_meters_traveled = 0;
 	total_empty_meters_traveled = 0;
@@ -603,7 +604,6 @@ void Bus::set_state(const BusState newstate, const double time)
 
 	if (state_ != newstate)
 	{
-		
 		BusState oldstate = state_;
 		state_ = newstate;
 		assert(theParameters->start_pass_generation < theParameters->stop_pass_generation); // passenger generation interval must be feasible 
@@ -611,21 +611,34 @@ void Bus::set_state(const BusState newstate, const double time)
 		// Only calculate 'time in state' within the passenger generation interval, outside of this is considered warmup and cooldown time for now
 	    double timer = 0.0;
 		if(time >= theParameters->start_pass_generation && time <= theParameters->stop_pass_generation) // if call within the passenger generation interval, update cumulative time in each busstate
-		{
-			timer = time;
-		    total_time_spent_in_state[oldstate] += timer - time_state_last_entered[oldstate]; // update cumulative time in each busstate (used for outputs)
-		}
-		else if(time < theParameters->start_pass_generation) // if call is before pass generation interval, ignore any state update but set timer of newstate to pass start, time_state_last_entered holds this as a 'dummy' time last state entered
+        {
+            timer = time;
+			double time_in_state = timer - time_state_last_entered[oldstate];
+            total_time_spent_in_state[oldstate] += time_in_state; // update cumulative time in each busstate (used for outputs)
+            if (oldstate == BusState::OnCall && last_stop_visited_ != nullptr) //store cumulative time in on-call state at each stop
+            {
+                total_time_spent_in_state_per_stop[last_stop_visited_->get_id()][oldstate] += time_in_state;
+				last_stop_visited_->update_total_time_oncall(time_in_state);
+            }
+        }
+        else if (time < theParameters->start_pass_generation) // if call is before pass generation interval, ignore any state update but set timer of newstate to pass start, time_state_last_entered holds this as a 'dummy' time last state entered
 		{
 		    timer = theParameters->start_pass_generation;
 		}
 		else if(time > theParameters->stop_pass_generation) // if call is after pass generation interval, set timer to pass stop and update states as normal
 		{
 		    timer = theParameters->stop_pass_generation;
-			total_time_spent_in_state[oldstate] += timer - time_state_last_entered[oldstate]; // update cumulative time in each busstate (used for outputs)
+			double time_in_state = timer - time_state_last_entered[oldstate];
+			total_time_spent_in_state[oldstate] += time_in_state; // update cumulative time in each busstate (used for outputs)
+			if (oldstate == BusState::OnCall && last_stop_visited_ != nullptr) //store cumulative time in on-call state at each stop
+            {
+                total_time_spent_in_state_per_stop[last_stop_visited_->get_id()][oldstate] += time_in_state;
+				last_stop_visited_->update_total_time_oncall(time_in_state);
+            }
 		}
 
 		time_state_last_entered[newstate] = timer; // start timer for newstate
+
 
 #ifdef  _DRTDEBUG
         //print_state();

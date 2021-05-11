@@ -836,6 +836,9 @@ public:
 	void set_dest_node(Destination* dest_node_) { dest_node = dest_node_; }
 
 	bool is_within_walking_distance_of(Busstop* target_stop); //!< check to see which stops are connected by walking links from this stop
+
+    void update_total_time_oncall(double time_spent_oncall) { total_time_oncall += time_spent_oncall; }
+    double get_total_time_oncall() const { return total_time_oncall; }
 /**@}*/
 
 // relevant only for demand format 2
@@ -849,21 +852,23 @@ protected:
     int id = -1;					//!< stop id
     string name;				//!< name of the bus stop "T-centralen"
     int link_id = -1;				//!< link it is on, maybe later a pointer to the respective link if needed
-    double position = 0;		    //!< relative position from the upstream node of the link (between 0 to 1)
-    double length = 20;			//!< length of the busstop, determines how many buses can be served at the same time
+    double position = 0.0;		    //!< relative position from the upstream node of the link (between 0 to 1)
+    double length = 20.0;			//!< length of the busstop, determines how many buses can be served at the same time
     bool has_bay = false;			//!< TRUE if it has a bay so it has an extra dwell time
     bool can_overtake = true;		//!< 0 - can't overtake, 1 - can overtake freely; TRUE if it is possible for a bus to overtake another bus that stops in front of it (if FALSE - dwell time is subject to the exit time of a blocking bus)
-    double min_DT = 1;
+    double min_DT = 1.0;
     int rti = 0;					//!< indicates the level of real-time information at this stop: 0 - none; 1 - for all lines stoping at each stop; 2 - for all lines stoping at all connected stop; 3 - for the entire network.
 
     bool gate_flag = false;		//!< gate flag. If set true, passenger generation subject to timetable of transport services
 
-    double avaliable_length = 20;	//!< length of the busstop minus occupied length
-    double exit_time = 0;
-    double dwelltime = 0;			//!< standard dwell time
+    double avaliable_length = 20.0;	//!< length of the busstop minus occupied length
+    double exit_time = 0.0;
+    double dwelltime = 0.0;			//!< standard dwell time
 
     int nr_boarding = 0;			//!< pass. boarding
     int nr_alighting = 0;			//!< pass alighting
+
+	double total_time_oncall = 0.0; //!< total time any vehicle has spent in the state 'OnCall' at this stop
 
     list<double> exogenous_arrivals; //!< unordered list of arrival times of exogenous trains
     

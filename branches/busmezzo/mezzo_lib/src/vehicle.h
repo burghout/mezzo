@@ -269,6 +269,8 @@ protected:
 	int total_occupied_meters_traveled = 0; //!< cumulative meters traveled with at least one passenger onboard
 
 	double init_time = 0.0; //!< time the vehicle is generated and made available, i.e. the time in which this vehicle was initially set to 'on-call' if a flex vehicle, set to zero by default if vehicle is not flex when read on input
+
+    map<int,map<BusState,double> > total_time_spent_in_state_per_stop; //!< total time spent in state at a particular stop. Maps stop ID to BusState to time. @todo currently only used to store time in state 'OnCall'
 /**@}*/
 };
 

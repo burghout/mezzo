@@ -7392,9 +7392,24 @@ namespace fwf_outputs {
             << "Total_Idle_Time" << '\t'
             << "Total_OnCall_Time" << endl;
     }
+
+
+    //!< @brief write out total time any vehicle has spent in any state at each stop. Corresponds to one row of "o_time_in_state_at_stop.dat" @todo currently only time spent in oncall state is output
+    void writeDRTVehicleStateAtStop_row(ostream& out, Busstop* stop)
+    {
+            out << stop->get_id() << "\t"
+                << stop->get_total_time_oncall() << endl;
+    }
+    void writeDRTVehicleStateAtStop_header(ostream& out)
+    {
+        out << "Busstop_ID" << '\t'
+            << "Total_OnCall_Time" << endl;
+    }
 }
 
-bool Network::write_busstop_output(string name1, string name2, string name3, string name4, string name5, string name6, string name7, string name8, string name9, string name10, string name11, string name12, string name13, string name14, string name15, string name16, string name17, string name18, string name19, string name20, string name21, string name22, string name23)
+bool Network::write_busstop_output(string name1, string name2, string name3, string name4, string name5, string name6, string name7, string name8, string name9, string name10, 
+    string name11, string name12, string name13, string name14, string name15, string name16, string name17, string name18, string name19, string name20, 
+    string name21, string name22, string name23, string name24)
 {
     Q_UNUSED(name5)
     Q_UNUSED(name6)
@@ -7416,6 +7431,7 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
     ofstream out17(name17.c_str(), ios_base::app); //"o_passenger_welfare_summary.dat"
     ofstream out18(name18.c_str(), ios_base::app); // "o_fwf_summary.dat"
     ofstream out21(name21.c_str(), ios_base::app); // "o_vkt.dat"
+    ofstream out24(name24.c_str(), ios_base::app); // "o_time_in_state_at_stop.dat"
 
   /*  this->write_busstop_output(
         workingdir + "o_transitlog_out.dat",                    out1
@@ -7463,11 +7479,6 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
     vector<Passenger*> allpass_within_passgen;
 
     /** @ingroup PARTC
-    *   @todo Drottningholms OD outputs
-    *   - add temporary flag to recognize whether or not this is a dholm network - if all fixed buslines end at Mörby C...
-    *   - filter 'all_pass' by start & end time
-    *   - also check the category of each od being checked
-    *   - generate a FWF_passdata for each OD category
     */
 
     FWF_passdata total_passdata_b2b;
@@ -7482,9 +7493,20 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
     // writing the crude data and summary outputs for each bus stop
     write_transitlogout_header(out1);
     write_transitstopsum_header(out2);
+    if(theParameters->drt)
+    {
+        fwf_outputs::writeDRTVehicleStateAtStop_header(out24);    
+    }
+
     for (auto & busstop : busstops)
     {
         busstop->write_output(out1);
+
+        if(busstop->get_CC()) //if the stop is in the service area of a CC
+        {
+            fwf_outputs::writeDRTVehicleStateAtStop_row(out24, busstop);
+        }
+
         vector<Busline*> stop_lines = busstop->get_lines();
         for (auto & stop_line : stop_lines)
         {
@@ -9335,7 +9357,8 @@ bool Network::writeall(unsigned int repl)
         workingdir + "o_passenger_dropoff.dat",
         workingdir + "o_vkt.dat",
         workingdir + "o_fwf_summary_odcategory.dat",
-        workingdir + "o_fwf_drtvehicle_states.dat"
+        workingdir + "o_fwf_drtvehicle_states.dat",
+        workingdir + "o_time_spent_in_state_at_stop.dat"
     );
     write_transitroutes(workingdir + "o_transit_routes.dat");
     return true;
