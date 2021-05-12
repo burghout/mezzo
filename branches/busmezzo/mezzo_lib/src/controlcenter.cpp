@@ -459,6 +459,25 @@ void VehicleScheduler::setSchedulingStrategy(int type)
 	}
 }
 
+RebalancingAction::RebalancingAction(Controlcenter* cc)
+{
+    cc_ = cc;
+}
+
+bool RebalancingAction::execute(Eventlist* eventlist, double time)
+{
+    cc_->requestRebalancingTrip(time);
+    double new_time = cc_->get_next_rebalancing_time(time);
+    if (new_time < time)
+    {
+        qDebug() << "Warning - new rebalancing time < current sim time";
+        new_time = time + 0.1;
+    }
+    eventlist->add_event(new_time, this);
+    return true;
+}
+
+
 //Controlcenter
 Controlcenter::Controlcenter(
 	Eventlist* eventlist, 
@@ -479,6 +498,8 @@ Controlcenter::Controlcenter(
 	theNetwork_ = theNetwork;
 	assignment_data_.cc_owner = this;
 
+	rebalancing_action_ = new RebalancingAction(this);
+
 	tg_.setTripGenerationStrategy(tg_strategy); //set the initial generation strategy of BustripGenerator
 	tg_.setEmptyVehicleStrategy(ev_strategy); //set the initial empty vehicle strategy of BustripGenerator
 	tg_.setRebelancingStrategy(rb_strategy); //set the initial rebalancing strategy of BustripGenerator
@@ -486,7 +507,10 @@ Controlcenter::Controlcenter(
 	vs_.setSchedulingStrategy(vs_strategy); //set initial scheduling strategy of VehicleScheduler
 	connectInternal(); //connect internal signal slots
 }
-Controlcenter::~Controlcenter(){}
+Controlcenter::~Controlcenter()
+{
+    delete rebalancing_action_;
+}
 
 void Controlcenter::reset()
 {
@@ -829,6 +853,11 @@ void Controlcenter::setGeneratedDirectRoutes(bool generate_direct_routes)
 double Controlcenter::get_rebalancing_interval() const
 {
     return rebalancing_interval_;
+}
+
+double Controlcenter::get_next_rebalancing_time(double time)
+{
+	return time + rebalancing_interval_;
 }
 
 set<Busstop*, ptr_less<Busstop*> > Controlcenter::get_collection_stops() const

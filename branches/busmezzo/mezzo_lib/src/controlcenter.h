@@ -202,6 +202,19 @@ private:
 	SchedulingStrategy* schedulingStrategy_ = nullptr; //!< strategy that is used to determine the start time (for dispatch) of flexible transit vehicle trips and scheduled visits to stops
 };
 
+
+/*! @brief execute called periodically, delegates to whatever rebalancingstrategy is used by BustripGenerator
+*/
+class RebalancingAction : public Action
+{
+public:
+    RebalancingAction(Controlcenter* cc);
+    ~RebalancingAction() override {}
+    bool execute(Eventlist* eventlist, double time) override;
+private:
+    Controlcenter* cc_ = nullptr;
+};
+
 //*! @brief groups together objects that control or modify demand-responsive transit objects @todo update description, alot of refactoring has been done, the signal slot calls are the same but the ownership and responsibilities of process classes have changed
 /*!
     Controlcenter functions as a facade for four process classes ((1) RequestHandler, (2) BustripGenerator, (3), BustripVehicleMatcher, (4) VehicleScheduler)
@@ -220,7 +233,7 @@ class Controlcenter : public QObject
     friend class TestControlcenter; //!< for writing unit tests for Controlcenter
 	friend class TestDRTAlgorithms;
 	friend class TestFixedWithFlexible_walking; //!< for writing integration tests for FWF network
-	friend class Network; //!< for writing results of completed trips to output files, and for generating direct lines between connectedStops_
+	friend class Network; //!< for writing results of completed trips to output files, for generating direct lines between connectedStops_, for initializing rebalancing actions
 
 public:
 	explicit Controlcenter(
@@ -270,8 +283,10 @@ public:
 
 	//methods related to rebalancing
     double get_rebalancing_interval() const;
+	double get_next_rebalancing_time(double time);
 	void add_collection_stop(Busstop* stop); //!< add stop to collection_stops_ the set of stops within the service of this control center's fleet that are used as targets for rebalancing
     set<Busstop*, ptr_less<Busstop*> > get_collection_stops() const; //!< returns the set of collection stops used for rebalancing strategies
+	void requestRebalancingTrip(double time); //!< delegates to BustripGenerator to generate a planned rebalancing trip
 
 	//methods for connecting passengers, vehicles, stops and lines
 	void connectPassenger(Passenger* pass); //!< connects passenger signals to control center slots
@@ -324,7 +339,6 @@ private slots:
 	
 	void requestTrip(double time); //!< delegates to BustripGenerator to generate a planned passenger carrying trip
 	void requestEmptyTrip(double time); //!< delegates to BustripGenerator to generate a planned empty-vehicle trip
-	void requestRebalancingTrip(double time); //!< delegates to BustripGenerator to generate a planned rebalancing trip
 
 	void matchVehiclesToTrips(double time); //!< delegates to BustripVehicleMatcher to assign connected transit vehicles to planned passenger carrying trips
 	void matchEmptyVehiclesToTrips(double time); //!< delegates to BustripVehicleMatcher to assign connected transit vehicles to planned empty-vehicle trips
@@ -355,6 +369,7 @@ private:
 
 	const double rebalancing_interval_; //!< time interval in between each rebalancing call @note e.g. first rebalancing call will be <rebalancing_interval_> seconds after start_pass_generation, <rebalancing_interval_> seconds after that etc..
 	set<Busstop*,ptr_less<Busstop*> > collection_stops_; //!< set of stops used as targets for rebalancing
+	RebalancingAction* rebalancing_action_;
 
 	//maps for bookkeeping connected passengers and vehicles
 	map<int, Passenger*> connectedPass_; //!< passengers currently connected to Controlcenter 

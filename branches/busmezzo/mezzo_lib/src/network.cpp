@@ -9542,7 +9542,7 @@ bool Network::init()
             //assert(theParameters->pass_day_to_day_indicator == 0); 
             //assert(theParameters->in_vehicle_d2d_indicator == 0);
 
-            for (const auto& od_arrival : empirical_passenger_arrivals) //add all empirical passenger arrivals to corresponding OD in terms of stops. TODO: currently untested with day2day, should be fine though
+            for (const auto& od_arrival : empirical_passenger_arrivals) //add all empirical passenger arrivals to corresponding OD in terms of stops.
             {
                 ODstops* od_stop = od_arrival.first;
                 double arrival_time = od_arrival.second;
@@ -9580,6 +9580,18 @@ bool Network::init()
     //Initialize the DRT vehicles to their starting stop at their starting time
     if (theParameters->drt)
     {
+        //Initialize rebalancing calls of controlcenter(s), initvalue is one rebalancing interval after the start pass generation period....
+        double rb_init_time = theParameters->start_pass_generation + 0.1;
+        for(auto cc : ccmap) // initialize all potential rebalancing events
+        {
+            if(cc.second->rb_strategy_ != 0) // @todo for now do not initialize any rebalancing events if no strategy is being used, may change this later if rebalancing is triggered dynamically or at a later time
+            {
+                double init_time = cc.second->get_next_rebalancing_time(rb_init_time);
+                eventlist->add_event(init_time, cc.second->rebalancing_action_);
+                rb_init_time += 0.00001;
+            }
+        }
+
         //Add buses to vector of unassigned vehicles and initial Busstop
         for (const DrtVehicleInit& drt_init : drtvehicles)
         {
