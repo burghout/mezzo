@@ -572,8 +572,11 @@ double Bus::get_total_time_oncall()
 	return total_time_oncall;
 }
 
-void Bus::update_meters_traveled(int meters_, bool is_empty)
+void Bus::update_meters_traveled(int meters_, bool is_empty, double time)
 {
+	if(time < theParameters->start_pass_generation || time > theParameters->stop_pass_generation) //ignore all meters traveled updates outside of passenger generation period	    
+		return;
+
 	total_meters_traveled += meters_;
 	if (is_empty)
 		total_empty_meters_traveled += meters_;

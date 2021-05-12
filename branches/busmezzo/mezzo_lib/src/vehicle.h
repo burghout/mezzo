@@ -206,7 +206,7 @@ public:
 	double get_total_time_driving();
 	double get_total_time_idle();
 	double get_total_time_oncall();
-	void update_meters_traveled(int meters_, bool is_empty);
+	void update_meters_traveled(int meters_, bool is_empty, double time);
 	double get_total_vkt() const;
 	double get_total_empty_vkt() const;
 	double get_total_occupied_vkt() const;

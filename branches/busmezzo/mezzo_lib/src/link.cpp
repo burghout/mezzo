@@ -590,7 +590,7 @@ Vehicle* Link::exit_veh(double time, Link* nextlink, int lookback)
 				if (!is_dummylink()) // do not count the length on dummy-links
 				{
 					Bus* bus = static_cast<Bus*>(veh);
-					bus->update_meters_traveled(length, bus->is_empty()); // hopefully this will keep track of VKT per vehicle (used for total VKT output)
+					bus->update_meters_traveled(length, bus->is_empty(), time); // hopefully this will keep track of VKT per vehicle (used for total VKT output)
 				}
 			}
 
@@ -667,7 +667,7 @@ Vehicle* Link::exit_veh(double time)
 				if (!is_dummylink()) // do not count the length on dummy-links
 				{
 					Bus* bus = static_cast<Bus*>(veh);
-					bus->update_meters_traveled(length,bus->is_empty()); // hopefully this will keep track of VKT per vehicle (used for total VKT output)
+					bus->update_meters_traveled(length,bus->is_empty(), time); // hopefully this will keep track of VKT per vehicle (used for total VKT output)
 				}
 			}
 
