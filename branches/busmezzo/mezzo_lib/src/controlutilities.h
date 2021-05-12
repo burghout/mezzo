@@ -23,6 +23,8 @@ namespace cc_helper_functions
  // Helper functions for controlstrategies
 namespace cs_helper_functions
 {
+    bool vehicle_is_at_location(Bus* veh, set<Busstop*,ptr_less<Busstop*> > stops); //!< returns true if vehicle is not driving and the last stop visited by the vehicle is within the set of stops
+
     // Update trip/trip-chain with new data
     void update_schedule(Bustrip* trip, double new_starttime); //!< takes trip that already has a preliminary schedule for both dispatch and stop visits, and updates this schedule given a new start time    
     void add_driving_roster_to_tripchain(const vector<Bustrip*>& tripchain); //!< Takes a vector of Bustrips and connects them via their driving_roster attribute in the order of the tripchain (i.e. index 0 is first trip, index 1 the second etc.)

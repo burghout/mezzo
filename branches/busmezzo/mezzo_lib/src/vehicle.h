@@ -199,6 +199,7 @@ public:
 //Control Center
 	BusState get_state() const { return state_; }
 	BusState calc_state(const bool assigned_to_trip, const bool bus_exiting_stop, const int occupancy) const; //!< returns the BusState of bus depending whether a bus is assigned to a trip, has just entered or exited a stop, and the occupancy of the bus. Other states for when a bus is not on a trip (e.g. onCall are set elsewhere)
+	double get_time_since_last_in_state(BusState state, double time); //!< returns the amount of time elapsed since the vehicle was last in <state> up until <time>, returns -1.0 if state has never been entered
 	double get_total_time_in_state(BusState state) const;
 	double get_total_time_empty();
 	double get_total_time_occupied();

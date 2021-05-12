@@ -450,6 +450,21 @@ BusState Bus::calc_state(const bool assigned_to_trip, const bool bus_exiting_sto
 	return BusState::Null;
 }
 
+double Bus::get_time_since_last_in_state(BusState state, double time)
+{
+	double time_in_state = -1.0;
+    if(time_state_last_entered.count(state) != 0)
+    {
+        time_in_state = time - time_state_last_entered[state];
+		if(time_in_state < 0.0)
+		{
+		    qDebug() << "Warning - calculated negative time in state for bus" << id << "returning zero time in state";
+			time_in_state = 0.0;
+		}
+    }
+	return time_in_state;
+}
+
 double Bus::get_total_time_in_state(BusState state) const
 {
 	if (total_time_spent_in_state.count(state) != 0)

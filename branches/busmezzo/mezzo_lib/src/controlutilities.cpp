@@ -15,6 +15,18 @@ namespace cc_helper_functions
 // Helper functions for controlstrategies
 namespace cs_helper_functions
 {
+    bool vehicle_is_at_location(Bus* veh, set<Busstop*,ptr_less<Busstop*> > stops)
+    {
+        if (!stops.empty() && !veh->is_driving())
+        {
+            if (stops.find(veh->get_last_stop_visited()) != stops.end())
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
     // Update trip/trip-chain with new data
     void update_schedule(Bustrip* trip, double new_starttime)
     {
