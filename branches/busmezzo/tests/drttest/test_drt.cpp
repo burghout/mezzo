@@ -54,7 +54,6 @@ private Q_SLOTS:
     void testCreateBusroute(); //!< tests creation of busroutes from stop pairs
     void testFindOrigins(); //!< tests the findNearestOrigin function
     void testFindDestinations(); //!< tests the findNearestDestination function
-    void testCreateAllDRTLines(); //!< tests creation of buslines
     void testCreateControlcenterDRTLines(); //!< tests the creation of direct buslines for the service area of a Controlcenter
     void testDelete(); //!< tests correct deletion
 
