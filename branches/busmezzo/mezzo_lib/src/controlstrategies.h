@@ -118,6 +118,7 @@ public:
 	Busline* find_shortest_busline(const vector<Busline*>& lines, double time) const; //!< returns shortest busline in terms of scheduled in-vehicle time among lines
     pair <Bus*,double> get_nearest_vehicle(const Busstop* targetStop, const set<Bus*>& vehicles, Network *theNetwork, double time); //!< returns nearest vehicle, returns pair(nullptr,0.0) if none
     vector<pair<Bus*,double> > find_nearest_vehicles(const Busstop* targetStop, const set<Bus*>& vehicles, Network *theNetwork, double time); //!< returns vector of (non-full) vehicles in order of closest expected ivt to targetStop to furthest, returns empty vector if none exists
+    vector<pair<Bus*, double>> find_nearest_vehicles(const Busstop* targetStop, const vector<Bus*>& vehicles, Network* theNetwork, double time); //!< returns vector of (non-full) vehicles in order of closest expected ivt to targetStop to furthest, returns empty vector if none exists
 
 protected:
     map<int, map<int, vector<Busline*> > > cached_lines_connecting_stops; //!< cached results of TripGenerationStrategy::find_lines_connecting_stops
@@ -215,6 +216,14 @@ private:
 
 
 //Rebalancing Strategies
+
+/*! @brief Naive rebalancing strategy that distributes on-call vehicles evenly among a set of collection stops
+ *  - a set of collection stops and a rebalancing interval are manually selected
+    - each rebalancing interval seconds a target capacity at all collection stops is calculated by num_oncall_vehicles / num_collection_stops
+    - starting with the collection stop with the lowest capacity a search for the nearest oncall vehicles that are not currently at a collection stop is performed
+    - closest vehicles are assigned until target capacity is reached, then move onto stop with next lowest capacity
+    - continue until no on-call vehicles (not present at a collection stop) are remaining, or all stops have reached target capacity
+ */
 class NaiveRebalancing : public TripGenerationStrategy
 {
 public:
