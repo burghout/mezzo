@@ -1165,12 +1165,14 @@ void Controlcenter::on_tripNotGenerated(double time)
 {
  //   qDebug() << "Trip not generated at time" << time;
 	//assignment_data_.print_state(time);
+	Q_UNUSED(time)
 }
 
 void Controlcenter::on_emptyTripNotGenerated(double time)
 {
  //   qDebug() << "Empty-trip not generated at time" << time;
 	//assignment_data_.print_state(time);
+	Q_UNUSED(time)
 }
 
 void Controlcenter::on_tripVehicleMatchFound(double time)
@@ -1183,12 +1185,14 @@ void Controlcenter::on_tripVehicleMatchNotFound(double time)
 {
 	//qDebug() << ": Vehicle - Trip match not found at time " << time;
     //assignment_data_.print_state(time);
+	Q_UNUSED(time)
 }
 
 void Controlcenter::on_emptyTripVehicleMatchNotFound(double time)
 {
     /*qDebug() << ": Vehicle - Trip match not found at time " << time;
     assignment_data_.print_state(time);*/
+	Q_UNUSED(time)
 }
 
 

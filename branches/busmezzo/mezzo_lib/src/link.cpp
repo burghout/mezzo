@@ -5,47 +5,47 @@
 #include "grid.h"
 #include <typeinfo> // for comparing different classes (Bus ans Vehicle)
 
-Link::Link(int id_, Node* in_, Node* out_, int length_, int nr_lanes_, Sdfunc* sdfunc_): id(id_), in_node (in_),
-		out_node(out_), length(length_), nr_lanes(nr_lanes_), sdfunc(sdfunc_)
+Link::Link(int id_, Node* in_, Node* out_, int length_, int nr_lanes_, Sdfunc* sdfunc_) : id(id_), in_node(in_),
+out_node(out_), length(length_), nr_lanes(nr_lanes_), sdfunc(sdfunc_)
 {
-	maxcap=static_cast<int> (length*nr_lanes/theParameters->standard_veh_length);
+    maxcap = static_cast<int> (length * nr_lanes / theParameters->standard_veh_length);
 #ifdef _DEBUG_LINK	
-	cout << "link " << id << " maxcap " << maxcap << endl;
+    cout << "link " << id << " maxcap " << maxcap << endl;
 #endif //_DEBUG_LINK
-	
+
 #ifdef _COLLECT_TRAVELTIMES
-	const int nr_fields=3;
-	string names[nr_fields]={"lid","time","traveltime"};
-    vector <string> fields(names,names+nr_fields);
-	grid=new Grid(nr_fields,fields);
+    const int nr_fields = 3;
+    string names[nr_fields] = { "lid","time","traveltime" };
+    vector <string> fields(names, names + nr_fields);
+    grid = new Grid(nr_fields, fields);
 #endif // _COLLECT_TRAVELTIMES
 #ifdef _COLLECT_ALL
-	const int nr_fields=8;
-	string names[nr_fields]= {"time","vid","lid","entry?","density","qlength","speed","earliest_exit_time"};
-   vector <string> fields(names,names+nr_fields);
-	grid=new Grid(nr_fields,fields);
+    const int nr_fields = 8;
+    string names[nr_fields] = { "time","vid","lid","entry?","density","qlength","speed","earliest_exit_time" };
+    vector <string> fields(names, names + nr_fields);
+    grid = new Grid(nr_fields, fields);
 #endif //_COLLECT_ALL	
-	avg_time=0.0;
-	avgtimes=new LinkTime();
-	avgtimes->id=id;
-	histtimes=NULL;
-	nr_passed=0;
-	running_percentage=0.0;
-	queue_percentage=0.0;
-	blocked=false;
-	moe_speed=new MOE(theParameters->moe_speed_update, 3.6);
-	moe_inflow=new MOE(theParameters->moe_inflow_update, (3600.0/theParameters->moe_inflow_update));
-	moe_outflow=new MOE(theParameters->moe_outflow_update, (3600.0/theParameters->moe_outflow_update));
-	moe_queue=new MOE(theParameters->moe_queue_update);
-	moe_density=new MOE(theParameters->moe_density_update);
-  blocked_until=-1.0; // -1.0 = not blocked, -2.0 = blocked until further notice, other value= blocked until value
-  nr_exits_blocked=0; // set by the turning movements if they are blocked
-  freeflowtime=(length/(sdfunc->speed(0.0)));
-  if (freeflowtime < 1.0)
-      freeflowtime=1.0;
-  queue=new Q(maxcap, freeflowtime);    
-  use_ass_matrix = false;
-  selected = false;
+    avg_time = 0.0;
+    avgtimes = new LinkTime();
+    avgtimes->id = id;
+    histtimes = nullptr;
+    nr_passed = 0;
+    running_percentage = 0.0;
+    queue_percentage = 0.0;
+    blocked = false;
+    moe_speed = new MOE(theParameters->moe_speed_update, 3.6);
+    moe_inflow = new MOE(theParameters->moe_inflow_update, (3600.0 / theParameters->moe_inflow_update));
+    moe_outflow = new MOE(theParameters->moe_outflow_update, (3600.0 / theParameters->moe_outflow_update));
+    moe_queue = new MOE(theParameters->moe_queue_update);
+    moe_density = new MOE(theParameters->moe_density_update);
+    blocked_until = -1.0; // -1.0 = not blocked, -2.0 = blocked until further notice, other value= blocked until value
+    nr_exits_blocked = 0; // set by the turning movements if they are blocked
+    freeflowtime = (length / (sdfunc->speed(0.0)));
+    if (freeflowtime < 1.0)
+        freeflowtime = 1.0;
+    queue = new Q(maxcap, freeflowtime);
+    use_ass_matrix = false;
+    selected = false;
 }
 
 
@@ -71,18 +71,17 @@ Link::~Link()
 	delete(moe_queue);
 	delete(moe_density);
 #ifdef _COLLECT_TRAVELTIMES
-	if (grid!=null )
+	if (grid!=nullptr)
 		delete(grid);
 #endif
  #ifdef _COLLECT_ALL
-	if (grid!=null )
+	if (grid!=nullptr)
 		delete(grid);
 #endif
-	if (histtimes!=NULL)
+	if (histtimes!=nullptr)
 		delete (histtimes);
-    if (avgtimes!=NULL)
+    if (avgtimes!=nullptr)
       delete (avgtimes);
-	
 }
 
 void Link::reset()
@@ -975,12 +974,12 @@ InputLink::InputLink(int id_, Origin* out_)
 {
     id=id_;
 	out_node=out_;
-	maxcap=65535; //
+	maxcap=numeric_limits<double>::max(); //
 	length=0;
     nr_lanes=0;
     queue=new Q(maxcap, 1.0);
-    histtimes=NULL;
-    avgtimes=NULL;
+    histtimes=nullptr;
+    avgtimes=nullptr;
 }
 
 void InputLink::reset()
@@ -1017,7 +1016,7 @@ Vehicle* InputLink::exit_veh(double time, Link* link, int lookback)
 			return veh;
 		}
 	}
-    return NULL;
+    return nullptr;
 }
 
 
