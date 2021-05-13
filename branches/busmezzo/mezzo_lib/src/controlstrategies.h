@@ -235,6 +235,18 @@ private:
     Network* theNetwork_; //!< currently needs access to the network to find the closest on-call Bus to origin stop of highest OD demand
 };
 
+//!< @brief Same as Naive rebalancing but includes en-route rebalancing vehicles on top of on-call vehicles in target capacity calculation
+class SimpleRebalancing : public TripGenerationStrategy
+{
+public:
+    explicit SimpleRebalancing(Network* theNetwork = nullptr);
+    ~SimpleRebalancing() override = default;
+    bool calc_trip_generation(DRTAssignmentData& assignment_data, const vector<Busline*>& candidateServiceRoutes, double time) override;
+
+private:
+    Network* theNetwork_; //!< currently needs access to the network to find the closest on-call Bus to origin stop of highest OD demand
+};
+
 //Matching Strategies
 //! @brief Base class for algorithms for assigning a Bus to an unmatched Bustrip.
 /*!

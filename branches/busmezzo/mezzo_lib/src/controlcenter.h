@@ -114,7 +114,7 @@ class BustripGenerator
 {
     enum generationStrategyType { Null = 0, Naive, Simple }; //!< ids of passenger trip generation strategies known to BustripGenerator
 	enum emptyVehicleStrategyType {	EVNull = 0, EVNaive, EVSimple, EVMaxWait, EVCumWait }; //!< ids of empty-vehicle redistribution strategies known to BustripGenerator
-	enum rebalancingStrategyType {	RBNull = 0, RBNaive }; //!< ids of empty-vehicle redistribution strategies known to BustripGenerator
+	enum rebalancingStrategyType {	RBNull = 0, RBNaive, RBSimple }; //!< ids of empty-vehicle redistribution strategies known to BustripGenerator
 	friend class BustripVehicleMatcher; //!< gives BustripVehicleMatcher access to serviceRoutes for initializing vehicles
 
 public:

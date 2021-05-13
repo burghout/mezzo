@@ -292,9 +292,13 @@ void BustripGenerator::setRebelancingStrategy(int type)
 	{
 		rebalancingStrategy_ = new NaiveRebalancing(theNetwork_);
 	}
+	else if (type == rebalancingStrategyType::RBSimple)
+	{
+		rebalancingStrategy_ = new SimpleRebalancing(theNetwork_);
+	}
 	else
 	{
-		DEBUG_MSG("BustripGenerator::setEmptyVehicleStrategy() - strategy " << type << " is not recognized! Setting strategy to nullptr. ");
+		DEBUG_MSG("BustripGenerator::setRebelancingStrategy() - strategy " << type << " is not recognized! Setting strategy to nullptr. ");
 		rebalancingStrategy_ = nullptr;
 	}
 }
