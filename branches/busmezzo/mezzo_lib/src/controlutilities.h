@@ -43,9 +43,10 @@ namespace cs_helper_functions
 
     // Find trip by condition
     set<Bustrip*, ptr_less<Bustrip*> > filterBustripsByStatus(const set<Bustrip*, ptr_less<Bustrip*> >& oldSet, BustripStatus status);
+    set<Bustrip*, ptr_less<Bustrip*> > filterBustripsByStatus(const set<Bustrip*, ptr_less<Bustrip*> >& oldSet, const vector<BustripStatus>& status);
     set<Bustrip*, ptr_less<Bustrip*> > filterRequestAssignedTrips(const set<Bustrip*, ptr_less<Bustrip*> >& oldSet); //!< returns trips that are members of oldset with <status> and non-empty scheduled requests members
     set<Bustrip*, ptr_less<Bustrip*> > filterRebalancingTrips(const set<Bustrip*, ptr_less<Bustrip*> >& oldSet); //!< returns trips that are members of oldset that are rebalancing
-    set<Bustrip*, ptr_less<Bustrip*> > filterRebalancingTripsToStop(const set<Bustrip*, ptr_less<Bustrip*> >& oldSet, Busstop* target_stop); //!< returns trips that are members of oldset that are rebalancing with final destination <target_stop>
+    set<Bustrip*, ptr_less<Bustrip*> > filterTripsWithFinalDestination(const set<Bustrip*, ptr_less<Bustrip*> >& oldSet, Busstop* target_stop); //!< returns trips that are members of oldset with final destination <target_stop>
 
 } // end namespace helper_functions
 

@@ -175,6 +175,17 @@ namespace cs_helper_functions
         copy_if(oldSet.begin(), oldSet.end(), inserter(newSet, newSet.end()), [status](Bustrip* trip) {return trip->get_status() == status; });
         return newSet;
     }
+
+    set<Bustrip*, ptr_less<Bustrip*> > filterBustripsByStatus(const set<Bustrip*, ptr_less<Bustrip*> >& oldSet, const vector<BustripStatus>& status)
+    {
+        set <Bustrip*, ptr_less<Bustrip*>> newSet;
+        copy_if(oldSet.begin(), oldSet.end(), inserter(newSet, newSet.end()), [&status](Bustrip* trip)
+        {
+            return find(status.begin(),status.end(), trip->get_status()) != status.end(); // if trip status is a member of status vector
+        });
+        return newSet;
+    }
+
     set<Bustrip*, ptr_less<Bustrip*> > filterRequestAssignedTrips(const set<Bustrip*, ptr_less<Bustrip*> >& oldSet)
     {
         set <Bustrip*, ptr_less<Bustrip*> > newSet = oldSet;
@@ -199,12 +210,12 @@ namespace cs_helper_functions
         copy_if(oldSet.begin(), oldSet.end(), inserter(newSet, newSet.end()), [](Bustrip* trip) {return trip->is_rebalancing(); });
         return newSet;
     }
-    set<Bustrip*, ptr_less<Bustrip*> > filterRebalancingTripsToStop(const set<Bustrip*, ptr_less<Bustrip*> >& oldSet, Busstop* target_stop)
+    set<Bustrip*, ptr_less<Bustrip*> > filterTripsWithFinalDestination(const set<Bustrip*, ptr_less<Bustrip*> >& oldSet, Busstop* target_stop)
     {
         set <Bustrip*, ptr_less<Bustrip*> > newSet;
         copy_if(oldSet.begin(), oldSet.end(), inserter(newSet, newSet.end()), [target_stop](Bustrip* trip)
         {
-            return trip->is_rebalancing() && trip->stops.back()->first == target_stop;
+            return trip->get_status() != BustripStatus::ScheduledWaitingForVehicle && trip->stops.back()->first == target_stop;
         });
         return newSet;
     }
