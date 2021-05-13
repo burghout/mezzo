@@ -667,42 +667,15 @@ void Bus::set_state(const BusState newstate, const double time)
 
 void Bus::print_state()
 {
-	cout << endl << "Bus " << bus_id << " is ";
-	switch (state_)
-	{
-	case BusState::OnCall:
-		cout << "OnCall";
-		break;
-	case BusState::IdleEmpty:
-		cout << "IdleEmpty";
-		break;
-	case BusState::IdlePartiallyFull:
-		cout << "IdlePartiallyFull";
-		break;
-	case BusState::IdleFull:
-		cout << "IdleFull";
-		break;
-	case BusState::DrivingEmpty:
-		cout << "DrivingEmpty";
-		break;
-	case BusState::DrivingPartiallyFull:
-		cout << "DrivingPartiallyFull";
-		break;
-	case BusState::DrivingFull:
-		cout << "DrivingFull";
-		break;
-	case BusState::Null:
-		cout << "NullBusState";
-		break;
-//	default:
-//		DEBUG_MSG_V("Something went very wrong");
-//		abort();
-	}
-	cout << endl;
+	qDebug() << "Bus" << bus_id << "is" << BusState_to_QString(state_);
 	if(last_stop_visited_)
-		cout << "\t" << "- last stop visited: " << last_stop_visited_->get_id() << endl;
+		qDebug() << "\t" << "- last stop visited: " << last_stop_visited_->get_id() << endl;
 	else
-		cout << "\t" << "- last stop visited: nullptr" << endl;
+		qDebug() << "\t" << "- last stop visited: nullptr" << endl;
+	if(curr_trip)
+	    qDebug() << "\t" << "- current trip " << curr_trip->get_id() << " status: " <<  BustripStatus_to_QString(curr_trip->get_status()) << endl;
+	else
+		qDebug() << "\t" << "- current trip: nullptr" << endl;
 }
 
 bool Bus::is_idle() const

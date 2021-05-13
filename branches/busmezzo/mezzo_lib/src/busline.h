@@ -387,7 +387,7 @@ enum class BustripStatus
 	Activated, // trip has been activated (dispatched), in other words a vehicle has started to perform this trip
 	Completed, // trip is finished (i.e. added to completed trips of a ControlCenter)
 };
-QString bustripstatus_to_QString(BustripStatus status);
+QString BustripStatus_to_QString(BustripStatus status);
 
 class Bustrip
 {

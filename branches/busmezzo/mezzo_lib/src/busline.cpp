@@ -833,7 +833,7 @@ Bustrip::Bustrip ()
 	}
 }
 
-QString bustripstatus_to_QString(BustripStatus status)
+QString BustripStatus_to_QString(BustripStatus status)
 {
 	QString status_s = "";
 

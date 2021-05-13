@@ -19,7 +19,7 @@ class Pass_path;
 
 enum class TransitModeType { Null = 0, Fixed, Flexible }; //!< used mainly for transitmode decision
 ostream& operator << (ostream& os, const TransitModeType& obj);
-QString transitmodetype_to_QString(TransitModeType mode); //!< helper print function for debug output
+QString TransitModeType_to_QString(TransitModeType mode); //!< helper print function for debug output
 
 
 enum class PassengerState
@@ -33,7 +33,7 @@ enum class PassengerState
     WaitingForFlexDenied,
     OnBoard //After boarding a bus
 };
-QString passengerstate_toQString(PassengerState state);
+QString PassengerState_to_QString(PassengerState state);
 class Passenger : public QObject, public Action
 {
     Q_OBJECT

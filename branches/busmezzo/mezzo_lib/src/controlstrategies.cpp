@@ -1019,7 +1019,7 @@ bool NaiveRebalancing::calc_trip_generation(DRTAssignmentData& assignment_data, 
         }
     );
 
-    // now generate a trip for each vehicle in order of longest on-call to each stop in order of smallest number of vehicles already at stop
+    // now generate a trip for each vehicle in order of nearest to each stop in order of lowest current capacity at stop
     size_t capacity = 0;
     for (auto target_stop : stop_currcap)
     {
@@ -1049,7 +1049,7 @@ bool NaiveRebalancing::calc_trip_generation(DRTAssignmentData& assignment_data, 
             // add newTrip to unmatched empty trip set for matching and scheduling
             assignment_data.unmatched_empty_trips.insert(newTrip); 
 
-            rebalancing_vehs.erase(veh.first);
+            rebalancing_vehs.erase(veh.first); // vehicle is no longer available for rebalancing
             trip_generated = true;
         } // veh : nearest rebalancing_vehs
     } // stop : stop_currcap

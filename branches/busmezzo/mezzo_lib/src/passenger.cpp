@@ -8,7 +8,7 @@ ostream& operator<<(ostream& os, const TransitModeType& obj)
 	return os;
 }
 
-QString transitmodetype_to_QString(TransitModeType mode)
+QString TransitModeType_to_QString(TransitModeType mode)
 {
 	QString mode_s = "";
 
@@ -28,7 +28,7 @@ QString transitmodetype_to_QString(TransitModeType mode)
 	return mode_s;
 }
 
-QString passengerstate_toQString(PassengerState state)
+QString PassengerState_to_QString(PassengerState state)
 {
 	QString state_s = "";
 
@@ -489,10 +489,10 @@ void Passenger::start(Eventlist* eventlist, double time)
 
 void Passenger::print_state()
 {
-	qDebug() << "Passenger" << get_id() << "is" << passengerstate_toQString(get_state());
+	qDebug() << "Passenger" << get_id() << "is" << PassengerState_to_QString(get_state());
 	//qDebug() << "\tlast stop visited: " << get_chosen_path_stops().back().first->get_id();
 	qDebug() << "\tlast stop visited: " << OD_stop->get_origin()->get_id();
-	qDebug() << "\tmode choice      : " << transitmodetype_to_QString(get_chosen_mode());
+	qDebug() << "\tmode choice      : " << TransitModeType_to_QString(get_chosen_mode());
 }
 
 Request* Passenger::createRequest(Busstop* origin_stop, Busstop* dest_stop, int load, double desired_departure_time, double current_time)
@@ -1796,7 +1796,7 @@ void Passenger::set_state(PassengerState newstate, double time)
 		state_ = newstate;
 
 		/*print_state();
-		qDebug() << "\tOldstate:" << passengerstate_toQString(oldstate);
+		qDebug() << "\tOldstate:" << PassengerState_to_QString(oldstate);
 		qDebug() << "\tTime	   :" << time;*/
 
 		emit stateChanged(this, oldstate, state_, time);
