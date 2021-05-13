@@ -22,3 +22,27 @@ Total passengers ignored (trip out of pass-generation start-stop interval):	452
 
 ------------------------------------------------------------------
 
+### Passenger per OD category summary: 	B2B	B2C	C2C	Total
+Passenger journeys completed                 :	159	554	1501	2214
+
+Average GTC:	-66.6863	-103.978	-62.1569	-72.9469
+Stdev GTC  :	20.0658	25.4775	29.6724	33.3308
+
+Average waiting time           :	311.073	296.45	257.32	270.972
+Stdev waiting time             :	176.255	171.952	169.572	171.838
+Maximum waiting time           :	612.725	700.853	734.139	734.139
+Median waiting time            :	317.528	286.348	252.455	264.336
+
+Average denied waiting time    :	0	0	0	0
+Stdev denied waiting time      :	0	0	0	0
+
+Average in-vehicle time        :	1181.88	2174.2	1148.14	1407.31
+Stdev in-vehicle time          :	433.26	604.074	714.785	804.687
+
+Average crowded in-vehicle time:	1122.78	2080.66	1103.61	1349.47
+Stdev crowded in-vehicle time  :	411.597	576.082	679.245	765.802
+
+Total passengers ignored (trip out of pass-generation start-stop interval):	452
+
+------------------------------------------------------------------
+
