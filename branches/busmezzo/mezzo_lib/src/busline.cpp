@@ -943,6 +943,7 @@ void Bustrip::reset ()
 	total_alighting = 0;
 	status_ = BustripStatus::Null;
     planned_capacity_ = 0;
+    is_rebalancing_ = false;
 }
 
 void Bustrip::set_busv(Bus* busv_)

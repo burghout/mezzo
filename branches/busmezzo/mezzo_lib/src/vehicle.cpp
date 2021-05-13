@@ -589,7 +589,7 @@ void Bus::update_meters_traveled(int meters_, bool is_empty, double time)
 		{
 			bool is_flextrip = this->get_curr_trip()->is_flex_trip();
 			map <Busstop*, passengers, ptr_less<Busstop*>> passengers_onboard = this->get_curr_trip()->get_passengers_on_board(); // pass stored by their alighting stop
-			for (auto alighting_stop : passengers_onboard)
+			for (const auto& alighting_stop : passengers_onboard)
 			{
 				vector<Passenger*> pass_with_alighting_stop = alighting_stop.second;
 				for (Passenger* pass : pass_with_alighting_stop)

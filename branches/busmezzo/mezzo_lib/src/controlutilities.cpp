@@ -193,5 +193,20 @@ namespace cs_helper_functions
 
         return newSet;
     }
+    set<Bustrip*, ptr_less<Bustrip*> > filterRebalancingTrips(const set<Bustrip*, ptr_less<Bustrip*> >& oldSet)
+    {
+        set <Bustrip*, ptr_less<Bustrip*>> newSet;
+        copy_if(oldSet.begin(), oldSet.end(), inserter(newSet, newSet.end()), [](Bustrip* trip) {return trip->is_rebalancing(); });
+        return newSet;
+    }
+    set<Bustrip*, ptr_less<Bustrip*> > filterRebalancingTripsToStop(const set<Bustrip*, ptr_less<Bustrip*> >& oldSet, Busstop* target_stop)
+    {
+        set <Bustrip*, ptr_less<Bustrip*> > newSet;
+        copy_if(oldSet.begin(), oldSet.end(), inserter(newSet, newSet.end()), [target_stop](Bustrip* trip)
+        {
+            return trip->is_rebalancing() && trip->stops.back()->first == target_stop;
+        });
+        return newSet;
+    }
 
 } // end namespace cs_helper_functions

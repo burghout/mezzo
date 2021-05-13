@@ -496,6 +496,9 @@ public:
     Bustrip* get_next_trip_in_chain() const; //!< returns the Bustrip that follows this one in the driving roster, nullptr otherwise
     Bustrip* get_prev_trip_in_chain() const; //!< returns the Bustrip that precedes this one in the driving roster, nullptr otherwise
 
+	bool is_rebalancing() const { return is_rebalancing_; } //!< return true if the bus is currently performing a rebalancing trip
+    void set_rebalancing(bool is_rebalancing) { is_rebalancing_ = is_rebalancing; }
+
     void set_status(BustripStatus newstatus);
     BustripStatus get_status()const { return status_; }
     /**@}*/
@@ -531,6 +534,8 @@ protected:
 	BustripStatus status_ = BustripStatus::Null;
 	int total_boarding = 0;
 	int total_alighting = 0;
+
+	bool is_rebalancing_ = false; //!< true if trip is an empty rebalancing trip, false otherwise
 
 	//!< @todo quick and dirty solution to assign requests that respect capacity constraints of a trip. Busv is nullptr until a vehicle is available, and is used in checks for this, but
 	//!<	we also want to know what the occupancy of each trip in a chain is, even those with nullptr busv. So update this when a vehicle is assigned (or re-assigned to a trip chain. The entire chain
