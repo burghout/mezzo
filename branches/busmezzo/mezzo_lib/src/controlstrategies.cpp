@@ -681,7 +681,7 @@ bool SimpleEmptyVehicleTripGeneration::calc_trip_generation(DRTAssignmentData& a
     //if (assignment_data.fleet_state.at(BusState::OnCall).empty())  //a drt vehicle must be available
     //    return false;
     // 2. sort unMatchedTrips (by nr of requests)
-    set<Bustrip*,compareBustripByNrRequests> sortedTrips (assignment_data.unmatched_trips.begin(), assignment_data.unmatched_trips.end());
+    set<Bustrip*, compareBustripByNrRequests> sortedTrips(assignment_data.unmatched_trips.begin(), assignment_data.unmatched_trips.end());
 
     bool trip_generated = false;
     for (auto unmatched_trip : sortedTrips) // loop through unmatched trips in order of priority
@@ -776,7 +776,7 @@ bool MaxWaitEmptyVehicleTripGeneration::calc_trip_generation(DRTAssignmentData& 
     //if (assignment_data.fleet_state.at(BusState::OnCall).empty())  //a drt vehicle must be available
     //    return false;
     // 2. sort unMatchedTrips (by maximum waiting time)
-    set<Bustrip*,compareBustripByMaxWait> sortedTrips (assignment_data.unmatched_trips.begin(), assignment_data.unmatched_trips.end(),time) ;
+    set<Bustrip*, compareBustripByMaxWait> sortedTrips(assignment_data.unmatched_trips.begin(), assignment_data.unmatched_trips.end(), time);
 
    bool trip_generated = false;
     for (auto unmatched_trip : sortedTrips) // loop through unmatched trips in order of priority
@@ -873,7 +873,7 @@ bool CumulativeWaitEmptyVehicleTripGeneration::calc_trip_generation(DRTAssignmen
     //    return false;
 
     // 2. sort unMatchedTrips (by cumulative waiting time)
-    set<Bustrip*,compareBustripByCumulativeWait> sortedTrips (assignment_data.unmatched_trips.begin(), assignment_data.unmatched_trips.end(),time);
+    set<Bustrip*, compareBustripByCumulativeWait> sortedTrips(assignment_data.unmatched_trips.begin(), assignment_data.unmatched_trips.end(), time);
 
     bool trip_generated = false;
     for (auto unmatched_trip : sortedTrips) // loop through unmatched trips in order of priority

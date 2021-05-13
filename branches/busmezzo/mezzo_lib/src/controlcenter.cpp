@@ -1109,7 +1109,7 @@ void Controlcenter::updateRequestState(Passenger* pass, PassengerState oldstate,
 			if(req->assigned_trip)
 			    req->assigned_trip->remove_request(req);
             req->set_state(RequestState::ServedFinished);
-            //removeActiveRequest(pass->get_id()); //!< @todo remove and delete via assignment_data instead, just testing incrementally if we can repeat results this way
+            
             assignment_data_.active_requests.erase(req);
             assignment_data_.completed_requests.insert(req);
             pass->set_curr_request(nullptr);

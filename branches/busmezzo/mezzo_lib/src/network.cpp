@@ -18,9 +18,10 @@
 //using namespace std;
 
 // initialise the global variables and objects
-double drt_first_rep_max_headway=0;
-double drt_first_rep_waiting_utility=10; //default is to evaluate waiting utility for drt service positively in the first rep
-int drt_min_occupancy=0;
+double drt_first_rep_max_headway = 0.0;
+double drt_first_rep_waiting_utility = 10.0; //default is to evaluate waiting utility for drt service positively in the first rep
+int drt_min_occupancy = 0;
+double drt_first_rebalancing_time = 0.0;
 
 bool PARTC::drottningholm_case = false;
 Busstop* PARTC::transfer_stop = nullptr;
@@ -1461,11 +1462,20 @@ bool Network::readcontrolcenters(const string& name)
     in >> keyword;
     if (keyword != "drt_min_occupancy:")
     {
-        DEBUG_MSG("readcontrolcenters:: no first_rep_waiting_utility keyword, read: " << keyword);
+        DEBUG_MSG("readcontrolcenters:: no drt_min_occupancy keyword, read: " << keyword);
         in.close();
         return false;
     }
     in >> ::drt_min_occupancy;
+
+    in >> keyword;
+    if (keyword != "drt_first_rebalancing_time:")
+    {
+        DEBUG_MSG("readcontrolcenters:: no drt_first_rebalancing_time keyword, read: " << keyword);
+        in.close();
+        return false;
+    }
+    in >> ::drt_first_rebalancing_time;
 
     //Create Controlcenters here or somewhere else. OBS: currently a pointer to this CC is given to Busstop via its constructor
     in >> keyword;
@@ -7428,9 +7438,12 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
     {
         busstop->write_output(out1);
 
-        if(busstop->get_CC()) //if the stop is in the service area of a CC
+        if (theParameters->drt)
         {
-            fwf_outputs::writeDRTVehicleStateAtStop_row(out24, busstop);
+            if (busstop->get_CC()) //if the stop is in the service area of a CC
+            {
+                fwf_outputs::writeDRTVehicleStateAtStop_row(out24, busstop);
+            }
         }
 
         vector<Busline*> stop_lines = busstop->get_lines();
@@ -9581,12 +9594,13 @@ bool Network::init()
     if (theParameters->drt)
     {
         //Initialize rebalancing calls of controlcenter(s), initvalue is one rebalancing interval after the start pass generation period....
-        double rb_init_time = theParameters->start_pass_generation + 0.1;
+        double rb_init_time = theParameters->start_pass_generation + ::drt_first_rebalancing_time + 0.1;
         for(auto cc : ccmap) // initialize all potential rebalancing events
         {
             if(cc.second->rb_strategy_ != 0) // @todo for now do not initialize any rebalancing events if no strategy is being used, may change this later if rebalancing is triggered dynamically or at a later time
             {
-                double init_time = cc.second->get_next_rebalancing_time(rb_init_time);
+                //double init_time = cc.second->get_next_rebalancing_time(rb_init_time);
+                double init_time = rb_init_time;
                 eventlist->add_event(init_time, cc.second->rebalancing_action_);
                 rb_init_time += 0.00001;
             }
