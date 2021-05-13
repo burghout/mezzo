@@ -8,7 +8,7 @@
 Link::Link(int id_, Node* in_, Node* out_, int length_, int nr_lanes_, Sdfunc* sdfunc_) : id(id_), in_node(in_),
 out_node(out_), length(length_), nr_lanes(nr_lanes_), sdfunc(sdfunc_)
 {
-    maxcap = length * nr_lanes / theParameters->standard_veh_length;
+    maxcap = length * static_cast<double>(nr_lanes) / static_cast<double>(theParameters->standard_veh_length);
 #ifdef _DEBUG_LINK	
     cout << "link " << id << " maxcap " << maxcap << endl;
 #endif //_DEBUG_LINK

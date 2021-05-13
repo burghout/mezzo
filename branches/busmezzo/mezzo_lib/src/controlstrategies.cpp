@@ -247,7 +247,7 @@ Bustrip* TripGenerationStrategy::create_unassigned_trip(Busline* line, double de
 set<Bus*> TripGenerationStrategy::get_driving_vehicles(const map<BusState, set<Bus*> >& fleetState) const
 {
     set<Bus*> drivingvehicles;
-    for (auto vehgroup : fleetState) //collect all driving buses. 
+    for (const auto& vehgroup : fleetState) //collect all driving buses. 
     {
         BusState state = vehgroup.first;
         switch (state)
@@ -698,7 +698,7 @@ bool SimpleEmptyVehicleTripGeneration::calc_trip_generation(DRTAssignmentData& a
             inserter(candidate_vehs, begin(candidate_vehs)));
         
         auto nearestVehicles = find_nearest_vehicles(tripStartStop, candidate_vehs, theNetwork_, time); // all candidate vehicles for carrying any request sorted by time to reach trip start stop
-        for(auto veh : nearestVehicles) // loop through vehicles by closest, now want to check capacity for carrying trip-plan
+        for(const auto& veh : nearestVehicles) // loop through vehicles by closest, now want to check capacity for carrying trip-plan
         {
             if (veh.first->is_oncall()) // if nearest vehicle is on-call then create and empty trip and chain it.....
             {
@@ -793,7 +793,7 @@ bool MaxWaitEmptyVehicleTripGeneration::calc_trip_generation(DRTAssignmentData& 
             inserter(candidate_vehs, begin(candidate_vehs)));
         
         auto nearestVehicles = find_nearest_vehicles(tripStartStop, candidate_vehs, theNetwork_, time); // all candidate vehicles for carrying any request sorted by time to reach trip start stop
-        for(auto veh : nearestVehicles) // loop through vehicles by closest, now want to check capacity for carrying trip-plan
+        for(const auto& veh : nearestVehicles) // loop through vehicles by closest, now want to check capacity for carrying trip-plan
         {
             if (veh.first->is_oncall()) // if nearest vehicle is on-call then create and empty trip and chain it.....
             {
@@ -890,7 +890,7 @@ bool CumulativeWaitEmptyVehicleTripGeneration::calc_trip_generation(DRTAssignmen
             inserter(candidate_vehs, begin(candidate_vehs)));
         
         auto nearestVehicles = find_nearest_vehicles(tripStartStop, candidate_vehs, theNetwork_, time); // all candidate vehicles for carrying any request sorted by time to reach trip start stop
-        for(auto veh : nearestVehicles) // loop through vehicles by closest, now want to check capacity for carrying trip-plan
+        for(const auto& veh : nearestVehicles) // loop through vehicles by closest, now want to check capacity for carrying trip-plan
         {
             if (veh.first->is_oncall()) // if nearest vehicle is on-call then create and empty trip and chain it.....
             {
@@ -1021,12 +1021,12 @@ bool NaiveRebalancing::calc_trip_generation(DRTAssignmentData& assignment_data, 
 
     // now generate a trip for each vehicle in order of nearest to each stop in order of lowest current capacity at stop
     size_t capacity = 0;
-    for (auto target_stop : stop_currcap)
+    for (const auto& target_stop : stop_currcap)
     {
         capacity = target_stop.second; // target stop capacity
         auto nearest_vehicles = find_nearest_vehicles(target_stop.first, rebalancing_vehs, theNetwork_, time); // all candidate vehicles for rebalancing, all on-call vehicles not currently at a collection stop in order of distance to target stop
 
-        for (auto veh : nearest_vehicles) // loop through vehicles in order of closest to stop
+        for (const auto& veh : nearest_vehicles) // loop through vehicles in order of closest to stop
         {
             if (capacity >= target_cap) // move onto next stop once target cap has been reached (or has already been reached)
             {

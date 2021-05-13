@@ -592,7 +592,7 @@ void Controlcenter::connectInternal()
 set<Bus*> Controlcenter::getAllVehicles()
 {
 	set<Bus*> vehs;
-	for (auto veh : connectedVeh_)
+	for (const auto& veh : connectedVeh_)
 	{
 		if(!veh.second->is_null())
 			vehs.insert(veh.second);
