@@ -211,7 +211,7 @@ public:
 	double get_total_empty_vkt() const;
 	double get_total_occupied_vkt() const;
 	void set_state(const BusState newstate, const double time); //!< sets current state_ to newstate and emits stateChanged if newstate differs from current state_
-	void print_state(); //!< prints current BusState for debugging purposes
+	void print_state() const; //!< prints current BusState for debugging purposes
 
 	bool is_idle() const;	//!< returns true if bus is idle/waiting at a stop
 	bool is_driving() const; //!< returns true if bus is driving between stops

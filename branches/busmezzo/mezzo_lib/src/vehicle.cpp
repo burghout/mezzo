@@ -665,17 +665,17 @@ void Bus::set_state(const BusState newstate, const double time)
 	}
 }
 
-void Bus::print_state()
+void Bus::print_state() const
 {
 	qDebug() << "Bus" << bus_id << "is" << BusState_to_QString(state_);
 	if(last_stop_visited_)
-		qDebug() << "\t" << "- last stop visited: " << last_stop_visited_->get_id() << endl;
+		qDebug() << "\t" << "- last stop visited: " << last_stop_visited_->get_id();
 	else
-		qDebug() << "\t" << "- last stop visited: nullptr" << endl;
+		qDebug() << "\t" << "- last stop visited: nullptr";
 	if(curr_trip)
-	    qDebug() << "\t" << "- current trip " << curr_trip->get_id() << " status: " <<  BustripStatus_to_QString(curr_trip->get_status()) << endl;
+	    qDebug() << "\t" << "- current trip " << curr_trip->get_id() << " status: " <<  BustripStatus_to_QString(curr_trip->get_status());
 	else
-		qDebug() << "\t" << "- current trip: nullptr" << endl;
+		qDebug() << "\t" << "- current trip: nullptr";
 }
 
 bool Bus::is_idle() const
