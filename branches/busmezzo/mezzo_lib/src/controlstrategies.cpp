@@ -974,8 +974,6 @@ bool NaiveRebalancing::calc_trip_generation(DRTAssignmentData& assignment_data, 
         return false;
 
     set<Bus*> oncall_vehs = assignment_data.fleet_state.at(BusState::OnCall);
-    //qDebug() << "Num collection stops: " << collection_stops.size();
-    //qDebug() << "Num oncall:" << oncall_vehs.size();
 
     // collect all oncall vehicles that are not already at a collection stop
     set<Bus*> candidate_vehs;
@@ -984,33 +982,23 @@ bool NaiveRebalancing::calc_trip_generation(DRTAssignmentData& assignment_data, 
         if(!cs_helper_functions::vehicle_is_at_location(veh,collection_stops))
             candidate_vehs.insert(veh);
     }
-    //qDebug() << "Num rebalancing:" << rebalancing_vehs.size();
     if(candidate_vehs.empty()) // all vehicles are already at a collection stop
         return false;
 
-    ////sort rebalancing vehicles by longest time spent on-call until current time
-    //sort(rebalancing_vehs.begin(), rebalancing_vehs.end(), [time](Bus* veh1, Bus* veh2) -> bool
-    //    {
-    //        return veh1->get_time_since_last_in_state(BusState::OnCall, time) > veh2->get_time_since_last_in_state(BusState::OnCall, time);
-    //    }
-    //);
-
     bool trip_generated = false; // true will signal to match empty rebalancing trips and schedule them
     
-    size_t target_cap = oncall_vehs.size() / collection_stops.size(); //want to distribute oncall vehicles equally among collection stops
-    //qDebug() << "Target cap:" << target_cap;
+    int target_cap = oncall_vehs.size() / static_cast<int>(collection_stops.size()); //want to distribute oncall vehicles equally among collection stops
     target_cap = target_cap == 0 ? 1 : target_cap; // if target cap is zero then we have fewer oncall vehicles than collection stops, in this case just rebalance vehicles until we run out of them
 
     // calculate the existing capacity in terms of number of oncall vehicles already at each collection stop
-    vector<pair<Busstop*,size_t> > stop_currcap; // current capacity at each stop
+    vector<pair<Busstop*,int> > stop_currcap; // current capacity at each stop
     for(auto stop : collection_stops)
     {
-        size_t curr_cap = assignment_data.cc_owner->getOnCallVehiclesAtStop(stop).size();
+        int curr_cap = assignment_data.cc_owner->getOnCallVehiclesAtStop(stop).size();
         stop_currcap.emplace_back(make_pair(stop,curr_cap));
-        //qDebug() << "Current cap at stop" << stop->get_id() << ":" << curr_cap;
     }
     // sort stops by smallest number of on-call vehicles already at stop
-    sort(stop_currcap.begin(), stop_currcap.end(), [](const pair<Busstop*, size_t>& lhs, const pair<Busstop*, size_t>& rhs)-> bool
+    sort(stop_currcap.begin(), stop_currcap.end(), [](const pair<Busstop*, int>& lhs, const pair<Busstop*, int>& rhs)-> bool
         {
             if (lhs.second != rhs.second)
                 return lhs.second < rhs.second;
@@ -1020,7 +1008,7 @@ bool NaiveRebalancing::calc_trip_generation(DRTAssignmentData& assignment_data, 
     );
 
     // now generate a trip for each vehicle in order of nearest to each stop in order of lowest current capacity at stop
-    size_t capacity = 0;
+    int capacity = 0;
     for (const auto& target_stop : stop_currcap)
     {
         if(target_stop.second >= target_cap)
@@ -1056,7 +1044,7 @@ bool NaiveRebalancing::calc_trip_generation(DRTAssignmentData& assignment_data, 
             newTrip->set_rebalancing(true); // mark trip as a rebalancing trip
 
             trip_generated = true;
-        } // veh : nearest rebalancing_vehs
+        } // veh : nearest_vehicles
     } // stop : stop_currcap
 
     return trip_generated; // emits Signal that rebalancing trip was generated, matcher does the rest.
@@ -1067,10 +1055,10 @@ bool SimpleRebalancing::calc_trip_generation(DRTAssignmentData& assignment_data,
 {
     /*
     - a set of collection stops and a rebalancing interval are manually selected
-    - each rebalancing interval seconds a target capacity at all collection stops is calculated by num_oncall_vehicles + num_rebalancing_vehicles / num_collection_stops
-    - starting with the collection stop with the lowest capacity a search for the nearest oncall vehicles that are not currently at a collection stop is performed
+    - each rebalancing interval seconds a target capacity at all collection stops is calculated by num_oncall_vehicles + num_enroute_vehicles / num_collection_stops
+    - starting with the collection stop with the lowest capacity a search for the nearest oncall vehicles that are not currently at a collection stop or at a collection stop with excess capacity is performed
     - closest vehicles are assigned until target capacity is reached, then move onto stop with next lowest capacity
-    - continue until no on-call vehicles (not present at a collection stop) are remaining, or all stops have reached target capacity
+    - continue until no on-call vehicles are remaining, or all stops have reached target capacity
      */
     if (assignment_data.fleet_state.find(BusState::OnCall) == assignment_data.fleet_state.end())  //a drt vehicle must have been initialized
         return false;
@@ -1081,8 +1069,6 @@ bool SimpleRebalancing::calc_trip_generation(DRTAssignmentData& assignment_data,
         return false;
 
     set<Bus*> oncall_vehs = assignment_data.fleet_state.at(BusState::OnCall);
-    /*qDebug() << "Num collection stops: " << collection_stops.size();
-    qDebug() << "Num oncall:" << oncall_vehs.size();*/
 
     // collect all oncall vehicles that are not already at a collection stop
     set<Bus*> candidate_vehs;
@@ -1091,46 +1077,25 @@ bool SimpleRebalancing::calc_trip_generation(DRTAssignmentData& assignment_data,
         if(!cs_helper_functions::vehicle_is_at_location(veh,collection_stops))
             candidate_vehs.insert(veh);
     }
-    //qDebug() << "Num candidate vehs:" << candidate_vehs.size();
-    //if(candidate_vehs.empty()) // all vehicles are already at a collection stop
-    //    return false;
-
+    
     // check number of vehicles that are already performing a trip
-    //auto active_rebalancing_trips = cs_helper_functions::filterRebalancingTrips(assignment_data.active_trips);
     vector<BustripStatus> status = { BustripStatus::Activated, BustripStatus::Scheduled }; //@todo filtering out ScheduledWaitingForVehicle trips basically, only want activated trips with a vehicle available for them
     auto active_trips = cs_helper_functions::filterBustripsByStatus(assignment_data.active_trips, status);
-    //qDebug() << "Num active trips:" << active_trips.size();
-
-    ////sort rebalancing vehicles by longest time spent on-call until current time
-    //sort(rebalancing_vehs.begin(), rebalancing_vehs.end(), [time](Bus* veh1, Bus* veh2) -> bool
-    //    {
-    //        return veh1->get_time_since_last_in_state(BusState::OnCall, time) > veh2->get_time_since_last_in_state(BusState::OnCall, time);
-    //    }
-    //);
-
-    bool trip_generated = false; // true will signal to match empty rebalancing trips and schedule them
-    
     const int target_cap = (oncall_vehs.size() + active_trips.size()) / static_cast<int>(collection_stops.size()); //want to distribute oncall + enroute vehicles equally among collection stops, floor division ensures no ping-ponging vehicles between collection stops
-    //qDebug() << "Target cap:" << target_cap;
-    //target_cap = target_cap == 0 ? 1 : target_cap; // if target cap is zero then we have fewer oncall + rebalancing vehicles than collection stops, in this case just rebalance on-call vehicles until we run out of them
 
     // calculate the existing capacity in terms of number of oncall vehicles already at each collection stop + number of rebalancing vehicles enroute to each stop
-    vector<pair<Busstop*,size_t> > stop_currcap; // current capacity at each stop
+    vector<pair<Busstop*,int> > stop_currcap; // current capacity at each stop
     for(auto stop : collection_stops)
     {
         auto oncall_vehs_at_stop = assignment_data.cc_owner->getOnCallVehiclesAtStop(stop);
         int num_oncall = oncall_vehs_at_stop.size();
         int num_enroute = cs_helper_functions::filterTripsWithFinalDestination(active_trips, stop).size();
-        //qDebug() << "Oncall at stop" << stop->get_id() << ":" << num_oncall;/*
-        //qDebug() << "Enroute to stop" << stop->get_id() << ":" << num_enroute;*/
         int curr_cap = num_oncall + num_enroute;
         stop_currcap.emplace_back(make_pair(stop,curr_cap));
-        //qDebug() << "Current cap at stop" << stop->get_id() << ":" << curr_cap;
 
         int excess_cap = curr_cap - target_cap;
         if(excess_cap > 0)
         {
-            //qDebug() << "\tExcess cap at stop" << stop->get_id() << ":" << curr_cap - target_cap;
             //stops with excess capacity can add their on-call vehicles to the pool of candidate vehicles...
             for(auto veh : oncall_vehs_at_stop)
             {
@@ -1144,7 +1109,7 @@ bool SimpleRebalancing::calc_trip_generation(DRTAssignmentData& assignment_data,
         }
     }
     // sort stops by smallest number of on-call vehicles already at stop
-    sort(stop_currcap.begin(), stop_currcap.end(), [](const pair<Busstop*, size_t>& lhs, const pair<Busstop*, size_t>& rhs)-> bool
+    sort(stop_currcap.begin(), stop_currcap.end(), [](const pair<Busstop*, int>& lhs, const pair<Busstop*, int>& rhs)-> bool
         {
             if (lhs.second != rhs.second)
                 return lhs.second < rhs.second;
@@ -1152,17 +1117,17 @@ bool SimpleRebalancing::calc_trip_generation(DRTAssignmentData& assignment_data,
                 return lhs.first->get_id() < lhs.first->get_id();
         }
     );
-    //qDebug() << "Num candidate vehs:" << candidate_vehs.size();
+    
     // now generate a trip for each vehicle in order of nearest to each stop in order of lowest current capacity at stop
-    size_t capacity = 0;
+    bool trip_generated = false; // true will signal to match empty rebalancing trips and schedule them
+    int capacity = 0;
     for (const auto& target_stop : stop_currcap)
     {
-        //qDebug() << "Rebalancing on-call vehicles to stop" << target_stop.first->get_id() << "with capacity:" << target_stop.second;
         if(target_stop.second >= target_cap)
             continue;
 
         capacity = target_stop.second; // target stop capacity
-        auto nearest_vehicles = find_nearest_vehicles(target_stop.first, candidate_vehs, theNetwork_, time); // all candidate vehicles for rebalancing, all on-call vehicles not currently at a collection stop in order of distance to target stop
+        auto nearest_vehicles = find_nearest_vehicles(target_stop.first, candidate_vehs, theNetwork_, time); // all candidate vehicles for rebalancing in order of distance to target stop
 
         for (const auto& veh : nearest_vehicles) // loop through vehicles in order of closest to stop
         {
@@ -1190,7 +1155,7 @@ bool SimpleRebalancing::calc_trip_generation(DRTAssignmentData& assignment_data,
 
             candidate_vehs.erase(veh.first); // vehicle is no longer available for rebalancing
             trip_generated = true;
-        } // veh : nearest rebalancing_vehs
+        } // veh : nearest_vehicles
     } // stop : stop_currcap
 
     return trip_generated; // emits Signal that rebalancing trip was generated, matcher does the rest.

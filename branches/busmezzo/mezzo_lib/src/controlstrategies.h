@@ -235,7 +235,7 @@ private:
     Network* theNetwork_; //!< currently needs access to the network to find the closest on-call Bus to origin stop of highest OD demand
 };
 
-//!< @brief Same as Naive rebalancing but includes en-route rebalancing vehicles on top of on-call vehicles in target capacity calculation, collection stops with on-call vehicles and excess capacity are also rebalanced
+//!< @brief Same as Naive rebalancing but includes en-route vehicles on top of on-call vehicles in target capacity calculation, collection stops with on-call vehicles in excess capacity are also rebalanced
 class SimpleRebalancing : public TripGenerationStrategy
 {
 public:
