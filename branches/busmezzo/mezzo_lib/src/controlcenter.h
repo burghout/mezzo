@@ -49,7 +49,7 @@ struct DRTAssignmentData
 	set<Request*, ptr_less<Request*> > rejected_requests; //!< all requests rejected by ControlCenter
 	set<Request*, ptr_less<Request*> > completed_requests; //!< all requests that were picked up and dropped off
 
-    map<BusState, set<Bus*> > fleet_state; //!< all candidate vehicles to be assigned, or reassigned to activeTrips
+    map<BusState, set<Bus*, bus_ptr_less<Bus*> > > fleet_state; //!< all candidate vehicles to be assigned, or reassigned to activeTrips
 
 	Controlcenter* cc_owner = nullptr;
 	void print_state(double time) const;
@@ -172,7 +172,7 @@ public:
 	bool matchVehiclesToEmptyVehicleTrips(DRTAssignmentData& assignment_data, double time); //!< returns true if at LEAST one unmatched empty trip was assigned to a vehicle
 
 private:
-	map<int, set<Bus*> > vehicles_per_service_route_; //!< maps lineIDs among service routes for this control center to vector of candidate transit vehicles
+	map<int, set<Bus*, bus_ptr_less<Bus*> > > vehicles_per_service_route_; //!< maps lineIDs among service routes for this control center to vector of candidate transit vehicles
 
 	MatchingStrategy* matchingStrategy_ = nullptr; //!< strategy for assigning unmatched trips to candidate transit vehicles
 };
@@ -265,13 +265,13 @@ public:
     vector<Busline*> getServiceRoutes() const;
     map<int,Bus*> getConnectedVehicles() const;
 
-	map<BusState, set<Bus*> > getFleetState() const;
+	map<BusState, set<Bus*, bus_ptr_less<Bus*> > > getFleetState() const;
 	void printFleetState() const; //!< for printing the state of the entire fleet for debugging
 
-	set<Bus*> getAllVehicles();
-	set<Bus*> getVehiclesDrivingToStop(Busstop* stop); //!< get connected vehicles that are driving to target stop
-	set<Bus*> getVehiclesEnRouteToStop(Busstop* stop); //!< get connected vehicles that are assigned to a trip with stop included in their downstream route
-	set<Bus*> getOnCallVehiclesAtStop(Busstop* stop); //!< get connected vehicles that are currently on-call at target stop
+	set<Bus*, bus_ptr_less<Bus*> > getAllVehicles();
+	set<Bus*, bus_ptr_less<Bus*> > getVehiclesDrivingToStop(Busstop* stop); //!< get connected vehicles that are driving to target stop
+	set<Bus*, bus_ptr_less<Bus*> > getVehiclesEnRouteToStop(Busstop* stop); //!< get connected vehicles that are assigned to a trip with stop included in their downstream route
+	set<Bus*, bus_ptr_less<Bus*> > getOnCallVehiclesAtStop(Busstop* stop); //!< get connected vehicles that are currently on-call at target stop
 	pair<Bus*,double> getClosestVehicleToStop(Busstop* stop, double time); //returns closest vehicle to stop and shortest expected time to get there
 	
 	double calc_route_travel_time(const vector<Link*>& routelinks, double time);
@@ -391,7 +391,7 @@ private:
 	VehicleScheduler vs_;
 
     set<Busstop*, ptr_less<Busstop*> > serviceArea_; //!< set of stops in the service area of this control center's fleet of vehicles. In other words the stops for which this control center can generate trips between
-    set<Bus*> initialVehicles_; //!< vehicles assigned to this control center on input (that should be preserved between resets)
+    set<Bus*, bus_ptr_less<Bus*> > initialVehicles_; //!< vehicles assigned to this control center on input (that should be preserved between resets)
 	vector<pair<Bus*, Bustrip*> > completedVehicleTrips_; //!< used for bookkeeping dynamically generated buses and bustrips (similar to busvehicles and bustrips in network) for writing output and deleting between resets
 	DRTAssignmentData assignment_data_; //!< stores dynamic vehicle, trip and request data used in assignment pipeline
 

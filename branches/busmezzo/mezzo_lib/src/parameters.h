@@ -71,6 +71,14 @@ struct pair_less {
     }
 };
 
+template<class T> //! EXPECTS T->get_bus_id()
+struct bus_ptr_less //@todo ugly quickfix for repeatability when iterating through sets of Bus*
+{
+    bool operator() (const T& lhs, const T& rhs) const {
+        return lhs->get_bus_id() < rhs->get_bus_id();
+    }
+};
+
 /** @defgroup PassengerDecisionParameters Debugging of interface with passenger decision model (CSGM, dynamic path choice, day2day, different levels of RTI), e.g. methods that return a DRT service parameter
     @ingroup DRT
     @{

@@ -341,7 +341,7 @@ void BustripVehicleMatcher::addVehicleToServiceRoute(int line_id, Bus* transitve
 void BustripVehicleMatcher::removeVehicleFromServiceRoute(int line_id, Bus * transitveh)
 {
 	assert(transitveh);
-	set<Bus*> candidateVehicles = vehicles_per_service_route_[line_id];
+	set<Bus*, bus_ptr_less<Bus*> > candidateVehicles = vehicles_per_service_route_[line_id];
     if (candidateVehicles.count(transitveh) != 0)
     {
         vehicles_per_service_route_[line_id].erase(transitveh);
@@ -593,9 +593,9 @@ void Controlcenter::connectInternal()
 	QObject::connect(this, &Controlcenter::tripVehicleMatchFound, this, &Controlcenter::scheduleMatchedTrips, Qt::DirectConnection);
 }
 
-set<Bus*> Controlcenter::getAllVehicles()
+set<Bus*, bus_ptr_less<Bus*> > Controlcenter::getAllVehicles()
 {
-	set<Bus*> vehs;
+	set<Bus*, bus_ptr_less<Bus*> > vehs;
 	for (const auto& veh : connectedVeh_)
 	{
 		if(!veh.second->is_null())
@@ -604,11 +604,11 @@ set<Bus*> Controlcenter::getAllVehicles()
 	return vehs;
 }
 
-set<Bus*> Controlcenter::getVehiclesDrivingToStop(Busstop* end_stop)
+set<Bus*, bus_ptr_less<Bus*> > Controlcenter::getVehiclesDrivingToStop(Busstop* end_stop)
 {
 	assert(end_stop);
-	set<Bus*> vehs_driving;
-	set<Bus*> vehs_enroute;
+	set<Bus*, bus_ptr_less<Bus*> > vehs_driving;
+	set<Bus*, bus_ptr_less<Bus*> > vehs_enroute;
 
 	//get driving vehicles
 	for (auto state : { BusState::DrivingEmpty, BusState::DrivingPartiallyFull, BusState::DrivingFull })
@@ -632,10 +632,10 @@ set<Bus*> Controlcenter::getVehiclesDrivingToStop(Busstop* end_stop)
 	return vehs_enroute;
 }
 
-set<Bus*> Controlcenter::getVehiclesEnRouteToStop(Busstop* stop)
+set<Bus*, bus_ptr_less<Bus*> > Controlcenter::getVehiclesEnRouteToStop(Busstop* stop)
 {
 	assert(stop);
-	set<Bus*> vehs_enroute;
+	set<Bus*, bus_ptr_less<Bus*> > vehs_enroute;
 	for(const auto& vehs_in_state : assignment_data_.fleet_state)
 	{
 	    if(vehs_in_state.first != BusState::Null && vehs_in_state.first != BusState::OnCall) // if not Null or Oncall then assigned to trip
@@ -671,10 +671,10 @@ set<Bus*> Controlcenter::getVehiclesEnRouteToStop(Busstop* stop)
 	return vehs_enroute;
 }
 
-set<Bus*> Controlcenter::getOnCallVehiclesAtStop(Busstop* stop)
+set<Bus*, bus_ptr_less<Bus*> > Controlcenter::getOnCallVehiclesAtStop(Busstop* stop)
 {
 	assert(stop);
-	set<Bus*> vehs_atstop;
+	set<Bus*, bus_ptr_less<Bus*> > vehs_atstop;
 
 	if (assignment_data_.fleet_state.count(BusState::OnCall) != 0)
 	{
@@ -735,12 +735,12 @@ pair<Bus*,double> Controlcenter::getClosestVehicleToStop(Busstop* stop, double t
 	pair<Bus*,double> closest = make_pair(nullptr, numeric_limits<double>::max());
 	
 	//check on-call vehicles
-	set<Bus*> oncall = getOnCallVehiclesAtStop(stop);
+	set<Bus*, bus_ptr_less<Bus*> > oncall = getOnCallVehiclesAtStop(stop);
 	if (!oncall.empty())
 		return make_pair(*oncall.begin(), 0.0);
 
 	//check en-route vehicles
-	set<Bus*> enroute = getVehiclesDrivingToStop(stop);
+	set<Bus*, bus_ptr_less<Bus*> > enroute = getVehiclesDrivingToStop(stop);
 	double shortest_tt = numeric_limits<double>::max();
 
 	for (auto veh : enroute)
@@ -759,11 +759,11 @@ pair<Bus*,double> Controlcenter::getClosestVehicleToStop(Busstop* stop, double t
 	}
 
 	//check remaining vehicles
-	set<Bus*> allvehs = getAllVehicles();
-	set<Bus*> checked;
-	set<Bus*> remaining;
-	set_union(oncall.begin(), oncall.end(), enroute.begin(), enroute.end(), inserter(checked, checked.begin()));
-	set_difference(allvehs.begin(), allvehs.end(), checked.begin(), checked.end(), inserter(remaining, remaining.begin()));
+	set<Bus*, bus_ptr_less<Bus*> > allvehs = getAllVehicles();
+	set<Bus*, bus_ptr_less<Bus*> > checked;
+	set<Bus*, bus_ptr_less<Bus*> > remaining;
+	set_union(oncall.begin(), oncall.end(), enroute.begin(), enroute.end(), inserter(checked, checked.begin()),bus_ptr_less<Bus*>());
+	set_difference(allvehs.begin(), allvehs.end(), checked.begin(), checked.end(), inserter(remaining, remaining.begin()),bus_ptr_less<Bus*>());
 
 	for (auto veh : remaining)
 	{
@@ -820,7 +820,7 @@ map<int, Bus *> Controlcenter::getConnectedVehicles() const
     return connectedVeh_;
 }
 
-map<BusState, set<Bus*>> Controlcenter::getFleetState() const
+map<BusState, set<Bus*, bus_ptr_less<Bus*> >> Controlcenter::getFleetState() const
 {
 	return assignment_data_.fleet_state;
 }

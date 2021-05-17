@@ -111,13 +111,13 @@ public:
 	Bustrip* create_unassigned_trip(Busline* line, double desired_dispatch_time, const vector<Visit_stop*>& schedule) const; //!< creates a Bustrip for a given line with a desired start time and a scheduled arrival to stops along this line (subject to the availability of a vehicle to serve this trip)
 	
 	//supporting methods for empty-vehicle redistribution strategies (maybe others in the future too TODO: figure out how best to share these)
-    set<Bus*> get_driving_vehicles(const map<BusState, set<Bus*> >& fleetState) const;
-    set<Bus*> get_vehicles_enroute_to_stop(const Busstop* stop, const set<Bus*>& vehicles) const; //!< returns true if at least one bus is currently driving to stop (and no intermediate stops) and false otherwise
+    set<Bus*, bus_ptr_less<Bus*> > get_driving_vehicles(const map<BusState, set<Bus*, bus_ptr_less<Bus*> > >& fleetState) const;
+    set<Bus*, bus_ptr_less<Bus*> > get_vehicles_enroute_to_stop(const Busstop* stop, const set<Bus*, bus_ptr_less<Bus*> >& vehicles) const; //!< returns true if at least one bus is currently driving to stop (and no intermediate stops) and false otherwise
 	double calc_route_travel_time(const vector<Link*>& routelinks, double time) const; //!< returns the sum of dynamic travel time costs over all links in routelinks
     vector<Link*> find_shortest_path_between_stops(Network* theNetwork, const Busstop* origin_stop, const Busstop* destination_stop, double start_time); //!< returns the shortest route between a pair of stops for a given time, returns empty vector if none exists
 	Busline* find_shortest_busline(const vector<Busline*>& lines, double time) const; //!< returns shortest busline in terms of scheduled in-vehicle time among lines
-    pair <Bus*,double> get_nearest_vehicle(const Busstop* targetStop, const set<Bus*>& vehicles, Network *theNetwork, double time); //!< returns nearest vehicle, returns pair(nullptr,0.0) if none
-    vector<pair<Bus*,double> > find_nearest_vehicles(const Busstop* targetStop, const set<Bus*>& vehicles, Network *theNetwork, double time); //!< returns vector of (non-full) vehicles in order of closest expected ivt to targetStop to furthest, returns empty vector if none exists
+    pair <Bus*,double> get_nearest_vehicle(const Busstop* targetStop, const set<Bus*, bus_ptr_less<Bus*> >& vehicles, Network *theNetwork, double time); //!< returns nearest vehicle, returns pair(nullptr,0.0) if none
+    vector<pair<Bus*,double> > find_nearest_vehicles(const Busstop* targetStop, const set<Bus*, bus_ptr_less<Bus*> >& vehicles, Network *theNetwork, double time); //!< returns vector of (non-full) vehicles in order of closest expected ivt to targetStop to furthest, returns empty vector if none exists
     vector<pair<Bus*, double>> find_nearest_vehicles(const Busstop* targetStop, const vector<Bus*>& vehicles, Network* theNetwork, double time); //!< returns vector of (non-full) vehicles in order of closest expected ivt to targetStop to furthest, returns empty vector if none exists
 
 protected:
@@ -263,7 +263,7 @@ public:
     virtual bool find_tripvehicle_match(
         DRTAssignmentData& assignment_data, 
         Bustrip* unmatchedTrip, //!< planned trip that has not yet been assigned to any transit vehicle
-        map<int, set<Bus*> >& veh_per_sroute, //!< set of candidate vehicles assigned with different service routes
+        map<int, set<Bus*, bus_ptr_less<Bus*> > >& veh_per_sroute, //!< set of candidate vehicles assigned with different service routes
         double time //!< time find_tripvehicle_match is called
     ) = 0; //!< returns true if unmatchedTrip was assigned to a transit vehicle from veh_per_sroute
 
@@ -277,7 +277,7 @@ class NullMatching : public MatchingStrategy
 {
 public:
 	~NullMatching() override = default;
-	bool find_tripvehicle_match(DRTAssignmentData& assignment_data, Bustrip* unmatchedTrip, map<int, set<Bus*> >& veh_per_sroute, double time) override;
+	bool find_tripvehicle_match(DRTAssignmentData& assignment_data, Bustrip* unmatchedTrip, map<int, set<Bus*, bus_ptr_less<Bus*> > >& veh_per_sroute, double time) override;
 };
 
 //! @brief Naive matching strategy always attempts to match the unmatchedTrip to the first candidate transit vehicle found (if any) at the origin stop of the unmatchedTrip
@@ -289,7 +289,7 @@ class NaiveMatching : public MatchingStrategy
 {
 public:
 	~NaiveMatching() override = default;
-	bool find_tripvehicle_match(DRTAssignmentData& assignment_data, Bustrip* unmatchedTrip, map<int, set<Bus*> >& veh_per_sroute, double time) override;
+	bool find_tripvehicle_match(DRTAssignmentData& assignment_data, Bustrip* unmatchedTrip, map<int, set<Bus*, bus_ptr_less<Bus*> > >& veh_per_sroute, double time) override;
 };
 
 //Scheduling Strategy

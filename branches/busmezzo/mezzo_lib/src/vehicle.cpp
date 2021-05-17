@@ -230,6 +230,8 @@ void Bus::reset ()
         last_stop_visited_ = nullptr;
         state_ = BusState::Null;
         sroute_ids_.clear(); //initial service routes re-added in Network::init
+		curr_trip = nullptr;
+		on_trip = false;
     }
 
 	total_time_spent_in_state.clear();

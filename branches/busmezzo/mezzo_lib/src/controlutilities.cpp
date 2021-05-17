@@ -215,7 +215,7 @@ namespace cs_helper_functions
         set <Bustrip*, ptr_less<Bustrip*> > newSet;
         copy_if(oldSet.begin(), oldSet.end(), inserter(newSet, newSet.end()), [target_stop](Bustrip* trip)
         {
-            return trip->get_status() != BustripStatus::ScheduledWaitingForVehicle && trip->stops.back()->first == target_stop;
+            return trip->stops.back()->first == target_stop;
         });
         return newSet;
     }
