@@ -1636,6 +1636,27 @@ void Busstop::reset()
 	output_stop_visits.clear();
 	output_summary.clear();
 	total_time_oncall = 0.0;
+
+	/* @todo ODstops are sometimes created on the fly but did not seem to ever be deleted or reset. After resets these may later be used from an invalid state (e.g. in Busstop::passenger_activity_at_stop with deleted waiting_passengers)
+	 * which causes undefined behavior or crashes. For now just go through all of them and reset them...Will sometimes cause alot of redundant resets on both ODstops, passengers that they own....
+	 * However the ODstops created on the fly should have an empty 'passingers_during_simulation' vector (since otherwise the ODstop would have been created in the initial read/init stage)
+	 * so we can at least avoid double-resetting the original set of ODstops (which is instead reset directly via Network::reset() -> odstops->reset()). Furthermore this will (hopefully) avoid double-deleting passengers
+	 * if using day2day, since in this case passengers are deleted via ODstops reset rather than reset themselves.
+	 */
+	for(const auto& dest : stop_as_origin)
+	{
+	    if(dest.second->get_passengers_during_simulation().empty()) //checking if this one was created on the fly
+	    {
+	        dest.second->reset(); // @todo reset these rather than delete for now to avoid dealing with double deletion management (of both ODstops and passengers), feels like the original intention was to carry over these between resets as well
+	    }
+	}
+	for(const auto& orig : stop_as_destination)
+	{
+	    if(orig.second->get_passengers_during_simulation().empty()) //checking if this one was created on the fly
+	    {
+	        orig.second->reset(); // @todo reset these rather than delete for now to avoid dealing with double deletion management (of both ODstops and passengers), feels like the original intention was to carry over these between resets as well
+	    }
+	}
 }
 
 Busstop_Visit::~Busstop_Visit()
