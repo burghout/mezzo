@@ -117,10 +117,10 @@ bool Busline::execute(Eventlist* eventlist, double time)
         assert(curr_trip != trips.end());
 		if(!curr_trip->first->is_activated()) // a trip that is successfully activated should not be activated twice
 			curr_trip->first->activate(time, busroute, odpair, eventlist); // activates the trip, generates bus etc.
-		else
+		/*else
 		{
 			qDebug() << "Warning - Busline::execute ignored double activation of trip " << curr_trip->first->get_id();
-		}
+		}*/
 
 		curr_trip++; // now points to next trip
 		if (curr_trip != trips.end()) // if there exists a next trip
@@ -639,7 +639,7 @@ double Busline::calc_curr_line_ivt (Busstop* start_stop, Busstop* end_stop, int 
 			}
 		}
 		if (found_board == false || found_alight == false)
-			return 10000; //default in case of no matching
+			return ::drt_default_large_ivt; //default in case of no matching
 
         // double ivt = cumulative_arrival_time - earliest_time_ostop + extra_travel_time;
 		//DEBUG_MSG_V("Busline::calc_curr_line_ivt returning IVT " << ivt << " for line " << id << " with no trips assigned to it yet between stop " << start_stop->get_name() << " and stop " << end_stop->get_name() << endl );
