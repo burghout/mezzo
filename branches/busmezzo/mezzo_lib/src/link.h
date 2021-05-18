@@ -92,170 +92,185 @@ class Vehicle;
 class Link
 {
 public:
-	Link (int id_, Node* in_, Node* out_, int length_, int nr_lanes_, Sdfunc* sdfunc_);
-	Link();
-	virtual ~Link();
-	void end_of_simulation(); // consolidates all temp values in their containers
-	virtual void reset();  // resets the link for restart
-	// accessors, they are inline where possible, but inline keyword not necessary
-	int get_id () {return id;}
-	int get_out_node_id () ;
-	int get_in_node_id() ;
-	int get_length() {return length;}	
-	int get_nr_lanes() {return nr_lanes;}
-	Sdfunc* get_sdfunc() {return sdfunc;}
-	Q* get_queue () {return queue;}
-	const string get_name() {return name;}
-	void set_name(string name_) {name=name_;}
-	//const int Link::size();
-	int size();
-	pair<double,double> set_output_moe_thickness(unsigned int val); // sets the output MOE for the link icon returns min/max
-	pair <double,double>  set_output_moe_colour(unsigned int val); // sets the output MOE for the link icon returns min/max
-	void set_hist_time(double time) {	hist_time=time;}
-	void set_histtimes(LinkTime* ltime) {
-		histtimes=ltime;
-		/*
-		avgtimes->nrperiods=histtimes->nrperiods;
-		avgtimes->periodlength=histtimes->periodlength;
-		avgtimes->times = histtimes->times;
-		*/
-		avgtimes = new LinkTime(*histtimes);
-		curr_period=0;
-		tmp_avg=0.0;
-		tmp_passed=0;
-		}
-	bool copy_linktimes_out_in(); //!< copies the output travel times to input (historical) travel times
-	double get_hist_time() {return hist_time;}
-	double get_cost (double time) const {
-		if (histtimes)	
-			return histtimes->cost(time);
-		else	
-			return get_freeflow_time();
-		}
-	double get_freeflow_time() const {return freeflowtime;}
-	double get_blocked() {return (blocked_until);}  // -1.0 = not blocked, -2.0 = blocked until further notice, other value= blocked until value
-	void set_blocked(double time) {blocked_until=time;}  // -1.0 = not blocked, -2.0 = blocked until further notice, other value= blocked until value
-	virtual bool full();
-	virtual bool full(double time);
-	bool empty();
-	bool exit_ok() {	return ok;}
-	double next_action (double time);
-	bool veh_exiting(double time, Link* nextlink, int lookback); 
-	void update_icon(double time);
+    Link(int id_, Node* in_, Node* out_, int length_, int nr_lanes_, Sdfunc* sdfunc_);
+    Link();
+    virtual ~Link();
+    void end_of_simulation(); // consolidates all temp values in their containers
+    virtual void reset();  // resets the link for restart
+    // accessors, they are inline where possible, but inline keyword not necessary
+    int get_id() { return id; }
+    int get_out_node_id();
+    int get_in_node_id();
+    int get_length() { return length; }
+    int get_nr_lanes() { return nr_lanes; }
+    Sdfunc* get_sdfunc() { return sdfunc; }
+    Q* get_queue() { return queue; }
+    const string get_name() { return name; }
+    void set_name(string name_) { name = name_; }
+    //const int Link::size();
+    int size();
+    pair<double, double> set_output_moe_thickness(unsigned int val); // sets the output MOE for the link icon returns min/max
+    pair <double, double>  set_output_moe_colour(unsigned int val); // sets the output MOE for the link icon returns min/max
+    void set_hist_time(double time) { hist_time = time; }
+    void set_histtimes(LinkTime* ltime) {
+        histtimes = ltime;
+        /*
+        avgtimes->nrperiods=histtimes->nrperiods;
+        avgtimes->periodlength=histtimes->periodlength;
+        avgtimes->times = histtimes->times;
+        */
+        avgtimes = new LinkTime(*histtimes);
+        curr_period = 0;
+        tmp_avg = 0.0;
+        tmp_passed = 0;
+    }
+    bool copy_linktimes_out_in(); //!< copies the output travel times to input (historical) travel times
+    double get_hist_time() { return hist_time; }
+    double get_cost(double time) const {
+        if (histtimes)
+            return histtimes->cost(time);
+        else
+            return get_freeflow_time();
+    }
+    double get_freeflow_time() const { return freeflowtime; }
+    double get_blocked() { return (blocked_until); }  // -1.0 = not blocked, -2.0 = blocked until further notice, other value= blocked until value
+    void set_blocked(double time) { blocked_until = time; }  // -1.0 = not blocked, -2.0 = blocked until further notice, other value= blocked until value
+    virtual bool full();
+    virtual bool full(double time);
+    bool empty();
+    bool exit_ok() { return ok; }
+    double next_action(double time);
+    bool veh_exiting(double time, Link* nextlink, int lookback);
+    void update_icon(double time);
 
 #ifndef _NO_GUI   
-	LinkIcon* get_icon(){return icon;}
-	void set_icon(LinkIcon* icon_) {icon=icon_; icon->set_pointers(&queue_percentage, &running_percentage);}
-	void set_selected_color(QColor selcolor) {icon->set_selected_color(selcolor);}
-	const QColor get_selected_color () {return (icon->get_selected_color());}
+    LinkIcon* get_icon() { return icon; }
+    void set_icon(LinkIcon* icon_) { icon = icon_; icon->set_pointers(&queue_percentage, &running_percentage); }
+    void set_selected_color(QColor selcolor) { icon->set_selected_color(selcolor); }
+    const QColor get_selected_color() { return (icon->get_selected_color()); }
 #endif // _NO_GUI                  
-	double get_nr_passed() {return nr_passed;}
+    double get_nr_passed() { return nr_passed; }
 
-	LinkTime* get_histtimes () {if (histtimes)
-		return histtimes;
-	else
-		return NULL;}
-	LinkTime* get_avgtimes () {return avgtimes;}
-	//  Incident stuff
-	void add_alternative(int dest, vector<Link*> route) ; // old way for incidents, adds stubs for alternative routes from this link to destination
-	void add_alternative_route(Route* route) ; // adds a whole route as alternative.
-	void register_route (Route* route) ;// adds route to routemap at link
-	multimap <int,Route*> get_routes() {return routemap;}
-	vector <Route*> get_routes_to_dest(int dest) ;// find all routes through this link leading to destination
-	unsigned int nr_alternative_routes(int dest, int incidentlink_id); // returns number of alternative routes from this link to dest, avoiding incidentlink_id
-	void receive_broadcast(Vehicle* veh, int lid, vector <double> parameters) ;
-	void set_incident(Sdfunc* sdptr, bool blocked_, double blocked_until);
-	void unset_incident();
-	void broadcast_incident_start(int lid, vector <double> parameters);
+    LinkTime* get_histtimes() {
+        if (histtimes)
+            return histtimes;
+        else
+            return nullptr;
+    }
+    LinkTime* get_avgtimes() { return avgtimes; }
+    //  Incident stuff
+    void add_alternative(int dest, vector<Link*> route); // old way for incidents, adds stubs for alternative routes from this link to destination
+    void add_alternative_route(Route* route); // adds a whole route as alternative.
+    void register_route(Route* route);// adds route to routemap at link
+    multimap <int, Route*> get_routes() { return routemap; }
+    vector <Route*> get_routes_to_dest(int dest);// find all routes through this link leading to destination
+    unsigned int nr_alternative_routes(int dest, int incidentlink_id); // returns number of alternative routes from this link to dest, avoiding incidentlink_id
+    void receive_broadcast(Vehicle* veh, int lid, vector <double> parameters);
+    void set_incident(Sdfunc* sdptr, bool blocked_, double blocked_until);
+    void unset_incident();
+    void broadcast_incident_start(int lid, vector <double> parameters);
 
-	// general methods  for entering, exiting vehicles etc.
-	virtual bool enter_veh(Vehicle* veh, double time);
-	virtual Vehicle* exit_veh(double time, Link* nextlink, int lookback);
-    virtual bool exit_veh(Vehicle* , double )  {return true;}
-	void update_exit_times(double time,Link* nextlink, int lookback);
-	virtual Vehicle* exit_veh(double time);
-	virtual double density();
-	double density_running(double time);
-	double density_running_only(double time);
-	virtual double speed_density(double density_);
-	double speed(double time);
-	// IO methods
-	bool write(ostream& out);
-	void write_time(ostream& out);	
-	void write_speeds(ostream & out, int nrperiods ) {out << id << "\t" ; moe_speed->fill_missing(nrperiods,speed_density(0));
-														moe_speed->write_values(out, nrperiods);}
-	void write_speed(ostream & out, int index ) {moe_speed->write_value(out,index);}
-	void write_inflows(ostream & out, int nrperiods) {out << id << "\t" ; moe_inflow->fill_missing (nrperiods, 0); 
-														moe_inflow->write_values(out,nrperiods);}
-	void write_inflow(ostream & out, int index ) {moe_inflow->write_value(out,index);}
-	void write_outflows(ostream & out,int nrperiods ) {out << id << "\t" ; moe_outflow->fill_missing (nrperiods, 0);
-														moe_outflow->write_values(out,nrperiods);}
-	void write_outflow(ostream & out, int index ) {moe_outflow->write_value(out,index);}
-	void write_queues(ostream & out,int nrperiods ) {out << id << "\t" ; moe_queue->fill_missing (nrperiods, 0);
-														moe_queue->write_values(out,nrperiods);}
-	void write_queue(ostream & out, int index ) {moe_queue->write_value(out,index);}
-	void write_densities(ostream & out,int nrperiods ) {out << id << "\t" ; moe_density->fill_missing (nrperiods, 0);
-														moe_density->write_values(out,nrperiods);}
-	void write_density(ostream & out, int index ) {moe_density->write_value(out,index);}
-	void write_passengers(ostream & out,int nrperiods ) {out << id << "\t" ; moe_passengers->fill_missing (nrperiods, 0);
-														moe_passengers->write_values(out,nrperiods);}
-	void write_passenger(ostream & out, int index ) {moe_passengers->write_value(out,index);}
-	int max_moe_size() {return _MAX(moe_speed->get_size(), _MAX (moe_inflow->get_size(),_MAX(moe_outflow->get_size(),_MAX(moe_queue->get_size(),_MAX(moe_density->get_size(),moe_passengers->get_size())))));}
-	void add_blocked_exit() {nr_exits_blocked++;}
-	void remove_blocked_exit() {nr_exits_blocked--;}
+    // general methods  for entering, exiting vehicles etc.
+    virtual bool enter_veh(Vehicle* veh, double time);
+    virtual Vehicle* exit_veh(double time, Link* nextlink, int lookback);
+    virtual bool exit_veh(Vehicle*, double) { return true; }
+    void update_exit_times(double time, Link* nextlink, int lookback);
+    virtual Vehicle* exit_veh(double time);
+    virtual double density();
+    double density_running(double time);
+    double density_running_only(double time);
+    virtual double speed_density(double density_);
+    double speed(double time);
+    // IO methods
+    bool write(ostream& out);
+    void write_time(ostream& out);
+    void write_speeds(ostream& out, int nrperiods) {
+        out << id << "\t"; moe_speed->fill_missing(nrperiods, speed_density(0));
+        moe_speed->write_values(out, nrperiods);
+    }
+    void write_speed(ostream& out, int index) { moe_speed->write_value(out, index); }
+    void write_inflows(ostream& out, int nrperiods) {
+        out << id << "\t"; moe_inflow->fill_missing(nrperiods, 0);
+        moe_inflow->write_values(out, nrperiods);
+    }
+    void write_inflow(ostream& out, int index) { moe_inflow->write_value(out, index); }
+    void write_outflows(ostream& out, int nrperiods) {
+        out << id << "\t"; moe_outflow->fill_missing(nrperiods, 0);
+        moe_outflow->write_values(out, nrperiods);
+    }
+    void write_outflow(ostream& out, int index) { moe_outflow->write_value(out, index); }
+    void write_queues(ostream& out, int nrperiods) {
+        out << id << "\t"; moe_queue->fill_missing(nrperiods, 0);
+        moe_queue->write_values(out, nrperiods);
+    }
+    void write_queue(ostream& out, int index) { moe_queue->write_value(out, index); }
+    void write_densities(ostream& out, int nrperiods) {
+        out << id << "\t"; moe_density->fill_missing(nrperiods, 0);
+        moe_density->write_values(out, nrperiods);
+    }
+    void write_density(ostream& out, int index) { moe_density->write_value(out, index); }
+    void write_passengers(ostream& out, int nrperiods) {
+        out << id << "\t"; moe_passengers->fill_missing(nrperiods, 0);
+        moe_passengers->write_values(out, nrperiods);
+    }
+    void write_passenger(ostream& out, int index) { moe_passengers->write_value(out, index); }
+    int max_moe_size() { return _MAX(moe_speed->get_size(), _MAX(moe_inflow->get_size(), _MAX(moe_outflow->get_size(), _MAX(moe_queue->get_size(), _MAX(moe_density->get_size(), moe_passengers->get_size()))))); }
+    void add_blocked_exit() { nr_exits_blocked++; }
+    void remove_blocked_exit() { nr_exits_blocked--; }
 
-	void set_use_ass_matrix(const bool value)  {use_ass_matrix=value; /*set_selected(value);*/}
-	void write_ass_matrix (ostream & out, int linkflowperiod); // writes the Assignment matrix for this link and given linkflow period
-	void set_selected (const bool sel) ;
-	bool get_selected () {return selected;}
+    void set_use_ass_matrix(const bool value) { use_ass_matrix = value; /*set_selected(value);*/ }
+    void write_ass_matrix(ostream& out, int linkflowperiod); // writes the Assignment matrix for this link and given linkflow period
+    void set_selected(const bool sel);
+    bool get_selected() { return selected; }
 
-	// convergence measure
-	double calc_diff_input_output_linktimes ();
-	double calc_sumsq_input_output_linktimes ();
+    // convergence measure
+    double calc_diff_input_output_linktimes();
+    double calc_sumsq_input_output_linktimes();
 
 #ifdef _VISSIMCOM
-	long parkinglot;
-	long pathid;
-	long lastlink;
+    long parkinglot;
+    long pathid;
+    long lastlink;
 #endif //_VISSIMCOM
 
 
 protected:
-	int id;
+	int id = -1;
 	string name;
-	Node* in_node;
-	Node* out_node;
-	Q* queue;
-	Sdfunc* temp_sdfunc;
-	int length; // length of the link in meters
-	int nr_lanes; // nr of lanes in the link
-	Sdfunc* sdfunc;
-	Grid* grid;
+	Node* in_node = nullptr;
+	Node* out_node = nullptr;
+	Q* queue = nullptr;
+	Sdfunc* temp_sdfunc = nullptr;
+	int length = 10; // length of the link in meters
+	int nr_lanes = 1; // nr of lanes in the link
+	Sdfunc* sdfunc = nullptr;
+	Grid* grid = nullptr;
 #ifndef _NO_GUI	
-	LinkIcon* icon;
+	LinkIcon* icon = nullptr;
 #endif // _NO_GUI	
-	double maxcap;
-	bool ok; // to check if the exit_veh operation went allright	
-	bool blocked; // set if the link is shut off during an incident
-	double blocked_until; // set to -1 if not active, otherwise it has the time when the queue that blocks the link will reach the upstream node.
-	int nr_exits_blocked; // set by the turning movements if they are blocked
-	double avg_time; // average traversal time
-	double tmp_avg; // temp var for average for period
-	int tmp_passed; // temp var for nr passed for period
-	int curr_period; // current period
-	LinkTime* avgtimes;  // Time dependent avg travel times
-	LinkTime* histtimes; // Time dependent historical travel times.
-	double hist_time; // historical traversal time
-	int nr_passed; // number of vehicles exited;
-	double running_percentage, queue_percentage;     // percentage of vehicles in running part and queue
-	double freeflowtime; // time it takes to traverse the link under freeflow
-	MOE* moe_speed;
-	MOE* moe_inflow;
-	MOE* moe_outflow;
-	MOE* moe_queue;
-	MOE* moe_density;
-	MOE* moe_passengers;
-	MOE* moe_occupancy_rate;
+	double maxcap = numeric_limits<double>::max();
+	bool ok = false; // to check if the exit_veh operation went allright	
+	bool blocked = false; // set if the link is shut off during an incident
+	double blocked_until = -1.0; // set to -1 if not active, otherwise it has the time when the queue that blocks the link will reach the upstream node.
+	int nr_exits_blocked = 0; // set by the turning movements if they are blocked
+	double avg_time = 0.0; // average traversal time
+	double tmp_avg = 0.0; // temp var for average for period
+	int tmp_passed = 0; // temp var for nr passed for period
+	int curr_period = 0; // current period
+	LinkTime* avgtimes = nullptr;  // Time dependent avg travel times
+	LinkTime* histtimes = nullptr; // Time dependent historical travel times.
+	double hist_time = 1.0; // historical traversal time
+	int nr_passed = 0; // number of vehicles exited;
+	double running_percentage = 0.0;
+    double queue_percentage = 0.0; // percentage of vehicles in running part and queue
+	double freeflowtime = 1.0; // time it takes to traverse the link under freeflow
+	MOE* moe_speed = nullptr;
+	MOE* moe_inflow = nullptr;
+	MOE* moe_outflow = nullptr;
+	MOE* moe_queue = nullptr;
+	MOE* moe_density = nullptr;
+	MOE* moe_passengers = nullptr;
+	MOE* moe_occupancy_rate = nullptr;
 	// Newly added for Assignment matrix
 	map < int , map <odval, map <int,int>,less_odval > > ass_matrix; // assignment matrix which is indexed as follows:
 	// ass_matrix [linkflow_period] [od_pair] [od_period]
@@ -264,8 +279,8 @@ protected:
 
 // New 2008-01-30
 	multimap <int, Route*> routemap; // map storing routes by Destination_id
-	bool use_ass_matrix; // boolean set to true if this link collects assignment matrix data
-	bool selected; //true if link is 'selected'
+	bool use_ass_matrix = false; // boolean set to true if this link collects assignment matrix data
+	bool selected = false; //true if link is 'selected'
 
 	 /** @ingroup DRT
 		@brief Quick and dirty labelling of dummylinks for calculating e.g. VKT outputs correctly.
@@ -322,9 +337,9 @@ class VirtualLink : public Link
 #endif //_VISSIMCOM
 
 	protected:
-	bool blocked;
-    double linkdensity;  // updated by the 1st Microscopic segment the virtual link corresponds to
-    double linkspeed; // updated by the 1st Micro seg.
+	bool blocked = false;
+    double linkdensity = 0.0;  // updated by the 1st Microscopic segment the virtual link corresponds to
+    double linkspeed = numeric_limits<double>::max(); // updated by the 1st Micro seg.
   list <double> in_headways;
   list <double> out_headways;
   #ifdef _VISSIMCOM

@@ -230,9 +230,12 @@ void Bus::reset ()
         last_stop_visited_ = nullptr;
         state_ = BusState::Null;
         sroute_ids_.clear(); //initial service routes re-added in Network::init
+		curr_trip = nullptr;
+		on_trip = false;
     }
 
 	total_time_spent_in_state.clear();
+	total_time_spent_in_state_per_stop.clear();
 	time_state_last_entered.clear();
 	total_meters_traveled = 0;
 	total_empty_meters_traveled = 0;
@@ -449,6 +452,21 @@ BusState Bus::calc_state(const bool assigned_to_trip, const bool bus_exiting_sto
 	return BusState::Null;
 }
 
+double Bus::get_time_since_last_in_state(BusState state, double time)
+{
+	double time_in_state = -1.0;
+    if(time_state_last_entered.count(state) != 0)
+    {
+        time_in_state = time - time_state_last_entered[state];
+		if(time_in_state < 0.0)
+		{
+		    qDebug() << "Warning - calculated negative time in state for bus" << id << "returning zero time in state";
+			time_in_state = 0.0;
+		}
+    }
+	return time_in_state;
+}
+
 double Bus::get_total_time_in_state(BusState state) const
 {
 	if (total_time_spent_in_state.count(state) != 0)
@@ -556,8 +574,11 @@ double Bus::get_total_time_oncall()
 	return total_time_oncall;
 }
 
-void Bus::update_meters_traveled(int meters_, bool is_empty)
+void Bus::update_meters_traveled(int meters_, bool is_empty, double time)
 {
+	if(time < theParameters->start_pass_generation || time > theParameters->stop_pass_generation) //ignore all meters traveled updates outside of passenger generation period	    
+		return;
+
 	total_meters_traveled += meters_;
 	if (is_empty)
 		total_empty_meters_traveled += meters_;
@@ -570,7 +591,7 @@ void Bus::update_meters_traveled(int meters_, bool is_empty)
 		{
 			bool is_flextrip = this->get_curr_trip()->is_flex_trip();
 			map <Busstop*, passengers, ptr_less<Busstop*>> passengers_onboard = this->get_curr_trip()->get_passengers_on_board(); // pass stored by their alighting stop
-			for (auto alighting_stop : passengers_onboard)
+			for (const auto& alighting_stop : passengers_onboard)
 			{
 				vector<Passenger*> pass_with_alighting_stop = alighting_stop.second;
 				for (Passenger* pass : pass_with_alighting_stop)
@@ -603,7 +624,6 @@ void Bus::set_state(const BusState newstate, const double time)
 
 	if (state_ != newstate)
 	{
-		
 		BusState oldstate = state_;
 		state_ = newstate;
 		assert(theParameters->start_pass_generation < theParameters->stop_pass_generation); // passenger generation interval must be feasible 
@@ -611,21 +631,34 @@ void Bus::set_state(const BusState newstate, const double time)
 		// Only calculate 'time in state' within the passenger generation interval, outside of this is considered warmup and cooldown time for now
 	    double timer = 0.0;
 		if(time >= theParameters->start_pass_generation && time <= theParameters->stop_pass_generation) // if call within the passenger generation interval, update cumulative time in each busstate
-		{
-			timer = time;
-		    total_time_spent_in_state[oldstate] += timer - time_state_last_entered[oldstate]; // update cumulative time in each busstate (used for outputs)
-		}
-		else if(time < theParameters->start_pass_generation) // if call is before pass generation interval, ignore any state update but set timer of newstate to pass start, time_state_last_entered holds this as a 'dummy' time last state entered
+        {
+            timer = time;
+			double time_in_state = timer - time_state_last_entered[oldstate];
+            total_time_spent_in_state[oldstate] += time_in_state; // update cumulative time in each busstate (used for outputs)
+            if (oldstate == BusState::OnCall && last_stop_visited_ != nullptr) //store cumulative time in on-call state at each stop
+            {
+                total_time_spent_in_state_per_stop[last_stop_visited_->get_id()][oldstate] += time_in_state;
+				last_stop_visited_->update_total_time_oncall(time_in_state);
+            }
+        }
+        else if (time < theParameters->start_pass_generation) // if call is before pass generation interval, ignore any state update but set timer of newstate to pass start, time_state_last_entered holds this as a 'dummy' time last state entered
 		{
 		    timer = theParameters->start_pass_generation;
 		}
 		else if(time > theParameters->stop_pass_generation) // if call is after pass generation interval, set timer to pass stop and update states as normal
 		{
 		    timer = theParameters->stop_pass_generation;
-			total_time_spent_in_state[oldstate] += timer - time_state_last_entered[oldstate]; // update cumulative time in each busstate (used for outputs)
+			double time_in_state = timer - time_state_last_entered[oldstate];
+			total_time_spent_in_state[oldstate] += time_in_state; // update cumulative time in each busstate (used for outputs)
+			if (oldstate == BusState::OnCall && last_stop_visited_ != nullptr) //store cumulative time in on-call state at each stop
+            {
+                total_time_spent_in_state_per_stop[last_stop_visited_->get_id()][oldstate] += time_in_state;
+				last_stop_visited_->update_total_time_oncall(time_in_state);
+            }
 		}
 
 		time_state_last_entered[newstate] = timer; // start timer for newstate
+
 
 #ifdef  _DRTDEBUG
         //print_state();
@@ -634,44 +667,17 @@ void Bus::set_state(const BusState newstate, const double time)
 	}
 }
 
-void Bus::print_state()
+void Bus::print_state() const
 {
-	cout << endl << "Bus " << bus_id << " is ";
-	switch (state_)
-	{
-	case BusState::OnCall:
-		cout << "OnCall";
-		break;
-	case BusState::IdleEmpty:
-		cout << "IdleEmpty";
-		break;
-	case BusState::IdlePartiallyFull:
-		cout << "IdlePartiallyFull";
-		break;
-	case BusState::IdleFull:
-		cout << "IdleFull";
-		break;
-	case BusState::DrivingEmpty:
-		cout << "DrivingEmpty";
-		break;
-	case BusState::DrivingPartiallyFull:
-		cout << "DrivingPartiallyFull";
-		break;
-	case BusState::DrivingFull:
-		cout << "DrivingFull";
-		break;
-	case BusState::Null:
-		cout << "NullBusState";
-		break;
-//	default:
-//		DEBUG_MSG_V("Something went very wrong");
-//		abort();
-	}
-	cout << endl;
+	qDebug() << "Bus" << bus_id << "is" << BusState_to_QString(state_);
 	if(last_stop_visited_)
-		cout << "\t" << "- last stop visited: " << last_stop_visited_->get_id() << endl;
+		qDebug() << "\t" << "- last stop visited: " << last_stop_visited_->get_id();
 	else
-		cout << "\t" << "- last stop visited: nullptr" << endl;
+		qDebug() << "\t" << "- last stop visited: nullptr";
+	if(curr_trip)
+	    qDebug() << "\t" << "- current trip " << curr_trip->get_id() << " status: " <<  BustripStatus_to_QString(curr_trip->get_status());
+	else
+		qDebug() << "\t" << "- current trip: nullptr";
 }
 
 bool Bus::is_idle() const

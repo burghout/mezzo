@@ -38,7 +38,8 @@ const vector<QString> output_filenames =
     "o_trip_total_travel_time.dat",
     "o_fwf_summary.dat",
     "o_vkt.dat",
-    "o_fwf_drtvehicle_states.dat"
+    "o_fwf_drtvehicle_states.dat",
+    "o_time_spent_in_state_at_stop.dat"
 };
 
 const vector<QString> skip_output_filenames =
@@ -304,7 +305,7 @@ void TestFixedWithFlexible_walking::testFleetState()
     Controlcenter* CC = net->get_controlcenters().begin()->second;
     vector<Busline*> serviceRoutes = CC->getServiceRoutes();
     set<Busstop*, ptr_less<Busstop*>> serviceArea = CC->getServiceArea();
-    map<BusState,set<Bus*> > fleetState = CC->getFleetState();
+    auto fleetState = CC->getFleetState();
     NaiveTripGeneration* tgs = new NaiveTripGeneration(); // borrowed to use helper functions to build trips
 
     QVERIFY(serviceRoutes.size() == 12);

@@ -18,9 +18,10 @@
 //using namespace std;
 
 // initialise the global variables and objects
-double drt_first_rep_max_headway=0;
-double drt_first_rep_waiting_utility=10; //default is to evaluate waiting utility for drt service positively in the first rep
-int drt_min_occupancy=0;
+double drt_first_rep_max_headway = 0.0;
+double drt_first_rep_waiting_utility = 10.0; //default is to evaluate waiting utility for drt service positively in the first rep
+int drt_min_occupancy = 0;
+double drt_first_rebalancing_time = 0.0;
 
 bool PARTC::drottningholm_case = false;
 Busstop* PARTC::transfer_stop = nullptr;
@@ -1461,11 +1462,20 @@ bool Network::readcontrolcenters(const string& name)
     in >> keyword;
     if (keyword != "drt_min_occupancy:")
     {
-        DEBUG_MSG("readcontrolcenters:: no first_rep_waiting_utility keyword, read: " << keyword);
+        DEBUG_MSG("readcontrolcenters:: no drt_min_occupancy keyword, read: " << keyword);
         in.close();
         return false;
     }
     in >> ::drt_min_occupancy;
+
+    in >> keyword;
+    if (keyword != "drt_first_rebalancing_time:")
+    {
+        DEBUG_MSG("readcontrolcenters:: no drt_first_rebalancing_time keyword, read: " << keyword);
+        in.close();
+        return false;
+    }
+    in >> ::drt_first_rebalancing_time;
 
     //Create Controlcenters here or somewhere else. OBS: currently a pointer to this CC is given to Busstop via its constructor
     in >> keyword;
@@ -1488,9 +1498,12 @@ bool Network::readcontrolcenters(const string& name)
         int ev_strategy; //id of empty vehicle strategy
         int tvm_strategy; //id of trip vehicle matching strategy
         int vs_strategy; //id of vehicle scheduling strategy
+        int rb_strategy; //id of the rebalancing strategy
+        double rebalancing_interval; // time elapsed between calls to rebalancing on-call vehicles
         int generate_direct_routes; // 1 if all direct routes between should be added as service routes to this cc and 0 otherwise
 
         int nr_stops; //number of stops in the control center's service area
+        int nr_collection_stops; //number of collection stops in the control center's service area used for rebalancing strategies, @note each collection stop must also be a member of the control center's service area
         int nr_lines; //number of lines (given as input) in the control center's service area
 
         char bracket;
@@ -1501,9 +1514,9 @@ bool Network::readcontrolcenters(const string& name)
             in.close();
             return false;
         }
-        in >> id >> tg_strategy >> ev_strategy >> tvm_strategy >> vs_strategy >> generate_direct_routes;
+        in >> id >> tg_strategy >> ev_strategy >> tvm_strategy >> vs_strategy >> rb_strategy >> rebalancing_interval >> generate_direct_routes;
 
-        auto* cc = new Controlcenter(eventlist, this, id, tg_strategy, ev_strategy, tvm_strategy, vs_strategy);
+        auto* cc = new Controlcenter(eventlist, this, id, tg_strategy, ev_strategy, tvm_strategy, vs_strategy, rb_strategy, rebalancing_interval);
 
         //read stops associated with this cc
         in >> nr_stops;
@@ -1524,6 +1537,36 @@ bool Network::readcontrolcenters(const string& name)
 
             cc->addStopToServiceArea(stop);
             stop->add_CC(cc);
+        }
+        bracket = ' ';
+        in >> bracket;
+        if (bracket != '}')
+        {
+            cout << "readcontrolcenters:: controlcenter scanner expected '}', read: " << bracket << endl;
+            in.close();
+            return false;
+        }
+
+        //read collection stops associated with this cc used for rebalancing
+        in >> nr_collection_stops;
+        bracket = ' ';
+        in >> bracket;
+        if (bracket != '{')
+        {
+            cout << "readcontrolcenters:: controlcenter scanner expected '{', read: " << bracket << endl;
+            in.close();
+            return false;
+        }
+        for (int i = 0; i < nr_collection_stops; ++i)
+        {
+            int stopid;
+            Busstop* stop;
+            in >> stopid;
+            stop = (*find_if(busstops.begin(), busstops.end(), compare<Busstop>(stopid)));
+            if(cc->isInServiceArea(stop))
+                cc->add_collection_stop(stop);
+            else
+                qDebug() << "Warning - ignoring adding collection stop " << stopid << " to controlcenter " << id << ", collection stop does not exist in service area";
         }
         bracket = ' ';
         in >> bracket;
@@ -2442,102 +2485,6 @@ bool Network::createAllDRTLinesWithIntermediateStops(Controlcenter* cc)
             cc->addServiceRoute(line);
         }
     } //if cc
-
-    return true;
-}
-
-bool Network::createAllDRTLines()
-{
-    // test to create direct busroutes from/to all stops
-    vector <Busstop*> stops;
-    auto stopsmap = get_stopsmap();
-    vector<Busroute*> routesFound;
-    vector<Busline*>  buslinesFound;
-    //*** Start of dummy values
-    theParameters->drt=true;
-    ODpair* od_pair = odpairs.front(); // for now just use this as dummy
-    Vtype* vtype = new Vtype(888, "octobus", 1.0, 20.0);
-    int id = 1;
-    int tg_strategy=0;
-    int ev_strategy=0;
-    int tvm_strategy=0;
-    int vs_strategy = 0;
-    auto* cc = new Controlcenter(eventlist, this, id, tg_strategy, ev_strategy, tvm_strategy, vs_strategy);
-    ccmap[id] = cc; //add to network map of control centers
-
-    int routeIdCounter = 10000; // TODO: update to find max routeId from busroutes vector
-    int busLineIdCounter = 10000; //  TODO: update later
-
-   //*** end of dummy values
-    Origin* ori = nullptr;
-    Destination* dest = nullptr;
-
-    for (auto startstop : stopsmap)
-    {
-        ori = nullptr;
-        // find best origin for startstop if it does not exist
-        if (startstop.second->get_origin_node() == nullptr)
-        {
-            // find  origin node
-            ori = findNearestOriginToStop(startstop.second);
-            if (ori != nullptr)
-                startstop.second->set_origin_node(ori);
-        }
-        for (auto endstop : stopsmap)
-        {
-            if (endstop.second->get_dest_node() == nullptr)
-            {
-                // find  destination node
-                dest = findNearestDestinationToStop(endstop.second);
-                if (dest != nullptr)
-                    endstop.second->set_dest_node(dest);
-            }
-            if (startstop != endstop)
-            {
-                // find best odpair
-                int ori_id = startstop.second->get_origin_node()->get_id();
-                int dest_id = endstop.second->get_dest_node()->get_id();
-                odval odid (ori_id, dest_id);
-                auto od_it = find_if (odpairs.begin(),odpairs.end(), compareod (odid) );
-                if (od_it != odpairs.end())
-                    od_pair = *od_it;
-                else // create new OD pair
-                {
-                    od_pair = new ODpair(startstop.second->get_origin_node(),endstop.second->get_dest_node(),0.0, &vehtypes);
-                    odpairs.push_back(od_pair);
-                    /*qDebug() <<  "createAllDRTLines----Missing OD pair, creating for Origin " << ori_id <<
-                                 ", destination " << dest_id;*/
-                }
-
-                stops.clear();
-                stops.push_back(startstop.second);
-                stops.push_back(endstop.second);
-               // qDebug() << "checking route for busline: " << startstop.first << " to " << endstop.first;
-
-                Busroute* newRoute = create_busroute_from_stops(routeIdCounter, od_pair->get_origin(), od_pair->get_destination(), stops);
-                if (newRoute != nullptr)
-                {
-                    //qDebug() << " route found";
-                    routesFound.push_back(newRoute);
-                    routeIdCounter++;
-                    // create busLine
-                    Busline* newLine = create_busline(busLineIdCounter,0,"DRT Line",newRoute,stops,vtype,od_pair,0,0.0,0.0,0,true);
-                    if (newLine != nullptr)
-                    {
-                        buslinesFound.push_back(newLine);
-                        busLineIdCounter++;
-                    }
-                }
-                else
-                    qDebug() << "DTR create buslines: no route found from stop " << startstop.first << " to " << endstop.first;
-
-            }
-        }
-    }
-    // add the routes found to the busroutes
-    busroutes.insert(busroutes.end(), routesFound.begin(), routesFound.end());
-    // add the buslines
-    buslines.insert(buslines.end(),buslinesFound.begin(),buslinesFound.end());
 
     return true;
 }
@@ -6343,22 +6290,11 @@ vector<Busstop*> Network::get_busstops_on_link(Link* link) const
 vector<Busstop*> Network::get_busstops_on_busroute(Busroute* route) const
 {
     vector<Busstop*> stops_on_route;
-    //cout << "checking for stops on route " << route->get_id() << endl;
     for (auto link : route->get_links())
     {
-    //    cout << "\tchecking for stops on link " << link->get_id() << endl;
         vector<Busstop*> stops_on_link = get_busstops_on_link(link);
-    /*    cout << "\tfound stops:";
-        for(auto stop : stops_on_link)
-            cout << " " << stop->get_id();
-        cout << endl;*/
         stops_on_route.insert(stops_on_route.end(), stops_on_link.begin(), stops_on_link.end());
     }
-    /*cout << "found stops on route:";
-    for (auto stop : stops_on_route)
-        cout << " " << stop->get_id();
-    cout << endl;*/
-
     return stops_on_route;
 }
 
@@ -7392,9 +7328,24 @@ namespace fwf_outputs {
             << "Total_Idle_Time" << '\t'
             << "Total_OnCall_Time" << endl;
     }
+
+
+    //!< @brief write out total time any vehicle has spent in any state at each stop. Corresponds to one row of "o_time_in_state_at_stop.dat" @todo currently only time spent in oncall state is output
+    void writeDRTVehicleStateAtStop_row(ostream& out, Busstop* stop)
+    {
+            out << stop->get_id() << "\t"
+                << stop->get_total_time_oncall() << endl;
+    }
+    void writeDRTVehicleStateAtStop_header(ostream& out)
+    {
+        out << "Busstop_ID" << '\t'
+            << "Total_OnCall_Time" << endl;
+    }
 }
 
-bool Network::write_busstop_output(string name1, string name2, string name3, string name4, string name5, string name6, string name7, string name8, string name9, string name10, string name11, string name12, string name13, string name14, string name15, string name16, string name17, string name18, string name19, string name20, string name21, string name22, string name23)
+bool Network::write_busstop_output(string name1, string name2, string name3, string name4, string name5, string name6, string name7, string name8, string name9, string name10, 
+    string name11, string name12, string name13, string name14, string name15, string name16, string name17, string name18, string name19, string name20, 
+    string name21, string name22, string name23, string name24)
 {
     Q_UNUSED(name5)
     Q_UNUSED(name6)
@@ -7416,6 +7367,7 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
     ofstream out17(name17.c_str(), ios_base::app); //"o_passenger_welfare_summary.dat"
     ofstream out18(name18.c_str(), ios_base::app); // "o_fwf_summary.dat"
     ofstream out21(name21.c_str(), ios_base::app); // "o_vkt.dat"
+    ofstream out24(name24.c_str(), ios_base::app); // "o_time_in_state_at_stop.dat"
 
   /*  this->write_busstop_output(
         workingdir + "o_transitlog_out.dat",                    out1
@@ -7463,11 +7415,6 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
     vector<Passenger*> allpass_within_passgen;
 
     /** @ingroup PARTC
-    *   @todo Drottningholms OD outputs
-    *   - add temporary flag to recognize whether or not this is a dholm network - if all fixed buslines end at Mörby C...
-    *   - filter 'all_pass' by start & end time
-    *   - also check the category of each od being checked
-    *   - generate a FWF_passdata for each OD category
     */
 
     FWF_passdata total_passdata_b2b;
@@ -7482,9 +7429,23 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
     // writing the crude data and summary outputs for each bus stop
     write_transitlogout_header(out1);
     write_transitstopsum_header(out2);
+    if(theParameters->drt)
+    {
+        fwf_outputs::writeDRTVehicleStateAtStop_header(out24);    
+    }
+
     for (auto & busstop : busstops)
     {
         busstop->write_output(out1);
+
+        if (theParameters->drt)
+        {
+            if (busstop->get_CC()) //if the stop is in the service area of a CC
+            {
+                fwf_outputs::writeDRTVehicleStateAtStop_row(out24, busstop);
+            }
+        }
+
         vector<Busline*> stop_lines = busstop->get_lines();
         for (auto & stop_line : stop_lines)
         {
@@ -9335,7 +9296,8 @@ bool Network::writeall(unsigned int repl)
         workingdir + "o_passenger_dropoff.dat",
         workingdir + "o_vkt.dat",
         workingdir + "o_fwf_summary_odcategory.dat",
-        workingdir + "o_fwf_drtvehicle_states.dat"
+        workingdir + "o_fwf_drtvehicle_states.dat",
+        workingdir + "o_time_spent_in_state_at_stop.dat"
     );
     write_transitroutes(workingdir + "o_transit_routes.dat");
     return true;
@@ -9593,7 +9555,7 @@ bool Network::init()
             //assert(theParameters->pass_day_to_day_indicator == 0); 
             //assert(theParameters->in_vehicle_d2d_indicator == 0);
 
-            for (const auto& od_arrival : empirical_passenger_arrivals) //add all empirical passenger arrivals to corresponding OD in terms of stops. TODO: currently untested with day2day, should be fine though
+            for (const auto& od_arrival : empirical_passenger_arrivals) //add all empirical passenger arrivals to corresponding OD in terms of stops.
             {
                 ODstops* od_stop = od_arrival.first;
                 double arrival_time = od_arrival.second;
@@ -9631,6 +9593,19 @@ bool Network::init()
     //Initialize the DRT vehicles to their starting stop at their starting time
     if (theParameters->drt)
     {
+        //Initialize rebalancing calls of controlcenter(s), initvalue is one rebalancing interval after the start pass generation period....
+        double rb_init_time = theParameters->start_pass_generation + ::drt_first_rebalancing_time + 0.1;
+        for(auto cc : ccmap) // initialize all potential rebalancing events
+        {
+            if(cc.second->rb_strategy_ != 0) // @todo for now do not initialize any rebalancing events if no strategy is being used, may change this later if rebalancing is triggered dynamically or at a later time
+            {
+                //double init_time = cc.second->get_next_rebalancing_time(rb_init_time);
+                double init_time = rb_init_time;
+                eventlist->add_event(init_time, cc.second->rebalancing_action_);
+                rb_init_time += 0.00001;
+            }
+        }
+
         //Add buses to vector of unassigned vehicles and initial Busstop
         for (const DrtVehicleInit& drt_init : drtvehicles)
         {

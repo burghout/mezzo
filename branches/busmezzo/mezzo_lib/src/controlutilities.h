@@ -23,6 +23,8 @@ namespace cc_helper_functions
  // Helper functions for controlstrategies
 namespace cs_helper_functions
 {
+    bool vehicle_is_at_location(Bus* veh, set<Busstop*,ptr_less<Busstop*> > stops); //!< returns true if vehicle is not driving and the last stop visited by the vehicle is within the set of stops
+
     // Update trip/trip-chain with new data
     void update_schedule(Bustrip* trip, double new_starttime); //!< takes trip that already has a preliminary schedule for both dispatch and stop visits, and updates this schedule given a new start time    
     void add_driving_roster_to_tripchain(const vector<Bustrip*>& tripchain); //!< Takes a vector of Bustrips and connects them via their driving_roster attribute in the order of the tripchain (i.e. index 0 is first trip, index 1 the second etc.)
@@ -41,7 +43,10 @@ namespace cs_helper_functions
 
     // Find trip by condition
     set<Bustrip*, ptr_less<Bustrip*> > filterBustripsByStatus(const set<Bustrip*, ptr_less<Bustrip*> >& oldSet, BustripStatus status);
+    set<Bustrip*, ptr_less<Bustrip*> > filterBustripsByStatus(const set<Bustrip*, ptr_less<Bustrip*> >& oldSet, const vector<BustripStatus>& status);
     set<Bustrip*, ptr_less<Bustrip*> > filterRequestAssignedTrips(const set<Bustrip*, ptr_less<Bustrip*> >& oldSet); //!< returns trips that are members of oldset with <status> and non-empty scheduled requests members
+    set<Bustrip*, ptr_less<Bustrip*> > filterRebalancingTrips(const set<Bustrip*, ptr_less<Bustrip*> >& oldSet); //!< returns trips that are members of oldset that are rebalancing
+    set<Bustrip*, ptr_less<Bustrip*> > filterTripsWithFinalDestination(const set<Bustrip*, ptr_less<Bustrip*> >& oldSet, Busstop* target_stop); //!< returns trips that are members of oldset with final destination <target_stop>
 
 } // end namespace helper_functions
 

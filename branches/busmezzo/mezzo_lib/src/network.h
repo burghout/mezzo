@@ -312,7 +312,6 @@ public:
     void renum_routes (); //!< renumerates the routes, to keep a consecutive series after deletions & additions
     Busroute* create_busroute_from_stops(int id, Origin* origin_node, Destination* destination_node, const vector<Busstop*>& stops, double time = 0.0); //!< creates a busroute beginning at origin node and ending at destination node that visits stops in sequential order. Returns nullptr if busroute is not possible
     Busline* create_busline(int busline_id, int opposite_busline_id, string name, Busroute* broute, vector <Busstop*> stops, Vtype* vtype, ODpair* odptr, int holding_strategy, double max_headway_holding, double init_occup_per_stop, int nr_stops_init_occup, bool flex_line); //!< creates a busline and adds it to Network::buslines
-    bool createAllDRTLines(); //!< creates all the DRT lines between each stop pair that has a viable route between them
     bool createAllDRTLines(Controlcenter* cc); //!< creates all direct DRT lines between each stop pair in the service area of Controlcenter and assigns these lines to Controlcenter
     bool createAllDRTLinesWithIntermediateStops(Controlcenter* cc); //!< creates all direct DRT lines between each stop pair in the service area of the Controlcenter and but also includes any intermediate stops that may be passed by in the generated route of that line
     Origin* findNearestOriginToStop(Busstop* stop); //!< returns the nearest Origin Node to  stop
@@ -416,7 +415,9 @@ public:
 
     // Public transport
 
-    bool write_busstop_output(string name1, string name2, string name3, string name4, string name5, string name6, string name7, string name8, string name9, string name10, string name11, string name12, string name13, string name14, string name15, string name16, string name17, string name18, string name19, string name20, string name21, string name22, string name23); //<! writes all the bus-related output
+    bool write_busstop_output(string name1, string name2, string name3, string name4, string name5, string name6, string name7, string name8, string name9, string name10, 
+        string name11, string name12, string name13, string name14, string name15, string name16, string name17, string name18, string name19, string name20, 
+        string name21, string name22, string name23, string name24); //<! writes all the bus-related output
     void write_passenger_welfare_summary(ostream& out, double total_gtc, int total_pass);
     bool write_path_set (string name1); //!< writes the path-set generated at the initialization process (aimed to be used as an input file for other runs with the same network)
     bool write_path_set_per_stop (string name1, Busstop* stop);

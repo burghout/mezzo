@@ -117,10 +117,10 @@ bool Busline::execute(Eventlist* eventlist, double time)
         assert(curr_trip != trips.end());
 		if(!curr_trip->first->is_activated()) // a trip that is successfully activated should not be activated twice
 			curr_trip->first->activate(time, busroute, odpair, eventlist); // activates the trip, generates bus etc.
-		else
+		/*else
 		{
 			qDebug() << "Warning - Busline::execute ignored double activation of trip " << curr_trip->first->get_id();
-		}
+		}*/
 
 		curr_trip++; // now points to next trip
 		if (curr_trip != trips.end()) // if there exists a next trip
@@ -639,7 +639,7 @@ double Busline::calc_curr_line_ivt (Busstop* start_stop, Busstop* end_stop, int 
 			}
 		}
 		if (found_board == false || found_alight == false)
-			return 10000; //default in case of no matching
+			return ::drt_default_large_ivt; //default in case of no matching
 
         // double ivt = cumulative_arrival_time - earliest_time_ostop + extra_travel_time;
 		//DEBUG_MSG_V("Busline::calc_curr_line_ivt returning IVT " << ivt << " for line " << id << " with no trips assigned to it yet between stop " << start_stop->get_name() << " and stop " << end_stop->get_name() << endl );
@@ -833,7 +833,7 @@ Bustrip::Bustrip ()
 	}
 }
 
-QString bustripstatus_to_QString(BustripStatus status)
+QString BustripStatus_to_QString(BustripStatus status)
 {
 	QString status_s = "";
 
@@ -943,6 +943,7 @@ void Bustrip::reset ()
 	total_alighting = 0;
 	status_ = BustripStatus::Null;
     planned_capacity_ = 0;
+    is_rebalancing_ = false;
 }
 
 void Bustrip::set_busv(Bus* busv_)
@@ -1620,8 +1621,8 @@ void Busstop::reset()
 	nr_alighting = 0;
 	is_origin = false;
 	is_destination = false;
-	dwelltime = 0;
-	exit_time = 0;
+	dwelltime = 0.0;
+	exit_time = 0.0;
 	expected_arrivals.clear();
 	expected_bus_arrivals.clear();
 	buses_at_stop.clear();
@@ -1634,6 +1635,7 @@ void Busstop::reset()
 	nr_waiting.clear();
 	output_stop_visits.clear();
 	output_summary.clear();
+	total_time_oncall = 0.0;
 }
 
 Busstop_Visit::~Busstop_Visit()

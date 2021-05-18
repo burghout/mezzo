@@ -33,9 +33,9 @@ stop_pass_generation= 5400
 stoptime= 10800
 
 ### Total vehicle summary ###
-Total VKT                   : 543
+Total VKT                   : 210
 Total occupied VKT          : 9
-Total empty VKT             : 534
+Total empty VKT             : 201
 Total occupied time         : 910.5
 Total empty time            : 951778
 Total driving time          : 952368
@@ -43,16 +43,16 @@ Total idle time             : 320
 Total oncall time           : 0
 
 ### Fixed vehicle summary ###
-Fixed VKT                   : 543
+Fixed VKT                   : 210
 Fixed occupied VKT          : 9
-Fixed empty VKT             : 534
+Fixed empty VKT             : 201
 Fixed occupied time         : 910.5
 Fixed empty time            : 951778
 Fixed driving time          : 952368
 Fixed idle time             : 320
 Fixed oncall time           : 0
-Fixed occ/total VKT ratio   : 0.0165746
-Fixed PKT/VKT ratio         : 0.0165746
+Fixed occ/total VKT ratio   : 0.0428571
+Fixed PKT/VKT ratio         : 0.0428571
 
 ### DRT vehicle summary ###
 DRT VKT                     : 0

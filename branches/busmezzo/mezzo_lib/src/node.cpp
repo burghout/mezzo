@@ -143,6 +143,11 @@ bool Origin::insert_veh(Vehicle* veh, double time)
 
 		if (link->full() )
 		{
+			if(veh->get_type() == 4)
+			{
+				Bus* bus = (Bus*)veh;
+			    qDebug() << "Warning - failed to insert bus vehicle" << bus->get_bus_id() << "into first route link" << link->get_id();
+			}
 			if (  inputqueue->enter_veh(veh,time) ) 
 			{
 				

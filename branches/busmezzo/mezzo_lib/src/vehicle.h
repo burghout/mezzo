@@ -199,18 +199,19 @@ public:
 //Control Center
 	BusState get_state() const { return state_; }
 	BusState calc_state(const bool assigned_to_trip, const bool bus_exiting_stop, const int occupancy) const; //!< returns the BusState of bus depending whether a bus is assigned to a trip, has just entered or exited a stop, and the occupancy of the bus. Other states for when a bus is not on a trip (e.g. onCall are set elsewhere)
+	double get_time_since_last_in_state(BusState state, double time); //!< returns the amount of time elapsed since the vehicle was last in <state> up until <time>, returns -1.0 if state has never been entered
 	double get_total_time_in_state(BusState state) const;
 	double get_total_time_empty();
 	double get_total_time_occupied();
 	double get_total_time_driving();
 	double get_total_time_idle();
 	double get_total_time_oncall();
-	void update_meters_traveled(int meters_, bool is_empty);
+	void update_meters_traveled(int meters_, bool is_empty, double time);
 	double get_total_vkt() const;
 	double get_total_empty_vkt() const;
 	double get_total_occupied_vkt() const;
 	void set_state(const BusState newstate, const double time); //!< sets current state_ to newstate and emits stateChanged if newstate differs from current state_
-	void print_state(); //!< prints current BusState for debugging purposes
+	void print_state() const; //!< prints current BusState for debugging purposes
 
 	bool is_idle() const;	//!< returns true if bus is idle/waiting at a stop
 	bool is_driving() const; //!< returns true if bus is driving between stops
@@ -269,6 +270,8 @@ protected:
 	int total_occupied_meters_traveled = 0; //!< cumulative meters traveled with at least one passenger onboard
 
 	double init_time = 0.0; //!< time the vehicle is generated and made available, i.e. the time in which this vehicle was initially set to 'on-call' if a flex vehicle, set to zero by default if vehicle is not flex when read on input
+
+    map<int,map<BusState,double> > total_time_spent_in_state_per_stop; //!< total time spent in state at a particular stop. Maps stop ID to BusState to time. @todo currently only used to store time in state 'OnCall'
 /**@}*/
 };
 
