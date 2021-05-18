@@ -1088,7 +1088,10 @@ bool SimpleRebalancing::calc_trip_generation(DRTAssignmentData& assignment_data,
     // check number of vehicles that are already performing a trip
     vector<BustripStatus> status = { BustripStatus::Activated, BustripStatus::Scheduled }; //@todo filtering out ScheduledWaitingForVehicle trips basically, only want activated trips with a vehicle available for them
     auto active_trips = cs_helper_functions::filterBustripsByStatus(assignment_data.active_trips, status);
-    const int target_cap = (oncall_vehs.size() + active_trips.size()) / static_cast<int>(collection_stops.size()); //want to distribute oncall + enroute vehicles equally among collection stops, floor division ensures no ping-ponging vehicles between collection stops
+    int target_cap = (oncall_vehs.size() + active_trips.size()) / static_cast<int>(collection_stops.size()); //want to distribute oncall + enroute vehicles equally among collection stops, floor division ensures no ping-ponging vehicles between collection stops
+    
+    target_cap = target_cap == 0 ? 1 : target_cap; // if target cap is zero then we have fewer oncall vehicles than collection stops, in this case just rebalance vehicles until we run out of them
+    assert(target_cap > 0);
 
     // calculate the existing capacity in terms of number of oncall vehicles already at each collection stop + number of rebalancing vehicles enroute to each stop
     vector<pair<Busstop*,int> > stop_currcap; // current capacity at each stop
