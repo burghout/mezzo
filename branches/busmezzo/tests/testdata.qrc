@@ -166,5 +166,17 @@
         <file>networks/SFnetwork_d2d/ExpectedOutputs/o_fwf_summary.dat</file>
         <file>networks/SFnetwork_d2d/ExpectedOutputs/o_vkt.dat</file>
         <file>networks/PentaFeeder_drt/ExpectedOutputs/o_path_set_generation.dat</file>
+        <file>networks/Drottningholm_collection_drt/ExpectedOutputs/o_fwf_drtvehicle_states.dat</file>
+        <file>networks/DRTAlgorithms/ExpectedOutputs/o_fwf_drtvehicle_states.dat</file>
+        <file>networks/FWF_testnetwork1/ExpectedOutputs/o_fwf_drtvehicle_states.dat</file>
+        <file>networks/FWF_testnetwork1_d2d/ExpectedOutputs/o_fwf_drtvehicle_states.dat</file>
+        <file>networks/FWF_testnetwork2/ExpectedOutputs/o_fwf_drtvehicle_states.dat</file>
+        <file>networks/PentaFeeder_drt/ExpectedOutputs/o_fwf_drtvehicle_states.dat</file>
+        <file>networks/Drottningholm_collection_drt/ExpectedOutputs/o_time_spent_in_state_at_stop.dat</file>
+        <file>networks/DRTAlgorithms/ExpectedOutputs/o_time_spent_in_state_at_stop.dat</file>
+        <file>networks/FWF_testnetwork1/ExpectedOutputs/o_time_spent_in_state_at_stop.dat</file>
+        <file>networks/FWF_testnetwork1_d2d/ExpectedOutputs/o_time_spent_in_state_at_stop.dat</file>
+        <file>networks/FWF_testnetwork2/ExpectedOutputs/o_time_spent_in_state_at_stop.dat</file>
+        <file>networks/PentaFeeder_drt/ExpectedOutputs/o_time_spent_in_state_at_stop.dat</file>
     </qresource>
 </RCC>

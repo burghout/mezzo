@@ -213,6 +213,7 @@ void ODstops::add_pass_waiting(Passenger* add_pass)
 	//}
 	if (find_if(waiting_passengers.begin(), waiting_passengers.end(), [add_pass](Passenger* pass) {return pass->get_id() == add_pass->get_id(); }) != waiting_passengers.end()) // pass is already in queue for this OD
 		qDebug() << "Warning - double addition of" << add_pass->get_id() << "to waiting passengerd of ODstop (" << this->get_origin()->get_id() << "," << this->get_destination()->get_id() << ")";
+
 	waiting_passengers.push_back(add_pass);
 }
 

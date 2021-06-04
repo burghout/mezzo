@@ -59,7 +59,7 @@ public:
     void reset(); // resets the queue for re-start of simulation
    // Accessors -> made inline so they are faster....
   //  inline const bool full() {return (calc_total_space() >= maxcap);}           // for some reason this doesnt work. check later...
-    inline bool full() { return (vehicles.size() >= maxcap); }
+    bool full() const;
     double get_maxcap() const { return maxcap; }
     inline bool empty() { return vehicles.empty(); }
     inline bool exit_ok() { return ok; }
@@ -84,15 +84,16 @@ public:
     double calc_space(double time);
     double calc_total_space();
 private:
-    double maxcap;
-    double freeflowtime;
+    double maxcap = numeric_limits<double>::max();
+    double freeflowtime = 1.0;
     // help vars
-    bool ok;   // used to indicate whether an exit_veh has been successful
-    double next_action; // when the next turn action should be scheduled.
+    bool ok = false;   // used to indicate whether an exit_veh has been successful
+    double next_action = -1.0; // when the next turn action should be scheduled.
                                // used when a vehicle hasn't arrived at the stopline yet.
     list <Veh_in_Q>::iterator viter; // iterator for the vehicles
     double ttime = 1.0;
-    int n, nextid, vnextid;
+    int n = 0;
+    int nextid, vnextid;
     Vehicle* vehicle = nullptr;
     Veh_in_Q value;
     // end help vars

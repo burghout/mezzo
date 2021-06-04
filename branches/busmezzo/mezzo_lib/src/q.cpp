@@ -48,6 +48,11 @@ void Q::reset()
     vehicle = nullptr;
 }
 
+bool Q::full() const
+{
+    return vehicles.size() >= maxcap;
+}
+
 
 bool Q::enter_veh(Vehicle* veh)
 {

@@ -9,12 +9,8 @@ Line_ID	Upstream_stop_ID	Upstream_stop_name	Downstream_stop_ID	Downstream_stop_n
 23	24	Stop_24	23	Stop_23	0	
 8001	1	Stop_1	2	Stop_2	3	
 8021	2	Stop_2	1	Stop_1	0	
-8002	1	Stop_1	4	Stop_4	10	
-8022	4	Stop_4	1	Stop_1	0	
+8002	1	Stop_1	4	Stop_4	6	
 8003	3	Stop_3	4	Stop_4	4	
 8023	4	Stop_4	3	Stop_3	0	
-8004	1	Stop_1	4	Stop_4	0	
-8004	2	Stop_2	1	Stop_1	0	
-8004	4	Stop_4	3	Stop_3	0	
 8025	3	Stop_3	4	Stop_4	0	
 8025	4	Stop_4	1	Stop_1	0	

@@ -32,6 +32,7 @@ HEADERS += $$MEZZO_ROOT_RPATH/busline.h \
            $$MEZZO_ROOT_RPATH/pass_route.h \
            $$MEZZO_ROOT_RPATH/controlcenter.h \
 		   $$MEZZO_ROOT_RPATH/controlstrategies.h \
+		   $$MEZZO_ROOT_RPATH/controlutilities.h \
 		   $$MEZZO_ROOT_RPATH/csvfile.h 
 
 
@@ -64,5 +65,6 @@ SOURCES += $$MEZZO_ROOT_RPATH/busline.cpp \
            $$MEZZO_ROOT_RPATH/pass_route.cpp \
            $$MEZZO_ROOT_RPATH/controlcenter.cpp \
 		   $$MEZZO_ROOT_RPATH/controlstrategies.cpp \
+		   $$MEZZO_ROOT_RPATH/controlutilities.cpp \
 
 CONFIG += sdk_no_version_check # for mac

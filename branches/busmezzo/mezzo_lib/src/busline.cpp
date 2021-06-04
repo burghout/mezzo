@@ -73,10 +73,6 @@ void Busline::reset ()
 {
 	if (flex_line)
 	{
-		for (Bustrip* trip : flex_trips) //clean up flex_trips that did not complete yet
-			delete trip;
-
-		flex_trips.clear(); //clear all dynamically generated trips that have not completed yet
 		trip_count = static_cast<int>(static_trips.size()); //reset trip counter to the original number of trips that were generated from input files
 		trips = static_trips; //reset trips vector to initial trips
 	}
@@ -121,10 +117,10 @@ bool Busline::execute(Eventlist* eventlist, double time)
         assert(curr_trip != trips.end());
 		if(!curr_trip->first->is_activated()) // a trip that is successfully activated should not be activated twice
 			curr_trip->first->activate(time, busroute, odpair, eventlist); // activates the trip, generates bus etc.
-		else
+		/*else
 		{
 			qDebug() << "Warning - Busline::execute ignored double activation of trip " << curr_trip->first->get_id();
-		}
+		}*/
 
 		curr_trip++; // now points to next trip
 		if (curr_trip != trips.end()) // if there exists a next trip
@@ -643,7 +639,7 @@ double Busline::calc_curr_line_ivt (Busstop* start_stop, Busstop* end_stop, int 
 			}
 		}
 		if (found_board == false || found_alight == false)
-			return 10000; //default in case of no matching
+			return ::drt_default_large_ivt; //default in case of no matching
 
         // double ivt = cumulative_arrival_time - earliest_time_ostop + extra_travel_time;
 		//DEBUG_MSG_V("Busline::calc_curr_line_ivt returning IVT " << ivt << " for line " << id << " with no trips assigned to it yet between stop " << start_stop->get_name() << " and stop " << end_stop->get_name() << endl );
@@ -783,18 +779,6 @@ void Busline::write_ttt_output(ostream & out)
 	}
 }
 
-void Busline::add_flex_trip(Bustrip* trip)
-{
-	assert(flex_trips.count(trip) == 0); //trips are only added once
-	flex_trips.insert(trip);
-}
-
-void Busline::remove_flex_trip(Bustrip * trip)
-{
-	assert(flex_trips.count(trip) == 1);
-	flex_trips.erase(trip);
-}
-
 bool Busline::is_unique_tripid(int trip_id)
 {
 	list <Start_trip>::iterator it;
@@ -848,6 +832,38 @@ Bustrip::Bustrip ()
 		random->randomize();
 	}
 }
+
+QString BustripStatus_to_QString(BustripStatus status)
+{
+	QString status_s = "";
+
+    switch (status)
+    {
+    case BustripStatus::Completed:
+        status_s = "Completed";
+        break;
+    case BustripStatus::Activated:
+        status_s = "Activated";
+        break;
+    case BustripStatus::Scheduled:
+        status_s = "Scheduled";
+        break;
+	case BustripStatus::ScheduledWaitingForVehicle:
+		status_s = "ScheduledWaitingForVehicle";
+		break;
+    case BustripStatus::Matched:
+        status_s = "Matched";
+        break;
+    case BustripStatus::Unmatched:
+        status_s = "Unmatched";
+        break;
+    case BustripStatus::Null:
+		status_s = "Null";
+        break;
+    }
+	return status_s;
+}
+
 
 Bustrip::Bustrip (int id_, double start_time_, Busline* line_): id(id_), line(line_), starttime(start_time_)
 {
@@ -925,6 +941,21 @@ void Bustrip::reset ()
 	activated = false;
 	total_boarding = 0;
 	total_alighting = 0;
+	status_ = BustripStatus::Null;
+    planned_capacity_ = 0;
+    is_rebalancing_ = false;
+}
+
+void Bustrip::set_busv(Bus* busv_)
+{
+	assert(busv_);
+    busv = busv_;
+	planned_capacity_ = busv_->get_capacity();
+	if(flex_trip)
+	{
+	    if(status_ == BustripStatus::ScheduledWaitingForVehicle)
+		    set_status(BustripStatus::Scheduled); // now the scheduled trip has a vehicle
+	}
 }
 
 void Bustrip::convert_stops_vector_to_map ()
@@ -990,8 +1021,7 @@ bool Bustrip::advance_next_stop (double time, Eventlist* eventlist)
 			{
 				curr_trip = trip;
 				break;
-			}
-				
+			}	
 		}
 		
 		vector <Start_trip*>::iterator last_trip = driving_roster.end()-1;
@@ -1019,12 +1049,12 @@ bool Bustrip::advance_next_stop (double time, Eventlist* eventlist)
 
 bool Bustrip::activate (double time, Route* route, ODpair* odpair, Eventlist* eventlist_)
 {
-	if (get_busv() == nullptr) // this can happen if the Bustrip activation call is for a dynamically generated chained trip, and this is not the first trip in the chain, 
+	if (get_status() == BustripStatus::ScheduledWaitingForVehicle) // this can happen if the Bustrip activation call is for a dynamically generated chained trip, and this is not the first trip in the chain, 
 							   // the 'cloned bus' is assigned to the chained trip dynamically when the previous trip has finished (see Bus::advance_curr_trip)
-							   // basically see busv == nullptr as another indicator that a bus is not available for this trip (yet) if this trip is a flex_trip
 	{
 		assert(theParameters->drt);
 		assert(is_flex_trip()); //should only happen for flex-trips
+		assert(get_busv() == nullptr); // basically see busv == nullptr as another indicator that a bus is not available for this trip (yet) if this trip is a flex_trip
 		return false; // ignore this call
 	}
 
@@ -1140,7 +1170,7 @@ void Bustrip::record_passenger_loads (vector <Visit_stop*>::iterator start_stop)
 		output_passenger_load.push_back(Bustrip_assign(line->get_id(), id, busv->get_id(), (*start_stop)->first->get_id(), (*start_stop)->first->get_name(), (*(start_stop + 1))->first->get_id(), (*(start_stop + 1))->first->get_name(), assign_segements[(*start_stop)->first]));
 		this->get_line()->add_record_passenger_loads_line((*start_stop)->first, (*(start_stop+1))->first,assign_segements[(*start_stop)->first]);
 	}
-	else //David added 2016-05-26: overwrite previous record_passenger_loads if this is the second call to pass_activity_at_stop
+	else // overwrite previous record_passenger_loads if this is the second call to pass_activity_at_stop
 	{
 		--start_stop; //decrement start stop since we have already advanced 'next_stop'
 		output_passenger_load.pop_back();
@@ -1152,26 +1182,208 @@ void Bustrip::record_passenger_loads (vector <Visit_stop*>::iterator start_stop)
 bool Bustrip::remove_request(const Request* req)
 {
 	assert(req);
-	vector<Request*>::iterator rq_it = find(scheduled_requests.begin(), scheduled_requests.end(), req);
-	if (rq_it != scheduled_requests.end())
+	vector<Request*>::iterator rq_it = find(assigned_requests.begin(), assigned_requests.end(), req);
+	if (rq_it != assigned_requests.end())
 	{
-		scheduled_requests.erase(rq_it);
+		assigned_requests.erase(rq_it);
 		return true;
 	}
 	/*else
 	{
-		qDebug() << "Warning - request " << req->id << " does not exist in scheduled_requests of trip " << id;
+		qDebug() << "Warning - request " << req->id << " does not exist in assigned_requests of trip " << id;
 	}*/
 	return false;
+}
+
+bool Bustrip::is_feasible_request_assignment(Request* req, size_t planned_capacity)
+{
+    if (has_stop_downstream(req->ostop_id) && has_stop_downstream(req->dstop_id)) // in case trip is already active, check so that pickup and dropoff stops have not been passed by already
+    {
+		//find pickup stop of req and dropoff stop of req
+        auto ostop_it = find_if(stops.begin(), stops.end(), [req](const Visit_stop* stop) {return stop->first->get_id() == req->ostop_id; });
+        auto dstop_it = find_if(stops.begin(), stops.end(), [req](const Visit_stop* stop) {return stop->first->get_id() == req->dstop_id; });
+        if (ostop_it != stops.end() && dstop_it != stops.end())
+        {
+            if (ostop_it < dstop_it) // origin is visited before destination
+            {
+                vector<Request*> candidate_reqs = assigned_requests; //make temp copy of currently assigned requests
+                candidate_reqs.push_back(req); // check feasibility of new request vector
+
+                for (auto stop_visit = ostop_it; stop_visit != stops.end(); ++stop_visit) // check if there is available capacity for the request by anticipating expected capacity starting from the pickup stop of the request
+                {
+                    Busstop* target_stop = (*stop_visit)->first;
+                    size_t planned_occ = get_planned_occupancy_at_stop(candidate_reqs, target_stop);
+                    if (planned_occ > planned_capacity)
+                        return false;
+                }
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+void Bustrip::set_status(BustripStatus newstatus)
+{
+	if(!is_flex_trip()) // only update status of flex trips, fixed stay at Null @todo expand to bookkeep fixed trips as well
+		return;
+
+	if(status_ != newstatus)
+    {
+        switch (newstatus) // sanity checks for set status call
+        {
+        case BustripStatus::Completed:
+            assert(get_next_stop() == stops.end()); //currently a trip is considered completed via Bustrip::advance_next_stop -> Bus::advance_curr_trip
+            assert(status_ == BustripStatus::Activated);
+            break;
+        case BustripStatus::Activated:
+            assert(is_activated()); // bustrip should be flagged as activated
+            assert(get_busv()->get_on_trip()); // vehicle should be flagged as busy
+            assert(status_ == BustripStatus::Scheduled);
+            break;
+        case BustripStatus::Scheduled:
+            assert(is_scheduled_for_dispatch()); // bustrip should be flagged as activated
+            break;
+		case BustripStatus::ScheduledWaitingForVehicle:
+			assert(is_scheduled_for_dispatch());
+			assert(get_busv() == nullptr);
+			break;
+        case BustripStatus::Matched:
+            //assert(get_busv() != nullptr); // trip later on in a chain of trips may not have a vehicle yet, since this is passed between trips via the driving roster
+			//assert(status_ == BustripStatus::Unmatched);
+            break;
+        case BustripStatus::Unmatched:
+            assert(get_busv() == nullptr); // no vehicle should be matched to this trip yet
+            break;
+        case BustripStatus::Null:
+            break;
+        }
+
+        status_ = newstatus;
+	}
+}
+
+size_t Bustrip::get_planned_occupancy_at_stop(const vector<Request*>& planned_requests, Busstop* target_stop) const
+{
+    auto stop_it = find_if(stops.begin(), stops.end(), [target_stop](const Visit_stop* stop) {return stop->first->get_id() == target_stop->get_id(); });
+    assert(stop_it != stops.end()); // target stop must exist on the planned stop visits of the bustrip
+    size_t n_dropoffs = get_num_assigned_requests_with_destination(planned_requests, target_stop->get_id());
+
+    if ((*stop_it) == stops.back()) // the target stop is the final stop of the trip
+        return n_dropoffs;
+
+    size_t n_pickups = get_num_assigned_requests_with_origin(planned_requests, target_stop->get_id());
+    ++stop_it; // now points to stop after target_stop
+
+    return get_planned_occupancy_at_stop(planned_requests, (*stop_it)->first) - n_pickups + n_dropoffs; // calculate stop occupancy recursively if not final stop of trip
+}
+
+bool Bustrip::has_reserve_capacity() const
+{
+    return assigned_requests.size() < planned_capacity_;
+}
+
+bool Bustrip::is_assigned_to_requests() const
+{
+    return !assigned_requests.empty();
+}
+
+vector<Request*> Bustrip::get_assigned_requests_with_destination(int dstop_id) const
+{
+	vector<Request*> reqs;
+	for(auto req : assigned_requests)
+	{
+	    if(req->dstop_id == dstop_id)
+			reqs.push_back(req);
+	}
+	return reqs;
+}
+
+vector<Request*> Bustrip::get_assigned_requests_with_origin(int ostop_id) const
+{
+	vector<Request*> reqs;
+	for(auto req : assigned_requests)
+	{
+	    if(req->ostop_id == ostop_id)
+			reqs.push_back(req);
+	}
+	return reqs;
+}
+
+size_t Bustrip::get_num_assigned_requests_with_destination(const vector<Request*>& requests, int dstop_id) const
+{
+	size_t count = 0;
+	for(auto req : requests)
+	{
+	    if(req->dstop_id == dstop_id)
+			++count;
+	}
+	return count;
+}
+
+size_t Bustrip::get_num_assigned_requests_with_origin(const vector<Request*>& requests, int ostop_id) const
+{
+	size_t count = 0;
+	for(auto req : requests)
+	{
+	    if(req->ostop_id == ostop_id)
+			++count;
+	}
+	return count;
+}
+
+bool Bustrip::is_part_of_tripchain() const
+{
+	return driving_roster.size() > 1;
+}
+
+Bustrip* Bustrip::get_next_trip_in_chain() const
+{
+    Bustrip* next_trip = nullptr;
+    if (!driving_roster.empty())
+    {
+        //find position of this trip in driving roster
+		int this_trip_id = get_id();
+		const auto this_trip_it = find_if(driving_roster.begin(),driving_roster.end(),[this_trip_id](const Start_trip* st)->bool { return st->first->get_id() == this_trip_id; } );
+		
+		if(this_trip_it != driving_roster.end()) 
+		{
+		    //check if there is any following trip
+			const auto next_trip_it = next(this_trip_it);
+
+			if(next_trip_it != driving_roster.end())
+				next_trip = (*next_trip_it)->first;
+		}
+    }
+    return next_trip;
+}
+
+Bustrip* Bustrip::get_prev_trip_in_chain() const
+{
+	Bustrip* prev_trip = nullptr;
+    if (!driving_roster.empty())
+    {
+        //find position of this trip in driving roster
+		int this_trip_id = get_id();
+		const auto this_trip_it = find_if(driving_roster.begin(),driving_roster.end(),[this_trip_id](const Start_trip* st)->bool { return st->first->get_id() == this_trip_id; } );
+		
+		if(this_trip_it != driving_roster.begin()) 
+		{
+		    //check if there is any following trip
+			const auto prev_trip_it = prev(this_trip_it);
+            prev_trip = (*prev_trip_it)->first;
+		}
+    }
+    return prev_trip;
 }
 
 double Bustrip::get_max_wait_requests(double cur_time) const
 {
     double max_wait = 0.0;
-    for (Request* r:scheduled_requests)
+    for (Request* r : assigned_requests)
     {
         double wait = (cur_time - r->time_desired_departure);
-        if ( wait < max_wait)
+        if (wait < max_wait)
             max_wait = wait;
     }
     return max_wait;
@@ -1180,12 +1392,30 @@ double Bustrip::get_max_wait_requests(double cur_time) const
 double Bustrip::get_cumulative_wait_requests(double cur_time) const
 {
     double total_wait = 0.0;
-    for (Request* r:scheduled_requests)
+    for (Request* r : assigned_requests)
     {
         double wait = (cur_time - r->time_desired_departure);
         total_wait += wait;
     }
     return total_wait;
+}
+
+void Bustrip::set_scheduled_for_dispatch(bool scheduled_for_dispatch_)
+{
+    scheduled_for_dispatch = scheduled_for_dispatch_;
+	if(scheduled_for_dispatch_)
+	{
+		if(!get_busv())
+			set_status(BustripStatus::ScheduledWaitingForVehicle);
+		else
+			set_status(BustripStatus::Scheduled);
+    }
+}
+
+void Bustrip::set_activated(bool activated_)
+{
+    activated = activated_;
+    if (activated_) set_status(BustripStatus::Activated);
 }
 
 double Bustrip::find_crowding_coeff (Passenger* pass)
@@ -1318,6 +1548,21 @@ vector <Visit_stop*> Bustrip::get_downstream_stops_till_horizon(Visit_stop *targ
 	}
 	return remaining_stops;
 }
+
+bool Bustrip::has_stop_downstream(Busstop* target_stop)
+{
+	vector<Busstop*> ds_stops = get_downstream_stops();
+	auto stop_it = find(ds_stops.begin(),ds_stops.end(), target_stop);
+	return stop_it != ds_stops.end();
+}
+
+bool Bustrip::has_stop_downstream(int target_stop_id)
+{
+	vector<Busstop*> ds_stops = get_downstream_stops();
+    auto stop_it = find_if(ds_stops.begin(), ds_stops.end(), [target_stop_id](const Busstop* stop) { return stop->get_id() == target_stop_id; });
+	return stop_it != ds_stops.end();
+}
+
 /* will be relevant only when time points will be trip-specific
 bool Bustrip::is_trip_timepoint (Busstop* stop)
 {
@@ -1376,8 +1621,8 @@ void Busstop::reset()
 	nr_alighting = 0;
 	is_origin = false;
 	is_destination = false;
-	dwelltime = 0;
-	exit_time = 0;
+	dwelltime = 0.0;
+	exit_time = 0.0;
 	expected_arrivals.clear();
 	expected_bus_arrivals.clear();
 	buses_at_stop.clear();
@@ -1390,6 +1635,28 @@ void Busstop::reset()
 	nr_waiting.clear();
 	output_stop_visits.clear();
 	output_summary.clear();
+	total_time_oncall = 0.0;
+
+	/* @todo ODstops are sometimes created on the fly but did not seem to ever be deleted or reset. After resets these may later be used from an invalid state (e.g. in Busstop::passenger_activity_at_stop with deleted waiting_passengers)
+	 * which causes undefined behavior or crashes. For now just go through all of them and reset them...Will sometimes cause alot of redundant resets on both ODstops, passengers that they own....
+	 * However the ODstops created on the fly should have an empty 'passingers_during_simulation' vector (since otherwise the ODstop would have been created in the initial read/init stage)
+	 * so we can at least avoid double-resetting the original set of ODstops (which is instead reset directly via Network::reset() -> odstops->reset()). Furthermore this will (hopefully) avoid double-deleting passengers
+	 * if using day2day, since in this case passengers are deleted via ODstops reset rather than reset themselves.
+	 */
+	for(const auto& dest : stop_as_origin)
+	{
+	    if(dest.second->get_passengers_during_simulation().empty()) //checking if this one was created on the fly
+	    {
+	        dest.second->reset(); // @todo reset these rather than delete for now to avoid dealing with double deletion management (of both ODstops and passengers), feels like the original intention was to carry over these between resets as well
+	    }
+	}
+	for(const auto& orig : stop_as_destination)
+	{
+	    if(orig.second->get_passengers_during_simulation().empty()) //checking if this one was created on the fly
+	    {
+	        orig.second->reset(); // @todo reset these rather than delete for now to avoid dealing with double deletion management (of both ODstops and passengers), feels like the original intention was to carry over these between resets as well
+	    }
+	}
 }
 
 Busstop_Visit::~Busstop_Visit()
@@ -1535,10 +1802,10 @@ bool Busstop::execute(Eventlist* eventlist, double time) // is executed by the e
 	if (bus_exit == true) 
 	// if there is an exiting bus
 	{
-		if(exiting_trip->get_holding_at_stop()) //David added 2016-05-26: the exiting trip is holding and needs to account for additional passengers that board during the holding period
+		if(exiting_trip->get_holding_at_stop()) // the exiting trip is holding and needs to account for additional passengers that board during the holding period
 		{
 			passenger_activity_at_stop(eventlist,exiting_trip,time);
-			exiting_trip->set_holding_at_stop(false); //exiting trip is not holding anymore
+			exiting_trip->set_holding_at_stop(false); // exiting trip is not holding anymore
 		}
 
 		Vehicle* veh =  (Vehicle*)(exiting_trip->get_busv()); // so we can do vehicle operations
@@ -1654,16 +1921,14 @@ bool Busstop::execute(Eventlist* eventlist, double time) // is executed by the e
 		return true;
 	}
 	
-	//check if busstop event is the availability of an unassigned vehicle
+	//check if busstop event is the initialization (or delayed availability) of an unassigned vehicle
 	for (vector<pair<Bus*, double>>::iterator ua_bus_it = unassigned_bus_arrivals.begin(); ua_bus_it != unassigned_bus_arrivals.end(); ++ua_bus_it )
 	{
 		if ((*ua_bus_it).second == time)
 		{
 			Bus* ua_bus = (*ua_bus_it).first;
-			//DEBUG_MSG("Activating unassigned bus " << ua_bus->get_bus_id() << " at time " << time << " at stop " << name);
-			ua_bus->set_last_stop_visited(this); //update this here before setting state
 			unassigned_bus_arrivals.erase(ua_bus_it); //vehicle is no longer arriving 
-			add_unassigned_bus(ua_bus, time); //add vehicle to vector of unassigned buses at this stop with current time as arrival time
+			add_unassigned_bus(ua_bus, time); //add vehicle to vector of unassigned buses at this stop with current time as arrival time, emits 'BusState::OnCall signal
 			
 			return true;
 		} 
@@ -1861,7 +2126,17 @@ void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, d
 				od = stop_as_origin[(*alighting_passenger)->get_OD_stop()->get_destination()];
 			}
 			(*alighting_passenger)->set_ODstop(od); // set this stop as passenger's new origin
+
+            (*alighting_passenger)->set_state(PassengerState::ArrivedToStop, time); // if the pass just alighted a flex trip this should be heard by Controlcenter, should remove request from active_requests
+            if ((*alighting_passenger)->get_chosen_mode() == TransitModeType::Flexible)
+            {
+				assert(theParameters->drt);
+                assert(CC);
+                CC->disconnectPassenger(*alighting_passenger); //now disconnect this passenger from the control center of this stop (should be the destination of the request of the traveler)
+            }
+
 			(*alighting_passenger)->set_chosen_mode(TransitModeType::Null); //reset the mode chosen of the pass to null (new mode choice is made after each alighting)
+			
 			if (id == (*alighting_passenger)->get_OD_stop()->get_destination()->get_id() || (*alighting_passenger)->get_OD_stop()->check_path_set() == false) // if this stop is passenger's destination
 			{
 				// passenger has no further conection choice
@@ -1890,9 +2165,11 @@ void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, d
                     new_od = next_stop->get_stop_od_as_origin_per_stop((*alighting_passenger)->get_OD_stop()->get_destination());
                 }
 
-				double arrival_time_connected_stop = time;
+                double arrival_time_connected_stop = time;
+				bool chose_to_walk = next_stop->get_id() != this->get_id();
                 //if (odstop->get_waiting_passengers().size() != 0) //Why was it like this??
-                if (next_stop->get_id() == this->get_id())  // pass stays at the same stop
+
+                if (!chose_to_walk)  // pass stays at the same stop
                 {
 					(*alighting_passenger)->set_ODstop(new_od); // set the connected stop as passenger's new origin (new OD)
 					ODstops* odstop = (*alighting_passenger)->get_OD_stop();
@@ -1930,35 +2207,45 @@ void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, d
                     (*alighting_passenger)->add_to_selected_path_stop(stop_time);
                 }
 
-                if (theParameters->drt)
-                {
-                    TransitModeType chosen_mode = (*alighting_passenger)->make_transitmode_decision(next_stop, time); //also sets chosen mode...
-					(*alighting_passenger)->set_chosen_mode(chosen_mode); //important that this is set before dropoff_decision call
+                TransitModeType chosen_mode = (*alighting_passenger)->make_transitmode_decision(next_stop, time); //also sets chosen mode...
+                if (!theParameters->drt)
+                    assert(chosen_mode == TransitModeType::Fixed);
+                (*alighting_passenger)->set_chosen_mode(chosen_mode); //important that this is set before dropoff_decision call
 
-                    if (chosen_mode == TransitModeType::Flexible)
+                if (chosen_mode == TransitModeType::Flexible)
+                {
+                    Busstop* dropoff_stop = (*alighting_passenger)->make_dropoff_decision(next_stop, time);
+
+                    Request* req = (*alighting_passenger)->createRequest(next_stop, dropoff_stop, 1, arrival_time_connected_stop, time); //create request with load 1 at current time 
+                    if (req != nullptr) //if a connection, or partial connection was found within the CC service of origin stop
                     {
-                        Busstop* dropoff_stop = (*alighting_passenger)->make_dropoff_decision(next_stop, time);
+                        assert((*alighting_passenger)->get_curr_request() == nullptr); // @note RequestHandler responsible for resetting this to nullptr if request is rejected
+                        (*alighting_passenger)->set_curr_request(req);
 
                         Controlcenter* CC = next_stop->get_CC();
                         assert(CC != nullptr);
                         CC->connectPassenger((*alighting_passenger)); //connect passenger to the CC of the stop they decided to stay at/walk to, send a request to this CC	
 
-                        Request* req = (*alighting_passenger)->createRequest(next_stop, dropoff_stop, 1, arrival_time_connected_stop, time); //create request with load 1 at current time 
-						if (req != nullptr) //if a connection, or partial connection was found within the CC service of origin stop
-						{
-							assert((*alighting_passenger)->get_curr_request() == nullptr); // @note RequestHandler responsible for resetting this to nullptr if request is rejected or after a pass has boarded a bus and request is removed
-							(*alighting_passenger)->set_curr_request(req);
-							emit(*alighting_passenger)->sendRequest(req, time); //send request to any controlcenter that is connected
-						}
-                        else
-                            DEBUG_MSG_V("WARNING - Busstop::passenger_activity_at_stop() - failed request creation for stops " << next_stop->get_id() << "->" << dropoff_stop->get_id() << " with desired departure time " << arrival_time_connected_stop << " at time " << time);
+                        emit(*alighting_passenger)->sendRequest(req, time); //send request to any controlcenter that is connected
                     }
+                    else
+                        DEBUG_MSG_V("WARNING - Busstop::passenger_activity_at_stop() - failed request creation for stops " << next_stop->get_id() << "->" << dropoff_stop->get_id() << " with desired departure time " << arrival_time_connected_stop << " at time " << time);
                 }
-			}
-		}
-		trip->passengers_on_board[this].clear(); // clear passengers with this stop as their alighting stop
-		trip->get_busv()->set_occupancy(trip->get_busv()->get_occupancy()-nr_alighting);	// update occupancy on bus
-		trip->update_total_alightings(nr_alighting);
+
+                if (chose_to_walk)
+                    (*alighting_passenger)->set_state(PassengerState::Walking, time);
+                else
+                {
+                    if (chosen_mode == TransitModeType::Fixed)
+                        (*alighting_passenger)->set_state(PassengerState::WaitingForFixed, time);
+                    if (chosen_mode == TransitModeType::Flexible)
+                        (*alighting_passenger)->set_state(PassengerState::WaitingForFlex, time);
+                }
+            }
+        }
+        trip->passengers_on_board[this].clear(); // clear passengers with this stop as their alighting stop
+        trip->get_busv()->set_occupancy(trip->get_busv()->get_occupancy() - nr_alighting);	// update occupancy on bus
+        trip->update_total_alightings(nr_alighting);
 
 		// * Passengers on-board
 		//int avialable_seats = trip->get_busv()->get_occupancy() - trip->get_busv()->get_number_seats();
@@ -2046,16 +2333,7 @@ void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, d
 							}
 							trip->get_busv()->set_occupancy(trip->get_busv()->get_occupancy()+1);
 							trip->update_total_boardings(1);
-							
-							if (theParameters->drt && CC != nullptr)
-							{
-								if((*check_pass)->is_flexible_user()) //!< @todo boarded bus signal currently removes the request of the passenger from the request set of the Controlcenter. Travelers are currently always disconnected directly afterwards
-								{
-									emit (*check_pass)->boardedBus((*check_pass)->get_id()); //boarding passenger signals control center that they have just boarded, should be ignored if pass is not a flexible user
-									CC->disconnectPassenger((*check_pass)); //now disconnect this passenger from the control center of this stop
-								}
-								(*check_pass)->set_chosen_mode(TransitModeType::Null); // reset travelers chosen mode. A new mode will be chosen when the traveler has chosen to alight
-							}
+							(*check_pass)->set_state(PassengerState::OnBoard, time); // @note dependent on being called after (*check_pass)->add_to_selected_path_trips
 
 							if (check_pass < pass_waiting_od.end()-1)
 							{
@@ -2073,8 +2351,13 @@ void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, d
 						}
 						else
 						{		
-							// if the passenger CAN NOT board
-							(*check_pass)->increment_nr_denied_boardings();
+                            // if the passenger CAN NOT board
+                            (*check_pass)->increment_nr_denied_boardings();
+                            if ((*check_pass)->get_chosen_mode() == TransitModeType::Fixed)
+                                (*check_pass)->set_state(PassengerState::WaitingForFixedDenied, time);
+                            if ((*check_pass)->get_chosen_mode() == TransitModeType::Flexible)
+                                (*check_pass)->set_state(PassengerState::WaitingForFlexDenied, time);
+
 							if ((*check_pass)->empty_denied_boarding() == true || this->get_id() != (*check_pass)->get_last_denied_boarding_stop_id()) // no double registration 
 							{
 								pair<Busstop*,double> denied_boarding;
@@ -2176,7 +2459,20 @@ double Busstop::calc_dwelltime (Bustrip* trip)  //!< calculates the dwelltime of
 	double crowdedness_coefficient = 0.0078;
 	double out_of_stop_coefficient = 3.0; // Taking in consideration the increasing dwell time when bus stops out of the stop
 	double bay_coefficient = 4.0;
-	*/
+    */
+    if (PARTC::drottningholm_case) //!> @todo PARTC remove
+    {
+        if (trip->is_flex_trip())
+        {
+            assert(theParameters->drt);
+            if ((nr_boarding == 0) && (nr_alighting == 0)) //skip dwell times for stops passed by with no requests
+            {
+                dwelltime = 0.0;
+                return dwelltime;
+            }
+        }
+    }
+
     Dwell_time_function* dt_func = trip->get_bustype()->get_dt_function();
 	dwell_constant = has_bay * dt_func->bay_coefficient + dt_func->over_stop_capacity_coefficient * check_out_of_stop(trip->get_busv()) + dt_func->dwell_constant;
 
@@ -2324,7 +2620,7 @@ double Busstop::calc_exiting_time (Eventlist* eventlist, Bustrip* trip, double t
 	//check if holding strategy is used for this trip
 	if (trip->get_complying() == true)
 	{
-		holding_departure_time = calc_holding_departure_time(trip, time); //David added 2016-04-01
+		holding_departure_time = calc_holding_departure_time(trip, time); 
 	}
 	double ready_to_depart = max(time + dwelltime, holding_departure_time);
 
@@ -2346,7 +2642,7 @@ double Busstop::calc_exiting_time (Eventlist* eventlist, Bustrip* trip, double t
 		if(ready_to_depart > time + dwelltime)
 		{
 			assert(!theParameters->drt); //holding at time points is not supported at the moment
-			trip->set_holding_at_stop(true); //David added 2016-05-26: set indicator that additional passengers that board whil bus is held at time point need to be accounting for at the bus's exit time
+			trip->set_holding_at_stop(true); // set indicator that additional passengers that board whil bus is held at time point need to be accounting for at the bus's exit time
 		}
 	}
 
@@ -2588,6 +2884,7 @@ void Busstop::add_unassigned_bus(Bus* bus, double arrival_time)
 			return left.second < right.second; //keep vector sorted by arrival time (smallest at the back of the vector)
 		}
 	);
+	bus->set_last_stop_visited(this); //update this here before setting state
 	bus->set_state(BusState::OnCall, arrival_time); //emits state change signal to control center
 }
 

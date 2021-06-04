@@ -54,7 +54,6 @@ private Q_SLOTS:
     void testCreateBusroute(); //!< tests creation of busroutes from stop pairs
     void testFindOrigins(); //!< tests the findNearestOrigin function
     void testFindDestinations(); //!< tests the findNearestDestination function
-    void testCreateAllDRTLines(); //!< tests creation of buslines
     void testCreateControlcenterDRTLines(); //!< tests the creation of direct buslines for the service area of a Controlcenter
     void testDelete(); //!< tests correct deletion
 
@@ -303,28 +302,18 @@ void TestDRT::testFindDestinations()
 
 }
 
-void TestDRT::testCreateAllDRTLines()
-{
-    auto busroutes = net->get_busroutes(); //should be 4 existing busroutes
-    auto buslines = net->get_buslines(); //should be 4 existing buslines
-    qDebug() << " testCreateAllDRTLInes, busroutes.size() " << busroutes.size()
-             << " buslines.size() " << buslines.size();
-    QVERIFY (busroutes.size() == 10);
-    QVERIFY (buslines.size() == 10);
-    net->createAllDRTLines(); // should find 12 more routes and create 12 more lines (all direct routes between 4 stops)
-    busroutes = net->get_busroutes();
-    buslines = net->get_buslines();
-    qDebug() << " testCreateAllDRTLInes, busroutes.size() " << busroutes.size()
-             << " buslines.size() " << buslines.size();
-    QVERIFY (busroutes.size() == 22);
-    QVERIFY (buslines.size() == 22);
-}
-
 void TestDRT::testCreateControlcenterDRTLines()
 {
     //create a dummy controlcenter
     Controlcenter* cc = new Controlcenter();
-
+    
+    auto busroutes = net->get_busroutes(); //should be 10 existing busroutes
+    auto buslines = net->get_buslines(); //should be 10 existing buslines
+    qDebug() << " testCreateControlcenterDRTLines, busroutes.size() " << busroutes.size()
+             << " buslines.size() " << buslines.size();
+    QVERIFY (busroutes.size() == 10);
+    QVERIFY (buslines.size() == 10);
+    
     //add stops A B and C to service area of controlcenter
     cc->addStopToServiceArea(net->get_busstop_from_name("A")); // on link 12
     cc->addStopToServiceArea(net->get_busstop_from_name("B")); // on link 34
@@ -333,18 +322,15 @@ void TestDRT::testCreateControlcenterDRTLines()
     QVERIFY(cc->getServiceArea().size() == 3); //there should be 3 stops in the service area of the controlcenter
     QVERIFY(cc->getServiceRoutes().size() == 0); //there should be no service routes available yet
 
-    auto busroutes = net->get_busroutes();
-    auto buslines = net->get_buslines();
-    QVERIFY (busroutes.size() == 22);
-    QVERIFY (buslines.size() == 22);
+    net->createAllDRTLines(cc);
 
-    net->createControlcenterDRTLines(cc);
-
-    //routes should not be duplicated, buslines can be duplicated
+    //@note routes should not be duplicated, buslines can be duplicated
     busroutes = net->get_busroutes();
     buslines = net->get_buslines();
-    QVERIFY (busroutes.size() == 22); //all direct routes already generated in testCreateAllDRTLines
-    QVERIFY (buslines.size() == 28); //6 additional lines for 3 stops in service area of controlcenter
+    qDebug() << " testCreateControlcenterDRTLines, busroutes.size() " << busroutes.size()
+             << " buslines.size() " << buslines.size();
+    QVERIFY (busroutes.size() == 10); //6 generated direct routes already exist
+    QVERIFY (buslines.size() == 16); //6 additional lines for 3 stops in service area of controlcenter
 
     QVERIFY(cc->getServiceRoutes().size() == 6); //6 lines have been added to controlcenter
 
