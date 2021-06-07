@@ -1581,22 +1581,22 @@ bool Network::readcontrolcenters(const string& name)
         if (generate_direct_routes == 1)
         {
             //@todo PARTC temporary change create direct lines with intermediate stops
-            //cout << "readcontrolcenters:: generating direct lines for control center " << cc->getID() << endl;
+            /*cout << "readcontrolcenters:: generating direct lines for control center " << cc->getID() << endl;
             if (!createAllDRTLinesWithIntermediateStops(cc))
             {
                 cout << "readcontrolcenters:: problem generating direct lines for control center " << id;
                 in.close();
                 return false;
             }
+            cc->setGeneratedDirectRoutes(generate_direct_routes);*/
+            cout << "readcontrolcenters:: generating direct lines for control center " << cc->getID() << endl;
+            if (!createAllDRTLines(cc))
+            {
+                cout << "readcontrolcenters:: problem generating direct lines for control center " << id;
+                in.close();
+                return false;
+            }
             cc->setGeneratedDirectRoutes(generate_direct_routes);
-            //cout << "readcontrolcenters:: generating direct lines for control center " << cc->getID() << endl;
-            //if (!createAllDRTLines(cc))
-            //{
-            //    cout << "readcontrolcenters:: problem generating direct lines for control center " << id;
-            //    in.close();
-            //    return false;
-            //}
-            //cc->setGeneratedDirectRoutes(generate_direct_routes);
         }
         
         //read lines associated with this cc 
@@ -2375,8 +2375,6 @@ bool Network::createAllDRTLinesWithIntermediateStops(Controlcenter* cc)
 {
     assert(theParameters->drt);
     assert(cc);
-
-    //@todo PARTC kindof case specific, maybe remove
 
     if (cc)
     {
@@ -7636,10 +7634,7 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
                     all_drtvehicles.push_back(vehtrip.first);
                     all_completed_trips.push_back(vehtrip.second);
 
-                    //!< @todo PARTC also try and distinguish between DRT vehicles for disaggregate trip analysis (vehicle time in state distributions, vkt etc...)
-                    {
-                        drt_vehdata_per_vehicle[vehtrip.first->get_bus_id()].push_back(vehtrip.first); //sort bus objects into bus id buckets
-                    }
+                    drt_vehdata_per_vehicle[vehtrip.first->get_bus_id()].push_back(vehtrip.first); //sort bus objects into bus id buckets, recall that there may be multiple vehicles per ID due to bus cloning
 
                     vehtrip.first->write_output(out4); //write trajectory output for each bus vehicle that completed a trip
                     vehtrip.second->write_assign_segments_output(out7); // writing the assignment results in terms of each segment on individual trips
@@ -7656,20 +7651,17 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
             drt_vehdata.calc_total_vehdata(all_drtvehicles);
             drt_tripdata.calc_trip_statistics(all_completed_trips);
 
-            //!< @todo PARTC maybe remove
+            if (!drt_vehdata_per_vehicle.empty()) //only generate output if we have drt vehicles
             {
-                if (!drt_vehdata_per_vehicle.empty()) //only generate output if we have drt vehicles
-                {
-                    ofstream out23(name23.c_str(), ios_base::app); // "o_fwf_drtvehicle_states.dat"
-                    fwf_outputs::writeDRTVehicleState_header(out23);
+                ofstream out23(name23.c_str(), ios_base::app); // "o_fwf_drtvehicle_states.dat"
+                fwf_outputs::writeDRTVehicleState_header(out23);
 
-                    for (const auto& vehid_data : drt_vehdata_per_vehicle)
-                    {
-                        FWF_vehdata temp_vehdata;
-                        temp_vehdata.calc_total_vehdata(vehid_data.second); // calculate vehdata for vector of bus objects in id bucket
-                        fwf_outputs::writeDRTVehicleState_row(out23, vehid_data.first, vehid_data.second.front()->get_init_time(), temp_vehdata); // use the init time of the first bus object associated with id bucket
-                        temp_vehdata.clear();
-                    }
+                for (const auto& vehid_data : drt_vehdata_per_vehicle)
+                {
+                    FWF_vehdata temp_vehdata;
+                    temp_vehdata.calc_total_vehdata(vehid_data.second); // calculate vehdata for vector of bus objects in id bucket
+                    fwf_outputs::writeDRTVehicleState_row(out23, vehid_data.first, vehid_data.second.front()->get_init_time(), temp_vehdata); // use the init time of the first bus object associated with id bucket
+                    temp_vehdata.clear();
                 }
             }
         }

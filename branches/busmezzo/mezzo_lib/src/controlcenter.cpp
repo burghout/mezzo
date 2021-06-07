@@ -915,7 +915,7 @@ void Controlcenter::connectVehicle(Bus* transitveh)
 
 		transitveh->set_control_center(this);
 
-		if(assignment_data_.planned_capacity == 0) //!< @todo PARTC specific remove
+		if(assignment_data_.planned_capacity == 0) //!< @todo default now is just setting this to whatever capacity the last connected vehicle is
 			assignment_data_.planned_capacity = transitveh->get_capacity();
 	}
 }

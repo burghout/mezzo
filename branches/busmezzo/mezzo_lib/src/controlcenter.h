@@ -54,7 +54,7 @@ struct DRTAssignmentData
 	Controlcenter* cc_owner = nullptr;
 	void print_state(double time) const;
 
-	int planned_capacity = 0; //!< @todo PARTC specific, assumes the entire drt fleet of each Controlcenter has the same capacity, remove
+	int planned_capacity = 0; //!< @todo assumes the entire drt fleet of each Controlcenter has the same capacity, maybe set as a parameter of Controlcenter or to min cap over all vehicles in fleet as default or something
 };
 
 struct Controlcenter_SummaryData
