@@ -367,7 +367,7 @@ private:
 
 	bool generated_direct_routes_ = false; //!< true if direct routes have been generated and added as service routes between all stops in the service area of this control center
 
-	const double rebalancing_interval_; //!< time interval in between each rebalancing call @note e.g. first rebalancing call will be <rebalancing_interval_> seconds after start_pass_generation, <rebalancing_interval_> seconds after that etc..
+	const double rebalancing_interval_; //!< time interval in between each rebalancing call @note e.g. first rebalancing call will be <::drt_first_rebalancing_time> seconds after start_pass_generation, <rebalancing_interval_> seconds after that etc..
 	set<Busstop*,ptr_less<Busstop*> > collection_stops_; //!< set of stops used as targets for rebalancing
 	RebalancingAction* rebalancing_action_;
 
