@@ -32,7 +32,7 @@
    sd_server_scale= 1.0
    server_type= 3
 #vehicle_parameters
-   standard_veh_length= 7
+   standard_veh_length= 1
 #route_parameters
    update_interval_routes= 900.0
    mnl_theta= -0.00417
@@ -71,7 +71,7 @@
    stop_pass_generation= 18000.0
    od_pairs_for_generation= 0
    gate_generation_time_diff= 0
-   empirical_demand= 1
+   empirical_demand= 0
 #transit_control_parameters
    riding_time_weight= 1.0
    dwell_time_weight= 1.0

@@ -13,11 +13,11 @@
 // Drawing functions
 /////////////////////////////////////////
 
-Drawing::Drawing() {bg_set=false;bpm=NULL;}
+Drawing::Drawing() {bg_set=false;bpm=nullptr;}
 
 Drawing::~Drawing()
 {
-  icons.empty();
+  //icons.empty();
 }
 
 void Drawing::add_icon(Icon* icon)

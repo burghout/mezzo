@@ -33,7 +33,6 @@
 #include <qcolor.h>
 #endif
 
-
 // DEFINES
 
 #define _DETERMINISTIC_OD_SERVERS
@@ -72,6 +71,14 @@ struct pair_less {
     }
 };
 
+template<class T> //! EXPECTS T->get_bus_id()
+struct bus_ptr_less //@todo ugly quickfix for repeatability when iterating through sets of Bus*
+{
+    bool operator() (const T& lhs, const T& rhs) const {
+        return lhs->get_bus_id() < rhs->get_bus_id();
+    }
+};
+
 /** @defgroup PassengerDecisionParameters Debugging of interface with passenger decision model (CSGM, dynamic path choice, day2day, different levels of RTI), e.g. methods that return a DRT service parameter
     @ingroup DRT
     @{
@@ -80,11 +87,46 @@ struct pair_less {
 extern double drt_first_rep_max_headway; //!< currently corresponds to a global maximum headway for a DRT service. Sometimes returned by calc_headway... functions when a Busline currently has no Bustrips in its trips list yet
 extern double drt_first_rep_waiting_utility; //!< sometimes returned in calc_waiting_utility functions when a Busline currently has no Bustrips in its trips list yet
 extern int drt_min_occupancy; //!< currently used in controlstrategies to put different minimum size of the set of passenger requests to consider generating trips
+extern double drt_first_rebalancing_time; //!< time after start_pass_generation parameter in which first rebalancing action is initiated
+
 const double drt_exploration_wt = 0.0; //!< default value returns by Controlcenter if RTI or experience is unavailable for passenger anticipated waiting time calculations for decisions
+const double drt_default_large_ivt = 10000.0;
 const double large_negative_utility = -10000.0;
 const double large_positive_utility = 10000.0;
 const double dummy_link_freeflow_speed = 1000.0;
 /**@}*/
+
+
+/** @ingroup PARTC
+* - bunch of stuff used for results output
+* @todo remove
+*/
+class Busstop;
+
+namespace PARTC
+{
+    extern bool drottningholm_case; //true if this is the drottningholm case
+    extern Busstop* transfer_stop; 
+    const vector<int> branch_ids_176 = { 217619,217618,217617,217616,217615,217614,217613,217612,217611,217610,217609,217608,217607,217606,217605,217603,217602,217604,217600,277024 };
+    const vector<int> branch_ids_177 = { 277036,277035,277034,277033,277032,277031,277030,277029,277028,277027,277026,277025,277024 };
+    const vector<int> corridor_ids = { 277024,277023,277022,277021,277020,277019,277018,277017,277016,277015,277014,277013,277012,277011,277010,277009,277008,277007,277006,277005,277004,277003,277002,277001 };
+    const int transfer_stop_id = 277024;
+    const int morby_station_id = 277001;
+
+    enum class ODCategory { Null = 0, b2b, b2c, c2c };
+
+    bool is_on_branch176(int stop_id);
+    bool is_on_branch177(int stop_id);
+    bool is_on_branch(int stop_id); // is on either branch
+    bool is_on_corridor(int stop_id);
+    bool is_transfer_stop(int stop_id);
+    bool is_branch_to_branch(int ostop_id, int dstop_id); // if OD pair is branch to branch
+    bool is_branch_to_corridor(int ostop_id, int dstop_id);
+    bool is_corridor_to_corridor(int ostop_id, int dstop_id);
+
+    ODCategory get_od_category(int ostop_id, int dstop_id);
+}
+
 
 // GLOBAL VARIABLES
 extern long int randseed; // random seed

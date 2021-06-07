@@ -122,6 +122,7 @@ nmake release</NMakeReBuildCommandLine>
     <ClCompile Include="src\busline.cpp" />
     <ClCompile Include="src\controlcenter.cpp" />
     <ClCompile Include="src\controlstrategies.cpp" />
+    <ClCompile Include="src\controlutilities.cpp" />
     <ClCompile Include="src\day2day.cpp" />
     <ClCompile Include="src\eventlist.cpp" />
     <ClCompile Include="src\Graph.cpp" />
@@ -153,6 +154,7 @@ nmake release</NMakeReBuildCommandLine>
     <ClInclude Include="src\busline.h" />
     <ClInclude Include="src\controlcenter.h" />
     <ClInclude Include="src\controlstrategies.h" />
+    <ClInclude Include="src\controlutilities.h" />
     <ClInclude Include="src\csvfile.h" />
     <ClInclude Include="src\day2day.h" />
     <ClInclude Include="src\eventlist.h" />

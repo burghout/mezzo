@@ -141,7 +141,9 @@ enum class BusState
 	//Loading/Unloading
 	//Refeuling
 	OnCall //!< 'oncall' refers to if the vehicle is not currently assigned any trip and is standing still
-}; 
+};
+QString BusState_to_QString(BusState state);
+
 class Bus : public QObject, public Vehicle
 {
 	Q_OBJECT
@@ -197,23 +199,25 @@ public:
 //Control Center
 	BusState get_state() const { return state_; }
 	BusState calc_state(const bool assigned_to_trip, const bool bus_exiting_stop, const int occupancy) const; //!< returns the BusState of bus depending whether a bus is assigned to a trip, has just entered or exited a stop, and the occupancy of the bus. Other states for when a bus is not on a trip (e.g. onCall are set elsewhere)
+	double get_time_since_last_in_state(BusState state, double time); //!< returns the amount of time elapsed since the vehicle was last in <state> up until <time>, returns -1.0 if state has never been entered
 	double get_total_time_in_state(BusState state) const;
 	double get_total_time_empty();
 	double get_total_time_occupied();
 	double get_total_time_driving();
 	double get_total_time_idle();
 	double get_total_time_oncall();
-	void update_meters_traveled(int meters_, bool is_empty);
+	void update_meters_traveled(int meters_, bool is_empty, double time);
 	double get_total_vkt() const;
 	double get_total_empty_vkt() const;
 	double get_total_occupied_vkt() const;
 	void set_state(const BusState newstate, const double time); //!< sets current state_ to newstate and emits stateChanged if newstate differs from current state_
-	void print_state(); //!< prints current BusState for debugging purposes
+	void print_state() const; //!< prints current BusState for debugging purposes
 
 	bool is_idle() const;	//!< returns true if bus is idle/waiting at a stop
 	bool is_driving() const; //!< returns true if bus is driving between stops
 	bool is_oncall() const; //!< returns true if bus is unassigned to any trip and is available for assignment
 	bool is_empty() const; //!< returns true if bus occupancy is currently 0 and false otherwise
+	bool is_full() const; //!< returns true if bus occupancy has reached max capacity and false otherwise
 	bool is_null() const;
 
 	Busstop* get_last_stop_visited() const { return last_stop_visited_; }
@@ -224,6 +228,8 @@ public:
 	Bus* progressFlexVehicle(Bus* oldbus, double time); //!< clones the oldbus into newbus, sets oldbus to null, disconnects it, removes it from service routes. Newbus inherits state from oldbus (DrivingEmpty), and is connected to cc, with same service routes as oldbus. Returns the new bus
 	void assignBusToTrip(Bus* bus, Bustrip* trip); //!< performs operations necessary to connect a bus with no trip with an 'unassigned' bustrip (for example the next trip of the driving_roster)
 
+    double get_init_time() const { return init_time; }
+    void set_init_time(double time) { init_time = time; }
 	void set_flex_vehicle(bool flex_vehicle) { flex_vehicle_ = flex_vehicle; }
 	bool is_flex_vehicle() const { return flex_vehicle_; }
 	void add_sroute_id(int sroute_id) { sroute_ids_.insert(sroute_id); } 
@@ -253,7 +259,7 @@ protected:
 	Busstop* last_stop_visited_ = nullptr; //!< the last busstop (if no stop has been visited then initialized to nullptr) that this transit vehicle has entered (or exited)
 	BusState state_ = BusState::Null; //!< current BusState of the transit vehicle
 	bool flex_vehicle_ = false; //!< true if vehicle can be assigned trips dynamically, false otherwise
-	set<int> sroute_ids_; //!< ids of service routes (buslines) that this bus can be assigned dynamically generated trips for
+	set<int> sroute_ids_; //!< ids of service routes (buslines) that this bus can be assigned dynamically generated trips for @todo remove, vehicle now knows of its CC if flex vehicle anyways
     Controlcenter* CC_ = nullptr; //!< control center that this vehicle is currently connected to. nullptr if not connected to any control center
 
 	// output attributes
@@ -262,6 +268,10 @@ protected:
 	int total_meters_traveled = 0; //!< cumulative meters traveled (excluding dummy links)
 	int total_empty_meters_traveled = 0; //!< cumulative meters traveled without any passengers onboard
 	int total_occupied_meters_traveled = 0; //!< cumulative meters traveled with at least one passenger onboard
+
+	double init_time = 0.0; //!< time the vehicle is generated and made available, i.e. the time in which this vehicle was initially set to 'on-call' if a flex vehicle, set to zero by default if vehicle is not flex when read on input
+
+    map<int,map<BusState,double> > total_time_spent_in_state_per_stop; //!< total time spent in state at a particular stop. Maps stop ID to BusState to time. @todo currently only used to store time in state 'OnCall'
 /**@}*/
 };
 

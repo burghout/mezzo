@@ -1,7 +1,76 @@
 #include "parameters.h"
 #include <iostream>
 
+namespace PARTC
+{
+    bool is_on_branch176(int stop_id)
+    {
+        return find(branch_ids_176.begin(), branch_ids_176.end(), stop_id) != branch_ids_176.end();
+    }
 
+    bool is_on_branch177(int stop_id)
+    {
+        return find(branch_ids_177.begin(), branch_ids_177.end(), stop_id) != branch_ids_177.end();
+    }
+
+    bool is_on_branch(int stop_id)
+    {
+        return is_on_branch176(stop_id) || is_on_branch177(stop_id);
+    }
+
+    bool is_on_corridor(int stop_id)
+    {
+        return find(corridor_ids.begin(), corridor_ids.end(), stop_id) != corridor_ids.end();
+    }
+
+    bool is_transfer_stop(int stop_id)
+    {
+        return stop_id == transfer_stop_id;
+    }
+
+    bool is_branch_to_branch(int ostop_id, int dstop_id)
+    {
+        if (is_on_branch(ostop_id)) // origin of trip starts on a branch
+        {
+            if (is_transfer_stop(dstop_id)) // destination is the transfer stop (which is on both branch and corridor)
+                return true;
+            else
+                return !is_on_corridor(dstop_id); // destination is NOT on corridor
+        }
+        return false;
+    }
+
+    bool is_branch_to_corridor(int ostop_id, int dstop_id)
+    {
+        if (!is_transfer_stop(ostop_id) && is_on_branch(ostop_id))
+            // origin is not the transfer stop (which is on corridor) and is on branch
+        {
+            if (!is_transfer_stop(dstop_id) && is_on_corridor(dstop_id))
+                // destination IS on corridor and is not the transfer stop
+                return true;
+        }
+        return false;
+    }
+
+    bool is_corridor_to_corridor(int ostop_id, int dstop_id)
+    {
+        return is_on_corridor(ostop_id) && is_on_corridor(dstop_id);
+    }
+
+    ODCategory get_od_category(int o, int d)
+    {
+        ODCategory category = ODCategory::Null;
+
+        if (is_branch_to_branch(o, d))
+            category = ODCategory::b2b;
+        if (is_branch_to_corridor(o, d))
+            category = ODCategory::b2c;
+        if (is_corridor_to_corridor(o, d))
+            category = ODCategory::c2c;
+
+        return category;
+    }
+}
 
 Parameters::Parameters ()
 // Later this will be read from a file
@@ -753,7 +822,7 @@ bool Parameters::read_parameters (istream & in )
 		return false;
 	}
 	in >> compliance_rate;
-	in >> keyword; //transfer_sync parameter, David added 2016-04-18
+	in >> keyword; //transfer_sync parameter
 	if (keyword!= "transfer_sync=")
 	{
 		cout << "ERROR reading Parameters file, expecting: transfer_sync=, read: " << keyword << endl;
