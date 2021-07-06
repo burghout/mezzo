@@ -139,7 +139,6 @@ public:
     double get_anticipated_ivtt(Busstop* stop, Busline* line, Busstop* leg);
     double get_ivtt_alpha_exp(Busstop* stop, Busline* line, Busstop* leg);
     bool any_previous_exp_ivtt(Busstop* stop, Busline* line, Busstop* leg);
-    void set_AWT_first_leg_boarding(Busstop* stop, Busline* line);
 
     double calc_total_waiting_time();
     double calc_total_IVT();

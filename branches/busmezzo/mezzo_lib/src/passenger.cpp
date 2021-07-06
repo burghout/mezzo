@@ -208,20 +208,6 @@ void Passenger::set_memory_projected_RTI (Busstop* stop, Busline* line, double p
 	}
 }
 
-void Passenger::set_AWT_first_leg_boarding(Busstop* stop, Busline* line)
-{
-	pair<Busstop*, Busline*> stopline;
-	stopline.first = stop;
-	stopline.second = line;
-
-	// So should this be done for every line that potentially pass at this stop upon arrival at the stop
-
-	// consider with and without RTI
-	// need to calc projected RTI and PK
-	
-	// AWT_first_leg_boarding = alpha_exp[stopline] * get_anticipated_waiting_time(stop,line) + alpha_RTI[stopline] * wt_rti + (1-alpha_RTI[stopline]-alpha_exp[stopline])*wt_pk; 	
-}
-
 double Passenger::get_memory_projected_RTI (Busstop* stop, Busline* line)
 {
 	pair<Busstop*, Busline*> stopline;
