@@ -71,8 +71,8 @@ struct Travel_time //structure for saving and adding data
 {
 	int counter;
 	int day;
-	float tt[5];
-	float alpha[3];
+	float tt[5]; // EXP, PK, RTI (or crowding for ivt), anticip, anticip_EXP
+	float alpha[3]; // EXP, PK, RTI (or crowding for ivt)
 	float convergence;
     
     friend float operator/ (const Travel_time& lhs, const Travel_time& rhs);

@@ -25,7 +25,7 @@ map<id_type, Travel_time>& operator << (map<id_type, Travel_time>& ODSLreg, pair
 	if (odsl_sum != ODSLreg.end())
 	{
 		row.second.convergence = row.second / odsl_sum->second;
-		row.second.day++;
+		++row.second.day;
 		odsl_sum->second = row.second;
 	}
 	else
@@ -59,7 +59,7 @@ map<id_type, Travel_time>& operator << (map<id_type, Travel_time>& ODSLreg, pair
 float insert (map<ODSL, Travel_time>& ODSL_reg, map<ODSL, Travel_time>& ODSL_data) //Method for inserting data for one day into record
 {
     float crit = 0;
-    for (map<ODSL, Travel_time>::iterator row = ODSL_data.begin(); row != ODSL_data.end(); row++) //aggregate over days
+    for (auto row = ODSL_data.begin(); row != ODSL_data.end(); ++row) //aggregate over days
     {
         row->second /= row->second.counter; //finish the averaging by dividing by the number of occurences which is counted when adding
         
@@ -76,7 +76,7 @@ float insert (map<ODSL, Travel_time>& ODSL_reg, map<ODSL, Travel_time>& ODSL_dat
 float insert (map<ODSLL, Travel_time>& ODSL_reg, map<ODSLL, Travel_time>& ODSL_data) //Method for inserting data for one day into record
 {
     float crit = 0;
-    for (map<ODSLL, Travel_time>::iterator row = ODSL_data.begin(); row != ODSL_data.end(); row++) //aggregate over days
+    for (auto row = ODSL_data.begin(); row != ODSL_data.end(); ++row) //aggregate over days
     {
         row->second /= row->second.counter; //finish the averaging by dividing by the number of occurences which is counted when adding
         
@@ -104,7 +104,7 @@ map<id_type, Travel_time>& operator += (map<id_type, Travel_time>& ODSLreg, cons
 template <typename id_type>
 map<id_type, Travel_time>& operator += (map<id_type, Travel_time>& ODSL_reg, map<id_type, Travel_time>& ODSL_data)
 {
-    for (typename map<id_type, Travel_time>::iterator row = ODSL_data.begin(); row != ODSL_data.end(); row++) //aggregate over replications
+    for (typename map<id_type, Travel_time>::iterator row = ODSL_data.begin(); row != ODSL_data.end(); ++row) //aggregate over replications
 	{
 		row->second /= row->second.counter; //finish the averaging by dividing by the number of occurences which is counted when adding
 		row->second.counter = 1;
@@ -199,13 +199,13 @@ void Day2day::update_day (int d)
 void Day2day::write_output (string filename, string addition)
 {
 	map<ODSL, Travel_time> temp_output;
-	for (map<ODSL, Travel_time>::iterator row = wt_day.begin(); row != wt_day.end(); row++)
+	for (auto row = wt_day.begin(); row != wt_day.end(); ++row)
 	{
 		const ODSL temp_odsl = {0, row->first.orig, row->first.dest, row->first.stop, row->first.line};
 		pair<const ODSL, Travel_time> temp_row (temp_odsl, row->second);
 		temp_output += temp_row;
 	}
-	for (map<ODSL, Travel_time>::iterator row = temp_output.begin(); row != temp_output.end(); row++) //aggregate over replications
+	for (auto row = temp_output.begin(); row != temp_output.end(); ++row) //aggregate over replications
 	{
 		row->second /= row->second.counter;
 	}
@@ -231,13 +231,13 @@ void Day2day::write_output (string filename, string addition)
 	out1 << average_waiting_time << "\t" << average_wt_pk << "\t" << average_wt_rti << "\t" << average_wt_exp << "\t" << average_wt_anticip << "\t";
 	if (temp_output.size() <= 2)
 	{
-		for (map<ODSL, Travel_time>::iterator row = temp_output.begin(); row != temp_output.end(); row++)
+		for (auto row = temp_output.begin(); row != temp_output.end(); ++row)
 		{
 			out1 << row->first.line << "\t" << row->second.counter << "\t" << row->second.tt[EXP] << "\t" << row->second.tt[anticip_EXP] << "\t" << row->second.tt[anticip] << "\t";
 		}
 	}
 	out1 << average_in_vehicle_time << "\t" << average_ivt_pk << "\t" << average_ivt_exp << "\t" << average_ivt_anticip << "\t";
-	out1 << average_travel_time << "\t" << nr_on_line_2 << "\t";
+	out1 << average_travel_time << "\t"; // << nr_on_line_2 << "\t";
 	out1.precision(2);
 	out1 << average_nr_of_changes << "\t" << total_crowding / nr_of_legs << "\t" << total_acrowding / nr_of_legs << "\t" << average_nr_missed << "\t";
 	out1 << addition << endl;
@@ -256,14 +256,16 @@ map<ODSL, Travel_time>& Day2day::process_wt_replication (vector<ODstops*>& odsto
 	nr_of_changes = 0;
 	nr_on_line_2 = 0;
 
-	for (vector<ODstops*>::iterator od_iter = odstops.begin(); od_iter != odstops.end(); od_iter++)
+
+	// For each od collect list of passenger experiences, For each passenger calculate and anticipated EXP, and if information is shared then we average the experiences when calculated anticipated wt
+	for (auto od_iter = odstops.begin(); od_iter != odstops.end(); ++od_iter)
 	{
 		map <Passenger*,list<Pass_waiting_experience> > pass_list = (*od_iter)->get_waiting_output();
-		for (map<Passenger*,list<Pass_waiting_experience> >::iterator pass_iter1 = pass_list.begin(); pass_iter1 != pass_list.end(); pass_iter1++)
+		for (auto pass_iter1 = pass_list.begin(); pass_iter1 != pass_list.end(); ++pass_iter1)
 		{
 			nr_of_passengers++;
 			list<Pass_waiting_experience> waiting_experience_list = (*pass_iter1).second;
-			for (list<Pass_waiting_experience>::iterator exp_iter = waiting_experience_list.begin(); exp_iter != waiting_experience_list.end(); exp_iter++)
+			for (auto exp_iter = waiting_experience_list.begin(); exp_iter != waiting_experience_list.end(); ++exp_iter)
 			{
 				Travel_time wt;
 
@@ -334,13 +336,13 @@ map<ODSLL, Travel_time>& Day2day::process_ivt_replication (vector<ODstops*>& ods
 	total_crowding = 0;
 	total_acrowding = 0;
 
-	for (vector<ODstops*>::iterator od_iter = odstops.begin(); od_iter != odstops.end(); od_iter++)
+	for (auto od_iter = odstops.begin(); od_iter != odstops.end(); ++od_iter)
 	{
 		map <Passenger*,list<Pass_onboard_experience> > pass_list = (*od_iter)->get_onboard_output();
-		for (map<Passenger*,list<Pass_onboard_experience> >::iterator pass_iter1 = pass_list.begin(); pass_iter1 != pass_list.end(); pass_iter1++)
+		for (auto pass_iter = pass_list.begin(); pass_iter != pass_list.end(); ++pass_iter)
 		{
-			list<Pass_onboard_experience> onboard_experience_list = (*pass_iter1).second;
-			for (list<Pass_onboard_experience>::iterator exp_iter = onboard_experience_list.begin(); exp_iter != onboard_experience_list.end(); exp_iter++)
+			list<Pass_onboard_experience> onboard_experience_list = (*pass_iter).second;
+			for (auto exp_iter = onboard_experience_list.begin(); exp_iter != onboard_experience_list.end(); ++exp_iter)
 			{
 				nr_of_legs++;
 				Travel_time ivt;
