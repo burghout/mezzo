@@ -1003,7 +1003,7 @@ double Controlcenter::calc_expected_ivt(Busline* service_route, Busstop* start_s
 	vector<Link*> shortestpath = find_shortest_path_between_stops(start_stop, end_stop, time);
 	double expected_ivt = calc_route_travel_time(shortestpath, time); // travel time calculated based on link->cost(time)
 	
-	return expected_ivt; //OBS waiting time is returned in seconds
+	return expected_ivt; //OBS in-vehicle time is returned in seconds
 }
 
 /**
@@ -1043,7 +1043,7 @@ double Controlcenter::calc_exploration_ivt(Busline* service_route, Busstop* star
 	if (found_board == false || found_alight == false)
 		return ::drt_default_large_ivt; //default in case of no matching
 
-	return cumulative_arrival_time - earliest_time_ostop; //OBS waiting time is returned in seconds
+	return cumulative_arrival_time - earliest_time_ostop; //OBS in-vehicle time is returned in seconds
 }
 
 double Controlcenter::calc_expected_wt(Busline* service_route, Busstop* start_stop, Busstop* end_stop, bool first_line_leg, double walking_time_to_start_stop, double arrival_time_to_start_stop)
@@ -1069,7 +1069,7 @@ double Controlcenter::calc_expected_wt(Busline* service_route, Busstop* start_st
 /**
  * @ingroup DRT
  * 
- * @todo currently just returns 0.0 waiting time
+ * @todo currently just returns 1.0 waiting time
  * 
  * @return exploration waiting time
  */
@@ -1265,8 +1265,11 @@ bool Controlcenter_OD::operator==(const Controlcenter_OD& rhs) const
 
 bool Controlcenter_OD::operator<(const Controlcenter_OD& rhs) const
 {
-	if (orig != nullptr && rhs.orig != nullptr)
-		return orig->get_id() < rhs.orig->get_id();
-	else
-		return true;
+    assert(orig != nullptr && rhs.orig != nullptr);
+	assert(dest != nullptr && rhs.dest != nullptr);
+
+    if (orig->get_id() != rhs.orig->get_id())
+        return orig->get_id() < rhs.orig->get_id();
+    else
+        return dest->get_id() < rhs.dest->get_id();
 }

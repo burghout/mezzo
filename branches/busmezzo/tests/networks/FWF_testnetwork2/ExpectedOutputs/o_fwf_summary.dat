@@ -1,31 +1,31 @@
 ### Total passenger summary ###
 Passenger journeys completed: 168
 
-Average GTC                    : -3.2417
-Stdev GTC                      : 1.25415
+Average GTC                    : -3.24725
+Stdev GTC                      : 1.26575
 
 Average walking time           : 0
 Stdev walking time             : 0
 
-Average waiting time           : 415.467
-Stdev waiting time             : 205.622
+Average waiting time           : 417.309
+Stdev waiting time             : 207.554
 Maximum waiting time           : 774.663
 Median waiting time            : 451.554
-CV waiting time                : 0.494918
+CV waiting time                : 0.497362
 
 Average denied waiting time    : 10.7143
 Stdev denied waiting time      : 61.1747
 
-Average in-vehicle time        : 935.518
-Stdev in-vehicle time          : 18.3732
+Average in-vehicle time        : 935.438
+Stdev in-vehicle time          : 18.2727
 
-Average crowded in-vehicle time: 927.961
-Stdev crowded in-vehicle time  : 75.3681
+Average crowded in-vehicle time: 927.884
+Stdev crowded in-vehicle time  : 75.2818
 
 Total PKT      : 1512
-Total Fixed PKT: 805.5
-Total DRT PKT  : 706.5
-PKT mode split (FIX / Total, DRT / Total)     : 0.532738, 0.467262
+Total Fixed PKT: 798
+Total DRT PKT  : 714
+PKT mode split (FIX / Total, DRT / Total)     : 0.527778, 0.472222
 
 Total passengers ignored (trip out of pass-generation start-stop interval): 132
 start_pass_generation= 1800
@@ -33,57 +33,57 @@ stop_pass_generation= 5400
 stoptime= 10800
 
 ### Total vehicle summary ###
-Total VKT                   : 387
+Total VKT                   : 390
 Total occupied VKT          : 157.5
-Total empty VKT             : 229.5
-Total occupied time         : 18901.1
-Total empty time            : 176663
-Total driving time          : 189509
-Total idle time             : 1541.16
-Total oncall time           : 4513.84
+Total empty VKT             : 232.5
+Total occupied time         : 18543.1
+Total empty time            : 177021
+Total driving time          : 189431
+Total idle time             : 1545.08
+Total oncall time           : 4587.41
 
 ### Fixed vehicle summary ###
 Fixed VKT                   : 180
 Fixed occupied VKT          : 70.5
 Fixed empty VKT             : 109.5
-Fixed occupied time         : 8073.1
-Fixed empty time            : 158691
-Fixed driving time          : 165935
-Fixed idle time             : 829
+Fixed occupied time         : 8063.1
+Fixed empty time            : 158701
+Fixed driving time          : 165958
+Fixed idle time             : 806
 Fixed oncall time           : 0
 Fixed occ/total VKT ratio   : 0.391667
-Fixed PKT/VKT ratio         : 4.475
+Fixed PKT/VKT ratio         : 4.43333
 
 ### DRT vehicle summary ###
-DRT VKT                     : 207
+DRT VKT                     : 210
 DRT occupied VKT            : 87
-DRT empty VKT               : 120
-DRT occupied time           : 10828
-DRT empty time              : 17972
-DRT driving time            : 23574
-DRT idle time               : 712.161
-DRT oncall time             : 4513.84
-DRT occ/total VKT ratio     : 0.42029
-DRT PKT/VKT ratio           : 3.41304
+DRT empty VKT               : 123
+DRT occupied time           : 10480
+DRT empty time              : 18320
+DRT driving time            : 23473.5
+DRT idle time               : 739.076
+DRT oncall time             : 4587.41
+DRT occ/total VKT ratio     : 0.414286
+DRT PKT/VKT ratio           : 3.4
 
 ### DRT trip summary ###
 Total trips                            : 88
 Total pass-carrying trips              : 33
 Total empty trips                      : 55
-Total pass boarding                    : 287
-Total pass alighting                   : 287
+Total pass boarding                    : 295
+Total pass alighting                   : 295
 
-Average boarding per pass-carrying trip: 8.69697
-Stdev boarding per pass-carrying trip  : 4.58908
+Average boarding per pass-carrying trip: 8.93939
+Stdev boarding per pass-carrying trip  : 5.47135
 Minimum boarding per pass-carrying trip: 1
-Maximum boarding per pass-carrying trip: 22
-Median boarding per pass-carrying trip : 10
+Maximum boarding per pass-carrying trip: 24
+Median boarding per pass-carrying trip : 9
 
 ### ControlCenter summary ###
-Requests recieved           : 287
+Requests recieved           : 295
 Requests rejected           : 0
-Requests accepted           : 287
-Requests served             : 287
+Requests accepted           : 295
+Requests served             : 295
 
 ------------------------------------------------------------------
 

@@ -553,7 +553,7 @@ void TestFixedWithFlexible_walking::testFlexiblePathExpectedLoS()
     Controlcenter* CC = drt1->get_CC();
     QVERIFY(CC != nullptr);
     QVERIFY(CC->getAllVehicles().size() == 0);// no vehicles have been initialized
-    QVERIFY(AproxEqual(CC->calc_exploration_wt(), 0.0)); //exploration parameters initialized to 0.0
+    QVERIFY(AproxEqual(CC->calc_exploration_wt(), 1.0)); //exploration parameters initialized to 1.0
     // Busstop* stop1 = net->get_stopsmap()[1];
     // Busstop* stop5 = net->get_stopsmap()[5];
     Busstop* stop4 = net->get_stopsmap()[4];
@@ -771,7 +771,7 @@ void TestFixedWithFlexible_walking::testPathSetUtilities()
 //! @note not quite like connection decision since 'no double walking rule' is not included, also the walking cost to access 5to4 or 1to4 pathsets calculated differently
     pathset_5to4 = pass1->get_OD_stop()->get_path_set();
     double sum_pathsetutil = 0.0;
-
+    qDebug() << "Printing average GTC components for 5->4: " << Qt::endl;
     for(const auto& path : pathset_5to4)
     {
         double twkt = path->calc_total_walking_distance() / theParameters->average_walking_speed;
@@ -801,7 +801,8 @@ void TestFixedWithFlexible_walking::testPathSetUtilities()
     }
     double logsum_5to4 = log(sum_pathsetutil);
     qDebug() << "Logsum pathset 5->4: " << logsum_5to4 << Qt::endl;
-
+    
+    qDebug() << "Printing average GTC components for 1->4: " << Qt::endl;
     for(const auto& path : pathset_1to4)
     {
         double twkt = path->calc_total_walking_distance() / theParameters->average_walking_speed;

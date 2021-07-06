@@ -265,7 +265,7 @@ double Pass_path::calc_total_waiting_time (double time, bool without_first_waiti
 
 		bool flexible_leg = check_all_flexible_lines(*iter_alt_lines); //true if calculating waiting time for a flexible transit leg
 
-		if (check_all_flexible_lines(*iter_alt_lines)) // want flexible transit line specific waiting times instead of fixed
+		if (flexible_leg) // want flexible transit line specific waiting times instead of fixed
 		{
 			Busline* service_route = (*iter_alt_lines).front();
 			Controlcenter* CC = service_route->get_CC(); //get the control center of this line leg
@@ -357,7 +357,7 @@ double Pass_path::calc_total_waiting_time (double time, bool without_first_waiti
 				}
 				else
 				{
-					assert(wt_explore == ::drt_exploration_wt); //temporary check, should always be the default we've set at this point
+					//assert(wt_explore == ::drt_exploration_wt); //temporary check, should always be the default we've set at this point
 					leg_waiting_time = wt_explore; //!< @todo this basically means that single-shot runs will always favor using paths with flexible transit legs downstream
 				}
 			}

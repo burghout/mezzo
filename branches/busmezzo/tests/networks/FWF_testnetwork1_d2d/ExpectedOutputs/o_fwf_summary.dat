@@ -1,16 +1,16 @@
 ### Total passenger summary ###
 Passenger journeys completed: 1
 
-Average GTC                    : -95.5222
+Average GTC                    : -87.8676
 Stdev GTC                      : 0
 
-Average walking time           : 253.876
+Average walking time           : 298.479
 Stdev walking time             : 0
 
-Average waiting time           : 606.912
+Average waiting time           : 452.958
 Stdev waiting time             : 0
-Maximum waiting time           : 606.912
-Median waiting time            : 606.912
+Maximum waiting time           : 452.958
+Median waiting time            : 452.958
 CV waiting time                : 0
 
 Average denied waiting time    : 0
