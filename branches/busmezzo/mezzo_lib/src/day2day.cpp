@@ -399,6 +399,73 @@ map<ODSLL, Travel_time>& Day2day::process_ivt_replication (vector<ODstops*>& ods
 	return ivt_day;
 }
 
+void Day2day::print_wt_alphas(const map<ODSL, Travel_time>& wt_records, const ODSL& odsl)
+{
+    auto tt_it = wt_records.find(odsl);
+    odsl.print();
+    if (tt_it != wt_records.end())
+    {
+        cout << "\twt_alpha_exp: " << tt_it->second.alpha[EXP] << endl;
+        cout << "\twt_alpha_pk : " << tt_it->second.alpha[PK] << endl;
+        cout << "\twt_alpha_rti: " << tt_it->second.alpha[RTI] << endl;
+    }
+    else
+    {
+        cout << "\tNo record for this ODSL exists." << endl;
+    }
+}
+
+void Day2day::print_ivt_alphas(const map<ODSLL, Travel_time>& ivt_records, const ODSLL& odsll)
+{
+    auto tt_it = ivt_records.find(odsll);
+    odsll.print();
+    if (tt_it != ivt_records.end())
+    {
+        cout << "\tivt_alpha_exp     : " << tt_it->second.alpha[EXP] << endl;
+        cout << "\tivt_alpha_pk      : " << tt_it->second.alpha[PK] << endl;
+        cout << "\tivt_alpha_crowding: " << tt_it->second.alpha[crowding] << endl;
+    }
+    else
+    {
+        cout << "No record for this ODSLL exists." << endl;
+    }
+}
+
+void Day2day::write_wt_alphas_header(string filename)
+{
+	ofstream ofs(filename.c_str(),ios_base::app);
+    ofs << "day\t" << "origin\t" << "destination\t" << "stop\t" << "line\t" << "wt_alpha_exp\t" << "wt_alpha_pk\t" << "wt_alpha_rti\t" << "drt\t" <<  endl;
+}
+void Day2day::write_wt_alphas(string filename, const map<ODSL, Travel_time>& wt_records)
+{
+    ofstream ofs(filename.c_str(),ios_base::app);
+    
+    for(const auto& wt_rec : wt_records)
+    {
+		ODSL odsl = wt_rec.first;
+		Travel_time tt = wt_rec.second;
+        ofs << tt.day << "\t" << odsl.orig << "\t" << odsl.dest << "\t" << odsl.stop << "\t" << odsl.line << "\t" << tt.alpha[EXP] << "\t" << tt.alpha[PK] << "\t" << tt.alpha[RTI] << endl;
+    }
+}
+void Day2day::write_ivt_alphas_header(string filename)
+{
+	ofstream ofs(filename.c_str(),ios_base::app);
+    ofs << "day\t" << "origin\t" << "destination\t" << "stop\t" << "line\t"  << "leg\t" << "ivt_alpha_exp\t" << "ivt_alpha_pk\t" << "ivt_alpha_crowding" << endl;
+}
+void Day2day::write_ivt_alphas(string filename, const map<ODSLL, Travel_time>& ivt_records)
+{
+	ofstream ofs(filename.c_str(),ios_base::app);
+    
+    for (const auto& ivt_rec : ivt_records)
+    {
+        ODSLL odsll = ivt_rec.first;
+        Travel_time tt = ivt_rec.second;
+        ofs << tt.day << "\t" << odsll.orig << "\t" << odsll.dest << "\t" << odsll.stop << "\t" << odsll.line << "\t" << odsll.leg << "\t" << tt.alpha[EXP] << "\t" << tt.alpha[PK] << "\t" << tt.alpha[crowding] << endl;
+    }
+
+}
+
+
 void Day2day::calc_anticipated_wt (Travel_time& row)
 {
 	float& wtPK = row.tt[PK];

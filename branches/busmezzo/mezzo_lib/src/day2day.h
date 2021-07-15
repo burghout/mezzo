@@ -34,7 +34,13 @@ struct ODSL //structure for comparing ODSL combinations
 		else
 			return line < rhs.line;
 	}
-} ;
+
+	void print() const
+	{
+	    cout << "PID-" << pid << "-ODSL: " << orig << dest << stop << line << endl;
+	}
+
+};
 
 struct ODSLL
 {
@@ -65,7 +71,14 @@ struct ODSLL
 		else
 			return leg < rhs.leg;
 	}
-} ;
+
+	void print() const
+	{
+	    cout << "PID-" << pid << "-ODSLL: " << orig << dest << stop << line << leg << endl;
+	}
+
+};
+
 
 struct Travel_time //structure for saving and adding data
 {
@@ -102,6 +115,36 @@ struct Travel_time //structure for saving and adding data
 		alpha[1] /= rhs;
 		alpha[2] /= rhs;
 		return *this;
+	}
+
+	void print_wt() const // print the contents of tt, alpha and convergence assuming that this is for waiting times
+	{
+	    qDebug() << "Printing day2day WT for day" << day;
+		qDebug() << "\t wt_exp        : " << tt[0];
+		qDebug() << "\t wt_pk         : " << tt[1];
+		qDebug() << "\t wt_rti        : " << tt[2];
+		qDebug() << "\t wt_anticip    : " << tt[3];
+		qDebug() << "\t wt_anticip_exp: " << tt[4] << Qt::endl;
+		qDebug() << "\t alpha_exp     : " << alpha[0];
+		qDebug() << "\t alpha_pk      : " << alpha[1];
+		qDebug() << "\t alpha_rti     : " << alpha[2] << Qt::endl;
+		qDebug() << "\t convergence   : " << convergence;
+		qDebug() << "\t counter       : " << counter;
+	}
+
+	void print_ivt() const // print the contents of tt, alpha and convergence assuming that this is for in-vehicle times
+	{
+	    qDebug() << "Printing day2day IVT for day" << day;
+		qDebug() << "\t ivt_exp        : " << tt[0];
+		qDebug() << "\t ivt_pk         : " << tt[1];
+		qDebug() << "\t ivt_crowding   : " << tt[2];
+		qDebug() << "\t ivt_anticip    : " << tt[3];
+		qDebug() << "\t ivt_anticip_exp: " << tt[4] << Qt::endl;
+		qDebug() << "\t alpha_exp      : " << alpha[0];
+		qDebug() << "\t alpha_pk       : " << alpha[1];
+		qDebug() << "\t alpha_crowding : " << alpha[2] << Qt::endl;
+		qDebug() << "\t convergence    : " << convergence;
+		qDebug() << "\t counter        : " << counter;
 	}
 } ;
 
@@ -162,6 +205,18 @@ public:
 	void write_output (string filename, string addition);
 	map<ODSL, Travel_time>& process_wt_replication (vector<ODstops*>& odstops, map<ODSL, Travel_time> wt_rec);
 	map<ODSLL, Travel_time>& process_ivt_replication (vector<ODstops*>& odstops, map<ODSLL, Travel_time> ivt_rec);
+
+	/** @ingroup DRT
+        @{
+        @todo two print/write functions for the alphas of a given ODSL combo or ODSLL combo to a file or console
+    */
+    static void print_wt_alphas(const map<ODSL, Travel_time>& wt_records, const ODSL& odsl); // print the alphas for a given ODSL record
+    static void print_ivt_alphas(const map<ODSLL, Travel_time>& ivt_records, const ODSLL& odsll); // print the alphas for a given ODSLL record
+    static void write_wt_alphas_header(string filename);
+    static void write_wt_alphas(string filename, const map<ODSL, Travel_time>& wt_records); //write out all ODSL alphas to a csv file
+	static void write_ivt_alphas_header(string filename);
+	static void write_ivt_alphas(string filename, const map<ODSLL, Travel_time>& ivt_records); //write out all ODSLL alphas to a csv file
+	/**@}*/
 };
 
 #endif
