@@ -275,7 +275,6 @@ void Day2day::write_output (string filename, string addition)
 	out1 << addition << endl;
 }
 
-map<ODSL, Travel_time>& Day2day::process_wt_replication (vector<ODstops*>& odstops, map<ODSL, Travel_time> wt_rec)
 map<ODSL, Travel_time>& Day2day::process_wt_replication (vector<ODstops*>& odstops, map<ODSL, Travel_time> wt_rec, const vector<Busline*>& buslines)
 {
 	map<ODSL, Travel_time> wt_rep; //record of ODSL data for the current replication
