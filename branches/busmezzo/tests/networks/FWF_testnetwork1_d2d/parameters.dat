@@ -66,8 +66,8 @@
    max_waiting_time= 1800.0
    dominancy_perception_threshold= 1.5
    choice_model= 1
-   real_time_info= 3
-   share_RTI_network= 1
+   real_time_info= 0
+   share_RTI_network= 0
    start_pass_generation= 1800.000000
    stop_pass_generation= 5400.000000
    od_pairs_for_generation= 0
@@ -82,4 +82,4 @@
    transfer_sync= 0
    drt= 1
 #day2day_assignment
-   default_alpha_RTI= 0.5
+   default_alpha_RTI= 0.0
