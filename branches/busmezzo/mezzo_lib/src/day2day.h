@@ -90,7 +90,7 @@ struct Travel_time //structure for saving and adding data
     
     friend float operator/ (const Travel_time& lhs, const Travel_time& rhs);
 
-	Travel_time &operator += (const Travel_time& rhs)
+	Travel_time& operator += (const Travel_time& rhs)
 	{
 		counter += rhs.counter;
 		tt[0] += rhs.tt[0];
@@ -148,10 +148,10 @@ struct Travel_time //structure for saving and adding data
 	}
 } ;
 
-template <typename id_type> float insert (map<id_type, Travel_time>& ODSL_reg, map<id_type, Travel_time>& ODSL_data); //Method for inserting data for one day into record
+//template <typename id_type> float insert (map<id_type, Travel_time>& ODSL_reg, map<id_type, Travel_time>& ODSL_data); //Method for inserting data for one day into record
 
 float insert (map<ODSL, Travel_time>& ODSL_reg, map<ODSL, Travel_time>& ODSL_data);
-float insert (map<ODSLL, Travel_time>& ODSL_reg, map<ODSLL, Travel_time>& ODSL_data);
+float insert (map<ODSLL, Travel_time>& ODSLL_reg, map<ODSLL, Travel_time>& ODSLL_data);
 
 class Day2day
 {
@@ -174,8 +174,8 @@ private:
 	bool individual_wt = false;
 	bool individual_ivt = false;
 
-	void calc_anticipated_wt (Travel_time& row);
-	void calc_anticipated_ivt (Travel_time& row);
+    void calc_anticipated_wt(Travel_time& row, bool is_flexible_leg = false);
+    void calc_anticipated_ivt(Travel_time& row, bool is_flexible_leg = false);
 
 	int nr_of_passengers = 0;
 	int nr_of_changes = 0;
@@ -203,15 +203,16 @@ public:
     void set_recency(float r_) {r = r_;}
 	void update_day (int d);
 	void write_output (string filename, string addition);
-	map<ODSL, Travel_time>& process_wt_replication (vector<ODstops*>& odstops, map<ODSL, Travel_time> wt_rec);
-	map<ODSLL, Travel_time>& process_ivt_replication (vector<ODstops*>& odstops, map<ODSLL, Travel_time> ivt_rec);
+	map<ODSL, Travel_time>& process_wt_replication (vector<ODstops*>& odstops, map<ODSL, Travel_time> wt_rec, const vector<Busline*>& buslines);
+	map<ODSLL, Travel_time>& process_ivt_replication (vector<ODstops*>& odstops, map<ODSLL, Travel_time> ivt_rec, const vector<Busline*>& buslines);
 
-	/** @ingroup DRT
+	/** @ingroup DRT fwf_wip
         @{
-        @todo two print/write functions for the alphas of a given ODSL combo or ODSLL combo to a file or console
     */
     static void print_wt_alphas(const map<ODSL, Travel_time>& wt_records, const ODSL& odsl); // print the alphas for a given ODSL record
     static void print_ivt_alphas(const map<ODSLL, Travel_time>& ivt_records, const ODSLL& odsll); // print the alphas for a given ODSLL record
+    static void print_all_wt_records(const map<ODSL, Travel_time>& wt_records); // print out the contents of a ODSL table
+    static void print_all_ivt_records(const map<ODSLL, Travel_time>& ivt_records); // print out the contents of a ODSLL table
     static void write_wt_alphas_header(string filename);
     static void write_wt_alphas(string filename, const map<ODSL, Travel_time>& wt_records); //write out all ODSL alphas to a csv file
 	static void write_ivt_alphas_header(string filename);

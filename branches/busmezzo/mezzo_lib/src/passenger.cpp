@@ -244,7 +244,7 @@ void Passenger::set_alpha_exp (Busstop* stop, Busline* line, double alpha)
 	alpha_exp[stopline] = alpha;
 }
 
-double Passenger::get_anticipated_waiting_time (Busstop* stop, Busline* line)
+double Passenger::get_anticipated_waiting_time (Busstop* stop, Busline* line) // anticipated waiting time based on incremental weighted average of prior experiences (if they exist)
 {
 	pair<Busstop*, Busline*> stopline;
 	stopline.first = stop;
@@ -438,7 +438,7 @@ void Passenger::start(Eventlist* eventlist, double time)
         }
     }
 
-    TransitModeType chosen_mode = make_transitmode_decision(connection_stop, start_time); 
+    TransitModeType chosen_mode = make_transitmode_decision(connection_stop, start_time);
     if (!theParameters->drt)
         assert(chosen_mode == TransitModeType::Fixed);
     set_chosen_mode(chosen_mode); //important that this is set before dropoff_decision call

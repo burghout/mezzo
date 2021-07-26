@@ -273,7 +273,7 @@ double Pass_path::calc_total_waiting_time (double time, bool without_first_waiti
 			//DEBUG_MSG("\t Calculating total waiting time for flexible line " << service_route->get_id());
 			//prior knowledge does not exist.... instead we should initialize pk to be 0.0
 			//wt_pk = 0.0; // default is just setting wt_pk to zero, should always have credibility coefficient 0.0 for a flexible transit leg
-			if (first_line)
+			if (first_line && RTI_availability > 0)
 			{ 
 				leg_has_RTI = true; //just to stay consistent with the fixed line setup
 				double walking_time = (((*iter_walk) / avg_walking_speed) * 60); //note that this is in seconds
@@ -283,6 +283,7 @@ double Pass_path::calc_total_waiting_time (double time, bool without_first_waiti
 			}
 			else // no rti for downstream flex legs....
 			{
+				leg_has_RTI = false;
 				wt_explore = CC->calc_expected_wt(service_route, service_route->stops.front(), service_route->stops.back(), first_line, 0.0, pass_arrival_time_at_next_stop); //if first leg, based on real-time, other legs should be exploration param or experience....
 				//DEBUG_MSG("\t wt_explore = " << wt_explore);
 				wt_explore /= 60; //sec to minutes
@@ -388,18 +389,20 @@ double Pass_path::calc_total_waiting_time (double time, bool without_first_waiti
             {
                 alpha_exp = pass->get_alpha_exp((*alt_transfer_stops_iter).front(), (*iter_alt_lines).front());
                 alpha_RTI = pass->get_alpha_RTI((*alt_transfer_stops_iter).front(), (*iter_alt_lines).front());
+				if(fwf_wip::day2day_drt_no_rti)
+					assert(AproxEqual(alpha_RTI,0.0));
             }
 
-			if (flexible_leg) // prior knowledge (pk) does not exist for flexible legs, use exploration waiting time instead... @todo make sure that weights here make sense...need to always add up to one
+			if (flexible_leg) // prior knowledge (pk) does not exist for flexible legs, use exploration waiting time or experienced waiting time instead if RTI is not available... 
 			{
 				if (leg_has_RTI)
 				{
-					leg_waiting_time = alpha_exp * pass->get_anticipated_waiting_time((*alt_transfer_stops_iter).front(), (*iter_alt_lines).front()) + alpha_RTI * wt_rti; //+ (1 - alpha_RTI - alpha_exp) * wt_pk;
+					leg_waiting_time = alpha_exp * pass->get_anticipated_waiting_time((*alt_transfer_stops_iter).front(), (*iter_alt_lines).front()) + alpha_RTI * wt_rti; // no exploration is used if RTI is available
 				}
 				else
 				{
-					leg_waiting_time = alpha_exp / (1 - alpha_RTI) * pass->get_anticipated_waiting_time((*alt_transfer_stops_iter).front(), (*iter_alt_lines).front()) + wt_explore;  // alpha_exp initialized to zero, so wt_explore will be used first, with 100% 'credibility'
-					//leg_waiting_time = alpha_exp / (1 - alpha_RTI) * pass->get_anticipated_waiting_time((*alt_transfer_stops_iter).front(), (*iter_alt_lines).front()) + (1 - alpha_exp - alpha_RTI) / (1 - alpha_RTI) * wt_pk; //Changed by Jens 2014-06-24
+					leg_waiting_time = alpha_exp > 0 ? alpha_exp * pass->get_anticipated_waiting_time((*alt_transfer_stops_iter).front(), (*iter_alt_lines).front()) : wt_explore;
+					//leg_waiting_time = alpha_exp / (1 - alpha_RTI) * pass->get_anticipated_waiting_time((*alt_transfer_stops_iter).front(), (*iter_alt_lines).front()) + (1 - alpha_exp - alpha_RTI) / (1 - alpha_RTI) * wt_explore;  // alpha_exp initialized to zero, so wt_explore will be used first, with 100% 'credibility', afterward
 				}
 			}
 			else //fixed leg
@@ -416,7 +419,7 @@ double Pass_path::calc_total_waiting_time (double time, bool without_first_waiti
 			}
         }
 		//DEBUG_MSG("\t transit leg " << (*iter_alt_lines).front()->get_id() << " final leg_waiting_time: " << leg_waiting_time*60);
-		sum_waiting_time += leg_waiting_time;
+		sum_waiting_time += leg_waiting_time; //minutes
 	}
 	//DEBUG_MSG("\t Path " << this->get_id() << " final sum_waiting_time: " << sum_waiting_time*60);
 	return sum_waiting_time; // minutes

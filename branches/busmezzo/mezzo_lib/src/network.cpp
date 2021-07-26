@@ -23,6 +23,8 @@ double drt_first_rep_waiting_utility = 10.0; //default is to evaluate waiting ut
 int drt_min_occupancy = 0;
 double drt_first_rebalancing_time = 0.0;
 
+bool fwf_wip::day2day_drt_no_rti = false;
+
 bool PARTC::drottningholm_case = false;
 Busstop* PARTC::transfer_stop = nullptr;
 
@@ -9054,6 +9056,18 @@ double Network::executemaster(QPixmap* pm_, QMatrix* wm_)
         }
     }
 
+    //!< @todo fwf_wip, wip for fixed with drt implementation
+    if(theParameters->drt)
+    {
+        if(theParameters->pass_day_to_day_indicator > 0 || theParameters->in_vehicle_d2d_indicator > 0)
+        {
+            if(theParameters->real_time_info == 0 && theParameters->share_RTI_network == 0 && theParameters->default_alpha_RTI == 0)
+            {
+                fwf_wip::day2day_drt_no_rti = true;
+            }
+        }
+    }
+
     day = 1;
     day2day = new Day2day(1);
     if (theParameters->pass_day_to_day_indicator >= 1)
@@ -9195,6 +9209,18 @@ double Network::executemaster()
         else if (theParameters->choice_set_indicator == 1)
         {
             this->read_transit_path_sets(workingdir + "path_set_generation.dat");
+        }
+    }
+
+    //!< @todo fwf_wip, wip for fixed with drt implementation
+    if(theParameters->drt)
+    {
+        if(theParameters->pass_day_to_day_indicator > 0 || theParameters->in_vehicle_d2d_indicator > 0)
+        {
+            if(theParameters->real_time_info == 0 && theParameters->share_RTI_network == 0 && theParameters->default_alpha_RTI == 0)
+            {
+                fwf_wip::day2day_drt_no_rti = true;
+            }
         }
     }
 
@@ -9841,20 +9867,30 @@ double Network::step(double timestep)
 
         if (theParameters->pass_day_to_day_indicator > 0)
         {
-            crit[wt] = insert(wt_rec, day2day->process_wt_replication(odstops, wt_rec)); //insert result from day2day learning in data container
+            crit[wt] = insert(wt_rec, day2day->process_wt_replication(odstops, wt_rec, buslines)); //insert result from day2day learning in data container
         }
 
         if (theParameters->in_vehicle_d2d_indicator > 0)
         {
-            crit[ivt] = insert(ivt_rec, day2day->process_ivt_replication(odstops, ivt_rec)); //insert result from day2day learning in data container
+            crit[ivt] = insert(ivt_rec, day2day->process_ivt_replication(odstops, ivt_rec, buslines)); //insert result from day2day learning in data container
         }
 
         string addition = To_String(static_cast<long double>(crit[wt])) + "\t" + To_String(static_cast<long double>(crit[ivt]));
-        day2day->write_output(workingdir + "o_convergence.dat", addition);
+        day2day->write_output(workingdir + "o_convergence.dat", addition); // uses the internal 'wt_day' and 'ivt_day' states that are set/updated in the process_tt_replication methods....
+        //Write out the ODSL and ODSLL tables here @todo it seems like 'day' doesn't necessarily correspond to the actual Network::day, but rather the first time a network element was experienced
+        if(day == 1)
+        {
+            Day2day::write_wt_alphas_header(workingdir + "o_fwf_wt_alphas.dat");
+            Day2day::write_ivt_alphas_header(workingdir + "o_fwf_ivt_alphas.dat");
+        }
+
+        Day2day::write_wt_alphas(workingdir + "o_fwf_wt_alphas.dat", wt_rec);
+        Day2day::write_ivt_alphas(workingdir + "o_fwf_ivt_alphas.dat",ivt_rec);
+
         cout << "Convergence: " << crit[wt] << " " << crit[ivt] << endl;
 
         day++;
-        day2day->update_day(day);
+        day2day->update_day(day); // clears the 'wt_day' and 'ivt_day' internal states of day2day, updates the kapas (decaying learning weights) with the current day
         if ((crit[wt] >= theta || crit[ivt] >= theta) && day <= theParameters->max_days)
         {
             reset();

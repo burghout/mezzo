@@ -96,6 +96,11 @@ const double large_positive_utility = 10000.0;
 const double dummy_link_freeflow_speed = 1000.0;
 /**@}*/
 
+namespace fwf_wip
+{
+    extern bool day2day_drt_no_rti; // true if both day2day and drt are active in parameters, and all RTI parameters are set to zero in parameters (i.e. no RTI is provisioned at any level)
+}
+
 
 /** @ingroup PARTC
 * - bunch of stuff used for results output
@@ -258,7 +263,7 @@ public:
     int pass_day_to_day_indicator; // 0 if irrelevant; 1 indicates read pass memory input and incorporate it on OD level; 2 indicates passenger specific memory
     int in_vehicle_d2d_indicator; // 0 if irrelevant; 1 indicates read pass memory input and incorporate it on OD level; 2 indicates passenger specific memory
     double break_criterium; // day2day convergence criteria (based on ratio between anticipated and experienced WT and/or IVT)
-    int max_days = 20; // day2day termination criteria if break_criterium not met, maximum number of days we iterate over. @todo currently do not read this as a param from input files to not break previous networks, included instead for testing purposes (and to name magic numbers)
+    int max_days = 20; // day2day termination criteria if break_criterium not met, maximum number of days we iterate over. 
     double transfer_coefficient;
     double in_vehicle_time_coefficient;
     double waiting_time_coefficient;

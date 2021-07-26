@@ -668,7 +668,11 @@ double ODstops::calc_combined_set_utility_for_alighting (Passenger* pass, Bustri
 	for (vector <Pass_path*>::iterator paths = path_set.begin(); paths < path_set.end(); paths++)
 	{
 		double time_till_transfer = bus_on_board->get_line()->calc_curr_line_ivt(pass->get_OD_stop()->get_origin(),origin_stop,pass->get_OD_stop()->get_origin()->get_rti(), time); // in seconds
-		staying_utility += exp(random->nrandom(theParameters->in_vehicle_time_coefficient, theParameters->in_vehicle_time_coefficient / 4 ) * (time_till_transfer/60) + random->nrandom(theParameters->transfer_coefficient, theParameters->transfer_coefficient / 4 )  +  (*paths)->calc_waiting_utility((*paths)->get_alt_transfer_stops().begin(), time + time_till_transfer, true, pass));
+		staying_utility += exp(
+			random->nrandom(theParameters->in_vehicle_time_coefficient, theParameters->in_vehicle_time_coefficient / 4 ) * (time_till_transfer/60) 
+			+ random->nrandom(theParameters->transfer_coefficient, theParameters->transfer_coefficient / 4 )  
+			+  (*paths)->calc_waiting_utility((*paths)->get_alt_transfer_stops().begin(), time + time_till_transfer, true, pass)
+		);
 		// taking into account IVT till this intermediate stop, transfer penalty and the utility of the path from this transfer stop till the final destination
 	}
 	return log(staying_utility);
@@ -825,9 +829,13 @@ void ODstops::record_passenger_dropoff_decision(Passenger* pass, double time, Bu
 
 void ODstops::record_waiting_experience(Passenger* pass, Bustrip* trip, double time, double experienced_WT, int level_of_rti_upon_decision, double projected_RTI, double AWT, int nr_missed)  //  add to output structure action info
 {
-	double expected_WT_PK = (trip->get_line()->calc_curr_line_headway())/2; // in seconds
-	//double experienced_WT = time - pass->get_arrival_time_at_stop();
-	output_pass_waiting_experience[pass].push_back(Pass_waiting_experience(pass->get_id(), pass->get_original_origin()->get_id(), pass->get_OD_stop()->get_destination()->get_id(), trip->get_line()->get_id(), trip->get_id() , pass->get_OD_stop()->get_origin()->get_id() , time, pass->get_start_time(), expected_WT_PK, level_of_rti_upon_decision, projected_RTI ,experienced_WT, AWT, nr_missed)); 
+    double expected_WT_PK = 0.0;
+    if (theParameters->drt && trip->is_flex_trip())
+        expected_WT_PK = trip->get_line()->get_CC()->calc_exploration_wt(); // in seconds, @todo we are using 'PK' in the implementation as a placeholder for DRT exploration anticipated LoS
+    else
+        expected_WT_PK = (trip->get_line()->calc_curr_line_headway()) / 2; // in seconds, @note for fixed pk wt is always half the scheduled headway
+    //double experienced_WT = time - pass->get_arrival_time_at_stop();
+    output_pass_waiting_experience[pass].push_back(Pass_waiting_experience(pass->get_id(), pass->get_original_origin()->get_id(), pass->get_OD_stop()->get_destination()->get_id(), trip->get_line()->get_id(), trip->get_id(), pass->get_OD_stop()->get_origin()->get_id(), time, pass->get_start_time(), expected_WT_PK, level_of_rti_upon_decision, projected_RTI, experienced_WT, AWT, nr_missed));
 }
 
 void ODstops::record_onboard_experience(Passenger* pass, Bustrip* trip, Busstop* stop, pair<double,double> riding_coeff)

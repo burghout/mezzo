@@ -18,6 +18,11 @@ float operator/ (const Travel_time& lhs, const Travel_time& rhs)
 	return quotient;
 };
 
+
+/**
+ * @notes
+ *	Calculates the convergence quotient (which is either based on individual experiences, or the average over individual experiences)
+*/
 template <typename id_type>
 map<id_type, Travel_time>& operator << (map<id_type, Travel_time>& ODSLreg, pair<const id_type, Travel_time>& row) //if existing ODSL is found, data is replaced else a new row is inserted
 {
@@ -56,6 +61,14 @@ map<id_type, Travel_time>& operator << (map<id_type, Travel_time>& ODSLreg, pair
 };
  */
 
+
+/**
+ * @brief ODSL data (I think) usually corresponds to data that has already been aggregated over a day. I.e. if we have shared OD info, then all passenger experiences for a given od are shared
+ *	First we finish the average of each ODSL row by dividing by the number of experiences in the sum. 
+ * @param ODSL(L)_reg  : the record to insert into
+ * @param ODSL(L)_data : the record to be inserted
+ * @return the convergence criteria. The average change in anticipated waiting time between days over all segments and all travelers. 
+*/
 float insert (map<ODSL, Travel_time>& ODSL_reg, map<ODSL, Travel_time>& ODSL_data) //Method for inserting data for one day into record
 {
     float crit = 0;
@@ -63,7 +76,7 @@ float insert (map<ODSL, Travel_time>& ODSL_reg, map<ODSL, Travel_time>& ODSL_dat
     {
         row->second /= row->second.counter; //finish the averaging by dividing by the number of occurences which is counted when adding
         
-        ODSL_reg << *row; //if existing ODSL is found, data is replaced else a new row is inserted
+        ODSL_reg << *row; //if existing ODSL is found, data is replaced else a new row is inserted, also calculates the quotient of the anticipated wt and ivt of the current day and the previous day
         
         crit += abs(row->second.convergence - 1); //for the break criterium
     }
@@ -73,23 +86,29 @@ float insert (map<ODSL, Travel_time>& ODSL_reg, map<ODSL, Travel_time>& ODSL_dat
     return crit;
 };
 
-float insert (map<ODSLL, Travel_time>& ODSL_reg, map<ODSLL, Travel_time>& ODSL_data) //Method for inserting data for one day into record
+float insert (map<ODSLL, Travel_time>& ODSLL_reg, map<ODSLL, Travel_time>& ODSLL_data) //Method for inserting data for one day into record
 {
     float crit = 0;
-    for (auto row = ODSL_data.begin(); row != ODSL_data.end(); ++row) //aggregate over days
+    for (auto row = ODSLL_data.begin(); row != ODSLL_data.end(); ++row) //aggregate over days
     {
         row->second /= row->second.counter; //finish the averaging by dividing by the number of occurences which is counted when adding
         
-        ODSL_reg << *row; //if existing ODSL is found, data is replaced else a new row is inserted
+        ODSLL_reg << *row; //if existing ODSL is found, data is replaced else a new row is inserted, also calculates the quotient of the anticipated wt and ivt of the current day and the previous day
         
         crit += abs(row->second.convergence - 1); //for the break criterium
     }
     
-    crit /= ODSL_data.size(); //to get the average
+    crit /= ODSLL_data.size(); //to get the average
     
     return crit;
 };
 
+
+
+/**
+ * @notes
+ *	Aggregates inserts pair into map, if already exists, then add together the results. Average is calculated between current and previous day. The 'recency' parameter is held within the alpha coeff calculations....
+*/
 template <typename id_type>
 map<id_type, Travel_time>& operator += (map<id_type, Travel_time>& ODSLreg, const pair<const id_type, Travel_time>& row) //if existing ODSL is found, data is added, else a new row is inserted
 {
@@ -101,6 +120,13 @@ map<id_type, Travel_time>& operator += (map<id_type, Travel_time>& ODSLreg, cons
 	return ODSLreg;
 };
 
+
+/**
+ * @notes
+ *	Used in two different contexts (i think).
+ *		(1) Used in 'process_wt_replication or process_ivt_replication' when adding the temporary ODSL(L)_rep of aggregated waiting time experiences, to the Day2day record
+ *		(2) Used when adding the final aggregated ODSL(L)_day to ODSL(L)_rec, the full accumulated history so far
+ */
 template <typename id_type>
 map<id_type, Travel_time>& operator += (map<id_type, Travel_time>& ODSL_reg, map<id_type, Travel_time>& ODSL_data)
 {
@@ -155,6 +181,12 @@ Day2day::Day2day (int nr_of_reps_)
 	ivt_alpha_base[EXP] = 0.0f;
 	ivt_alpha_base[PK] = 1.0f;
 	ivt_alpha_base[crowding] = 1.0f;
+
+	if(fwf_wip::day2day_drt_no_rti)
+	{
+	    wt_alpha_base[RTI] = 0.0f;
+		wt_alpha_base[PK] = 1.0f;
+	}
 
 	day = 1;
 	v = 2.0f;
@@ -244,6 +276,7 @@ void Day2day::write_output (string filename, string addition)
 }
 
 map<ODSL, Travel_time>& Day2day::process_wt_replication (vector<ODstops*>& odstops, map<ODSL, Travel_time> wt_rec)
+map<ODSL, Travel_time>& Day2day::process_wt_replication (vector<ODstops*>& odstops, map<ODSL, Travel_time> wt_rec, const vector<Busline*>& buslines)
 {
 	map<ODSL, Travel_time> wt_rep; //record of ODSL data for the current replication
 	total_waiting_time = 0;
@@ -294,10 +327,20 @@ map<ODSL, Travel_time>& Day2day::process_wt_replication (vector<ODstops*>& odsto
 				//insert base values and replace when previous experience found
 				insert_alphas(wt_odsl, wt, wt_rec, wt_alpha_base, day);
 
+
+				bool is_flexible_leg = false; // true only if the current on-board experience was for a flexible line leg
+				if(theParameters->drt)
+				{
+                    auto line_it = find_if(buslines.begin(), buslines.end(), [line](const Busline* l) { return l->get_id() == line; });
+					assert(line_it != buslines.end());
+					is_flexible_leg = (*line_it)->is_flex_line();
+				}
+
 				//calculate anticipated waiting time and add to experience for this replication
-				calc_anticipated_wt(wt);
+				calc_anticipated_wt(wt, is_flexible_leg);
+
 				pair<const ODSL, Travel_time> wt_row (wt_odsl, wt);
-				wt_rep += wt_row; //if existing ODSL is found, data is added, else a new row is inserted
+				wt_rep += wt_row; //if existing ODSL is found, data is added, else a new row is inserted, @note this increments the 'counter' of the row. 
 
 				//add to output;
 				nr_of_changes++;
@@ -313,9 +356,9 @@ map<ODSL, Travel_time>& Day2day::process_wt_replication (vector<ODstops*>& odsto
 		}
 	}
 
-	if (nr_of_reps > 1 || theParameters->pass_day_to_day_indicator == 1)
+	if (nr_of_reps > 1 || theParameters->pass_day_to_day_indicator == 1) // only if experiences are aggregated per OD....
 	{
-		wt_day += wt_rep; //add repetition to day data
+		wt_day += wt_rep; //add repetition to day data, finishes the average..., wt_day stored at attribute level for writing, merged with Network wt_rec for following day
 	}
 	else
 	{
@@ -325,7 +368,7 @@ map<ODSL, Travel_time>& Day2day::process_wt_replication (vector<ODstops*>& odsto
 	return wt_day;
 }
 
-map<ODSLL, Travel_time>& Day2day::process_ivt_replication (vector<ODstops*>& odstops, map<ODSLL, Travel_time> ivt_rec)
+map<ODSLL, Travel_time>& Day2day::process_ivt_replication (vector<ODstops*>& odstops, map<ODSLL, Travel_time> ivt_rec, const vector<Busline*>& buslines)
 {
 	map<ODSLL, Travel_time> ivt_rep; //record of ODSL data for the current replication
 	nr_of_legs = 0;
@@ -371,8 +414,16 @@ map<ODSLL, Travel_time>& Day2day::process_ivt_replication (vector<ODstops*>& ods
 				//insert base values and replace when previous experience found
 				insert_alphas(ivt_odsl, ivt, ivt_rec, ivt_alpha_base, day);
 
+				bool is_flexible_leg = false; // true only if the current on-board experience was for a flexible line leg
+				if(theParameters->drt)
+				{
+                    auto line_it = find_if(buslines.begin(), buslines.end(), [line](const Busline* l) { return l->get_id() == line; });
+					assert(line_it != buslines.end());
+					is_flexible_leg = (*line_it)->is_flex_line();
+				}
+
 				//calculate anticipated waiting time and add to experience for this replication
-				calc_anticipated_ivt(ivt);
+				calc_anticipated_ivt(ivt, is_flexible_leg);
 				pair<const ODSLL, Travel_time> ivt_row (ivt_odsl, ivt);
 				ivt_rep += ivt_row; //if existing ODSL is found, data is added, else a new row is inserted
 
@@ -431,10 +482,28 @@ void Day2day::print_ivt_alphas(const map<ODSLL, Travel_time>& ivt_records, const
     }
 }
 
+void Day2day::print_all_wt_records(const map<ODSL, Travel_time>& wt_records)
+{
+	for(const auto& wt_row : wt_records)
+	{
+	    wt_row.first.print();
+		wt_row.second.print_wt();
+	}
+}
+
+void Day2day::print_all_ivt_records(const map<ODSLL, Travel_time>& ivt_records)
+{
+	for(const auto& ivt_row : ivt_records)
+	{
+	    ivt_row.first.print();
+		ivt_row.second.print_ivt();
+	}
+}
+
 void Day2day::write_wt_alphas_header(string filename)
 {
 	ofstream ofs(filename.c_str(),ios_base::app);
-    ofs << "day\t" << "origin\t" << "destination\t" << "stop\t" << "line\t" << "wt_alpha_exp\t" << "wt_alpha_pk\t" << "wt_alpha_rti\t" << "drt\t" <<  endl;
+    ofs << "day\t" << "origin\t" << "destination\t" << "stop\t" << "line\t" << "wt_alpha_exp\t" << "wt_alpha_pk\t" << "wt_alpha_rti\t" <<  endl;
 }
 void Day2day::write_wt_alphas(string filename, const map<ODSL, Travel_time>& wt_records)
 {
@@ -466,19 +535,22 @@ void Day2day::write_ivt_alphas(string filename, const map<ODSLL, Travel_time>& i
 }
 
 
-void Day2day::calc_anticipated_wt (Travel_time& row)
+void Day2day::calc_anticipated_wt (Travel_time& row, bool is_flexible_leg)
 {
+	if(is_flexible_leg) assert(theParameters->drt);
+
 	float& wtPK = row.tt[PK];
 	float& wtRTI = row.tt[RTI];
-	float& wtEXP = row.tt[EXP];
-	float& awtEXP = row.tt[anticip_EXP];
+	float& wtEXP = row.tt[EXP]; // most recent experience
+	float& awtEXP = row.tt[anticip_EXP]; // rolling average of experiences
 	float& alphaRTI = row.alpha[RTI];
 	float& alphaEXP = row.alpha[EXP];
 	float& alphaPK = row.alpha[PK];
-	float& awtG = row.tt[anticip];
+	float& awtG = row.tt[anticip]; // anticipated travel time of previous day
 
 	//calc awt - this could be moved to insert_alphas
 	if (wtEXP == 0) wtEXP = 1.0; //to avoid division by zero
+
 	if (awtEXP >= 0) //If there is prior experience
 	{
 		awtG = alphaRTI * wtRTI + alphaEXP * awtEXP + alphaPK * wtPK;
@@ -487,6 +559,8 @@ void Day2day::calc_anticipated_wt (Travel_time& row)
 	}
 	else
 	{
+		if(fwf_wip::day2day_drt_no_rti)
+			alphaRTI = 0.0;
 		awtG = alphaRTI * wtRTI + alphaPK * wtPK;
 		awtEXP = wtEXP;
 	}
@@ -495,6 +569,13 @@ void Day2day::calc_anticipated_wt (Travel_time& row)
 	float aRTI = 1 / pow(abs(wtRTI / wtEXP - 1) + 1, v1);
 	float aEXP = 1 / pow(abs(awtEXP / wtEXP - 1) + 1, v1);
 	float aPK = 1 / pow(abs(wtPK / wtEXP - 1) + 1, v1);
+
+    if (fwf_wip::day2day_drt_no_rti) // if no RTI is provisioned globally
+    {
+        aRTI = 0.0;
+		if(is_flexible_leg)
+            aPK = 0.0; // for flexible legs the 'prior knowledge' (PK) information source corresponds to a first exploration parameter. When experience exists trust in the exploration parameter is set to zero
+    }
 
 	//normalize a's
 	float fnorm = 1 / (aRTI + aEXP + aPK);
@@ -515,10 +596,23 @@ void Day2day::calc_anticipated_wt (Travel_time& row)
 	alphaRTI = fnorm * alphaRTI;
 	alphaEXP = fnorm * alphaEXP;
 	alphaPK = 1 - alphaRTI - alphaEXP;
+
+	if (fwf_wip::day2day_drt_no_rti) // if no RTI is provisioned globally
+    {
+        alphaRTI = 0.0;
+		if(is_flexible_leg)
+		{
+			alphaPK = 0.0; // for flexible legs the 'prior knowledge' (PK) information source corresponds to a first exploration parameter. When experience exists trust in the exploration parameter is set to zero
+		    alphaEXP = 1.0; // credibility coeffs dont matter for flexible legs if no RTI is available globally
+		}
+	}
+
 }
 
-void Day2day::calc_anticipated_ivt (Travel_time& row)
+void Day2day::calc_anticipated_ivt (Travel_time& row, bool is_flexible_leg)
 {
+	if(is_flexible_leg) assert(theParameters->drt);
+
 	float& ivtPK = row.tt[PK];
 	float& ivtEXP = row.tt[EXP];
 	float& aivtEXP = row.tt[anticip_EXP];
@@ -561,6 +655,14 @@ void Day2day::calc_anticipated_ivt (Travel_time& row)
 	fnorm = 1 / (alphaEXP + alphaPK);
 	alphaEXP = fnorm * alphaEXP;
 	alphaPK = 1 - alphaEXP;
+
+	if(is_flexible_leg) // @todo fwf_wip for now 'pk' or 'ivt exploration' is only used as a placeholder for experience on drt legs
+	{
+		alphaEXP = 1.0;
+	    alphaPK = 0.0;
+	}
+
 	aivtG = acrowdingEXP *(alphaEXP * aivtEXP + alphaPK * ivtPK);
+
 }
 

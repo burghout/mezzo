@@ -737,7 +737,7 @@ pair<Bus*,double> Controlcenter::getClosestVehicleToStop(Busstop* stop, double t
 	//check on-call vehicles
 	set<Bus*, bus_ptr_less<Bus*> > oncall = getOnCallVehiclesAtStop(stop);
 	if (!oncall.empty())
-		return make_pair(*oncall.begin(), 0.0);
+		return make_pair(*oncall.begin(), 1.0); // 1.0 second represents the minimal anticipated waiting time
 
 	//check en-route vehicles
 	set<Bus*, bus_ptr_less<Bus*> > enroute = getVehiclesDrivingToStop(stop);
@@ -1060,7 +1060,7 @@ double Controlcenter::calc_expected_wt(Busline* service_route, Busstop* start_st
 	//closest.first->print_state();
 	if (first_line_leg) // for first transit link traveler can save on waiting time by sending their request for when they expect to arrive
 	{
-		closest.second = Max(0.0, closest.second - walking_time_to_start_stop); // remove walking time to stop from waiting time if this actually saves any time
+		closest.second = Max(1.0, closest.second - walking_time_to_start_stop); // remove walking time to stop from waiting time if this actually saves any time, 1.0 is the minimum waiting time
 	}
 
 	return closest.second; //OBS waiting time is returned in seconds
@@ -1265,9 +1265,6 @@ bool Controlcenter_OD::operator==(const Controlcenter_OD& rhs) const
 
 bool Controlcenter_OD::operator<(const Controlcenter_OD& rhs) const
 {
-    assert(orig != nullptr && rhs.orig != nullptr);
-	assert(dest != nullptr && rhs.dest != nullptr);
-
     if (orig->get_id() != rhs.orig->get_id())
         return orig->get_id() < rhs.orig->get_id();
     else
