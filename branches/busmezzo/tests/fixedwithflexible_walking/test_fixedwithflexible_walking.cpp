@@ -358,7 +358,7 @@ void TestFixedWithFlexible_walking::testFleetState()
     closest = CC->getClosestVehicleToStop(stop1,0.0);
     QVERIFY(closest.first != nullptr);
     QVERIFY(closest.first == bus1); // bus1 should be oncall at stop 1
-    QVERIFY(AproxEqual(closest.second,0.0)); // should have 0.0s expected time until arrival
+    QVERIFY(AproxEqual(closest.second,1.0)); // should have 0.0s expected time until arrival
 
     stop1->remove_unassigned_bus(bus1,0.0); //remove bus from queue of stop, updates state to Idle, also in fleetState
     bus1->set_state(BusState::Null,0.0); //change from Idle to Null should remove bus from fleetState

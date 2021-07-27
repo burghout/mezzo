@@ -20,8 +20,13 @@ const std::string network_name = "masterfile.mezzo";
 
 const QString expected_outputs_path = "://networks/FWF_testnetwork1_d2d/ExpectedOutputs/";
 const QString path_set_generation_filename = "o_path_set_generation.dat";
-const QString d2d_convergence_filename = "o_convergence.dat";
 
+const vector<QString> d2d_output_filenames = 
+{
+    "o_convergence.dat",
+    "o_fwf_ivt_alphas.dat",
+    "o_fwf_wt_alphas.dat"  
+};
 const vector<QString> output_filenames =
 {
     "o_od_stop_summary_without_paths.dat",
@@ -40,7 +45,9 @@ const vector<QString> output_filenames =
     "o_fwf_summary.dat",
     "o_vkt.dat",
     "o_fwf_drtvehicle_states.dat",
-    "o_time_spent_in_state_at_stop.dat"
+    "o_time_spent_in_state_at_stop.dat",
+    "o_fwf_ivt_alphas.dat",
+    "o_fwf_wt_alphas.dat"
 };
 
 const vector<QString> skip_output_filenames =
@@ -63,13 +70,13 @@ private slots:
     void testCreateNetwork(); //!< test loading a network
     void testInitNetwork(); //!< test generating passenger path sets & loading a network
     void testInitParameters(); //!< tests that the parameters for the loaded network are as expected
-    void testInitRoutes(); //!< tests if the routes that are read in are actually possible given the configuration of the network...
+    void testValidRouteInput(); //!< tests if the routes that are read in are actually possible given the configuration of the network...
     void testPassengerStart(); //!< tests for when a traveler first enters the simulation and makes a connection, transitmode and dropoff decision, sends a request if mode is flexible, changes 'chosen mode' state of traveler...etc
     void testRunNetwork();
     void testPassAssignment_day2day(); //!< tests of resulting pass assignment between days
     void testPassAssignment_final(); //!< tests of resulting pass assignment on final day
     void testSaveResults();
-    void testConvergence(); //!< tests of day2day convergence
+    void testFinalDay2dayOutput(); //!< tests of day2day convergence
     void testDelete(); //!< tests correct deletion
 
 private:
@@ -97,7 +104,11 @@ void TestFixedWithFlexible_day2day::testCreateNetwork()
 
 void TestFixedWithFlexible_day2day::testInitNetwork()
 {
-    qDebug() << "Removing file " + d2d_convergence_filename + ": " << QFile::remove(d2d_convergence_filename); //remove old day2day convergence results
+    // remove old output files:
+    for (const QString& filename : d2d_output_filenames)
+    {
+        qDebug() << "Removing file " + filename + ": " << QFile::remove(filename); //remove old day2day convergence results
+    }
 
     qDebug() << "Initializing network in " + QString::fromStdString(network_path);
     nt->init();
@@ -194,20 +205,20 @@ void TestFixedWithFlexible_day2day::testInitParameters()
 {
     //BusMezzo parameters
     QVERIFY2(theParameters->drt == true, "Failure, DRT is not set to true in parameters");
-    QVERIFY2(theParameters->real_time_info == 3, "Failure, real time info is not set to 3 in parameters");
-    QVERIFY2(AproxEqual(theParameters->share_RTI_network, 1.0), "Failure, share RTI network is not 1 in parameters");
+    QVERIFY2(theParameters->real_time_info == 0, "Failure, real time info is not set to 3 in parameters");
+    QVERIFY2(AproxEqual(theParameters->share_RTI_network, 0.0), "Failure, share RTI network is not 1 in parameters");
     QVERIFY2(theParameters->choice_set_indicator == 1, "Failure, choice set indicator is not set to 1 in parameters");
     QVERIFY2(net->count_transit_paths() == 27, "Failure, network should have 14 transit paths defined");
 
     //day2day params
     QVERIFY2(theParameters->pass_day_to_day_indicator == 1, "Failure, waiting time day2day indicator is not activated");
     QVERIFY2(theParameters->in_vehicle_d2d_indicator == 1, "Failure, IVT day2day indicator is not activade");
-    QVERIFY2(AproxEqual(theParameters->default_alpha_RTI,0.5), "Faliure, initial credibility coefficient for day2day RTI is not set to 0.5");
+    QVERIFY2(AproxEqual(theParameters->default_alpha_RTI,0.0), "Faliure, initial credibility coefficient for day2day RTI is not set to 0.5");
     QVERIFY2(AproxEqual(theParameters->break_criterium,0.1),"Failure, break criterium for day2day is not set to 0.1");
     QVERIFY2(theParameters->max_days == 20, "Failure, max days for day2day is not set to 20.");
 }
 
-void TestFixedWithFlexible_day2day::testInitRoutes()
+void TestFixedWithFlexible_day2day::testValidRouteInput()
 {
     /**
       @todo
@@ -609,10 +620,11 @@ void TestFixedWithFlexible_day2day::testSaveResults()
     }
 }
 
-void TestFixedWithFlexible_day2day::testConvergence()
+void TestFixedWithFlexible_day2day::testFinalDay2dayOutput()
 {
-
-        QString o_filename = d2d_convergence_filename;
+    //test if day2day files match the expected output files
+    for (const QString& o_filename : d2d_output_filenames)
+    {
         qDebug() << "Comparing " + o_filename + " with ExpectedOutputs/" + o_filename;
 
         QString ex_o_fullpath = expected_outputs_path + o_filename;
@@ -630,7 +642,7 @@ void TestFixedWithFlexible_day2day::testConvergence()
 
         ex_outputfile.close();
         outputfile.close();
-
+    }
 }
 
 

@@ -1,5 +1,5 @@
 Bus_ID	Init_Time	Total_VKT	Total_Occ_VKT	Total_Emp_VKT	Total_Occ_Time	Total_Emp_Time	Total_Driving_Time	Total_Idle_Time	Total_OnCall_Time
-8001	0	0	0	0	0	0	0	0	0
+8001	0	1.5	1.5	0	153.5	1281.61	151.5	278.725	1004.89
 8002	0	0	0	0	0	0	0	0	0
 8003	0	0	0	0	0	0	0	0	0
 8004	0	0	0	0	0	0	0	0	0

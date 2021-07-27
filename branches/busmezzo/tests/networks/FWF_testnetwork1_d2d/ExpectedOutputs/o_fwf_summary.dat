@@ -1,16 +1,16 @@
 ### Total passenger summary ###
 Passenger journeys completed: 1
 
-Average GTC                    : -87.8676
+Average GTC                    : -71.5771
 Stdev GTC                      : 0
 
-Average walking time           : 298.479
+Average walking time           : 274.146
 Stdev walking time             : 0
 
-Average waiting time           : 452.958
+Average waiting time           : 244.569
 Stdev waiting time             : 0
-Maximum waiting time           : 452.958
-Median waiting time            : 452.958
+Maximum waiting time           : 244.569
+Median waiting time            : 244.569
 CV waiting time                : 0
 
 Average denied waiting time    : 0
@@ -23,9 +23,9 @@ Average crowded in-vehicle time: 864.975
 Stdev crowded in-vehicle time  : 0
 
 Total PKT      : 9
-Total Fixed PKT: 9
-Total DRT PKT  : 0
-PKT mode split (FIX / Total, DRT / Total)     : 1, 0
+Total Fixed PKT: 7.5
+Total DRT PKT  : 1.5
+PKT mode split (FIX / Total, DRT / Total)     : 0.833333, 0.166667
 
 Total passengers ignored (trip out of pass-generation start-stop interval): 0
 start_pass_generation= 1800
@@ -33,57 +33,57 @@ stop_pass_generation= 5400
 stoptime= 10800
 
 ### Total vehicle summary ###
-Total VKT                   : 210
+Total VKT                   : 211.5
 Total occupied VKT          : 9
-Total empty VKT             : 201
+Total empty VKT             : 202.5
 Total occupied time         : 910.5
-Total empty time            : 951778
-Total driving time          : 952368
-Total idle time             : 320
-Total oncall time           : 0
+Total empty time            : 953213
+Total driving time          : 952520
+Total idle time             : 598.725
+Total oncall time           : 1004.89
 
 ### Fixed vehicle summary ###
 Fixed VKT                   : 210
-Fixed occupied VKT          : 9
-Fixed empty VKT             : 201
-Fixed occupied time         : 910.5
-Fixed empty time            : 951778
+Fixed occupied VKT          : 7.5
+Fixed empty VKT             : 202.5
+Fixed occupied time         : 757
+Fixed empty time            : 951931
 Fixed driving time          : 952368
 Fixed idle time             : 320
 Fixed oncall time           : 0
-Fixed occ/total VKT ratio   : 0.0428571
-Fixed PKT/VKT ratio         : 0.0428571
+Fixed occ/total VKT ratio   : 0.0357143
+Fixed PKT/VKT ratio         : 0.0357143
 
 ### DRT vehicle summary ###
-DRT VKT                     : 0
-DRT occupied VKT            : 0
+DRT VKT                     : 1.5
+DRT occupied VKT            : 1.5
 DRT empty VKT               : 0
-DRT occupied time           : 0
-DRT empty time              : 0
-DRT driving time            : 0
-DRT idle time               : 0
-DRT oncall time             : 0
-DRT occ/total VKT ratio     : -nan(ind)
-DRT PKT/VKT ratio           : -nan(ind)
+DRT occupied time           : 153.5
+DRT empty time              : 1281.61
+DRT driving time            : 151.5
+DRT idle time               : 278.725
+DRT oncall time             : 1004.89
+DRT occ/total VKT ratio     : 1
+DRT PKT/VKT ratio           : 1
 
 ### DRT trip summary ###
-Total trips                            : 0
-Total pass-carrying trips              : 0
+Total trips                            : 1
+Total pass-carrying trips              : 1
 Total empty trips                      : 0
-Total pass boarding                    : 0
-Total pass alighting                   : 0
+Total pass boarding                    : 1
+Total pass alighting                   : 1
 
-Average boarding per pass-carrying trip: 0
+Average boarding per pass-carrying trip: 1
 Stdev boarding per pass-carrying trip  : 0
-Minimum boarding per pass-carrying trip: 2.14748e+09
-Maximum boarding per pass-carrying trip: 0
-Median boarding per pass-carrying trip : 0
+Minimum boarding per pass-carrying trip: 1
+Maximum boarding per pass-carrying trip: 1
+Median boarding per pass-carrying trip : 1
 
 ### ControlCenter summary ###
-Requests recieved           : 0
+Requests recieved           : 1
 Requests rejected           : 0
-Requests accepted           : 0
-Requests served             : 0
+Requests accepted           : 1
+Requests served             : 1
 
 ------------------------------------------------------------------
 

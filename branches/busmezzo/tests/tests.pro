@@ -12,6 +12,7 @@ SUBDIRS += \
     drttest \
     pentafeeder_fixed \
     pentafeeder_drt \
+    pentafeeder_mixed_day2day \
     fixedwithflexible_walking \
     fixedwithflexible_day2day \
     fixedwithflexible \
