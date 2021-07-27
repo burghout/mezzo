@@ -45,9 +45,7 @@ const vector<QString> output_filenames =
     "o_fwf_summary.dat",
     "o_vkt.dat",
     "o_fwf_drtvehicle_states.dat",
-    "o_time_spent_in_state_at_stop.dat",
-    "o_fwf_ivt_alphas.dat",
-    "o_fwf_wt_alphas.dat"
+    "o_time_spent_in_state_at_stop.dat"
 };
 
 const vector<QString> skip_output_filenames =
