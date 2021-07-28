@@ -1600,6 +1600,11 @@ double Passenger::calc_total_waiting_time_due_to_denied_boarding()
 	return total_walking_time_due_to_denied_boarding;
 }
 
+int Passenger::get_nr_transfers()
+{
+	return (static_cast<int>(selected_path_stops.size()) - 4) / 2; // given path definition (direct connection - 4 elements, 1 transfers - 6 elements, 2 transfers - 8 elements, etc.
+}
+
 bool Passenger::line_is_rejected(int id) 
 {
 	vector<int>::iterator it = find(rejected_lines.begin(),rejected_lines.end(), id); 
@@ -1614,7 +1619,7 @@ void Passenger::write_selected_path(ostream& out)
 	double total_IVT_crowding = calc_IVT_crowding();
 	double total_walking_time = calc_total_walking_time();
 	double total_waiting_time_due_to_denied_boarding = calc_total_waiting_time_due_to_denied_boarding();
-	int nr_transfers = (static_cast<int>(selected_path_stops.size()) - 4) / 2; // given path definition (direct connection - 4 elements, 1 transfers - 6 elements, 2 transfers - 8 elements, etc.
+	int nr_transfers = get_nr_transfers(); // given path definition (direct connection - 4 elements, 1 transfers - 6 elements, 2 transfers - 8 elements, etc.
 
 	this->set_GTC(theParameters->walking_time_coefficient * total_walking_time + theParameters->waiting_time_coefficient * total_waiting_time + theParameters->waiting_time_coefficient * 3.5 *total_waiting_time_due_to_denied_boarding + theParameters->in_vehicle_time_coefficient * total_IVT_crowding + theParameters->transfer_coefficient * nr_transfers);
 

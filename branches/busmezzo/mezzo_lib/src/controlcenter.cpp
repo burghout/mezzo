@@ -812,6 +812,13 @@ Controlcenter_SummaryData Controlcenter::getSummaryData() const
 	return summarydata_;
 }
 
+vector<Bustrip*> Controlcenter::get_activated_trips()
+{
+	vector<Bustrip*> activated_trips;
+    copy_if(begin(assignment_data_.active_trips), end(assignment_data_.active_trips), back_inserter(activated_trips), [](const Bustrip* trip) {return trip->is_activated(); });
+	return activated_trips;
+}
+
 set<Busstop*, ptr_less<Busstop*>> Controlcenter::getServiceArea() const { return serviceArea_; }
 vector<Busline*> Controlcenter::getServiceRoutes() const { return tg_.getServiceRoutes(); }
 

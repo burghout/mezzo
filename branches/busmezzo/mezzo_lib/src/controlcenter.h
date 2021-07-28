@@ -261,6 +261,8 @@ private:
 public:
 	int getID() const;
 	Controlcenter_SummaryData getSummaryData() const;
+	vector<Bustrip*> get_activated_trips(); //!< get all trips that have been activated but have not completed yet
+
     set<Busstop *, ptr_less<Busstop *> > getServiceArea() const;
     vector<Busline*> getServiceRoutes() const;
     map<int,Bus*> getConnectedVehicles() const;

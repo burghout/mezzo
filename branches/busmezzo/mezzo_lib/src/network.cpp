@@ -123,6 +123,71 @@ string To_String(T val)
     return stream.str();
 }
 
+namespace fwf_outputs {
+    bool finished_trip_within_pass_generation_interval(Passenger* pass)
+    {
+        if (pass->get_end_time() <= 0)
+            return false;
+        if (pass->get_end_time() > theParameters->stop_pass_generation)
+            return false;
+        if (pass->get_start_time() < theParameters->start_pass_generation)
+            return false;
+        return true;
+    }
+
+    //!< @brief write out vkt results for each replication, should be one row per replication @note Check Link::is_dummylink definition whether these are skipped or not for the current case
+    void writeVKT(ostream& out, const FWF_vehdata& fix_vehdata, const FWF_vehdata& drt_vehdata)
+    {
+        out << drt_vehdata.total_vkt << "\t" << drt_vehdata.total_occupied_vkt << "\t" << drt_vehdata.total_empty_vkt << "\t"
+            << fix_vehdata.total_vkt << "\t" << fix_vehdata.total_occupied_vkt << "\t" << fix_vehdata.total_empty_vkt << endl;
+
+        /*out << "\nDRT VKT                     : " << drt_vehdata.total_vkt;
+    out << "\nDRT occupied VKT            : " << drt_vehdata.total_occupied_vkt;
+    out << "\nDRT empty VKT               : " << drt_vehdata.total_empty_vkt;
+    out << "\nDRT occupied time           : " << drt_vehdata.total_occupied_time;
+    out << "\nDRT empty time              : " << drt_vehdata.total_empty_time;
+    out << "\nDRT driving time            : " << drt_vehdata.total_driving_time;
+    out << "\nDRT idle time               : " << drt_vehdata.total_idle_time;
+    out << "\nDRT oncall time             : " << drt_vehdata.total_oncall_time;*/
+    }
+
+    //!< @brief write out time and vkt spent in different states for a DRT vehicle for e.g. analysis of distributions. Corresponds to one row of "o_fwf_drtvehicle_states.dat"
+    void writeDRTVehicleState_row(ostream& out, int bus_id, double init_time, const FWF_vehdata& drt_vehdata)
+    {
+            out << bus_id << "\t"
+                << init_time << "\t"
+                << drt_vehdata.total_vkt << "\t" << drt_vehdata.total_occupied_vkt << "\t" << drt_vehdata.total_empty_vkt << "\t"
+                << drt_vehdata.total_occupied_time << "\t" << drt_vehdata.total_empty_time << "\t"
+                << drt_vehdata.total_driving_time << "\t" << drt_vehdata.total_idle_time << "\t" << drt_vehdata.total_oncall_time << endl;
+    }
+    void writeDRTVehicleState_header(ostream& out)
+    {
+        out << "Bus_ID" << '\t'
+            << "Init_Time" << '\t'
+            << "Total_VKT" << '\t'
+            << "Total_Occ_VKT" << '\t'
+            << "Total_Emp_VKT" << '\t'
+            << "Total_Occ_Time" << '\t'
+            << "Total_Emp_Time" << '\t'
+            << "Total_Driving_Time" << '\t'
+            << "Total_Idle_Time" << '\t'
+            << "Total_OnCall_Time" << endl;
+    }
+
+
+    //!< @brief write out total time any vehicle has spent in any state at each stop. Corresponds to one row of "o_time_in_state_at_stop.dat" @todo currently only time spent in oncall state is output
+    void writeDRTVehicleStateAtStop_row(ostream& out, Busstop* stop)
+    {
+            out << stop->get_id() << "\t"
+                << stop->get_total_time_oncall() << endl;
+    }
+    void writeDRTVehicleStateAtStop_header(ostream& out)
+    {
+        out << "Busstop_ID" << '\t'
+            << "Total_OnCall_Time" << endl;
+    }
+}
+
 FWF_vehdata operator+(const FWF_vehdata& lhs, const FWF_vehdata& rhs)
 {
     FWF_vehdata sum;
@@ -7199,6 +7264,78 @@ bool Network::writeFWFsummary(
         return true;
 }
 
+
+bool Network::write_modesplit_header(string filename)
+{
+    ofstream out(filename.c_str(),ios_base::app); //"o_fwf_day2day_modesplit.dat"
+            out << "day" << '\t'
+            << "fix_pkt" << '\t'
+            << "drt_pkt" << '\t'
+            << "fix_boarding" << '\t'
+            << "drt_boarding" << '\t'
+            << "avg_gtc" << '\t'
+            <<  "npass" << '\t'
+            <<  "pass_ignored" << endl;
+    return true;
+}
+bool Network::write_modesplit(string filename)
+{
+    ofstream out(filename.c_str(),ios_base::app); //"o_fwf_day2day_modesplit.dat"
+    FWF_passdata total_passdata;
+    FWF_tripdata total_tripdata;
+    vector<Passenger*> allpass_within_passgen;
+
+    //collect all passengers, calculate pkt per mode and total, calculate fix / total and drt/ total pkt percentages
+    vector<Passenger*> all_pass = get_all_generated_passengers(); // includes also pass that did not complete their trip, outside pass gen range etc..
+    int pass_ignored = 0;
+    for (Passenger* pass : all_pass) // only check pass who started and completed trip within the pass generation time interval
+    {
+        if (fwf_outputs::finished_trip_within_pass_generation_interval(pass))
+        {
+            allpass_within_passgen.push_back(pass);
+        }
+        else
+        {
+            ++pass_ignored;
+        }
+    }
+    total_passdata.calc_pass_statistics(allpass_within_passgen);
+    double fix = total_passdata.total_pass_fix_vkt / total_passdata.total_pass_vkt;
+    double drt = total_passdata.total_pass_drt_vkt / total_passdata.total_pass_vkt;
+    out << day << '\t' << fix << '\t' << drt << '\t';
+
+    // collect all trips to calculate mode split based on number of boardings instead
+    vector<Bustrip*> all_trips; // will contain all activated fixed trips and all completed 
+    std::copy_if(begin(bustrips), end(bustrips), back_inserter(all_trips), [](const Bustrip* trip) { return trip->is_activated(); }); // all the fixed trips
+
+    vector<Bustrip*> drt_trips; // all completed drt trip from any control center
+    for (const auto& cc : ccmap)
+    {
+        for (const auto& vehtrip : cc.second->completedVehicleTrips_)
+        {
+            drt_trips.push_back(vehtrip.second);
+        }
+        vector<Bustrip*> drt_activated_trips = cc.second->get_activated_trips(); // all activated drt trips that have not completed
+        drt_trips.insert(drt_trips.end(), drt_activated_trips.begin(), drt_activated_trips.end());
+    }
+    all_trips.insert(all_trips.end(), drt_trips.begin(), drt_trips.end());
+
+    total_tripdata.calc_trip_statistics(all_trips);
+    if(total_tripdata.total_pass_boarding != 0)
+    {
+        fix = static_cast<double>(total_tripdata.fix_total_pass_boarding) / static_cast<double>(total_tripdata.total_pass_boarding);
+        drt = static_cast<double>(total_tripdata.drt_total_pass_boarding) / static_cast<double>(total_tripdata.total_pass_boarding);
+    }
+    else
+    {
+        fix = 0.0;
+        drt = 0.0;
+    }
+    out << fix << '\t' << drt << '\t' << total_passdata.avg_gtc << '\t' << total_passdata.npass << '\t' << pass_ignored << endl;
+
+    return true;
+}
+
 bool Network::writeheadways(string name)
 // writes the time headways for the virtual links. to compare with the arrival process in Mitsim
 {
@@ -7281,71 +7418,6 @@ namespace PARTC
         out << "\nStdev crowded in-vehicle time  : " << passdata_b2c.std_total_crowded_ivt;
 
         out << "\n\n### Corridor to Corridor passenger summary ###";*/
-    }
-}
-
-namespace fwf_outputs {
-    bool finished_trip_within_pass_generation_interval(Passenger* pass)
-    {
-        if (pass->get_end_time() <= 0)
-            return false;
-        if (pass->get_end_time() > theParameters->stop_pass_generation)
-            return false;
-        if (pass->get_start_time() < theParameters->start_pass_generation)
-            return false;
-        return true;
-    }
-
-    //!< @brief write out vkt results for each replication, should be one row per replication @note Check Link::is_dummylink definition whether these are skipped or not for the current case
-    void writeVKT(ostream& out, const FWF_vehdata& fix_vehdata, const FWF_vehdata& drt_vehdata)
-    {
-        out << drt_vehdata.total_vkt << "\t" << drt_vehdata.total_occupied_vkt << "\t" << drt_vehdata.total_empty_vkt << "\t"
-            << fix_vehdata.total_vkt << "\t" << fix_vehdata.total_occupied_vkt << "\t" << fix_vehdata.total_empty_vkt << endl;
-
-        /*out << "\nDRT VKT                     : " << drt_vehdata.total_vkt;
-    out << "\nDRT occupied VKT            : " << drt_vehdata.total_occupied_vkt;
-    out << "\nDRT empty VKT               : " << drt_vehdata.total_empty_vkt;
-    out << "\nDRT occupied time           : " << drt_vehdata.total_occupied_time;
-    out << "\nDRT empty time              : " << drt_vehdata.total_empty_time;
-    out << "\nDRT driving time            : " << drt_vehdata.total_driving_time;
-    out << "\nDRT idle time               : " << drt_vehdata.total_idle_time;
-    out << "\nDRT oncall time             : " << drt_vehdata.total_oncall_time;*/
-    }
-
-    //!< @brief write out time and vkt spent in different states for a DRT vehicle for e.g. analysis of distributions. Corresponds to one row of "o_fwf_drtvehicle_states.dat"
-    void writeDRTVehicleState_row(ostream& out, int bus_id, double init_time, const FWF_vehdata& drt_vehdata)
-    {
-            out << bus_id << "\t"
-                << init_time << "\t"
-                << drt_vehdata.total_vkt << "\t" << drt_vehdata.total_occupied_vkt << "\t" << drt_vehdata.total_empty_vkt << "\t"
-                << drt_vehdata.total_occupied_time << "\t" << drt_vehdata.total_empty_time << "\t"
-                << drt_vehdata.total_driving_time << "\t" << drt_vehdata.total_idle_time << "\t" << drt_vehdata.total_oncall_time << endl;
-    }
-    void writeDRTVehicleState_header(ostream& out)
-    {
-        out << "Bus_ID" << '\t'
-            << "Init_Time" << '\t'
-            << "Total_VKT" << '\t'
-            << "Total_Occ_VKT" << '\t'
-            << "Total_Emp_VKT" << '\t'
-            << "Total_Occ_Time" << '\t'
-            << "Total_Emp_Time" << '\t'
-            << "Total_Driving_Time" << '\t'
-            << "Total_Idle_Time" << '\t'
-            << "Total_OnCall_Time" << endl;
-    }
-
-
-    //!< @brief write out total time any vehicle has spent in any state at each stop. Corresponds to one row of "o_time_in_state_at_stop.dat" @todo currently only time spent in oncall state is output
-    void writeDRTVehicleStateAtStop_row(ostream& out, Busstop* stop)
-    {
-            out << stop->get_id() << "\t"
-                << stop->get_total_time_oncall() << endl;
-    }
-    void writeDRTVehicleStateAtStop_header(ostream& out)
-    {
-        out << "Busstop_ID" << '\t'
-            << "Total_OnCall_Time" << endl;
     }
 }
 
@@ -9888,8 +9960,11 @@ double Network::step(double timestep)
         {
             Day2day::write_wt_alphas_header(workingdir + "o_fwf_wt_alphas.dat");
             Day2day::write_ivt_alphas_header(workingdir + "o_fwf_ivt_alphas.dat");
+
+            write_modesplit_header(workingdir + "o_fwf_day2day_modesplit.dat");
         }
 
+        write_modesplit(workingdir + "o_fwf_day2day_modesplit.dat"); // write modesplit for the current day
         Day2day::write_wt_alphas(workingdir + "o_fwf_wt_alphas.dat", wt_rec);
         Day2day::write_ivt_alphas(workingdir + "o_fwf_ivt_alphas.dat",ivt_rec);
 
@@ -10260,12 +10335,15 @@ void FWF_passdata::calc_pass_statistics(const vector<Passenger*>& passengers)
     vector<double> inveh_crowded_times;
 
     vector<double> gtcs;
+    vector<double> transfers_per_pass;
 
     double wlkt = 0.0;
     double wt = 0.0;
     double ivt = 0.0;
     double d_wt = 0.0;
     double c_ivt = 0.0;
+    double n_trans = 0.0;
+    double gtc = 0.0;
 
     double vkt = 0.0;
     double drt_vkt = 0.0;
@@ -10284,10 +10362,18 @@ void FWF_passdata::calc_pass_statistics(const vector<Passenger*>& passengers)
             ivt = pass->calc_total_IVT();
             c_ivt = pass->calc_IVT_crowding();
 
+            n_trans = static_cast<double>(pass->get_nr_transfers());
+
+            gtc = theParameters->walking_time_coefficient * wlkt
+            + theParameters->waiting_time_coefficient * wt
+            + theParameters->waiting_time_coefficient * 3.5 * d_wt
+            + theParameters->in_vehicle_time_coefficient * c_ivt
+            + theParameters->transfer_coefficient * n_trans;
+
             vkt = pass->get_total_vkt();
             drt_vkt = pass->get_total_drt_vkt();
             fix_vkt = pass->get_total_fix_vkt();
-
+        
             total_pass_vkt += vkt;
             total_pass_drt_vkt += drt_vkt;
             total_pass_fix_vkt += fix_vkt;
@@ -10307,7 +10393,8 @@ void FWF_passdata::calc_pass_statistics(const vector<Passenger*>& passengers)
             inveh_times.push_back(ivt);
             inveh_crowded_times.push_back(c_ivt);
 
-            gtcs.push_back(pass->get_GTC());
+            gtcs.push_back(gtc);
+            transfers_per_pass.push_back(n_trans);
         }
     }
     if (npass != 0)
@@ -10321,6 +10408,7 @@ void FWF_passdata::calc_pass_statistics(const vector<Passenger*>& passengers)
         pair<double, double> ivt_stats = fwf_stats::calcMeanAndStdev(inveh_times);
         pair<double, double> ivtc_stats = fwf_stats::calcMeanAndStdev(inveh_crowded_times);
         pair<double, double> gtc_stats = fwf_stats::calcMeanAndStdev(gtcs);
+        pair<double, double> ntrans_stats = fwf_stats::calcMeanAndStdev(transfers_per_pass);
 
         avg_total_wlkt = wlkt_stats.first;
         std_total_wlkt = wlkt_stats.second;
@@ -10337,6 +10425,9 @@ void FWF_passdata::calc_pass_statistics(const vector<Passenger*>& passengers)
 
         avg_total_crowded_ivt = ivtc_stats.first;
         std_total_crowded_ivt = ivtc_stats.second;
+
+        avg_ntrans = ntrans_stats.first;
+        std_ntrans = ntrans_stats.second;
 
         avg_gtc = gtc_stats.first;
         std_gtc = gtc_stats.second;
@@ -10372,6 +10463,11 @@ void FWF_tripdata::calc_trip_statistics(const vector<Bustrip*>& trips)
             trip_total_boarding = trip->get_total_boarding();
             ++total_trips;
             total_pass_boarding += trip_total_boarding;
+            if(trip->is_flex_trip())
+                drt_total_pass_boarding += trip_total_boarding;
+            else
+                fix_total_pass_boarding += trip_total_boarding;
+
             total_pass_alighting += trip->get_total_alighting();
 
             if (trip_total_boarding == 0)

@@ -96,7 +96,10 @@ struct FWF_passdata
     int pass_completed = 0; // pass completed trips (that reached their final destination)
     double avg_gtc = 0.0;
     double std_gtc = 0.0;
-    
+
+    double avg_ntrans = 0.0; // average transfers
+    double std_ntrans = 0.0;
+
     double total_wlkt = 0.0; //total walking time
     double avg_total_wlkt = 0.0; //avg walking time
     double std_total_wlkt = 0.0; //std walking time
@@ -195,6 +198,9 @@ struct FWF_tripdata
     
     int total_pass_boarding = 0; // total boardings over all trips
     int total_pass_alighting = 0; // total alightings over all trips (should match boardings)
+
+    int fix_total_pass_boarding = 0; // total boardings over all fixed trips
+    int drt_total_pass_boarding = 0; // total boardings over all drt trips
     
     double avg_boarding_per_trip = 0; // average number of passengers that boarded each trip at any stop
     double std_boarding_per_trip = 0; // stdev number of passengers that boarded each trip at any stop
@@ -333,6 +339,8 @@ public:
     bool writesummary(string name); //!< writes the summary of the OD output
 
     bool writeFWFsummary(ostream& out, const FWF_passdata& total_passdata, const FWF_passdata& fix_passdata, const FWF_passdata& drt_passdata, const FWF_vehdata& total_vehdata, const FWF_vehdata& fix_vehdata, const FWF_vehdata& drt_vehdata, const FWF_ccdata& cc_data, const FWF_tripdata& drt_tripdata, int pass_ignored); //!< summary of output for debugging fixed with flexible implementation
+    bool write_modesplit_header(string filename);
+    bool write_modesplit(string filename); //!< calculate and write PKT mode split (FIX / Total, DRT / Total) for all passengers that completed a trip @todo change this to instead use the number of times 'flex' or 'fix' was chosen in a mode decision
 
     bool writelinktimes(string name); //!<writes average link traversal times.
     bool writeheadways(string name); //!< writes the timestamps of vehicles entering a Virtual Link (i e Mitsim).

@@ -12,12 +12,12 @@ stops_walking_times:	0
 
 lines:	2
 
-{ 2  20 	FixedCircularAtoE 	  100	1010	2	4	0	0	0	0	0
+{ 2  20 	FixedCircularAtoE 	  100	1010	2	4	0	0	0	0	
 	5	{ 1  2  3  4  5 }
 	0	{ }
 }
 
-{20 2	FixedCircularEtoA 	  900	22	20	4	0	0	0	0	0
+{20 2	FixedCircularEtoA 	  900	22	20	4	0	0	0	0	
 	2	{5  1}
 	0	{ }
 }
