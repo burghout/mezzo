@@ -4002,25 +4002,31 @@ void Network::find_all_paths_fast ()
         collect_im_stops.clear();
         collect_walking_distances.clear();
 
-        for (auto basic_destination = busstops.begin(); basic_destination < busstops.end(); basic_destination++)
+        if (!fwf_wip::day2day_drt_no_rti) // @todo temporary fix, do not merge paths
         {
-            merge_paths_by_stops((*basic_origin),(*basic_destination));
-            merge_paths_by_common_lines((*basic_origin),(*basic_destination));
+            for (auto basic_destination = busstops.begin(); basic_destination < busstops.end(); basic_destination++)
+            {
+                merge_paths_by_stops((*basic_origin), (*basic_destination));
+                merge_paths_by_common_lines((*basic_origin), (*basic_destination));
+            }
+            //write_path_set_per_stop (workingdir + "path_set_generation.dat", (*basic_origin));
         }
-        //write_path_set_per_stop (workingdir + "path_set_generation.dat", (*basic_origin));
     }
-    // apply static filtering rules
-    cout << "Filtering paths..." << endl;
-    for (auto basic_origin = busstops.begin(); basic_origin < busstops.end(); basic_origin++)
+    if (!fwf_wip::day2day_drt_no_rti)
     {
-        cout << (*basic_origin)->get_name() << endl;
-        static_filtering_rules(*basic_origin);
-    }
-    // apply dominancy rules
-    cout << "Applying dominancy rules..." << endl;
-    for (auto basic_origin = busstops.begin(); basic_origin < busstops.end(); basic_origin++)
-    {
-        dominancy_rules(*basic_origin);
+        // apply static filtering rules
+        cout << "Filtering paths..." << endl;
+        for (auto basic_origin = busstops.begin(); basic_origin < busstops.end(); basic_origin++)
+        {
+            cout << (*basic_origin)->get_name() << endl;
+            static_filtering_rules(*basic_origin);
+        }
+        // apply dominancy rules
+        cout << "Applying dominancy rules..." << endl;
+        for (auto basic_origin = busstops.begin(); basic_origin < busstops.end(); basic_origin++)
+        {
+            dominancy_rules(*basic_origin);
+        }
     }
 
     // report generated choice-sets
@@ -8943,6 +8949,18 @@ double Network::executemaster(QPixmap* pm_, QMatrix* wm_)
         cout << "Problem reading parameters: " << filenames[18] << endl; // read parameters first
     }
 
+    //!< @todo fwf_wip, wip for fixed with drt implementation
+    if(theParameters->drt)
+    {
+        if(theParameters->pass_day_to_day_indicator > 0 || theParameters->in_vehicle_d2d_indicator > 0)
+        {
+            if(theParameters->real_time_info == 0 && theParameters->share_RTI_network == 0 && theParameters->default_alpha_RTI == 0)
+            {
+                fwf_wip::day2day_drt_no_rti = true;
+            }
+        }
+    }
+
     if (!readvtypes(filenames[7])) {
         cout << "Problem reading vtypes: " << filenames[6] << endl; // read the vehicle types first
     }
@@ -9056,18 +9074,6 @@ double Network::executemaster(QPixmap* pm_, QMatrix* wm_)
         }
     }
 
-    //!< @todo fwf_wip, wip for fixed with drt implementation
-    if(theParameters->drt)
-    {
-        if(theParameters->pass_day_to_day_indicator > 0 || theParameters->in_vehicle_d2d_indicator > 0)
-        {
-            if(theParameters->real_time_info == 0 && theParameters->share_RTI_network == 0 && theParameters->default_alpha_RTI == 0)
-            {
-                fwf_wip::day2day_drt_no_rti = true;
-            }
-        }
-    }
-
     day = 1;
     day2day = new Day2day(1);
     if (theParameters->pass_day_to_day_indicator >= 1)
@@ -9102,6 +9108,18 @@ double Network::executemaster()
     time = 0.0;
     if (!readparameters(filenames[18])) {
         cout << "Problem reading parameters: " << filenames[18] << endl; // read parameters first
+    }
+
+    //!< @todo fwf_wip, wip for fixed with drt implementation
+    if(theParameters->drt)
+    {
+        if(theParameters->pass_day_to_day_indicator > 0 || theParameters->in_vehicle_d2d_indicator > 0)
+        {
+            if(theParameters->real_time_info == 0 && theParameters->share_RTI_network == 0 && theParameters->default_alpha_RTI == 0)
+            {
+                fwf_wip::day2day_drt_no_rti = true;
+            }
+        }
     }
 
     if (!readvtypes(filenames[7])) {
@@ -9209,18 +9227,6 @@ double Network::executemaster()
         else if (theParameters->choice_set_indicator == 1)
         {
             this->read_transit_path_sets(workingdir + "path_set_generation.dat");
-        }
-    }
-
-    //!< @todo fwf_wip, wip for fixed with drt implementation
-    if(theParameters->drt)
-    {
-        if(theParameters->pass_day_to_day_indicator > 0 || theParameters->in_vehicle_d2d_indicator > 0)
-        {
-            if(theParameters->real_time_info == 0 && theParameters->share_RTI_network == 0 && theParameters->default_alpha_RTI == 0)
-            {
-                fwf_wip::day2day_drt_no_rti = true;
-            }
         }
     }
 
