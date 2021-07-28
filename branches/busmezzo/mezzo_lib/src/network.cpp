@@ -9955,18 +9955,21 @@ double Network::step(double timestep)
 
         string addition = To_String(static_cast<long double>(crit[wt])) + "\t" + To_String(static_cast<long double>(crit[ivt]));
         day2day->write_output(workingdir + "o_convergence.dat", addition); // uses the internal 'wt_day' and 'ivt_day' states that are set/updated in the process_tt_replication methods....
-        //Write out the ODSL and ODSLL tables here @todo it seems like 'day' doesn't necessarily correspond to the actual Network::day, but rather the first time a network element was experienced
-        if(day == 1)
+        if (fwf_wip::day2day_drt_no_rti)
         {
-            Day2day::write_wt_alphas_header(workingdir + "o_fwf_wt_alphas.dat");
-            Day2day::write_ivt_alphas_header(workingdir + "o_fwf_ivt_alphas.dat");
+            //Write out the ODSL and ODSLL tables here @todo it seems like 'day' doesn't necessarily correspond to the actual Network::day, but rather the first time a network element was experienced
+            if (day == 1)
+            {
+                Day2day::write_wt_alphas_header(workingdir + "o_fwf_wt_alphas.dat");
+                Day2day::write_ivt_alphas_header(workingdir + "o_fwf_ivt_alphas.dat");
 
-            write_modesplit_header(workingdir + "o_fwf_day2day_modesplit.dat");
+                write_modesplit_header(workingdir + "o_fwf_day2day_modesplit.dat");
+            }
+
+            write_modesplit(workingdir + "o_fwf_day2day_modesplit.dat"); // write modesplit for the current day
+            Day2day::write_wt_alphas(workingdir + "o_fwf_wt_alphas.dat", wt_rec);
+            Day2day::write_ivt_alphas(workingdir + "o_fwf_ivt_alphas.dat", ivt_rec);
         }
-
-        write_modesplit(workingdir + "o_fwf_day2day_modesplit.dat"); // write modesplit for the current day
-        Day2day::write_wt_alphas(workingdir + "o_fwf_wt_alphas.dat", wt_rec);
-        Day2day::write_ivt_alphas(workingdir + "o_fwf_ivt_alphas.dat",ivt_rec);
 
         cout << "Convergence: " << crit[wt] << " " << crit[ivt] << endl;
 
