@@ -1369,7 +1369,7 @@ bool LatestDepartureScheduling::schedule_trips(DRTAssignmentData& assignment_dat
 {
     /**
     * @todo
-    *   - Currently schedules dispatch based on the latest desired departure time of any request in the entire TRIPCHAIN. E.g. a request with a delayed departure might be sent for a vehicle
+    *   - Currently schedules dispatch based on the latest desired departure time of . E.g. a request with a delayed departure might be sent for a vehicle
     *       that must first make an empty trip to pick up the passenger. The empty trip will then be delayed based on the desired departure even when the vehicle should be dispatched immediately...
     *   - Might need to change both the behavior of busstrip execute (that always activates trips immediately
     *   - Either that or add a 'holding at stop' behavior to wait for any matched passengers...
@@ -1378,6 +1378,8 @@ bool LatestDepartureScheduling::schedule_trips(DRTAssignmentData& assignment_dat
     *   2. Update Busstop::calc_exiting_time() with holding behavior if a flex trip & there are additional matched pass arriving.
     *       - See how the double call to Busstop::passenger_activity_at_stop() effects outputs and behavior with DRT etc...
     *       - Perhaps set up some tests or simple demand-supply instances to check this....
+    *
+    * @note requests currently are only assigned to max 1 individual Bustrip (i.e. will not be assigned to several trips in the same chain) at a time, this is also assumed in this scheduling strategy
     */
 
     assert(eventlist);
@@ -1393,18 +1395,14 @@ bool LatestDepartureScheduling::schedule_trips(DRTAssignmentData& assignment_dat
         //check if the bus associated with this trip is available
         if (bus->get_last_stop_visited()->get_id() == trip->get_last_stop_visited()->get_id()) //vehicle should already be located at the first stop of the trip
         {
-            //find the latest desired departure time among passengers assigned to the first trip in the tripchain
-            //qDebug() << "\tOriginal starttime of trip" << trip->get_id() << ": " << trip->get_starttime();
-            double latest_desired_dep = 0.0;
-            vector<Request*> assigned_reqs = trip->get_assigned_requests();
-            //qDebug() << "\tNumber of requests assigned to first trip: " << assigned_reqs.size();
-            for (const Request* req : assigned_reqs)
-            {
-                assert(req->state == RequestState::Matched); //all requests should be matched at this point
-                if (req->time_desired_departure > latest_desired_dep)
-                    latest_desired_dep = req->time_desired_departure;
-            }
-            //qDebug() << "\tLatest desired departure of trip" << trip->get_id() << ": " << latest_desired_dep;
+            //find the latest desired departure time among passengers assigned to the first trip in the tripchain, that are located at the origin of the trip
+            /*qDebug() << "\tOriginal starttime of trip" << trip->get_id() << ": " << trip->get_starttime();*/
+            
+            vector<Request*> assigned_reqs_at_origin = trip->get_assigned_requests_with_origin(trip->stops.front()->first->get_id());
+            const double latest_desired_dep = cs_helper_functions::get_latest_desired_departure(assigned_reqs_at_origin);
+
+            /*qDebug() << "\tNumber of requests assigned to first trip: " << assigned_reqs_at_origin.size();
+            qDebug() << "\tLatest desired departure of trip" << trip->get_id() << ": " << latest_desired_dep;*/
 
             //update the schedule of the trip such that dispatch of the tripchain is either now (if the trip was delayed) or at the latest_desired_departure of assigned passengers
             if (latest_desired_dep < time) 
