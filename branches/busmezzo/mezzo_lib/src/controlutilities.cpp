@@ -113,6 +113,17 @@ namespace cs_helper_functions
         }
     }
 
+    double get_latest_desired_departure(const vector<Request*>& requests)
+    {
+        double latest = -1.0;
+        for(const Request* req : requests)
+        {
+            if(req->time_desired_departure > latest)
+                latest = req->time_desired_departure;
+        }
+        return latest;
+    }
+
     // Find requests by condition
     vector<Request*> getRequestsInTripChain(const vector<Start_trip*>& driving_roster)
     {
@@ -135,14 +146,14 @@ namespace cs_helper_functions
     set<Request*, ptr_less<Request*> > filterRequestsByState(const set<Request*, ptr_less<Request*> >& oldSet, RequestState state)
     {
         set <Request*, ptr_less<Request*> > newSet;
-        copy_if(oldSet.begin(), oldSet.end(), inserter(newSet, newSet.end()), [state](Request* value) {return value->state == state; });
+        copy_if(oldSet.begin(), oldSet.end(), inserter(newSet, newSet.end()), [state](Request* req) {return req->state == state; });
         return newSet;
     }
 
     set<Request*, ptr_less<Request*> > filterRequestsByOD(const set<Request*, ptr_less<Request*> >& oldSet, int o_id, int d_id)
     {
         set <Request*, ptr_less<Request*>> newSet;
-        std::copy_if(oldSet.begin(), oldSet.end(), std::inserter(newSet, newSet.end()), [o_id, d_id](Request* value) {return (value->ostop_id == o_id) && (value->dstop_id == d_id); });
+        copy_if(oldSet.begin(), oldSet.end(), std::inserter(newSet, newSet.end()), [o_id, d_id](Request* req) {return (req->ostop_id == o_id) && (req->dstop_id == d_id); });
         return newSet;
     }
 
