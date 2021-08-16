@@ -339,8 +339,10 @@ public:
     bool writesummary(string name); //!< writes the summary of the OD output
 
     bool writeFWFsummary(ostream& out, const FWF_passdata& total_passdata, const FWF_passdata& fix_passdata, const FWF_passdata& drt_passdata, const FWF_vehdata& total_vehdata, const FWF_vehdata& fix_vehdata, const FWF_vehdata& drt_vehdata, const FWF_ccdata& cc_data, const FWF_tripdata& drt_tripdata, int pass_ignored); //!< summary of output for debugging fixed with flexible implementation
-    bool write_modesplit_header(string filename);
-    bool write_modesplit(string filename); //!< calculate and write PKT mode split (FIX / Total, DRT / Total) for all passengers that completed a trip @todo change this to instead use the number of times 'flex' or 'fix' was chosen in a mode decision
+    bool write_day2day_boardings_header(string filename);
+    bool write_day2day_boardings(string filename); //!< calculates the number of boardings for each line
+    bool write_day2day_modesplit_header(string filename);
+    bool write_day2day_modesplit(string filename); //!< calculate and write PKT mode split (FIX / Total, DRT / Total) for all passengers that completed a trip @todo change this to instead use the number of times 'flex' or 'fix' was chosen in a mode decision
 
     bool writelinktimes(string name); //!<writes average link traversal times.
     bool writeheadways(string name); //!< writes the timestamps of vehicles entering a Virtual Link (i e Mitsim).

@@ -7265,7 +7265,54 @@ bool Network::writeFWFsummary(
 }
 
 
-bool Network::write_modesplit_header(string filename)
+bool Network::write_day2day_boardings_header(string filename)
+{
+    ofstream out(filename.c_str(),ios_base::app); //"o_fwf_day2day_boardings.dat"
+            out << "line_id" << '\t'
+            << "total_pass_boarded" << '\t'
+            << "day" << '\t' << endl;
+    return true;
+}
+
+bool Network::write_day2day_boardings(string filename)
+{
+    ofstream out(filename.c_str(),ios_base::app); //"o_fwf_day2day_boardings.dat"
+    map<int,int> line_total_boarding; // total number of boardings per line
+
+    // collect all trips to calculate number of boardings per line
+    vector<Bustrip*> all_trips; // will contain all activated fixed trips and all completed 
+    std::copy_if(begin(bustrips), end(bustrips), back_inserter(all_trips), [](const Bustrip* trip) { return trip->is_activated(); }); // all the fixed trips
+    vector<Bustrip*> drt_trips; // all completed drt trip from any control center
+    for (const auto& cc : ccmap)
+    {
+        for (const auto& vehtrip : cc.second->completedVehicleTrips_)
+        {
+            drt_trips.push_back(vehtrip.second);
+        }
+        vector<Bustrip*> drt_activated_trips = cc.second->get_activated_trips(); // all activated drt trips that have not completed
+        drt_trips.insert(drt_trips.end(), drt_activated_trips.begin(), drt_activated_trips.end());
+    }
+    all_trips.insert(all_trips.end(), drt_trips.begin(), drt_trips.end());
+    for(auto trip : all_trips)
+    {
+        line_total_boarding[trip->get_line()->get_id()] += trip->get_total_boarding();   
+    }
+    for(auto line : buslines) // just set all lines with zero trip boardings to zero
+    {
+        if(line_total_boarding.count(line->get_id()) == 0)
+            line_total_boarding[line->get_id()] = 0;
+    }
+
+    /*out << "line_id" << '\t' << "total_pass_boarded" << '\t' << "day" << '\t' << endl;*/
+    for(auto res : line_total_boarding)
+    {
+        out << res.first << '\t' << res.second << '\t' << day << endl;    
+    }
+
+    return true;
+}
+
+bool Network::write_day2day_modesplit_header(string filename)
 {
     ofstream out(filename.c_str(),ios_base::app); //"o_fwf_day2day_modesplit.dat"
             out << "day" << '\t'
@@ -7278,7 +7325,7 @@ bool Network::write_modesplit_header(string filename)
             <<  "pass_ignored" << endl;
     return true;
 }
-bool Network::write_modesplit(string filename)
+bool Network::write_day2day_modesplit(string filename)
 {
     ofstream out(filename.c_str(),ios_base::app); //"o_fwf_day2day_modesplit.dat"
     FWF_passdata total_passdata;
@@ -9963,10 +10010,12 @@ double Network::step(double timestep)
                 Day2day::write_wt_alphas_header(workingdir + "o_fwf_wt_alphas.dat");
                 Day2day::write_ivt_alphas_header(workingdir + "o_fwf_ivt_alphas.dat");
 
-                write_modesplit_header(workingdir + "o_fwf_day2day_modesplit.dat");
+                write_day2day_modesplit_header(workingdir + "o_fwf_day2day_modesplit.dat");
+                write_day2day_boardings_header(workingdir + "o_fwf_day2day_boardings.dat");
             }
 
-            write_modesplit(workingdir + "o_fwf_day2day_modesplit.dat"); // write modesplit for the current day
+            write_day2day_modesplit(workingdir + "o_fwf_day2day_modesplit.dat"); // write modesplit for the current day
+            write_day2day_boardings(workingdir + "o_fwf_day2day_boardings.dat"); // write total boardings per line for the current day
             Day2day::write_wt_alphas(workingdir + "o_fwf_wt_alphas.dat", wt_rec);
             Day2day::write_ivt_alphas(workingdir + "o_fwf_ivt_alphas.dat", ivt_rec);
         }

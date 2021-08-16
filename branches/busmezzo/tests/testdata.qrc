@@ -204,5 +204,7 @@
         <file alias="pentamasterfile_mixed">networks/PentaFeeder_mixed_d2d/masterfile.mezzo</file>
         <file>networks/FWF_testnetwork1_d2d/ExpectedOutputs/o_fwf_day2day_modesplit.dat</file>
         <file>networks/PentaFeeder_mixed_d2d/ExpectedOutputs/o_fwf_day2day_modesplit.dat</file>
+        <file>networks/PentaFeeder_mixed_d2d/ExpectedOutputs/o_fwf_day2day_boardings.dat</file>
+        <file>networks/FWF_testnetwork1_d2d/ExpectedOutputs/o_fwf_day2day_boardings.dat</file>
     </qresource>
 </RCC>
