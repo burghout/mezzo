@@ -7270,7 +7270,7 @@ bool Network::write_day2day_boardings_header(string filename)
     ofstream out(filename.c_str(),ios_base::app); //"o_fwf_day2day_boardings.dat"
             out << "line_id" << '\t'
             << "total_pass_boarded" << '\t'
-            << "day" << '\t' << endl;
+            << "day" << endl;
     return true;
 }
 
