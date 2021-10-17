@@ -1,0 +1,5 @@
+day	origin	destination	stop	line	wt_alpha_exp	wt_alpha_pk	wt_alpha_rti	last_wt_exp	accumulated_wt_exp
+1	1	2	1	1	0.68883	0.31117	0	323.836	323.836
+1	1	2	1	8001	1	0	0	0.944441	0.944441
+3	1	2	1	1	0.641562	0.358438	0	303.506	293.157
+3	1	2	1	8001	1	0	0	0.926708	0.933293

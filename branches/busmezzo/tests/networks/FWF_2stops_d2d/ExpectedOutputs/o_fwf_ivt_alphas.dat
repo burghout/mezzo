@@ -1,0 +1,5 @@
+day	origin	destination	stop	line	leg	ivt_alpha_exp	ivt_alpha_pk	ivt_alpha_crowding	last_ivt_exp	accumulated_ivt_exp
+1	1	2	1	1	2	0.505437	0.494563	0.97308	1819.93	1819.93
+1	1	2	1	8001	2	1	0	0.97308	1805.21	1805.21
+3	1	2	1	1	2	0.504169	0.495831	0.965013	1818.08	1819.31
+3	1	2	1	8001	2	1	0	0.965013	1805.54	1805.32
