@@ -1081,12 +1081,21 @@ TransitModeType Passenger::make_transitmode_decision(Busstop* pickup_stop, doubl
 			}
 		}
 
-		fixed_u = fixed_available ? log(fixed_u) : ::large_negative_utility; //logsum of path-set utilities associated with each action, default large negative utility otherwise
-		flex_u = flex_available ? log(flex_u) : ::large_negative_utility;
+		fixed_u = fixed_available && !AproxEqual(fixed_u,0.0) ? log(fixed_u) : ::large_negative_utility; //logsum of path-set utilities associated with each action, default large negative utility otherwise
+		flex_u = flex_available && !AproxEqual(flex_u,0.0) ? log(flex_u) : ::large_negative_utility;
 
 		double MNL_denom = exp(fixed_u) + exp(flex_u);
-		fixed_p = exp(fixed_u) / MNL_denom;
-		flex_p = exp(flex_u) / MNL_denom;
+		
+		if(AproxEqual(MNL_denom,0.0)) // if both utilities of fixed and flex are equally extremely negative (MNL_denom=0), just make random choice
+		{
+		    fixed_p = 0.5;
+			flex_p = 1 - fixed_p;
+		}
+		else
+		{
+		    fixed_p = exp(fixed_u) / MNL_denom; 
+		    flex_p = exp(flex_u) / MNL_denom;    
+		}
 		assert(AproxEqual(fixed_p + flex_p, 1.0));
 
 		mode_MNL[TransitModeType::Fixed].first = fixed_u; 
