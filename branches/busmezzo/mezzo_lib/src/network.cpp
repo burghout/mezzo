@@ -7320,6 +7320,8 @@ bool Network::write_day2day_modesplit_header(string filename)
             << "drt_pkt" << '\t'
             << "fix_boarding" << '\t'
             << "drt_boarding" << '\t'
+            << "fix_chosen" << '\t'
+            << "drt_chosen" << '\t'
             << "avg_gtc" << '\t'
             <<  "npass" << '\t'
             <<  "pass_ignored" << endl;
@@ -7378,7 +7380,7 @@ bool Network::write_day2day_modesplit(string filename)
         fix = 0.0;
         drt = 0.0;
     }
-    out << fix << '\t' << drt << '\t' << total_passdata.avg_gtc << '\t' << total_passdata.npass << '\t' << pass_ignored << endl;
+    out << fix << '\t' << drt << '\t' << total_passdata.total_fix_chosen << '\t' << total_passdata.total_drt_chosen << '\t' << total_passdata.avg_gtc << '\t' << total_passdata.npass << '\t' << pass_ignored << endl;
 
     return true;
 }
@@ -10429,6 +10431,9 @@ void FWF_passdata::calc_pass_statistics(const vector<Passenger*>& passengers)
             total_pass_vkt += vkt;
             total_pass_drt_vkt += drt_vkt;
             total_pass_fix_vkt += fix_vkt;
+
+            total_drt_chosen += pass->get_num_drt_mode_choice();
+            total_fix_chosen += pass->get_num_fix_mode_choice();
 
             total_wlkt += wlkt;
             total_wt += wt;

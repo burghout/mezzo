@@ -127,6 +127,9 @@ void Passenger::reset ()
 	total_vehicle_meters_traveled = 0;
 	total_fixvehicle_meters_traveled = 0;
 	total_flexvehicle_meters_traveled = 0;
+	num_drt_mode_choice = 0;
+	num_fix_mode_choice = 0;
+	num_null_mode_choice = 0;
 
 	double new_start_time = 0; 
 	while (new_start_time <= theParameters->start_pass_generation || new_start_time > theParameters->stop_pass_generation)
@@ -585,6 +588,26 @@ double Passenger::get_total_drt_vkt()
 double Passenger::get_total_fix_vkt()
 {
 	return static_cast<double>(total_fixvehicle_meters_traveled) / 1000.0;
+}
+
+int Passenger::get_num_drt_mode_choice()
+{
+    return num_drt_mode_choice;
+}
+
+int Passenger::get_num_fix_mode_choice()
+{
+    return num_fix_mode_choice;
+}
+
+void Passenger::increment_mode_choice_counter(TransitModeType chosen_mode)
+{
+    if(chosen_mode == TransitModeType::Fixed)
+		++num_fix_mode_choice;
+	else if(chosen_mode == TransitModeType::Flexible)
+		++num_drt_mode_choice;
+	else
+		++num_null_mode_choice;
 }
 
 bool Passenger:: make_boarding_decision (Bustrip* arriving_bus, double time) 
@@ -1135,6 +1158,8 @@ TransitModeType Passenger::make_transitmode_decision(Busstop* pickup_stop, doubl
 
 	if(!theParameters->drt)
 		assert(chosen_mode != TransitModeType::Flexible);
+
+	increment_mode_choice_counter(chosen_mode);
 
 	return chosen_mode;
 }

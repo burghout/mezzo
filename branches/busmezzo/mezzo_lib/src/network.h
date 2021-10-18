@@ -127,7 +127,10 @@ struct FWF_passdata
     double total_pass_vkt = 0.0;
     double total_pass_drt_vkt = 0.0;
     double total_pass_fix_vkt = 0.0;
-    
+
+    int total_drt_chosen = 0; // total number times a flexible mode was chosen over all travelers that completed their trip and all mode choice decisions
+    int total_fix_chosen = 0; // total number times a fiexed mode was chosen over all travelers that completed their trip and all mode choice decisions
+
     size_t npass = 0; //number of passengers statistics have been calculated for
 
     void calc_pass_statistics(const vector<Passenger*>& passengers); //fill in aggregate passengers statistics based on whatever vector of passengers

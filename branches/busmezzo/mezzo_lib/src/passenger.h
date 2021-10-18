@@ -172,6 +172,10 @@ protected:
     int total_fixvehicle_meters_traveled = 0; //!< total meters traveled using a transit vehicle that followed a fixed schedule and route
     PassengerState state_ = PassengerState::Null;
 
+    int num_drt_mode_choice = 0;
+    int num_fix_mode_choice = 0;
+    int num_null_mode_choice = 0;
+
 public:
     map<ODstops*, map<Pass_path*, double> > temp_connection_path_utilities; //!< cached exp(path utilities) calculated for a given connection/transitmode/dropoff decision. Cleared at the beginning of each make_connection_decision call and filled via calls from this method
     void set_chosen_mode(TransitModeType chosen_mode) { chosen_mode_ = chosen_mode; }
@@ -185,6 +189,10 @@ public:
     double get_total_vkt();
     double get_total_drt_vkt();
     double get_total_fix_vkt();
+
+    int get_num_drt_mode_choice(); //!< number of times passenger chose 'drt' in a mode choice
+    int get_num_fix_mode_choice(); //!< number of times passenger chose 'fix' in a mode choice
+    void increment_mode_choice_counter(TransitModeType chosen_mode);
 signals:
     void sendRequest(Request* req, double time); //!< signal to send Request message to Controlcenter along with time in which signal is sent
     void stateChanged(Passenger* pass, PassengerState oldstate, PassengerState newstate, double time);
@@ -238,7 +246,8 @@ class PassengerRecycler
 {
 public:
     ~PassengerRecycler();
-    Passenger* newPassenger() {
+    Passenger* newPassenger()
+    {
         if (pass_recycled.empty())
             return new Passenger();
         else
