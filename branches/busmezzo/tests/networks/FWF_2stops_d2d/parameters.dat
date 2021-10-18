@@ -52,7 +52,7 @@
    choice_set_indicator= 1
    pass_day_to_day_indicator= 1
    in_vehicle_d2d_indicator= 1
-   break_criterium= 0.100000
+   break_criterium= 0.001
    max_days= 20
    transfer_coefficient= -0.334
    in_vehicle_time_coefficient= -0.001540
