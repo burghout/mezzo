@@ -7332,23 +7332,27 @@ bool Network::write_day2day_modesplit(string filename)
     ofstream out(filename.c_str(),ios_base::app); //"o_fwf_day2day_modesplit.dat"
     FWF_passdata total_passdata;
     FWF_tripdata total_tripdata;
-    vector<Passenger*> allpass_within_passgen;
+    vector<Passenger*> all_pass_dest_reached;
 
     //collect all passengers, calculate pkt per mode and total, calculate fix / total and drt/ total pkt percentages
     vector<Passenger*> all_pass = get_all_generated_passengers(); // includes also pass that did not complete their trip, outside pass gen range etc..
     int pass_ignored = 0;
-    for (Passenger* pass : all_pass) // only check pass who started and completed trip within the pass generation time interval
+    for (Passenger* pass : all_pass) // only check pass that completed their trip
     {
-        if (fwf_outputs::finished_trip_within_pass_generation_interval(pass))
+        /*if (fwf_outputs::finished_trip_within_pass_generation_interval(pass))
         {
             allpass_within_passgen.push_back(pass);
+        }*/
+        if(pass->get_end_time() > 0) 
+        {
+            all_pass_dest_reached.push_back(pass);
         }
         else
         {
             ++pass_ignored;
         }
     }
-    total_passdata.calc_pass_statistics(allpass_within_passgen);
+    total_passdata.calc_pass_statistics(all_pass_dest_reached);
     double fix = total_passdata.total_pass_fix_vkt / total_passdata.total_pass_vkt;
     double drt = total_passdata.total_pass_drt_vkt / total_passdata.total_pass_vkt;
     out << day << '\t' << fix << '\t' << drt << '\t';
