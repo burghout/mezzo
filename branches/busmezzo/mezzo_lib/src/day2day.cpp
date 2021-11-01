@@ -502,7 +502,7 @@ void Day2day::print_all_ivt_records(const map<ODSLL, Travel_time>& ivt_records)
 void Day2day::write_wt_alphas_header(string filename)
 {
 	ofstream ofs(filename.c_str(),ios_base::app);
-    ofs << "day\t" << "origin\t" << "destination\t" << "stop\t" << "line\t" << "wt_alpha_exp\t" << "wt_alpha_pk\t" << "wt_alpha_rti\t" << "last_wt_exp\t" << "accumulated_wt_exp" << endl;
+    ofs << "day\t" << "origin\t" << "destination\t" << "stop\t" << "line\t" << "wt_alpha_exp\t" << "wt_alpha_pk\t" << "wt_alpha_rti\t" << "last_wt_exp\t" << "accumulated_wt_exp\t" << "kapa_AWT" << endl;
 }
 void Day2day::write_wt_alphas(string filename, const map<ODSL, Travel_time>& wt_records)
 {
@@ -512,13 +512,13 @@ void Day2day::write_wt_alphas(string filename, const map<ODSL, Travel_time>& wt_
     {
 		ODSL odsl = wt_rec.first;
 		Travel_time tt = wt_rec.second;
-        ofs << tt.day << "\t" << odsl.orig << "\t" << odsl.dest << "\t" << odsl.stop << "\t" << odsl.line << "\t" << tt.alpha[EXP] << "\t" << tt.alpha[PK] << "\t" << tt.alpha[RTI] << "\t" << tt.tt[EXP] << "\t" << tt.tt[anticip_EXP] << endl;
+        ofs << tt.day << "\t" << odsl.orig << "\t" << odsl.dest << "\t" << odsl.stop << "\t" << odsl.line << "\t" << tt.alpha[EXP] << "\t" << tt.alpha[PK] << "\t" << tt.alpha[RTI] << "\t" << tt.tt[EXP] << "\t" << tt.tt[anticip_EXP] << "\t" << tt.temp_kapa_ATT << endl;
     }
 }
 void Day2day::write_ivt_alphas_header(string filename)
 {
 	ofstream ofs(filename.c_str(),ios_base::app);
-    ofs << "day\t" << "origin\t" << "destination\t" << "stop\t" << "line\t"  << "leg\t" << "ivt_alpha_exp\t" << "ivt_alpha_pk\t" << "ivt_alpha_crowding\t" << "last_ivt_exp\t" << "accumulated_ivt_exp" << endl;
+    ofs << "day\t" << "origin\t" << "destination\t" << "stop\t" << "line\t"  << "leg\t" << "ivt_alpha_exp\t" << "ivt_alpha_pk\t" << "ivt_alpha_crowding\t" << "last_ivt_exp\t" << "accumulated_ivt_exp\t" << "kapa_AIVT" << endl;
 }
 void Day2day::write_ivt_alphas(string filename, const map<ODSLL, Travel_time>& ivt_records)
 {
@@ -528,7 +528,7 @@ void Day2day::write_ivt_alphas(string filename, const map<ODSLL, Travel_time>& i
     {
         ODSLL odsll = ivt_rec.first;
         Travel_time tt = ivt_rec.second;
-        ofs << tt.day << "\t" << odsll.orig << "\t" << odsll.dest << "\t" << odsll.stop << "\t" << odsll.line << "\t" << odsll.leg << "\t" << tt.alpha[EXP] << "\t" << tt.alpha[PK] << "\t" << tt.alpha[crowding] << "\t" << tt.tt[EXP] << "\t" << tt.tt[anticip_EXP] << endl;
+        ofs << tt.day << "\t" << odsll.orig << "\t" << odsll.dest << "\t" << odsll.stop << "\t" << odsll.line << "\t" << odsll.leg << "\t" << tt.alpha[EXP] << "\t" << tt.alpha[PK] << "\t" << tt.alpha[crowding] << "\t" << tt.tt[EXP] << "\t" << tt.tt[anticip_EXP] << "\t" << tt.temp_kapa_ATT << endl;
     }
 
 }
@@ -555,6 +555,7 @@ void Day2day::calc_anticipated_wt (Travel_time& row, bool is_flexible_leg)
 		awtG = alphaRTI * wtRTI + alphaEXP * awtEXP + alphaPK * wtPK;
 		float kapaAWT = 1 / pow(1 + row.day / pow(abs(awtEXP / wtEXP - 1) + 1, v), r);
 		awtEXP = (1 - kapaAWT) * awtEXP + kapaAWT * wtEXP;
+		row.temp_kapa_ATT = kapaAWT;
 	}
 	else
 	{
@@ -626,6 +627,7 @@ void Day2day::calc_anticipated_ivt (Travel_time& row, bool is_flexible_leg)
 	{
 		float kapaAWT = 1 / (1 + row.day / pow(abs(aivtEXP / ivtEXP - 1) + 1, v));
 		aivtEXP = (1 - kapaAWT) * aivtEXP + kapaAWT * ivtEXP;
+		row.temp_kapa_ATT = kapaAWT;
 	}
 	else
 	{

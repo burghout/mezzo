@@ -87,6 +87,7 @@ struct Travel_time //structure for saving and adding data
 	float tt[5]; // EXP, PK, RTI (or crowding for ivt), anticip, anticip_EXP
 	float alpha[3]; // EXP, PK, RTI (or crowding for ivt)
 	float convergence;
+	float temp_kapa_ATT = 0.0; // temporary placeholder for outputting the most recent weight used for discounting more recent travel time experiences when updating anticipated travel time
     
     friend float operator/ (const Travel_time& lhs, const Travel_time& rhs);
 
@@ -128,6 +129,7 @@ struct Travel_time //structure for saving and adding data
 		qDebug() << "\t alpha_exp     : " << alpha[0];
 		qDebug() << "\t alpha_pk      : " << alpha[1];
 		qDebug() << "\t alpha_rti     : " << alpha[2] << Qt::endl;
+		qDebug() << "\t kapa_AWT   : " << temp_kapa_ATT;
 		qDebug() << "\t convergence   : " << convergence;
 		qDebug() << "\t counter       : " << counter;
 	}
@@ -143,6 +145,7 @@ struct Travel_time //structure for saving and adding data
 		qDebug() << "\t alpha_exp      : " << alpha[0];
 		qDebug() << "\t alpha_pk       : " << alpha[1];
 		qDebug() << "\t alpha_crowding : " << alpha[2] << Qt::endl;
+		qDebug() << "\t kapa_AIVT   : " << temp_kapa_ATT;
 		qDebug() << "\t convergence    : " << convergence;
 		qDebug() << "\t counter        : " << counter;
 	}
