@@ -1,5 +1,5 @@
-salience: 2
-crowding_salience: 3
-trust: 2
+salience: 1
+crowding_salience: 1
+trust: 1
 recency: 1
 ODS: 0
