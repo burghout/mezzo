@@ -595,7 +595,7 @@ void TestFixedWithFlexible_walking::testFlexiblePathExpectedLoS()
 
     // Path 17 first leg
     Busline* path17_leg1 = path17->get_alt_lines()[0][0];
-    double path17_leg1_wt = CC->calc_expected_wt(path17_leg1,path17_leg1->stops.front(),path17_leg1->stops.back(),true,path17_walking_time*60,0.0);
+    double path17_leg1_wt = CC->calc_expected_wt(path17_leg1,path17_leg1->stops.front(),path17_leg1->stops.back(),true,true,path17_walking_time*60,0.0);
     QVERIFY(AproxEqual(path17_leg1_wt,904.0 - path17_walking_time*60));
 
     // second leg
@@ -613,7 +613,7 @@ void TestFixedWithFlexible_walking::testFlexiblePathExpectedLoS()
     // third leg, should return exploration parameter
     Busline* path17_leg3 = path17->get_alt_lines()[2][0];
     arr_time = 0.0 + path17_leg1_wt + path17_leg2_wt + path17_walking_time*60 + leg1_ivt_rti + leg2_rti_ivt;
-    double path17_leg3_wt = CC->calc_expected_wt(path17_leg3,path17_leg3->stops.front(),path17_leg3->stops.back(),false,path17_walking_time*60,arr_time);
+    double path17_leg3_wt = CC->calc_expected_wt(path17_leg3,path17_leg3->stops.front(),path17_leg3->stops.back(),false,false,path17_walking_time*60,arr_time);
     //qDebug() << "Path 17 leg 3 waiting time: " << path17_leg3_wt;
     QVERIFY(AproxEqual(path17_leg3_wt,::drt_exploration_wt));
     QVERIFY(AproxEqual(path17_leg1_wt + path17_leg2_wt + path17_leg3_wt, path17_total_wt*60));
@@ -628,7 +628,7 @@ void TestFixedWithFlexible_walking::testFlexiblePathExpectedLoS()
     // Path 14 first leg (direct to stop 4 via walking to stop 1)
     Busline* path14_leg1 = path14->get_alt_lines()[0][0];
     double path14_walking_time = path14->calc_total_walking_distance() / theParameters->average_walking_speed;
-    double path14_leg1_wt = CC->calc_expected_wt(path14_leg1,path14_leg1->stops.front(),path14_leg1->stops.back(),true,path14_walking_time*60,0.0);
+    double path14_leg1_wt = CC->calc_expected_wt(path14_leg1,path14_leg1->stops.front(),path14_leg1->stops.back(),true,true,path14_walking_time*60,0.0);
     // qDebug() << path14_leg1_wt;
     QVERIFY(AproxEqual(path14_leg1_wt,904.0 - path14_walking_time*60));
     QVERIFY(AproxEqual(path14_leg1_wt,path14_total_wt*60));
@@ -667,7 +667,7 @@ void TestFixedWithFlexible_walking::testFlexiblePathExpectedLoS()
     // third leg, should return exploration parameter
     Busline* path20_leg3 = path20->get_alt_lines()[2][0];
     arr_time = 0.0 + path20_leg1_wt + path20_leg2_wt + path20_walking_time*60 + path20_leg1_ivt_rti + path20_leg2_ivt_rti;
-    double path20_leg3_wt = CC->calc_expected_wt(path20_leg3,path20_leg3->stops.front(),path20_leg3->stops.back(),false,path20_walking_time*60,arr_time);
+    double path20_leg3_wt = CC->calc_expected_wt(path20_leg3,path20_leg3->stops.front(),path20_leg3->stops.back(),false,false,path20_walking_time*60,arr_time);
     QVERIFY(AproxEqual(path20_leg3_wt,::drt_exploration_wt));
     QVERIFY(AproxEqual(path20_leg1_wt + path20_leg2_wt + path20_leg3_wt, path20_total_wt*60));
     //qDebug() << "Checking path " << path4->get_id() << " between stop 1 to 4 attributes for passenger " << pass2->get_id() << ", 1 drt vehicle at stop " << bus1->get_last_stop_visited()->get_id();
@@ -682,7 +682,7 @@ void TestFixedWithFlexible_walking::testFlexiblePathExpectedLoS()
     // Path 14 first leg (direct to stop 4 via walking to stop 1)
     Busline* path4_leg1 = path4->get_alt_lines()[0][0];
     double path4_walking_time = path4->calc_total_walking_distance() / theParameters->average_walking_speed;
-    double path4_leg1_wt = CC->calc_expected_wt(path4_leg1,path4_leg1->stops.front(),path4_leg1->stops.back(),true,path4_walking_time*60,0.0);
+    double path4_leg1_wt = CC->calc_expected_wt(path4_leg1,path4_leg1->stops.front(),path4_leg1->stops.back(),true,true,path4_walking_time*60,0.0);
     // qDebug() << path14_leg1_wt;
     QVERIFY(AproxEqual(path4_leg1_wt,904.0 - path4_walking_time*60));
     QVERIFY(AproxEqual(path4_leg1_wt,path4_total_wt*60));
