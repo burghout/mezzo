@@ -1053,14 +1053,14 @@ double Controlcenter::calc_exploration_ivt(Busline* service_route, Busstop* star
 	return cumulative_arrival_time - earliest_time_ostop; //OBS in-vehicle time is returned in seconds
 }
 
-double Controlcenter::calc_expected_wt(Busline* service_route, Busstop* start_stop, Busstop* end_stop, bool first_line_leg, double walking_time_to_start_stop, double arrival_time_to_start_stop)
+double Controlcenter::calc_expected_wt(Busline* service_route, Busstop* start_stop, Busstop* end_stop, bool first_line_leg, bool rti, double walking_time_to_start_stop, double arrival_time_to_start_stop)
 {
 	assert(service_route->is_flex_line()); //otherwise kindof pointless to ask the CC about wt
 	assert(service_route->get_CC()->getID() == id_);
     Q_UNUSED(end_stop)
 
-	if (!first_line_leg) 
-		return calc_exploration_wt(); //no 'RTI' or better estimate is available
+	if (!first_line_leg || !rti) 
+		return calc_exploration_wt(); //no real-time information ('rti') or better estimate is available
 
 	pair<Bus*,double> closest = getClosestVehicleToStop(start_stop, arrival_time_to_start_stop);
 	//DEBUG_MSG("Bus " << closest.first->get_bus_id() << " is closest to stop " << start_stop->get_id() << " with time_to_stop " << closest.second);

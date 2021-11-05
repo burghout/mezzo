@@ -273,19 +273,19 @@ double Pass_path::calc_total_waiting_time (double time, bool without_first_waiti
 			//DEBUG_MSG("\t Calculating total waiting time for flexible line " << service_route->get_id());
 			//prior knowledge does not exist.... instead we should initialize pk to be 0.0
 			//wt_pk = 0.0; // default is just setting wt_pk to zero, should always have credibility coefficient 0.0 for a flexible transit leg
-			if (first_line && RTI_availability > 0)
+			if (first_line && RTI_availability > 0) // if first leg, wt estimate is based on real-time (if available), otherwise should be based on exploration parameter or prior experience....
 			{ 
 				leg_has_RTI = true; //just to stay consistent with the fixed line setup
 				double walking_time = (((*iter_walk) / avg_walking_speed) * 60); //note that this is in seconds
-				wt_rti = CC->calc_expected_wt(service_route, service_route->stops.front(), service_route->stops.back(), first_line, walking_time, pass_arrival_time_at_next_stop); //if first leg, based on real-time, other legs should be exploration param or experience....
 				//DEBUG_MSG("\t wt_rti = " << wt_rti);
+				wt_rti = CC->calc_expected_wt(service_route, service_route->stops.front(), service_route->stops.back(), first_line, leg_has_RTI, walking_time, pass_arrival_time_at_next_stop); 
 				wt_rti /= 60; //sec to minutes
 			}
 			else // no rti for downstream flex legs....
 			{
 				leg_has_RTI = false;
-				wt_explore = CC->calc_expected_wt(service_route, service_route->stops.front(), service_route->stops.back(), first_line, 0.0, pass_arrival_time_at_next_stop); //if first leg, based on real-time, other legs should be exploration param or experience....
 				//DEBUG_MSG("\t wt_explore = " << wt_explore);
+				wt_explore = CC->calc_expected_wt(service_route, service_route->stops.front(), service_route->stops.back(), first_line, leg_has_RTI, 0.0, pass_arrival_time_at_next_stop); 
 				wt_explore /= 60; //sec to minutes
 			}			
 		}
