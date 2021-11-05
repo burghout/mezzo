@@ -295,6 +295,8 @@ double Pass_path::calc_total_waiting_time (double time, bool without_first_waiti
 			wt_pk = (calc_curr_leg_headway((*iter_alt_lines), alt_transfer_stops_iter, pass_arrival_time_at_next_stop) / 2);
 			//DEBUG_MSG("\t wt_pk = " << wt_pk);
 			//DEBUG_MSG("\t RTI_availability = " << RTI_availability);
+			if(wt_pk < 0.0) // if no lines were available for this leg then set expected wt based on prior knowledge to infinity
+				wt_pk = numeric_limits<double>::max(); 
 			switch (RTI_availability)
 			{
 			case 0:
@@ -492,7 +494,7 @@ double Pass_path::calc_curr_leg_headway (vector<Busline*> leg_lines, vector <vec
 	}
 	if (accumlated_frequency == 0.0) // in case no line is avaliable
 	{
-		return 0.0;
+		return -1.0; // if no line is available return negative expected headway (to flag caller for this)
 	}
     
     //if (drt_line_count > 0)
