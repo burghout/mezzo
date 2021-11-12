@@ -99,6 +99,7 @@ const double dummy_link_freeflow_speed = 1000.0;
 namespace fwf_wip
 {
     extern bool day2day_drt_no_rti; // true if both day2day and drt are active in parameters, and all RTI parameters are set to zero in parameters (i.e. no RTI is provisioned at any level)
+    extern bool write_all_pass_experiences; // true if disaggregate individual passenger experiences of waiting time and in-vehicle time should be written to output files
 }
 
 

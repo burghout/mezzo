@@ -24,6 +24,7 @@ int drt_min_occupancy = 0;
 double drt_first_rebalancing_time = 0.0;
 
 bool fwf_wip::day2day_drt_no_rti = false;
+bool fwf_wip::write_all_pass_experiences = false;
 
 bool PARTC::drottningholm_case = false;
 Busstop* PARTC::transfer_stop = nullptr;
@@ -10132,18 +10133,25 @@ double Network::step(double timestep)
 
                 write_day2day_modesplit_header(workingdir + "o_fwf_day2day_modesplit.dat");
                 write_day2day_boardings_header(workingdir + "o_fwf_day2day_boardings.dat");
-                write_day2day_passenger_waiting_experience_header(workingdir + "o_fwf_day2day_passenger_waiting_experience.dat");
-                write_day2day_passenger_onboard_experience_header(workingdir + "o_fwf_day2day_passenger_onboard_experience.dat");
-                write_day2day_passenger_transitmode_header(workingdir + "o_fwf_day2day_passenger_transitmode.dat");
+                if (fwf_wip::write_all_pass_experiences)
+                {
+                    write_day2day_passenger_waiting_experience_header(workingdir + "o_fwf_day2day_passenger_waiting_experience.dat");
+                    write_day2day_passenger_onboard_experience_header(workingdir + "o_fwf_day2day_passenger_onboard_experience.dat");
+                    write_day2day_passenger_transitmode_header(workingdir + "o_fwf_day2day_passenger_transitmode.dat");
+                }
             }
             Day2day::write_wt_alphas(workingdir + "o_fwf_wt_alphas.dat", wt_rec);
             Day2day::write_ivt_alphas(workingdir + "o_fwf_ivt_alphas.dat", ivt_rec);
 
             write_day2day_modesplit(workingdir + "o_fwf_day2day_modesplit.dat"); // write modesplit for the current day
             write_day2day_boardings(workingdir + "o_fwf_day2day_boardings.dat"); // write total boardings per line for the current day
-            write_day2day_passenger_waiting_experience(workingdir + "o_fwf_day2day_passenger_waiting_experience.dat");
-            write_day2day_passenger_onboard_experience(workingdir + "o_fwf_day2day_passenger_onboard_experience.dat");
-            write_day2day_passenger_transitmode(workingdir + "o_fwf_day2day_passenger_transitmode.dat");
+
+            if (fwf_wip::write_all_pass_experiences)
+            {
+                write_day2day_passenger_waiting_experience(workingdir + "o_fwf_day2day_passenger_waiting_experience.dat");
+                write_day2day_passenger_onboard_experience(workingdir + "o_fwf_day2day_passenger_onboard_experience.dat");
+                write_day2day_passenger_transitmode(workingdir + "o_fwf_day2day_passenger_transitmode.dat");
+            }
         }
 
         cout << "Convergence: " << crit[wt] << " " << crit[ivt] << endl;
