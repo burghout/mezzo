@@ -37,7 +37,7 @@ struct ODSL //structure for comparing ODSL combinations
 
 	void print() const
 	{
-	    cout << "PID-" << pid << "-ODSL: " << orig << dest << stop << line << endl;
+	    cout << "PID-" << pid << "-ODSL: " << "(" << orig << "," << dest << "," << stop << "," << line << ")" << endl;
 	}
 
 };
@@ -74,7 +74,7 @@ struct ODSLL
 
 	void print() const
 	{
-	    cout << "PID-" << pid << "-ODSLL: " << orig << dest << stop << line << leg << endl;
+	    cout << "PID-" << pid << "-ODSLL: " << "(" << orig << "," << dest << "," << stop << "," << line << "," << leg << ")" << endl;
 	}
 
 };
