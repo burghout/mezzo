@@ -7264,6 +7264,117 @@ bool Network::writeFWFsummary(
         return true;
 }
 
+bool Network::write_day2day_passenger_waiting_experience_header(string filename)
+{
+    ofstream out(filename.c_str(), ios_base::app); //"o_fwf_day2day_passenger_waiting_experience.dat"
+    out << "day" << '\t'
+        << "pass_id" << '\t'
+        << "origin_id" << '\t'
+        << "destination_id" << '\t'
+        << "line_id" << '\t'
+        << "trip_id" << '\t'
+        << "stop_id" << '\t'
+        << "boarding_time" << '\t'
+        << "generation_time" << '\t'
+        << "expected_wt_pk" << '\t'
+        << "rti_level_available" << '\t'
+        << "projected_wt_rti" << '\t'
+        << "experienced_wt" << '\t'
+        << "anticipated_wt" << '\t'
+        << "nr_missed" << endl;
+    return true;
+}
+bool Network::write_day2day_passenger_waiting_experience(string filename)
+{
+    ofstream out(filename.c_str(), ios_base::app); //"o_fwf_day2day_passenger_waiting_experience.dat"
+
+    for (auto stop_iter = busstops.begin(); stop_iter != busstops.end(); ++stop_iter)
+    {
+        auto stop_as_origin = (*stop_iter)->get_stop_as_origin();
+        for (auto od_iter = stop_as_origin.begin(); od_iter != stop_as_origin.end(); ++od_iter)
+        {
+            map <Passenger*, list<Pass_waiting_experience> > waiting_experience = od_iter->second->get_waiting_output();
+            for (auto pass_iter1 = waiting_experience.begin(); pass_iter1 != waiting_experience.end(); ++pass_iter1)
+            {
+                out << day << '\t';
+                od_iter->second->write_waiting_exp_output(out, (*pass_iter1).first);
+            }
+        }
+    }
+    return true;
+}
+bool Network::write_day2day_passenger_onboard_experience_header(string filename)
+{
+    ofstream out(filename.c_str(), ios_base::app); //"o_fwf_day2day_passenger_onboard_experience.dat"
+    out << "day" << '\t'
+        << "pass_id" << '\t'
+        << "origin_id" << '\t'
+        << "destination_id" << '\t'
+        << "line_id" << '\t'
+        << "trip_id" << '\t'
+        << "stop_id" << '\t'
+        << "leg_id" << '\t'
+        << "expected_ivt" << '\t'
+        << "experienced_ivt" << '\t'
+        << "experienced_ivt_crowding" << endl;
+    return true;
+}
+bool Network::write_day2day_passenger_onboard_experience(string filename)
+{
+    ofstream out(filename.c_str(), ios_base::app); //"o_fwf_day2day_passenger_onboard_experience.dat"
+
+    for (auto stop_iter = busstops.begin(); stop_iter != busstops.end(); ++stop_iter)
+    {
+        auto stop_as_origin = (*stop_iter)->get_stop_as_origin();
+        for (auto od_iter = stop_as_origin.begin(); od_iter != stop_as_origin.end(); ++od_iter)
+        {
+            map <Passenger*, list<Pass_onboard_experience> > onboard_experience = od_iter->second->get_onboard_output();
+            for (auto pass_iter1 = onboard_experience.begin(); pass_iter1 != onboard_experience.end(); ++pass_iter1)
+            {
+                out << day << '\t';
+                od_iter->second->write_onboard_exp_output(out, (*pass_iter1).first);
+            }
+        }
+    }
+    return true;
+}
+bool Network::write_day2day_passenger_transitmode_header(string filename)
+{
+    ofstream out(filename.c_str(), ios_base::app); //"o_fwf_day2day_passenger_transitmode.dat"
+    out << "day" << '\t'
+        << "pass_id" << '\t'
+        << "original_origin_id" << '\t'
+        << "destination_id" << '\t'
+        << "pickupstop_id" << '\t'
+        << "time" << '\t'
+        << "generation_time" << '\t'
+        << "chosen_transitmode_id" << '\t'
+        << "fixed_mode_id" << '\t'
+        << "u_fixed" << '\t'
+        << "prob_fixed" << '\t'
+        << "drt_mode_id" << '\t'
+        << "u_drt" << '\t'
+        << "prob_drt" << endl;
+    return true;
+}
+bool Network::write_day2day_passenger_transitmode(string filename)
+{
+    ofstream out(filename.c_str(), ios_base::app); //"o_fwf_day2day_passenger_transitmode.dat"
+    for (const auto& od : odstops_demand)
+    {
+        vector<Passenger*> pass_vec = od->get_passengers_during_simulation();
+        for (const auto& pass : pass_vec)
+        {
+            /*if (pass->get_end_time() > 0)
+            {*/
+            out << day << '\t';
+            od->write_transitmode_output(out, pass);
+            /*}*/
+        }
+    }
+    return true;
+}
+
 
 bool Network::write_day2day_boardings_header(string filename)
 {
@@ -7478,12 +7589,6 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
     string name11, string name12, string name13, string name14, string name15, string name16, string name17, string name18, string name19, string name20, 
     string name21, string name22, string name23, string name24)
 {
-    Q_UNUSED(name5)
-    Q_UNUSED(name6)
-    Q_UNUSED(name13)
-    Q_UNUSED(name14)
-    Q_UNUSED(name15)
-
     ofstream out1(name1.c_str(),ios_base::app); //"o_transitlog_out.dat"
     ofstream out2(name2.c_str(),ios_base::app); //"o_transitstop_sum.dat"
     ofstream out3(name3.c_str(),ios_base::app); //"o_transitline_sum.dat"
@@ -7520,16 +7625,25 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
         workingdir + "o_passenger_welfare_summary.dat",         out17
         workingdir + "o_fwf_summary.dat",                       out18
         workingdir + "o_passenger_transitmode.dat",             out19
-        workingdir + "o_passenger_dropoff.dat"                  out20
+        workingdir + "o_passenger_dropoff.dat",                 out20
+        workingdir + "o_vkt.dat",                               out21
+        workingdir + "o_fwf_summary_odcategory.dat",            out22
+        workingdir + "o_fwf_drtvehicle_states.dat",             out23
+        workingdir + "o_time_spent_in_state_at_stop.dat"        out24
     );*/
 
-    /* passenger decision related, deactivated
-    ofstream out5(name5.c_str(),ios_base::app);
-    ofstream out6(name6.c_str(),ios_base::app);
-    ofstream out13(name13.c_str(),ios_base::app);
-    ofstream out14(name14.c_str(),ios_base::app);
-    ofstream out15(name15.c_str(),ios_base::app);
-    */
+    Q_UNUSED(name5)
+    Q_UNUSED(name6)
+    Q_UNUSED(name13)
+    Q_UNUSED(name14)
+    Q_UNUSED(name15)
+    // passenger decision related, deactivated
+    //ofstream out5(name5.c_str(),ios_base::app); // "o_passenger_boarding.dat"
+    //ofstream out6(name6.c_str(),ios_base::app); // "o_passenger_alighting.dat"
+    //ofstream out13(name13.c_str(),ios_base::app); // "o_passenger_waiting_experience.dat"
+    //ofstream out14(name14.c_str(),ios_base::app); // "o_passenger_onboard_experience.dat"
+    //ofstream out15(name15.c_str(),ios_base::app); // "o_passenger_connection.dat"
+    
 
     /*FWF/DRT related outputs
 @todo Need to either create a calc function for each one of these or fill it in in a different way.
@@ -7746,7 +7860,7 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
             //        /*if (pass->get_end_time() > 0)
             //        {*/
             //        od->write_transitmode_output(out19, pass);
-            //        od->write_dropoff_output(out20, pass);
+            //        //od->write_dropoff_output(out20, pass);
             //        /*}*/
             //    }
             //}
@@ -7803,45 +7917,45 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
 
         total_vehdata = fix_vehdata + drt_vehdata;
         writeFWFsummary(out18, total_passdata, fix_passdata, drt_passdata, total_vehdata, fix_vehdata, drt_vehdata, cc_summarydata, drt_tripdata, pass_ignored);
-        /* deactivated - unneccessary files in most cases
-        for (vector<Busstop*>::iterator stop_iter = busstops.begin(); stop_iter < busstops.end(); stop_iter++)
+        // deactivated - unneccessary files in most cases
+        /*for (auto stop_iter = busstops.begin(); stop_iter != busstops.end(); ++stop_iter)
         {
-            map <Busstop*, ODstops*> stop_as_origin = (*stop_iter)->get_stop_as_origin();
-            for (map <Busstop*, ODstops*>::iterator od_iter = stop_as_origin.begin(); od_iter != stop_as_origin.end(); od_iter++)
+            auto stop_as_origin = (*stop_iter)->get_stop_as_origin();
+            for (auto od_iter = stop_as_origin.begin(); od_iter != stop_as_origin.end(); ++od_iter)
             {
                 map <Passenger*,list<Pass_boarding_decision> > boarding_decisions = od_iter->second->get_boarding_output();
-                for (map<Passenger*,list<Pass_boarding_decision> >::iterator pass_iter1 = boarding_decisions.begin(); pass_iter1 != boarding_decisions.end(); pass_iter1++)
+                for (auto pass_iter1 = boarding_decisions.begin(); pass_iter1 != boarding_decisions.end(); ++pass_iter1)
                 {
                     od_iter->second->write_boarding_output(out5, (*pass_iter1).first);
                 }
 
                 map <Passenger*,list<Pass_alighting_decision> > alighting_decisions = od_iter->second->get_alighting_output();
-                for (map<Passenger*,list<Pass_alighting_decision> >::iterator pass_iter2 = alighting_decisions.begin(); pass_iter2 != alighting_decisions.end(); pass_iter2++)
+                for (auto pass_iter2 = alighting_decisions.begin(); pass_iter2 != alighting_decisions.end(); ++pass_iter2)
                 {
                     od_iter->second->write_alighting_output(out6, (*pass_iter2).first);
                     break;
                 }
 
                 map <Passenger*,list<Pass_connection_decision> > connection_decisions = od_iter->second->get_connection_output();
-                for (map<Passenger*,list<Pass_connection_decision> >::iterator pass_iter1 = connection_decisions.begin(); pass_iter1 != connection_decisions.end(); pass_iter1++)
+                for (auto pass_iter1 = connection_decisions.begin(); pass_iter1 != connection_decisions.end(); ++pass_iter1)
                 {
                     od_iter->second->write_connection_output(out15, (*pass_iter1).first);
                 }
 
                 map <Passenger*,list<Pass_waiting_experience> > waiting_experience = od_iter->second->get_waiting_output();
-                for (map<Passenger*,list<Pass_waiting_experience> >::iterator pass_iter1 = waiting_experience.begin(); pass_iter1 != waiting_experience.end(); pass_iter1++)
+                for (auto pass_iter1 = waiting_experience.begin(); pass_iter1 != waiting_experience.end(); ++pass_iter1)
                 {
                     od_iter->second->write_waiting_exp_output(out13, (*pass_iter1).first);
                 }
 
                 map <Passenger*,list<Pass_onboard_experience> > onboard_experience = od_iter->second->get_onboard_output();
-                for (map<Passenger*,list<Pass_onboard_experience> >::iterator pass_iter1 = onboard_experience.begin(); pass_iter1 != onboard_experience.end(); pass_iter1++)
+                for (auto pass_iter1 = onboard_experience.begin(); pass_iter1 != onboard_experience.end(); ++pass_iter1)
                 {
                     od_iter->second->write_onboard_exp_output(out14, (*pass_iter1).first);
                 }
             }
-        }
-        */
+        }*/
+        
     }
     return true;
 }
@@ -10018,12 +10132,18 @@ double Network::step(double timestep)
 
                 write_day2day_modesplit_header(workingdir + "o_fwf_day2day_modesplit.dat");
                 write_day2day_boardings_header(workingdir + "o_fwf_day2day_boardings.dat");
+                write_day2day_passenger_waiting_experience_header(workingdir + "o_fwf_day2day_passenger_waiting_experience.dat");
+                write_day2day_passenger_onboard_experience_header(workingdir + "o_fwf_day2day_passenger_onboard_experience.dat");
+                write_day2day_passenger_transitmode_header(workingdir + "o_fwf_day2day_passenger_transitmode.dat");
             }
+            Day2day::write_wt_alphas(workingdir + "o_fwf_wt_alphas.dat", wt_rec);
+            Day2day::write_ivt_alphas(workingdir + "o_fwf_ivt_alphas.dat", ivt_rec);
 
             write_day2day_modesplit(workingdir + "o_fwf_day2day_modesplit.dat"); // write modesplit for the current day
             write_day2day_boardings(workingdir + "o_fwf_day2day_boardings.dat"); // write total boardings per line for the current day
-            Day2day::write_wt_alphas(workingdir + "o_fwf_wt_alphas.dat", wt_rec);
-            Day2day::write_ivt_alphas(workingdir + "o_fwf_ivt_alphas.dat", ivt_rec);
+            write_day2day_passenger_waiting_experience(workingdir + "o_fwf_day2day_passenger_waiting_experience.dat");
+            write_day2day_passenger_onboard_experience(workingdir + "o_fwf_day2day_passenger_onboard_experience.dat");
+            write_day2day_passenger_transitmode(workingdir + "o_fwf_day2day_passenger_transitmode.dat");
         }
 
         cout << "Convergence: " << crit[wt] << " " << crit[ivt] << endl;

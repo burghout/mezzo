@@ -342,6 +342,12 @@ public:
     bool writesummary(string name); //!< writes the summary of the OD output
 
     bool writeFWFsummary(ostream& out, const FWF_passdata& total_passdata, const FWF_passdata& fix_passdata, const FWF_passdata& drt_passdata, const FWF_vehdata& total_vehdata, const FWF_vehdata& fix_vehdata, const FWF_vehdata& drt_vehdata, const FWF_ccdata& cc_data, const FWF_tripdata& drt_tripdata, int pass_ignored); //!< summary of output for debugging fixed with flexible implementation
+    bool write_day2day_passenger_waiting_experience_header(string filename);
+    bool write_day2day_passenger_waiting_experience(string filename);
+    bool write_day2day_passenger_onboard_experience_header(string filename);
+    bool write_day2day_passenger_onboard_experience(string filename);
+    bool write_day2day_passenger_transitmode_header(string filename);
+    bool write_day2day_passenger_transitmode(string filename);
     bool write_day2day_boardings_header(string filename);
     bool write_day2day_boardings(string filename); //!< calculates the number of boardings for each line
     bool write_day2day_modesplit_header(string filename);
