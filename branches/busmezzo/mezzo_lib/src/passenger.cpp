@@ -697,7 +697,20 @@ void Passenger::record_waiting_experience(Bustrip* arriving_bus, double time)
 		}
 		
 		ODstops* passenger_od = original_origin->get_stop_od_as_origin_per_stop(OD_stop->get_destination());
-		passenger_od->record_waiting_experience(this, arriving_bus, time, experienced_WT, curr_stop->get_rti(), this->get_memory_projected_RTI(curr_stop,arriving_bus->get_line()), AWT_first_leg_boarding, static_cast<int>(waiting_time_due_denied_boarding.size()));
+		// @note AWT_first_leg_boarding was always 0.0 in seems, not actually recorded as a waiting time experience, instead the anticipated waiting time is recalculated in 3 different places:
+		// 1. Passenger level, 2. OD stops level, 3. Day2Day level
+		passenger_od->record_waiting_experience(
+			this, 
+			arriving_bus, 
+			time, 
+			experienced_WT, 
+			curr_stop->get_rti(), 
+			this->get_memory_projected_RTI(curr_stop,arriving_bus->get_line()), 
+			this->get_anticipated_waiting_time(curr_stop,arriving_bus->get_line())*60, //convert back to seconds 
+			static_cast<int>(waiting_time_due_denied_boarding.size())
+		);
+
+		//passenger_od->record_waiting_experience(this, arriving_bus, time, experienced_WT, curr_stop->get_rti(), this->get_memory_projected_RTI(curr_stop,arriving_bus->get_line()), AWT_first_leg_boarding, static_cast<int>(waiting_time_due_denied_boarding.size()));
 		//OD_stop->record_waiting_experience(this, arriving_bus, time, experienced_WT, curr_stop->get_rti(), this->get_memory_projected_RTI(curr_stop,arriving_bus->get_line()), AWT_first_leg_boarding, waiting_time_due_denied_boarding.size());
 		//left_behind_before = false;
 	}
