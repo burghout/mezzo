@@ -548,7 +548,7 @@ void Day2day::calc_anticipated_wt (Travel_time& row, bool is_flexible_leg)
 	float& awtG = row.tt[anticip]; // anticipated travel time of previous day
 
 	//calc awt - this could be moved to insert_alphas
-	if (wtEXP == 0) wtEXP = 1.0; //to avoid division by zero
+	if (wtEXP == 0) wtEXP = 1.0; //to avoid division by zero as well as flag that this at least the second experience collected
 
 	if (awtEXP >= 0) //If there is prior experience
 	{

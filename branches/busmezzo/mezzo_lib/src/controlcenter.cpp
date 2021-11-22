@@ -812,6 +812,11 @@ Controlcenter_SummaryData Controlcenter::getSummaryData() const
 	return summarydata_;
 }
 
+DRTAssignmentData Controlcenter::get_assignment_data() const
+{
+	return assignment_data_;
+}
+
 vector<Bustrip*> Controlcenter::get_activated_trips()
 {
 	vector<Bustrip*> activated_trips;

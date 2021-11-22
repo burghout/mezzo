@@ -24,7 +24,11 @@ int drt_min_occupancy = 0;
 double drt_first_rebalancing_time = 0.0;
 
 bool fwf_wip::day2day_drt_no_rti = false;
-bool fwf_wip::write_all_pass_experiences = false;
+
+bool fwf_wip::write_all_pass_experiences = true; //set manually
+bool fwf_wip::randomize_pass_arrivals = false; //set manually
+bool fwf_wip::day2day_no_convergence_criterium = true; //set manually
+bool fwf_wip::drt_enforce_strict_boarding = false; //set manually
 
 bool PARTC::drottningholm_case = false;
 Busstop* PARTC::transfer_stop = nullptr;
@@ -10158,7 +10162,8 @@ double Network::step(double timestep)
 
         day++;
         day2day->update_day(day); // clears the 'wt_day' and 'ivt_day' internal states of day2day, updates the kapas (decaying learning weights) with the current day
-        if ((crit[wt] >= theta || crit[ivt] >= theta) && day <= theParameters->max_days)
+        bool convergence_reached = fwf_wip::day2day_no_convergence_criterium ? false : (crit[wt] < theta || crit[ivt] < theta);
+        if (!convergence_reached && day <= theParameters->max_days)
         {
             reset();
             read_transitday2day(wt_rec);

@@ -100,6 +100,9 @@ namespace fwf_wip
 {
     extern bool day2day_drt_no_rti; // true if both day2day and drt are active in parameters, and all RTI parameters are set to zero in parameters (i.e. no RTI is provisioned at any level)
     extern bool write_all_pass_experiences; // true if disaggregate individual passenger experiences of waiting time and in-vehicle time should be written to output files
+    extern bool randomize_pass_arrivals; // true if to enable randomizing traveler arrival times (+- around original arrival time) to a stop between days or simulation iterations (i.e. passenger resets)
+    extern bool day2day_no_convergence_criterium; // true if we do not terminate based on day2day convergence criteria and instead run until a max number of days is reached
+    extern bool drt_enforce_strict_boarding; // true if we do not allow drt-users to opportunistically board drt vehicles
 }
 
 

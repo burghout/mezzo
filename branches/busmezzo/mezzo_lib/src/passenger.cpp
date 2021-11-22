@@ -131,10 +131,13 @@ void Passenger::reset ()
 	num_fix_mode_choice = 0;
 	num_null_mode_choice = 0;
 
-	double new_start_time = 0; 
-	while (new_start_time <= theParameters->start_pass_generation || new_start_time > theParameters->stop_pass_generation)
-		new_start_time = start_time + theRandomizers[0]->urandom(-300, 300); //The passengers should arrive at stops a little bit randomly, otherwise they might face the exact same situation every day
-	start_time = new_start_time;
+    if (fwf_wip::randomize_pass_arrivals)
+    {
+        double new_start_time = -1;
+        while (new_start_time <= theParameters->start_pass_generation || new_start_time > theParameters->stop_pass_generation)
+            new_start_time = start_time + theRandomizers[0]->urandom(-300, 300); //The passengers should arrive at stops a little bit randomly, otherwise they might face the exact same situation every day
+        start_time = new_start_time;
+    }
 
 	end_time = 0;
 	nr_boardings = 0;
@@ -677,7 +680,7 @@ void Passenger::record_waiting_experience(Bustrip* arriving_bus, double time)
 	if(theParameters->demand_format == 3)
 	{
 		Busstop* curr_stop = OD_stop->get_origin();
-		bool left_behind_before = !empty_denied_boarding() && curr_stop->get_id() == get_last_denied_boarding_stop_id();
+		bool left_behind_before = (!empty_denied_boarding()) && (curr_stop->get_id() == get_last_denied_boarding_stop_id());
 		double experienced_WT;
 		if (left_behind_before)
 		{
@@ -697,7 +700,7 @@ void Passenger::record_waiting_experience(Bustrip* arriving_bus, double time)
 		}
 		
 		ODstops* passenger_od = original_origin->get_stop_od_as_origin_per_stop(OD_stop->get_destination());
-		// @note AWT_first_leg_boarding was always 0.0 in seems, not actually recorded as a waiting time experience, instead the anticipated waiting time is recalculated in 3 different places:
+		// @note AWT_first_leg_boarding was always 0.0 in seems, not actually recorded as a waiting time projection, instead the anticipated waiting time is recalculated in 3 different places:
 		// 1. Passenger level, 2. OD stops level, 3. Day2Day level
 		passenger_od->record_waiting_experience(
 			this, 

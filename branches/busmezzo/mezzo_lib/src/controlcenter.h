@@ -261,6 +261,7 @@ private:
 public:
 	int getID() const;
 	Controlcenter_SummaryData getSummaryData() const;
+	DRTAssignmentData get_assignment_data() const;
 	vector<Bustrip*> get_activated_trips(); //!< get all trips that have been activated but have not completed yet
 
     set<Busstop *, ptr_less<Busstop *> > getServiceArea() const;
