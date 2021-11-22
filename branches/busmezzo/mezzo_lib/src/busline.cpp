@@ -1223,6 +1223,12 @@ bool Bustrip::is_feasible_request_assignment(Request* req, size_t planned_capaci
     return false;
 }
 
+bool Bustrip::is_in_assigned_requests(Request* req)
+{
+	auto rq_it = find(assigned_requests.begin(), assigned_requests.end(), req);
+	return rq_it != assigned_requests.end();
+}
+
 void Bustrip::set_status(BustripStatus newstatus)
 {
 	if(!is_flex_trip()) // only update status of flex trips, fixed stay at Null @todo expand to bookkeep fixed trips as well

@@ -476,6 +476,7 @@ public:
     void add_request(Request* req) { assigned_requests.push_back((req)); }
     bool remove_request(const Request* req); //!< removes request from scheduled requests if it exists, returns true if successful, false otherwise
     bool is_feasible_request_assignment(Request* req, size_t planned_capacity); //!< returns true if adding request does not exceed planned cap
+	bool is_in_assigned_requests(Request* req); //!< returns true if request exists in assigned requests, false otherwise
 
     void update_total_boardings(int n_boarding) { total_boarding += n_boarding; }
     void update_total_alightings(int n_alighting) { total_alighting += n_alighting; }
