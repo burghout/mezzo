@@ -624,7 +624,17 @@ bool Passenger:: make_boarding_decision (Bustrip* arriving_bus, double time)
 	{
 		if (curr_request_->assigned_veh == nullptr) // if we are not associating requests with specific vehicles
 		{
-			if (arriving_bus->is_flex_trip() && arriving_bus->has_stop_downstream(curr_request_->dstop_id)) // passengers board any trip that matches request destination downstream @todo maybe update this to only board vehicles that the pass was assigned to
+			bool board_bus = false;
+			if(::fwf_wip::drt_enforce_strict_boarding)
+			{
+			    board_bus = arriving_bus->is_flex_trip() && arriving_bus->is_in_assigned_requests(curr_request_); // board only the trip that the request of the passenger was originally assigned to
+				assert(board_bus == arriving_bus->is_in_assigned_requests(curr_request_));
+			}
+			else
+			{
+			    board_bus = arriving_bus->is_flex_trip() && arriving_bus->has_stop_downstream(curr_request_->dstop_id); // passengers board any trip that matches request destination downstream @todo maybe update this to only board vehicles that the pass was assigned to
+			}
+			if (board_bus) 
 			{
 				OD_stop->set_staying_utility(::large_negative_utility); //we set these utilities just to record boarding output
 				OD_stop->set_boarding_utility(::large_positive_utility);
