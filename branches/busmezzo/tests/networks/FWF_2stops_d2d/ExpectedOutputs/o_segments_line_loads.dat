@@ -1,4 +1,4 @@
 Line_ID	Upstream_stop_ID	Upstream_stop_name	Downstream_stop_ID	Downstream_stop_name	Passenger_load	
-1	1	Stop_1	2	Stop_2	31	
-8001	1	Stop_1	2	Stop_2	15	
-8021	2	Stop_2	1	Stop_1	0	
+1	1	Stop_1	2	Stop_2	60	
+21	22	Stop_22	21	Stop_21	0	
+10000	1	Stop_1	2	Stop_2	40	

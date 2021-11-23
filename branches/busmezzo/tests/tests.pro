@@ -16,7 +16,8 @@ SUBDIRS += \
     fixedwithflexible_walking \
     fixedwithflexible_day2day \
     fixedwithflexible \
-    drt_algorithms
+    drt_algorithms \
+    fixedwithflexible_2stop_2link
 
 	
 CONFIG += sdk_no_version_check # for mac
