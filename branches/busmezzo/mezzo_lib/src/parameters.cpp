@@ -777,13 +777,13 @@ bool Parameters::read_parameters (istream & in )
 		return false;
 	}
 	in >> RTCI_smoothing_alpha;
-	in >> keyword;
-	if (keyword != "RTCI_alpha=")
-	{
-		cout << "ERROR reading Parameters file, expecting: RTCI_alpha=, read: " << keyword << endl;
-		return false;
-	}
-	in >> RTCI_alpha;
+	//in >> keyword;
+	//if (keyword != "RTCI_alpha=")
+	//{
+	//	cout << "ERROR reading Parameters file, expecting: RTCI_alpha=, read: " << keyword << endl;
+	//	return false;
+	//}
+	//in >> RTCI_alpha;
 	//in >> keyword;
 	//if (keyword != "RTCI_level=")
 	//{

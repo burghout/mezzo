@@ -447,18 +447,20 @@ double Busline::get_arrival_time_at_next_stop(Bustrip* incoming_trip, Busstop* t
 }
 
 // RTCI - used to extract the currently valid car-specific RTCI prediction for each considered IVT path segment
-double Busline::get_anticipated_segment_car_RTCI(Bustrip* expected_trip, Busstop* dep_stop, int section, Busstop* start_stop)
+double Busline::get_anticipated_segment_car_RTCI(Bustrip* expected_trip, Busstop* dep_stop, int section, Passenger* pass, Busstop* start_stop)
 {
 	double toReturn;
 	if (theParameters->include_car_RTCI == 4)
 	{ 
-		if (dep_stop == /*pass->get_original_origin()*/start_stop)
+		if (dep_stop == start_stop)
 		{
 			toReturn = expected_trip->predicted_car_RTCI_factors[dep_stop][section];
 		}
 		else
 		{
-			toReturn = 1.0;
+			//toReturn = 1.0;
+			toReturn = expected_trip->predicted_car_RTCI_factors[start_stop/*pass->get_OD_stop()->get_origin()*/ /*pass->get_original_origin()*/][section];
+			//cout << "Original origin: " << pass->get_original_origin()->get_id() << "origin: " << start_stop->get_id()/*pass->get_OD_stop()->get_origin()->get_id()*/ << endl;
 		}
 	}
 	else if (theParameters->include_car_RTCI == 3)
@@ -551,7 +553,7 @@ double Busline::calc_curr_line_ivt (Busstop* start_stop, Busstop* end_stop, int 
 	return ((*alight_stop)->second - (*board_stop)->second) + extra_travel_time; // in seconds
 }
 
-double Busline::calc_curr_line_car_ivt(Busstop* start_stop, Busstop* end_stop, int rti, double time, int section, /*Passenger* pass,*/ bool include_ivt_RTCI, Busstop* origin)
+double Busline::calc_curr_line_car_ivt(Busstop* start_stop, Busstop* end_stop, int rti, double time, int section, Passenger* pass, bool include_ivt_RTCI, Busstop* origin)
 {
 	double extra_travel_time = 0.0;
 	//RTCI Melina
@@ -604,7 +606,7 @@ double Busline::calc_curr_line_car_ivt(Busstop* start_stop, Busstop* end_stop, i
 			//}
 			//else if (theParameters->RTCI_level == 2)
 			//{
-				ivtt_CL += (next_stop_arrival_time - (*stop)->second) * get_anticipated_segment_car_RTCI((*check_trip).first, (*stop)->first, section, origin);
+				ivtt_CL += (next_stop_arrival_time - (*stop)->second) * get_anticipated_segment_car_RTCI((*check_trip).first, (*stop)->first, section, pass, origin);
 				//cout  << " " << "Stop: "<< start_stop->get_id() << " " << "destination: " << end_stop->get_id() << " " << "section: " << section << " " << "In vehicle time: " << ivtt_CL << " " <<  "RTCI: " << get_anticipated_segment_RTCI((*check_trip).first, (*stop)->first, section, origin) << "TRIP"<< (*check_trip).first->get_id() << "first trip" << endl;
 				// partial_ivtt_CL = segment_IVTT * segment RTCI
 			//}
@@ -629,7 +631,7 @@ double Busline::calc_curr_line_car_ivt(Busstop* start_stop, Busstop* end_stop, i
 	return ((*alight_stop)->second - (*board_stop)->second) + extra_travel_time; // in seconds
 }
 
-double Busline::calc_curr_line_car_ivt(Busstop* start_stop, Busstop* end_stop, int rti, double time, int section, /*Passenger* pass,*/ bool include_ivt_RTCI, Busstop* origin, int transfer_section, Busstop* transfer_stop)
+double Busline::calc_curr_line_car_ivt(Busstop* start_stop, Busstop* end_stop, int rti, double time, int section, Passenger* pass, bool include_ivt_RTCI, Busstop* origin, int transfer_section, Busstop* transfer_stop)
 {
 	double extra_travel_time = 0.0;
 	//RTCI Melina
@@ -680,20 +682,20 @@ double Busline::calc_curr_line_car_ivt(Busstop* start_stop, Busstop* end_stop, i
 			//}
 			//else if (theParameters->RTCI_level == 2)
 			//{
-				if (theParameters->include_car_RTCI == 3)
-				{
+				/*if (theParameters->include_car_RTCI == 3)
+				{*/
 					if ((*stop)->first == transfer_stop)
 					{
 						section = transfer_section;
 					}
 					int newsection = section;
-					ivtt_CL += (next_stop_arrival_time - (*stop)->second) * get_anticipated_segment_car_RTCI((*check_trip).first, (*stop)->first, newsection, origin); //Melina 21-01-19
+					ivtt_CL += (next_stop_arrival_time - (*stop)->second) * get_anticipated_segment_car_RTCI((*check_trip).first, (*stop)->first, newsection, pass, origin); //Melina 21-01-19
 					//cout << "Passenger: "<< pass->get_id() << " " << "Stop: "<< start_stop->get_id() << " " << "destination: " << end_stop->get_id() << " " << "section: " << section << " " << "In vehicle time: " << ivtt_CL << " " <<  "RTCI: " << get_anticipated_segment_RTCI((*check_trip).first, (*stop)->first, section, pass, start_stop) << "TRIP"<< (*check_trip).first->get_id() << endl;	// partial_ivtt_CL = segment_IVTT * segment RTCI
-				}
-				else if (theParameters->include_car_RTCI == 4)
-				{
-					ivtt_CL += (next_stop_arrival_time - (*stop)->second) * get_anticipated_segment_car_RTCI((*check_trip).first, (*stop)->first, section, origin); //Melina 21-01-19
-				}
+				//}
+				//else if (theParameters->include_car_RTCI == 4)
+				//{
+				//	ivtt_CL += (next_stop_arrival_time - (*stop)->second) * get_anticipated_segment_car_RTCI((*check_trip).first, (*stop)->first, section, origin); //Melina 21-01-19
+				//}
 			//}
 		}
 	}
@@ -2210,6 +2212,11 @@ void Busstop::passenger_activity_at_stop(Eventlist* eventlist, Bustrip* trip, do
 				//ODstops* od_stop = (*onboard_passenger)->get_OD_stop();
 				ODstops* od_stop = (*onboard_passenger)->get_original_origin()->get_stop_od_as_origin_per_stop((*onboard_passenger)->get_OD_stop()->get_destination());
 				od_stop->record_onboard_experience(*onboard_passenger, trip, this, riding_coeff);
+				//if ((*onboard_passenger)->get_pass_carRTCI() == true) //Melina
+				//{
+				//	(*onboard_passenger)->set_projected_ivtt_RTCI(this, trip->get_line(), this, pass_car, (riding_coeff.first * trip->get_line()->get_anticipated_segment_car_RTCI(trip, this, pass_car, (*onboard_passenger)->get_original_origin())));
+				//}
+				
 				// update sitting status - if a passenger stands and there is an available seat - allow sitting; sitting priority among pass. already on-board by remaning travel distance
 				// Erik 18-09-16
 				int available_seats = trip->get_busv()->get_car_occupancy(pass_car) < trip->get_busv()->get_car_number_seats();

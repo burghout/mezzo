@@ -4904,7 +4904,7 @@ bool Network::read_OD_IVTT (istream& in)
     Busstop* bs_l = (*(find_if(busstops.begin(), busstops.end(), compare <Busstop> (leg_id) )));
     ODstops* od_stop = bs_o->get_stop_od_as_origin_per_stop(bs_d);
     od_stop->set_anticipated_ivtt(bs_s, bl, bs_l, car_id /*Erik 18-11-26*/, anticipated_in_vehicle_time);
-    od_stop->set_ivtt_alpha_exp(bs_s, bl, bs_l, car_id /* Erik 18-11-26*/, alpha_exp);
+    od_stop->set_ivtt_alpha_exp(bs_s, bl, bs_l, car_id, alpha_exp); //Melina 2021-04-20
     in >> bracket;
     if (bracket != '}')
     {
@@ -4924,7 +4924,7 @@ bool Network::read_OD_IVTT (pair<const ODSLLC, Travel_time>& ivt_row)
     const int& leg_id = ivt_row.first.leg;
 	const int& car_id = ivt_row.first.car;
     double anticipated_in_vehicle_time = ivt_row.second.tt[anticip];
-    // double alpha_exp = ivt_row.second.alpha[EXP];
+    double alpha_exp = ivt_row.second.alpha[EXP]; //Melina
 
     Busstop* bs_o = (*(find_if(busstops.begin(), busstops.end(), compare <Busstop> (origin_stop_id) )));
     Busstop* bs_d = (*(find_if(busstops.begin(), busstops.end(), compare <Busstop> (destination_stop_id) )));
@@ -4933,6 +4933,7 @@ bool Network::read_OD_IVTT (pair<const ODSLLC, Travel_time>& ivt_row)
     Busstop* bs_l = (*(find_if(busstops.begin(), busstops.end(), compare <Busstop> (leg_id) )));
     ODstops* od_stop = bs_o->get_stop_od_as_origin_per_stop(bs_d);
     od_stop->set_anticipated_ivtt(bs_s, bl, bs_l, car_id, anticipated_in_vehicle_time);
+	od_stop->set_ivtt_alpha_exp(bs_s, bl, bs_l, car_id, alpha_exp); //Melina
 
     return true;
 }
@@ -4948,7 +4949,7 @@ bool Network::read_pass_IVTT (pair<const ODSLLC, Travel_time>& ivt_row)
     const int& leg_id = ivt_row.first.leg;
 	const int& car_id = ivt_row.first.car;
     double anticipated_in_vehicle_time = ivt_row.second.tt[anticip];
-    // double alpha_exp = ivt_row.second.alpha[EXP];
+    double alpha_exp = ivt_row.second.alpha[EXP];
 
     Busstop* bs_o = (*(find_if(busstops.begin(), busstops.end(), compare <Busstop> (origin_stop_id) )));
     Busstop* bs_d = (*(find_if(busstops.begin(), busstops.end(), compare <Busstop> (destination_stop_id) )));
@@ -4960,6 +4961,7 @@ bool Network::read_pass_IVTT (pair<const ODSLLC, Travel_time>& ivt_row)
     vector<Passenger*> passengers = od_stop->get_passengers_during_simulation();
     Passenger* p = *find_if(passengers.begin(), passengers.end(), compare<Passenger>(pass_id));
     p->set_anticipated_ivtt(bs_s, bl, bs_l, car_id, anticipated_in_vehicle_time);
+	p->set_ivtt_alpha_exp(bs_s, bl, bs_l, car_id, alpha_exp); //Melina
 
     return true;
 }

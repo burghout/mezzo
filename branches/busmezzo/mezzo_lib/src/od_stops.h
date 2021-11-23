@@ -248,13 +248,13 @@ class Pass_onboard_experience
 {
 public:
 	Pass_onboard_experience(
-		int pass_id_, 
-		int original_origin_, 
-		int destination_stop_, 
-		int line_id_, 
-		int trip_id_, 
-		int stop_id_, 
-		int leg_id_, 
+		int pass_id_,
+		int original_origin_,
+		int destination_stop_,
+		int line_id_,
+		int trip_id_,
+		int stop_id_,
+		int leg_id_,
 		int car_id_,
 		double expected_ivt_, 
 		pair<double, double> experienced_ivt_
@@ -271,7 +271,7 @@ public:
 			<< car_id << '\t'
 			<< expected_ivt << '\t' 
 			<< experienced_ivt.first << '\t' 
-			<< experienced_ivt.second 
+			<< experienced_ivt.second
 			<< endl;
 	}
 	

@@ -661,7 +661,7 @@ double ODstops::calc_combined_set_utility_for_alighting (Passenger* pass, Bustri
 			{
 				for (int next_transfer_section = 1; next_transfer_section <= alt_stops[1].front()->get_num_sections(); ++next_transfer_section)//Melina 20-10-28
 				{
-					double time_till_transfer = bus_on_board->get_line()->calc_curr_line_car_ivt(pass->get_OD_stop()->get_origin(), origin_stop, pass->get_OD_stop()->get_origin()->get_rti(), time, pass->get_pass_car(), /*pass,*/ /*pass->get_pass_carRTCI(),*/ pass->get_OD_stop()->get_origin()->get_rtci(), pass->get_OD_stop()->get_origin()); // RTCI Melina // in seconds
+					double time_till_transfer = bus_on_board->get_line()->calc_curr_line_car_ivt(pass->get_OD_stop()->get_origin(), origin_stop, pass->get_OD_stop()->get_origin()->get_rti(), time, pass->get_pass_car(), pass, /*pass->get_pass_carRTCI(),*/ pass->get_OD_stop()->get_origin()->get_rtci(), pass->get_OD_stop()->get_origin()); // RTCI Melina // in seconds
 					staying_utility += exp(random->nrandom(theParameters->in_vehicle_time_coefficient, theParameters->in_vehicle_time_coefficient / 4) * (time_till_transfer / 60)
 						+ random->nrandom(theParameters->transfer_coefficient, theParameters->transfer_coefficient / 4)
 						+ (*paths)->calc_waiting_utility((*paths)->get_alt_transfer_stops().begin(), pass->get_pass_car() /*Erik 18-12-02*/, time + time_till_transfer, true, pass, next_transfer_section, alt_stops[1].front()));
@@ -671,7 +671,7 @@ double ODstops::calc_combined_set_utility_for_alighting (Passenger* pass, Bustri
 			}
 			else
 			{
-				double time_till_transfer = bus_on_board->get_line()->calc_curr_line_car_ivt(pass->get_OD_stop()->get_origin(), origin_stop, pass->get_OD_stop()->get_origin()->get_rti(), time, pass->get_pass_car(), /*pass,*/ /*pass->get_pass_carRTCI(),*/ pass->get_OD_stop()->get_origin()->get_rtci(), pass->get_OD_stop()->get_origin()); // RTCI Melina // in seconds
+				double time_till_transfer = bus_on_board->get_line()->calc_curr_line_car_ivt(pass->get_OD_stop()->get_origin(), origin_stop, pass->get_OD_stop()->get_origin()->get_rti(), time, pass->get_pass_car(), pass, /*pass->get_pass_carRTCI(),*/ pass->get_OD_stop()->get_origin()->get_rtci(), pass->get_OD_stop()->get_origin()); // RTCI Melina // in seconds
 				staying_utility += exp(random->nrandom(theParameters->in_vehicle_time_coefficient, theParameters->in_vehicle_time_coefficient / 4) * (time_till_transfer / 60)
 					+ random->nrandom(theParameters->transfer_coefficient, theParameters->transfer_coefficient / 4)
 					+ (*paths)->calc_waiting_utility((*paths)->get_alt_transfer_stops().begin(), pass->get_pass_car() /*Erik 18-12-02*/, time + time_till_transfer, true, pass));
@@ -685,7 +685,7 @@ double ODstops::calc_combined_set_utility_for_alighting (Passenger* pass, Bustri
 			{
 				for (int next_transfer_section = 1; next_transfer_section <= alt_stops[1].front()->get_num_sections(); ++next_transfer_section)//Melina 20-10-28
 				{
-					double time_till_transfer = bus_on_board->get_line()->calc_curr_line_car_ivt(pass->get_OD_stop()->get_origin(), origin_stop, pass->get_OD_stop()->get_origin()->get_rti(), time, pass->get_pass_car(), /*pass,*/ pass->get_pass_carRTCI(), pass->get_OD_stop()->get_origin()); // RTCI Melina // in seconds
+					double time_till_transfer = bus_on_board->get_line()->calc_curr_line_car_ivt(pass->get_OD_stop()->get_origin(), origin_stop, pass->get_OD_stop()->get_origin()->get_rti(), time, pass->get_pass_car(), pass, pass->get_pass_carRTCI(), pass->get_OD_stop()->get_origin()); // RTCI Melina // in seconds
 					staying_utility += exp(random->nrandom(theParameters->in_vehicle_time_coefficient, theParameters->in_vehicle_time_coefficient / 4) * (time_till_transfer / 60)
 						+ random->nrandom(theParameters->transfer_coefficient, theParameters->transfer_coefficient / 4)
 						+ (*paths)->calc_waiting_utility((*paths)->get_alt_transfer_stops().begin(), pass->get_pass_car() /*Erik 18-12-02*/, time + time_till_transfer, true, pass, next_transfer_section, alt_stops[1].front()));
@@ -695,7 +695,7 @@ double ODstops::calc_combined_set_utility_for_alighting (Passenger* pass, Bustri
 			}
 			else
 			{
-				double time_till_transfer = bus_on_board->get_line()->calc_curr_line_car_ivt(pass->get_OD_stop()->get_origin(), origin_stop, pass->get_OD_stop()->get_origin()->get_rti(), time, pass->get_pass_car(), /*pass,*/ pass->get_pass_carRTCI(), pass->get_OD_stop()->get_origin()); // RTCI Melina // in seconds
+				double time_till_transfer = bus_on_board->get_line()->calc_curr_line_car_ivt(pass->get_OD_stop()->get_origin(), origin_stop, pass->get_OD_stop()->get_origin()->get_rti(), time, pass->get_pass_car(), pass, pass->get_pass_carRTCI(), pass->get_OD_stop()->get_origin()); // RTCI Melina // in seconds
 				staying_utility += exp(random->nrandom(theParameters->in_vehicle_time_coefficient, theParameters->in_vehicle_time_coefficient / 4) * (time_till_transfer / 60)
 					+ random->nrandom(theParameters->transfer_coefficient, theParameters->transfer_coefficient / 4)
 					+ (*paths)->calc_waiting_utility((*paths)->get_alt_transfer_stops().begin(), pass->get_pass_car() /*Erik 18-12-02*/, time + time_till_transfer, true, pass));

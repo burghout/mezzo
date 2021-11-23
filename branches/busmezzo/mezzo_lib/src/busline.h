@@ -254,7 +254,7 @@ public:
 	vector <Start_trip>::iterator Busline::get_pointer_to_curr_trip(Bustrip* recorded_trip);
 	vector <Start_trip>::iterator Busline::get_pointer_to_next_incoming_trip(Bustrip* recorded_trip);
 	double get_arrival_time_at_next_stop(Bustrip* incoming_trip, Busstop* this_stop);	// returns the projected arrival time at the next stop of this trip
-	double get_anticipated_segment_car_RTCI(Bustrip* expected_trip, Busstop* dep_stop, int section, Busstop* start_stop);	// used to access the current (valid) car-specific RTCI prediction at each pass. decision instance
+	double get_anticipated_segment_car_RTCI(Bustrip* expected_trip, Busstop* dep_stop, int section, Passenger* pass, Busstop* start_stop);	// used to access the current (valid) car-specific RTCI prediction at each pass. decision instance
 	double get_anticipated_segment_RTCI(Bustrip* expected_trip, Busstop* dep_stop, Busstop* start_stop);	// used to access the current (valid) vehicle-specific RTCI prediction at each pass. decision instance
 	bool execute(Eventlist* eventlist, double time); //!< re-implemented from virtual function in Action this function does the real work. It initiates the current Bustrip and books the next one
 
@@ -263,8 +263,8 @@ public:
 	double calc_curr_line_headway_forward ();
 	double calc_max_headway ();
 	double calc_curr_line_ivt (Busstop* start_stop, Busstop* end_stop, int rti, double time); 
-	double calc_curr_line_car_ivt(Busstop* start_stop, Busstop* end_stop, int rti, double time, int section, /*Passenger* pass, */bool include_ivt_RTCI/* = false*/, Busstop* origin); //RTCI Melina
-	double calc_curr_line_car_ivt(Busstop* start_stop, Busstop* end_stop, int rti, double time, int section, /*Passenger* pass, */bool include_ivt_RTCI/* = false*/, Busstop* origin, int transfer_section, Busstop* transfer_stop); //RTCI Melina
+	double calc_curr_line_car_ivt(Busstop* start_stop, Busstop* end_stop, int rti, double time, int section, Passenger* pass, bool include_ivt_RTCI/* = false*/, Busstop* origin); //RTCI Melina
+	double calc_curr_line_car_ivt(Busstop* start_stop, Busstop* end_stop, int rti, double time, int section, Passenger* pass, bool include_ivt_RTCI/* = false*/, Busstop* origin, int transfer_section, Busstop* transfer_stop); //RTCI Melina
 
 	// output-related functions
 	void calculate_sum_output_line();

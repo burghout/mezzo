@@ -198,16 +198,25 @@ double Pass_path::calc_total_in_vehicle_time(double time, Passenger* pass, int s
 				if (has_reached_boarding_stop)
 				{
 					double leg_ivtt;
+					//double alpha_exp_ivt; //Melina 2021-04-19
+					//double alpha_RTCI; //Melina 2021-04-20
 					if (pass->any_previous_exp_ivtt(iter_alt_transfer_stops->front(), iter_alt_lines->front(), *iter_leg_stops, section/*pass->get_pass_car() *//*Erik 18-11-25*/))
 					{
-						if (leg_has_RTCI = true) //Melina 2021-04-16 travel time based on both RTCI and experience
-						{
-							leg_ivtt = theParameters->RTCI_alpha * (pass->get_anticipated_ivtt(iter_alt_transfer_stops->front(), iter_alt_lines->front(), *iter_leg_stops, section)) + (1 - theParameters->RTCI_alpha) * (iter_alt_lines->front()->calc_curr_line_car_ivt(*(iter_leg_stops - 1), *iter_leg_stops, alt_transfer_stops.front().front()->get_rti(), time, section, leg_has_RTCI, alt_transfer_stops.front().front())); //Melina 2021-04-16 travel time based on both RTCI and experience
-						}
-						else
-						{
+						//if (leg_has_RTCI == true) //Melina 2021-04-16 travel time based on both RTCI and experience
+						//{
+						//	alpha_exp_ivt = pass->get_ivtt_alpha_exp(iter_alt_transfer_stops->front(), iter_alt_lines->front(), *iter_leg_stops, section);
+						//	//alpha_RTCI = pass->get_alpha_RTCI(iter_alt_transfer_stops->front(), iter_alt_lines->front(), *iter_leg_stops, section);
+						//	//leg_ivtt = (theParameters->RTCI_alpha) * (pass->get_anticipated_ivtt(iter_alt_transfer_stops->front(), iter_alt_lines->front(), *iter_leg_stops, section)) + (1 - theParameters->RTCI_alpha) * (iter_alt_lines->front()->calc_curr_line_car_ivt(*(iter_leg_stops - 1), *iter_leg_stops, alt_transfer_stops.front().front()->get_rti(), time, section, leg_has_RTCI, alt_transfer_stops.front().front())); //Melina 2021-04-16 travel time based on both RTCI and experience
+						//	leg_ivtt = (alpha_exp_ivt /*/ (alpha_exp_ivt + alpha_RTCI)*/) * (pass->get_anticipated_ivtt(iter_alt_transfer_stops->front(), iter_alt_lines->front(), *iter_leg_stops, section)) + (1 - alpha_exp_ivt/*alpha_RTCI / (alpha_exp_ivt + alpha_RTCI)*/) * (iter_alt_lines->front()->calc_curr_line_car_ivt(*(iter_leg_stops - 1), *iter_leg_stops, alt_transfer_stops.front().front()->get_rti(), time, section, leg_has_RTCI, alt_transfer_stops.front().front())); //Melina 2021-04-16 travel time based on both RTCI and experience
+						/////*	if (pass->get_id()==33)
+						////	{
+						//	cout << " passenger: " << pass->get_id() << " alpha exp: " << alpha_exp_ivt << " expected travel time: " << (pass->get_anticipated_ivtt(iter_alt_transfer_stops->front(), iter_alt_lines->front(), *iter_leg_stops, section)) << " first car: " << section << endl;
+						////}
+						//}
+						//else
+						//{
 							leg_ivtt = pass->get_anticipated_ivtt(iter_alt_transfer_stops->front(), iter_alt_lines->front(), *iter_leg_stops, section/*pass->get_pass_car()*//*Erik 18-11-25*/);
-						}
+						//}
 					}
 					else
 					{
@@ -217,7 +226,7 @@ double Pass_path::calc_total_in_vehicle_time(double time, Passenger* pass, int s
 						//}
 						//else //if (theParameters->include_car_RTCI/*crowding_info*/ == 2)
 						//{
-							leg_ivtt = iter_alt_lines->front()->calc_curr_line_car_ivt(*(iter_leg_stops - 1), *iter_leg_stops, alt_transfer_stops.front().front()->get_rti(), time, section, /*pass,*/ leg_has_RTCI, alt_transfer_stops.front().front());
+							leg_ivtt = iter_alt_lines->front()->calc_curr_line_car_ivt(*(iter_leg_stops - 1), *iter_leg_stops, alt_transfer_stops.front().front()->get_rti(), time, section, pass, leg_has_RTCI, alt_transfer_stops.front().front());
 						//}
 					}
 
@@ -248,7 +257,7 @@ double Pass_path::calc_total_in_vehicle_time(double time, Passenger* pass, int s
 					iter_alt_transfer_stops->front(),
 					(iter_alt_transfer_stops + 1)->front(),
 					alt_transfer_stops.front().front()->get_rti(),
-					time, section, /*pass,*/ leg_has_RTCI/*pass->get_pass_carRTCI()*/, alt_transfer_stops.front().front());
+					time, section, pass, leg_has_RTCI, alt_transfer_stops.front().front());
 			/*}*/
 		}
 		IVT.push_back(ivtt);
@@ -304,6 +313,8 @@ double Pass_path::calc_total_in_vehicle_time(double time, Passenger* pass, int s
 				if (has_reached_boarding_stop)
 				{
 					double leg_ivtt;
+					//double alpha_exp_ivt;
+					//double alpha_RTCI;
 					//if (pass->any_previous_exp_ivtt(iter_alt_transfer_stops->front(), iter_alt_lines->front(), *iter_leg_stops, section/*pass->get_pass_car() *//*Erik 18-11-25*/))
 					//{
 					//	leg_ivtt = pass->get_anticipated_ivtt(iter_alt_transfer_stops->front(), iter_alt_lines->front(), *iter_leg_stops, pass->get_pass_car()/*Erik 18-11-25*/);
@@ -312,36 +323,48 @@ double Pass_path::calc_total_in_vehicle_time(double time, Passenger* pass, int s
 					{
 						if (pass->any_previous_exp_ivtt(iter_alt_transfer_stops->front(), iter_alt_lines->front(), *iter_leg_stops, section/*pass->get_pass_car() *//*Erik 18-11-25*/))
 						{
-							if (leg_has_RTCI = true) //Melina 2021-04-16
-							{
-								leg_ivtt = theParameters->RTCI_alpha * (pass->get_anticipated_ivtt(iter_alt_transfer_stops->front(), iter_alt_lines->front(), *iter_leg_stops, section)) + (1 - theParameters->RTCI_alpha)* (leg_ivtt = iter_alt_lines->front()->calc_curr_line_car_ivt(*(iter_leg_stops - 1), *iter_leg_stops, alt_transfer_stops.front().front()->get_rti(), time, section, leg_has_RTCI, alt_transfer_stops.front().front(), transfer_section, transfer_stop));
-							}
-							else
-							{
-								leg_ivtt = pass->get_anticipated_ivtt(iter_alt_transfer_stops->front(), iter_alt_lines->front(), *iter_leg_stops, section/*pass->get_pass_car()*//*Erik 18-11-25*/);
-							}
+							//if (leg_has_RTCI == true) //Melina 2021-04-16
+							//{
+							//	alpha_exp_ivt = pass->get_ivtt_alpha_exp(iter_alt_transfer_stops->front(), iter_alt_lines->front(), *iter_leg_stops, section);
+							//	//alpha_RTCI = pass->get_alpha_RTCI(iter_alt_transfer_stops->front(), iter_alt_lines->front(), *iter_leg_stops, section);
+							//	//leg_ivtt = (theParameters->RTCI_alpha) * (pass->get_anticipated_ivtt(iter_alt_transfer_stops->front(), iter_alt_lines->front(), *iter_leg_stops, section)) + (1- theParameters->RTCI_alpha) * (iter_alt_lines->front()->calc_curr_line_car_ivt(*(iter_leg_stops - 1), *iter_leg_stops, alt_transfer_stops.front().front()->get_rti(), time, section, leg_has_RTCI, alt_transfer_stops.front().front(), transfer_section, transfer_stop)); //Melina 2021-04-16 travel time based on both RTCI and experience
+							//	leg_ivtt = (alpha_exp_ivt /*/ (alpha_exp_ivt + alpha_RTCI)*/) * (pass->get_anticipated_ivtt(iter_alt_transfer_stops->front(), iter_alt_lines->front(), *iter_leg_stops, section)) + (1 - alpha_exp_ivt/*alpha_RTCI / (alpha_exp_ivt + alpha_RTCI)*/) * (iter_alt_lines->front()->calc_curr_line_car_ivt(*(iter_leg_stops - 1), *iter_leg_stops, alt_transfer_stops.front().front()->get_rti(), time, section, leg_has_RTCI, alt_transfer_stops.front().front(), transfer_section, transfer_stop)); //Melina 2021-04-16 travel time based on both RTCI and experience
+							//	//leg_ivtt = theParameters->RTCI_alpha * (pass->get_anticipated_ivtt(iter_alt_transfer_stops->front(), iter_alt_lines->front(), *iter_leg_stops, section)) + (1 - theParameters->RTCI_alpha)* (leg_ivtt = iter_alt_lines->front()->calc_curr_line_car_ivt(*(iter_leg_stops - 1), *iter_leg_stops, alt_transfer_stops.front().front()->get_rti(), time, section, leg_has_RTCI, alt_transfer_stops.front().front(), transfer_section, transfer_stop));
+							//	cout << " passenger: " << pass->get_id() << " alpha exp: " << alpha_exp_ivt << /*" rtci credibility: " << alpha_RTCI <<*/ /*" alpha RTCI: " << alpha_RTCI <<*/ " first car: " << section << endl;
+							//	//cout << "alpha exp: " << alpha_exp_ivt << "rtci credibility: " << 1 - alpha_exp_ivt << /*" alpha RTCI: " << alpha_RTCI << */" car: " << section << endl;
+							//}
+							//else
+							//{
+								leg_ivtt = pass->get_anticipated_ivtt(iter_alt_transfer_stops->front(), iter_alt_lines->front(), *iter_leg_stops, section);
+							//}
 						}
 						else
 						{
-							leg_ivtt = iter_alt_lines->front()->calc_curr_line_car_ivt(*(iter_leg_stops - 1), *iter_leg_stops, alt_transfer_stops.front().front()->get_rti(), time, section, /*pass,*/ leg_has_RTCI, alt_transfer_stops.front().front(), transfer_section, transfer_stop);
+							leg_ivtt = iter_alt_lines->front()->calc_curr_line_car_ivt(*(iter_leg_stops - 1), *iter_leg_stops, alt_transfer_stops.front().front()->get_rti(), time, section, pass, leg_has_RTCI, alt_transfer_stops.front().front(), transfer_section, transfer_stop);
 						}
 					}
 					if (iter_alt_transfer_stops->front()->get_id() == transfer_stop->get_id())
 					{
 						if (pass->any_previous_exp_ivtt(iter_alt_transfer_stops->front(), iter_alt_lines->front(), *iter_leg_stops, transfer_section/*pass->get_pass_car() *//*Erik 18-11-25*/))
 						{
-							if (leg_has_RTCI = true)
-							{
-								leg_ivtt = theParameters->RTCI_alpha * (pass->get_anticipated_ivtt(iter_alt_transfer_stops->front(), iter_alt_lines->front(), *iter_leg_stops, transfer_section)) + (1 - theParameters->RTCI_alpha) * (iter_alt_lines->front()->calc_curr_line_car_ivt(*(iter_leg_stops - 1), *iter_leg_stops, alt_transfer_stops.front().front()->get_rti(), time, section, /*pass,*/ leg_has_RTCI, alt_transfer_stops.front().front(), transfer_section, transfer_stop));
-							}
-							else
-							{
-								leg_ivtt = pass->get_anticipated_ivtt(iter_alt_transfer_stops->front(), iter_alt_lines->front(), *iter_leg_stops, transfer_section/*pass->get_pass_car()*//*Erik 18-11-25*/);
-							}
+							//if (leg_has_RTCI == true)
+							//{
+							//	alpha_exp_ivt = pass->get_ivtt_alpha_exp(iter_alt_transfer_stops->front(), iter_alt_lines->front(), *iter_leg_stops, transfer_section);
+							//	//alpha_RTCI = pass->get_alpha_RTCI(iter_alt_transfer_stops->front(), iter_alt_lines->front(), *iter_leg_stops, transfer_section);
+							//	//leg_ivtt = (theParameters->RTCI_alpha) * (pass->get_anticipated_ivtt(iter_alt_transfer_stops->front(), iter_alt_lines->front(), *iter_leg_stops, transfer_section)) + (1 - theParameters->RTCI_alpha) * (iter_alt_lines->front()->calc_curr_line_car_ivt(*(iter_leg_stops - 1), *iter_leg_stops, alt_transfer_stops.front().front()->get_rti(), time, section, leg_has_RTCI, alt_transfer_stops.front().front(), transfer_section, transfer_stop)); //Melina 2021-04-16 travel time based on both RTCI and experience
+							//	leg_ivtt = (alpha_exp_ivt /*/ (alpha_exp_ivt + alpha_RTCI)*/) * (pass->get_anticipated_ivtt(iter_alt_transfer_stops->front(), iter_alt_lines->front(), *iter_leg_stops, transfer_section)) + (1 - alpha_exp_ivt/*alpha_RTCI / (alpha_exp_ivt + alpha_RTCI)*/) * (iter_alt_lines->front()->calc_curr_line_car_ivt(*(iter_leg_stops - 1), *iter_leg_stops, alt_transfer_stops.front().front()->get_rti(), time, section, leg_has_RTCI, alt_transfer_stops.front().front(), transfer_section, transfer_stop)); //Melina 2021-04-16 travel time based on both RTCI and experience
+							//	cout << "alpha exp: " << alpha_exp_ivt << "rtci credibility: "<< 1- alpha_exp_ivt << /* " alpha RTCI: " << alpha_RTCI <<*/ " car: " << transfer_section << endl;
+							//	//cout << " passenger: " << pass->get_id() << " alpha exp: " << alpha_exp_ivt << /*" rtci credibility: " << alpha_RTCI <<*/ /*" alpha RTCI: " << alpha_RTCI <<*/ " transfer car: " << transfer_section << endl;
+							//	//leg_ivtt = theParameters->RTCI_alpha * (pass->get_anticipated_ivtt(iter_alt_transfer_stops->front(), iter_alt_lines->front(), *iter_leg_stops, transfer_section)) + (1 - theParameters->RTCI_alpha) * (iter_alt_lines->front()->calc_curr_line_car_ivt(*(iter_leg_stops - 1), *iter_leg_stops, alt_transfer_stops.front().front()->get_rti(), time, section, /*pass,*/ leg_has_RTCI, alt_transfer_stops.front().front(), transfer_section, transfer_stop));
+							//}
+							//else
+							//{
+								leg_ivtt = pass->get_anticipated_ivtt(iter_alt_transfer_stops->front(), iter_alt_lines->front(), *iter_leg_stops, transfer_section);
+							//}
 						}
 						else
 						{
-							leg_ivtt = iter_alt_lines->front()->calc_curr_line_car_ivt(*(iter_leg_stops - 1), *iter_leg_stops, alt_transfer_stops.front().front()->get_rti(), time, section, /*pass,*/ leg_has_RTCI, alt_transfer_stops.front().front(), transfer_section, transfer_stop);
+							leg_ivtt = iter_alt_lines->front()->calc_curr_line_car_ivt(*(iter_leg_stops - 1), *iter_leg_stops, alt_transfer_stops.front().front()->get_rti(), time, section, pass, leg_has_RTCI, alt_transfer_stops.front().front(), transfer_section, transfer_stop);
 						}
 					}
 					ivtt += leg_ivtt;
@@ -370,7 +393,7 @@ double Pass_path::calc_total_in_vehicle_time(double time, Passenger* pass, int s
 				iter_alt_transfer_stops->front(),
 				(iter_alt_transfer_stops + 1)->front(),
 				alt_transfer_stops.front().front()->get_rti(),
-				time, section, /*pass,*/ leg_has_RTCI/*pass->get_pass_carRTCI()*/, alt_transfer_stops.front().front(), transfer_section, transfer_stop); //Melina 21-01-20
+				time, section, pass, leg_has_RTCI, alt_transfer_stops.front().front(), transfer_section, transfer_stop); //Melina 21-01-20
 			/*}*/
 		}
 		IVT.push_back(ivtt);

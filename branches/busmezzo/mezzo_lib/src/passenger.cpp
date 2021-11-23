@@ -147,6 +147,8 @@ void Passenger::init ()
 	if (theParameters->in_vehicle_d2d_indicator == 1)
 	{
 		anticipated_ivtt = OD_stop->get_anticipated_ivtt();
+		ivtt_alpha_exp = OD_stop->get_ivtt_alpha_exp(); //Melina
+	//	alpha_RTCI = OD_stop->get_alpha_RTCI();
 	}
 }
 
@@ -224,6 +226,26 @@ void Passenger::set_alpha_exp (Busstop* stop, Busline* line, double alpha)
 	alpha_exp[stopline] = alpha;
 }
 
+//void Passenger::set_alpha_RTCI(Busstop* stop, Busline* line, Busstop* leg, int car, double alpha)
+//{
+//	SLLC stoplineleg;
+//	stoplineleg.stop = stop;
+//	stoplineleg.line = line;
+//	stoplineleg.leg = leg;
+//	stoplineleg.car = car;
+//	alpha_RTCI[stoplineleg] = alpha;
+//}
+//
+void Passenger::set_ivtt_alpha_exp(Busstop* stop, Busline* line, Busstop* leg, int car, double alpha)
+{
+	SLLC stoplineleg;
+	stoplineleg.stop = stop;
+	stoplineleg.line = line;
+	stoplineleg.leg = leg;
+	stoplineleg.car = car;
+	ivtt_alpha_exp[stoplineleg] = alpha;
+}
+
 double Passenger::get_anticipated_waiting_time (Busstop* stop, Busline* line)
 {
 	pair<Busstop*, Busline*> stopline;
@@ -239,6 +261,16 @@ double Passenger::get_alpha_RTI (Busstop* stop, Busline* line)
 	stopline.second = line;
 	return alpha_RTI[stopline];
 }
+
+//double Passenger::get_alpha_RTCI(Busstop* stop, Busline* line, Busstop* leg, int car)
+//{
+//	SLLC stoplineleg;
+//	stoplineleg.stop = stop;
+//	stoplineleg.line = line;
+//	stoplineleg.leg = leg;
+//	stoplineleg.car = car;
+//	return alpha_RTCI[stoplineleg];
+//}
 
 double Passenger::get_alpha_exp (Busstop* stop, Busline* line)
 {

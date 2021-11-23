@@ -131,6 +131,7 @@ public:
 	void set_alpha_exp (Busstop* stop, Busline* line, double alpha); 
 	double get_anticipated_waiting_time (Busstop* stop, Busline* line);
 	double get_alpha_RTI (Busstop* stop, Busline* line);
+	//double get_alpha_RTCI(Busstop* stop, Busline* line, Busstop* leg, int car);
 	double get_alpha_exp (Busstop* stop, Busline* line);
 	bool any_previous_exp_ODSL (Busstop* stop, Busline* line);
 	//void set_anticipated_ivtt (Busstop* stop, Busline* line, Busstop* leg, double anticipated_ivt);
@@ -139,7 +140,9 @@ public:
 	double get_anticipated_ivtt(Busstop* stop, Busline* line, Busstop* leg, int car);
 	//double get_ivtt_alpha_exp (Busstop* stop, Busline* line, Busstop* leg);
 	//bool any_previous_exp_ivtt (Busstop* stop, Busline* line, Busstop* leg);
+	void set_ivtt_alpha_exp(Busstop* stop, Busline* line, Busstop* leg, int car, double alpha); //Melina
 	double get_ivtt_alpha_exp(Busstop* stop, Busline* line, Busstop* leg, int car);
+//	void set_alpha_RTCI(Busstop* stop, Busline* line, Busstop* leg, int car, double alpha); //Melina
 	bool any_previous_exp_ivtt(Busstop* stop, Busline* line, Busstop* leg, int car);
 	void set_AWT_first_leg_boarding(Busstop* stop, Busline* line);
 
