@@ -25,9 +25,9 @@ double drt_first_rebalancing_time = 0.0;
 
 bool fwf_wip::day2day_drt_no_rti = false;
 
-bool fwf_wip::write_all_pass_experiences = true; //set manually
-bool fwf_wip::randomize_pass_arrivals = false; //set manually
-bool fwf_wip::day2day_no_convergence_criterium = true; //set manually
+bool fwf_wip::write_all_pass_experiences = false; //set manually
+bool fwf_wip::randomize_pass_arrivals = true; //set manually
+bool fwf_wip::day2day_no_convergence_criterium = false; //set manually
 bool fwf_wip::drt_enforce_strict_boarding = false; //set manually
 
 bool PARTC::drottningholm_case = false;
