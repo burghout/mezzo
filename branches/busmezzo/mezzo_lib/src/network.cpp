@@ -159,11 +159,13 @@ namespace fwf_outputs {
     //!< @brief write out time and vkt spent in different states for a DRT vehicle for e.g. analysis of distributions. Corresponds to one row of "o_fwf_drtvehicle_states.dat"
     void writeDRTVehicleState_row(ostream& out, int bus_id, double init_time, const FWF_vehdata& drt_vehdata)
     {
-            out << bus_id << "\t"
-                << init_time << "\t"
-                << drt_vehdata.total_vkt << "\t" << drt_vehdata.total_occupied_vkt << "\t" << drt_vehdata.total_empty_vkt << "\t"
-                << drt_vehdata.total_occupied_time << "\t" << drt_vehdata.total_empty_time << "\t"
-                << drt_vehdata.total_driving_time << "\t" << drt_vehdata.total_idle_time << "\t" << drt_vehdata.total_oncall_time << endl;
+        out << std::fixed;
+        out.precision(5);
+        out << bus_id << "\t"
+            << init_time << "\t"
+            << drt_vehdata.total_vkt << "\t" << drt_vehdata.total_occupied_vkt << "\t" << drt_vehdata.total_empty_vkt << "\t"
+            << drt_vehdata.total_occupied_time << "\t" << drt_vehdata.total_empty_time << "\t"
+            << drt_vehdata.total_driving_time << "\t" << drt_vehdata.total_idle_time << "\t" << drt_vehdata.total_oncall_time << endl;
     }
     void writeDRTVehicleState_header(ostream& out)
     {
@@ -179,12 +181,13 @@ namespace fwf_outputs {
             << "Total_OnCall_Time" << endl;
     }
 
-
     //!< @brief write out total time any vehicle has spent in any state at each stop. Corresponds to one row of "o_time_in_state_at_stop.dat" @todo currently only time spent in oncall state is output
     void writeDRTVehicleStateAtStop_row(ostream& out, Busstop* stop)
     {
-            out << stop->get_id() << "\t"
-                << stop->get_total_time_oncall() << endl;
+        out << std::fixed;
+        out.precision(5);
+        out << stop->get_id() << "\t"
+            << stop->get_total_time_oncall() << endl;
     }
     void writeDRTVehicleStateAtStop_header(ostream& out)
     {
@@ -7142,131 +7145,133 @@ bool Network::writesummary(string name)
 
 bool Network::writeFWFsummary(
     ostream& out,
-    const FWF_passdata& total_passdata, 
+    const FWF_passdata& total_passdata,
     const FWF_passdata& fix_passdata,
     const FWF_passdata& drt_passdata,
-    const FWF_vehdata& total_vehdata, 
+    const FWF_vehdata& total_vehdata,
     const FWF_vehdata& fix_vehdata,
     const FWF_vehdata& drt_vehdata,
-    const FWF_ccdata& cc_data, 
+    const FWF_ccdata& cc_data,
     const FWF_tripdata& drt_tripdata,
     int pass_ignored
 )
 {
     assert(out);
+    Q_UNUSED(drt_passdata)
+    Q_UNUSED(fix_passdata)
 
-    Q_UNUSED(drt_passdata);
-    Q_UNUSED(fix_passdata);
+    out << std::fixed;
+    out.precision(2);
     //ofstream out(filename.c_str());
     /*
     Collect statistics from other output files relevant for fixed with flexible implementation output
     */
-        out << "### Total passenger summary ###";
-        out << "\nPassenger journeys completed: " << total_passdata.pass_completed;
+    out << "### Total passenger summary ###";
+    out << "\nPassenger journeys completed: " << total_passdata.pass_completed;
 
-        out << "\n\nAverage GTC                    : " << total_passdata.avg_gtc;
-        out << "\nStdev GTC                      : " << total_passdata.std_gtc;
+    out << "\n\nAverage GTC                    : " << total_passdata.avg_gtc;
+    out << "\nStdev GTC                      : " << total_passdata.std_gtc;
 
-        //out << "\n\nTotal walking time             : " << total_passdata.total_wlkt;
-        out << "\n\nAverage walking time           : " << total_passdata.avg_total_wlkt;
-        out << "\nStdev walking time             : " << total_passdata.std_total_wlkt;
+    //out << "\n\nTotal walking time             : " << total_passdata.total_wlkt;
+    out << "\n\nAverage walking time           : " << total_passdata.avg_total_wlkt;
+    out << "\nStdev walking time             : " << total_passdata.std_total_wlkt;
 
-        //out << "\n\nTotal waiting time             : " << total_passdata.total_wt;
-        out << "\n\nAverage waiting time           : " << total_passdata.avg_total_wt;
-        out << "\nStdev waiting time             : " << total_passdata.std_total_wt;
-        //out << "\nMinimum waiting time           : " << total_passdata.min_wt;
-        out << "\nMaximum waiting time           : " << total_passdata.max_wt;
-        out << "\nMedian waiting time            : " << total_passdata.median_wt;
-        out << "\nCV waiting time                : " << total_passdata.cv_wt;
+    //out << "\n\nTotal waiting time             : " << total_passdata.total_wt;
+    out << "\n\nAverage waiting time           : " << total_passdata.avg_total_wt;
+    out << "\nStdev waiting time             : " << total_passdata.std_total_wt;
+    //out << "\nMinimum waiting time           : " << total_passdata.min_wt;
+    out << "\nMaximum waiting time           : " << total_passdata.max_wt;
+    out << "\nMedian waiting time            : " << total_passdata.median_wt;
+    out << "\nCV waiting time                : " << total_passdata.cv_wt;
 
-        //out << "\n\nTotal denied waiting time      : " << total_passdata.total_denied_wt;
-        out << "\n\nAverage denied waiting time    : " << total_passdata.avg_denied_wt;
-        out << "\nStdev denied waiting time      : " << total_passdata.std_denied_wt;
-        
-        //out << "\n\nTotal in-vehicle time          : " << total_passdata.total_ivt;
-        out << "\n\nAverage in-vehicle time        : " << total_passdata.avg_total_ivt;
-        out << "\nStdev in-vehicle time          : " << total_passdata.std_total_ivt;
+    //out << "\n\nTotal denied waiting time      : " << total_passdata.total_denied_wt;
+    out << "\n\nAverage denied waiting time    : " << total_passdata.avg_denied_wt;
+    out << "\nStdev denied waiting time      : " << total_passdata.std_denied_wt;
 
-        //out << "\n\nTotal crowded in-vehicle time  : " << total_passdata.total_crowded_ivt;
-        out << "\n\nAverage crowded in-vehicle time: " << total_passdata.avg_total_crowded_ivt;
-        out << "\nStdev crowded in-vehicle time  : " << total_passdata.std_total_crowded_ivt;
+    //out << "\n\nTotal in-vehicle time          : " << total_passdata.total_ivt;
+    out << "\n\nAverage in-vehicle time        : " << total_passdata.avg_total_ivt;
+    out << "\nStdev in-vehicle time          : " << total_passdata.std_total_ivt;
 
-        out << "\n\nTotal PKT      : " << total_passdata.total_pass_vkt;
-        out << "\nTotal Fixed PKT: " << total_passdata.total_pass_fix_vkt;
-        out << "\nTotal DRT PKT  : " << total_passdata.total_pass_drt_vkt;
-        out << "\nPKT mode split (FIX / Total, DRT / Total)     : " << total_passdata.total_pass_fix_vkt / total_passdata.total_pass_vkt << ", " << total_passdata.total_pass_drt_vkt / total_passdata.total_pass_vkt;
+    //out << "\n\nTotal crowded in-vehicle time  : " << total_passdata.total_crowded_ivt;
+    out << "\n\nAverage crowded in-vehicle time: " << total_passdata.avg_total_crowded_ivt;
+    out << "\nStdev crowded in-vehicle time  : " << total_passdata.std_total_crowded_ivt;
 
-        out << "\n\nTotal passengers ignored (trip out of pass-generation start-stop interval): " << pass_ignored;
-        out << "\nstart_pass_generation= " << theParameters->start_pass_generation;
-        out << "\nstop_pass_generation= " << theParameters->stop_pass_generation;
-        out << "\nstoptime= " << runtime;
- /*       out << "\n\n### Fixed passenger summary ###";
-        out << "\n\nTotal walking time             : " << fix_passdata.total_wlkt;
-        out << "\nAverage walking time           : " << fix_passdata.avg_total_wlkt;
-        ...
-        
-        out << "\n\n### DRT passenger summary ###";
-        out << "\n\nTotal walking time             : " << drt_passdata.total_wlkt;
-        out << "\nAverage walking time           : " << drt_passdata.avg_total_wlkt;
-        ...;*/
+    out << "\n\nTotal PKT      : " << total_passdata.total_pass_vkt;
+    out << "\nTotal Fixed PKT: " << total_passdata.total_pass_fix_vkt;
+    out << "\nTotal DRT PKT  : " << total_passdata.total_pass_drt_vkt;
+    out << "\nPKT mode split (FIX / Total, DRT / Total)     : " << total_passdata.total_pass_fix_vkt / total_passdata.total_pass_vkt << ", " << total_passdata.total_pass_drt_vkt / total_passdata.total_pass_vkt;
 
-        out << "\n\n### Total vehicle summary ###";
-        out << "\nTotal VKT                   : " << total_vehdata.total_vkt;
-        out << "\nTotal occupied VKT          : " << total_vehdata.total_occupied_vkt;
-        out << "\nTotal empty VKT             : " << total_vehdata.total_empty_vkt;
-        out << "\nTotal occupied time         : " << total_vehdata.total_occupied_time;
-        out << "\nTotal empty time            : " << total_vehdata.total_empty_time;
-        out << "\nTotal driving time          : " << total_vehdata.total_driving_time;
-        out << "\nTotal idle time             : " << total_vehdata.total_idle_time;
-        out << "\nTotal oncall time           : " << total_vehdata.total_oncall_time;
-        
-        out << "\n\n### Fixed vehicle summary ###";
-        out << "\nFixed VKT                   : " << fix_vehdata.total_vkt;
-        out << "\nFixed occupied VKT          : " << fix_vehdata.total_occupied_vkt;
-        out << "\nFixed empty VKT             : " << fix_vehdata.total_empty_vkt;
-        out << "\nFixed occupied time         : " << fix_vehdata.total_occupied_time;
-        out << "\nFixed empty time            : " << fix_vehdata.total_empty_time;
-        out << "\nFixed driving time          : " << fix_vehdata.total_driving_time;
-        out << "\nFixed idle time             : " << fix_vehdata.total_idle_time;
-        out << "\nFixed oncall time           : " << fix_vehdata.total_oncall_time; //should always be zero...fixed schedule buses are currently always assigned a trip
-        out << "\nFixed occ/total VKT ratio   : " << fix_vehdata.total_occupied_vkt / fix_vehdata.total_vkt;
-        out << "\nFixed PKT/VKT ratio         : " << total_passdata.total_pass_fix_vkt / fix_vehdata.total_vkt; //should match average occupancy somewhat
+    out << "\n\nTotal passengers ignored (trip out of pass-generation start-stop interval): " << pass_ignored;    
+    out << "\nstart_pass_generation= " << theParameters->start_pass_generation;
+    out << "\nstop_pass_generation= " << theParameters->stop_pass_generation;
+    out << "\nstoptime= " << runtime;
+    /*       out << "\n\n### Fixed passenger summary ###";
+           out << "\n\nTotal walking time             : " << fix_passdata.total_wlkt;
+           out << "\nAverage walking time           : " << fix_passdata.avg_total_wlkt;
+           ...
 
-        out << "\n\n### DRT vehicle summary ###";
-        out << "\nDRT VKT                     : " << drt_vehdata.total_vkt;
-        out << "\nDRT occupied VKT            : " << drt_vehdata.total_occupied_vkt;
-        out << "\nDRT empty VKT               : " << drt_vehdata.total_empty_vkt;
-        out << "\nDRT occupied time           : " << drt_vehdata.total_occupied_time;
-        out << "\nDRT empty time              : " << drt_vehdata.total_empty_time;
-        out << "\nDRT driving time            : " << drt_vehdata.total_driving_time;
-        out << "\nDRT idle time               : " << drt_vehdata.total_idle_time;
-        out << "\nDRT oncall time             : " << drt_vehdata.total_oncall_time;
-        out << "\nDRT occ/total VKT ratio     : " << drt_vehdata.total_occupied_vkt / drt_vehdata.total_vkt;
-        out << "\nDRT PKT/VKT ratio           : " << total_passdata.total_pass_drt_vkt / drt_vehdata.total_vkt; //should match average occupancy somewhat
+           out << "\n\n### DRT passenger summary ###";
+           out << "\n\nTotal walking time             : " << drt_passdata.total_wlkt;
+           out << "\nAverage walking time           : " << drt_passdata.avg_total_wlkt;
+           ...;*/
+
+    out << "\n\n### Total vehicle summary ###";
+    out << "\nTotal VKT                   : " << total_vehdata.total_vkt;
+    out << "\nTotal occupied VKT          : " << total_vehdata.total_occupied_vkt;
+    out << "\nTotal empty VKT             : " << total_vehdata.total_empty_vkt;
+    out << "\nTotal occupied time         : " << total_vehdata.total_occupied_time;
+    out << "\nTotal empty time            : " << total_vehdata.total_empty_time;
+    out << "\nTotal driving time          : " << total_vehdata.total_driving_time;
+    out << "\nTotal idle time             : " << total_vehdata.total_idle_time;
+    out << "\nTotal oncall time           : " << total_vehdata.total_oncall_time;
+
+    out << "\n\n### Fixed vehicle summary ###";
+    out << "\nFixed VKT                   : " << fix_vehdata.total_vkt;
+    out << "\nFixed occupied VKT          : " << fix_vehdata.total_occupied_vkt;
+    out << "\nFixed empty VKT             : " << fix_vehdata.total_empty_vkt;
+    out << "\nFixed occupied time         : " << fix_vehdata.total_occupied_time;
+    out << "\nFixed empty time            : " << fix_vehdata.total_empty_time;
+    out << "\nFixed driving time          : " << fix_vehdata.total_driving_time;
+    out << "\nFixed idle time             : " << fix_vehdata.total_idle_time;
+    out << "\nFixed oncall time           : " << fix_vehdata.total_oncall_time; //should always be zero...fixed schedule buses are currently always assigned a trip
+    out << "\nFixed occ/total VKT ratio   : " << fix_vehdata.total_occupied_vkt / fix_vehdata.total_vkt;
+    out << "\nFixed PKT/VKT ratio         : " << total_passdata.total_pass_fix_vkt / fix_vehdata.total_vkt; //should match average occupancy somewhat
+
+    out << "\n\n### DRT vehicle summary ###";
+    out << "\nDRT VKT                     : " << drt_vehdata.total_vkt;
+    out << "\nDRT occupied VKT            : " << drt_vehdata.total_occupied_vkt;
+    out << "\nDRT empty VKT               : " << drt_vehdata.total_empty_vkt;
+    out << "\nDRT occupied time           : " << drt_vehdata.total_occupied_time;
+    out << "\nDRT empty time              : " << drt_vehdata.total_empty_time;
+    out << "\nDRT driving time            : " << drt_vehdata.total_driving_time;
+    out << "\nDRT idle time               : " << drt_vehdata.total_idle_time;
+    out << "\nDRT oncall time             : " << drt_vehdata.total_oncall_time;
+    out << "\nDRT occ/total VKT ratio     : " << drt_vehdata.total_occupied_vkt / drt_vehdata.total_vkt;
+    out << "\nDRT PKT/VKT ratio           : " << total_passdata.total_pass_drt_vkt / drt_vehdata.total_vkt; //should match average occupancy somewhat
 
 
-        out << "\n\n### DRT trip summary ###";
-        out << "\nTotal trips                            : " << drt_tripdata.total_trips;
-        out << "\nTotal pass-carrying trips              : " << drt_tripdata.total_pass_carrying_trips;
-        out << "\nTotal empty trips                      : " << drt_tripdata.total_empty_trips;
-        out << "\nTotal pass boarding                    : " << drt_tripdata.total_pass_boarding;
-        out << "\nTotal pass alighting                   : " << drt_tripdata.total_pass_alighting;
-        
-        out << "\n\nAverage boarding per pass-carrying trip: " << drt_tripdata.avg_boarding_per_trip;
-        out << "\nStdev boarding per pass-carrying trip  : " << drt_tripdata.std_boarding_per_trip;
-        out << "\nMinimum boarding per pass-carrying trip: " << drt_tripdata.min_boarding_per_trip;
-        out << "\nMaximum boarding per pass-carrying trip: " << drt_tripdata.max_boarding_per_trip;
-        out << "\nMedian boarding per pass-carrying trip : " << drt_tripdata.median_boarding_per_trip;
+    out << "\n\n### DRT trip summary ###";    
+    out << "\nTotal trips                            : " << drt_tripdata.total_trips;
+    out << "\nTotal pass-carrying trips              : " << drt_tripdata.total_pass_carrying_trips;
+    out << "\nTotal empty trips                      : " << drt_tripdata.total_empty_trips;
+    out << "\nTotal pass boarding                    : " << drt_tripdata.total_pass_boarding;
+    out << "\nTotal pass alighting                   : " << drt_tripdata.total_pass_alighting;
 
-        out << "\n\n### ControlCenter summary ###";
-        out << "\nRequests recieved           : " << cc_data.total_requests_recieved;
-        out << "\nRequests rejected           : " << cc_data.total_requests_rejected;
-        out << "\nRequests accepted           : " << cc_data.total_requests_accepted;
-        out << "\nRequests served             : " << cc_data.total_requests_served;
+    out << "\n\nAverage boarding per pass-carrying trip: " << drt_tripdata.avg_boarding_per_trip;
+    out << "\nStdev boarding per pass-carrying trip  : " << drt_tripdata.std_boarding_per_trip;
+    out << "\nMinimum boarding per pass-carrying trip: " << drt_tripdata.min_boarding_per_trip;
+    out << "\nMaximum boarding per pass-carrying trip: " << drt_tripdata.max_boarding_per_trip;
+    out << "\nMedian boarding per pass-carrying trip : " << drt_tripdata.median_boarding_per_trip;
 
-        out << "\n\n------------------------------------------------------------------\n\n";
+    out << "\n\n### ControlCenter summary ###";
+    out << "\nRequests recieved           : " << cc_data.total_requests_recieved;
+    out << "\nRequests rejected           : " << cc_data.total_requests_rejected;
+    out << "\nRequests accepted           : " << cc_data.total_requests_accepted;
+    out << "\nRequests served             : " << cc_data.total_requests_served;
 
-        return true;
+    out << "\n\n------------------------------------------------------------------\n\n";
+
+    return true;
 }
 
 bool Network::write_day2day_passenger_waiting_experience_header(string filename)
@@ -7292,7 +7297,6 @@ bool Network::write_day2day_passenger_waiting_experience_header(string filename)
 bool Network::write_day2day_passenger_waiting_experience(string filename)
 {
     ofstream out(filename.c_str(), ios_base::app); //"o_fwf_day2day_passenger_waiting_experience.dat"
-
     for (auto stop_iter = busstops.begin(); stop_iter != busstops.end(); ++stop_iter)
     {
         auto stop_as_origin = (*stop_iter)->get_stop_as_origin();
@@ -7327,7 +7331,7 @@ bool Network::write_day2day_passenger_onboard_experience_header(string filename)
 bool Network::write_day2day_passenger_onboard_experience(string filename)
 {
     ofstream out(filename.c_str(), ios_base::app); //"o_fwf_day2day_passenger_onboard_experience.dat"
-
+    out << std::fixed;
     for (auto stop_iter = busstops.begin(); stop_iter != busstops.end(); ++stop_iter)
     {
         auto stop_as_origin = (*stop_iter)->get_stop_as_origin();
@@ -7336,6 +7340,7 @@ bool Network::write_day2day_passenger_onboard_experience(string filename)
             map <Passenger*, list<Pass_onboard_experience> > onboard_experience = od_iter->second->get_onboard_output();
             for (auto pass_iter1 = onboard_experience.begin(); pass_iter1 != onboard_experience.end(); ++pass_iter1)
             {
+                out.precision(0);
                 out << day << '\t';
                 od_iter->second->write_onboard_exp_output(out, (*pass_iter1).first);
             }
@@ -7365,6 +7370,7 @@ bool Network::write_day2day_passenger_transitmode_header(string filename)
 bool Network::write_day2day_passenger_transitmode(string filename)
 {
     ofstream out(filename.c_str(), ios_base::app); //"o_fwf_day2day_passenger_transitmode.dat"
+    out << std::fixed;
     for (const auto& od : odstops_demand)
     {
         vector<Passenger*> pass_vec = od->get_passengers_during_simulation();
@@ -7372,6 +7378,7 @@ bool Network::write_day2day_passenger_transitmode(string filename)
         {
             /*if (pass->get_end_time() > 0)
             {*/
+            out.precision(0);
             out << day << '\t';
             od->write_transitmode_output(out, pass);
             /*}*/
@@ -7471,7 +7478,10 @@ bool Network::write_day2day_modesplit(string filename)
     total_passdata.calc_pass_statistics(all_pass_dest_reached);
     double fix = total_passdata.total_pass_fix_vkt / total_passdata.total_pass_vkt;
     double drt = total_passdata.total_pass_drt_vkt / total_passdata.total_pass_vkt;
-    out << day << '\t' << fix << '\t' << drt << '\t';
+    out << std::fixed;
+    out.precision(2);
+    out << day << '\t';
+    out << fix << '\t' << drt << '\t';
 
     // collect all trips to calculate mode split based on number of boardings instead
     vector<Bustrip*> all_trips; // will contain all activated fixed trips and all completed 
@@ -7500,7 +7510,11 @@ bool Network::write_day2day_modesplit(string filename)
         fix = 0.0;
         drt = 0.0;
     }
-    out << fix << '\t' << drt << '\t' << total_passdata.total_fix_chosen << '\t' << total_passdata.total_drt_chosen << '\t' << total_passdata.avg_gtc << '\t' << total_passdata.npass << '\t' << pass_ignored << endl;
+    out << fix << '\t' << drt << '\t';
+    out << total_passdata.total_fix_chosen << '\t' << total_passdata.total_drt_chosen << '\t';
+    out.precision(5);
+    out << total_passdata.avg_gtc << '\t';
+    out << total_passdata.npass << '\t' << pass_ignored << endl;
 
     return true;
 }
@@ -7528,6 +7542,8 @@ namespace PARTC
     void writeFWFsummary_odcategories(ostream& out, const FWF_passdata& passdata_b2b, const FWF_passdata& passdata_b2c, const FWF_passdata& passdata_c2c, const FWF_passdata& passdata_total, int pass_ignored)
     {
         assert(out);
+        out << std::fixed;
+        out.precision(2);
         out << "### Passenger per OD category summary: \tB2B\tB2C\tC2C\tTotal";
         out << "\nPassenger journeys completed                 :\t" << passdata_b2b.pass_completed << "\t" << passdata_b2c.pass_completed << "\t" << passdata_c2c.pass_completed << "\t" << passdata_total.pass_completed;
 
@@ -7722,7 +7738,7 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
     write_transitlinesum_header(out3);
     write_transitlineloads_header(out9);
     write_triptotaltraveltime_header(out11);
-    for (auto & busline : buslines)
+    for (const auto& busline : buslines)
     {
         busline->calculate_sum_output_line();
         busline->get_output_summary().write(out3,busline->get_id());
@@ -8102,6 +8118,8 @@ void Network::write_od_summary_header(ostream& out)
 void Network::write_passenger_welfare_summary(ostream& out, double total_gtc, int total_pass)
 {
     unsigned int total_pass_gen = count_generated_passengers();
+    out << std::fixed;
+    out.precision(2);
     out << "Total generalized travel cost:" << '\t' << total_gtc << endl
         << "Average generalized travel cost per passenger:" << '\t' << total_gtc / total_pass << endl
         << "Number of generated passengers: " << '\t' << total_pass_gen << endl

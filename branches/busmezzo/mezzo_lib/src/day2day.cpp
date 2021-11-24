@@ -506,13 +506,15 @@ void Day2day::write_wt_alphas_header(string filename)
 }
 void Day2day::write_wt_alphas(string filename, const map<ODSL, Travel_time>& wt_records)
 {
-    ofstream ofs(filename.c_str(),ios_base::app);
-    
-    for(const auto& wt_rec : wt_records)
+    ofstream ofs(filename.c_str(), ios_base::app);
+    ofs << std::fixed;
+    ofs.precision(5);
+    for (const auto& wt_rec : wt_records)
     {
-		ODSL odsl = wt_rec.first;
-		Travel_time tt = wt_rec.second;
-        ofs << tt.day << "\t" << odsl.orig << "\t" << odsl.dest << "\t" << odsl.stop << "\t" << odsl.line << "\t" << tt.alpha[EXP] << "\t" << tt.alpha[PK] << "\t" << tt.alpha[RTI] << "\t" << tt.tt[EXP] << "\t" << tt.tt[anticip_EXP] << "\t" << tt.temp_kapa_ATT << endl;
+        ODSL odsl = wt_rec.first;
+        Travel_time tt = wt_rec.second;
+        ofs << tt.day << "\t" << odsl.orig << "\t" << odsl.dest << "\t" << odsl.stop << "\t" << odsl.line << "\t";
+        ofs << tt.alpha[EXP] << "\t" << tt.alpha[PK] << "\t" << tt.alpha[RTI] << "\t" << tt.tt[EXP] << "\t" << tt.tt[anticip_EXP] << "\t" << tt.temp_kapa_ATT << endl;
     }
 }
 void Day2day::write_ivt_alphas_header(string filename)
@@ -522,13 +524,15 @@ void Day2day::write_ivt_alphas_header(string filename)
 }
 void Day2day::write_ivt_alphas(string filename, const map<ODSLL, Travel_time>& ivt_records)
 {
-	ofstream ofs(filename.c_str(),ios_base::app);
-    
+    ofstream ofs(filename.c_str(), ios_base::app);
+    ofs << std::fixed;
+    ofs.precision(5);
     for (const auto& ivt_rec : ivt_records)
     {
         ODSLL odsll = ivt_rec.first;
         Travel_time tt = ivt_rec.second;
-        ofs << tt.day << "\t" << odsll.orig << "\t" << odsll.dest << "\t" << odsll.stop << "\t" << odsll.line << "\t" << odsll.leg << "\t" << tt.alpha[EXP] << "\t" << tt.alpha[PK] << "\t" << tt.alpha[crowding] << "\t" << tt.tt[EXP] << "\t" << tt.tt[anticip_EXP] << "\t" << tt.temp_kapa_ATT << endl;
+        ofs << tt.day << "\t" << odsll.orig << "\t" << odsll.dest << "\t" << odsll.stop << "\t" << odsll.line << "\t" << odsll.leg << "\t";
+	    ofs << tt.alpha[EXP] << "\t" << tt.alpha[PK] << "\t" << tt.alpha[crowding] << "\t" << tt.tt[EXP] << "\t" << tt.tt[anticip_EXP] << "\t" << tt.temp_kapa_ATT << endl;
     }
 
 }

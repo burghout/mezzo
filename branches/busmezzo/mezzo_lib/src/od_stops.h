@@ -40,6 +40,8 @@ public:
 	virtual ~Pass_boarding_decision(); //!< destructor
 
 	void write(ostream& out){
+		out << std::fixed;
+		out.precision(5);
 		out << pass_id << '\t'
 			<< original_origin << '\t'
 			<< destination_stop << '\t'
@@ -258,21 +260,23 @@ public:
 	): pass_id(pass_id_),original_origin(original_origin_),destination_stop(destination_stop_),line_id(line_id_),trip_id(trip_id_), stop_id(stop_id_),time(time_),generation_time(generation_time_),expected_WT_PK(expected_WT_PK_),RTI_level_available(RTI_level_available_),projected_WT_RTI(projected_WT_RTI_),experienced_WT(experienced_WT_),AWT(AWT_),nr_missed(nr_missed_) {}
 	virtual ~Pass_waiting_experience(); //!< destructor
 	
-	void write(ostream& out){ 
+	void write(ostream& out){
+		out << std::fixed;
+		out.precision(5);
 		out << pass_id << '\t' 
 			<< original_origin << '\t' 
 			<< destination_stop << '\t' 
 			<< line_id << '\t'
 			<< trip_id << '\t'
 			<< stop_id<< '\t'
-			<< time << '\t'
+	        << time << '\t'
 			<< generation_time << '\t' 
 			<< expected_WT_PK << '\t'
-			<< RTI_level_available << '\t'
-			<< projected_WT_RTI << '\t'
+		    << RTI_level_available << '\t'
+		    << projected_WT_RTI << '\t'
 			<< experienced_WT <<'\t'
 			<< AWT <<'\t'
-			<< nr_missed <<'\t'
+		    << nr_missed <<'\t'
 			<< endl;
 	}
 	
@@ -325,16 +329,19 @@ public:
 	): pass_id(pass_id_),original_origin(original_origin_),destination_stop(destination_stop_),line_id(line_id_), trip_id(trip_id_), stop_id(stop_id_), leg_id(leg_id_), expected_ivt(expected_ivt_), experienced_ivt(experienced_ivt_) {}
 	
 	void write (ostream& out){
+		out << std::fixed;
+		out.precision(5);
 		out << pass_id << '\t' 
 			<< original_origin << '\t' 
 			<< destination_stop << '\t' 
 			<< line_id << '\t'
 			<< trip_id << '\t' 
 			<< stop_id << '\t' 
-			<< leg_id << '\t' 
-			<< expected_ivt << '\t' 
-			<< experienced_ivt.first << '\t' 
-			<< experienced_ivt.second 
+			<< leg_id << '\t'
+	        << expected_ivt << '\t' 
+			<< experienced_ivt.first << '\t';
+		out.precision(2);
+		out	<< experienced_ivt.second 
 			<< endl;
 	}
 	

@@ -44,26 +44,28 @@ class Output_Summary_Line // container object holding output data for busline
 {
 public:
 	virtual ~Output_Summary_Line(); //!< destructor
-	void write (ostream& out, int line_id) { 
-		out << line_id << '\t'
-			<< line_avg_headway << '\t'
-			<< line_avg_DT << '\t'
-			<< line_avg_abs_deviation << '\t'
-			<< line_avg_waiting_per_stop << '\t'
-			<< line_total_boarding << '\t'
-			<< line_sd_headway << '\t'
-			<< line_sd_DT << '\t'
-			<< line_on_time << '\t'
-			<< line_early << '\t'
-			<< line_late << '\t'
-			<< total_pass_riding_time << '\t'
-			<< total_pass_dwell_time << '\t'
-			<< total_pass_waiting_time << '\t'
-			<< total_pass_holding_time << '\t' 
-			<< control_objective_function << '\t' 
-			<< total_travel_time_crowding << '\t' 
-			<< endl; 
-	}
+	void write (ostream& out, int line_id) {
+		out << std::fixed;
+		out.precision(5);
+        out << line_id << '\t'
+	        << line_avg_headway << '\t'
+            << line_avg_DT << '\t'
+            << line_avg_abs_deviation << '\t'
+            << line_avg_waiting_per_stop << '\t'
+            << line_total_boarding << '\t'
+            << line_sd_headway << '\t'
+            << line_sd_DT << '\t'
+            << line_on_time << '\t'
+            << line_early << '\t'
+            << line_late << '\t'
+            << total_pass_riding_time << '\t'
+            << total_pass_dwell_time << '\t'
+            << total_pass_waiting_time << '\t'
+            << total_pass_holding_time << '\t'
+            << control_objective_function << '\t'
+            << total_travel_time_crowding << '\t'
+            << endl;
+    }
 
 	void reset () { 
 		line_avg_headway = 0;
@@ -152,7 +154,9 @@ public:
 
 	virtual ~Busline_travel_times(); //!< destructor
 
-	void write(ostream& out){ 
+	void write(ostream& out){
+		out << std::fixed;
+		out.precision(2);
 		out << trip_id << '\t'
 			<< total_travel_time << '\t'
 			<< endl; 
@@ -584,7 +588,9 @@ public:
 	   nr_alighting(nr_alighting_),nr_boarding(nr_boarding_),occupancy(occupancy_),nr_waiting(nr_waiting_), total_waiting_time(total_waiting_time_),holding_time(holding_time_) {}
 
 	virtual ~Busstop_Visit(); //!< destructor
-	void write (ostream& out) { 
+	void write (ostream& out) {
+		out << std::fixed;
+		out.precision(5);
 		out << line_id << '\t'
 			<< trip_id << '\t'
 			<< vehicle_id << '\t'
@@ -656,7 +662,9 @@ class Output_Summary_Stop_Line // container object holding output data for stop 
 {
 public:
 	virtual ~Output_Summary_Stop_Line(); //!< destructor
-	void write (ostream& out, int stop_id, int line_id, string name) { 
+	void write (ostream& out, int stop_id, int line_id, string name) {
+		out << std::fixed;
+		out.precision(5);
 		out << stop_id <<  '\t' 
 			<< name << '\t' 
 			<< line_id << '\t'

@@ -62,7 +62,7 @@ struct Request
     double time_request_generated = -1.0; //!< time request was generated
     RequestState state = RequestState::Null; //!< current state of the request
     Passenger* pass_owner = nullptr; //!< passenger who sent this request
-    Bus* assigned_veh = nullptr; //!< vehicle that has been assigned to this request, nullptr if none has been assigned
+    //Bus* assigned_veh = nullptr; //!< vehicle that has been assigned to this request, nullptr if none has been assigned
     Bustrip* assigned_trip = nullptr; //!< bustrip that has been assigned to this request, nullptr by default, updated when assigned
     Request() { id = ++id_counter; }
     Request(Passenger* pass_owner, int pass_id, int ostop_id, int dstop_id, int load, double t_departure, double t_generated);

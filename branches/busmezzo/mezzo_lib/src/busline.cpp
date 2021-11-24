@@ -2924,6 +2924,8 @@ void Busstop::record_busstop_visit (Bustrip* trip, double enter_time)  // create
 	int nr_riders = occupancy + nr_alighting - nr_boarding;
 	double riding_time;
 	double holdingtime = exit_time - enter_time - dwelltime;
+	if(Abs(holdingtime) < 0.01) // to clean up file outputs a bit
+		holdingtime = 0.0;
 	double crowded_pass_riding_time;
 	double crowded_pass_dwell_time;
 	double crowded_pass_holding_time;

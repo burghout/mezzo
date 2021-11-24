@@ -935,12 +935,14 @@ void ODstops::write_od_summary(ostream & out)
 {
 	calc_pass_measures();
     int nr_paths = static_cast<int>(paths_tt.size());
+	out << std::fixed;
+	out.precision(2);
 	out << origin_stop->get_id() << '\t'
 		<< destination_stop->get_id() << '\t'
 		<< nr_pass_completed << '\t'
-		<< avg_tt << '\t'
+        << avg_tt << '\t'
 		<< avg_nr_boardings << '\t'
-		<< nr_paths << '\t'
+        << nr_paths << '\t'
 		<< endl
 		<< "{" << '\t';
 
@@ -957,14 +959,16 @@ void ODstops::write_od_summary(ostream & out)
 
 void ODstops::write_od_summary_without_paths(ostream & out)
 {
-	out << origin_stop->get_id() << '\t' 
-		<< origin_stop->get_name() << '\t'
-		<< destination_stop->get_id() << '\t' 
-		<< destination_stop->get_name() << '\t'
-		<< nr_pass_completed << '\t' 
-		<< avg_tt << '\t' 
-		<< avg_nr_boardings << '\t' 
-		<< endl; 
+    out << std::fixed;
+    out.precision(2);
+    out << origin_stop->get_id() << '\t'
+        << origin_stop->get_name() << '\t'
+        << destination_stop->get_id() << '\t'
+        << destination_stop->get_name() << '\t'
+        << nr_pass_completed << '\t'
+        << avg_tt << '\t'
+        << avg_nr_boardings << '\t'
+        << endl;
 }
 
 void ODstops::calc_pass_measures ()
@@ -1026,7 +1030,9 @@ void ODstops::calc_pass_measures ()
 }
 
 void Pass_alighting_decision::write (ostream& out) 
-{ 
+{
+    out << std::fixed;
+	out.precision(5);
 	out << pass_id << '\t'
 		<< original_origin << '\t'
 		<< destination_stop << '\t'
@@ -1046,7 +1052,9 @@ void Pass_alighting_decision::write (ostream& out)
 }
 
 void Pass_connection_decision::write (ostream& out)
-{ 
+{
+    out << std::fixed;
+	out.precision(5);
 	out << pass_id << '\t' 
 		<< original_origin << '\t' 
 		<< destination_stop << '\t' 
@@ -1198,6 +1206,8 @@ void Pass_alighting_decision_zone::write (ostream& out)
 
 void Pass_dropoff_decision::write(ostream& out)
 {
+    out << std::fixed;
+    out.precision(5);
 	out << pass_id << '\t'
 		<< original_origin << '\t'
 		<< destination_stop << '\t'
@@ -1216,13 +1226,15 @@ void Pass_dropoff_decision::write(ostream& out)
 
 void Pass_transitmode_decision::write(ostream& out)
 {
-	out << pass_id << '\t'
+	out << std::fixed;
+	out.precision(5);
+    out << pass_id << '\t'
 		<< original_origin << '\t'
 		<< destination_stop << '\t'
 		<< pickupstop_id << '\t'
-		<< time << '\t'
+        << time << '\t'
 		<< generation_time << '\t'
-		<< chosen_transitmode << '\t';
+        << chosen_transitmode << '\t';
 	for (map<TransitModeType, pair<double, double> >::iterator iter = mode_MNL.begin(); iter != mode_MNL.end(); iter++)
 	{
 		out << (*iter).first << '\t';

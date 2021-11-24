@@ -616,44 +616,50 @@ void Passenger::increment_mode_choice_counter(TransitModeType chosen_mode)
 bool Passenger:: make_boarding_decision (Bustrip* arriving_bus, double time) 
 {
 	/*Busstop* curr_stop = selected_path_stops.back().first;
-	ODstops* od = curr_stop->get_stop_od_as_origin_per_stop(OD_stop->get_destination());*/
-//	Busstop* curr_stop = OD_stop->get_origin(); //2014-04-14 Jens West changed this, because otherwise the passengers would board lines and then not know what to do
-	double boarding_prob;
+    ODstops* od = curr_stop->get_stop_od_as_origin_per_stop(OD_stop->get_destination());*/
+    //	Busstop* curr_stop = OD_stop->get_origin(); //2014-04-14 Jens West changed this, because otherwise the passengers would board lines and then not know what to do
+    double boarding_prob;
 
-	if (theParameters->drt && chosen_mode_ == TransitModeType::Flexible) // if passenger is a flexible transit user
-	{
-		if (curr_request_->assigned_veh == nullptr) // if we are not associating requests with specific vehicles
-		{
-			bool board_bus = false;
-			if(::fwf_wip::drt_enforce_strict_boarding)
-			{
-			    board_bus = arriving_bus->is_flex_trip() && arriving_bus->is_in_assigned_requests(curr_request_); // board only the trip that the request of the passenger was originally assigned to
-				assert(board_bus == arriving_bus->is_in_assigned_requests(curr_request_));
-			}
-			else
-			{
-			    board_bus = arriving_bus->is_flex_trip() && arriving_bus->has_stop_downstream(curr_request_->dstop_id); // passengers board any trip that matches request destination downstream @todo maybe update this to only board vehicles that the pass was assigned to
-			}
-			if (board_bus) 
-			{
-				OD_stop->set_staying_utility(::large_negative_utility); //we set these utilities just to record boarding output
-				OD_stop->set_boarding_utility(::large_positive_utility);
-				boarding_prob = 1.0;
-				boarding_decision = true;
-				//qDebug() << "Passenger at stop " << QString::fromStdString(this->get_OD_stop()->get_origin()->get_name()) << ", time " << time << " decided to board Veh " << arriving_bus->get_busv()->get_bus_id();
-			}
-			else // always stay and wait otherwise
-			{
-				OD_stop->set_staying_utility(::large_positive_utility);
-				OD_stop->set_boarding_utility(::large_negative_utility);
-				boarding_prob = 0.0;
-				boarding_decision = false;
-			}
-		}
-		else
-			abort(); //should never happen at the moment, not assigning vehicles anything
-	}
-	else
+    if (theParameters->drt && chosen_mode_ == TransitModeType::Flexible) // if passenger is a flexible transit user
+    {
+        bool board_bus = false;
+        if (::fwf_wip::drt_enforce_strict_boarding)
+        {
+            board_bus = arriving_bus->is_flex_trip() && arriving_bus->is_in_assigned_requests(curr_request_); // board only the trip that the request of the passenger was originally assigned to
+            assert(board_bus == arriving_bus->is_in_assigned_requests(curr_request_));
+        }
+        else
+        {
+            board_bus = arriving_bus->is_flex_trip() && arriving_bus->has_stop_downstream(curr_request_->dstop_id); // passengers board any trip that matches request destination downstream @todo maybe update this to only board vehicles that the pass was assigned to
+        }
+        if (board_bus)
+        {
+            OD_stop->set_staying_utility(::large_negative_utility); //we set these utilities just to record boarding output
+            OD_stop->set_boarding_utility(::large_positive_utility);
+            boarding_prob = 1.0;
+            boarding_decision = true;
+            //qDebug() << "Passenger at stop " << QString::fromStdString(this->get_OD_stop()->get_origin()->get_name()) << ", time " << time << " decided to board Veh " << arriving_bus->get_busv()->get_bus_id();
+        }
+        else // always stay and wait otherwise
+        {
+            OD_stop->set_staying_utility(::large_positive_utility);
+            OD_stop->set_boarding_utility(::large_negative_utility);
+            boarding_prob = 0.0;
+            boarding_decision = false;
+        }
+		//Controlcenter* cc = arriving_bus->get_line()->get_CC();
+        //if(cc)
+        //{
+        //	DRTAssignmentData assignment_data = cc->get_assignment_data();
+        //    assignment_data.print_state(time);
+        //}
+        //qDebug() << "Flex trip " << arriving_bus->get_id() << " arriving to stop " << this->get_OD_stop()->get_origin()->get_id() << " at time " << time;
+        //qDebug() << "\t Number of assigned requests to trip: " << arriving_bus->get_assigned_requests().size();
+        //qDebug() << "\t Passenger " << this->get_id() << " with request " << curr_request_->get_id() << " assigned to trip: " << arriving_bus->is_in_assigned_requests(curr_request_);
+        //qDebug() << "\t Passenger request is assigned to trip: " << curr_request_->assigned_trip->get_id();
+        //qDebug() << "\t Decided to board: " << boarding_decision;
+    }
+    else
 	{
 		// use the od based on last stop on record (in case of connections)
 		boarding_prob = OD_stop->calc_boarding_probability(arriving_bus->get_line(), time, this);
@@ -733,11 +739,6 @@ Busstop* Passenger::make_alighting_decision (Bustrip* boarding_bus, double time)
 {
     if (theParameters->drt && chosen_mode_ == TransitModeType::Flexible)
     {
-        assert(curr_request_->assigned_veh == nullptr); // have not started assigning vehicles to requests yet, otherwise can use this instead
-
-        //Busstop* alight_stop = boarding_bus->stops.back()->first;
-        //assert(curr_request_->dstop_id == alight_stop->get_id()); //otherwise the traveler has boarded a bus they should not have boarded, final stop of boarded bus should be guarantee match chosen dropoff stop of traveler
-
         // find the alighting stop of the traveler on the boarded bus, choice is already made with drop-off decision when request was sent
         Busstop* alight_stop = nullptr;
         int did = curr_request_->dstop_id;
@@ -1259,7 +1260,7 @@ Busstop* Passenger::make_dropoff_decision(Busstop* pickup_stop, double time)
         //calculate probabilities
         for (const auto& stop_u : accum_dropoff_stops_u) //calculate the MNL denominator
         {
-            dropoff_stops_u[stop_u.first] = (stop_u.second == 0.0) ? -DBL_INF : log(stop_u.second);
+            dropoff_stops_u[stop_u.first] = !AproxEqual(stop_u.second, 0.0) ? log(stop_u.second) : ::large_negative_utility;
             MNL_denom += exp(dropoff_stops_u[stop_u.first]); //maybe redundant directly after log but to stay consistent with logit formulation
         }
         //assert(!AproxEqual(MNL_denom, 0.0));
@@ -1682,22 +1683,22 @@ void Passenger::write_selected_path(ostream& out)
 	int nr_transfers = get_nr_transfers(); // given path definition (direct connection - 4 elements, 1 transfers - 6 elements, 2 transfers - 8 elements, etc.
 
 	this->set_GTC(theParameters->walking_time_coefficient * total_walking_time + theParameters->waiting_time_coefficient * total_waiting_time + theParameters->waiting_time_coefficient * 3.5 *total_waiting_time_due_to_denied_boarding + theParameters->in_vehicle_time_coefficient * total_IVT_crowding + theParameters->transfer_coefficient * nr_transfers);
-
+	out << std::fixed;
+	out.precision(5);
 	out << passenger_id << '\t'
 		<< original_origin->get_id() << '\t'
 		<< original_origin->get_name() << '\t'
 		<< OD_stop->get_destination()->get_id() << '\t'
 		<< OD_stop->get_destination()->get_name() << '\t'
-		<< start_time << '\t'
-		<< nr_transfers << '\t'
-		<< total_walking_time << '\t'
+        << start_time << '\t'
+        << nr_transfers << '\t'
+        << total_walking_time << '\t'
 		<< total_waiting_time << '\t'
 		<< total_waiting_time_due_to_denied_boarding << '\t'
 		<< total_IVT << '\t'
 		<< total_IVT_crowding << '\t'
 		<< end_time << '\t'
 		<< '{';
-
 	for (vector <pair<Busstop*,double> >::iterator stop_iter = selected_path_stops.begin(); stop_iter < selected_path_stops.end(); stop_iter++)
 	{
 		out << (*stop_iter).first->get_id() << '\t';
@@ -1716,6 +1717,8 @@ void Passenger::write_selected_path(ostream& out)
 void Passenger::write_passenger_trajectory(ostream& out)
 {
 	// find passenger time-location stamps
+	out << std::fixed;
+	out.precision(2);
 	out << passenger_id << '\t'
 		<< '{' << '\t';
 	vector <Busstop*> stop_stamps;
