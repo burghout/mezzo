@@ -304,8 +304,8 @@ void TestFixedWithFlexible_2stop_2link::testRunNetwork()
     nt->wait();
 
     // test here the properties that should be true after running the simulation
-    QString msg = "Failure current time " + QString::number(net->get_currenttime()) + " should be 10800.1 after running the simulation";
-    QVERIFY2 (AproxEqual(net->get_currenttime(),10800.1), qPrintable(msg));
+    //QString msg = "Failure current time " + QString::number(net->get_currenttime()) + " should be 10800.1 after running the simulation";
+    //QVERIFY2 (AproxEqual(net->get_currenttime(),10800.1), qPrintable(msg));
     qDebug() << "Final day: " << net->day;
     //QVERIFY(net->day == theParameters->max_days); // current setup does not converge within 20 days
 }

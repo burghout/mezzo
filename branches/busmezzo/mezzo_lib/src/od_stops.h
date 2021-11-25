@@ -413,11 +413,11 @@ public:
 	void set_origin (Busstop* origin_stop_) {origin_stop=origin_stop_;}
 	void set_destination (Busstop* destination_stop_) {destination_stop=destination_stop_;}
 	void set_min_transfers (int min_transfers_) {min_transfers = min_transfers_;}
-    map <Passenger*,list<Pass_boarding_decision> > get_boarding_output () {return output_pass_boarding_decision;}
-    map <Passenger*,list<Pass_alighting_decision> > get_alighting_output () {return output_pass_alighting_decision;}
-    map <Passenger*,list<Pass_connection_decision> > get_connection_output () {return output_pass_connection_decision;}
-    map <Passenger*,list<Pass_waiting_experience> > get_waiting_output () {return output_pass_waiting_experience;}
-    map <Passenger*,list<Pass_onboard_experience> > get_onboard_output () {return output_pass_onboard_experience;}
+    map <Passenger*, list<Pass_boarding_decision>, ptr_less<Passenger*> > get_boarding_output() { return output_pass_boarding_decision; }
+    map <Passenger*, list<Pass_alighting_decision>, ptr_less<Passenger*> > get_alighting_output() { return output_pass_alighting_decision; }
+    map <Passenger*, list<Pass_connection_decision>, ptr_less<Passenger*> > get_connection_output() { return output_pass_connection_decision; }
+    map <Passenger*, list<Pass_waiting_experience>, ptr_less<Passenger*> > get_waiting_output() { return output_pass_waiting_experience; }
+    map <Passenger*, list<Pass_onboard_experience>, ptr_less<Passenger*> > get_onboard_output() { return output_pass_onboard_experience; }
 	vector <Passenger*> get_passengers_during_simulation () const {return passengers_during_simulation;}
 	
 	void add_pass_waiting(Passenger* add_pass); //!< add passenger to the queue of this OD, called when passenger has arrived to the origin stop of this OD
@@ -506,19 +506,19 @@ public:
 
 protected:
 	// output structures and measures (all output stored by origin zone)
-    map <Passenger*,list<Pass_boarding_decision> > output_pass_boarding_decision;
-    map <Passenger*,list<Pass_alighting_decision> > output_pass_alighting_decision;
-    map <Passenger*,list<Pass_connection_decision> > output_pass_connection_decision;
+    map <Passenger*,list<Pass_boarding_decision>, ptr_less<Passenger*> > output_pass_boarding_decision;
+    map <Passenger*,list<Pass_alighting_decision>, ptr_less<Passenger*> > output_pass_alighting_decision;
+    map <Passenger*,list<Pass_connection_decision>, ptr_less<Passenger*> > output_pass_connection_decision;
 
 /** @ingroup DRT
 	@{
 */
-	map <Passenger*, list<Pass_transitmode_decision> > output_pass_transitmode_decision;
-	map <Passenger*, list<Pass_dropoff_decision> > output_pass_dropoff_decision;
+	map <Passenger*, list<Pass_transitmode_decision>, ptr_less<Passenger*> > output_pass_transitmode_decision;
+	map <Passenger*, list<Pass_dropoff_decision>, ptr_less<Passenger*> > output_pass_dropoff_decision;
 /** @} */
 
-    map <Passenger*,list<Pass_waiting_experience> > output_pass_waiting_experience;
-    map <Passenger*,list<Pass_onboard_experience> > output_pass_onboard_experience;
+    map <Passenger*,list<Pass_waiting_experience>, ptr_less<Passenger*> > output_pass_waiting_experience;
+    map <Passenger*,list<Pass_onboard_experience>, ptr_less<Passenger*> > output_pass_onboard_experience;
 	vector <Passenger*> passengers_during_simulation;
 	
     vector <pair<vector<Busstop*>, pair <int,double> > > paths_tt;

@@ -7299,10 +7299,10 @@ bool Network::write_day2day_passenger_waiting_experience(string filename)
     ofstream out(filename.c_str(), ios_base::app); //"o_fwf_day2day_passenger_waiting_experience.dat"
     for (auto stop_iter = busstops.begin(); stop_iter != busstops.end(); ++stop_iter)
     {
-        auto stop_as_origin = (*stop_iter)->get_stop_as_origin();
+        ODs_for_stop stop_as_origin = (*stop_iter)->get_stop_as_origin();
         for (auto od_iter = stop_as_origin.begin(); od_iter != stop_as_origin.end(); ++od_iter)
         {
-            map <Passenger*, list<Pass_waiting_experience> > waiting_experience = od_iter->second->get_waiting_output();
+            map <Passenger*, list<Pass_waiting_experience>, ptr_less<Passenger*> > waiting_experience = od_iter->second->get_waiting_output();
             for (auto pass_iter1 = waiting_experience.begin(); pass_iter1 != waiting_experience.end(); ++pass_iter1)
             {
                 out << day << '\t';
@@ -7334,10 +7334,10 @@ bool Network::write_day2day_passenger_onboard_experience(string filename)
     out << std::fixed;
     for (auto stop_iter = busstops.begin(); stop_iter != busstops.end(); ++stop_iter)
     {
-        auto stop_as_origin = (*stop_iter)->get_stop_as_origin();
+        ODs_for_stop stop_as_origin = (*stop_iter)->get_stop_as_origin();
         for (auto od_iter = stop_as_origin.begin(); od_iter != stop_as_origin.end(); ++od_iter)
         {
-            map <Passenger*, list<Pass_onboard_experience> > onboard_experience = od_iter->second->get_onboard_output();
+            map <Passenger*, list<Pass_onboard_experience>, ptr_less<Passenger*> > onboard_experience = od_iter->second->get_onboard_output();
             for (auto pass_iter1 = onboard_experience.begin(); pass_iter1 != onboard_experience.end(); ++pass_iter1)
             {
                 out.precision(0);

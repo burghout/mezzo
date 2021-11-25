@@ -292,7 +292,7 @@ map<ODSL, Travel_time>& Day2day::process_wt_replication (vector<ODstops*>& odsto
 	// For each od collect list of passenger experiences, For each passenger calculate and anticipated EXP, and if information is shared then we average the experiences when calculated anticipated wt
 	for (auto od_iter = odstops.begin(); od_iter != odstops.end(); ++od_iter)
 	{
-		map <Passenger*,list<Pass_waiting_experience> > pass_list = (*od_iter)->get_waiting_output();
+        map <Passenger*, list<Pass_waiting_experience>, ptr_less<Passenger*> > pass_list = (*od_iter)->get_waiting_output();
 		for (auto pass_iter1 = pass_list.begin(); pass_iter1 != pass_list.end(); ++pass_iter1)
 		{
 			nr_of_passengers++;
@@ -380,7 +380,7 @@ map<ODSLL, Travel_time>& Day2day::process_ivt_replication (vector<ODstops*>& ods
 
 	for (auto od_iter = odstops.begin(); od_iter != odstops.end(); ++od_iter)
 	{
-		map <Passenger*,list<Pass_onboard_experience> > pass_list = (*od_iter)->get_onboard_output();
+		map <Passenger*,list<Pass_onboard_experience>, ptr_less<Passenger*> > pass_list = (*od_iter)->get_onboard_output();
 		for (auto pass_iter = pass_list.begin(); pass_iter != pass_list.end(); ++pass_iter)
 		{
 			list<Pass_onboard_experience> onboard_experience_list = (*pass_iter).second;
