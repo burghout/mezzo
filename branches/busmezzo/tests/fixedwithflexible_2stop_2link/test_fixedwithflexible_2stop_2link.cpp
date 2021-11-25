@@ -186,7 +186,7 @@ void TestFixedWithFlexible_2stop_2link::testInitParameters()
     QVERIFY2(AproxEqual(theParameters->default_alpha_RTI, 0.0), "Failure, default alpha RTI is not 0 in parameters");
     
     //! CSGM @todo
-    QVERIFY2(theParameters->choice_set_indicator == 0, "Failure, choice set indicator is not set to 1 in parameters");
+    QVERIFY2(theParameters->choice_set_indicator == 0, "Failure, choice set indicator is not set to 0 in parameters");
     //QVERIFY2(net->count_transit_paths() == 27, "Failure, network should have 14 transit paths defined");
 
     //day2day params

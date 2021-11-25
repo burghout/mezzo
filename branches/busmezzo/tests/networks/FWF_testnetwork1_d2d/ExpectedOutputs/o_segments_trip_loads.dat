@@ -4,7 +4,7 @@ Line_ID	Trip_ID	Vehicle_ID	Start_stop_ID	Start_stop_name	End_stop_id	End_stop_na
 1	103	103	1	Stop_1	2	Stop_2	0	
 1	104	104	1	Stop_1	2	Stop_2	0	
 1	105	105	1	Stop_1	2	Stop_2	0	
-1	106	106	1	Stop_1	2	Stop_2	0	
+1	106	106	1	Stop_1	2	Stop_2	1	
 1	107	107	1	Stop_1	2	Stop_2	0	
 1	108	108	1	Stop_1	2	Stop_2	0	
 1	109	109	1	Stop_1	2	Stop_2	0	
@@ -169,7 +169,7 @@ Line_ID	Trip_ID	Vehicle_ID	Start_stop_ID	Start_stop_name	End_stop_id	End_stop_na
 3	306	306	3	Stop_3	4	Stop_4	0	
 3	307	307	3	Stop_3	4	Stop_4	0	
 3	308	308	3	Stop_3	4	Stop_4	0	
-3	309	309	3	Stop_3	4	Stop_4	1	
+3	309	309	3	Stop_3	4	Stop_4	0	
 3	310	310	3	Stop_3	4	Stop_4	0	
 3	311	311	3	Stop_3	4	Stop_4	0	
 3	312	312	3	Stop_3	4	Stop_4	0	
@@ -215,4 +215,4 @@ Line_ID	Trip_ID	Vehicle_ID	Start_stop_ID	Start_stop_name	End_stop_id	End_stop_na
 23	2325	374	24	Stop_24	23	Stop_23	0	
 23	2326	375	24	Stop_24	23	Stop_23	0	
 23	2327	376	24	Stop_24	23	Stop_23	0	
-8001	800101	8001	1	Stop_1	2	Stop_2	1	
+8003	800301	8003	3	Stop_3	4	Stop_4	1	
