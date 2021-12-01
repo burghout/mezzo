@@ -83,7 +83,7 @@ struct ODSLL
 struct Travel_time //structure for saving and adding data
 {
 	int counter;
-	int day;
+	int day; // @note, not sure if this actually corresponds to the day of the travel time record, seems to grow faster than the actual day in Day2Day::day or Network::day
 	float tt[5]; // EXP, PK, RTI (or crowding for ivt), anticip, anticip_EXP
 	float alpha[3]; // EXP, PK, RTI (or crowding for ivt)
 	float convergence;
@@ -217,9 +217,9 @@ public:
     static void print_all_wt_records(const map<ODSL, Travel_time>& wt_records); // print out the contents of a ODSL table
     static void print_all_ivt_records(const map<ODSLL, Travel_time>& ivt_records); // print out the contents of a ODSLL table
     static void write_wt_alphas_header(string filename);
-    static void write_wt_alphas(string filename, const map<ODSL, Travel_time>& wt_records); //write out all ODSL alphas to a csv file
+    static void write_wt_alphas(string filename, const map<ODSL, Travel_time>& wt_records, int day); //write out all ODSL alphas to a csv file
 	static void write_ivt_alphas_header(string filename);
-	static void write_ivt_alphas(string filename, const map<ODSLL, Travel_time>& ivt_records); //write out all ODSLL alphas to a csv file
+	static void write_ivt_alphas(string filename, const map<ODSLL, Travel_time>& ivt_records, int day); //write out all ODSLL alphas to a csv file
 	/**@}*/
 };
 

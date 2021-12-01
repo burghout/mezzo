@@ -187,6 +187,9 @@ void Passenger::init ()
 	if (theParameters->in_vehicle_d2d_indicator == 1)
 	{
 		anticipated_ivtt = OD_stop->get_anticipated_ivtt();
+		ivtt_acc_exp = OD_stop->get_ivtt_acc_exp();
+		ivtt_alpha_exp = OD_stop->get_ivtt_alpha_exp();
+		ivtt_alpha_exp_crowding = OD_stop->get_ivtt_alpha_exp_crowding();
 	}
 }
 
@@ -263,7 +266,10 @@ double Passenger::get_alpha_RTI (Busstop* stop, Busline* line)
 	pair<Busstop*, Busline*> stopline;
 	stopline.first = stop;
 	stopline.second = line;
-	return alpha_RTI[stopline];
+	if(alpha_RTI.count(stopline) != 0)
+	    return alpha_RTI[stopline];
+	else
+		return 0.0;
 }
 
 double Passenger::get_alpha_exp (Busstop* stop, Busline* line)
@@ -272,6 +278,10 @@ double Passenger::get_alpha_exp (Busstop* stop, Busline* line)
 	stopline.first = stop;
 	stopline.second = line;
 	return alpha_exp[stopline];
+	if(alpha_exp.count(stopline) != 0)
+	    return alpha_exp[stopline];
+	else
+		return 0.0;
 }
 
 bool Passenger::any_previous_exp_ODSL (Busstop* stop, Busline* line)
@@ -291,22 +301,76 @@ void Passenger::set_anticipated_ivtt (Busstop* stop, Busline* line, Busstop* leg
 	anticipated_ivtt[stoplineleg] = anticipated_ivt;
 }
 
-double Passenger::get_anticipated_ivtt (Busstop* stop, Busline* line, Busstop* leg)
+double Passenger::get_anticipated_ivtt(Busstop* stop, Busline* line, Busstop* leg)
 {
-	SLL stoplineleg;
-	stoplineleg.stop = stop;
-	stoplineleg.line = line;
-	stoplineleg.leg = leg;
-	return anticipated_ivtt[stoplineleg];
+    SLL stoplineleg;
+    stoplineleg.stop = stop;
+    stoplineleg.line = line;
+    stoplineleg.leg = leg;
+    return anticipated_ivtt[stoplineleg];
 }
 
-double Passenger::get_ivtt_alpha_exp (Busstop* stop, Busline* line, Busstop* leg)
+void Passenger::set_ivtt_alpha_exp(Busstop* stop, Busline* line, Busstop* leg, double alpha)
 {
-	SLL stoplineleg;
-	stoplineleg.stop = stop;
-	stoplineleg.line = line;
-	stoplineleg.leg = leg;
-	return ivtt_alpha_exp[stoplineleg];
+    SLL stoplineleg;
+    stoplineleg.stop = stop;
+    stoplineleg.line = line;
+    stoplineleg.leg = leg;
+    ivtt_alpha_exp[stoplineleg] = alpha;
+}
+
+double Passenger::get_ivtt_alpha_exp(Busstop* stop, Busline* line, Busstop* leg)
+{
+    SLL stoplineleg;
+    stoplineleg.stop = stop;
+    stoplineleg.line = line;
+    stoplineleg.leg = leg;
+    if (ivtt_alpha_exp.count(stoplineleg) != 0)
+        return ivtt_alpha_exp[stoplineleg];
+    else
+        return 0.0;
+}
+
+void Passenger::set_ivtt_alpha_exp_crowding(Busstop* stop, Busline* line, Busstop* leg, double alpha)
+{
+    SLL stoplineleg;
+    stoplineleg.stop = stop;
+    stoplineleg.line = line;
+    stoplineleg.leg = leg;
+    ivtt_alpha_exp_crowding[stoplineleg] = alpha;
+}
+double Passenger::get_ivtt_alpha_exp_crowding(Busstop* stop, Busline* line, Busstop* leg)
+{
+    SLL stoplineleg;
+    stoplineleg.stop = stop;
+    stoplineleg.line = line;
+    stoplineleg.leg = leg;
+
+    if (ivtt_alpha_exp_crowding.count(stoplineleg) != 0)
+        return ivtt_alpha_exp_crowding[stoplineleg];
+    else
+        return 0.0;
+}
+
+void Passenger::set_ivtt_acc_exp(Busstop* stop, Busline* line, Busstop* leg, double ivt_acc_exp)
+{
+    SLL stoplineleg;
+    stoplineleg.stop = stop;
+    stoplineleg.line = line;
+    stoplineleg.leg = leg;
+    ivtt_acc_exp[stoplineleg] = ivt_acc_exp;
+}
+double Passenger::get_ivtt_acc_exp(Busstop* stop, Busline* line, Busstop* leg)
+{
+    SLL stoplineleg;
+    stoplineleg.stop = stop;
+    stoplineleg.line = line;
+    stoplineleg.leg = leg;
+
+	if(ivtt_acc_exp.count(stoplineleg) != 0)
+        return ivtt_acc_exp[stoplineleg];
+	else
+		return 0.0;
 }
 
 bool Passenger::any_previous_exp_ivtt (Busstop* stop, Busline* line, Busstop* leg)
@@ -697,7 +761,7 @@ void Passenger::record_waiting_experience(Bustrip* arriving_bus, double time)
 	{
 		Busstop* curr_stop = OD_stop->get_origin();
 		bool left_behind_before = (!empty_denied_boarding()) && (curr_stop->get_id() == get_last_denied_boarding_stop_id());
-		double experienced_WT;
+		double wt_exp;
 		if (left_behind_before)
 		{
 			double first_bus_arrival_time = waiting_time_due_denied_boarding.back().second;
@@ -708,29 +772,29 @@ void Passenger::record_waiting_experience(Bustrip* arriving_bus, double time)
 					break;
 				first_bus_arrival_time = denied_boarding->second;
 			}*/
-			experienced_WT = (first_bus_arrival_time - get_arrival_time_at_stop()) + 3.5 * (time - first_bus_arrival_time);
+			wt_exp = (first_bus_arrival_time - get_arrival_time_at_stop()) + 3.5 * (time - first_bus_arrival_time);
 		}
 		else
 		{
-			experienced_WT = time - get_arrival_time_at_stop();
+			wt_exp = time - get_arrival_time_at_stop();
 		}
 		
 		ODstops* passenger_od = original_origin->get_stop_od_as_origin_per_stop(OD_stop->get_destination());
 		// @note AWT_first_leg_boarding was always 0.0 in seems, not actually recorded as a waiting time projection, instead the anticipated waiting time is recalculated in 3 different places:
 		// 1. Passenger level, 2. OD stops level, 3. Day2Day level
 		passenger_od->record_waiting_experience(
-			this, 
-			arriving_bus, 
-			time, 
-			experienced_WT, 
-			curr_stop->get_rti(), 
-			this->get_memory_projected_RTI(curr_stop,arriving_bus->get_line()), 
-			this->get_anticipated_waiting_time(curr_stop,arriving_bus->get_line())*60, //convert back to seconds 
-			static_cast<int>(waiting_time_due_denied_boarding.size())
-		);
+            this, 
+            arriving_bus, 
+            time, 
+            wt_exp, 
+            curr_stop->get_rti(), 
+            this->get_memory_projected_RTI(curr_stop,arriving_bus->get_line()), 
+            this->get_anticipated_waiting_time(curr_stop,arriving_bus->get_line())*60, //convert back to seconds 
+            static_cast<int>(waiting_time_due_denied_boarding.size())
+        );
 
-		//passenger_od->record_waiting_experience(this, arriving_bus, time, experienced_WT, curr_stop->get_rti(), this->get_memory_projected_RTI(curr_stop,arriving_bus->get_line()), AWT_first_leg_boarding, static_cast<int>(waiting_time_due_denied_boarding.size()));
-		//OD_stop->record_waiting_experience(this, arriving_bus, time, experienced_WT, curr_stop->get_rti(), this->get_memory_projected_RTI(curr_stop,arriving_bus->get_line()), AWT_first_leg_boarding, waiting_time_due_denied_boarding.size());
+		//passenger_od->record_waiting_experience(this, arriving_bus, time, wt_exp, curr_stop->get_rti(), this->get_memory_projected_RTI(curr_stop,arriving_bus->get_line()), AWT_first_leg_boarding, static_cast<int>(waiting_time_due_denied_boarding.size()));
+		//OD_stop->record_waiting_experience(this, arriving_bus, time, wt_exp, curr_stop->get_rti(), this->get_memory_projected_RTI(curr_stop,arriving_bus->get_line()), AWT_first_leg_boarding, waiting_time_due_denied_boarding.size());
 		//left_behind_before = false;
 	}
 }
@@ -1186,6 +1250,7 @@ TransitModeType Passenger::make_transitmode_decision(Busstop* pickup_stop, doubl
 	if(!theParameters->drt)
 		assert(chosen_mode != TransitModeType::Flexible);
 
+	//DEBUG_MSG("\t Chose mode : " + TransitModeType_to_QString(chosen_mode).toStdString());
 	increment_mode_choice_counter(chosen_mode);
 
 	return chosen_mode;

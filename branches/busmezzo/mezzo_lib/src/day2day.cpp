@@ -306,9 +306,9 @@ map<ODSL, Travel_time>& Day2day::process_wt_replication (vector<ODstops*>& odsto
 				int dest = exp_iter->destination_stop;
 				int stop = exp_iter->stop_id;
 				int line = exp_iter->line_id;
-				wt.tt[PK] = exp_iter->expected_WT_PK;
-				wt.tt[RTI] = exp_iter->projected_WT_RTI;
-				wt.tt[EXP] = exp_iter->experienced_WT;
+				wt.tt[PK] = exp_iter->wt_pk;
+				wt.tt[RTI] = exp_iter->wt_rti;
+				wt.tt[EXP] = exp_iter->wt_exp;
 
 				if (aggregate)
 				{
@@ -337,7 +337,7 @@ map<ODSL, Travel_time>& Day2day::process_wt_replication (vector<ODstops*>& odsto
 
 				//calculate anticipated waiting time and add to experience for this replication
 				calc_anticipated_wt(wt, is_flexible_leg);
-
+				
 				pair<const ODSL, Travel_time> wt_row (wt_odsl, wt);
 				wt_rep += wt_row; //if existing ODSL is found, data is added, else a new row is inserted, @note this increments the 'counter' of the row. 
 
@@ -395,9 +395,9 @@ map<ODSLL, Travel_time>& Day2day::process_ivt_replication (vector<ODstops*>& ods
 				int stop = exp_iter->stop_id;
 				int line = exp_iter->line_id;
 				int leg = exp_iter->leg_id;
-				ivt.tt[PK] = exp_iter->expected_ivt;
-				ivt.tt[EXP] = exp_iter->experienced_ivt.first;
-				ivt.tt[crowding] = exp_iter->experienced_ivt.second;
+				ivt.tt[PK] = exp_iter->ivt_pk;
+				ivt.tt[EXP] = exp_iter->ivt_exp.first;
+				ivt.tt[crowding] = exp_iter->ivt_exp.second;
 
 				if (aggregate)
 				{
@@ -504,7 +504,7 @@ void Day2day::write_wt_alphas_header(string filename)
 	ofstream ofs(filename.c_str(),ios_base::app);
     ofs << "day\t" << "origin\t" << "destination\t" << "stop\t" << "line\t" << "wt_alpha_exp\t" << "wt_alpha_pk\t" << "wt_alpha_rti\t" << "last_wt_exp\t" << "accumulated_wt_exp\t" << "kapa_AWT" << endl;
 }
-void Day2day::write_wt_alphas(string filename, const map<ODSL, Travel_time>& wt_records)
+void Day2day::write_wt_alphas(string filename, const map<ODSL, Travel_time>& wt_records, int day)
 {
     ofstream ofs(filename.c_str(), ios_base::app);
     ofs << std::fixed;
@@ -513,7 +513,7 @@ void Day2day::write_wt_alphas(string filename, const map<ODSL, Travel_time>& wt_
     {
         ODSL odsl = wt_rec.first;
         Travel_time tt = wt_rec.second;
-        ofs << tt.day << "\t" << odsl.orig << "\t" << odsl.dest << "\t" << odsl.stop << "\t" << odsl.line << "\t";
+        ofs << day << "\t" << odsl.orig << "\t" << odsl.dest << "\t" << odsl.stop << "\t" << odsl.line << "\t";
         ofs << tt.alpha[EXP] << "\t" << tt.alpha[PK] << "\t" << tt.alpha[RTI] << "\t" << tt.tt[EXP] << "\t" << tt.tt[anticip_EXP] << "\t" << tt.temp_kapa_ATT << endl;
     }
 }
@@ -522,7 +522,7 @@ void Day2day::write_ivt_alphas_header(string filename)
 	ofstream ofs(filename.c_str(),ios_base::app);
     ofs << "day\t" << "origin\t" << "destination\t" << "stop\t" << "line\t"  << "leg\t" << "ivt_alpha_exp\t" << "ivt_alpha_pk\t" << "ivt_alpha_crowding\t" << "last_ivt_exp\t" << "accumulated_ivt_exp\t" << "kapa_AIVT" << endl;
 }
-void Day2day::write_ivt_alphas(string filename, const map<ODSLL, Travel_time>& ivt_records)
+void Day2day::write_ivt_alphas(string filename, const map<ODSLL, Travel_time>& ivt_records, int day)
 {
     ofstream ofs(filename.c_str(), ios_base::app);
     ofs << std::fixed;
@@ -531,7 +531,7 @@ void Day2day::write_ivt_alphas(string filename, const map<ODSLL, Travel_time>& i
     {
         ODSLL odsll = ivt_rec.first;
         Travel_time tt = ivt_rec.second;
-        ofs << tt.day << "\t" << odsll.orig << "\t" << odsll.dest << "\t" << odsll.stop << "\t" << odsll.line << "\t" << odsll.leg << "\t";
+        ofs << day << "\t" << odsll.orig << "\t" << odsll.dest << "\t" << odsll.stop << "\t" << odsll.line << "\t" << odsll.leg << "\t";
 	    ofs << tt.alpha[EXP] << "\t" << tt.alpha[PK] << "\t" << tt.alpha[crowding] << "\t" << tt.tt[EXP] << "\t" << tt.tt[anticip_EXP] << "\t" << tt.temp_kapa_ATT << endl;
     }
 
@@ -618,12 +618,12 @@ void Day2day::calc_anticipated_ivt (Travel_time& row, bool is_flexible_leg)
 	if(is_flexible_leg) assert(theParameters->drt);
 
 	float& ivtPK = row.tt[PK];
-	float& ivtEXP = row.tt[EXP];
-	float& aivtEXP = row.tt[anticip_EXP];
+	float& ivtEXP = row.tt[EXP]; // most recent experience
+	float& aivtEXP = row.tt[anticip_EXP]; // accumulated experience
 	float& alphaEXP = row.alpha[EXP];
 	float& alphaPK = row.alpha[PK];
-	float& aivtG = row.tt[anticip];
-	float& crowdingEXP = row.tt[crowding];
+	float& aivtG = row.tt[anticip]; // anticipated experience based on combination of information sources
+	float& crowdingEXP = row.tt[crowding]; // crowding factor experienced
 	float& acrowdingEXP = row.alpha[crowding];
 
 	//calc aivt

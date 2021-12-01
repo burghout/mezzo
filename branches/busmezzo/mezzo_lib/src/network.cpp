@@ -5949,6 +5949,7 @@ bool Network::read_OD_IVTT (istream& in)
     ODstops* od_stop = bs_o->get_stop_od_as_origin_per_stop(bs_d);
     od_stop->set_anticipated_ivtt(bs_s, bl, bs_l, anticipated_in_vehicle_time);
     od_stop->set_ivtt_alpha_exp(bs_s, bl, bs_l, alpha_exp);
+    //@todo add reader for other ivtt day2day values as well, ivtt_alpha_exp_crowding, ivtt_acc_exp etc..
     in >> bracket;
     if (bracket != '}')
     {
@@ -5966,7 +5967,10 @@ bool Network::read_OD_IVTT (pair<const ODSLL, Travel_time>& ivt_row)
     const int& line_id = ivt_row.first.line;
     const int& leg_id = ivt_row.first.leg;
     double anticipated_in_vehicle_time = ivt_row.second.tt[anticip];
-    // double alpha_exp = ivt_row.second.alpha[EXP];
+    
+    double alpha_exp = ivt_row.second.alpha[EXP];
+    double alpha_exp_crowding = ivt_row.second.alpha[crowding];
+    double ivt_acc_exp = ivt_row.second.tt[anticip_EXP];
 
     Busstop* bs_o = (*(find_if(busstops.begin(), busstops.end(), compare <Busstop> (origin_stop_id) )));
     Busstop* bs_d = (*(find_if(busstops.begin(), busstops.end(), compare <Busstop> (destination_stop_id) )));
@@ -5975,6 +5979,9 @@ bool Network::read_OD_IVTT (pair<const ODSLL, Travel_time>& ivt_row)
     Busstop* bs_l = (*(find_if(busstops.begin(), busstops.end(), compare <Busstop> (leg_id) )));
     ODstops* od_stop = bs_o->get_stop_od_as_origin_per_stop(bs_d);
     od_stop->set_anticipated_ivtt(bs_s, bl, bs_l, anticipated_in_vehicle_time);
+    od_stop->set_ivtt_alpha_exp(bs_s, bl, bs_l, alpha_exp);
+    od_stop->set_ivtt_alpha_exp_crowding(bs_s, bl, bs_l, alpha_exp_crowding);
+    od_stop->set_ivtt_acc_exp(bs_s, bl, bs_l,ivt_acc_exp);
 
     return true;
 }
@@ -5988,7 +5995,10 @@ bool Network::read_pass_IVTT (pair<const ODSLL, Travel_time>& ivt_row)
     const int& line_id = ivt_row.first.line;
     const int& leg_id = ivt_row.first.leg;
     double anticipated_in_vehicle_time = ivt_row.second.tt[anticip];
-    // double alpha_exp = ivt_row.second.alpha[EXP];
+    
+    double alpha_exp = ivt_row.second.alpha[EXP];
+    double alpha_exp_crowding = ivt_row.second.alpha[crowding];
+    double ivt_acc_exp = ivt_row.second.tt[anticip_EXP];
 
     Busstop* bs_o = (*(find_if(busstops.begin(), busstops.end(), compare <Busstop> (origin_stop_id) )));
     Busstop* bs_d = (*(find_if(busstops.begin(), busstops.end(), compare <Busstop> (destination_stop_id) )));
@@ -6000,6 +6010,9 @@ bool Network::read_pass_IVTT (pair<const ODSLL, Travel_time>& ivt_row)
     vector<Passenger*> passengers = od_stop->get_passengers_during_simulation();
     Passenger* p = *find_if(passengers.begin(), passengers.end(), compare<Passenger>(pass_id));
     p->set_anticipated_ivtt(bs_s, bl, bs_l, anticipated_in_vehicle_time);
+    p->set_ivtt_alpha_exp(bs_s, bl, bs_l, alpha_exp);
+    p->set_ivtt_alpha_exp_crowding(bs_s, bl, bs_l, alpha_exp_crowding);
+    p->set_ivtt_acc_exp(bs_s, bl, bs_l,ivt_acc_exp);
 
     return true;
 }
@@ -7286,11 +7299,15 @@ bool Network::write_day2day_passenger_waiting_experience_header(string filename)
         << "stop_id" << '\t'
         << "boarding_time" << '\t'
         << "generation_time" << '\t'
-        << "expected_wt_pk" << '\t'
+        << "wt_pk" << '\t'
         << "rti_level_available" << '\t'
-        << "projected_wt_rti" << '\t'
-        << "experienced_wt" << '\t'
-        << "anticipated_wt" << '\t'
+        << "wt_rti" << '\t'
+        << "wt_exp" << '\t'
+        << "wt_acc_exp" << '\t'
+        << "wt_anticip" << '\t'
+        << "wt_alpha_pk" << '\t'
+        << "wt_alpha_rti" << '\t'
+        << "wt_alpha_exp" << '\t'
         << "nr_missed" << endl;
     return true;
 }
@@ -7323,9 +7340,16 @@ bool Network::write_day2day_passenger_onboard_experience_header(string filename)
         << "trip_id" << '\t'
         << "stop_id" << '\t'
         << "leg_id" << '\t'
-        << "expected_ivt" << '\t'
-        << "experienced_ivt" << '\t'
-        << "experienced_ivt_crowding" << endl;
+        << "ivt_pk" << '\t'
+        << "ivt_exp" << '\t'
+        << "ivt_exp_weighted" << '\t'
+        << "crowding_exp" << '\t'
+        << "ivt_alpha_crowding_exp" << '\t'
+        << "ivt_acc_exp" << '\t'
+        << "ivt_anticip" << '\t'
+        << "ivt_alpha_exp" << '\t'
+        << "ivt_alpha_pk" << '\t'
+        << endl;
     return true;
 }
 bool Network::write_day2day_passenger_onboard_experience(string filename)
@@ -10162,8 +10186,8 @@ double Network::step(double timestep)
                     write_day2day_passenger_transitmode_header(workingdir + "o_fwf_day2day_passenger_transitmode.dat");
                 }
             }
-            Day2day::write_wt_alphas(workingdir + "o_fwf_wt_alphas.dat", wt_rec);
-            Day2day::write_ivt_alphas(workingdir + "o_fwf_ivt_alphas.dat", ivt_rec);
+            Day2day::write_wt_alphas(workingdir + "o_fwf_wt_alphas.dat", wt_rec, day);
+            Day2day::write_ivt_alphas(workingdir + "o_fwf_ivt_alphas.dat", ivt_rec, day);
 
             write_day2day_modesplit(workingdir + "o_fwf_day2day_modesplit.dat"); // write modesplit for the current day
             write_day2day_boardings(workingdir + "o_fwf_day2day_boardings.dat"); // write total boardings per line for the current day

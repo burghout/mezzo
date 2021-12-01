@@ -137,7 +137,12 @@ public:
     bool any_previous_exp_ODSL(Busstop* stop, Busline* line);
     void set_anticipated_ivtt(Busstop* stop, Busline* line, Busstop* leg, double anticipated_ivt);
     double get_anticipated_ivtt(Busstop* stop, Busline* line, Busstop* leg);
+    void set_ivtt_alpha_exp(Busstop* stop, Busline* line, Busstop* leg, double alpha);
     double get_ivtt_alpha_exp(Busstop* stop, Busline* line, Busstop* leg);
+    void set_ivtt_alpha_exp_crowding(Busstop* stop, Busline* line, Busstop* leg, double alpha);
+    double get_ivtt_alpha_exp_crowding(Busstop* stop, Busline* line, Busstop* leg);
+    void set_ivtt_acc_exp(Busstop* stop, Busline* line, Busstop* leg, double ivt_acc_exp);
+    double get_ivtt_acc_exp(Busstop* stop, Busline* line, Busstop* leg);
     bool any_previous_exp_ivtt(Busstop* stop, Busline* line, Busstop* leg);
 
     double calc_total_waiting_time();
@@ -233,6 +238,8 @@ protected:
     map<pair<Busstop*, Busline*>, double, pair_less<pair <Busstop*, Busline*> >> alpha_exp;
     map<SLL, double> anticipated_ivtt;
     map<SLL, double> ivtt_alpha_exp;
+    map<SLL, double> ivtt_alpha_exp_crowding;
+    map<SLL, double> ivtt_acc_exp;
 
     // relevant only for OD in terms od zones
     ODzone* o_zone = nullptr;

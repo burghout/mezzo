@@ -242,60 +242,75 @@ public:
 class Pass_waiting_experience // container object holding output data for passenger waiting experience
 {
 public:
-	Pass_waiting_experience(
-		int pass_id_,
-		int original_origin_,
-		int destination_stop_,
-		int line_id_,
-		int trip_id_, 
-		int stop_id_, 
-		double time_, 
-		double generation_time_,
-		double expected_WT_PK_, 
-		bool RTI_level_available_, 
-		double projected_WT_RTI_, 
-		double experienced_WT_, 
-		double AWT_, 
-		int nr_missed_
-	): pass_id(pass_id_),original_origin(original_origin_),destination_stop(destination_stop_),line_id(line_id_),trip_id(trip_id_), stop_id(stop_id_),time(time_),generation_time(generation_time_),expected_WT_PK(expected_WT_PK_),RTI_level_available(RTI_level_available_),projected_WT_RTI(projected_WT_RTI_),experienced_WT(experienced_WT_),AWT(AWT_),nr_missed(nr_missed_) {}
-	virtual ~Pass_waiting_experience(); //!< destructor
+    Pass_waiting_experience(
+        int pass_id_,
+        int original_origin_,
+        int destination_stop_,
+        int line_id_,
+        int trip_id_,
+        int stop_id_,
+        double time_,
+        double generation_time_,
+        double wt_pk_,
+        bool RTI_level_available_,
+        double wt_rti_,
+        double wt_exp_,
+        double wt_acc_exp_,
+        double wt_anticip_,
+        double alpha_pk_,
+        double alpha_rti_,
+        double alpha_exp_,
+        int nr_missed_
+    ) : pass_id(pass_id_), original_origin(original_origin_), destination_stop(destination_stop_),
+        line_id(line_id_), trip_id(trip_id_), stop_id(stop_id_), time(time_), generation_time(generation_time_),
+        wt_pk(wt_pk_), RTI_level_available(RTI_level_available_), wt_rti(wt_rti_), wt_exp(wt_exp_), wt_acc_exp(wt_acc_exp_), wt_anticip(wt_anticip_),
+        alpha_pk(alpha_pk_), alpha_rti(alpha_rti_), alpha_exp(alpha_exp_), nr_missed(nr_missed_) {}
+    virtual ~Pass_waiting_experience(); //!< destructor
 	
 	void write(ostream& out){
 		out << std::fixed;
 		out.precision(5);
 		out << pass_id << '\t' 
-			<< original_origin << '\t' 
-			<< destination_stop << '\t' 
-			<< line_id << '\t'
-			<< trip_id << '\t'
-			<< stop_id<< '\t'
-	        << time << '\t'
-			<< generation_time << '\t' 
-			<< expected_WT_PK << '\t'
-		    << RTI_level_available << '\t'
-		    << projected_WT_RTI << '\t'
-			<< experienced_WT <<'\t'
-			<< AWT <<'\t'
-		    << nr_missed <<'\t'
-			<< endl;
+            << original_origin << '\t'
+            << destination_stop << '\t'
+            << line_id << '\t'
+            << trip_id << '\t'
+            << stop_id << '\t'
+            << time << '\t'
+            << generation_time << '\t'
+            << wt_pk << '\t'
+            << RTI_level_available << '\t'
+            << wt_rti << '\t'
+            << wt_exp << '\t'
+            << wt_acc_exp << '\t'
+            << wt_anticip << '\t'
+            << alpha_pk << '\t'
+            << alpha_rti << '\t'
+            << alpha_exp << '\t'
+            << nr_missed << '\t'
+            << endl;
 	}
 	
-	void reset(){
-		pass_id = 0; 
-		original_origin = 0; 
-		destination_stop = 0; 
-		line_id = 0; 
-		trip_id = 0; 
-		stop_id = 0; 
-		time = 0;
-		generation_time = 0; 
-		expected_WT_PK = 0; 
-		RTI_level_available = 0; 
-		projected_WT_RTI = 0; 
-		experienced_WT = 0; 
-		AWT = 0;
-		nr_missed = 0;
-	}
+    void reset() {
+        pass_id = 0;
+        original_origin = 0;
+        destination_stop = 0;
+        line_id = 0;
+        trip_id = 0;
+        stop_id = 0;
+        time = 0.0;
+        generation_time = 0.0;
+        wt_pk = 0.0;
+        RTI_level_available = false;
+        wt_rti = 0.0;
+        wt_exp = 0.0;
+        wt_acc_exp = 0.0;
+        wt_anticip = 0.0;
+        alpha_pk = 0.0;
+        alpha_rti = 0.0;
+        alpha_exp = 0.0;
+        nr_missed = 0;
+    }
 	
 	int pass_id;
 	int original_origin;
@@ -305,11 +320,15 @@ public:
 	int stop_id;
 	double time;
 	double generation_time;
-	double expected_WT_PK;
+	double wt_pk; // anticipated waiting time based on prior knowledge (static information source e.g. schedule or exploration)
 	bool RTI_level_available;
-	double projected_WT_RTI;
-	double experienced_WT;
-	double AWT;
+	double wt_rti; // anticipated waiting time based on real-time information
+	double wt_exp; // actual waiting time experienced
+	double wt_acc_exp; // anticipated waiting time based on accumulated experience
+	double wt_anticip; // anticipated waiting time based on anticip_exp, rti, and pk information sources combined with credibility weights
+	double alpha_pk; // credibility coeff of prior knowledge
+	double alpha_rti; // credibility coeff of real-time information
+	double alpha_exp; // credibility coeff of accumulated experience
 	int nr_missed; //Nr of missed buses due to overcrowding
 };
 
@@ -323,10 +342,17 @@ public:
 		int line_id_, 
 		int trip_id_, 
 		int stop_id_, 
-		int leg_id_, 
-		double expected_ivt_, 
-		pair<double, double> experienced_ivt_
-	): pass_id(pass_id_),original_origin(original_origin_),destination_stop(destination_stop_),line_id(line_id_), trip_id(trip_id_), stop_id(stop_id_), leg_id(leg_id_), expected_ivt(expected_ivt_), experienced_ivt(experienced_ivt_) {}
+        int leg_id_,
+        double ivt_pk_,
+        pair<double, double> ivt_exp_,
+        double ivt_acc_exp_,
+        double ivt_anticip_,
+        double ivt_alpha_exp_crowding_,
+        double ivt_alpha_exp_,
+        double ivt_alpha_pk_
+	): pass_id(pass_id_),original_origin(original_origin_),destination_stop(destination_stop_),line_id(line_id_), trip_id(trip_id_), stop_id(stop_id_), leg_id(leg_id_),
+    ivt_pk(ivt_pk_), ivt_exp(ivt_exp_), ivt_acc_exp(ivt_acc_exp_), ivt_anticip(ivt_anticip_),
+    ivt_alpha_exp_crowding(ivt_alpha_exp_crowding_), ivt_alpha_exp(ivt_alpha_exp_), ivt_alpha_pk(ivt_alpha_pk_) {}
 	
 	void write (ostream& out){
 		out << std::fixed;
@@ -338,10 +364,17 @@ public:
 			<< trip_id << '\t' 
 			<< stop_id << '\t' 
 			<< leg_id << '\t'
-	        << expected_ivt << '\t' 
-			<< experienced_ivt.first << '\t';
+	        << ivt_pk << '\t' 
+			<< ivt_exp.first << '\t'
+		    << ivt_exp.first*ivt_exp.second << '\t';
 		out.precision(2);
-		out	<< experienced_ivt.second 
+		out	<< ivt_exp.second << '\t'
+		    << ivt_alpha_exp_crowding << '\t';
+		out.precision(5);
+		out << ivt_acc_exp << '\t'
+		    << ivt_anticip << '\t'
+		    << ivt_alpha_exp << '\t'
+		    << ivt_alpha_pk
 			<< endl;
 	}
 	
@@ -352,8 +385,14 @@ public:
 	int trip_id;
 	int stop_id;
 	int leg_id;
-	double expected_ivt;
-	pair<double, double> experienced_ivt;
+	double ivt_pk; // ivt based on static prior knowledge (e.g. schedules/exploration)
+	pair<double, double> ivt_exp; // first = experienced ivt, second = crowding coefficient
+	double ivt_acc_exp;
+	double ivt_anticip;
+    double ivt_alpha_exp_crowding;
+    double ivt_alpha_exp;
+	double ivt_alpha_pk;
+	
 	double crowding = 0;
 };
 
@@ -447,8 +486,8 @@ public:
     void record_passenger_connection_decision (Passenger* pass, double time, Busstop* chosen_alighting_stop, map<Busstop*,pair<double,double> > connecting_MNL_);
 	void record_passenger_transitmode_decision(Passenger* pass, double time, Busstop* pickup_stop, TransitModeType chosen_mode, map<TransitModeType, pair<double, double>> mode_MNL_);
 	void record_passenger_dropoff_decision(Passenger* pass, double time, Busstop* pickup_stop, Busstop* chosen_dropoff_stop, map<Busstop*, pair<double, double>> dropoff_MNL_);
-	void record_waiting_experience (Passenger* pass, Bustrip* trip, double time, double experienced_WT, int level_of_rti_upon_decision, double projected_RTI, double AWT, int nr_missed); // !< creates a log-file for a decision and related waiting time components
-	void record_onboard_experience(Passenger* pass, Bustrip* trip, Busstop* stop, pair<double,double> riding_coeff);
+	void record_waiting_experience (Passenger* pass, Bustrip* trip, double time, double wt_exp, int level_of_rti_upon_decision, double wt_rti, double wt_acc_exp, int nr_missed); // !< creates a log-file for a decision and related waiting time components
+	void record_onboard_experience(Passenger* pass, Bustrip* trip, Busstop* stop, pair<double,double> ivt_exp);
 	void write_boarding_output(ostream & out, Passenger* pass);
 	void write_alighting_output(ostream & out, Passenger* pass);
 	void write_connection_output(ostream & out, Passenger* pass);
@@ -465,12 +504,16 @@ public:
 	void set_anticipated_ivtt (Busstop* stop, Busline* line, Busstop* leg, double anticipated_IVTT);
 	void set_alpha_RTI (Busstop* stop, Busline* line, double alpha); 
 	void set_alpha_exp (Busstop* stop, Busline* line, double alpha); 
-	void set_ivtt_alpha_exp (Busstop* stop, Busline* line, Busstop* leg, double alpha); 
+	void set_ivtt_alpha_exp (Busstop* stop, Busline* line, Busstop* leg, double alpha);
+    void set_ivtt_alpha_exp_crowding(Busstop* stop, Busline* line, Busstop* leg, double alpha);
+    void set_ivtt_acc_exp(Busstop* stop, Busline* line, Busstop* leg, double ivt_acc_exp);
     map<pair<Busstop*, Busline*>,double, pair_less<pair <Busstop*, Busline*> >> get_anticipated_waiting_time () {return anticipated_waiting_time;}
     map<pair<Busstop*, Busline*>,double, pair_less<pair <Busstop*, Busline*> >> get_alpha_RTI () {return alpha_RTI;}
     map<pair<Busstop*, Busline*>,double, pair_less<pair <Busstop*, Busline*> >> get_alpha_exp () {return alpha_exp;}
-	map<SLL, double> get_anticipated_ivtt () {return anticipated_ivtt;}
-	map<SLL, double> get_ivtt_alpha_exp () {return ivtt_alpha_exp;}
+    map<SLL, double> get_anticipated_ivtt() { return anticipated_ivtt; }
+    map<SLL, double> get_ivtt_alpha_exp() { return ivtt_alpha_exp; }
+    map<SLL, double> get_ivtt_alpha_exp_crowding() { return ivtt_alpha_exp_crowding; }
+    map<SLL, double> get_ivtt_acc_exp() { return ivtt_acc_exp; }
 
 protected:
 	Busstop* origin_stop = nullptr;
@@ -533,6 +576,8 @@ protected:
     map<pair<Busstop*, Busline*>,double,pair_less<pair <Busstop*, Busline*> >> alpha_exp;
 	map<SLL,double> anticipated_ivtt;
 	map<SLL,double> ivtt_alpha_exp;
+	map<SLL,double> ivtt_alpha_exp_crowding;
+	map<SLL,double> ivtt_acc_exp;
 
 };
 

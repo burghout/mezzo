@@ -106,6 +106,23 @@ void ODstops::set_ivtt_alpha_exp (Busstop* stop, Busline* line, Busstop* leg, do
 	ivtt_alpha_exp[stoplineleg] = alpha;
 }
 
+void ODstops::set_ivtt_alpha_exp_crowding (Busstop* stop, Busline* line, Busstop* leg, double alpha)
+{
+	SLL stoplineleg;
+	stoplineleg.stop = stop;
+	stoplineleg.line = line;
+	stoplineleg.leg = leg;
+	ivtt_alpha_exp_crowding[stoplineleg] = alpha;
+}
+void ODstops::set_ivtt_acc_exp (Busstop* stop, Busline* line, Busstop* leg, double ivt_acc_exp)
+{
+	SLL stoplineleg;
+	stoplineleg.stop = stop;
+	stoplineleg.line = line;
+	stoplineleg.leg = leg;
+	ivtt_acc_exp[stoplineleg] = ivt_acc_exp;
+}
+
 list<Pass_transitmode_decision> ODstops::get_pass_transitmode_decisions(Passenger* pass)
 {
 	assert(pass);
@@ -195,6 +212,8 @@ void ODstops::delete_passengers()
 	alpha_exp.clear();
 	anticipated_ivtt.clear();
 	ivtt_alpha_exp.clear();
+	ivtt_alpha_exp_crowding.clear();
+	ivtt_acc_exp.clear();
 	for (vector <Passenger*>::iterator iter_pass = passengers_during_simulation.begin(); iter_pass < passengers_during_simulation.end(); iter_pass++)
 	{
 		delete *iter_pass;
@@ -827,37 +846,50 @@ void ODstops::record_passenger_dropoff_decision(Passenger* pass, double time, Bu
 	output_pass_dropoff_decision[pass].push_back(Pass_dropoff_decision(pass->get_id(), pass->get_original_origin()->get_id(), pass->get_OD_stop()->get_destination()->get_id(), pickup_stop->get_id(), time, pass->get_start_time(), chosen_dropoff_stop->get_id(), dropoff_MNL_));
 }
 
-void ODstops::record_waiting_experience(Passenger* pass, Bustrip* trip, double time, double experienced_WT, int level_of_rti_upon_decision, double projected_RTI, double AWT, int nr_missed)  //  add to output structure action info
+void ODstops::record_waiting_experience(Passenger* pass, Bustrip* trip, double time, double wt_exp, int level_of_rti_upon_decision, double wt_rti, double wt_acc_exp, int nr_missed)  //  add to output structure action info
 {
-    double expected_WT_PK = 0.0;
+    double wt_pk = 0.0;
     if (theParameters->drt && trip->is_flex_trip())
-        expected_WT_PK = trip->get_line()->get_CC()->calc_exploration_wt(); // in seconds, @todo we are using 'PK' in the implementation as a placeholder for DRT exploration anticipated LoS
+        wt_pk = trip->get_line()->get_CC()->calc_exploration_wt(); // in seconds, @todo we are using 'PK' in the implementation as a placeholder for DRT exploration anticipated LoS
     else
-        expected_WT_PK = (trip->get_line()->calc_curr_line_headway()) / 2; // in seconds, @note for fixed pk wt is always half the scheduled headway
-    //double experienced_WT = time - pass->get_arrival_time_at_stop();
+        wt_pk = (trip->get_line()->calc_curr_line_headway()) / 2; // in seconds, @note for fixed pk wt is always half the scheduled headway
+    //double wt_exp = time - pass->get_arrival_time_at_stop();
+    //Calculate and save whatever the anticipated waiting time was based on all information sources and current trust coeffs
+    Busstop* stop = pass->get_OD_stop()->get_origin();
+    Busline* line = trip->get_line();
+
+    double aRTI = pass->get_alpha_RTI(stop, line);
+    double aEXP = pass->get_alpha_exp(stop, line);
+    double aPK = 1.0 - aRTI - aEXP;
+    double wt_anticip = aEXP * wt_acc_exp + aPK * wt_pk + aRTI * wt_rti; // should be in seconds
+
     output_pass_waiting_experience[pass].push_back(
-		Pass_waiting_experience(
-			pass->get_id(), 
-			pass->get_original_origin()->get_id(), 
-			pass->get_OD_stop()->get_destination()->get_id(), 
-			trip->get_line()->get_id(), 
-			trip->get_id(), 
-			pass->get_OD_stop()->get_origin()->get_id(), 
-			time, 
-			pass->get_start_time(), 
-			expected_WT_PK, 
-			level_of_rti_upon_decision, 
-			projected_RTI, 
-			experienced_WT, 
-			AWT, 
-			nr_missed
-		)
-	);
+        Pass_waiting_experience(
+            pass->get_id(),
+            pass->get_original_origin()->get_id(),
+            pass->get_OD_stop()->get_destination()->get_id(),
+            line->get_id(),
+            trip->get_id(),
+            stop->get_id(),
+            time,
+            pass->get_start_time(),
+            wt_pk,
+            level_of_rti_upon_decision,
+            wt_rti,
+            wt_exp,
+            wt_acc_exp,
+            wt_anticip,
+            aPK,
+            aRTI,
+            aEXP,
+            nr_missed
+        )
+    );
 }
 
-void ODstops::record_onboard_experience(Passenger* pass, Bustrip* trip, Busstop* stop, pair<double,double> riding_coeff)
+void ODstops::record_onboard_experience(Passenger* pass, Bustrip* trip, Busstop* stop, pair<double,double> ivt_exp)
 {
-	double expected_ivt = 0.0;
+	double ivt_pk = 0.0;
 	double first_stop_time;
 	double second_stop_time;
 	for (vector<Visit_stop*>::iterator stop_v = trip->stops.begin(); stop_v < trip->stops.end(); stop_v++)
@@ -865,13 +897,45 @@ void ODstops::record_onboard_experience(Passenger* pass, Bustrip* trip, Busstop*
 			if ((*stop_v)->first->get_id() == stop->get_id())
 			{
 				second_stop_time = (*stop_v)->second;
-				expected_ivt = second_stop_time - first_stop_time; //when the right stop is found, the visit time is substracted by the visit time of the previous stop
+				ivt_pk = second_stop_time - first_stop_time; //when the right stop is found, the visit time is substracted by the visit time of the previous stop
 				break;
 			}
 			first_stop_time = (*stop_v)->second;
 	}
-	//double experienced_ivt = riding_coeff.first*riding_coeff.second;
-	output_pass_onboard_experience[pass].push_back(Pass_onboard_experience(pass->get_id(), pass->get_original_origin()->get_id(), pass->get_OD_stop()->get_destination()->get_id(), trip->get_line()->get_id(), trip->get_id() , pass->get_OD_stop()->get_origin()->get_id(), stop->get_id(), expected_ivt, riding_coeff));
+	//double ivt_exp = riding_coeff.first*riding_coeff.second;
+
+    //Calculate and save whatever the anticipated waiting time was based on all information sources and current trust coeffs
+    Busstop* o_stop = pass->get_OD_stop()->get_origin();
+    Busline* line = trip->get_line();
+	double ivt_anticip = 0.0;
+	if(pass->any_previous_exp_ivtt(o_stop,line,stop)) // to mimic how anticipated ivtt is usually accessed
+        ivt_anticip = pass->get_anticipated_ivtt(o_stop, line, stop); //should be in seconds
+	else
+		ivt_anticip = ivt_pk;
+	
+    double aEXP = pass->get_ivtt_alpha_exp(o_stop, line, stop);
+    double aPK = 1.0 - aEXP;
+    double aCrowdEXP = pass->get_ivtt_alpha_exp_crowding(o_stop, line, stop);
+    double ivt_acc_exp = pass->get_ivtt_acc_exp(o_stop, line, stop);
+
+	output_pass_onboard_experience[pass].push_back(
+		Pass_onboard_experience(
+			pass->get_id(), 
+			pass->get_original_origin()->get_id(), 
+			pass->get_OD_stop()->get_destination()->get_id(), 
+			line->get_id(), 
+			trip->get_id() , 
+			o_stop->get_id(), 
+			stop->get_id(), 
+			ivt_pk, 
+			ivt_exp, //riding coeff = experienced ivt and associated crowding factor used to calculate it
+			ivt_acc_exp,
+			ivt_anticip,
+			aCrowdEXP,
+			aEXP,
+			aPK
+		)
+	);
 }
 
 void ODstops::write_boarding_output(ostream & out, Passenger* pass)
