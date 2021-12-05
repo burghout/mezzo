@@ -743,7 +743,12 @@ bool Passenger:: make_boarding_decision (Bustrip* arriving_bus, double time)
 	}
 	else
 	{
-		rejected_lines.push_back(arriving_bus->get_line()->get_id());
+		/* @todo not sure what 'rejected lines' is used for exactly in day2day. Can mess with utility calculations later for flex trips however
+		 * so for now only add fixed lines to rejected lines. A false boarding decision for a flexible transit users
+		 * currently just means the traveler did not board a trip that does not match the request they sent
+		*/
+		if(chosen_mode_ == TransitModeType::Fixed && !arriving_bus->is_flex_trip())
+		    rejected_lines.push_back(arriving_bus->get_line()->get_id());
 	}
 
 	OD_stop->record_passenger_boarding_decision(this, arriving_bus, time, boarding_prob, boarding_decision);
@@ -1314,6 +1319,7 @@ Busstop* Passenger::make_dropoff_decision(Busstop* pickup_stop, double time)
             }
         }
         assert(!accum_dropoff_stops_u.empty()); // if empty, a flexible first transit leg was chosen with no available destination stops or no flexible paths available from the target OD (i.e. should never happen)
+		size_t n_candidate_stops = accum_dropoff_stops_u.size(); // total number of dropoff stops available to choose from
 
         map <Busstop*, double> dropoff_stops_u; // the double value is the utility associated with the respective stop
         map <Busstop*, double> dropoff_stops_p; // the double value is the probability associated with the respective stop
@@ -1322,6 +1328,7 @@ Busstop* Passenger::make_dropoff_decision(Busstop* pickup_stop, double time)
 
         map<Busstop*, pair<double, double> > dropoff_MNL; //!< for output collector at ODstops level, first double utility of choosing dropoff stop, second probability
         double MNL_denom = 0.0;
+		
         //calculate probabilities
         for (const auto& stop_u : accum_dropoff_stops_u) //calculate the MNL denominator
         {
@@ -1333,7 +1340,14 @@ Busstop* Passenger::make_dropoff_decision(Busstop* pickup_stop, double time)
         for (const auto& stop_u : dropoff_stops_u) //calculate probabilities
         {
             Busstop* candidate_dropoff_stop = stop_u.first;
-            double stop_prob = exp(stop_u.second) / MNL_denom; //probability of choosing stop as dropoff point
+			double stop_prob = 0.0;
+			if(AproxEqual(MNL_denom,0.0)) // If all candidate drop-off stops are equally bad
+			{
+			    stop_prob = 1.0 / static_cast<double>(n_candidate_stops); // choose a random dropoff stop, all equally likely to be chosen   
+			}
+			else
+				stop_prob = exp(stop_u.second) / MNL_denom; //probability of choosing stop as dropoff point
+
 
             dropoff_stops_p[candidate_dropoff_stop] = stop_prob;
             candidate_stops.push_back(candidate_dropoff_stop);
