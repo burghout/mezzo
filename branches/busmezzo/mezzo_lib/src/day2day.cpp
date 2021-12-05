@@ -579,6 +579,13 @@ void Day2day::calc_anticipated_wt (Travel_time& row, bool is_flexible_leg)
         aRTI = 0.0;
 		if(is_flexible_leg)
             aPK = 0.0; // for flexible legs the 'prior knowledge' (PK) information source corresponds to a first exploration parameter. When experience exists trust in the exploration parameter is set to zero
+		else
+		{
+		    if(::fwf_wip::zero_pk_fixed)
+		    {
+		        aPK = 0.0;
+		    }
+		}
     }
 
 	//normalize a's
@@ -608,6 +615,14 @@ void Day2day::calc_anticipated_wt (Travel_time& row, bool is_flexible_leg)
 		{
 			alphaPK = 0.0; // for flexible legs the 'prior knowledge' (PK) information source corresponds to a first exploration parameter. When experience exists trust in the exploration parameter is set to zero
 		    alphaEXP = 1.0; // credibility coeffs dont matter for flexible legs if no RTI is available globally
+		}
+        else
+		{
+		    if(::fwf_wip::zero_pk_fixed)
+		    {
+		        alphaPK = 0.0;
+				alphaEXP = 1.0;
+		    }
 		}
 	}
 
@@ -664,8 +679,16 @@ void Day2day::calc_anticipated_ivt (Travel_time& row, bool is_flexible_leg)
 	if(is_flexible_leg) // @todo fwf_wip for now 'pk' or 'ivt exploration' is only used as a placeholder for experience on drt legs
 	{
 		alphaEXP = 1.0;
-	    alphaPK = 0.0;
-	}
+        alphaPK = 0.0;
+    }
+    else
+    {
+        if (::fwf_wip::zero_pk_fixed)
+        {
+			alphaEXP = 1.0;
+            alphaPK = 0.0;
+        }
+    }
 
 	aivtG = acrowdingEXP *(alphaEXP * aivtEXP + alphaPK * ivtPK);
 

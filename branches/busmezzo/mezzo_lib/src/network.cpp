@@ -29,6 +29,7 @@ bool fwf_wip::write_all_pass_experiences = false; //set manually
 bool fwf_wip::randomize_pass_arrivals = true; //set manually
 bool fwf_wip::day2day_no_convergence_criterium = false; //set manually
 bool fwf_wip::drt_enforce_strict_boarding = false; //set manually
+bool fwf_wip::zero_pk_fixed = false; //set manually (default false)
 
 bool PARTC::drottningholm_case = false;
 Busstop* PARTC::transfer_stop = nullptr;

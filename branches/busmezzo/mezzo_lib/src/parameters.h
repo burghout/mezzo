@@ -103,6 +103,7 @@ namespace fwf_wip
     extern bool randomize_pass_arrivals; // true if to enable randomizing traveler arrival times (+- around original arrival time) to a stop between days or simulation iterations (i.e. passenger resets)
     extern bool day2day_no_convergence_criterium; // true if we do not terminate based on day2day convergence criteria and instead run until a max number of days is reached
     extern bool drt_enforce_strict_boarding; // true if we do not allow drt-users to opportunistically board drt vehicles
+    extern bool zero_pk_fixed; // true if trust in prior knowledge is set to zero after the first day2day iteration
 }
 
 
