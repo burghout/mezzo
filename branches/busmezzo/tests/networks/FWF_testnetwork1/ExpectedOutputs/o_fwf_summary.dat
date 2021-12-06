@@ -1,14 +1,14 @@
 ### Total passenger summary ###
 Passenger journeys completed: 16
 
-Average GTC                    : -61.57
-Stdev GTC                      : 18.44
+Average GTC                    : -61.53
+Stdev GTC                      : 18.47
 
 Average walking time           : 84.74
 Stdev walking time             : 147.94
 
-Average waiting time           : 288.80
-Stdev waiting time             : 139.14
+Average waiting time           : 288.30
+Stdev waiting time             : 139.62
 Maximum waiting time           : 503.39
 Median waiting time            : 317.10
 CV waiting time                : 0.48
@@ -39,8 +39,8 @@ Total empty VKT             : 195.00
 Total occupied time         : 5020.00
 Total empty time            : 230131.90
 Total driving time          : 209462.93
-Total idle time             : 417.44
-Total oncall time           : 25271.54
+Total idle time             : 405.44
+Total oncall time           : 25283.54
 
 ### Fixed vehicle summary ###
 Fixed VKT                   : 210.00
@@ -61,8 +61,8 @@ DRT empty VKT               : 4.50
 DRT occupied time           : 3028.50
 DRT empty time              : 25771.50
 DRT driving time            : 3465.02
-DRT idle time               : 63.44
-DRT oncall time             : 25271.54
+DRT idle time               : 51.44
+DRT oncall time             : 25283.54
 DRT occ/total VKT ratio     : 0.87
 DRT PKT/VKT ratio           : 1.57
 

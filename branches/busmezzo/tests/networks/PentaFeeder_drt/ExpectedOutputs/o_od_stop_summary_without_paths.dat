@@ -1,5 +1,5 @@
 Origin_stop_ID	Origin_stop_name	Destination_stop_ID	Destination_stop_name	Nr_pass_completed	Average_travel_time	Average_number_boardings	
-1	A	5	E	42	330.50	1.00	
-2	B	5	E	42	642.16	1.00	
-3	C	5	E	53	538.29	1.00	
-4	D	5	E	15	365.69	1.00	
+1	A	5	E	42	320.00	1.00	
+2	B	5	E	42	633.06	1.00	
+3	C	5	E	53	548.44	1.00	
+4	D	5	E	15	361.95	1.00	
