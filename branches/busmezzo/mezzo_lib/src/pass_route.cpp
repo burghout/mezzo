@@ -754,15 +754,74 @@ bool Pass_path::is_first_transit_leg_flexible() const
 	return true;
 }
 
+bool Pass_path::is_first_leg_flexible_and_matches_end_stops() const
+{
+    if(!is_first_transit_leg_flexible())
+		return false;
+	if(alt_transfer_stops.size() < 4) // sortof redundant but this indicates that the path is not walking only, or empty
+		return false;
+	assert(!alt_lines.empty());
+	vector<Busline*> first_transit_leg = alt_lines.front();
+
+	const auto it = alt_transfer_stops.begin();
+	const auto first_dep_stopset_it = next(it,1);
+	const auto second_arr_stopset_it = next(it,2);
+	if((*first_dep_stopset_it).empty())
+		return false;
+	if((*second_arr_stopset_it).empty())
+		return false;
+
+	// @todo currently assumes only one stop in each of these set of alternative arrival/departure stops for flexible transit legs
+	Busstop* first_dep_stop = (*first_dep_stopset_it).front();
+	Busstop* second_arr_stop = (*second_arr_stopset_it).front();
+
+	// return false if start and end stops of first leg does not match the departure and arrival stops of the first leg
+	for(auto line: first_transit_leg)
+	{
+        if (line->stops.empty())
+            return false;
+
+        Busstop* start_stop = line->stops.front();
+        Busstop* end_stop = line->stops.back();
+
+		if(start_stop->get_id() != first_dep_stop->get_id())
+			return false;
+		if(end_stop->get_id() != second_arr_stop->get_id())
+            return false;
+	}
+
+	return true;
+}
+
 Busstop* Pass_path::get_first_transfer_stop() const
 {
     Busstop* firsttransfer = nullptr;
     if (number_of_transfers != 0)
-        firsttransfer = alt_lines.front().front()->stops.back(); //end stop of first transit leg
+    {
+        auto stop_it = alt_transfer_stops.begin();
+        advance(stop_it, 2); // move to the first arrival stop after a transit leg (third set of alt_transfer_stops)
+		if(!(*stop_it).empty())
+            firsttransfer = (*stop_it).front();
+    }
     return firsttransfer;
 }
 
 Busstop* Pass_path::get_first_dropoff_stop() const
 {
-	return alt_lines.front().front()->stops.back(); //end stop of first transit leg
+	/**
+     * Cases:
+     *	Walking only path or empty path should return nullptr
+     *	Direct paths have 4 sets of alt_transfer_stops, should return the arriving stop of the second pair
+     *	Transferring paths have > 4 sets of alt_transfer_stops, should return the arriving stop of the second pair
+    */
+    Busstop* first_dropoff_stop = nullptr;
+    if (alt_transfer_stops.size() >= 4) // means we have at least one transit leg
+    {
+        auto stop_it = alt_transfer_stops.begin();
+        advance(stop_it, 2); // move to the first arrival stop after a transit leg (third set of alt_transfer_stops)
+		if(!(*stop_it).empty())
+            first_dropoff_stop = (*stop_it).front();
+    }
+
+    return first_dropoff_stop;
 }

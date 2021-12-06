@@ -1189,7 +1189,7 @@ TransitModeType Passenger::make_transitmode_decision(Busstop* pickup_stop, doubl
 					fixed_available = true;
 				}
 			}
-			else if (path->is_first_transit_leg_flexible())
+			else if (path->is_first_leg_flexible_and_matches_end_stops())
 			{
 				if(temp_connection_path_utilities[targetOD].count(path) != 0) //should ignore paths that include walking to access targetOD, access to pickup stop set utility already included
 				{
@@ -1313,9 +1313,12 @@ Busstop* Passenger::make_dropoff_decision(Busstop* pickup_stop, double time)
         {
             if (temp_connection_path_utilities[targetOD].count(path) != 0) //should ignore paths that include walking to access targetOD, access to pickup stop set utility already included
             {
-                Busstop* candidate_stop = path->get_first_dropoff_stop();
-                //DEBUG_MSG("\t getting utilities for path " << path->get_id() << " with next leg dropoff stop " << candidate_stop->get_id());
-                accum_dropoff_stops_u[candidate_stop] += temp_connection_path_utilities[targetOD][path]; 	//sort the path utilities by dropoff stop
+                if (path->is_first_leg_flexible_and_matches_end_stops()) // in case there are flex paths that where first leg is based on intermediate stops rather than the beginning and end of the route
+                {
+                    Busstop* candidate_stop = path->get_first_dropoff_stop();
+                    //DEBUG_MSG("\t getting utilities for path " << path->get_id() << " with next leg dropoff stop " << candidate_stop->get_id());
+                    accum_dropoff_stops_u[candidate_stop] += temp_connection_path_utilities[targetOD][path]; 	//sort the path utilities by dropoff stop
+                }
             }
         }
         assert(!accum_dropoff_stops_u.empty()); // if empty, a flexible first transit leg was chosen with no available destination stops or no flexible paths available from the target OD (i.e. should never happen)

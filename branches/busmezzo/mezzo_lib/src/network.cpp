@@ -31,6 +31,7 @@ bool fwf_wip::randomize_pass_arrivals = true; //set manually
 bool fwf_wip::day2day_no_convergence_criterium = false; //set manually
 bool fwf_wip::drt_enforce_strict_boarding = false; //set manually
 bool fwf_wip::zero_pk_fixed = false; //set manually (default false)
+bool fwf_wip::autogen_drt_lines_with_intermediate_stops = false;  //set manually (default false)
 
 bool PARTC::drottningholm_case = false;
 Busstop* PARTC::transfer_stop = nullptr;
@@ -1664,21 +1665,24 @@ bool Network::readcontrolcenters(const string& name)
         //create and add all direct lines to cc
         if (generate_direct_routes == 1)
         {
-            //@todo PARTC temporary change create direct lines with intermediate stops
-            /*cout << "readcontrolcenters:: generating direct lines for control center " << cc->getID() << endl;
-            if (!createAllDRTLinesWithIntermediateStops(cc))
-            {
-                cout << "readcontrolcenters:: problem generating direct lines for control center " << id;
-                in.close();
-                return false;
-            }
-            cc->setGeneratedDirectRoutes(generate_direct_routes);*/
             cout << "readcontrolcenters:: generating direct lines for control center " << cc->getID() << endl;
-            if (!createAllDRTLines(cc))
+            if (::fwf_wip::autogen_drt_lines_with_intermediate_stops)
             {
-                cout << "readcontrolcenters:: problem generating direct lines for control center " << id;
-                in.close();
-                return false;
+                if (!createAllDRTLinesWithIntermediateStops(cc))
+                {
+                    cout << "readcontrolcenters:: problem generating direct lines for control center " << id;
+                    in.close();
+                    return false;
+                }
+            }
+            else
+            {
+                if (!createAllDRTLines(cc))
+                {
+                    cout << "readcontrolcenters:: problem generating direct lines for control center " << id;
+                    in.close();
+                    return false;
+                }
             }
             cc->setGeneratedDirectRoutes(generate_direct_routes);
         }
@@ -2536,7 +2540,7 @@ bool Network::createAllDRTLinesWithIntermediateStops(Controlcenter* cc)
                         }
 
                         // grab all the intermediate busstops including the start and end stops
-                        vector<Busstop*> allstops = get_busstops_on_busroute(newRoute); // all stops that we happen to pass by on the route found.
+                        vector<Busstop*> allstops = get_intermediate_busstops_on_busroute(newRoute,startstop,endstop); //all stops in including and in-between start and endstop
                         assert(allstops.front() == startstop);
                         assert(allstops.back() == endstop);
 
@@ -6396,6 +6400,48 @@ vector<Busstop*> Network::get_busstops_on_busroute(Busroute* route) const
         vector<Busstop*> stops_on_link = get_busstops_on_link(link);
         stops_on_route.insert(stops_on_route.end(), stops_on_link.begin(), stops_on_link.end());
     }
+    return stops_on_route;
+}
+
+vector<Busstop*> Network::get_intermediate_busstops_on_busroute(Busroute* route, Busstop* start_stop, Busstop* end_stop) const
+{
+    vector<Busstop*> stops_on_route;
+    bool start_stop_occurence = false;
+    bool end_stop_occurence = false;
+    
+    for (auto link : route->get_links())
+    {
+        vector<Busstop*> stops_on_link = get_busstops_on_link(link);
+        for(auto stop: stops_on_link)
+        {
+            // ignore stops up until first occurence of start_stop
+            if(!start_stop_occurence && (stop->get_id() == start_stop->get_id())) 
+                start_stop_occurence = true;
+
+            // push all stops until first occurence of end_stop (including start and end stop) and then terminate
+            if(start_stop_occurence)
+            {
+                stops_on_route.push_back(stop);
+                if(!end_stop_occurence && (stop->get_id() == end_stop->get_id())) // stop collecting after first occurence of end_stop
+                    end_stop_occurence = true;
+            }
+                
+            if(end_stop_occurence)
+                break;
+        }
+        if(end_stop_occurence)
+                break;
+    }
+    if(!start_stop_occurence)
+    {
+        qDebug() << "Network::get_intermediate_busstops_on_busroute() - warning: returning empty vector start stop never encountered on route";
+        assert(stops_on_route.empty());
+    }
+    if(!end_stop_occurence)
+    {
+        qDebug() << "Network::get_intermediate_busstops_on_busroute() - warning: end stop never encountered on route";
+    }
+    
     return stops_on_route;
 }
 
