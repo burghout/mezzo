@@ -215,6 +215,18 @@ private:
     Controlcenter* cc_ = nullptr;
 };
 
+/*! @brief execute calls requestTrip (i.e. initiates assignment pipeline) periodically if time-horizon based assignment is being used
+*/
+class AssignmentAction : public Action
+{
+public:
+    AssignmentAction(Controlcenter* cc);
+    ~AssignmentAction() override {}
+    bool execute(Eventlist* eventlist, double time) override;
+private:
+    Controlcenter* cc_ = nullptr;
+};
+
 //*! @brief groups together objects that control or modify demand-responsive transit objects @todo update description, alot of refactoring has been done, the signal slot calls are the same but the ownership and responsibilities of process classes have changed
 /*!
     Controlcenter functions as a facade for four process classes ((1) RequestHandler, (2) BustripGenerator, (3), BustripVehicleMatcher, (4) VehicleScheduler)
@@ -246,6 +258,7 @@ public:
 		int vs_strategy = 0,
 		int rb_strategy = 0,
 		double rebalancing_interval = 0.0,
+		double assignment_interval = 0.0,
 		QObject* parent = nullptr
 	);
 	~Controlcenter();
@@ -284,10 +297,16 @@ public:
 	bool getGeneratedDirectRoutes();
 	void setGeneratedDirectRoutes(bool generate_direct_routes);
 
+	//methods related to periodic time-horizon based assignment
+	double get_assignment_interval() const;
+	double get_next_assignment_time(double time) const;
+	void requestTrip(double time); //!< delegates to BustripGenerator to generate a planned passenger carrying trip
+
 	//methods related to rebalancing
     double get_rebalancing_interval() const;
 	double get_next_rebalancing_time(double time);
-	void add_collection_stop(Busstop* stop); //!< add stop to collection_stops_ the set of stops within the service of this control center's fleet that are used as targets for rebalancing
+    double get_next_assignment_time(double time);
+    void add_collection_stop(Busstop* stop); //!< add stop to collection_stops_ the set of stops within the service of this control center's fleet that are used as targets for rebalancing
     set<Busstop*, ptr_less<Busstop*> > get_collection_stops() const; //!< returns the set of collection stops used for rebalancing strategies
 	void requestRebalancingTrip(double time); //!< delegates to BustripGenerator to generate a planned rebalancing trip
 
@@ -340,7 +359,6 @@ private slots:
 	//fleet related
 	void updateFleetState(Bus* bus, BusState oldstate, BusState newstate, double time); //!< updates fleetState every time a connected transit vehicle changes its state
 	
-	void requestTrip(double time); //!< delegates to BustripGenerator to generate a planned passenger carrying trip
 	void requestEmptyTrip(double time); //!< delegates to BustripGenerator to generate a planned empty-vehicle trip
 
 	void matchVehiclesToTrips(double time); //!< delegates to BustripVehicleMatcher to assign connected transit vehicles to planned passenger carrying trips
@@ -369,6 +387,10 @@ private:
 	const int rb_strategy_; //!< initial rebalancing strategy
 
 	bool generated_direct_routes_ = false; //!< true if direct routes have been generated and added as service routes between all stops in the service area of this control center
+
+	const double assignment_interval_; //!< time interval in between vehicle-passenger assignment calls @note first assignment call will be <::drt_first_assignment_time> seconds after start_pass_generation, <assignment_interval_> seconds after that etc...
+	bool time_based_assignment_ = false; //!< true if vehicle-passenger assignment calls are time-based (e.g. called every x seconds) and false if event-based (e.g. if a new request was recieved)
+	AssignmentAction* assignment_action_;
 
 	const double rebalancing_interval_; //!< time interval in between each rebalancing call @note e.g. first rebalancing call will be <::drt_first_rebalancing_time> seconds after start_pass_generation, <rebalancing_interval_> seconds after that etc..
 	set<Busstop*,ptr_less<Busstop*> > collection_stops_; //!< set of stops used as targets for rebalancing

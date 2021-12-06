@@ -39,7 +39,7 @@ private:
 
 void TestControlcenter::testConstruction()
 {   
-    ccPtr = new Controlcenter(nullptr,nullptr,0,0,0,0,0,0,0.0,nullptr);
+    ccPtr = new Controlcenter(nullptr,nullptr,0,0,0,0,0,0,0.0,0.0,nullptr);
 
     QVERIFY2(ccPtr != nullptr, "Failed to create a Controlcenter");
 }

@@ -2,12 +2,13 @@ drt_first_rep_max_headway: 900
 drt_first_rep_waiting_utility: 10
 drt_min_occupancy: 0
 drt_first_rebalancing_time: 0.0
-
+drt_first_assignment_time: 0.0
 
 controlcenters: 1
 
 {	1	0	0	0	0 
 	0	0.0
+	0.0
 	1
 	3 { 1 2 3 }
 	0 {}

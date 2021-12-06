@@ -481,6 +481,24 @@ bool RebalancingAction::execute(Eventlist* eventlist, double time)
     return true;
 }
 
+AssignmentAction::AssignmentAction(Controlcenter* cc)
+{
+    cc_ = cc;
+}
+
+bool AssignmentAction::execute(Eventlist* eventlist, double time)
+{
+    cc_->requestTrip(time);
+    double new_time = cc_->get_next_assignment_time(time);
+    if (new_time < time)
+    {
+        qDebug() << "Warning - new assignment time < current sim time";
+        new_time = time + 0.1;
+    }
+    eventlist->add_event(new_time, this);
+    return true;
+}
+
 
 //Controlcenter
 Controlcenter::Controlcenter(
@@ -492,16 +510,18 @@ Controlcenter::Controlcenter(
 	int tvm_strategy, 
 	int vs_strategy,
 	int rb_strategy,
-	double rebalancing_interval, 
+	double rebalancing_interval,
+	double assignment_interval,
 	QObject* parent)
-    : QObject(parent), id_(id), tg_strategy_(tg_strategy), ev_strategy_(ev_strategy), tvm_strategy_(tvm_strategy), vs_strategy_(vs_strategy), rb_strategy_(rb_strategy), rebalancing_interval_(rebalancing_interval), tg_(theNetwork), vs_(eventlist)
+    : QObject(parent), id_(id), tg_strategy_(tg_strategy), ev_strategy_(ev_strategy), tvm_strategy_(tvm_strategy), vs_strategy_(vs_strategy), rb_strategy_(rb_strategy), rebalancing_interval_(rebalancing_interval), assignment_interval_(assignment_interval), tg_(theNetwork), vs_(eventlist)
 {
 	QString qname = QString::fromStdString(to_string(id));
 	this->setObjectName(qname); //name of control center does not really matter but useful for debugging purposes
 
 	theNetwork_ = theNetwork;
 	assignment_data_.cc_owner = this;
-
+	time_based_assignment_ = assignment_interval_ > 0.0; // @todo set indicator for time based assignment based on positive assignment_interval input for now
+	assignment_action_ = new AssignmentAction(this);
 	rebalancing_action_ = new RebalancingAction(this);
 
 	tg_.setTripGenerationStrategy(tg_strategy); //set the initial generation strategy of BustripGenerator
@@ -514,12 +534,14 @@ Controlcenter::Controlcenter(
 Controlcenter::~Controlcenter()
 {
     delete rebalancing_action_;
+	delete assignment_action_;
 }
 
 void Controlcenter::reset()
 {
-	disconnect(this, nullptr, nullptr, nullptr); //Disconnect all signals of Controlcenter
+	time_based_assignment_ = assignment_interval_ > 0.0; // in case we switched between event-based and time-based assignment dynamically
 
+	disconnect(this, nullptr, nullptr, nullptr); //Disconnect all signals of Controlcenter
 	connectInternal(); //reconnect internal signal slots
 
 	//Reset all process classes
@@ -578,8 +600,17 @@ void Controlcenter::connectInternal()
 	QObject::connect(this, &Controlcenter::emptyTripVehicleMatchNotFound, this, &Controlcenter::on_emptyTripVehicleMatchNotFound, Qt::DirectConnection);
 
 	//Triggers to generate trips via BustripGenerator
-	QObject::connect(this, &Controlcenter::requestAccepted, this, &Controlcenter::requestTrip, Qt::DirectConnection); 
-	QObject::connect(this, &Controlcenter::newUnassignedVehicle, this, &Controlcenter::requestTrip, Qt::DirectConnection);
+	if(time_based_assignment_) // indicator for using time horizon based assignment
+	{
+	    cout << "Controlcenter " << id_ << " using time-based assignment with decision horizon: " << assignment_interval_ << " seconds." << endl;
+	}
+	else
+	{
+		cout << "Controlcenter " << id_ << " using event-based assignment, new requests and new on-call vehicles will trigger assignment pipeline." << endl;
+	    QObject::connect(this, &Controlcenter::requestAccepted, this, &Controlcenter::requestTrip, Qt::DirectConnection); 
+	    QObject::connect(this, &Controlcenter::newUnassignedVehicle, this, &Controlcenter::requestTrip, Qt::DirectConnection);    
+	}
+	
 	QObject::connect(this, &Controlcenter::tripVehicleMatchNotFound, this, &Controlcenter::requestEmptyTrip, Qt::DirectConnection);
 
 	//Triggers to match vehicles in trips via BustripVehicleMatcher
@@ -866,6 +897,11 @@ void Controlcenter::setGeneratedDirectRoutes(bool generate_direct_routes)
 	generated_direct_routes_ = generate_direct_routes;
 }
 
+double Controlcenter::get_assignment_interval() const
+{
+	return assignment_interval_;
+}
+
 double Controlcenter::get_rebalancing_interval() const
 {
     return rebalancing_interval_;
@@ -874,6 +910,11 @@ double Controlcenter::get_rebalancing_interval() const
 double Controlcenter::get_next_rebalancing_time(double time)
 {
 	return time + rebalancing_interval_;
+}
+
+double Controlcenter::get_next_assignment_time(double time)
+{
+	return time + assignment_interval_;
 }
 
 set<Busstop*, ptr_less<Busstop*> > Controlcenter::get_collection_stops() const

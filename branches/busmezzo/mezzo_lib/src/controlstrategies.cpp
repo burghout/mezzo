@@ -529,6 +529,9 @@ bool SimpleTripGeneration::calc_trip_generation(DRTAssignmentData& assignment_da
         // 3. create trips for those requests for which I have not found a trip
         for (auto rq : unassignedRequests)
         {
+            if(rq->state != RequestState::Unmatched) // only generate trip plans for requests that have not been assigned to any trip yet
+                continue;
+            
             auto  lines_between_stops = find_lines_connecting_stops(candidateServiceRoutes, rq->ostop_id, rq->dstop_id); //check if any candidate service route connects the OD pair (even for segments of the route)
             if (lines_between_stops.empty())
             {

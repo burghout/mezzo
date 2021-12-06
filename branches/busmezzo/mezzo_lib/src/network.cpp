@@ -22,6 +22,7 @@ double drt_first_rep_max_headway = 0.0;
 double drt_first_rep_waiting_utility = 10.0; //default is to evaluate waiting utility for drt service positively in the first rep
 int drt_min_occupancy = 0;
 double drt_first_rebalancing_time = 0.0;
+double drt_first_assignment_time = 0.0;
 
 bool fwf_wip::day2day_drt_no_rti = false;
 
@@ -1543,7 +1544,6 @@ bool Network::readcontrolcenters(const string& name)
         return false;
     }
     in >> ::drt_min_occupancy;
-
     in >> keyword;
     if (keyword != "drt_first_rebalancing_time:")
     {
@@ -1552,7 +1552,14 @@ bool Network::readcontrolcenters(const string& name)
         return false;
     }
     in >> ::drt_first_rebalancing_time;
-
+    in >> keyword;
+    if (keyword != "drt_first_assignment_time:")
+    {
+        DEBUG_MSG("readcontrolcenters:: no drt_first_assignment_time keyword, read: " << keyword);
+        in.close();
+        return false;
+    }
+    in >> ::drt_first_assignment_time;
     //Create Controlcenters here or somewhere else. OBS: currently a pointer to this CC is given to Busstop via its constructor
     in >> keyword;
     if (keyword != "controlcenters:")
@@ -1576,6 +1583,7 @@ bool Network::readcontrolcenters(const string& name)
         int vs_strategy; //id of vehicle scheduling strategy
         int rb_strategy; //id of the rebalancing strategy
         double rebalancing_interval; // time elapsed between calls to rebalancing on-call vehicles
+        double assignment_interval; // time in between calls to assign available vehicles to active passenger requests, value of zero or less indicates event-based assignment is used
         int generate_direct_routes; // 1 if all direct routes between should be added as service routes to this cc and 0 otherwise
 
         int nr_stops; //number of stops in the control center's service area
@@ -1590,9 +1598,9 @@ bool Network::readcontrolcenters(const string& name)
             in.close();
             return false;
         }
-        in >> id >> tg_strategy >> ev_strategy >> tvm_strategy >> vs_strategy >> rb_strategy >> rebalancing_interval >> generate_direct_routes;
+        in >> id >> tg_strategy >> ev_strategy >> tvm_strategy >> vs_strategy >> rb_strategy >> rebalancing_interval >> assignment_interval >> generate_direct_routes;
 
-        auto* cc = new Controlcenter(eventlist, this, id, tg_strategy, ev_strategy, tvm_strategy, vs_strategy, rb_strategy, rebalancing_interval);
+        auto* cc = new Controlcenter(eventlist, this, id, tg_strategy, ev_strategy, tvm_strategy, vs_strategy, rb_strategy, rebalancing_interval, assignment_interval);
 
         //read stops associated with this cc
         in >> nr_stops;
@@ -9906,14 +9914,18 @@ bool Network::init()
     {
         //Initialize rebalancing calls of controlcenter(s), initvalue is one rebalancing interval after the start pass generation period....
         double rb_init_time = theParameters->start_pass_generation + ::drt_first_rebalancing_time + 0.1;
-        for(auto cc : ccmap) // initialize all potential rebalancing events
+        double ass_init_time = theParameters->start_pass_generation + ::drt_first_assignment_time + 0.1;
+        for(const auto& cc : ccmap) // initialize all potential rebalancing events
         {
             if(cc.second->rb_strategy_ != 0) // @todo for now do not initialize any rebalancing events if no strategy is being used, may change this later if rebalancing is triggered dynamically or at a later time
             {
-                //double init_time = cc.second->get_next_rebalancing_time(rb_init_time);
-                double init_time = rb_init_time;
-                eventlist->add_event(init_time, cc.second->rebalancing_action_);
+                eventlist->add_event(rb_init_time, cc.second->rebalancing_action_);
                 rb_init_time += 0.00001;
+            }
+            if(cc.second->assignment_interval_ > 0.0) //@todo indicator for using time horizon-based assignment
+            {
+                eventlist->add_event(ass_init_time,cc.second->assignment_action_);
+                ass_init_time + 0.00001;
             }
         }
 
