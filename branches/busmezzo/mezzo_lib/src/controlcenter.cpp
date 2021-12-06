@@ -602,11 +602,13 @@ void Controlcenter::connectInternal()
 	//Triggers to generate trips via BustripGenerator
 	if(time_based_assignment_) // indicator for using time horizon based assignment
 	{
-	    cout << "Controlcenter " << id_ << " using time-based assignment with decision horizon: " << assignment_interval_ << " seconds." << endl;
+	    // cout << "Controlcenter " << id_ << " using time-based assignment with decision horizon: " << assignment_interval_ << " seconds." << endl;
+		assert(assignment_interval_ > 0.0);
+		assert(assignment_action_);
 	}
 	else
 	{
-		cout << "Controlcenter " << id_ << " using event-based assignment, new requests and new on-call vehicles will trigger assignment pipeline." << endl;
+		// cout << "Controlcenter " << id_ << " using event-based assignment, new requests and new on-call vehicles will trigger assignment pipeline." << endl;
 	    QObject::connect(this, &Controlcenter::requestAccepted, this, &Controlcenter::requestTrip, Qt::DirectConnection); 
 	    QObject::connect(this, &Controlcenter::newUnassignedVehicle, this, &Controlcenter::requestTrip, Qt::DirectConnection);    
 	}
