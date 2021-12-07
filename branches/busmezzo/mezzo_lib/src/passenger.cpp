@@ -743,12 +743,19 @@ bool Passenger:: make_boarding_decision (Bustrip* arriving_bus, double time)
 	}
 	else
 	{
-		/* @todo not sure what 'rejected lines' is used for exactly in day2day. Can mess with utility calculations later for flex trips however
-		 * so for now only add fixed lines to rejected lines. A false boarding decision for a flexible transit users
-		 * currently just means the traveler did not board a trip that does not match the request they sent
+		/* @todo not sure what 'rejected lines' is used for exactly in day2day. Think its to deal with passengers who get stuck and never board between days (i.e. lower the utility of making the choice that got them stuck).
+		 * Can mess with utility calculations later for flex trips however so for now only add fixed lines to rejected lines to replicate previous behavior.
+		 * A false boarding decision for a flexible transit users currently just means the traveler did not board a trip that does not match the request they sent.
 		*/
-		if(chosen_mode_ == TransitModeType::Fixed && !arriving_bus->is_flex_trip())
-		    rejected_lines.push_back(arriving_bus->get_line()->get_id());
+        if (theParameters->drt)
+        {
+            if (chosen_mode_ == TransitModeType::Fixed && !arriving_bus->is_flex_trip())
+                rejected_lines.push_back(arriving_bus->get_line()->get_id());
+        }
+        else
+        {
+            rejected_lines.push_back(arriving_bus->get_line()->get_id());
+        }
 	}
 
 	OD_stop->record_passenger_boarding_decision(this, arriving_bus, time, boarding_prob, boarding_decision);
