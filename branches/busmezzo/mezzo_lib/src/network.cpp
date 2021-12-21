@@ -32,6 +32,7 @@ bool fwf_wip::day2day_no_convergence_criterium = false; //set manually
 bool fwf_wip::drt_enforce_strict_boarding = false; //set manually
 bool fwf_wip::zero_pk_fixed = false; //set manually (default false)
 bool fwf_wip::autogen_drt_lines_with_intermediate_stops = false;  //set manually (default false)
+bool fwf_wip::csgm_no_merging_or_filtering_paths = true; //set manually (default false)
 
 bool PARTC::drottningholm_case = false;
 Busstop* PARTC::transfer_stop = nullptr;
@@ -4088,7 +4089,7 @@ void Network::find_all_paths_fast ()
         collect_im_stops.clear();
         collect_walking_distances.clear();
 
-        if (!fwf_wip::day2day_drt_no_rti) // @todo temporary fix, do not merge paths
+        if (!fwf_wip::csgm_no_merging_or_filtering_paths) // @todo temporary fix, do not merge paths
         {
             for (auto basic_destination = busstops.begin(); basic_destination < busstops.end(); basic_destination++)
             {
@@ -4098,7 +4099,7 @@ void Network::find_all_paths_fast ()
             //write_path_set_per_stop (workingdir + "path_set_generation.dat", (*basic_origin));
         }
     }
-    if (!fwf_wip::day2day_drt_no_rti)
+    if (!fwf_wip::csgm_no_merging_or_filtering_paths)
     {
         // apply static filtering rules
         cout << "Filtering paths..." << endl;
