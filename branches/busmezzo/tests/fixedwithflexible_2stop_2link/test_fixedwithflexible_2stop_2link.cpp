@@ -74,6 +74,7 @@ private slots:
     void testInitNetwork(); //!< test generating passenger path sets & loading a network
     void testInitParameters(); //!< tests that the parameters for the loaded network are as expected
     void testValidRouteInput(); //!< tests if the routes that are read in are actually possible given the configuration of the network...
+    void testAutoGenBuslines(); //!< tests with methods for autogenerate buslines between pairs of stops and including intermediate stops
     void testCasePathSet(); //!< tests if setting choice set generation parameters yield expected paths
     void testRunNetwork();
     void testPassAssignment_day2day(); //!< tests of resulting pass assignment between days
@@ -115,7 +116,11 @@ void TestFixedWithFlexible_2stop_2link::testInitNetwork()
     
     qDebug() << "Removing file " + path_set_generation_filename + ": " << QFile::remove(path_set_generation_filename); //remove old passenger path sets
     
+    ::fwf_wip::autogen_drt_lines_with_intermediate_stops = true; // set manually
+    ::fwf_wip::csgm_no_merging_or_filtering_paths = true; //set manually (default false)
+    
     qDebug() << "Initializing network in " + QString::fromStdString(network_path);
+    
     nt->init();
 
     // Test if the network is properly read and initialized
@@ -178,6 +183,7 @@ void TestFixedWithFlexible_2stop_2link::testInitParameters()
     ::fwf_wip::randomize_pass_arrivals = false; //set manually
     ::fwf_wip::day2day_no_convergence_criterium = true; //set manually
     ::fwf_wip::drt_enforce_strict_boarding = true; //set manually
+    ::fwf_wip::zero_pk_fixed = true; // set manually
     
     //BusMezzo parameters, drt without RTI
     QVERIFY2(theParameters->drt == true, "Failure, DRT is not set to true in parameters");
@@ -245,6 +251,21 @@ void TestFixedWithFlexible_2stop_2link::testValidRouteInput()
             }
         }
     }
+}
+
+void TestFixedWithFlexible_2stop_2link::testAutoGenBuslines()
+{
+    /**
+      All generated buslines should only include start and end stops even when autogenerate with intermediate stops
+      All predefined (i.e. fixed) lines should also only have a start and and end stop
+    */
+    QVERIFY(::fwf_wip::autogen_drt_lines_with_intermediate_stops);
+//    vector<Busline*> lines = net->get_buslines();
+//    for(auto line : lines)
+//    {
+//        QString msg = QString("Failure, line %1 does not visit only 2 stops").arg(line->get_id());
+//        QVERIFY2(line->stops.size() == 2,qPrintable(msg));
+//    }
 }
 
 void TestFixedWithFlexible_2stop_2link::testCasePathSet()

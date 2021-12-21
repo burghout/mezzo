@@ -5,6 +5,8 @@ TEMPLATE = subdirs
 SUBDIRS += \
     drottningholm_collection_drt \
     drottningholm_collection_fixed \
+    drottningholm_bidirectional_fixed \
+    drottningholm_bidirectional_mixed_day2day \
     sf_fixed_day2day \
     sf_fixed \
     controlcenter \

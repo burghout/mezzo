@@ -26,13 +26,13 @@ double drt_first_assignment_time = 0.0;
 
 bool fwf_wip::day2day_drt_no_rti = false;
 
-bool fwf_wip::write_all_pass_experiences = false; //set manually
-bool fwf_wip::randomize_pass_arrivals = true; //set manually
-bool fwf_wip::day2day_no_convergence_criterium = false; //set manually
-bool fwf_wip::drt_enforce_strict_boarding = false; //set manually
+bool fwf_wip::write_all_pass_experiences = false; //set manually (default false)
+bool fwf_wip::randomize_pass_arrivals = true; //set manually (default true)
+bool fwf_wip::day2day_no_convergence_criterium = false; //set manually (default false)
+bool fwf_wip::drt_enforce_strict_boarding = false; //set manually (default false)
 bool fwf_wip::zero_pk_fixed = false; //set manually (default false)
 bool fwf_wip::autogen_drt_lines_with_intermediate_stops = false;  //set manually (default false)
-bool fwf_wip::csgm_no_merging_or_filtering_paths = true; //set manually (default false)
+bool fwf_wip::csgm_no_merging_or_filtering_paths = false; //set manually (default false)
 
 bool PARTC::drottningholm_case = false;
 Busstop* PARTC::transfer_stop = nullptr;

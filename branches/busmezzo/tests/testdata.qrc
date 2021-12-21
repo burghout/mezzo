@@ -235,5 +235,7 @@
         <file>networks/FWF_2stops_d2d/ExpectedOutputs/o_vkt.dat</file>
         <file>networks/Drottningholm_collection_drt/ExpectedOutputs/o_fwf_summary_odcategory.dat</file>
         <file>networks/Drottningholm_collection_fixed/ExpectedOutputs/o_fwf_summary_odcategory.dat</file>
+        <file alias="dholm_bidirectional_fixed">networks/Drottningholm_bidirectional_fixed/masterfile.mezzo</file>
+        <file alias="dholm_bidirectional_mixed_d2d">networks/Drottningholm_bidirectional_mixed_d2d/masterfile.mezzo</file>
     </qresource>
 </RCC>

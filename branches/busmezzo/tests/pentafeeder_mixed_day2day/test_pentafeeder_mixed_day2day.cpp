@@ -113,6 +113,10 @@ void TestPentaFeeder_mixed_day2day::testInitNetwork()
     qDebug() << "Removing file " + path_set_generation_filename + ": " << QFile::remove(path_set_generation_filename); //remove old passenger path sets
     
     qDebug() << "Initializing network in " + QString::fromStdString(network_path);
+    
+    ::fwf_wip::autogen_drt_lines_with_intermediate_stops = false;  //set manually (default false)
+    ::fwf_wip::csgm_no_merging_or_filtering_paths = false; //set manually (default false)
+    
     nt->init();
 
     // Test if the network is properly read and initialized
@@ -172,7 +176,7 @@ void TestPentaFeeder_mixed_day2day::testInitNetwork()
 }
 
 void TestPentaFeeder_mixed_day2day::testInitParameters()
-{
+{   
     //BusMezzo parameters, drt without RTI
     QVERIFY2(theParameters->drt == true, "Failure, DRT is not set to true in parameters");
     QVERIFY2(theParameters->real_time_info == 0, "Failure, real time info is not set to 0 in parameters");

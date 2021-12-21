@@ -83,7 +83,10 @@ void TestSpiessFlorianFixed::testInitNetwork()
     qDebug() << "Removing file " + path_set_generation_filename + ": " << QFile::remove(path_set_generation_filename); //remove old passenger path sets
     qDebug() << "Initializing network in " + QString::fromStdString(network_path_1);
 
+    ::fwf_wip::csgm_no_merging_or_filtering_paths = false; //set manually (default false)
+    
     nt->init();
+    
  // Test here various properties that should be true after reading the network
     // Test if the network is properly read and initialized
     QVERIFY2(net->get_links().size() == 15, "Failure, network should have 15 links ");

@@ -83,8 +83,11 @@ void TestSpiessFlorianFixed_day2day::testInitNetwork()
     qDebug() << "Removing file " + d2d_convergence_filename + ": " << QFile::remove(d2d_convergence_filename); //remove old day2day convergence results
     qDebug() << "Removing file " + path_set_generation_filename + ": " << QFile::remove(path_set_generation_filename); //remove old passenger path sets
     qDebug() << "Initializing network in " + QString::fromStdString(network_path_1);
-
+    
     nt->init();
+    
+    ::fwf_wip::csgm_no_merging_or_filtering_paths = false; //set manually (default false)
+    
  // Test here various properties that should be true after reading the network
     // Test if the network is properly read and initialized
     QVERIFY2(net->get_links().size() == 15, "Failure, network should have 15 links ");

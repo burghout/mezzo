@@ -92,6 +92,10 @@ void TestFixedWithFlexible_walking::testCreateNetwork()
 void TestFixedWithFlexible_walking::testInitNetwork()
 {
     qDebug() << "Initializing network in " + QString::fromStdString(network_path);
+    
+    ::fwf_wip::autogen_drt_lines_with_intermediate_stops = false;  //set manually (default false)
+    ::fwf_wip::csgm_no_merging_or_filtering_paths = false; //set manually (default false)
+    
     nt->init();
 
     // Test if the network is properly read and initialized
