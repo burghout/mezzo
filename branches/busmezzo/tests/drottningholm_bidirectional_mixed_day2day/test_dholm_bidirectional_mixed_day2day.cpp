@@ -144,6 +144,9 @@ void TestDrottningholmBidirectional_mixed_day2day::testInitNetwork()
 
     ::fwf_wip::autogen_drt_lines_with_intermediate_stops = true;  //set manually (default false)
     ::fwf_wip::csgm_no_merging_or_filtering_paths = true; //set manually (default false)
+
+    ::PARTC::drottningholm_case = true;
+    //::PARTC::transfer_stop = transfer;
     
     nt->init();
 
@@ -175,9 +178,6 @@ void TestDrottningholmBidirectional_mixed_day2day::testInitParameters()
     ::fwf_wip::day2day_no_convergence_criterium = false; //set manually (default false)
     ::fwf_wip::drt_enforce_strict_boarding = true; //set manually (default false)
     ::fwf_wip::zero_pk_fixed = true; //set manually (default false)
-    
-    ::PARTC::drottningholm_case = true;
-    //::PARTC::transfer_stop = transfer;
     
     //BusMezzo parameters, drt without RTI
     QVERIFY2(theParameters->drt == true, "Failure, DRT is not set to true in parameters");

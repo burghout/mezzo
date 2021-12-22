@@ -141,6 +141,12 @@ void TestDrottningholmBidirectional_fixed::testInitNetwork()
     qDebug() << "Removing file " + path_set_generation_filename + ": " << QFile::remove(path_set_generation_filename); //remove old passenger path sets
     qDebug() << "Initializing network in " + QString::fromStdString(network_path_1);
 
+    ::fwf_wip::autogen_drt_lines_with_intermediate_stops = false;  //set manually (default false)
+    ::fwf_wip::csgm_no_merging_or_filtering_paths = true; //set manually (default false)
+    
+    ::PARTC::drottningholm_case = true;
+    //::PARTC::transfer_stop = transfer;
+    
     nt->init();
 
     QVERIFY2 (AproxEqual(net->get_currenttime(),0.0), "Failure, currenttime should be 0 at start of simulation");
@@ -171,11 +177,6 @@ void TestDrottningholmBidirectional_fixed::testInitParameters()
     ::fwf_wip::day2day_no_convergence_criterium = false; //set manually (default false)
     ::fwf_wip::drt_enforce_strict_boarding = false; //set manually (default false)
     ::fwf_wip::zero_pk_fixed = true; //set manually (default false)
-    ::fwf_wip::autogen_drt_lines_with_intermediate_stops = false;  //set manually (default false)
-    ::fwf_wip::csgm_no_merging_or_filtering_paths = true; //set manually (default false)
-    
-    ::PARTC::drottningholm_case = true;
-    //::PARTC::transfer_stop = transfer;
     
     //BusMezzo parameters, drt without RTI
     QVERIFY2(theParameters->drt == false, "Failure, DRT is not set to false in parameters");
