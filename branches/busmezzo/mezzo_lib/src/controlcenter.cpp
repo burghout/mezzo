@@ -1096,7 +1096,7 @@ double Controlcenter::calc_exploration_ivt(Busline* service_route, Busstop* star
 		}
 	}
 	if (found_board == false || found_alight == false)
-		return ::drt_default_large_ivt; //default in case of no matching
+		return ::default_large_ivt; //default in case of no matching
 
 	return cumulative_arrival_time - earliest_time_ostop; //OBS in-vehicle time is returned in seconds
 }
