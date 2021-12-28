@@ -83,17 +83,17 @@ struct bus_ptr_less //@todo ugly quickfix for repeatability when iterating throu
     @ingroup DRT
     @{
 */
-//temporary globals for DRT implementation
+// named default return values (e.g. 'null' cases)
 extern double drt_first_rep_max_headway; //!< currently corresponds to a global maximum headway for a DRT service. Sometimes returned by calc_headway... functions when a Busline currently has no Bustrips in its trips list yet
 extern double drt_first_rep_waiting_utility; //!< sometimes returned in calc_waiting_utility functions when a Busline currently has no Bustrips in its trips list yet
 extern int drt_min_occupancy; //!< currently used in controlstrategies to put different minimum size of the set of passenger requests to consider generating trips
 extern double drt_first_rebalancing_time; //!< time after start_pass_generation parameter in which first rebalancing action is initiated
 
 const double drt_exploration_wt = 1.0; //!< default value returns by Controlcenter if RTI or experience is unavailable for passenger anticipated waiting time calculations for decisions
-const double drt_default_large_ivt = 10000.0;
-const double large_negative_utility = -10000.0;
-const double large_positive_utility = 10000.0;
-const double dummy_link_freeflow_speed = 1000.0;
+const double default_large_ivt = 10000.0; // seconds
+const double large_negative_utility = -10000.0; // generalized cost
+const double large_positive_utility = 10000.0; // generalized cost
+const double dummy_link_freeflow_speed = 1000.0; // m/s
 /**@}*/
 
 namespace fwf_wip
