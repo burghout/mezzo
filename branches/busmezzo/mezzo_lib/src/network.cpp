@@ -34,8 +34,9 @@ bool fwf_wip::zero_pk_fixed = false; //set manually (default false)
 bool fwf_wip::autogen_drt_lines_with_intermediate_stops = false;  //set manually (default false)
 bool fwf_wip::csgm_no_merging_or_filtering_paths = false; //set manually (default false)
 
-bool PARTC::drottningholm_case = false;
-Busstop* PARTC::transfer_stop = nullptr;
+bool PARTC::drottningholm_case = true; //set manually (default false)
+
+pair<Busstop*,Busstop*> PARTC::transfer_stops = make_pair(nullptr,nullptr);
 
 long int randseed=0;
 int vid=0;
@@ -9898,19 +9899,32 @@ bool Network::init()
     }
 
     //!< @todo PARTC specific, remove
-    for (auto line : buslines)
+    //for (auto line : buslines)
+    //{
+    //    if (!line->is_flex_line())
+    //    {
+    //        if (line->stops.back()->get_id() == PARTC::morby_station_id) //all fixed lines end at morby station
+    //        {
+    //            PARTC::drottningholm_case = true;
+    //            PARTC::transfer_stops = busstopsmap[PARTC::transfer_stop_id];
+    //            assert(PARTC::transfer_stops->get_id() == PARTC::transfer_stop_id);
+    //        }
+    //        else
+    //            PARTC::drottningholm_case = false;
+    //    }
+    //}
+    if(PARTC::drottningholm_case)
     {
-        if (!line->is_flex_line())
+        // set transfer stops for case (one for each direction of demand)
+        if(busstopsmap.count(PARTC::transfer_stop_ids.first))
         {
-            if (line->stops.back()->get_id() == PARTC::morby_station_id) //all fixed lines end at morby station
-            {
-                PARTC::drottningholm_case = true;
-                PARTC::transfer_stop = busstopsmap[PARTC::transfer_stop_id];
-                assert(PARTC::transfer_stop->get_id() == PARTC::transfer_stop_id);
-            }
-            else
-                PARTC::drottningholm_case = false;
+            PARTC::transfer_stops.first = busstopsmap[PARTC::transfer_stop_ids.first];
         }
+        if(busstopsmap.count(PARTC::transfer_stop_ids.second))
+        {
+            PARTC::transfer_stops.second = busstopsmap[PARTC::transfer_stop_ids.second];
+        }
+        assert(PARTC::transfer_stops.first != nullptr || PARTC::transfer_stops.second != nullptr); // at least one transfer stop must be defined for this case 
     }
 
     if (theParameters->demand_format == 3)

@@ -118,14 +118,19 @@ class Busstop;
 namespace PARTC
 {
     extern bool drottningholm_case; //true if this is the drottningholm case
-    extern Busstop* transfer_stop; 
-    const vector<int> branch_ids_176 = { 217619,217618,217617,217616,217615,217614,217613,217612,217611,217610,217609,217608,217607,217606,217605,217603,217602,217604,217600,277024 };
-    const vector<int> branch_ids_177 = { 277036,277035,277034,277033,277032,277031,277030,277029,277028,277027,277026,277025,277024 };
-    const vector<int> corridor_ids = { 277024,277023,277022,277021,277020,277019,277018,277017,277016,277015,277014,277013,277012,277011,277010,277009,277008,277007,277006,277005,277004,277003,277002,277001 };
-    const int transfer_stop_id = 277024;
+    extern pair<Busstop*,Busstop*> transfer_stops;
+    const pair<int,int> transfer_stop_ids = std::make_pair(277024, 77024);
+
+    const vector<int> branch_ids_176 = { 217619,217618,217617,217616,217615,217614,217613,217612,217611,217610,217609,217608,217607,217606,217605,217603,217602,217604,217600,277024,
+                                          77024, 17600, 17601, 17602, 17604, 17605, 17606, 17607, 17608, 17609, 17610, 17611, 17612, 17613, 17614, 17615, 17616, 17617, 17618, 17619 };
+    const vector<int> branch_ids_177 = { 277036,277035,277034,277033,277032,277031,277030,277029,277028,277027,277026,277025,277024,
+                                          77024, 77025, 77026, 77027, 77028, 77029, 77030, 77031, 77032, 77033, 77034, 77035, 77036 };
+    const vector<int> corridor_ids = { 277024,277023,277022,277021,277020,277019,277018,277017,277016,277015,277014,277013,277012,277011,277010,277009,277008,277007,277006,277005,277004,277003,277002,277001,
+                                        77001, 77002, 77003, 77004,	77005, 77006, 77007, 77008, 77009, 77010, 77011, 77012, 77013, 77014, 77015, 77016, 77017, 77018, 77019, 77020, 77021, 77022, 77023, 77024 };
+    
     const int morby_station_id = 277001;
 
-    enum class ODCategory { Null = 0, b2b, b2c, c2c };
+    enum class ODCategory { Null = 0, b2b, b2c, c2c, c2b };
 
     bool is_on_branch176(int stop_id);
     bool is_on_branch177(int stop_id);
@@ -134,9 +139,11 @@ namespace PARTC
     bool is_transfer_stop(int stop_id);
     bool is_branch_to_branch(int ostop_id, int dstop_id); // if OD pair is branch to branch
     bool is_branch_to_corridor(int ostop_id, int dstop_id);
+    bool is_corridor_to_branch(int ostop_id, int dstop_id);
     bool is_corridor_to_corridor(int ostop_id, int dstop_id);
 
     ODCategory get_od_category(int ostop_id, int dstop_id);
+    QString ODCategory_to_QString(ODCategory category); //!< helper print function for debug output
 }
 
 

@@ -155,6 +155,7 @@ void TestDrottningholmCollection_drt::testInitNetwork()
     qDebug() << "Initializing network in " + QString::fromStdString(network_path_1);
 
     ::fwf_wip::csgm_no_merging_or_filtering_paths = false; //set manually (default false)
+    ::PARTC::drottningholm_case = true; //set manually (default false)
     
     nt->init();
 

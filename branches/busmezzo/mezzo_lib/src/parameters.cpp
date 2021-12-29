@@ -7,28 +7,23 @@ namespace PARTC
     {
         return find(branch_ids_176.begin(), branch_ids_176.end(), stop_id) != branch_ids_176.end();
     }
-
     bool is_on_branch177(int stop_id)
     {
         return find(branch_ids_177.begin(), branch_ids_177.end(), stop_id) != branch_ids_177.end();
     }
-
-    bool is_on_branch(int stop_id)
+    bool is_on_branch(int stop_id) // is on either branch
     {
         return is_on_branch176(stop_id) || is_on_branch177(stop_id);
     }
-
     bool is_on_corridor(int stop_id)
     {
         return find(corridor_ids.begin(), corridor_ids.end(), stop_id) != corridor_ids.end();
     }
-
     bool is_transfer_stop(int stop_id)
     {
-        return stop_id == transfer_stop_id;
+        return (stop_id == transfer_stop_ids.first) || (stop_id == transfer_stop_ids.second);
     }
-
-    bool is_branch_to_branch(int ostop_id, int dstop_id)
+    bool is_branch_to_branch(int ostop_id, int dstop_id) // if OD pair is branch to branch
     {
         if (is_on_branch(ostop_id)) // origin of trip starts on a branch
         {
@@ -39,19 +34,19 @@ namespace PARTC
         }
         return false;
     }
-
     bool is_branch_to_corridor(int ostop_id, int dstop_id)
     {
-        if (!is_transfer_stop(ostop_id) && is_on_branch(ostop_id))
-            // origin is not the transfer stop (which is on corridor) and is on branch
+        if (!is_transfer_stop(ostop_id) && is_on_branch(ostop_id)) // origin is not the transfer stop (which is on corridor) and is on branch
         {
-            if (!is_transfer_stop(dstop_id) && is_on_corridor(dstop_id))
-                // destination IS on corridor and is not the transfer stop
+            if (!is_transfer_stop(dstop_id) && is_on_corridor(dstop_id)) // destination IS on corridor and is not the transfer stop
                 return true;
         }
         return false;
     }
-
+    bool is_corridor_to_branch(int ostop_id, int dstop_id)
+    {
+        return is_on_corridor(ostop_id) && !is_on_corridor(dstop_id); // origin is on corridor & destination is not on corridor (i.e. is on a branch but is not a transfer stop)
+    }
     bool is_corridor_to_corridor(int ostop_id, int dstop_id)
     {
         return is_on_corridor(ostop_id) && is_on_corridor(dstop_id);
@@ -67,8 +62,36 @@ namespace PARTC
             category = ODCategory::b2c;
         if (is_corridor_to_corridor(o, d))
             category = ODCategory::c2c;
+        if (is_corridor_to_branch(o, d))
+            category = ODCategory::c2b;
 
         return category;
+    }
+
+    QString ODCategory_to_QString(ODCategory category)
+    {
+        QString category_s = "";
+
+        switch (category)
+        {
+        case ODCategory::Null:
+            category_s = "Null";
+            break;
+        case ODCategory::b2b:
+            category_s = "branch-to-branch";
+            break;
+        case ODCategory::b2c:
+            category_s = "branch-to-corridor";
+            break;
+        case ODCategory::c2c:
+            category_s = "corridor-to-corridor";
+            break;
+        case ODCategory::c2b:
+            category_s = "corridor-to-branch";
+            break;
+        }
+
+        return category_s;
     }
 }
 
