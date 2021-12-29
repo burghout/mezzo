@@ -34,7 +34,7 @@ bool fwf_wip::zero_pk_fixed = false; //set manually (default false)
 bool fwf_wip::autogen_drt_lines_with_intermediate_stops = false;  //set manually (default false)
 bool fwf_wip::csgm_no_merging_or_filtering_paths = false; //set manually (default false)
 
-bool PARTC::drottningholm_case = true; //set manually (default false)
+bool PARTC::drottningholm_case = false; //set manually (default false)
 
 pair<Busstop*,Busstop*> PARTC::transfer_stops = make_pair(nullptr,nullptr);
 

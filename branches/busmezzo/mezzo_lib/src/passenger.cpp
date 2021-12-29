@@ -1164,6 +1164,8 @@ TransitModeType Passenger::make_transitmode_decision(Busstop* pickup_stop, doubl
 	assert(chosen_mode_ == TransitModeType::Null); //!< The chosen mode of the traveler should be Null before a decision has been made
 	assert(pickup_stop->check_stop_od_as_origin_per_stop(OD_stop->get_destination()) != false); //!< checked already in make_connection_decision which should always be called
     //DEBUG_MSG("Passenger::make_transitmode_decision() - pass " << this->get_id() << " choosing mode for pickup stop " << pickup_stop->get_id() << " at time " << time);
+	/*int fix_counter = 0;
+    int drt_counter = 0;*/
 
 	//Q_UNUSED(time);
 	TransitModeType chosen_mode = TransitModeType::Null;
@@ -1181,29 +1183,41 @@ TransitModeType Passenger::make_transitmode_decision(Busstop* pickup_stop, doubl
 		bool fixed_available = false;
 		bool flex_available = false;
 
+		//DEBUG_MSG("Passenger::make_transitmode_decision() - pass " << this->get_id() << " choosing mode for pickup stop " << pickup_stop->get_id() << " and final destination " << OD_stop->get_destination()->get_id() << " at time " << time);
+		//PARTC::ODCategory category = PARTC::get_od_category(pickup_stop->get_id(),OD_stop->get_destination()->get_id());
+		//DEBUG_MSG("\t OD category: " << PARTC::ODCategory_to_QString(category).toStdString());
+
 		vector<Pass_path*> paths = targetOD->get_path_set();
 		if (temp_connection_path_utilities.count(targetOD) == 0) //should be at least one path, unless traveler walked to an arbitrary stop due to no paths being available
 			return TransitModeType::Null;
-
+		
 		for (const auto& path : paths) //utilities of accessing the pickup stop should already be included in temp_connection_path_utilities
 		{
+			//DEBUG_MSG("\tChecking path " << path->get_id() << " with " << path->get_number_of_transfers() << " number of transfers");
 			if (path->is_first_transit_leg_fixed()) 
 			{
 				if (temp_connection_path_utilities[targetOD].count(path) != 0) //should ignore paths that include walking to access targetOD, access to pickup stop set utility already included
 				{
+					//++fix_counter;
 					//DEBUG_MSG("\t getting utilities for fixed path " << path->get_id());
 					fixed_u += temp_connection_path_utilities[targetOD][path];
 					fixed_available = true;
 				}
 			}
-			else if (path->is_first_leg_flexible_and_matches_end_stops())
+			else
 			{
-				if(temp_connection_path_utilities[targetOD].count(path) != 0) //should ignore paths that include walking to access targetOD, access to pickup stop set utility already included
-				{
-					//DEBUG_MSG("\t getting utilities for flex path " << path->get_id());
-					flex_u += temp_connection_path_utilities[targetOD][path];
-					flex_available = true;
-				}
+                pair<bool, Busline*> candidate_line = path->is_first_leg_flexible_and_any_line_matches_end_stops();
+                if (candidate_line.first)
+                {					
+					//DEBUG_MSG("\t\tFound first leg flex " << candidate_line.second->get_id() << " with end stop " << candidate_line.second->stops.back()->get_id() );
+                    if (temp_connection_path_utilities[targetOD].count(path) != 0) //should ignore paths that include walking to access targetOD, access to pickup stop set utility already included
+                    {
+						//++drt_counter;
+                        //DEBUG_MSG("\t getting utilities for flex path " << path->get_id());
+                        flex_u += temp_connection_path_utilities[targetOD][path];
+                        flex_available = true;
+                    }
+                }
 			}
 		}
 
@@ -1228,8 +1242,8 @@ TransitModeType Passenger::make_transitmode_decision(Busstop* pickup_stop, doubl
 		mode_MNL[TransitModeType::Fixed].second = fixed_p;
 		mode_MNL[TransitModeType::Flexible].first = flex_u; 
 		mode_MNL[TransitModeType::Flexible].second = flex_p;
-		//DEBUG_MSG("\t Fixed prob: " << fixed_p*100 << "%");
-		//DEBUG_MSG("\t Flex prob : " << flex_p*100 << "%");
+		/*DEBUG_MSG("\t Fixed prob: " << fixed_p*100 << "%");
+		DEBUG_MSG("\t Flex prob : " << flex_p*100 << "%");*/
 
 		// Make choice, if neither fixed or flex is available then default is to return TransitModeType::Null
 		if (fixed_available && !flex_available)
@@ -1262,7 +1276,9 @@ TransitModeType Passenger::make_transitmode_decision(Busstop* pickup_stop, doubl
 	if(!theParameters->drt)
 		assert(chosen_mode != TransitModeType::Flexible);
 
-	//DEBUG_MSG("\t Chose mode : " + TransitModeType_to_QString(chosen_mode).toStdString());
+	/*DEBUG_MSG("\t Chose mode : " + TransitModeType_to_QString(chosen_mode).toStdString());
+	DEBUG_MSG("\t Num fixed paths: " << fix_counter);
+	DEBUG_MSG("\t Number drt paths: " << drt_counter);*/
 	increment_mode_choice_counter(chosen_mode);
 
 	return chosen_mode;
@@ -1280,29 +1296,30 @@ Busstop* Passenger::make_dropoff_decision(Busstop* pickup_stop, double time)
     Busstop* dropoff_stop = nullptr;
 
     //* @todo PARTC force case specific drop-off stop dependent on OD category (if using drt)
-    if (PARTC::drottningholm_case)
-    {
-        using namespace PARTC;
-        ODCategory category = get_od_category(this->original_origin->get_id(), this->get_OD_stop()->get_destination()->get_id());
-		ODstops* targetOD = pickup_stop->get_stop_od_as_origin_per_stop(OD_stop->get_destination());
+  //  if (PARTC::drottningholm_case)
+  //  {
+  //      using namespace PARTC;
+  //      ODCategory category = get_od_category(this->original_origin->get_id(), this->get_OD_stop()->get_destination()->get_id());
+		//ODstops* targetOD = pickup_stop->get_stop_od_as_origin_per_stop(OD_stop->get_destination());
 
-        switch (category)
-        {
-        case ODCategory::Null: abort(); break; //all ods should have a category
-        case ODCategory::b2b: // force no transfers
-            dropoff_stop = OD_stop->get_destination();
-            break;
-        case ODCategory::b2c: // force request to transfer point
-            dropoff_stop = PARTC::transfer_stop;
-            break;
-        case ODCategory::c2c: abort(); break; //should never have chosen flexible
-        }
-		map<Busstop*, pair<double, double> > dropoff_MNL; //!< for output collector at ODstops level, first double utility of choosing dropoff stop, second probability
+  //      switch (category)
+  //      {
+  //      case ODCategory::Null: abort(); break; //all ods should have a category
+  //      case ODCategory::b2b: // force no transfers
+  //          dropoff_stop = OD_stop->get_destination();
+  //          break;
+  //      case ODCategory::b2c: // force request to transfer point
+  //          dropoff_stop = PARTC::transfer_stops.first;
+  //          break;
+		//case ODCategory::c2b: abort(); break; // should have never chosen flexible
+  //      case ODCategory::c2c: abort(); break; //should never have chosen flexible
+  //      }
+		//map<Busstop*, pair<double, double> > dropoff_MNL; //!< for output collector at ODstops level, first double utility of choosing dropoff stop, second probability
 
-		dropoff_MNL[dropoff_stop] = make_pair(::large_positive_utility, 1.0); // fill in output structure
-		targetOD->record_passenger_dropoff_decision(this, time, pickup_stop, dropoff_stop, dropoff_MNL);
-		return dropoff_stop;
-    }
+		//dropoff_MNL[dropoff_stop] = make_pair(::large_positive_utility, 1.0); // fill in output structure
+		//targetOD->record_passenger_dropoff_decision(this, time, pickup_stop, dropoff_stop, dropoff_MNL);
+		//return dropoff_stop;
+  //  }
 
     assert(pickup_stop->check_stop_od_as_origin_per_stop(OD_stop->get_destination()) != false); //!< checked already in make_connection_decision which should always be called
     //DEBUG_MSG("Passenger::make_dropoff_decision() - pass " << this->get_id() << " choosing dropoff stop for pickup stop " << pickup_stop->get_id() << " at time " << time);
@@ -1320,9 +1337,11 @@ Busstop* Passenger::make_dropoff_decision(Busstop* pickup_stop, double time)
         {
             if (temp_connection_path_utilities[targetOD].count(path) != 0) //should ignore paths that include walking to access targetOD, access to pickup stop set utility already included
             {
-                if (path->is_first_leg_flexible_and_matches_end_stops()) // in case there are flex paths that where first leg is based on intermediate stops rather than the beginning and end of the route
+				pair<bool,Busline*> candidate_line = path->is_first_leg_flexible_and_any_line_matches_end_stops();
+                if (candidate_line.first) // in case there are flex paths that where first leg is based on intermediate stops rather than the beginning and end of the route
                 {
-                    Busstop* candidate_stop = path->get_first_dropoff_stop();
+                    //Busstop* candidate_stop = path->get_first_dropoff_stop();
+                    Busstop* candidate_stop = candidate_line.second->stops.back();
                     //DEBUG_MSG("\t getting utilities for path " << path->get_id() << " with next leg dropoff stop " << candidate_stop->get_id());
                     accum_dropoff_stops_u[candidate_stop] += temp_connection_path_utilities[targetOD][path]; 	//sort the path utilities by dropoff stop
                 }

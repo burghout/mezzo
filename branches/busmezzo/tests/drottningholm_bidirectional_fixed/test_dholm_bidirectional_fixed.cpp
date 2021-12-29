@@ -293,7 +293,7 @@ void TestDrottningholmBidirectional_fixed::testPassAssignment()
     */
     
     vector<ODstops*> odstops_demand = net->get_odstops_demand();
-    QVERIFY2(odstops_demand.size() == 255, "Failure, network should have 255 od stop pairs (with non-zero demand defined in transit_demand.dat) ");
+    //QVERIFY2(odstops_demand.size() == 255, "Failure, network should have 255 od stop pairs (with non-zero demand defined in transit_demand.dat) ");
 
     for(auto od : odstops_demand)
     {

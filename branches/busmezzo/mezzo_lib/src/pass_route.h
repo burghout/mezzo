@@ -60,6 +60,7 @@ class Pass_path
     bool check_all_fixed_lines(const vector<Busline*>& line_vec) const; //!< returns true if all lines in vector are not flagged as flexible and is non-empty
     bool is_first_transit_leg_fixed() const; //!< returns true if the first set of lines in alt_lines are all fixed
     bool is_first_transit_leg_flexible() const; //!< returns true if the first set of lines in alt_lines are all flexible
+    pair<bool,Busline*> is_first_leg_flexible_and_any_line_matches_end_stops() const; //!< returns true if all lines in alt_lines are flexible and any line in alt_lines has a start and end stop that matches the first departure stop and second arrival stop in alt_transfer_stops, also returns the first line that matches these conditions if found and nullptr otherwise
     bool is_first_leg_flexible_and_matches_end_stops() const; //!< returns true if the first set of lines in alt_lines are all flexible and that each line in that set has a start and end stop that matches the first departure stop and second arrival stop in alt_transfer_stops
     Busstop* get_first_transfer_stop() const; //!< returns the first arrival stop after the first transit leg of this path if there are transfers. Returns nullptr if there are no transfers in this path
     Busstop* get_first_dropoff_stop() const; //!< returns the first arrival stop after the first transit leg of this path

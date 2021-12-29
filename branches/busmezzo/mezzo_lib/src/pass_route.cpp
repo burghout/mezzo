@@ -754,6 +754,45 @@ bool Pass_path::is_first_transit_leg_flexible() const
 	return true;
 }
 
+pair<bool,Busline*> Pass_path::is_first_leg_flexible_and_any_line_matches_end_stops() const
+{
+	pair<bool,Busline*> match = std::make_pair(false,nullptr);
+    if(!is_first_transit_leg_flexible())
+		return match;
+	if(alt_transfer_stops.size() < 4) // sortof redundant but this indicates that the path is not walking only, or empty
+		return match;
+	assert(!alt_lines.empty());
+	vector<Busline*> first_transit_leg = alt_lines.front();
+
+	const auto it = alt_transfer_stops.begin();
+	const auto first_dep_stopset_it = next(it,1);
+	const auto second_arr_stopset_it = next(it,2);
+	if((*first_dep_stopset_it).empty())
+		return match;
+	if((*second_arr_stopset_it).empty())
+		return match;
+
+	// @todo currently assumes only one stop in each of these set of alternative arrival/departure stops for flexible transit legs
+	Busstop* first_dep_stop = (*first_dep_stopset_it).front();
+	Busstop* second_arr_stop = (*second_arr_stopset_it).front();
+
+	// return true the first time if start and end stops of first leg does not match the departure and arrival stops of the first leg
+	for(auto line: first_transit_leg)
+	{
+        Busstop* start_stop = line->stops.front();
+        Busstop* end_stop = line->stops.back();
+
+		if((start_stop->get_id() == first_dep_stop->get_id()) && (end_stop->get_id() == second_arr_stop->get_id()))
+		{
+		    match.first = true;
+			match.second = line;
+			return match;
+		}
+	}
+
+	return match;
+}
+
 bool Pass_path::is_first_leg_flexible_and_matches_end_stops() const
 {
     if(!is_first_transit_leg_flexible())
