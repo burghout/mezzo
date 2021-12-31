@@ -97,7 +97,7 @@ bool is_branch_to_corridor(int ostop_id, int dstop_id)
 }
 bool is_corridor_to_branch(int ostop_id, int dstop_id)
 {
-    return is_on_corridor(ostop_id) && !is_on_corridor(dstop_id); // origin is on corridor & destination is not on corridor (i.e. is on a branch but is not a transfer stop)
+    return (!is_transfer_stop(ostop_id) && is_on_corridor(ostop_id)) && !is_on_corridor(dstop_id); // origin is on corridor and is not transfer stop & destination is not on corridor (i.e. is on a branch but is not a transfer stop)
 }
 bool is_corridor_to_corridor(int ostop_id, int dstop_id)
 {
@@ -319,7 +319,7 @@ void TestDrottningholmBidirectional_mixed_day2day::testCasePathSet()
             Busstop* second_dropoff_stop = nullptr;
             int o2 = -1;
             int d2 = -1;
-            if(n_transfers == 1)
+            if(n_transfers > 0)
             {
                 second_leg == alt_lines[1].front();
                 second_pickup_stop = second_leg->stops.front();
