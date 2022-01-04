@@ -48,7 +48,7 @@ map<id_type, Travel_time>& operator << (map<id_type, Travel_time>& ODSLreg, pair
 	float crit = 0;
     for (typename map<id_type, Travel_time>::iterator row = ODSL_data.begin(); row != ODSL_data.end(); row++) //aggregate over days
 	{
-		row->second /= row->second.counter; //finish the averaging by dividing by the number of occurences which is counted when adding
+		row->second /= row->second.counter; //finish the averaging by dividing by the number of occurrences which is counted when adding
 				
 		ODSL_reg << *row; //if existing ODSL is found, data is replaced else a new row is inserted
 
@@ -74,7 +74,7 @@ float insert (map<ODSL, Travel_time>& ODSL_reg, map<ODSL, Travel_time>& ODSL_dat
     float crit = 0;
     for (auto row = ODSL_data.begin(); row != ODSL_data.end(); ++row) //aggregate over days
     {
-        row->second /= row->second.counter; //finish the averaging by dividing by the number of occurences which is counted when adding
+        row->second /= row->second.counter; //finish the averaging by dividing by the number of occurrences which is counted when adding
         
         ODSL_reg << *row; //if existing ODSL is found, data is replaced else a new row is inserted, also calculates the quotient of the anticipated wt and ivt of the current day and the previous day
         
@@ -91,7 +91,7 @@ float insert (map<ODSLL, Travel_time>& ODSLL_reg, map<ODSLL, Travel_time>& ODSLL
     float crit = 0;
     for (auto row = ODSLL_data.begin(); row != ODSLL_data.end(); ++row) //aggregate over days
     {
-        row->second /= row->second.counter; //finish the averaging by dividing by the number of occurences which is counted when adding
+        row->second /= row->second.counter; //finish the averaging by dividing by the number of occurrences which is counted when adding
         
         ODSLL_reg << *row; //if existing ODSL is found, data is replaced else a new row is inserted, also calculates the quotient of the anticipated wt and ivt of the current day and the previous day
         
@@ -132,7 +132,7 @@ map<id_type, Travel_time>& operator += (map<id_type, Travel_time>& ODSL_reg, map
 {
     for (typename map<id_type, Travel_time>::iterator row = ODSL_data.begin(); row != ODSL_data.end(); ++row) //aggregate over replications
 	{
-		row->second /= row->second.counter; //finish the averaging by dividing by the number of occurences which is counted when adding
+		row->second /= row->second.counter; //finish the averaging by dividing by the number of occurrences which is counted when adding
 		row->second.counter = 1;
 
 		ODSL_reg += *row; //if existing ODSL is found, data is added, else a new row is inserted

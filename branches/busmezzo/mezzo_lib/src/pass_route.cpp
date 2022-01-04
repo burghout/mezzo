@@ -12,37 +12,37 @@ Pass_path:: Pass_path ()
         random->randomize();
     }
 }
-Pass_path:: Pass_path (int path_id, vector<vector<Busline*> > alt_lines_)
-{
-	p_id = path_id;
-	alt_lines = alt_lines_;
-	number_of_transfers = find_number_of_transfers();
-    random = new (Random);
-    if (randseed != 0)
-        {
-        random->seed(randseed);
-        }
-    else
-    {
-        random->randomize();
-    }
-}
-Pass_path:: Pass_path (int path_id, vector<vector<Busline*> > alt_lines_, vector <vector <Busstop*> > alt_transfer_stops_)
-{
-	p_id = path_id;
-	alt_lines = alt_lines_;
-	alt_transfer_stops = alt_transfer_stops_;
-	number_of_transfers = find_number_of_transfers();
-	random = new (Random);
-	if (randseed != 0)
-		{
-		random->seed(randseed);
-		}
-	else
-	{
-		random->randomize();
-	}
-}
+//Pass_path:: Pass_path (int path_id, vector<vector<Busline*> > alt_lines_)
+//{
+//	p_id = path_id;
+//	alt_lines = alt_lines_;
+//	number_of_transfers = find_number_of_transfers();
+//    random = new (Random);
+//    if (randseed != 0)
+//        {
+//        random->seed(randseed);
+//        }
+//    else
+//    {
+//        random->randomize();
+//    }
+//}
+//Pass_path:: Pass_path (int path_id, vector<vector<Busline*> > alt_lines_, vector <vector <Busstop*> > alt_transfer_stops_)
+//{
+//	p_id = path_id;
+//	alt_lines = alt_lines_;
+//	alt_transfer_stops = alt_transfer_stops_;
+//	number_of_transfers = find_number_of_transfers();
+//	random = new (Random);
+//	if (randseed != 0)
+//		{
+//		random->seed(randseed);
+//		}
+//	else
+//	{
+//		random->randomize();
+//	}
+//}
 
 Pass_path::Pass_path (int path_id, vector<vector<Busline*> > alt_lines_, vector <vector <Busstop*> > alt_transfer_stops_, vector<double> walking_distances_)
 {
@@ -689,7 +689,7 @@ size_t Pass_path::count_flexible_legs() const
 	return num_flex_legs;
 }
 
-bool Pass_path::check_all_flexible_lines(const vector<Busline*>& line_vec) const
+bool Pass_path::check_all_flexible_lines(const vector<Busline*>& line_vec)
 {
 	if (line_vec.empty()) //empty vector of lines is not a set of flexible transit lines
 		return false;
@@ -716,7 +716,7 @@ bool Pass_path::check_any_flexible_lines() const
 	return false;
 }
 
-bool Pass_path::check_all_fixed_lines(const vector<Busline*>& line_vec) const
+bool Pass_path::check_all_fixed_lines(const vector<Busline*>& line_vec)
 {
 	if (line_vec.empty()) //empty vector of lines is not a set of fixed transit lines
 		return false;

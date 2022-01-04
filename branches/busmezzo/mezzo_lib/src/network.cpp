@@ -4336,7 +4336,7 @@ void Network:: find_recursive_connection_with_walking (Busstop* origin)
         nr_im_stop_elements++;
     }
 
-    for (map <Busstop*, double>::iterator poss_origin = possible_origins.begin(); poss_origin != possible_origins.end(); poss_origin++)
+    for (auto poss_origin = possible_origins.begin(); poss_origin != possible_origins.end(); poss_origin++)
     {
         if ((*poss_origin).second < 10000)
         {
@@ -6408,38 +6408,38 @@ vector<Busstop*> Network::get_busstops_on_busroute(Busroute* route) const
 vector<Busstop*> Network::get_intermediate_busstops_on_busroute(Busroute* route, Busstop* start_stop, Busstop* end_stop) const
 {
     vector<Busstop*> stops_on_route;
-    bool start_stop_occurence = false;
-    bool end_stop_occurence = false;
+    bool start_stop_occurrence = false;
+    bool end_stop_occurrence = false;
     
     for (auto link : route->get_links())
     {
         vector<Busstop*> stops_on_link = get_busstops_on_link(link);
         for(auto stop: stops_on_link)
         {
-            // ignore stops up until first occurence of start_stop
-            if(!start_stop_occurence && (stop->get_id() == start_stop->get_id())) 
-                start_stop_occurence = true;
+            // ignore stops up until first occurrence of start_stop
+            if(!start_stop_occurrence && (stop->get_id() == start_stop->get_id())) 
+                start_stop_occurrence = true;
 
-            // push all stops until first occurence of end_stop (including start and end stop) and then terminate
-            if(start_stop_occurence)
+            // push all stops until first occurrence of end_stop (including start and end stop) and then terminate
+            if(start_stop_occurrence)
             {
                 stops_on_route.push_back(stop);
-                if(!end_stop_occurence && (stop->get_id() == end_stop->get_id())) // stop collecting after first occurence of end_stop
-                    end_stop_occurence = true;
+                if(!end_stop_occurrence && (stop->get_id() == end_stop->get_id())) // stop collecting after first occurrence of end_stop
+                    end_stop_occurrence = true;
             }
                 
-            if(end_stop_occurence)
+            if(end_stop_occurrence)
                 break;
         }
-        if(end_stop_occurence)
+        if(end_stop_occurrence)
                 break;
     }
-    if(!start_stop_occurence)
+    if(!start_stop_occurrence)
     {
         qDebug() << "Network::get_intermediate_busstops_on_busroute() - warning: returning empty vector start stop never encountered on route";
         assert(stops_on_route.empty());
     }
-    if(!end_stop_occurence)
+    if(!end_stop_occurrence)
     {
         qDebug() << "Network::get_intermediate_busstops_on_busroute() - warning: end stop never encountered on route";
     }

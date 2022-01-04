@@ -312,7 +312,8 @@ protected:
     vector<pair<Busstop*, double> > delta_at_stops; //!< expected ivt between departures for all stops on this line (defined on input when reading bustrips for this line) with first stop departure at time = 0
     int trip_count = 0; //!< the number of trips created for this line
     list <Start_trip> static_trips; //!< trips that were created from input files (i.e. were not created dynamically for this line), to be saved between resets
-    double planned_headway = 0; //!< planned headway in seconds of this line, set to zero by default in constructor. If this is a DRT line then the planned headway is not based on pre-scheduled trips but on expectations given service design (@todo DRT currently only valid with trip format 3 now!)
+    double planned_headway = 0; /*!< planned headway in seconds of this line, set to zero by default in constructor. If this is a DRT line then the planned headway is not based on pre-scheduled trips but on expectations given service design.
+                                  (@todo DRT currently only valid with trip format 3 now. The default planned_headway of auto-generated DRT lines is set based on a global param ::drt_first_rep_max_headway) */
 	Controlcenter* CC_ = nullptr; //!< controlcenter that can dynamically generate trips for this line
 
 	// additional output collection for FWF implementation/testing
