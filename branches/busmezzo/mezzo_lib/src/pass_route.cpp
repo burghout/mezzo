@@ -729,6 +729,16 @@ bool Pass_path::check_all_fixed_lines(const vector<Busline*>& line_vec)
 	return true;
 }
 
+bool Pass_path::check_no_mixed_mode_legs(const vector<vector<Busline*> >& alt_lines)
+{
+    for (const auto& leg : alt_lines)
+    {
+        if (!check_all_fixed_lines(leg) && !check_all_flexible_lines(leg))
+            return false;
+    }
+    return true;
+}
+
 bool Pass_path::is_first_transit_leg_fixed() const
 {
 	if (alt_lines.empty()) //path with no transit legs (e.g. walking only)
