@@ -145,7 +145,10 @@ vector <rateval> ODpair::get_route_rates()
 
 void ODpair::add_route(Route* route)
 {
-	routes.insert(routes.end(),route);
+	if(find(routes.begin(),routes.end(),route) == routes.end())
+	    routes.insert(routes.end(),route);
+	else
+		qDebug() << "ODpair::add_route - Route" << route->get_id() << "already exists for OD" << this->get_origin()->get_id() << this->get_destination()->get_id();
 }
 
  Route* ODpair::get_route(int id)
