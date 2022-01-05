@@ -354,7 +354,6 @@ void TestFixedWithFlexible_walking::testFleetState()
     bus1->set_bustype_attributes(bustype);
     bus1->set_bus_id(1); //vehicle id and bus id mumbojumbo
     CC->connectVehicle(bus1); //connect vehicle to a control center
-    CC->addVehicleToAllServiceRoutes(bus1);
     bus1->set_last_stop_visited(stop1); // need to do this before setting state always
     stop1->add_unassigned_bus(bus1,0.0); //should change the buses stat to OnCall and update connected Controlcenter
     QVERIFY(CC->getOnCallVehiclesAtStop(stop1).size() == 1);
@@ -373,7 +372,6 @@ void TestFixedWithFlexible_walking::testFleetState()
     bus2->set_bus_id(2);
     bus2->set_bustype_attributes(bustype);
     CC->connectVehicle(bus2); //connect vehicle to a control center
-    CC->addVehicleToAllServiceRoutes(bus2);
     trip->set_busv(bus2);
     bus2->set_curr_trip(trip);
     bus2->set_on_trip(true);
@@ -568,7 +566,6 @@ void TestFixedWithFlexible_walking::testFlexiblePathExpectedLoS()
     bus1->set_bustype_attributes(bustype);
     bus1->set_bus_id(1); //vehicle id and bus id mumbojumbo
     CC->connectVehicle(bus1); //connect vehicle to a control center
-    CC->addVehicleToAllServiceRoutes(bus1);
     bus1->set_last_stop_visited(stop4); // need to do this before setting state always
     stop4->add_unassigned_bus(bus1,0.0); //should change the buses stat to OnCall and update connected Controlcenter
     QVERIFY(CC->getOnCallVehiclesAtStop(stop4).size() == 1);
@@ -757,7 +754,6 @@ void TestFixedWithFlexible_walking::testPathSetUtilities()
     bus1->set_bustype_attributes(bustype);
     bus1->set_bus_id(1); //vehicle id and bus id mumbojumbo
     CC->connectVehicle(bus1); //connect vehicle to a control center
-    CC->addVehicleToAllServiceRoutes(bus1);
     bus1->set_last_stop_visited(stop4); // need to do this before setting state always
     stop4->add_unassigned_bus(bus1,0.0); //should change the buses stat to OnCall and update connected Controlcenter
     QVERIFY(CC->getOnCallVehiclesAtStop(stop4).size() == 1);
@@ -874,7 +870,6 @@ void TestFixedWithFlexible_walking::testPassArrivedToWaitingDecisions()
     bus1->set_bustype_attributes(bustype);
     bus1->set_bus_id(1); //vehicle id and bus id mumbojumbo
     CC->connectVehicle(bus1); //connect vehicle to a control center
-    CC->addVehicleToAllServiceRoutes(bus1);
     bus1->set_last_stop_visited(stop4); // need to do this before setting state always
     stop4->add_unassigned_bus(bus1,0.0); //should change the buses stat to OnCall and update connected Controlcenter
     QVERIFY(CC->getOnCallVehiclesAtStop(stop4).size() == 1);
