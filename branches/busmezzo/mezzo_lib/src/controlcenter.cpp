@@ -317,36 +317,7 @@ BustripVehicleMatcher::~BustripVehicleMatcher()
 
 void BustripVehicleMatcher::reset(int matching_strategy_type)
 {
-	vehicles_per_service_route_.clear();
 	setMatchingStrategy(matching_strategy_type);
-}
-
-void BustripVehicleMatcher::addVehicleToAllServiceRoutes(const BustripGenerator& tg, Bus* transitveh)
-{
-    assert(transitveh);
-    for (const Busline* line : tg.serviceRoutes_)
-    {
-        addVehicleToServiceRoute(line->get_id(), transitveh);
-    }
-}
-
-void BustripVehicleMatcher::addVehicleToServiceRoute(int line_id, Bus* transitveh)
-{
-	assert(transitveh);
-    //TODO need to add check for when line_id that is not included as a service route, maybe move service routes to Controlcenter rather than BustripGenerator
-    vehicles_per_service_route_[line_id].insert(transitveh);
-    transitveh->add_sroute_id(line_id); //vehicle is also aware of its service routes for now. TODO: probably this is a bit unnecessary at the moment, since the vehicle also knows of its CC
-}
-
-void BustripVehicleMatcher::removeVehicleFromServiceRoute(int line_id, Bus * transitveh)
-{
-	assert(transitveh);
-	set<Bus*, bus_ptr_less<Bus*> > candidateVehicles = vehicles_per_service_route_[line_id];
-    if (candidateVehicles.count(transitveh) != 0)
-    {
-        vehicles_per_service_route_[line_id].erase(transitveh);
-        transitveh->remove_sroute_id(line_id); //vehicle is also aware of its service routes for now. TODO: probably this is a bit unnecessary at the moment, since the vehicle also knows of its CC
-    }
 }
 
 void BustripVehicleMatcher::setMatchingStrategy(int type)
@@ -377,7 +348,7 @@ bool BustripVehicleMatcher::matchVehiclesToTrips(DRTAssignmentData& assignment_d
 		for (auto it = assignment_data.unmatched_trips.begin(); it != assignment_data.unmatched_trips.end();) //attempt to match vehicles to all trips in planned trips
 		{
 			Bustrip* trip = *it;
-			if (matchingStrategy_->find_tripvehicle_match(assignment_data, trip, vehicles_per_service_route_, time))
+			if (matchingStrategy_->find_tripvehicle_match(assignment_data, trip, time))
 			{
 				matchfound = true;
 				it = assignment_data.unmatched_trips.erase(it);
@@ -401,7 +372,7 @@ bool BustripVehicleMatcher::matchVehiclesToEmptyVehicleTrips(DRTAssignmentData& 
 		for (auto it = assignment_data.unmatched_empty_trips.begin(); it != assignment_data.unmatched_empty_trips.end();) //attempt to match all trips in planned trips
 		{
 			Bustrip* trip = *it;
-			if (matchingStrategy_->find_tripvehicle_match(assignment_data, trip, vehicles_per_service_route_, time))
+			if (matchingStrategy_->find_tripvehicle_match(assignment_data, trip, time))
 			{
 				matchfound = true;
 				it = assignment_data.unmatched_empty_trips.erase(it);
@@ -1002,24 +973,6 @@ void Controlcenter::addServiceRoute(Busline* line)
 
 	//whenever a line is added as a service route to a CC, the line also knows of the CC it is a service route for...
 	line->add_CC(this); // may create a tight coupling between Controlcenter's and Busline, but added so that Pass_path can ask specific buslines for LoS estimates. 
-}
-
-void Controlcenter::addVehicleToAllServiceRoutes(Bus* transitveh)
-{
-    assert(transitveh);
-    tvm_.addVehicleToAllServiceRoutes(tg_, transitveh);
-}
-
-void Controlcenter::addVehicleToServiceRoute(int line_id, Bus* transitveh)
-{
-	assert(transitveh);
-	tvm_.addVehicleToServiceRoute(line_id, transitveh);
-}
-
-void Controlcenter::removeVehicleFromServiceRoute(int line_id, Bus* transitveh)
-{
-	assert(transitveh);
-	tvm_.removeVehicleFromServiceRoute(line_id, transitveh);
 }
 
 void Controlcenter::addInitialVehicle(Bus* transitveh)

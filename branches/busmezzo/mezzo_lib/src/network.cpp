@@ -10003,7 +10003,6 @@ bool Network::init()
             bus->set_curr_trip(nullptr); //unlike non-dynamically generated bus/trips this bus should not have a trip between resets as well
             bus->set_on_trip(false);
             cc->connectVehicle(bus); //connect vehicle to a control center
-            cc->addVehicleToAllServiceRoutes(bus); //initially, each vehicle of this control center can be assigned to any service route of the control center
             cc->addInitialVehicle(bus);
             stop->book_unassigned_bus_arrival(eventlist, bus, init_time); //should be in a Null state until their init_time (also adds a Busstop event scheduled for the init_time of vehicle  to switch state of bus to IdleEmpty from Null)
             bus->set_init_time(init_time);

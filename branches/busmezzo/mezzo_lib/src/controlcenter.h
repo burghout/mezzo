@@ -162,18 +162,12 @@ public:
 
 	void reset(int matching_strategy_type); //!< resets members and matching strategy 
 
-	//find_candidate_vehicles
-    void addVehicleToAllServiceRoutes(const BustripGenerator& tg, Bus* transitveh); //!< adds vehicle as candidate to serve ALL service routes in BustripGenerator
-	void addVehicleToServiceRoute(int line_id, Bus* transitveh); //!< add vehicle to vector of vehicles assigned to serve the given line
-	void removeVehicleFromServiceRoute(int line_id, Bus* transitveh); //!< remove vehicle from vector of vehicles assigned to serve the given line
-	void setMatchingStrategy(int type); //!< destroy current matchingStrategy_ and set to new type
+    void setMatchingStrategy(int type); //!< destroy current matchingStrategy_ and set to new type
 
 	bool matchVehiclesToTrips(DRTAssignmentData& assignment_data, double time); //!< returns true if at LEAST one unmatched trip was assigned to a vehicle
 	bool matchVehiclesToEmptyVehicleTrips(DRTAssignmentData& assignment_data, double time); //!< returns true if at LEAST one unmatched empty trip was assigned to a vehicle
 
 private:
-	map<int, set<Bus*, bus_ptr_less<Bus*> > > vehicles_per_service_route_; //!< maps lineIDs among service routes for this control center to vector of candidate transit vehicles
-
 	MatchingStrategy* matchingStrategy_ = nullptr; //!< strategy for assigning unmatched trips to candidate transit vehicles
 };
 
@@ -319,9 +313,6 @@ public:
 
     void addStopToServiceArea(Busstop* stop); //!< add stop to serviceArea_ the set of stops within the service area of this control center's fleet
 	void addServiceRoute(Busline* line); //!< add line to BustripGenerator's map of possible lines to create trips for
-    void addVehicleToAllServiceRoutes(Bus* transitveh); //!< add transit vehicle as a candidate vehicle to be assigned trips for to all service routes in BustripGenerator
-	void addVehicleToServiceRoute(int line_id, Bus* transitveh); //!< add transit vehicle to vector of candidate vehicles that may be assigned trips for a given line/service route
-	void removeVehicleFromServiceRoute(int line_id, Bus* transitveh); //!< remove bus from vector of candidate vehicles that may be assigned trips for a given line/service route
 
 	void addInitialVehicle(Bus* transitveh); //!< add vehicle assigned to this control center on input (that should be preserved between resets)
 	void addCompletedVehicleTrip(Bus* transitveh, Bustrip* trip); //!< add vehicle - trip pair to vector of completed trips

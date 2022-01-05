@@ -1236,48 +1236,35 @@ Bustrip* MatchingStrategy::find_earliest_planned_trip(const set<Bustrip*>& trips
 }
 
 
-bool NullMatching::find_tripvehicle_match(DRTAssignmentData& assignment_data, Bustrip* unmatchedTrip, map<int, set<Bus*, bus_ptr_less<Bus*> >>& veh_per_sroute, const double time)
+bool NullMatching::find_tripvehicle_match(DRTAssignmentData& assignment_data, Bustrip* unmatchedTrip, const double time)
 {
     Q_UNUSED(unmatchedTrip)
-    Q_UNUSED(veh_per_sroute)
     Q_UNUSED(time)
     Q_UNUSED(assignment_data)
 
     return false;
 }
 
-bool NaiveMatching::find_tripvehicle_match(DRTAssignmentData& assignment_data, Bustrip* unmatchedTrip, map<int, set<Bus*, bus_ptr_less<Bus*> >>& veh_per_sroute, const double time)
+bool NaiveMatching::find_tripvehicle_match(DRTAssignmentData& assignment_data, Bustrip* unmatchedTrip, const double time)
 {
-    Q_UNUSED(assignment_data);
+    if (assignment_data.fleet_state.find(BusState::OnCall) == assignment_data.fleet_state.end())  //a drt vehicle must have been initialized
+        return false;
+    if (assignment_data.fleet_state.at(BusState::OnCall).empty())  //a drt vehicle must be available
+        return false;
+    if (!unmatchedTrip)
+        return false;
 
     //attempt to match unmatchedTrip with first on-call vehicle found at the origin stop of the trip
-    if ((unmatchedTrip != nullptr) && !veh_per_sroute.empty())
-    {
-        Busline* sroute = unmatchedTrip->get_line(); //get the line/service route of this trip
-        set<Bus*, bus_ptr_less<Bus*> > candidate_buses = veh_per_sroute[sroute->get_id()]; //get all transit vehicles that have this route in their service area
+    Busstop* origin_stop = unmatchedTrip->get_last_stop_visited(); //get the initial stop of the trip
+    vector<pair<Bus*, double>> ua_buses_at_stop = origin_stop->get_unassigned_buses_at_stop(); // @note should always be sorted by arrival time when added to Busstop
 
-        if (!candidate_buses.empty()) //there is at least one bus serving the route of this trip
-        {
-            Busstop* origin_stop = unmatchedTrip->get_last_stop_visited(); //get the initial stop of the trip
-            vector<pair<Bus*, double>> ua_buses_at_stop = origin_stop->get_unassigned_buses_at_stop();
+    if(ua_buses_at_stop.empty()) // no on-call vehicles are available at the origin stop of the trip
+        return false;
 
-            //check if one of the unassigned transit vehicles at the origin stop is currently serving the route of the trip
-            for (const pair<Bus*, double>& ua_bus : ua_buses_at_stop)
-            {
-                set<Bus*, bus_ptr_less<Bus*> >::iterator c_bus_it;
-                c_bus_it = candidate_buses.find(ua_bus.first); //first bus in list should be the bus that arrived to the stop earliest
+    Bus* veh = ua_buses_at_stop.front().first; // first bus in list should be the bus that arrived to the stop earliest
+    assign_oncall_vehicle_to_trip(origin_stop, veh, unmatchedTrip, time); //schedule the vehicle to perform the trip at this time
 
-                if (c_bus_it != candidate_buses.end()) //a bus match has been found
-                {
-                    Bus* veh = (*c_bus_it);
-                    assign_oncall_vehicle_to_trip(origin_stop, veh, unmatchedTrip, time); //schedule the vehicle to perform the trip at this time
-
-                    return true;
-                }
-            }
-        }
-    }
-    return false;
+    return true;
 }
 
 //SchedulingStrategy

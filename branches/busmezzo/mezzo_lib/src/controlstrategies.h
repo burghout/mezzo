@@ -261,9 +261,8 @@ class MatchingStrategy
 public:
     virtual ~MatchingStrategy() = default;
     virtual bool find_tripvehicle_match(
-        DRTAssignmentData& assignment_data, 
-        Bustrip* unmatchedTrip, //!< planned trip that has not yet been assigned to any transit vehicle
-        map<int, set<Bus*, bus_ptr_less<Bus*> > >& veh_per_sroute, //!< set of candidate vehicles assigned with different service routes
+        DRTAssignmentData& assignment_data,
+        Bustrip* unmatchedTrip,
         double time //!< time find_tripvehicle_match is called
     ) = 0; //!< returns true if unmatchedTrip was assigned to a transit vehicle from veh_per_sroute
 
@@ -277,19 +276,15 @@ class NullMatching : public MatchingStrategy
 {
 public:
 	~NullMatching() override = default;
-	bool find_tripvehicle_match(DRTAssignmentData& assignment_data, Bustrip* unmatchedTrip, map<int, set<Bus*, bus_ptr_less<Bus*> > >& veh_per_sroute, double time) override;
+	bool find_tripvehicle_match(DRTAssignmentData& assignment_data, Bustrip* unmatchedTrip, double time) override;
 };
 
 //! @brief Naive matching strategy always attempts to match the unmatchedTrip to the first candidate transit vehicle found (if any) at the origin stop of the unmatchedTrip
-/*!
-    @todo
-        - Rework ugly hack for moving vehicles between stop pairs, maybe implement a 'perform_Uturn' type method
-*/
 class NaiveMatching : public MatchingStrategy
 {
 public:
 	~NaiveMatching() override = default;
-	bool find_tripvehicle_match(DRTAssignmentData& assignment_data, Bustrip* unmatchedTrip, map<int, set<Bus*, bus_ptr_less<Bus*> > >& veh_per_sroute, double time) override;
+	bool find_tripvehicle_match(DRTAssignmentData& assignment_data, Bustrip* unmatchedTrip, double time) override;
 };
 
 //Scheduling Strategy

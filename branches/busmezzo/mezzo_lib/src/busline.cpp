@@ -2884,7 +2884,7 @@ void Busstop::add_unassigned_bus(Bus* bus, double arrival_time)
 	sort(unassigned_buses_at_stop.begin(), unassigned_buses_at_stop.end(), 
 		[](const pair<Bus*, double>& left, const pair<Bus*, double>& right) -> bool
 		{
-			return left.second < right.second; //keep vector sorted by arrival time (smallest at the back of the vector)
+			return left.second < right.second; //keep vector sorted by arrival time (earliest at the front of the vector)
 		}
 	);
 	bus->set_last_stop_visited(this); //update this here before setting state

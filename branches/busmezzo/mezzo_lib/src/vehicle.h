@@ -232,8 +232,6 @@ public:
     void set_init_time(double time) { init_time = time; }
 	void set_flex_vehicle(bool flex_vehicle) { flex_vehicle_ = flex_vehicle; }
 	bool is_flex_vehicle() const { return flex_vehicle_; }
-	void add_sroute_id(int sroute_id) { sroute_ids_.insert(sroute_id); } 
-	void remove_sroute_id(int sroute_id) { if (sroute_ids_.count(sroute_id) != 0) { sroute_ids_.erase(sroute_id); } }
     void set_control_center(Controlcenter* CC) { CC_ = CC; }
 	Controlcenter* get_CC() { return CC_; }
 
@@ -259,7 +257,6 @@ protected:
 	Busstop* last_stop_visited_ = nullptr; //!< the last busstop (if no stop has been visited then initialized to nullptr) that this transit vehicle has entered (or exited)
 	BusState state_ = BusState::Null; //!< current BusState of the transit vehicle
 	bool flex_vehicle_ = false; //!< true if vehicle can be assigned trips dynamically, false otherwise
-	set<int> sroute_ids_; //!< ids of service routes (buslines) that this bus can be assigned dynamically generated trips for @todo remove, vehicle now knows of its CC if flex vehicle anyways
     Controlcenter* CC_ = nullptr; //!< control center that this vehicle is currently connected to. nullptr if not connected to any control center
 
 	// output attributes

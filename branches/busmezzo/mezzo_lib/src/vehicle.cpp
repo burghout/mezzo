@@ -229,7 +229,6 @@ void Bus::reset ()
         CC_ = nullptr; //re-added in Network::init if drt vehicle
         last_stop_visited_ = nullptr;
         state_ = BusState::Null;
-        sroute_ids_.clear(); //initial service routes re-added in Network::init
 		curr_trip = nullptr;
 		on_trip = false;
     }
@@ -319,13 +318,6 @@ Bus* Bus::progressFlexVehicle(Bus* oldbus, double time)
     cc->connectVehicle(newbus);
     newbus->set_state(oldstate, time); //updates fleet state of CC with this vehicle
 
-	//add newbus to the same service routes as oldbus
-    set<int> sroute_ids = oldbus->sroute_ids_; //copy ids of service routes of old bus when it finished its trip, sroute_ids_ will change when removing oldbus from control center service routes
-    for (const int& sroute_id : sroute_ids)
-    {
-        cc->removeVehicleFromServiceRoute(sroute_id, this); //strip oldbus (this) of all of its service routes, both in control center and from its member sroute_ids_
-        cc->addVehicleToServiceRoute(sroute_id, newbus); //initiate the newbus with the sroutes of the oldbus
-    }
     return newbus;
 }
 
