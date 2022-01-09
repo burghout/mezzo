@@ -65,7 +65,8 @@ class Pass_path
     bool is_first_leg_flexible_and_matches_end_stops() const; //!< returns true if the first set of lines in alt_lines are all flexible and that each line in that set has a start and end stop that matches the first departure stop and second arrival stop in alt_transfer_stops
     Busstop* get_first_transfer_stop() const; //!< returns the first arrival stop after the first transit leg of this path if there are transfers. Returns nullptr if there are no transfers in this path
     Busstop* get_first_dropoff_stop() const; //!< returns the first arrival stop after the first transit leg of this path
-    
+    Busstop* get_origin() const; //!< returns the origin of the path (i.e. the very first stop in alt_transfer_stops)
+    Busstop* get_destination() const; //!< returns the destination of the path (i.e. the very last stop in alt_transfer_stops)
     /**@}*/
 protected:
     int p_id = -1;

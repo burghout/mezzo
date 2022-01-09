@@ -874,3 +874,17 @@ Busstop* Pass_path::get_first_dropoff_stop() const
 
     return first_dropoff_stop;
 }
+
+Busstop* Pass_path::get_origin() const
+{
+	if(!alt_transfer_stops.empty())
+        return alt_transfer_stops.front().front();
+	return nullptr;
+}
+
+Busstop* Pass_path::get_destination() const
+{
+	if(!alt_transfer_stops.empty())
+	    return alt_transfer_stops.back().back();
+	return nullptr;
+}
