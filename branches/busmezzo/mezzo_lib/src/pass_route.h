@@ -59,6 +59,7 @@ class Pass_path
     bool check_any_flexible_lines() const; //!< returns true if ANY transit leg of this path is flexible, will e.g. return false if all line legs are fixed, and for walking only paths
     static bool check_all_fixed_lines(const vector<Busline*>& line_vec); //!< returns true if all lines in vector are not flagged as flexible and is non-empty
     static bool check_no_mixed_mode_legs(const vector<vector<Busline*> >& alt_lines); //!< returns true if each set of lines in alt_lines is comprised of only fixed or only flexible lines
+    bool has_no_connected_flexible_legs() const; //!< returns true if path does not contain any connected flexible transit legs (e.g. drt -> drt will return false, fix -> fix or fix -> drt will return true)
     bool is_first_transit_leg_fixed() const; //!< returns true if the first set of lines in alt_lines are all fixed
     bool is_first_transit_leg_flexible() const; //!< returns true if the first set of lines in alt_lines are all flexible
     pair<bool,Busline*> is_first_leg_flexible_and_any_line_matches_end_stops() const; //!< returns true if all lines in alt_lines are flexible and any line in alt_lines has a start and end stop that matches the first departure stop and second arrival stop in alt_transfer_stops, also returns the first line that matches these conditions if found and nullptr otherwise
