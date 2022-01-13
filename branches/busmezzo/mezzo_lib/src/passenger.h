@@ -156,7 +156,7 @@ public:
     
     //walking time
     double get_walking_time(Busstop*,double);
-	double get_walking_time(Busstop*, int, double); // Erik 18-10-08
+	double get_walking_time(int, Busstop*, int, double); // Erik 18-10-08
 
 	double get_walking_distance(Busstop*, int);
 

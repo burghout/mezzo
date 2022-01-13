@@ -2647,15 +2647,16 @@ double Busstop::get_walking_time(int curr_section, Busstop* next_stop, int next_
 
 	double walking_time;
 
-
 	//get walking time from exogenous distribution, returns negative value if not available
-	walking_time = estimate_walking_time_from_quantiles(next_stop, curr_time);
+	//walking_time = estimate_walking_time_from_quantiles(next_stop, curr_time);
 
-	//otherwise, infer walking time from walking distance
-	if (walking_time < 0) {
 
-		walking_time = get_walking_distance_stop_section(curr_section, next_stop, next_section) 
-			* 60 / random->nrandom(theParameters->average_walking_speed, theParameters->average_walking_speed / 4);
+	////otherwise, infer walking time from walking distance
+	//if (walking_time < 0) {
+	    /*cout << get_walking_distance_stop_section(curr_section, next_stop, next_section) << endl;
+	    cout << random->nrandom(theParameters->average_walking_speed, theParameters->average_walking_speed / 4) << endl;
+	    cout << get_walking_distance_stop_section(curr_section, next_stop, next_section) * 60 / random->nrandom(theParameters->average_walking_speed, theParameters->average_walking_speed / 4) << endl;*/
+		walking_time = get_walking_distance_stop_section(curr_section, next_stop, next_section) * 60 / random->nrandom(theParameters->average_walking_speed, theParameters->average_walking_speed / 4);
 		//int curr_section_diff = abs(shortest_walks[next_stop].first - curr_section);
 		//int next_section_diff = abs(shortest_walks[next_stop].second - next_section);
 		//double curr_section_length = length / num_sections;
@@ -2666,9 +2667,14 @@ double Busstop::get_walking_time(int curr_section, Busstop* next_stop, int next_
 		//walking_distance += curr_section_diff * curr_section_length + next_section_diff * next_section_length;
 
 		//walking_time = walking_distance * 60 / random->nrandom(theParameters->average_walking_speed, theParameters->average_walking_speed / 4);
-
-	}
-
+		if (walking_time<0)
+		{
+			walking_time = get_walking_distance_stop_section(curr_section, next_stop, next_section)* 60 / random->nrandom(theParameters->average_walking_speed, theParameters->average_walking_speed / 4);
+			/*cout << get_walking_distance_stop_section(curr_section, next_stop, next_section) << endl;
+			cout << random->nrandom(theParameters->average_walking_speed, theParameters->average_walking_speed / 4) << endl;
+			cout << get_walking_distance_stop_section(curr_section, next_stop, next_section) * 60 / random->nrandom(theParameters->average_walking_speed, theParameters->average_walking_speed / 4) << endl;*/
+		}
+	//}
 	return walking_time;
 }
 
@@ -2695,7 +2701,10 @@ double Busstop::get_walking_distance_stop_section(int curr_section, Busstop* nex
 		//cout << " from = " << this->get_id() << " curr_section = " << curr_section << " to = " << next_stop->get_id() << " next_section = " << next_section;
 		//cout << " walking_distance = " << walking_distance << " sw1 = " << shortest_walks[next_stop].first << " sw2 " << shortest_walks[next_stop].second << endl;
 	}
-
+	if (walking_distance<0)
+	{
+		cout << "here" << endl;
+	}
 	return walking_distance;
 }
 

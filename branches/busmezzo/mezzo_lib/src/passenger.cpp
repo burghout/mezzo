@@ -419,13 +419,12 @@ void Passenger::start (Eventlist* eventlist)
 			set_ODstop(connection_stop->get_stop_od_as_origin_per_stop(OD_stop->get_destination())); // set this stop as his new origin (new OD)
 
 			// Erik 18-09-15: should get_walking time take both connection stop and platform section as input?
-			double arrival_time_to_connected_stop = start_time + get_walking_time(connection_stop, connection_section, start_time);
+			double arrival_time_to_connected_stop = start_time + get_walking_time(orig_section, connection_stop, connection_section, start_time);
 			eventlist->add_event(arrival_time_to_connected_stop, this);
 
             pair<Busstop*,double> stop_time;
 			stop_time.first = connection_stop;
 			stop_time.second = arrival_time_to_connected_stop;
-			add_to_selected_path_stop(stop_time);
 
 			// Erik 18-09-24
 			//int connection_section = orig_section;
@@ -433,23 +432,28 @@ void Passenger::start (Eventlist* eventlist)
 			pair<int, double> section_time;
 			section_time.first = connection_section;
 			section_time.second = arrival_time_to_connected_stop;
+			add_to_selected_path_stop(stop_time);
 			add_to_selected_path_sections(section_time);
 		}
 		else // if the pass. stays at the same stop
 		{
 			//OD_stop->add_pass_waiting(this); // store the new passenger at the list of waiting passengers with this OD THIS
 			set_arrival_time_at_stop(start_time);
-			add_to_selected_path_stop(stop_time);
+			//add_to_selected_path_stop(stop_time);
 
 			// Erik 18-10-08
-			double arrival_time_to_connected_stop = start_time + get_walking_time(connection_stop, connection_section, start_time);
+			double arrival_time_to_connected_stop = start_time + get_walking_time(orig_section, connection_stop, connection_section, start_time);
 			eventlist->add_event(arrival_time_to_connected_stop, this);
 			// Erik 18-09-24
 			//int connection_section = orig_section;
+			pair<Busstop*, double> stop_time;
+			stop_time.first = connection_stop;
+			stop_time.second = arrival_time_to_connected_stop;
 			section = connection_section;
 			pair<int, double> section_time;
 			section_time.first = connection_section;
 			section_time.second = arrival_time_to_connected_stop;
+			add_to_selected_path_stop(stop_time);
 			add_to_selected_path_sections(section_time);
 
 			if (get_pass_RTI_network_level() == true || OD_stop->get_origin()->get_rti() > 0)
@@ -496,7 +500,15 @@ bool Passenger:: make_boarding_decision (Bustrip* arriving_bus, double time)
 			}
 			else
 			{
-				rejected_lines.push_back(arriving_bus->get_line()->get_id());
+				if ((time - start_time)> theParameters->max_waiting_time) //Melina for avoiding long waiting times
+				{
+					boarding_decision = 1;
+					rejected_lines.clear();
+				}
+				else
+				{
+					rejected_lines.push_back(arriving_bus->get_line()->get_id());
+				}
 			}
 			break;
 		case 4:
@@ -1556,11 +1568,11 @@ double Passenger::get_walking_time(Busstop* busstop_dest_ptr, double curr_time)
     return busstop_orig_ptr->get_walking_time(busstop_dest_ptr, curr_time);
 }
 
-double Passenger::get_walking_time(Busstop* busstop_dest_ptr, int dest_section, double curr_time)
+double Passenger::get_walking_time(int curr_section, Busstop* busstop_dest_ptr, int dest_section, double curr_time) //Melina 17-12-21
 {
 	Busstop* busstop_orig_ptr = OD_stop->get_origin();
 
-	return busstop_orig_ptr->get_walking_time(section, busstop_dest_ptr, dest_section, curr_time);
+	return busstop_orig_ptr->get_walking_time(curr_section, busstop_dest_ptr, dest_section, curr_time);
 }
 
 
