@@ -19,7 +19,8 @@ SUBDIRS += \
     fixedwithflexible_day2day \
     fixedwithflexible \
     drt_algorithms \
-    fixedwithflexible_2stop_2link
+    fixedwithflexible_2stop_2link \
+	csgm
 
 	
 CONFIG += sdk_no_version_check # for mac

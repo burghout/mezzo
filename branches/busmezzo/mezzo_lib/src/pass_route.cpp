@@ -729,14 +729,138 @@ bool Pass_path::check_all_fixed_lines(const vector<Busline*>& line_vec)
 	return true;
 }
 
-bool Pass_path::check_no_mixed_mode_legs(const vector<vector<Busline*> >& alt_lines)
+bool Pass_path::has_no_mixed_mode_legs(const vector<vector<Busline*> >& alt_lines)
 {
     for (const auto& leg : alt_lines)
     {
-        if (!check_all_fixed_lines(leg) && !check_all_flexible_lines(leg))
+        if (is_mixed_mode_leg(leg))
             return false;
     }
     return true;
+}
+
+bool Pass_path::has_connected_flexible_legs(const vector<vector<Busline*>>& alt_lines)
+{
+	bool drt_leg = false;
+	for(const auto& leg : alt_lines)
+	{
+        if (check_all_flexible_lines(leg))
+        {
+			if(drt_leg) // previous leg was also drt
+			    return true;
+
+            drt_leg = true;
+        }
+        else
+            drt_leg = false;
+	}
+	return false;
+}
+
+size_t Pass_path::count_num_mixed_mode_legs(const vector<vector<Busline*>>& alt_lines)
+{
+	size_t count = 0;
+	for (const auto& leg : alt_lines)
+    {
+        if (is_mixed_mode_leg(leg))
+            ++count;
+    }
+    return count;
+}
+
+bool Pass_path::is_mixed_mode_leg(const vector<Busline*>& path_leg)
+{
+    return (!check_all_fixed_lines(path_leg) && !check_all_flexible_lines(path_leg));
+}
+
+vector<vector<vector<Busline*> > > Pass_path::get_unmixed_paths(const vector<vector<Busline*>>& original_path)
+{
+	// assumes that the original stops and walking links are the same for all sub paths as the original paths, only difference is alt_lines (transit legs)
+//	qDebug() << "Num legs in original path: " << original_path.size();
+	size_t num_mixed_legs = count_num_mixed_mode_legs(original_path);
+	size_t num_unmixed_paths = static_cast<size_t>(pow(2, num_mixed_legs));
+//	qDebug() << "Num mixed legs           : " << num_mixed_legs;
+//	qDebug() << "Num unmixed paths        : " << num_unmixed_paths;
+
+	vector<vector<vector<Busline*>>> unmixed_paths;
+    get_unmixed_paths_helper(original_path, 0, unmixed_paths);
+
+	// sanity checks
+    for (auto path : unmixed_paths) // final check that all the paths that we return are not mixed mode
+    {
+        for (auto leg : path)
+            assert(!is_mixed_mode_leg(leg));
+    }
+    assert(unmixed_paths.size() == num_unmixed_paths); // 2^n paths should be returned, where n is the number of mixed legs in the original path
+
+    return unmixed_paths;
+}
+
+void Pass_path::remove_paths_with_connected_flexible_legs(vector<vector<vector<Busline*>>>& paths)
+{
+	paths.erase(remove_if(paths.begin(), paths.end(),
+    [](const auto& path_legs) { 
+        return Pass_path::has_connected_flexible_legs(path_legs); 
+    }), 
+paths.end());
+}
+
+void Pass_path::get_unmixed_paths_helper(const vector<vector<Busline*>>& path, size_t path_idx, vector<vector<vector<Busline*>>>& unmixed_paths)
+{
+	/**
+	 *
+	 * 0. Break condition is that no path in paths has a mixed leg
+	 * 1. If path_idx points to a mixed leg we branch on it, otherwise increment path_idx (@todo could probably replace this by searching for 'next occurance')
+	 *  	- Divide it into two new paths based on mixed leg, even if a mixed mode leg exists downstream
+	 *
+	 *	@notes
+	 *		::pathid is a global static counter
+	 *		the number of paths is counted as the final step, so do not need to care about this.
+	 *		should result in sum_i^N(2^n) paths for each path in paths with mixed legs and where n_i is the number of mixed legs in that path i and N is the original number of paths passed as an argument
+	 *
+	 */
+//    qDebug() << "unmixed path size: " << unmixed_paths.size();
+//    qDebug() << "path_idx         : " << path_idx;
+    if (has_no_mixed_mode_legs(path)) // break condition for recursion @note also takes care of empty path
+    {
+        unmixed_paths.push_back(path); // if the path we are currently checking is unmixed
+        return;
+    }
+    assert(path_idx < path.size()); // if path_idx == path.size() then we have looked at all legs of the path for mixed modes, have not found any, but somehow did not pass the check of the break condition
+
+    vector<Busline*> curr_leg = path[path_idx]; // the leg we want to check/branch on
+
+    if (is_mixed_mode_leg(curr_leg)) // if mixed leg we want to split into two sub-paths
+    {
+		vector<vector<Busline*>> sub_path_fix = path; // copy path
+        vector<vector<Busline*>> sub_path_drt = path; // copy path
+        auto split_legs = split_leg_by_mode(curr_leg);
+
+        //create two new transit leg paths, same as current path but with the mixed leg separated
+        sub_path_fix[path_idx] = split_legs.first;
+        sub_path_drt[path_idx] = split_legs.second;
+
+        // branch on mixed leg, we know that all legs up until path_idx are now unmixed
+        get_unmixed_paths_helper(sub_path_fix, path_idx + 1, unmixed_paths);
+        get_unmixed_paths_helper(sub_path_drt, path_idx + 1, unmixed_paths);
+    }
+	else
+		get_unmixed_paths_helper(path,path_idx+1,unmixed_paths); // continue search for mixed leg
+}
+
+pair<vector<Busline*>, vector<Busline*>> Pass_path::split_leg_by_mode(const vector<Busline*>& transit_leg)
+{
+	vector<Busline*> fixed_lines;
+	vector<Busline*> flex_lines;
+	for(auto line : transit_leg)
+	{
+	    if(line->is_flex_line())
+			flex_lines.push_back(line);
+		else
+			fixed_lines.push_back(line);
+	}
+
+	return make_pair(fixed_lines,flex_lines);
 }
 
 bool Pass_path::has_no_connected_flexible_legs() const

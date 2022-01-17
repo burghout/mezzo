@@ -58,7 +58,19 @@ class Pass_path
     static bool check_all_flexible_lines(const vector<Busline*>& line_vec); //!< returns true if all lines in vector are flagged as flexible (i.e. dynamically scheduled or routed) and is non-empty
     bool check_any_flexible_lines() const; //!< returns true if ANY transit leg of this path is flexible, will e.g. return false if all line legs are fixed, and for walking only paths
     static bool check_all_fixed_lines(const vector<Busline*>& line_vec); //!< returns true if all lines in vector are not flagged as flexible and is non-empty
-    static bool check_no_mixed_mode_legs(const vector<vector<Busline*> >& alt_lines); //!< returns true if each set of lines in alt_lines is comprised of only fixed or only flexible lines
+    static bool has_no_mixed_mode_legs(const vector<vector<Busline*> >& alt_lines); //!< returns true if each set of lines in alt_lines is comprised of only fixed or only flexible lines
+    static bool has_connected_flexible_legs(const vector<vector<Busline*> >& alt_lines); //!< returns true if alt_lines does not contain any connected flexible transit legs (e.g. drt -> drt will return true, fix -> fix or fix -> drt, drt/fix -> drt/fix will return false)
+    static size_t count_num_mixed_mode_legs(const vector<vector<Busline*> >& alt_lines); //!< returns the number of sets of lines in alt_lines that is comprised of mixed fixed and flexible lines
+    static bool is_mixed_mode_leg(const vector<Busline*>& path_leg);
+    static vector<vector<vector<Busline*>>> get_unmixed_paths(const vector<vector<Busline*>>& original_path); /*!< utility method for dividing a path with potentially mixed-mode legs (each set in alt_lines) into several paths each with no mixed legs
+                                                                                                                @note assumes that only 2 modes are available (fixed or flexible) and that alt_transfer_stops and walking_distances of the resultant unmixed paths are the same as for the original path */
+    static void remove_paths_with_connected_flexible_legs(vector<vector<vector<Busline*>>>& paths); // removes all transit-leg paths from <paths> that contain any connected flexible-only transit legs (e.g. drt -> drt will be removed, fix -> fix or fix -> drt, drt/fix -> drt/fix will be ignored)
+private:
+    static void get_unmixed_paths_helper(const vector<vector<Busline*>>& path, size_t path_idx, vector<vector<vector<Busline*>>>& unmixed_paths);
+
+public:
+    static pair<vector<Busline*>,vector<Busline*>> split_leg_by_mode(const vector<Busline*>& transit_leg); //!< splits transit leg into a set of fixed lines and flexible lines if mixed, 'first' is fixed, 'second' is flexible
+
     bool has_no_connected_flexible_legs() const; //!< returns true if path does not contain any connected flexible transit legs (e.g. drt -> drt will return false, fix -> fix or fix -> drt will return true)
     bool is_first_transit_leg_fixed() const; //!< returns true if the first set of lines in alt_lines are all fixed
     bool is_first_transit_leg_flexible() const; //!< returns true if the first set of lines in alt_lines are all flexible

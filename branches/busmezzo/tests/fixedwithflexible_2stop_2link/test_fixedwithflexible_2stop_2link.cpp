@@ -303,7 +303,7 @@ void TestFixedWithFlexible_2stop_2link::testCasePathSet()
             QVERIFY(!alt_lines.empty()); // no empty paths
             
             // Fixed and Flexible lines are always considered distinct from one another
-            QVERIFY(path->check_no_mixed_mode_legs(alt_lines));
+            QVERIFY(path->has_no_mixed_mode_legs(alt_lines));
             
             // max 2 legs should be available
             size_t n_legs = alt_lines.size();

@@ -314,7 +314,7 @@ void TestDrottningholmBidirectional_mixed_day2day::testCasePathSet()
             QVERIFY(n_legs < 3); // max 2 legs should be available
             
             // Fixed and Flexible lines are always considered distinct from one another
-            QVERIFY(path->check_no_mixed_mode_legs(alt_lines));
+            QVERIFY(path->has_no_mixed_mode_legs(alt_lines));
             
             int n_trans = path->get_number_of_transfers();
             QVERIFY(n_trans < 2);
