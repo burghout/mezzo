@@ -200,7 +200,7 @@ void TestFixedWithFlexible_2stop_2link::testInitParameters()
     QVERIFY2(theParameters->in_vehicle_d2d_indicator == 1, "Failure, IVT day2day indicator is not activade");
     QVERIFY2(AproxEqual(theParameters->default_alpha_RTI,0.0), "Faliure, default credibility coefficient for day2day RTI is not set to 0.0");
     QVERIFY2(AproxEqual(theParameters->break_criterium,0.01),"Failure, break criterium for day2day is not set to 0.01");
-    QVERIFY2(theParameters->max_days == 100, "Failure, max days for day2day is not set to 100.");
+    QVERIFY2(theParameters->max_days == 20, "Failure, max days for day2day is not set to 20.");
 }
 
 void TestFixedWithFlexible_2stop_2link::testValidRouteInput()
@@ -276,19 +276,35 @@ void TestFixedWithFlexible_2stop_2link::testCasePathSet()
         - Currently checks all ODs with stop 1 as an origin (i.e. 1->2, 1->22, 1->21) and stop 1 as a destination (2->1, 22->1, 21->1)
         - No transfers between DRT lines are ever allowed for this case only DRT->FIX
     */
-    
+    QVERIFY(theParameters->absolute_max_transfers == 2);
+    QVERIFY(theParameters->max_nr_extra_transfers == 1);
     vector<ODstops*> ods = net->get_odstops_demand();
+    
+    bool at_least_one_transfer = false;
+    for(auto od : ods)
+    {
+        auto pathset = od->get_path_set();
+        
+        for(auto path: pathset)
+        {
+            if(path->get_number_of_transfers() > 0)
+                at_least_one_transfer = true;
+        }
+    }
+    QVERIFY(at_least_one_transfer);
+    
     for(auto od : ods)
     {
         int o = od->get_origin()->get_id();
         int d = od->get_destination()->get_id();
-        qDebug() << "Checking od: " << o << d;
+        qDebug() << "Checking od:" << o << d;
         
         vector<Pass_path*> pathset = od->get_path_set();
         QVERIFY2(!pathset.empty(), "Failure, there should be at least one path per OD"); // there should always be a path for each OD with non-zero demand rate for this network
 
         for(auto path : pathset)
         {
+            qDebug() << "\tpath:" << path->get_id();
             // general conditions for paths that should always hold true
             vector<vector<Busstop*> > alt_stops = path->get_alt_transfer_stops();
             QVERIFY(!alt_stops.empty()); // no empty paths
@@ -363,7 +379,7 @@ void TestFixedWithFlexible_2stop_2link::testCasePathSet()
             // FIX->     x
             // DRT->DRT  x
             // FIX->FIX  x
-            // DRT->FIX  y
+            // DRT->FIX  x
             // FIX->DRT  y
             {
                 QVERIFY(n_legs == 1 || n_legs == 2);
@@ -372,16 +388,9 @@ void TestFixedWithFlexible_2stop_2link::testCasePathSet()
                 else if (n_trans == 1)
                 {
                     QVERIFY(!leg_2.empty());
-                    if(Pass_path::check_all_fixed_lines(leg_1)) // if first leg fixed should be followed by flex
-                    {
-                        QVERIFY(Pass_path::check_all_flexible_lines(leg_2));
-                        
-                    }
-                    else
-                    {
-                        QVERIFY(Pass_path::check_all_flexible_lines(leg_1)); // if first leg flex should be followed by fix
-                        QVERIFY(Pass_path::check_all_fixed_lines(leg_2));
-                    }
+                    // first leg fixed should be followed by flex
+                    QVERIFY(Pass_path::check_all_fixed_lines(leg_1)); 
+                    QVERIFY(Pass_path::check_all_flexible_lines(leg_2));
                 }
             }
             else if (o == 2 && d == 1)

@@ -53,14 +53,14 @@
    pass_day_to_day_indicator= 1
    in_vehicle_d2d_indicator= 1
    break_criterium= 0.01
-   max_days= 100
+   max_days= 20
    transfer_coefficient= -0.5
    in_vehicle_time_coefficient= -0.1
    waiting_time_coefficient= -0.2
    walking_time_coefficient= -0.2
    average_walking_speed= 66.66
-   max_nr_extra_transfers= 0
-   absolute_max_transfers= 0
+   max_nr_extra_transfers= 1
+   absolute_max_transfers= 2
    max_in_vehicle_time_ratio= 2.0
    max_walking_distance= 500.0
    max_waiting_time= 6000.0
