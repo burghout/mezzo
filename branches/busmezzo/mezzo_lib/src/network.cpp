@@ -3647,7 +3647,7 @@ bool Network::check_consecutive (Busstop* first, Busstop* second)
 bool Network::find_direct_paths (Busstop* bs_origin, Busstop* bs_destination)
 // finds if there is a direct path between a given pair of stops, generate new direct paths
 {
-    vector <Busline*> lines_o = bs_origin->get_lines(); //!> @todo Check how buslines are being added to stops after autogen of direct DRT lines
+    vector <Busline*> lines_o = bs_origin->get_lines();
     for (auto bl_o = lines_o.begin(); bl_o < lines_o.end(); bl_o++)
     {
         vector <Busline*> lines_d = bs_destination->get_lines();
@@ -3677,8 +3677,15 @@ bool Network::find_direct_paths (Busstop* bs_origin, Busstop* bs_destination)
                         lines_sequence.push_back(last_line);
                         walking_distances_sequence.push_back(0);
                         walking_distances_sequence.push_back(0);
+
+
                         Pass_path* direct_path = new Pass_path(pathid, lines_sequence, stops_sequence, walking_distances_sequence);
                         pathid++;
+
+                        if(theParameters->drt)
+                        {
+                            assert(Pass_path::has_no_mixed_mode_legs(lines_sequence));
+                        }
 
                         ODstops* od_stop;
                         if (!bs_origin->check_destination_stop(bs_destination))
@@ -3762,9 +3769,24 @@ void Network::generate_indirect_paths()
         return;
     }
     */
-    Pass_path* indirect_path = new Pass_path(pathid, lines_sequence, stops_sequence, collect_walking_distances);
-    pathid++;
-    paths.push_back(indirect_path);
+
+    if (theParameters->drt) // special guarantees for when drt 'lines' are available
+    {
+        auto unmixed_line_sequences = Pass_path::get_unmixed_paths(lines_sequence);
+        Pass_path::remove_paths_with_connected_flexible_legs(unmixed_line_sequences);
+        for(const auto& unmixed_line_sequence : unmixed_line_sequences)
+        {
+            Pass_path* indirect_path = new Pass_path(pathid, unmixed_line_sequence, stops_sequence, collect_walking_distances);
+            pathid++;
+            paths.push_back(indirect_path);    
+        }
+    }
+    else
+    {
+        Pass_path* indirect_path = new Pass_path(pathid, lines_sequence, stops_sequence, collect_walking_distances);
+        pathid++;
+        paths.push_back(indirect_path);
+    }
     /*
     int stop_leg = 0;
     vector<vector<Busline*> >::iterator lines_sequence_iter = lines_sequence.begin();
@@ -3879,7 +3901,6 @@ Busroute* Network::create_busroute_from_stops(int id, Origin* origin_node, Desti
 
     return new Busroute(id, origin_node, destination_node, rlinks);
 }
-
 
 vector<vector<Busline*> > Network::compose_line_sequence (Busstop* destination)
 {
