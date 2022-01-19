@@ -115,7 +115,8 @@ void TestPentaFeeder_mixed_day2day::testInitNetwork()
     qDebug() << "Initializing network in " + QString::fromStdString(network_path);
     
     ::fwf_wip::autogen_drt_lines_with_intermediate_stops = false;  //set manually (default false)
-    ::fwf_wip::csgm_no_merging_or_filtering_paths = true; //set manually (default false)
+    ::fwf_wip::csgm_no_merging_rules = true; //set manually (default false)
+    ::fwf_wip::csgm_no_filtering_dominancy_rules = true; //set manually (default false)        
     
     nt->init();
 

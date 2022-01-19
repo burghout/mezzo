@@ -95,7 +95,8 @@ void TestPentaFeeder_fixed::testInitNetwork()
     //QFile::remove(path_set_generation_filename); //remove old passenger path sets
     qDebug() << "Initializing network in " + QString::fromStdString(network_path);
     
-    ::fwf_wip::csgm_no_merging_or_filtering_paths = false; //set manually (default false)
+    ::fwf_wip::csgm_no_merging_rules = false; //set manually (default false)
+    ::fwf_wip::csgm_no_filtering_dominancy_rules = false; //set manually (default false)    
     
     nt->init();
     

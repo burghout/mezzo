@@ -167,8 +167,9 @@ void TestDrottningholmBidirectional_mixed_day2day::testInitNetwork()
     qDebug() << "Initializing network in " + QString::fromStdString(network_path_1);
 
     ::fwf_wip::autogen_drt_lines_with_intermediate_stops = true;  //set manually (default false)
-    ::fwf_wip::csgm_no_merging_or_filtering_paths = true; //set manually (default false)
-
+    ::fwf_wip::csgm_no_merging_rules = true; //set manually (default false)
+    ::fwf_wip::csgm_no_filtering_dominancy_rules = true; //set manually (default false)
+    
     ::PARTC::drottningholm_case = true;
     //::PARTC::transfer_stop = transfer;
     
@@ -282,6 +283,8 @@ void TestDrottningholmBidirectional_mixed_day2day::testCasePathSet()
             - only particular paths generated dependent on CSGM parameters
                 For our bidirectional mixed mode case we have a minimum of 0 transfers for any OD category (lines (2)176 and (2)177)
     */
+    QVERIFY(theParameters->absolute_max_transfers == 2);
+    QVERIFY(theParameters->max_nr_extra_transfers == 1);
     
     vector<ODstops*> ods = net->get_odstops_demand();
     for(auto od : ods)

@@ -117,7 +117,8 @@ void TestFixedWithFlexible_2stop_2link::testInitNetwork()
     qDebug() << "Removing file " + path_set_generation_filename + ": " << QFile::remove(path_set_generation_filename); //remove old passenger path sets
     
     ::fwf_wip::autogen_drt_lines_with_intermediate_stops = true; // set manually
-    ::fwf_wip::csgm_no_merging_or_filtering_paths = true; //set manually (default false)
+    ::fwf_wip::csgm_no_merging_rules = true; //set manually (default false)
+    ::fwf_wip::csgm_no_filtering_dominancy_rules = true; //set manually (default false)
     
     qDebug() << "Initializing network in " + QString::fromStdString(network_path);
     

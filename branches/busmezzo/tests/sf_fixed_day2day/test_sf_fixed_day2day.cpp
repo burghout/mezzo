@@ -84,7 +84,8 @@ void TestSpiessFlorianFixed_day2day::testInitNetwork()
     qDebug() << "Removing file " + path_set_generation_filename + ": " << QFile::remove(path_set_generation_filename); //remove old passenger path sets
     qDebug() << "Initializing network in " + QString::fromStdString(network_path_1);
     
-    ::fwf_wip::csgm_no_merging_or_filtering_paths = false; //set manually (default false)
+    ::fwf_wip::csgm_no_merging_rules = false; //set manually (default false)
+    ::fwf_wip::csgm_no_filtering_dominancy_rules = false; //set manually (default false)    
     
     nt->init();
     
