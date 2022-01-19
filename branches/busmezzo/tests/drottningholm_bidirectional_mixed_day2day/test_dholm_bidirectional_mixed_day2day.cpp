@@ -324,6 +324,33 @@ void TestDrottningholmBidirectional_mixed_day2day::testCasePathSet()
             if(n_legs > 1)
                 leg_2 = alt_lines[1];
             
+            QString leg1_mode_s;
+            QString leg2_mode_s;
+            if(!leg_1.empty())
+            {
+                if(Pass_path::check_all_fixed_lines(leg_1))
+                    leg1_mode_s = "FIX";
+                else if (Pass_path::check_all_flexible_lines(leg_1))
+                    leg1_mode_s = "DRT";
+                else
+                    leg1_mode_s = "Null";
+            }
+            else
+                leg1_mode_s = "Null";
+            if(!leg_2.empty())
+            {
+                if(Pass_path::check_all_fixed_lines(leg_2))
+                    leg2_mode_s = "FIX";
+                else if (Pass_path::check_all_flexible_lines(leg_2))
+                    leg2_mode_s = "DRT";
+                else
+                    leg2_mode_s = "Null";
+            }
+            else
+                leg2_mode_s = "Null";
+            
+            qDebug() << "\ttransfers:" << n_trans << "leg1: " + leg1_mode_s << "leg2: " + leg2_mode_s;
+            
             switch(od_category)
             {
             case ODCategory::b2b:
@@ -375,7 +402,7 @@ void TestDrottningholmBidirectional_mixed_day2day::testCasePathSet()
                 {
                     QVERIFY(n_legs == 2); // No more than a single transfer
                     QVERIFY(Pass_path::check_all_fixed_lines(leg_1)); // first leg fix
-                    QVERIFY(Pass_path::check_all_flexible_lines(leg_2)); // second leg flex
+                    QVERIFY(Pass_path::check_all_flexible_lines(leg_2) || Pass_path::check_all_fixed_lines(leg_2)); // second leg flex or fix
                 }
                 break;
             case ODCategory::c2c:

@@ -105,7 +105,8 @@ namespace fwf_wip
     extern bool drt_enforce_strict_boarding; // true if we do not allow drt-users to opportunistically board drt vehicles
     extern bool zero_pk_fixed; // true if trust in prior knowledge is set to zero after the first day2day iteration
     extern bool autogen_drt_lines_with_intermediate_stops; // true if when auto-generating all direct routes between stops within a Controlcenter service area to also include any intermediate stop on the generated route
-    extern bool csgm_no_merging_or_filtering_paths; // true if when choice-set-generation-model is called to generate paths for demand format 3, then skip the merging into hyperpaths step and static filtering (e.g. dominancy) rules
+    extern bool csgm_no_merging_rules; // true if when choice-set-generation-model is called to generate paths for demand format 3, then skip the merging into hyperpaths step based on common stops or lines
+    extern bool csgm_no_filtering_dominancy_rules; // true if when choice-set-generation-model is called to generate paths for demand format 3, skip static filtering and dominancy rules
 }
 
 
