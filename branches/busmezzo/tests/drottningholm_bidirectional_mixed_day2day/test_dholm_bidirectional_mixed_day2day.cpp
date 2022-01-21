@@ -377,7 +377,7 @@ void TestDrottningholmBidirectional_mixed_day2day::testCasePathSet()
                 // DRT ->     x
                 // DRT -> DRT x
                 // FIX -> DRT x
-                // DRT -> FIX y
+                // DRT -> FIX y (transfer is always at merging stop to corridor)
                 // FIX -> FIX (x,y) - crowding decision
                 if(n_legs == 1)
                 {
@@ -394,7 +394,7 @@ void TestDrottningholmBidirectional_mixed_day2day::testCasePathSet()
                 // FIX ->     y
                 // DRT ->     x
                 // DRT -> DRT x
-                // FIX -> DRT y
+                // FIX -> DRT y (transfer is always at merging stop to corridor)
                 // DRT -> FIX x
                 // FIX -> FIX (x,y) 
                 if(n_legs == 1)

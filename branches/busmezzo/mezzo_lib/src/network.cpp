@@ -4878,6 +4878,197 @@ void Network::static_filtering_rules (Busstop* stop)
     }
 }
 
+int Network::drottningholm_path_filtering()
+{
+    /**
+     * @todo
+     *      Remove paths for Drottningholm bidirectional mixed-mode day-to-day case:
+     *
+     *      - Assertions to double-check for mixed-mode legs, and no double-DRT legs, max transfers...
+     *
+     *      Remove lines from alt_lines that do not have start and end stops that match path?
+    */
+    std::cout << "Network::drottningholm_path_filtering - filtering current path-set" << std::endl;
+    assert(::PARTC::drottningholm_case);
+
+    int total_paths_checked = 0;
+    int filtered_path_count = 0;
+    int more_than_1_transfer = 0;
+
+    int b2b_drt_direct_route_only = 0;
+    int b2b_other = 0;
+
+    int b2c_drt_to_first_common_stop_only = 0;
+    int b2c_other = 0;
+
+    int c2b_drt_from_first_common_stop_only = 0;
+    int c2b_other = 0;
+
+    int c2c_no_drt_lines = 0;
+    int c2c_other = 0;
+
+    for (auto o_stop : busstops)
+    {
+        for (auto d_stop : busstops)
+        {
+            if (o_stop->get_id() != d_stop->get_id() && o_stop->check_destination_stop(d_stop))
+            {
+                ODstops* odpairs = o_stop->get_stop_od_as_origin_per_stop(d_stop);
+                vector <Pass_path*> path_set = odpairs->get_path_set();
+                if (!path_set.empty())
+                {
+                    map <Pass_path*, bool> paths_to_be_deleted;
+
+                    for (auto path : path_set)
+                    {
+                        assert(Pass_path::has_no_mixed_mode_legs(path->get_alt_lines()));
+                        assert(path->has_no_connected_flexible_legs());
+
+                        ++total_paths_checked;
+                        using namespace PARTC;
+                        Busstop* p_o_stop = path->get_alt_transfer_stops().front().front();
+                        Busstop* p_d_stop = path->get_alt_transfer_stops().back().front();
+
+                        assert(p_o_stop->get_id() == o_stop->get_id());
+                        assert(p_d_stop->get_id() == d_stop->get_id());
+                        /*qDebug() << "Checking filtering rules for path" << path->get_id() << "for ODstops" << p_o_stop->get_id() << p_d_stop->get_id();
+                        ODCategory od_category = get_od_category(p_o_stop->get_id(), p_d_stop->get_id());
+                        DEBUG_MSG("\t OD category: " << ODCategory_to_QString(od_category).toStdString());*/
+
+                        int n_transfers = path->get_number_of_transfers();
+                        bool drt_first = path->is_first_transit_leg_flexible();;
+                        Busstop* transfer_stop = nullptr;
+                        if(n_transfers > 1)
+                        {
+                            paths_to_be_deleted[path] = true;
+                            ++more_than_1_transfer;
+                            continue;
+                        }
+                        if (n_transfers == 1)
+                        {
+                            transfer_stop = path->get_first_dropoff_stop();
+                            assert(transfer_stop);
+                        }
+
+                        ODCategory od_category = get_od_category(p_o_stop->get_id(), p_d_stop->get_id());
+                        switch (od_category)
+                        {
+                        case ODCategory::Null: abort(); break; //all ods should have a category
+                        case ODCategory::b2b:
+                            if ((n_transfers == 1) && drt_first) // DRT-> DRT/FIX (eliminates e.g. DRT -> FIX_branch (176 177))
+                            {
+                                paths_to_be_deleted[path] = true;
+                                ++b2b_drt_direct_route_only;
+                            }
+                            if ((n_transfers == 1) && !drt_first) // FIX -> DRT/FIX for now remove @todo depending on if we have between branch demand
+                            {
+                                paths_to_be_deleted[path] = true;
+                                ++b2b_other;
+                            }
+                            break;
+                        case ODCategory::b2c:
+                            if (n_transfers == 0 && drt_first) // DRT -> no direct DRT lines to corridor
+                            {
+                                paths_to_be_deleted[path] = true;
+                                ++b2c_other;
+                            }
+                            if ((n_transfers == 1))
+                            {
+                                if (drt_first) // DRT -> FIX
+                                {
+                                    if (!is_transfer_stop(transfer_stop->get_id())) // delete all paths that do not have transfer point at first common stop in the west-east direction when first leg DRT
+                                    {
+                                        paths_to_be_deleted[path] = true;
+                                        ++b2c_drt_to_first_common_stop_only;
+                                    }
+                                }
+                                if (!drt_first && path->check_any_flexible_lines()) // FIX -> DRT
+                                {
+                                    paths_to_be_deleted[path] = true;
+                                    ++b2c_other;
+                                }
+                            }
+                            break;
+                        case ODCategory::c2b:
+                            if (n_transfers == 0 && drt_first) // DRT ->
+                            {
+                                paths_to_be_deleted[path] = true;
+                                ++c2b_other;
+                            }
+                            if (n_transfers == 1)
+                            {
+                                if (drt_first) // DRT -> DRT/FIX
+                                {
+                                    paths_to_be_deleted[path] = true;
+                                    ++c2b_other;
+                                }
+                                if (!drt_first && path->check_any_flexible_lines()) // FIX -> DRT
+                                {
+                                    if (!is_transfer_stop(transfer_stop->get_id())) // delete all paths that do not have transfer point at first common stop in the east_west when first leg FIX
+                                    {
+                                        paths_to_be_deleted[path] = true;
+                                        ++c2b_drt_from_first_common_stop_only;
+                                    }
+                                }
+                            }
+                            break;
+                        case ODCategory::c2c:
+                            if (path->check_any_flexible_lines()) // no c2c path should include a flexible leg (this always implies backtracking)
+                            {
+                                ++c2c_no_drt_lines;
+                                paths_to_be_deleted[path] = true;
+                            }
+                            break;
+                        }
+
+                    } // path : path-set
+                    for (const auto& path_delete : paths_to_be_deleted)
+                    {
+                        if (path_delete.second)
+                        {
+                            auto it = find(path_set.begin(), path_set.end(), path_delete.first);
+                            if (it != path_set.end())
+                            {
+                                delete* it;
+                                path_set.erase(it);
+                                ++filtered_path_count;
+                            }
+                            else
+                            {
+                                qDebug() << "Marked path for deletion that does not exist in path-set";
+                            }
+
+                        }
+                    } // delete paths
+                    paths_to_be_deleted.clear();
+                } // if retrieved path-set of ODstop is non-empty
+                odpairs->set_path_set(path_set);
+            } // if ODstop exists (has a path)
+        } // d_stop : destinations
+    } // o_stop : origins
+
+    cout << "Original path-set size                \t : " << total_paths_checked << endl;
+    cout << "Total number deleted paths            \t : "  << filtered_path_count << endl;
+    cout << "\t more_than_1_transfer               : " << more_than_1_transfer << endl;
+    cout << "\t b2b_drt_direct_route_only          : " << b2b_drt_direct_route_only << endl;
+    cout << "\t b2b_other                          : " << b2b_other << endl;
+    cout << "\t b2c_drt_to_first_common_stop_only  : " << b2c_drt_to_first_common_stop_only << endl;
+    cout << "\t b2c_other                          : " << b2c_other << endl;
+    cout << "\t c2b_drt_from_first_common_stop_only: " << c2b_drt_from_first_common_stop_only << endl;
+    cout << "\t c2b_other                          : " << c2b_other << endl;
+    cout << "\t c2c_no_drt_lines                   : " << c2c_no_drt_lines << endl;
+    cout << "\t c2c_other                          : " << c2c_other << endl;
+
+    int total_filtered = more_than_1_transfer+b2b_drt_direct_route_only+b2b_other+b2c_drt_to_first_common_stop_only+b2c_other+c2b_drt_from_first_common_stop_only+c2b_other+c2c_no_drt_lines+c2c_other;
+    assert(filtered_path_count == total_filtered);
+
+    cout << "Saving filtered path-set..." << endl;
+
+    write_path_set(workingdir + "o_path_set_generation_drottningholm.dat");
+    cout << "Path-set filtering finished!" << endl;
+    return filtered_path_count;
+}
+
 void Network::dominancy_rules (Busstop* stop)
 {
     // applying static dominancy rules on the transit path choice set

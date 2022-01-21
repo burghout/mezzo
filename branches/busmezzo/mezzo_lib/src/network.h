@@ -521,6 +521,7 @@ public:
     bool check_path_no_repeating_stops (Pass_path* path); // chceks if the path deos not include going through the same stop more than once
     bool check_sequence_no_repeating_stops (vector<Busstop*> stops); // chceks if the sequence does not include going through the same stop more than once
     void static_filtering_rules (Busstop* stop); // delete paths which do not fulfill the global filtering rules
+    int drottningholm_path_filtering(); // @todo Drottningholm-case-specific filtering of paths, delete paths that do not fulfill rules for path composition based on passenger OD categories
     void dominancy_rules (Busstop* stop); // delete paths which are dominated by other alterantive paths
     bool totaly_dominancy_rule (ODstops* odstops, vector<vector<Busline*> > lines, vector<vector<Busstop*> > stops); // check if there is already a path with shorter IVT than the potential one
     //  bool downstream_dominancy_rule (Pass_path* check_path); // check whether there is already a path with a transfer stop closer to the destination (to avoid further downstream transfers on the same line)
