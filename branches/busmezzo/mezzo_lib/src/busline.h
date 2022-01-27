@@ -440,6 +440,7 @@ public:
 	static double find_crowding_coeff(bool sits, double load_factor_seatcap, double load_factor_totalcap); // RTCI Melina - overloaded version 
 	//pair<double, double> crowding_dt_factor (double nr_boarding, double nr_alighting);
 	pair<int, int> crowding_dt_factor(int nr_boarding, int nr_alighting);
+	pair<int, int> crowding_cardt_factor(int car, int nr_boarding, int nr_alighting);
 	vector <Busstop*> get_downstream_stops(); //!< return the remaining stops to be visited starting from 'next_stop', returns empty Busstop vector if there are none
 	vector <Visit_stop*> get_downstream_stops_till_horizon(Visit_stop* target_stop); //!< return the remaining stops to be visited starting from 'next_stop'
 

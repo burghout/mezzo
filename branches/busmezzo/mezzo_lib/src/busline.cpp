@@ -1493,6 +1493,31 @@ pair<int, int> Bustrip::crowding_dt_factor(int nr_boarding, int nr_alighting)
 	return crowding_factor;
 }
 
+pair<int, int> Bustrip::crowding_cardt_factor(int car, int nr_boarding, int nr_alighting)
+{
+	pair<int, int> crowding_factor;
+	if (busv->get_car_capacity() == busv->get_car_number_seats())
+	//if (busv->get_capacity() == busv->get_number_seats())
+	{
+		crowding_factor.first = 1;
+		crowding_factor.second = 1;
+	}
+	else
+	{
+		int nr_standees_alighting = max(0, get_busv()->get_car_occupancy(car) - (nr_boarding + nr_alighting) - busv->get_car_number_seats());
+		int nr_standees_boarding = max(0, get_busv()->get_car_occupancy(car) - (nr_boarding + nr_alighting) / 2 - busv->get_car_number_seats());
+		double crowdedness_ratio_alighting = nr_standees_alighting / (busv->get_car_capacity() - busv->get_car_number_seats());
+		double crowdedness_ratio_boarding = nr_standees_boarding / (busv->get_car_capacity() - busv->get_car_number_seats());
+		/*double nr_standees_alighting = max(0.0, busv->get_occupancy() - (nr_boarding + nr_alighting) - busv->get_number_seats());
+		double nr_standees_boarding = max(0.0, busv->get_occupancy() - (nr_boarding + nr_alighting) / 2 - busv->get_number_seats());
+		double crowdedness_ratio_alighting = nr_standees_alighting / (busv->get_capacity() - busv->get_number_seats());
+		double crowdedness_ratio_boarding = nr_standees_boarding / (busv->get_capacity() - busv->get_number_seats());*/
+		crowding_factor.second = 1 + 0.75 * pow(crowdedness_ratio_alighting, 2);
+		crowding_factor.first = 1 + 0.75 * pow(crowdedness_ratio_boarding, 2);
+	}
+	return crowding_factor;
+}
+
 vector <Busstop*> Bustrip::get_downstream_stops()
 {
 	vector <Busstop*> remaining_stops;
@@ -2783,10 +2808,11 @@ double Busstop::calc_dwelltime (Bustrip* trip)  //!< calculates the dwelltime of
 		case 16:
 			for (std::size_t car = 1; car <= trip->get_busv()->get_number_cars(); car++) 
 			{
-				double carDwelltime = 15.0 + (1.4 * (1.0 + (1.0 / 35.0)
-					* ((trip->get_busv()->get_car_occupancy(car) - trip->get_busv()->get_car_number_seats()) / 7.0)))
-					* (pow((1.0 / 7.0) * car_nr_boarding[car], 0.7) + pow((1.0 / 7.0) * nr_alighting_section[car], 0.7)
-						+ (0.027 * ((1.0 / 7.0) * car_nr_boarding[car]) * ((1.0 / 7.0) * nr_alighting_section[car])));
+
+				crowding_factor = trip->crowding_cardt_factor(car, car_nr_boarding[car], nr_alighting_section[car]);
+				double carDwelltime = dwell_constant + dt_func->boarding_coefficient * crowding_factor.first * car_nr_boarding[car] + dt_func->alighting_cofficient * crowding_factor.second * nr_alighting_section[car];
+
+				//double carDwelltime = 15.0 + (1.4 * (1.0 + (1.0 / 35.0)* ((trip->get_busv()->get_car_occupancy(car) - trip->get_busv()->get_car_number_seats()) / 7.0)))* (pow((1.0 / 7.0) * car_nr_boarding[car], 0.7) + pow((1.0 / 7.0) * nr_alighting_section[car], 0.7)+ (0.027 * ((1.0 / 7.0) * car_nr_boarding[car]) * ((1.0 / 7.0) * nr_alighting_section[car])));
 
 				dwelltimes.push_back(carDwelltime);
 				/*cout << "car occupancy-" << car << ": " << trip->get_busv()->get_car_occupancy(car)
