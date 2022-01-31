@@ -379,13 +379,15 @@ private:
 
 	bool generated_direct_routes_ = false; //!< true if direct routes have been generated and added as service routes between all stops in the service area of this control center
 
-	const double assignment_interval_; //!< time interval in between vehicle-passenger assignment calls @note first assignment call will be <::drt_first_assignment_time> seconds after start_pass_generation, <assignment_interval_> seconds after that etc...
-	bool time_based_assignment_ = false; //!< true if vehicle-passenger assignment calls are time-based (e.g. called every x seconds) and false if event-based (e.g. if a new request was recieved)
-	AssignmentAction* assignment_action_;
 
 	const double rebalancing_interval_; //!< time interval in between each rebalancing call @note e.g. first rebalancing call will be <::drt_first_rebalancing_time> seconds after start_pass_generation, <rebalancing_interval_> seconds after that etc..
 	set<Busstop*,ptr_less<Busstop*> > collection_stops_; //!< set of stops used as targets for rebalancing
 	RebalancingAction* rebalancing_action_;
+
+    const double assignment_interval_; //!< time interval in between vehicle-passenger assignment calls @note first assignment call will be <::drt_first_assignment_time> seconds after start_pass_generation, <assignment_interval_> seconds after that etc...
+    bool time_based_assignment_ = false; //!< true if vehicle-passenger assignment calls are time-based (e.g. called every x seconds) and false if event-based (e.g. if a new request was recieved)
+    AssignmentAction* assignment_action_;
+
 
 	//maps for bookkeeping connected passengers and vehicles
 	map<int, Passenger*> connectedPass_; //!< passengers currently connected to Controlcenter 

@@ -791,7 +791,7 @@ vector<vector<vector<Busline*> > > Pass_path::get_unmixed_paths(const vector<vec
 void Pass_path::remove_paths_with_connected_flexible_legs(vector<vector<vector<Busline*>>>& paths)
 {
 	paths.erase(remove_if(paths.begin(), paths.end(),
-    [](const auto& path_legs) { 
+    [](/*const auto&*/const vector<vector<Busline*>>&  path_legs) {
         return Pass_path::has_connected_flexible_legs(path_legs); 
     }), 
 paths.end());

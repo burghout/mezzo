@@ -4972,7 +4972,7 @@ int Network::drottningholm_path_filtering()
                                 paths_to_be_deleted[path] = true;
                                 ++b2c_other;
                             }
-                            if ((n_transfers == 1))
+                            if (n_transfers == 1)
                             {
                                 if (drt_first) // DRT -> FIX
                                 {
@@ -10196,7 +10196,7 @@ bool Network::init()
             if(cc.second->assignment_interval_ > 0.0) //@todo indicator for using time horizon-based assignment
             {
                 eventlist->add_event(ass_init_time,cc.second->assignment_action_);
-                ass_init_time + 0.00001;
+                ass_init_time += 0.00001;
             }
         }
 

@@ -63,7 +63,7 @@ void DRTAssignmentData::print_state(double time) const
     qDebug() << "\tactive_trips         :" << active_trips.size();
 	qDebug() << "\t\tpassenger_trips:" << cs_helper_functions::filterRequestAssignedTrips(active_trips).size(); // @note the number of active passenger carrying trips should pretty much always match the number of busy vehicles without rebalancing (unless the vehicle-trip hasnt been scheduled yet)
 	qDebug() << "\t\tempty_trips    :" << active_trips.size() - cs_helper_functions::filterRequestAssignedTrips(active_trips).size();
-    qDebug() << "\tcompleted_trips      :" << cc_owner->getCompletedVehicleTrips().size() << endl;
+    qDebug() << "\tcompleted_trips      :" << cc_owner->getCompletedVehicleTrips().size() ;
 
     qDebug() << "\trejected_requests    :" << rejected_requests.size();
     qDebug() << "\tactive_requests      :" << active_requests.size();
@@ -71,10 +71,10 @@ void DRTAssignmentData::print_state(double time) const
 	qDebug() << "\t\tassigned_requests  :" << cs_helper_functions::filterRequestsByState(active_requests,RequestState::Assigned).size();
 	qDebug() << "\t\tmatched_requests   :" << cs_helper_functions::filterRequestsByState(active_requests,RequestState::Matched).size();
 	qDebug() << "\t\tin_service_requests:" << cs_helper_functions::filterRequestsByState(active_requests,RequestState::ServedUnfinished).size();
-    qDebug() << "\tcompleted_requests   :" << completed_requests.size() << endl;
+    qDebug() << "\tcompleted_requests   :" << completed_requests.size() ;
 
     if (fleet_state.find(BusState::OnCall) != fleet_state.end())
-        qDebug() << "\toncall_vehicles      :" << fleet_state.at(BusState::OnCall).size() << endl;
+        qDebug() << "\toncall_vehicles      :" << fleet_state.at(BusState::OnCall).size() ;
     else
         qDebug() << "\tno vehicles intialized!";
 }

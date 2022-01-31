@@ -8,9 +8,9 @@ DEFINES += _NO_GUI
 macx {
     CONFIG -= app_bundle # for mac remove the application bundling
     CONFIG += sdk_no_version_check # for mac
+
 }
-
-
+DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x050F00
 # Input
 HEADERS += ../mezzo_lib/src/busline.h \
 		   ../mezzo_lib/src/day2day.h \

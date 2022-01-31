@@ -68,3 +68,5 @@ SOURCES += $$MEZZO_ROOT_RPATH/busline.cpp \
 		   $$MEZZO_ROOT_RPATH/controlutilities.cpp \
 
 CONFIG += sdk_no_version_check # for mac
+DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x050F00 # to force updated constructs
+
