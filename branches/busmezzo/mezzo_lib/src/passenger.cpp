@@ -1295,7 +1295,7 @@ Busstop* Passenger::make_dropoff_decision(Busstop* pickup_stop, double time)
     assert(chosen_mode_ == TransitModeType::Flexible); //dropoff decision really only makes sense for on-demand/flexible modes
     Busstop* dropoff_stop = nullptr;
 
-    //* @todo PARTC force case specific drop-off stop dependent on OD category (if using drt)
+  //  //* @todo PARTC force case specific drop-off stop dependent on OD category (if using drt)
   //  if (PARTC::drottningholm_case)
   //  {
   //      using namespace PARTC;
@@ -1305,13 +1305,15 @@ Busstop* Passenger::make_dropoff_decision(Busstop* pickup_stop, double time)
   //      switch (category)
   //      {
   //      case ODCategory::Null: abort(); break; //all ods should have a category
-  //      case ODCategory::b2b: // force no transfers
+  //      case ODCategory::b2b: // force no transfers (eliminates e.g. DRT -> FIX_branch (176 177))
   //          dropoff_stop = OD_stop->get_destination();
   //          break;
-  //      case ODCategory::b2c: // force request to transfer point
+  //      case ODCategory::b2c: // force request to transfer point in the west-east direction
   //          dropoff_stop = PARTC::transfer_stops.first;
   //          break;
-		//case ODCategory::c2b: abort(); break; // should have never chosen flexible
+		//case ODCategory::c2b:
+		//	dropoff_stop = OD_stop->get_destination(); // should have transferred to DRT from corridor or branch lines at earliest transfer stop
+		//	break;
   //      case ODCategory::c2c: abort(); break; //should never have chosen flexible
   //      }
 		//map<Busstop*, pair<double, double> > dropoff_MNL; //!< for output collector at ODstops level, first double utility of choosing dropoff stop, second probability

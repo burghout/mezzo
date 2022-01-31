@@ -4881,12 +4881,11 @@ void Network::static_filtering_rules (Busstop* stop)
 int Network::drottningholm_path_filtering()
 {
     /**
-     * @todo
-     *      Remove paths for Drottningholm bidirectional mixed-mode day-to-day case:
+     *      Removes paths for Drottningholm bidirectional mixed-mode day-to-day case:
      *
-     *      - Assertions to double-check for mixed-mode legs, and no double-DRT legs, max transfers...
+     *      - Assertions to double-check for mixed-mode legs, and no double-DRT legs
      *
-     *      Remove lines from alt_lines that do not have start and end stops that match path?
+     *      @todo Remove lines from alt_lines that do not have start and end stops that match path?
     */
     std::cout << "Network::drottningholm_path_filtering - filtering current path-set" << std::endl;
     assert(::PARTC::drottningholm_case);
@@ -7813,6 +7812,76 @@ bool Network::write_day2day_modesplit(string filename)
     return true;
 }
 
+bool Network::write_day2day_modesplit_odcategory_header(const string& filename)
+{
+    assert(PARTC::drottningholm_case);
+    ofstream out(filename.c_str(),ios_base::app); //"o_fwf_day2day_modesplit_category.dat"
+            out << "day" << '\t'
+            << "od_category" << '\t' // {Null = 0, b2b, b2c, c2c, c2b}, use overloaded << operator for ODCategory enum class
+            << "fix_chosen" << '\t'
+            << "drt_chosen" << '\t'
+            << "avg_gtc" << '\t'
+            << "npass" << '\t'
+            << "pass_ignored" << endl;
+    return true;
+}
+
+bool Network::write_day2day_modesplit_odcategory(const string& filename)
+{
+    assert(PARTC::drottningholm_case);
+
+    using namespace PARTC;
+    ofstream out(filename.c_str(),ios_base::app); //"o_fwf_day2day_modesplit_category.dat"
+
+    vector<ODCategory> odcategories = { ODCategory::b2b, ODCategory::b2c, ODCategory::c2c, ODCategory::c2b }; // @note we are skipping the NULL category, should be empty output
+    map<ODCategory, FWF_passdata> total_passdata_per_od;
+    map<ODCategory, vector<Passenger*> > allpass_per_od;
+    map<ODCategory, int> pass_ignored_per_od;
+    
+    vector<Passenger*> all_pass = get_all_generated_passengers(); // includes also pass that did not complete their trip, outside pass gen range etc..
+    
+    for (Passenger* pass : all_pass) // only check pass that completed their trip
+    {
+        ODCategory od_category = ODCategory::Null;
+        ODstops* od = pass->get_OD_stop();
+        int ostop = pass->get_original_origin()->get_id();
+        int dstop = od->get_destination()->get_id();
+
+        // divide passengers by od category and print to output file
+        od_category = get_od_category(ostop, dstop);
+        assert(od_category != PARTC::ODCategory::Null); // each od should have a category
+
+        if (fwf_outputs::finished_trip_within_pass_generation_interval(pass))
+        {
+            allpass_per_od[od_category].push_back(pass);
+        }
+        else
+        {
+            ++pass_ignored_per_od[od_category];
+        }
+    }
+
+    // print the day, odcategory, and passenger modesplit data to ofs, 7 columns
+    for(ODCategory od_category : odcategories)
+    {
+        total_passdata_per_od[od_category].calc_pass_statistics(allpass_per_od[od_category]);
+        const FWF_passdata& data = total_passdata_per_od[od_category];
+        
+        out << std::fixed;
+        out.precision(2);
+        out << day << '\t';
+        out << static_cast<underlying_type<ODCategory>::type>(od_category) << '\t';
+        out << data.total_fix_chosen << '\t';
+        out << data.total_drt_chosen << '\t';
+        out.precision(5);
+        out << data.avg_gtc << '\t';
+        out << data.npass << '\t';
+        out << pass_ignored_per_od[od_category] << endl;
+    }
+
+    return true;
+}
+
 bool Network::writeheadways(string name)
 // writes the time headways for the virtual links. to compare with the arrival process in Mitsim
 {
@@ -10108,21 +10177,6 @@ bool Network::init()
         initvalue += 0.00001;
     }
 
-    //!< @todo PARTC specific, remove
-    //for (auto line : buslines)
-    //{
-    //    if (!line->is_flex_line())
-    //    {
-    //        if (line->stops.back()->get_id() == PARTC::morby_station_id) //all fixed lines end at morby station
-    //        {
-    //            PARTC::drottningholm_case = true;
-    //            PARTC::transfer_stops = busstopsmap[PARTC::transfer_stop_id];
-    //            assert(PARTC::transfer_stops->get_id() == PARTC::transfer_stop_id);
-    //        }
-    //        else
-    //            PARTC::drottningholm_case = false;
-    //    }
-    //}
     if(PARTC::drottningholm_case)
     {
         // set transfer stops for case (one for each direction of demand)
@@ -10468,6 +10522,10 @@ double Network::step(double timestep)
                     write_day2day_passenger_onboard_experience_header(workingdir + "o_fwf_day2day_passenger_onboard_experience.dat");
                     write_day2day_passenger_transitmode_header(workingdir + "o_fwf_day2day_passenger_transitmode.dat");
                 }
+                if(PARTC::drottningholm_case)
+                {
+                    write_day2day_modesplit_odcategory_header(workingdir + "o_fwf_day2day_modesplit_odcategory.dat");
+                }
             }
             Day2day::write_wt_alphas(workingdir + "o_fwf_wt_alphas.dat", wt_rec, day);
             Day2day::write_ivt_alphas(workingdir + "o_fwf_ivt_alphas.dat", ivt_rec, day);
@@ -10480,6 +10538,10 @@ double Network::step(double timestep)
                 write_day2day_passenger_waiting_experience(workingdir + "o_fwf_day2day_passenger_waiting_experience.dat");
                 write_day2day_passenger_onboard_experience(workingdir + "o_fwf_day2day_passenger_onboard_experience.dat");
                 write_day2day_passenger_transitmode(workingdir + "o_fwf_day2day_passenger_transitmode.dat");
+            }
+            if(PARTC::drottningholm_case)
+            {
+                write_day2day_modesplit_odcategory(workingdir + "o_fwf_day2day_modesplit_odcategory.dat");
             }
         }
 

@@ -353,6 +353,9 @@ public:
     bool write_day2day_modesplit_header(string filename);
     bool write_day2day_modesplit(string filename); //!< calculate and write PKT mode split (FIX / Total, DRT / Total) for all passengers that completed a trip @todo change this to instead use the number of times 'flex' or 'fix' was chosen in a mode decision
 
+    bool write_day2day_modesplit_odcategory_header(const string& filename = "o_fwf_day2day_modesplit_odcategory.dat");
+    bool write_day2day_modesplit_odcategory(const string& filename = "o_fwf_day2day_modesplit_odcategory.dat");
+
     bool writelinktimes(string name); //!<writes average link traversal times.
     bool writeheadways(string name); //!< writes the timestamps of vehicles entering a Virtual Link (i e Mitsim).
     //!<same format as historical times read by readlinktimes(string name)
