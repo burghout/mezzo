@@ -297,7 +297,7 @@ public:
     ~Network();
     bool readmaster(string name); //!< reads the master file.
 #ifndef _NO_GUI
-    double executemaster(QPixmap * pm_, QMatrix * wm_); //!< starts the scenario, returns total running time
+    double executemaster(QPixmap * pm_, QTransform *wm_); //!< starts the scenario, returns total running time
     double get_scale() {return scale;} //!< returns the scale of the drawing
 #endif //_NO_GUI
     double executemaster(); //!< without GUI
@@ -388,7 +388,7 @@ public:
 
 #ifndef _NO_GUI
     void recenter_image();   //!< sets the image in the center and adapts zoom to fit window
-    QMatrix netgraphview_init(); //!< scale the network graph to the view initialized by pixmaps
+    QTransform netgraphview_init(); //!< scale the network graph to the view initialized by pixmaps
 
     void redraw(); //!< redraws the image
 
@@ -653,8 +653,8 @@ protected:
 #ifndef _NO_GUI
     Drawing* drawing=nullptr; //!< the place where all the Icons live
     QPixmap* pm=nullptr; //!< the place where the drawing is drawn
-    QMatrix* wm=nullptr; //!< worldmatrix that contains all the transformations of the drawing (scaling, translation, rotation, &c)
-    QMatrix initview_wm; //!< world matrix that transform the drawing to the inital view
+    QTransform* wm=nullptr; //!< worldmatrix that contains all the transformations of the drawing (scaling, translation, rotation, &c)
+    QTransform initview_wm; //!< world matrix that transform the drawing to the inital view
     double scale=100.0; //!< contains the scale of the drawing
     double width_x=100.0; //!< width of boundaries of drawing in original coordinate system
     double height_y=100.0; //!< height of boundaries of drawing in org. coord. sys.

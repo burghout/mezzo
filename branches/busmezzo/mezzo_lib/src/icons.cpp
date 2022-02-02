@@ -25,7 +25,7 @@ void Drawing::add_icon(Icon* icon)
  	icons.push_back(icon);
 }
 
-void Drawing::draw(QPixmap* pm,QMatrix * wm)
+void Drawing::draw(QPixmap* pm, /*QMatrix */ QTransform *wm)
 {
 	if (!basematrix_set)
 	{
@@ -40,7 +40,7 @@ void Drawing::draw(QPixmap* pm,QMatrix * wm)
 		bwm=*wm;
 		bwm.translate(theParameters->background_x,theParameters->background_y);
 		bwm.scale(theParameters->background_scale,theParameters->background_scale);
-		paint.setWorldMatrix(bwm);
+        paint.setWorldTransform(bwm);
 		paint.drawPixmap(0,0,*bpm);
 		paint.end();
 		
@@ -167,7 +167,7 @@ void LinkIcon::set_pointers(double * q, double * r)
 	 runningpercentage=r;
 }
 
-void LinkIcon::draw(QPixmap * pm,QMatrix * wm)   // draw the stuff on pixmap
+void LinkIcon::draw(QPixmap * pm,/*QMatrix */ QTransform * wm)   // draw the stuff on pixmap
 {
 	
 	if (theParameters->viewmode==0)
@@ -177,7 +177,7 @@ void LinkIcon::draw(QPixmap * pm,QMatrix * wm)   // draw the stuff on pixmap
 		paint.setRenderHint(QPainter::Antialiasing);
 	    
 		// set the world matrix that controls zoom and translation of  the drawn image
-		paint.setWorldMatrix(*wm);
+        paint.setWorldTransform(*wm);
 		double scale_ = 1;
 		if ( (wm->m11() > 0) && (wm->m11() < 1) ) 
 			scale_ = (1/wm->m11()); // the horizontal scale factor
@@ -253,7 +253,7 @@ void LinkIcon::draw(QPixmap * pm,QMatrix * wm)   // draw the stuff on pixmap
 		paint.setRenderHint(QPainter::Antialiasing);
 	    
 		// set the world matrix that controls zoom and translation of  the drawn image
-		paint.setWorldMatrix(*wm);
+        paint.setWorldTransform(*wm);
 		// set scale
 		double scale_ = 1;
 		if ( (wm->m11() > 0) && (wm->m11() < 1) ) 
@@ -366,12 +366,12 @@ void LinkIcon::draw(QPixmap * pm,QMatrix * wm)   // draw the stuff on pixmap
 // VirtualLinkIcon functions
 //////////////////////////////////////////////
 
-void VirtualLinkIcon::draw(QPixmap * pm,QMatrix * wm)   // draw the stuff on pixmap
+void VirtualLinkIcon::draw(QPixmap * pm,/*QMatrix */ QTransform * wm)   // draw the stuff on pixmap
 {
 
    QPainter paint(pm); // automatic paint.begin()
     paint.setRenderHint(QPainter::Antialiasing); // make nice smooth lines
-    paint.setWorldMatrix(*wm);
+    paint.setWorldTransform(*wm);
 	int scale_ = 1;
 	if ((wm->m11() > 0) && (wm->m11() < 1))
 		scale_ = static_cast<int> (1/wm->m11()); // the horizontal scale factor   
@@ -395,13 +395,13 @@ NodeIcon::NodeIcon( int x, int y, Node* node):Icon(x,y)
 	thenode_=node;
 }
 
-void NodeIcon::draw(QPixmap *pm,QMatrix *wm)
+void NodeIcon::draw(QPixmap *pm,/*QMatrix */ QTransform *wm)
 {
 	width=2*theParameters->node_radius;
 	height=2*theParameters->node_radius;
 	QPainter paint(pm); // automatic paint.begin()
 	paint.setRenderHint(QPainter::Antialiasing); // smooth lines
-	paint.setWorldMatrix(*wm);
+    paint.setWorldTransform(*wm);
 	int scale_ = 1;
 	if ((wm->m11() > 0) && (wm->m11() < 1))
 		scale_ = static_cast<int> (1/wm->m11()); // the horizontal scale factor	
@@ -447,13 +447,13 @@ IncidentIcon::IncidentIcon(int x, int y):Icon(x,y)
 	visible=true;
 }
 
-void IncidentIcon::draw(QPixmap * pm,QMatrix * wm)
+void IncidentIcon::draw(QPixmap * pm,/*QMatrix */ QTransform * wm)
 {
 	if (visible)
 	{
 		QPainter paint(pm); // automatic paint.begin()
 		paint.setRenderHint(QPainter::Antialiasing); // smooth lines
-		paint.setWorldMatrix(*wm);
+        paint.setWorldTransform(*wm);
 		int scale_ = 1;
 		if ((wm->m11() > 0) && (wm->m11() < 1))
 		scale_ = static_cast<int> (1/wm->m11()); // the horizontal scale factor

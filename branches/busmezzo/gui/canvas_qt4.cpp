@@ -51,8 +51,8 @@ MainForm::MainForm(QWidget *parent): QMainWindow(parent)
 
 	// implementation of view zooming and panning
 	//xiaoliang
-	mod2stdViewMat_=QMatrix(1,0,0,1,0,0);
-	viewMat_=QMatrix(1,0,0,1,0,0);
+    mod2stdViewMat_=QTransform(1,0,0,1,0,0);
+    viewMat_=QTransform(1,0,0,1,0,0);
 	viewSize_=QSize(panelx,panely);
 	pm1=QPixmap(viewSize_);
 	pm1.fill();
@@ -178,8 +178,8 @@ void MainForm::on_closenetwork_triggered()
 	nodes_sel_.clear();
 	links_sel_.clear();
 
-	mod2stdViewMat_=QMatrix(1,0,0,1,0,0);
-	viewMat_=QMatrix(1,0,0,1,0,0);
+    mod2stdViewMat_=QTransform(1,0,0,1,0,0);
+    viewMat_=QTransform(1,0,0,1,0,0);
 	viewSize_=QSize(panelx,panely);
 	pm1=QPixmap(viewSize_);
 	pm1.fill();
@@ -253,7 +253,7 @@ void MainForm::on_quit_triggered()
 void MainForm::on_openmasterfile_triggered()
 {
 	fn = "";
-	fn = (QFileDialog::getOpenFileName(this, "Select a MEZZO master file", QString::null,"Mezzo Files (*.mime *.mezzo)") );
+    fn = (QFileDialog::getOpenFileName(this, "Select a MEZZO master file", QString(),"Mezzo Files (*.mime *.mezzo)") );
 	// Open master file
 	process_masterfile();	
 }
@@ -293,7 +293,7 @@ void MainForm::on_zoomin_triggered()
 	// the view center
 	int xviewcenter=viewSize_.width()/2;
 	int yviewcenter=viewSize_.height()/2;
-	QMatrix tempMat;
+    QTransform tempMat;
 	scale*=scalefactor;
 
 	// transfer matrix
@@ -316,7 +316,7 @@ void MainForm::on_zoomout_triggered()
 	// the view center
 	int xviewcenter=viewSize_.width()/2;
 	int yviewcenter=viewSize_.height()/2;
-	QMatrix tempMat;
+    QTransform tempMat;
 
 	scale/=scalefactor;
 	tempMat.reset();
@@ -358,14 +358,14 @@ void MainForm::on_inselectmode_triggered(bool triggered)
 
 void MainForm::on_savescreenshot_triggered()
 {
-	QString fn = QFileDialog::getSaveFileName(this, "Save Image", QString::null, "PNG Files (*.png)" );
+    QString fn = QFileDialog::getSaveFileName(this, "Save Image", QString(), "PNG Files (*.png)" );
     if (!fn.isEmpty())
        pm1.save(fn,"PNG");
 }
 
 void MainForm::on_loadbackground_triggered()
 {
-	QString fn( QFileDialog::getOpenFileName(this, "Open background image",QString::null,"PNG Files (*.png)" ) );
+    QString fn( QFileDialog::getOpenFileName(this, "Open background image",QString(),"PNG Files (*.png)" ) );
     if (!fn.isEmpty())
     {
         string haha=string(fn.toLatin1().data());
@@ -666,7 +666,7 @@ void MainForm::mousePressEvent ( QMouseEvent * event )
 			QString mesg=QString("Mouse_X %1, Mouse_Y %2").arg(x_current).arg(y_current);
 			mouse_label->setText(mesg);
 
-			QMatrix inv = wm.inverted();
+            QTransform inv = wm.inverted();
 			QPoint pos_model = inv.map(pos_view);
 			selectNodes(pos_model);
 		}
@@ -676,7 +676,7 @@ void MainForm::mousePressEvent ( QMouseEvent * event )
 			QString mesg=QString("Mouse_X %1, Mouse_Y %2").arg(x_current).arg(y_current);
 			mouse_label->setText(mesg);
 
-			QMatrix inv = wm.inverted();
+            QTransform inv = wm.inverted();
 			QPoint pos_model = inv.map(pos_view);
 			selectLinks(pos_model);
 		}
@@ -827,7 +827,7 @@ void MainForm::zoomRectArea()
 	scale*=rect2view_factor;
 
 	// transfer matrix
-	QMatrix tempMat;
+    QTransform tempMat;
 	tempMat.reset();
 	tempMat.scale(rect2view_factor, rect2view_factor);
 	tempMat.translate(-zoomrect_->left(),-zoomrect_->top());

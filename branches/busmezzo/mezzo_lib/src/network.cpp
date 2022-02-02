@@ -9562,7 +9562,7 @@ bool Network::readmaster(string name)
 }
 
 #ifndef _NO_GUI
-double Network::executemaster(QPixmap* pm_, QMatrix* wm_)
+double Network::executemaster(QPixmap* pm_, QTransform* wm_)
 {
     pm = pm_;
     wm = wm_;
@@ -10614,7 +10614,7 @@ void Network::recenter_image()
 *   step 3: translate the overscaled dimension
 *   PROOF BY M=M1*M2*M3
 */
-QMatrix Network::netgraphview_init()
+QTransform Network::netgraphview_init()
 {
     // make sure initial worldmatrix is a unit matrix
     initview_wm.reset();

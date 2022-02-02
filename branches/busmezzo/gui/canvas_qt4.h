@@ -113,9 +113,9 @@ private:
     bool exited;
 
 	// xiaoliang work variables on zooming
-	QMatrix wm;			  //!< general world matrix from model to current view	
-    QMatrix mod2stdViewMat_; //!< define transition from basic model to standard view
-	QMatrix viewMat_;		  //!< define transition from standard view to current view
+    QTransform wm;			  //!< general world matrix from model to current view
+    QTransform mod2stdViewMat_; //!< define transition from basic model to standard view
+    QTransform viewMat_;		  //!< define transition from standard view to current view
 	QSize viewSize_;
 	QSize canvasOffset; // off set in X and Y of the Canvas to the Mainform
 	QPixmap pm1, pm2; //!< shared pixmaps on which the network is drawn off-screen

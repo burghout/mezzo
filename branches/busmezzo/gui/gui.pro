@@ -34,6 +34,7 @@ win32{
 
 QT+= core gui widgets
 
+DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x050F00
 CONFIG +=  embed_manifest_exe
 #uic4
 

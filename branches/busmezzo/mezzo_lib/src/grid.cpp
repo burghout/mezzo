@@ -2,7 +2,7 @@
 
 
 Grid::Grid(int nr_fields_,vector<string> names_):nr_fields(nr_fields_),fnames(names_)
-{}
+{Q_UNUSED(nr_fields);}
 
 void Grid::reset()
 {
