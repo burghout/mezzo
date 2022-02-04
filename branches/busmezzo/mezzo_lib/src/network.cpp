@@ -26,6 +26,7 @@ double drt_first_assignment_time = 0.0;
 
 bool fwf_wip::day2day_drt_no_rti = false;
 
+bool fwf_wip::write_all_d2d_alphas = false; // set manually (default false)
 bool fwf_wip::write_all_pass_experiences = false; //set manually (default false)
 bool fwf_wip::randomize_pass_arrivals = true; //set manually (default true)
 bool fwf_wip::day2day_no_convergence_criterium = false; //set manually (default false)
@@ -10511,11 +10512,14 @@ double Network::step(double timestep)
             //Write out the ODSL and ODSLL tables here @todo it seems like 'day' doesn't necessarily correspond to the actual Network::day, but rather the first time a network element was experienced
             if (day == 1)
             {
-                Day2day::write_wt_alphas_header(workingdir + "o_fwf_wt_alphas.dat");
-                Day2day::write_ivt_alphas_header(workingdir + "o_fwf_ivt_alphas.dat");
-
                 write_day2day_modesplit_header(workingdir + "o_fwf_day2day_modesplit.dat");
                 write_day2day_boardings_header(workingdir + "o_fwf_day2day_boardings.dat");
+
+                if(fwf_wip::write_all_d2d_alphas)
+                {
+                    Day2day::write_wt_alphas_header(workingdir + "o_fwf_wt_alphas.dat");
+                    Day2day::write_ivt_alphas_header(workingdir + "o_fwf_ivt_alphas.dat");
+                }
                 if (fwf_wip::write_all_pass_experiences)
                 {
                     write_day2day_passenger_waiting_experience_header(workingdir + "o_fwf_day2day_passenger_waiting_experience.dat");
@@ -10527,12 +10531,15 @@ double Network::step(double timestep)
                     write_day2day_modesplit_odcategory_header(workingdir + "o_fwf_day2day_modesplit_odcategory.dat");
                 }
             }
-            Day2day::write_wt_alphas(workingdir + "o_fwf_wt_alphas.dat", wt_rec, day);
-            Day2day::write_ivt_alphas(workingdir + "o_fwf_ivt_alphas.dat", ivt_rec, day);
 
             write_day2day_modesplit(workingdir + "o_fwf_day2day_modesplit.dat"); // write modesplit for the current day
             write_day2day_boardings(workingdir + "o_fwf_day2day_boardings.dat"); // write total boardings per line for the current day
 
+            if (fwf_wip::write_all_d2d_alphas)
+            {
+                Day2day::write_wt_alphas(workingdir + "o_fwf_wt_alphas.dat", wt_rec, day);
+                Day2day::write_ivt_alphas(workingdir + "o_fwf_ivt_alphas.dat", ivt_rec, day);
+            }
             if (fwf_wip::write_all_pass_experiences)
             {
                 write_day2day_passenger_waiting_experience(workingdir + "o_fwf_day2day_passenger_waiting_experience.dat");
