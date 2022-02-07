@@ -197,6 +197,28 @@ private:
 	double total_acrowding = 0;
 	int nr_on_line_2 = 0;
 
+/** @ingroup DRT
+ *  @{ 
+	@todo Temporary day2day attributes for for Drottningholm case-specific outputs
+*/
+    map<PARTC::ODCategory, double> total_wt_per_odcat;
+	map<PARTC::ODCategory, double> total_wt_pk_per_odcat;
+	map<PARTC::ODCategory, double> total_wt_rti_per_odcat;
+	map<PARTC::ODCategory, double> total_wt_exp_per_odcat;
+	map<PARTC::ODCategory, double> total_wt_anticip_per_odcat;
+	map<PARTC::ODCategory, double> total_ivt_per_odcat;
+	map<PARTC::ODCategory, double> total_ivt_pk_per_odcat;
+	map<PARTC::ODCategory, double> total_ivt_exp_per_odcat;
+	map<PARTC::ODCategory, double> total_ivt_anticip_per_odcat;
+	map<PARTC::ODCategory, double> total_ivt_crowding_per_odcat;
+	map<PARTC::ODCategory, double> total_ivt_acrowding_per_odcat;
+    map<PARTC::ODCategory, int> npass_per_odcat;
+	map<PARTC::ODCategory, int> nmissed_per_odcat;
+	map<PARTC::ODCategory, int> ntrans_per_odcat;
+	map<PARTC::ODCategory, int> nlegs_per_odcat;
+/**@}*/
+
+
 public:
 	Day2day (int nr_of_reps_);
 	void reset ();
@@ -220,6 +242,10 @@ public:
     static void write_wt_alphas(string filename, const map<ODSL, Travel_time>& wt_records, int day); //write out all ODSL alphas to a csv file
 	static void write_ivt_alphas_header(string filename);
 	static void write_ivt_alphas(string filename, const map<ODSLL, Travel_time>& ivt_records, int day); //write out all ODSLL alphas to a csv file
+
+	// temp for Drottningholms case
+	void write_convergence_per_od_header(const string& filename = "o_fwf_convergence_odcategory.dat");
+	void write_convergence_per_od(const string& filename = "o_fwf_convergence_odcategory.dat"); //write average day results per OD category
 	/**@}*/
 };
 

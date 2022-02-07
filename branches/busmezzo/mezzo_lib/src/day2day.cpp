@@ -228,6 +228,79 @@ void Day2day::update_day (int d)
 	ivt_day.clear();
 }
 
+void Day2day::write_convergence_per_od_header(const string& filename)
+{
+    assert(PARTC::drottningholm_case);
+    ofstream out(filename.c_str(), ios_base::app); //"o_fwf_convergence_odcategory.dat"
+    out << "day" << '\t'
+		<< "od_category" << '\t' // {Null = 0, b2b, b2c, c2c, c2b}
+        << "npass" << '\t'
+        << "avg_wt" << '\t'
+        << "avg_wt_pk" << '\t'
+        << "avg_wt_rti" << '\t'
+        << "avg_wt_exp" << '\t'
+        << "avg_wt_anticip" << '\t'
+        << "avg_ivt" << '\t'
+        << "avg_ivt_pk" << '\t'
+        << "avg_ivt_exp" << '\t'
+        << "avg_ivt_anticip" << '\t'
+        << "avg_tt" << '\t'
+		<< "avg_ntrans" << '\t'
+        << "avg_crowding" << '\t'
+        << "avg_alpha_crowding" << '\t'
+        << "avg_nmissed" << endl;
+}
+void Day2day::write_convergence_per_od(const string& filename)
+{
+	assert(PARTC::drottningholm_case);
+	using namespace PARTC;
+    ofstream out1(filename.c_str(), ios_base::app); //o_fwf_convergence_odcategory.dat
+
+    for (ODCategory odcat : { ODCategory::b2b, ODCategory::b2c, ODCategory::c2c, ODCategory::c2b })
+    {
+        int nr_of_passengers = npass_per_odcat[odcat];
+        double total_crowding = total_ivt_crowding_per_odcat[odcat];
+        double total_acrowding = total_ivt_acrowding_per_odcat[odcat];
+        int nr_of_legs = nlegs_per_odcat[odcat];
+
+        double average_nr_of_changes = static_cast<double>(ntrans_per_odcat[odcat]) / static_cast<double>(nr_of_passengers) - 1;
+        double average_nr_missed = static_cast<double>(nmissed_per_odcat[odcat]) / static_cast<double>(nr_of_passengers);
+        double average_waiting_time = total_wt_per_odcat[odcat] / nr_of_passengers;
+        double average_wt_pk = total_wt_pk_per_odcat[odcat] / nr_of_passengers;
+        double average_wt_rti = total_wt_rti_per_odcat[odcat] / nr_of_passengers;
+        double average_wt_exp = total_wt_exp_per_odcat[odcat] / nr_of_passengers;
+        double average_wt_anticip = total_wt_anticip_per_odcat[odcat] / nr_of_passengers;
+
+        double average_in_vehicle_time = total_ivt_per_odcat[odcat] / nr_of_passengers;
+        double average_ivt_pk = total_ivt_pk_per_odcat[odcat] / nr_of_passengers;
+        double average_ivt_exp = total_ivt_exp_per_odcat[odcat] / nr_of_passengers;
+        double average_ivt_anticip = total_ivt_anticip_per_odcat[odcat] / nr_of_passengers;
+
+        double average_travel_time = average_waiting_time + average_in_vehicle_time;
+
+        out1.precision(0);
+        out1 << fixed;
+        out1 << day << "\t"
+            << static_cast<underlying_type<ODCategory>::type>(odcat) << '\t'
+            << nr_of_passengers << "\t"
+            << average_waiting_time << "\t"
+            << average_wt_pk << "\t"
+            << average_wt_rti << "\t"
+            << average_wt_exp << "\t"
+            << average_wt_anticip << "\t"
+            << average_in_vehicle_time << "\t"
+            << average_ivt_pk << "\t"
+            << average_ivt_exp << "\t"
+            << average_ivt_anticip << "\t"
+            << average_travel_time << "\t";
+        out1.precision(2);
+        out1 << average_nr_of_changes << "\t" 
+		    << total_crowding / nr_of_legs << "\t" 
+			<< total_acrowding / nr_of_legs << "\t" 
+			<< average_nr_missed << endl;
+    }
+}
+
 void Day2day::write_output (string filename, string addition)
 {
 	map<ODSL, Travel_time> temp_output;
@@ -287,6 +360,18 @@ map<ODSL, Travel_time>& Day2day::process_wt_replication (vector<ODstops*>& odsto
 	nr_of_passengers = 0;
 	nr_of_changes = 0;
 	nr_on_line_2 = 0;
+
+	if (PARTC::drottningholm_case)
+	{
+		total_wt_per_odcat.clear();
+		total_wt_pk_per_odcat.clear();
+		total_wt_rti_per_odcat.clear();
+		total_wt_exp_per_odcat.clear();
+		total_wt_anticip_per_odcat.clear();
+		npass_per_odcat.clear();
+		ntrans_per_odcat.clear();
+		nmissed_per_odcat.clear();
+	}
 
 
 	// For each od collect list of passenger experiences, For each passenger calculate and anticipated EXP, and if information is shared then we average the experiences when calculated anticipated wt
@@ -349,6 +434,24 @@ map<ODSL, Travel_time>& Day2day::process_wt_replication (vector<ODstops*>& odsto
 				total_wt_exp += wt.tt[anticip_EXP];
 				total_wt_anticip += wt.tt[anticip];
 				total_nr_missed += exp_iter->nr_missed;
+
+				if(PARTC::drottningholm_case)
+				{
+                    PARTC::ODCategory odcat = PARTC::get_od_category(orig, dest);
+                    assert(odcat != PARTC::ODCategory::Null); // all ods should have a category
+
+					++npass_per_odcat[odcat];
+					++ntrans_per_odcat[odcat];
+
+                    total_wt_per_odcat[odcat] += wt.tt[EXP];
+                    total_wt_pk_per_odcat[odcat] += wt.tt[PK];
+                    total_wt_rti_per_odcat[odcat] += wt.tt[RTI];
+                    total_wt_exp_per_odcat[odcat] += wt.tt[anticip_EXP];
+                    total_wt_anticip_per_odcat[odcat] += wt.tt[anticip];
+
+					nmissed_per_odcat[odcat] += exp_iter->nr_missed;
+				}
+
 				if (line == 2)
 					nr_on_line_2++;
 			}
@@ -377,6 +480,17 @@ map<ODSLL, Travel_time>& Day2day::process_ivt_replication (vector<ODstops*>& ods
 	total_ivt_anticip = 0;
 	total_crowding = 0;
 	total_acrowding = 0;
+
+	if (PARTC::drottningholm_case)
+	{
+		nlegs_per_odcat.clear();
+		total_ivt_per_odcat.clear();
+		total_ivt_pk_per_odcat.clear();
+		total_ivt_exp_per_odcat.clear();
+		total_ivt_anticip_per_odcat.clear();
+		total_ivt_crowding_per_odcat.clear();
+		total_ivt_acrowding_per_odcat.clear();
+	}
 
 	for (auto od_iter = odstops.begin(); od_iter != odstops.end(); ++od_iter)
 	{
@@ -433,6 +547,22 @@ map<ODSLL, Travel_time>& Day2day::process_ivt_replication (vector<ODstops*>& ods
 				total_ivt_anticip += ivt.alpha[EXP] * ivt.tt[anticip_EXP] + ivt.alpha[PK] * ivt.tt[PK];
 				total_crowding += ivt.tt[crowding];
 				total_acrowding += ivt.alpha[crowding];
+
+                if (PARTC::drottningholm_case)
+                {
+					PARTC::ODCategory odcat = PARTC::get_od_category(orig, dest);
+                    assert(odcat != PARTC::ODCategory::Null); // all ods should have a category
+
+                    ++nlegs_per_odcat[odcat];
+
+                    total_ivt_per_odcat[odcat] += ivt.tt[EXP];
+                    total_ivt_pk_per_odcat[odcat] += ivt.tt[PK];
+                    total_ivt_exp_per_odcat[odcat] += ivt.tt[anticip_EXP];
+                    total_ivt_anticip_per_odcat[odcat] += ivt.alpha[EXP] * ivt.tt[anticip_EXP] + ivt.alpha[PK] * ivt.tt[PK];
+                    total_ivt_crowding_per_odcat[odcat] += ivt.tt[crowding];
+                    total_ivt_acrowding_per_odcat[odcat] += ivt.alpha[crowding];
+                }
+
 			}
 		}
 	}
