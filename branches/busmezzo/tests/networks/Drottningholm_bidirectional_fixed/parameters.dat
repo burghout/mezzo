@@ -58,7 +58,7 @@
    waiting_time_coefficient= -0.07
    walking_time_coefficient= -0.07
    average_walking_speed= 66.66
-   max_nr_extra_transfers= 0
+   max_nr_extra_transfers= 1
    absolute_max_transfers= 2
    max_in_vehicle_time_ratio= 2.0
    max_walking_distance= 2500.0

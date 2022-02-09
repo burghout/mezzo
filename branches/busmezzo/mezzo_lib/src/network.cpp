@@ -23,6 +23,7 @@ double drt_first_rep_waiting_utility = 10.0; //default is to evaluate waiting ut
 int drt_min_occupancy = 0;
 double drt_first_rebalancing_time = 0.0;
 double drt_first_assignment_time = 0.0;
+bool drt_enforce_strict_boarding = false;
 
 bool fwf_wip::day2day_drt_no_rti = false;
 
@@ -30,13 +31,12 @@ bool fwf_wip::write_all_d2d_alphas = false; // set manually (default false)
 bool fwf_wip::write_all_pass_experiences = false; //set manually (default false)
 bool fwf_wip::randomize_pass_arrivals = true; //set manually (default true)
 bool fwf_wip::day2day_no_convergence_criterium = false; //set manually (default false)
-bool fwf_wip::drt_enforce_strict_boarding = false; //set manually (default false)
-bool fwf_wip::zero_pk_fixed = false; //set manually (default false)
-bool fwf_wip::autogen_drt_lines_with_intermediate_stops = false;  //set manually (default false)
+bool fwf_wip::zero_pk_fixed = true; //set manually (default false)
+bool fwf_wip::autogen_drt_lines_with_intermediate_stops = true;  //set manually (default false)
 bool fwf_wip::csgm_no_merging_rules = false; //set manually (default false)
 bool fwf_wip::csgm_no_filtering_dominancy_rules = false; //set manually (default false)
 
-bool PARTC::drottningholm_case = false; //set manually (default false)
+bool PARTC::drottningholm_case = true; //set manually (default false)
 
 pair<Busstop*,Busstop*> PARTC::transfer_stops = make_pair(nullptr,nullptr);
 
@@ -1565,6 +1565,14 @@ bool Network::readcontrolcenters(const string& name)
         return false;
     }
     in >> ::drt_first_assignment_time;
+    in >> keyword;
+    if (keyword != "drt_enforce_strict_boarding:")
+    {
+        DEBUG_MSG("readcontrolcenters:: no drt_enforce_strict_boarding keyword, read: " << keyword);
+        in.close();
+        return false;
+    }
+    in >> ::drt_enforce_strict_boarding;
     //Create Controlcenters here or somewhere else. OBS: currently a pointer to this CC is given to Busstop via its constructor
     in >> keyword;
     if (keyword != "controlcenters:")

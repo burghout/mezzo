@@ -183,7 +183,7 @@ void TestFixedWithFlexible_2stop_2link::testInitParameters()
     ::fwf_wip::write_all_pass_experiences = true; //set manually
     ::fwf_wip::randomize_pass_arrivals = false; //set manually
     ::fwf_wip::day2day_no_convergence_criterium = true; //set manually
-    ::fwf_wip::drt_enforce_strict_boarding = true; //set manually
+    QVERIFY(::drt_enforce_strict_boarding);
     ::fwf_wip::zero_pk_fixed = true; // set manually
     
     //BusMezzo parameters, drt without RTI

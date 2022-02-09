@@ -185,7 +185,6 @@ void TestDrottningholmBidirectional_fixed::testInitParameters()
     ::fwf_wip::write_all_pass_experiences = false; //set manually (default false)
     ::fwf_wip::randomize_pass_arrivals = true; //set manually (default true)
     ::fwf_wip::day2day_no_convergence_criterium = false; //set manually (default false)
-    ::fwf_wip::drt_enforce_strict_boarding = false; //set manually (default false)
     ::fwf_wip::zero_pk_fixed = true; //set manually (default false)
     
     //BusMezzo parameters, drt without RTI

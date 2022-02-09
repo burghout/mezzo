@@ -3,6 +3,7 @@ drt_first_rep_waiting_utility: 10
 drt_min_occupancy: 0
 drt_first_rebalancing_time: 0.0
 drt_first_assignment_time: 0.0
+drt_enforce_strict_boarding: 0
 
 controlcenters: 1
 

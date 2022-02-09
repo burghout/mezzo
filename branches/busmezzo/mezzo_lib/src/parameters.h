@@ -88,6 +88,7 @@ extern double drt_first_rep_max_headway; //!< currently corresponds to a global 
 extern double drt_first_rep_waiting_utility; //!< sometimes returned in calc_waiting_utility functions when a Busline currently has no Bustrips in its trips list yet
 extern int drt_min_occupancy; //!< currently used in controlstrategies to put different minimum size of the set of passenger requests to consider generating trips
 extern double drt_first_rebalancing_time; //!< time after start_pass_generation parameter in which first rebalancing action is initiated
+extern bool drt_enforce_strict_boarding; //!< true to only allow passengers to board drt vehicles that they have specifically been assigned to, false and passengers will opportunistically board drt vehicles that match their request
 
 const double drt_exploration_wt = 1.0; //!< default value returns by Controlcenter if RTI or experience is unavailable for passenger anticipated waiting time calculations for decisions
 const double default_large_ivt = 10000.0; // seconds
@@ -103,7 +104,6 @@ namespace fwf_wip
     extern bool write_all_pass_experiences; // true if disaggregate individual passenger experiences of waiting time and in-vehicle time should be written to output files
     extern bool randomize_pass_arrivals; // true if to enable randomizing traveler arrival times (+- around original arrival time) to a stop between days or simulation iterations (i.e. passenger resets)
     extern bool day2day_no_convergence_criterium; // true if we do not terminate based on day2day convergence criteria and instead run until a max number of days is reached
-    extern bool drt_enforce_strict_boarding; // true if we do not allow drt-users to opportunistically board drt vehicles
     extern bool zero_pk_fixed; // true if trust in prior knowledge is set to zero after the first day2day iteration
     extern bool autogen_drt_lines_with_intermediate_stops; // true if when auto-generating all direct routes between stops within a Controlcenter service area to also include any intermediate stop on the generated route
     extern bool csgm_no_merging_rules; // true if when choice-set-generation-model is called to generate paths for demand format 3, then skip the merging into hyperpaths step based on common stops or lines

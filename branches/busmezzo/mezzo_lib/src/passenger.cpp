@@ -687,7 +687,7 @@ bool Passenger:: make_boarding_decision (Bustrip* arriving_bus, double time)
     if (theParameters->drt && chosen_mode_ == TransitModeType::Flexible) // if passenger is a flexible transit user
     {
         bool board_bus = false;
-        if (::fwf_wip::drt_enforce_strict_boarding)
+        if (::drt_enforce_strict_boarding)
         {
             board_bus = arriving_bus->is_flex_trip() && arriving_bus->is_in_assigned_requests(curr_request_); // board only the trip that the request of the passenger was originally assigned to
             assert(board_bus == arriving_bus->is_in_assigned_requests(curr_request_));
