@@ -1,3 +1,3 @@
 day	fix_pkt	drt_pkt	fix_boarding	drt_boarding	fix_chosen	drt_chosen	avg_gtc	npass	pass_ignored
-1	0.54	0.46	0.41	0.59	77	111	-27.94922	188	7
-2	0.58	0.42	0.49	0.51	85	89	-26.69117	174	21
+1	0.80	0.20	0.74	0.26	261	90	-90.63734	255	0
+2	0.78	0.22	0.72	0.28	249	95	-87.50721	255	0

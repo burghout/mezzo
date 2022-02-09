@@ -119,6 +119,7 @@ void TestFixedWithFlexible_2stop_2link::testInitNetwork()
     ::fwf_wip::autogen_drt_lines_with_intermediate_stops = true; // set manually
     ::fwf_wip::csgm_no_merging_rules = true; //set manually (default false)
     ::fwf_wip::csgm_no_filtering_dominancy_rules = true; //set manually (default false)
+    ::fwf_wip::write_all_d2d_alphas = true; // set manually (default false)
     
     qDebug() << "Initializing network in " + QString::fromStdString(network_path);
     

@@ -21,6 +21,18 @@ const std::string network_name = "masterfile.mezzo";
 
 const QString expected_outputs_path = "://networks/Drottningholm_bidirectional_mixed_d2d/ExpectedOutputs/";
 const QString path_set_generation_filename = "o_path_set_generation.dat";
+const vector<QString> d2d_output_filenames = 
+{
+    "o_convergence.dat",
+    "o_fwf_ivt_alphas.dat",
+    "o_fwf_wt_alphas.dat",
+    "o_fwf_day2day_modesplit.dat",
+    "o_fwf_day2day_boardings.dat",
+    "o_fwf_convergence_odcategory.dat",
+    "o_fwf_day2day_boardings.dat",
+    "o_fwf_day2day_modesplit.dat",
+    "o_fwf_day2day_modesplit_odcategory.dat"
+};
 const vector<QString> output_filenames =
 {
     "o_od_stop_summary_without_paths.dat",
@@ -38,7 +50,8 @@ const vector<QString> output_filenames =
     "o_trip_total_travel_time.dat",
     "o_fwf_summary.dat",
     "o_vkt.dat",
-    "o_fwf_summary_odcategory.dat"
+    "o_time_spent_in_state_at_stop.dat",
+    "o_fwf_summary_odcategory.dat",
 };
 
 const long int seed = 42;
@@ -140,6 +153,7 @@ private Q_SLOTS:
     void testRunNetwork(); //!< test running the network
     void testPassAssignment(); //!< tests path-set-generation + resulting assignment
     void testSaveResults(); //!< tests saving results
+    void testFinalDay2dayOutput(); //!< tests of final day2day convergence files
     void testDelete(); //!< tests correct deletion
 
 private:
@@ -163,12 +177,20 @@ void TestDrottningholmBidirectional_mixed_day2day::testCreateNetwork()
 
 void TestDrottningholmBidirectional_mixed_day2day::testInitNetwork()
 {
+    // remove old output files:
+    for (const QString& filename : d2d_output_filenames)
+    {
+        qDebug() << "Removing file " + filename + ": " << QFile::remove(filename); //remove old day2day convergence results
+    }
+    
     //qDebug() << "Removing file " + path_set_generation_filename + ": " << QFile::remove(path_set_generation_filename); //remove old passenger path sets
     qDebug() << "Initializing network in " + QString::fromStdString(network_path_1);
 
     ::fwf_wip::autogen_drt_lines_with_intermediate_stops = true;  //set manually (default false)
     ::fwf_wip::csgm_no_merging_rules = true; //set manually (default false)
     ::fwf_wip::csgm_no_filtering_dominancy_rules = true; //set manually (default false)
+    ::fwf_wip::write_all_d2d_alphas = true; // set manually (default false)
+    
     
     ::PARTC::drottningholm_case = true;
     //::PARTC::transfer_stop = transfer;
@@ -352,7 +374,7 @@ void TestDrottningholmBidirectional_mixed_day2day::testCasePathSet()
             else
                 leg2_mode_s = "Null";
             
-            qDebug() << "\ttransfers:" << n_trans << "leg1: " + leg1_mode_s << "leg2: " + leg2_mode_s;
+            //qDebug() << "\ttransfers:" << n_trans << "leg1: " + leg1_mode_s << "leg2: " + leg2_mode_s;
             
             switch(od_category)
             {
@@ -517,6 +539,30 @@ void TestDrottningholmBidirectional_mixed_day2day::testSaveResults()
 
     //test if output files match the expected output files
     for (const QString& o_filename : output_filenames)
+    {
+        qDebug() << "Comparing " + o_filename + " with ExpectedOutputs/" + o_filename;
+
+        QString ex_o_fullpath = expected_outputs_path + o_filename;
+        QFile ex_outputfile(ex_o_fullpath);
+
+        QString msg = "Failure, cannot open ExpectedOutputs/" + o_filename;
+        QVERIFY2(ex_outputfile.open(QIODevice::ReadOnly | QIODevice::Text), qPrintable(msg));
+
+        QFile outputfile(o_filename);
+        msg = "Failure, cannot open " + o_filename;
+        QVERIFY2(outputfile.open(QIODevice::ReadOnly | QIODevice::Text), qPrintable(msg));
+
+        msg = "Failure, " + o_filename + " differs from ExpectedOutputs/" + o_filename;
+        QVERIFY2(outputfile.readAll() == ex_outputfile.readAll(), qPrintable(msg));
+
+        ex_outputfile.close();
+        outputfile.close();
+    }
+}
+void TestDrottningholmBidirectional_mixed_day2day::testFinalDay2dayOutput()
+{
+    //test if day2day files match the expected output files
+    for (const QString& o_filename : d2d_output_filenames)
     {
         qDebug() << "Comparing " + o_filename + " with ExpectedOutputs/" + o_filename;
 
