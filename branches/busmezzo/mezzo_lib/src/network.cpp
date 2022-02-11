@@ -10537,6 +10537,7 @@ double Network::step(double timestep)
                 if(PARTC::drottningholm_case)
                 {
                     day2day->write_convergence_per_od_header(workingdir + "o_fwf_convergence_odcategory.dat");
+                    day2day->write_convergence_per_od_and_mode_header(workingdir + "o_fwf_convergence_odcategory_mode.dat");
                     write_day2day_modesplit_odcategory_header(workingdir + "o_fwf_day2day_modesplit_odcategory.dat");
                 }
             }
@@ -10558,6 +10559,7 @@ double Network::step(double timestep)
             if(PARTC::drottningholm_case)
             {
                 day2day->write_convergence_per_od(workingdir + "o_fwf_convergence_odcategory.dat");
+                day2day->write_convergence_per_od_and_mode(workingdir + "o_fwf_convergence_odcategory_mode.dat");
                 write_day2day_modesplit_odcategory(workingdir + "o_fwf_day2day_modesplit_odcategory.dat");
             }
         }

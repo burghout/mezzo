@@ -216,6 +216,23 @@ private:
 	map<PARTC::ODCategory, int> nmissed_per_odcat;
 	map<PARTC::ODCategory, int> ntrans_per_odcat;
 	map<PARTC::ODCategory, int> nlegs_per_odcat;
+
+	map<TransitModeType,map <PARTC::ODCategory, double> >  total_wt_per_odcat_mode;
+	map<TransitModeType,map <PARTC::ODCategory, double> >  total_wt_pk_per_odcat_mode;
+	map<TransitModeType,map <PARTC::ODCategory, double> >  total_wt_exp_per_odcat_mode;
+	map<TransitModeType,map <PARTC::ODCategory, double> >  total_wt_rti_per_odcat_mode;
+	map<TransitModeType,map <PARTC::ODCategory, double> >  total_wt_anticip_per_odcat_mode;
+	map<TransitModeType,map <PARTC::ODCategory, double> >  total_ivt_per_odcat_mode;
+	map<TransitModeType,map <PARTC::ODCategory, double> >  total_ivt_pk_per_odcat_mode;
+	map<TransitModeType,map <PARTC::ODCategory, double> >  total_ivt_exp_per_odcat_mode;
+	map<TransitModeType,map <PARTC::ODCategory, double> >  total_ivt_anticip_per_odcat_mode;
+	map<TransitModeType,map <PARTC::ODCategory, double> >  total_ivt_crowding_per_odcat_mode;
+	map<TransitModeType,map <PARTC::ODCategory, double> >  total_ivt_acrowding_per_odcat_mode;
+    map<TransitModeType,map <PARTC::ODCategory, int> > npass_per_odcat_mode;
+	map<TransitModeType,map <PARTC::ODCategory, int> > nmissed_per_odcat_mode;
+	map<TransitModeType,map <PARTC::ODCategory, int> > ntrans_per_odcat_mode;
+	map<TransitModeType,map <PARTC::ODCategory, int> > nlegs_per_odcat_mode;
+
 /**@}*/
 
 
@@ -246,7 +263,9 @@ public:
 	// temp for Drottningholms case
 	void write_convergence_per_od_header(const string& filename = "o_fwf_convergence_odcategory.dat");
 	void write_convergence_per_od(const string& filename = "o_fwf_convergence_odcategory.dat"); //write average day results per OD category
-	/**@}*/
+    void write_convergence_per_od_and_mode_header(const string& filename = "o_fwf_convergence_odcategory_mode.dat");
+    void write_convergence_per_od_and_mode(const string& filename = "o_fwf_convergence_odcategory_mode.dat");
+    /**@}*/
 };
 
 #endif
