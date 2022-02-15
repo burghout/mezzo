@@ -1116,7 +1116,8 @@ bool Bustrip::activate (double time, Route* route, ODpair* odpair, Eventlist* ev
 	}
 	else // if insert returned false
   	{
-  		ok = false; 
+  		ok = false;
+		qDebug() << "Warning - trip" << this->get_id() << "activation attempt failed at time" << time;
   	}	
 	set_activated(ok);
 	return ok;
