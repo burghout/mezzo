@@ -947,18 +947,20 @@ void ODstops::write_boarding_output(ostream & out, Passenger* pass)
 	}
 }
 
-void ODstops::write_waiting_exp_output(ostream & out, Passenger* pass)
+void ODstops::write_waiting_exp_output(ostream & out, Passenger* pass, int day)
 {
 	for (list <Pass_waiting_experience>::iterator iter = output_pass_waiting_experience[pass].begin(); iter!=output_pass_waiting_experience[pass].end();iter++)
 	{
+		out << day << '\t';
 		iter->write(out);
 	}
 }
 
-void ODstops::write_onboard_exp_output(ostream & out, Passenger* pass)
+void ODstops::write_onboard_exp_output(ostream & out, Passenger* pass, int day)
 {
 	for (list <Pass_onboard_experience>::iterator iter = output_pass_onboard_experience[pass].begin(); iter!=output_pass_onboard_experience[pass].end();iter++)
 	{
+		out << day << '\t';
 		iter->write(out);
 	}
 }
@@ -979,18 +981,20 @@ void ODstops::write_connection_output(ostream & out, Passenger* pass)
 	}
 }
 
-void ODstops::write_transitmode_output(ostream& out, Passenger* pass)
+void ODstops::write_transitmode_output(ostream& out, Passenger* pass, int day)
 {
 	for (list <Pass_transitmode_decision>::iterator iter = output_pass_transitmode_decision[pass].begin(); iter != output_pass_transitmode_decision[pass].end(); iter++)
 	{
+		out << day << '\t';
 		iter->write(out);
 	}
 }
 
-void ODstops::write_dropoff_output(ostream& out, Passenger* pass)
+void ODstops::write_dropoff_output(ostream& out, Passenger* pass, int day)
 {
 	for (list <Pass_dropoff_decision>::iterator iter = output_pass_dropoff_decision[pass].begin(); iter != output_pass_dropoff_decision[pass].end(); iter++)
 	{
+		out << day << '\t';
 		iter->write(out);
 	}
 }

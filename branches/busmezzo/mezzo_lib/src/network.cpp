@@ -7600,8 +7600,7 @@ bool Network::write_day2day_passenger_waiting_experience(string filename)
             map <Passenger*, list<Pass_waiting_experience>, ptr_less<Passenger*> > waiting_experience = od_iter->second->get_waiting_output();
             for (auto pass_iter1 = waiting_experience.begin(); pass_iter1 != waiting_experience.end(); ++pass_iter1)
             {
-                out << day << '\t';
-                od_iter->second->write_waiting_exp_output(out, (*pass_iter1).first);
+                od_iter->second->write_waiting_exp_output(out, (*pass_iter1).first, day);
             }
         }
     }
@@ -7642,9 +7641,7 @@ bool Network::write_day2day_passenger_onboard_experience(string filename)
             map <Passenger*, list<Pass_onboard_experience>, ptr_less<Passenger*> > onboard_experience = od_iter->second->get_onboard_output();
             for (auto pass_iter1 = onboard_experience.begin(); pass_iter1 != onboard_experience.end(); ++pass_iter1)
             {
-                out.precision(0);
-                out << day << '\t';
-                od_iter->second->write_onboard_exp_output(out, (*pass_iter1).first);
+                od_iter->second->write_onboard_exp_output(out, (*pass_iter1).first, day);
             }
         }
     }
@@ -7678,12 +7675,7 @@ bool Network::write_day2day_passenger_transitmode(string filename)
         vector<Passenger*> pass_vec = od->get_passengers_during_simulation();
         for (const auto& pass : pass_vec)
         {
-            /*if (pass->get_end_time() > 0)
-            {*/
-            out.precision(0);
-            out << day << '\t';
-            od->write_transitmode_output(out, pass);
-            /*}*/
+            od->write_transitmode_output(out, pass, day);
         }
     }
     return true;

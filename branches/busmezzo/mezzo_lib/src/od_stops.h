@@ -488,16 +488,16 @@ public:
 	void record_passenger_dropoff_decision(Passenger* pass, double time, Busstop* pickup_stop, Busstop* chosen_dropoff_stop, map<Busstop*, pair<double, double>> dropoff_MNL_);
 	void record_waiting_experience (Passenger* pass, Bustrip* trip, double time, double wt_exp, int level_of_rti_upon_decision, double wt_rti, double wt_acc_exp, int nr_missed); // !< creates a log-file for a decision and related waiting time components
 	void record_onboard_experience(Passenger* pass, Bustrip* trip, Busstop* stop, pair<double,double> ivt_exp);
-	void write_boarding_output(ostream & out, Passenger* pass);
-	void write_alighting_output(ostream & out, Passenger* pass);
-	void write_connection_output(ostream & out, Passenger* pass);
-	void write_transitmode_output(ostream& out, Passenger* pass);
-	void write_dropoff_output(ostream& out, Passenger* pass);
-	void write_waiting_exp_output(ostream & out, Passenger* pass);
-	void write_onboard_exp_output(ostream & out, Passenger* pass);
-	void write_od_summary(ostream & out);
-	void write_od_summary_without_paths (ostream & out);
-	void calc_pass_measures ();
+    void write_boarding_output(ostream& out, Passenger* pass);
+    void write_alighting_output(ostream& out, Passenger* pass);
+    void write_connection_output(ostream& out, Passenger* pass);
+    void write_transitmode_output(ostream& out, Passenger* pass, int day);
+    void write_dropoff_output(ostream& out, Passenger* pass, int day);
+    void write_waiting_exp_output(ostream& out, Passenger* pass, int day);
+    void write_onboard_exp_output(ostream& out, Passenger* pass, int day);
+    void write_od_summary(ostream& out);
+    void write_od_summary_without_paths(ostream& out);
+    void calc_pass_measures();
 
 	//Day2Day
 	void set_anticipated_waiting_time (Busstop* stop, Busline* line, double anticipated_WT);
