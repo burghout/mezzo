@@ -4898,6 +4898,7 @@ int Network::drottningholm_path_filtering()
     */
     std::cout << "Network::drottningholm_path_filtering - filtering current path-set" << std::endl;
     assert(::PARTC::drottningholm_case);
+    bool remove_double_fix = true;
 
     int total_paths_checked = 0;
     int filtered_path_count = 0;
@@ -4968,7 +4969,7 @@ int Network::drottningholm_path_filtering()
                                 paths_to_be_deleted[path] = true;
                                 ++b2b_drt_direct_route_only;
                             }
-                            if ((n_transfers == 1) && !drt_first) // FIX -> DRT/FIX for now remove @todo depending on if we have between branch demand
+                            else if ((n_transfers == 1) && !drt_first) // FIX -> DRT/FIX for now remove @todo depending on if we have between branch demand
                             {
                                 paths_to_be_deleted[path] = true;
                                 ++b2b_other;
@@ -4980,7 +4981,7 @@ int Network::drottningholm_path_filtering()
                                 paths_to_be_deleted[path] = true;
                                 ++b2c_other;
                             }
-                            if (n_transfers == 1)
+                            else if (n_transfers == 1)
                             {
                                 if (drt_first) // DRT -> FIX
                                 {
@@ -4990,7 +4991,12 @@ int Network::drottningholm_path_filtering()
                                         ++b2c_drt_to_first_common_stop_only;
                                     }
                                 }
-                                if (!drt_first && path->check_any_flexible_lines()) // FIX -> DRT
+                                else if (!drt_first && path->check_any_flexible_lines()) // FIX -> DRT
+                                {
+                                    paths_to_be_deleted[path] = true;
+                                    ++b2c_other;
+                                }
+                                else if(!drt_first && remove_double_fix) // FIX -> FIX/DRT
                                 {
                                     paths_to_be_deleted[path] = true;
                                     ++b2c_other;
@@ -5003,20 +5009,25 @@ int Network::drottningholm_path_filtering()
                                 paths_to_be_deleted[path] = true;
                                 ++c2b_other;
                             }
-                            if (n_transfers == 1)
+                            else if (n_transfers == 1)
                             {
                                 if (drt_first) // DRT -> DRT/FIX
                                 {
                                     paths_to_be_deleted[path] = true;
                                     ++c2b_other;
                                 }
-                                if (!drt_first && path->check_any_flexible_lines()) // FIX -> DRT
+                                else if (!drt_first && path->check_any_flexible_lines()) // FIX -> DRT
                                 {
                                     if (!is_transfer_stop(transfer_stop->get_id())) // delete all paths that do not have transfer point at first common stop in the east_west when first leg FIX
                                     {
                                         paths_to_be_deleted[path] = true;
                                         ++c2b_drt_from_first_common_stop_only;
                                     }
+                                }
+                                else if(!drt_first && remove_double_fix) // FIX -> FIX/DRT
+                                {
+                                    paths_to_be_deleted[path] = true;
+                                    ++c2b_other;
                                 }
                             }
                             break;
@@ -5025,6 +5036,14 @@ int Network::drottningholm_path_filtering()
                             {
                                 ++c2c_no_drt_lines;
                                 paths_to_be_deleted[path] = true;
+                            }
+                            else if(n_transfers == 1)
+                            {
+                                if(!drt_first && remove_double_fix)
+                                {
+                                    paths_to_be_deleted[path] = true;
+                                    ++c2c_other;
+                                }
                             }
                             break;
                         }
