@@ -4,6 +4,8 @@ drt_min_occupancy: 1
 drt_first_rebalancing_time: 0.0
 drt_first_assignment_time: 0.0
 drt_enforce_strict_boarding: 0
+drt_exploration_wt: 1.0
+
 
 controlcenters: 1
 {	1	2	2	1	1 

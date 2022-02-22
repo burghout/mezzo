@@ -89,8 +89,8 @@ extern double drt_first_rep_waiting_utility; //!< sometimes returned in calc_wai
 extern int drt_min_occupancy; //!< currently used in controlstrategies to put different minimum size of the set of passenger requests to consider generating trips
 extern double drt_first_rebalancing_time; //!< time after start_pass_generation parameter in which first rebalancing action is initiated
 extern bool drt_enforce_strict_boarding; //!< true to only allow passengers to board drt vehicles that they have specifically been assigned to, false and passengers will opportunistically board drt vehicles that match their request
+extern double drt_exploration_wt; //!< default value returns by Controlcenter if RTI or experience is unavailable for passenger anticipated waiting time calculations for decisions
 
-const double drt_exploration_wt = 1.0; //!< default value returns by Controlcenter if RTI or experience is unavailable for passenger anticipated waiting time calculations for decisions
 const double default_large_ivt = 10000.0; // seconds
 const double large_negative_utility = -10000.0; // generalized cost
 const double large_positive_utility = 10000.0; // generalized cost

@@ -24,6 +24,7 @@ int drt_min_occupancy = 0;
 double drt_first_rebalancing_time = 0.0;
 double drt_first_assignment_time = 0.0;
 bool drt_enforce_strict_boarding = false;
+double drt_exploration_wt = 1.0;
 
 bool fwf_wip::day2day_drt_no_rti = false;
 
@@ -1573,6 +1574,14 @@ bool Network::readcontrolcenters(const string& name)
         return false;
     }
     in >> ::drt_enforce_strict_boarding;
+    in >> keyword;
+    if (keyword != "drt_exploration_wt:")
+    {
+        DEBUG_MSG("readcontrolcenters:: no drt_exploration_wt keyword, read: " << keyword);
+        in.close();
+        return false;
+    }
+    in >> ::drt_exploration_wt;
     //Create Controlcenters here or somewhere else. OBS: currently a pointer to this CC is given to Busstop via its constructor
     in >> keyword;
     if (keyword != "controlcenters:")
