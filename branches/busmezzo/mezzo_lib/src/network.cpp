@@ -4484,12 +4484,18 @@ void Network::merge_paths_by_stops (Busstop* origin_stop, Busstop* destination_s
             }
             for (auto path1 = path_set.begin(); path1 < path_set.end()-1; path1++)
             {
+                if((*path1)->check_any_flexible_lines()) // skip merging check for paths with flexible legs
+                    continue;
+
                 bool perform_merge = false;
                 vector <vector <Busstop*> > stops1 = (*path1)->get_alt_transfer_stops();
                 if (!flagged_paths[(*path1)])
                 {
                     for (auto path2 = path1 + 1; path2 < path_set.end(); path2++)
                     {
+                        if((*path2)->check_any_flexible_lines()) // skip merging check for paths with flexible legs
+                            continue;
+
                         bool fulfilled_conditions = compare_same_lines_paths ((*path1), (*path2));
                         if (fulfilled_conditions)
                         {
@@ -4609,12 +4615,18 @@ void Network::merge_paths_by_common_lines (Busstop* origin_stop, Busstop* destin
             }
             for (auto path1 = path_set.begin(); path1 < path_set.end()-1; path1++)
             {
+                if((*path1)->check_any_flexible_lines()) // skip merging check for paths with flexible legs
+                    continue;
+
                 bool perform_merge = false;
                 vector<vector<Busline*> > transfer_lines1_collect = (*path1)->get_alt_lines();
                 if (!flagged_paths[(*path1)])
                 {
                     for (auto path2 = path1 + 1; path2 < path_set.end(); path2++)
                     {
+                        if((*path2)->check_any_flexible_lines()) // skip merging check for paths with flexible legs
+                            continue;
+
                         vector<vector<Busline*> > transfer_lines1_ = (*path1)->get_alt_lines();
                         auto transfer_lines1 = transfer_lines1_.begin();
                         auto transfer_lines1_collect_iter = transfer_lines1_collect.begin();
@@ -5130,8 +5142,14 @@ void Network::dominancy_rules (Busstop* stop)
                 }
                 for (auto path1 = path_set.begin(); path1 < path_set.end()-1; path1++)
                 {
+                    if((*path1)->check_any_flexible_lines()) // skip static comparisons of paths with flexible legs, the true WT and IVT of these is learned
+                        continue;
+
                     for (auto path2 = path1 + 1; path2 < path_set.end(); path2++)
                     {
+                        if((*path2)->check_any_flexible_lines()) // skip static comparisons of paths with flexible legs, the true WT and IVT of these is learned
+                            continue;
+                        
                         // check if path1 dominates path2
                         if ((*path1)->find_number_of_transfers() < (*path2)->find_number_of_transfers() && (*path1)->calc_total_scheduled_in_vehicle_time(0.0) <= (*path2)->calc_total_scheduled_in_vehicle_time(0.0) && (*path1)->calc_total_walking_distance() <= (*path2)->calc_total_walking_distance())
                         {
