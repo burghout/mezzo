@@ -1,4 +1,4 @@
-﻿
+
 
 #include "gettime.h"
 #include <cassert>
@@ -4157,7 +4157,7 @@ void Network::find_all_paths_fast ()
         }
     }
 
-    if (PARTC::drottningholm_case)
+    if (PARTC::drottningholm_case) // apply drottningholm case specific path filtering
     {
         int paths_filtered = drottningholm_path_filtering();
     }
