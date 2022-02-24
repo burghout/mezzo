@@ -4157,6 +4157,11 @@ void Network::find_all_paths_fast ()
         }
     }
 
+    if (PARTC::drottningholm_case)
+    {
+        int paths_filtered = drottningholm_path_filtering();
+    }
+
     // report generated choice-sets
     cout << "Saving paths..." << endl;
 
