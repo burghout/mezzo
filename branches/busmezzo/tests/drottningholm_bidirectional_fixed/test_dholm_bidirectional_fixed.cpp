@@ -166,11 +166,10 @@ void TestDrottningholmBidirectional_fixed::testInitNetwork()
     qDebug() << "Initializing network in " + QString::fromStdString(network_path_1);
 
     ::fwf_wip::autogen_drt_lines_with_intermediate_stops = false;  //set manually (default false)
-    ::fwf_wip::csgm_no_merging_rules = true; //set manually (default false)
-    ::fwf_wip::csgm_no_filtering_dominancy_rules = true; //set manually (default false)
+    //::fwf_wip::csgm_no_merging_rules = true; //set manually (default false)
+    //::fwf_wip::csgm_no_filtering_dominancy_rules = true; //set manually (default false)
     
     ::PARTC::drottningholm_case = true;
-    //::PARTC::transfer_stop = transfer;
     
     nt->init();
 
