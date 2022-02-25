@@ -4916,16 +4916,13 @@ void Network::static_filtering_rules (Busstop* stop)
 int Network::drottningholm_path_filtering()
 {
     /**
-     *      Removes paths for Drottningholm bidirectional mixed-mode day-to-day case:
-     *
-     *      - Assertions to double-check for mixed-mode legs, and no double-DRT legs
+     *      Removes paths for Drottningholm bidirectional mixed-mode day-to-day case
      *
      *      @todo Remove lines from alt_lines that do not have start and end stops that match path?
     */
     std::cout << "Network::drottningholm_path_filtering - filtering current path-set" << std::endl;
     using namespace PARTC;
     assert(drottningholm_case);
-    bool remove_double_fix = true;
 
     map<ODCategory,map<PathType,int> > filtered_path_counts; 
 
@@ -5087,14 +5084,14 @@ int Network::drottningholm_path_filtering()
     cout << "Original path-set size                \t : " << total_paths_checked << endl;
     cout << "Total number deleted paths            \t : "  << filtered_path_count << endl;
 
-    cout << "\t b2c_drt_to_first_common_stop_only  : " << b2c_drt_to_first_common_stop_only << endl;
-    cout << "\t c2b_drt_from_first_common_stop_only: " << c2b_drt_from_first_common_stop_only << endl;
+    cout << "\tb2c_drt_to_first_common_stop_only  : " << b2c_drt_to_first_common_stop_only << endl;
+    cout << "\tc2b_drt_from_first_common_stop_only: " << c2b_drt_from_first_common_stop_only << endl;
     int total_filter_categories = b2c_drt_to_first_common_stop_only+c2b_drt_from_first_common_stop_only;
     for(auto odcat : {ODCategory::b2b, ODCategory::b2c, ODCategory::c2b, ODCategory::c2c})
     {
         for(auto ptype : {PathType::other, PathType::fix, PathType::drt, PathType::drt_fix, PathType::fix_drt, PathType::drt_drt, PathType::fix_fix})
         {
-            ++total_filter_categories;
+            total_filter_categories += filtered_path_counts[odcat][ptype];
             string msg = "\t" + ODCategory_to_QString(odcat).toStdString() + " - " + PathType_to_QString(ptype).toStdString() + ": " + to_string(filtered_path_counts[odcat][ptype]);
             cout << msg << endl;
         }
