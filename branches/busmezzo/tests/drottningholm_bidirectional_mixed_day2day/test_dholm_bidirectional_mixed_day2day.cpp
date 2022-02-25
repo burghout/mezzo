@@ -308,6 +308,8 @@ void TestDrottningholmBidirectional_mixed_day2day::testCasePathSet()
     QVERIFY(theParameters->absolute_max_transfers == 2);
     QVERIFY(theParameters->max_nr_extra_transfers == 1);
     
+    map<ODCategory,map<PARTC::PathType,int> > counter_path_type; // keep track of path types found per od category
+    
     vector<ODstops*> ods = net->get_odstops_demand();
     for(auto od : ods)
     {
@@ -323,6 +325,9 @@ void TestDrottningholmBidirectional_mixed_day2day::testCasePathSet()
 
         for(auto path : pathset)
         {
+            PARTC::PathType path_type = Pass_path::get_pathtype(path);
+            ++counter_path_type[od_category][path_type];
+            
             // general conditions for paths that should always hold true
             vector<vector<Busstop*> > alt_stops = path->get_alt_transfer_stops();
             QVERIFY(!alt_stops.empty()); // no empty paths
@@ -446,6 +451,49 @@ void TestDrottningholmBidirectional_mixed_day2day::testCasePathSet()
             
         } //for paths in od
     } // for od in ods
+    
+    // Check which if all paths that are possible have at least one path defined for them, and that all paths which should be excluded have no paths defined for them
+    
+    for(auto odcat : {ODCategory::c2c, ODCategory::c2b, ODCategory::b2c, ODCategory::b2b})
+    {
+        switch(odcat)
+        {
+        case ODCategory::c2c:
+            QVERIFY2(counter_path_type[odcat][PARTC::PathType::fix]      > 0,"FIX-> should be available for C2C");
+            QVERIFY2(counter_path_type[odcat][PARTC::PathType::drt]     == 0,"DRT-> should not be available for C2C");
+            QVERIFY2(counter_path_type[odcat][PARTC::PathType::drt_drt] == 0,"DRT->DRT should not be available for C2C");
+            QVERIFY2(counter_path_type[odcat][PARTC::PathType::fix_drt] == 0,"FIX->DRT should not be available for C2C");
+            QVERIFY2(counter_path_type[odcat][PARTC::PathType::drt_fix] == 0,"DRT->FIX should not be available for C2C");
+            QVERIFY2(counter_path_type[odcat][PARTC::PathType::fix_fix] == 0,"FIX->FIX should not be available for C2C");
+            break;
+        case ODCategory::c2b:
+            QVERIFY2(counter_path_type[odcat][PARTC::PathType::fix]      > 0,"FIX-> should be available for C2B");
+            QVERIFY2(counter_path_type[odcat][PARTC::PathType::drt]     == 0,"DRT-> should not be available for C2B");
+            QVERIFY2(counter_path_type[odcat][PARTC::PathType::drt_drt] == 0,"DRT->DRT should not be available for C2B");
+            QVERIFY2(counter_path_type[odcat][PARTC::PathType::fix_drt]  > 0,"FIX->DRT should be available for C2B");
+            QVERIFY2(counter_path_type[odcat][PARTC::PathType::drt_fix] == 0,"DRT->FIX should not be available for C2B");
+            QVERIFY2(counter_path_type[odcat][PARTC::PathType::fix_fix] == 0,"FIX->FIX should not be available for C2B");
+            break;
+        case ODCategory::b2c:
+            QVERIFY2(counter_path_type[odcat][PARTC::PathType::fix]      > 0,"FIX-> should be available for B2C");
+            QVERIFY2(counter_path_type[odcat][PARTC::PathType::drt]     == 0,"DRT-> should not be available for B2C");
+            QVERIFY2(counter_path_type[odcat][PARTC::PathType::drt_drt] == 0,"DRT->DRT should not be available for B2C");
+            QVERIFY2(counter_path_type[odcat][PARTC::PathType::fix_drt] == 0,"FIX->DRT should not be available for B2C");
+            QVERIFY2(counter_path_type[odcat][PARTC::PathType::drt_fix]  > 0,"DRT->FIX should be available for B2C");
+            QVERIFY2(counter_path_type[odcat][PARTC::PathType::fix_fix] == 0,"FIX->FIX should not be available for B2C");
+            break;
+        case ODCategory::b2b:
+            QVERIFY2(counter_path_type[odcat][PARTC::PathType::fix]      > 0,"FIX-> should be available for B2B");
+            QVERIFY2(counter_path_type[odcat][PARTC::PathType::drt]      > 0,"DRT-> should not be available for B2B");
+            QVERIFY2(counter_path_type[odcat][PARTC::PathType::drt_drt] == 0,"DRT->DRT should not be available for B2B");
+            QVERIFY2(counter_path_type[odcat][PARTC::PathType::fix_drt] == 0,"FIX->DRT should not be available for B2B");
+            QVERIFY2(counter_path_type[odcat][PARTC::PathType::drt_fix] == 0,"DRT->FIX should not be available for B2B");
+            QVERIFY2(counter_path_type[odcat][PARTC::PathType::fix_fix] == 0,"FIX->FIX should not be available for B2B");
+            break;
+        }
+        QVERIFY2(counter_path_type[odcat][PARTC::PathType::other] == 0, "No paths in 'other' category should be available for any passenger category");
+    }
+    
 }
 
 void TestDrottningholmBidirectional_mixed_day2day::testRunNetwork()
