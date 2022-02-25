@@ -93,6 +93,25 @@ namespace PARTC
 
         return category_s;
     }
+
+    QString PathType_to_QString(PathType type)
+    {
+		QString type_s = "";
+
+		switch (type)
+		{
+        case PathType::other: type_s = "other"; break;
+        case PathType::fix: type_s = "fix"; break;
+        case PathType::drt: type_s = "drt"; break;
+        case PathType::drt_drt: type_s = "drt_drt"; break;
+        case PathType::fix_drt: type_s = "fix_drt"; break;
+        case PathType::drt_fix: type_s = "drt_fix"; break;
+        case PathType::fix_fix: type_s = "fix_fix"; break;
+        default: ;
+        }
+
+        return type_s;
+    }
 }
 
 Parameters::Parameters ()

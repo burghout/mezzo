@@ -117,6 +117,7 @@ namespace fwf_wip
 */
 class Busstop;
 
+
 namespace PARTC
 {
     extern bool drottningholm_case; //true if this is the drottningholm case
@@ -133,6 +134,7 @@ namespace PARTC
     const int morby_station_id = 277001;
 
     enum class ODCategory { Null = 0, b2b, b2c, c2c, c2b };
+    enum class PathType { other=0, fix, drt, drt_drt, fix_drt, drt_fix, fix_fix };
 
     bool is_on_branch176(int stop_id);
     bool is_on_branch177(int stop_id);
@@ -146,6 +148,7 @@ namespace PARTC
 
     ODCategory get_od_category(int ostop_id, int dstop_id);
     QString ODCategory_to_QString(ODCategory category); //!< helper print function for debug output
+    QString PathType_to_QString(PathType type);
 }
 
 

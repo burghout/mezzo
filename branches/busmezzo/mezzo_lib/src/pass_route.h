@@ -54,6 +54,7 @@ class Pass_path
     /** @ingroup DRT
         @{
     */
+    static PARTC::PathType get_pathtype(Pass_path* path); //!< drottningholm-case-specific helper function, @todo remove
     size_t count_flexible_legs() const;
     static bool check_all_flexible_lines(const vector<Busline*>& line_vec); //!< returns true if all lines in vector are flagged as flexible (i.e. dynamically scheduled or routed) and is non-empty
     bool check_any_flexible_lines() const; //!< returns true if ANY transit leg of this path is flexible, will e.g. return false if all line legs are fixed, and for walking only paths

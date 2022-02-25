@@ -681,6 +681,44 @@ map<Busline*, bool> Pass_path::check_maybe_worthwhile_to_wait (vector<Busline*> 
 	return worth_to_wait;
 }
 
+PARTC::PathType Pass_path::get_pathtype(Pass_path* path)
+{
+	using namespace PARTC;
+	assert(drottningholm_case);
+	PathType path_type = PathType::other; // paths with less than 1 leg, or more than 1 transfer, or any mixed mode legs
+
+    auto path_legs = path->get_alt_lines();
+    if (!path_legs.empty()) // not walking only and empty path
+    {
+        if (has_no_mixed_mode_legs(path_legs)) // not path with mixed mode legs
+        {
+            const auto& leg1 = path_legs[0];
+            const bool drt_first = check_all_flexible_lines(leg1);
+            if (path_legs.size() == 1) //check if first leg is fix or drt
+            {
+                if (drt_first)
+                    path_type = PathType::drt;
+                else
+                    path_type = PathType::fix;
+            }
+            else if (path_legs.size() == 2) //also check if second leg is fix or drt
+            {
+                const auto& leg2 = path_legs[1];
+                const bool drt_second = check_all_flexible_lines(leg2);
+                if (drt_first && drt_second)
+                    path_type = PathType::drt_drt;
+                else if (!drt_first && drt_second)
+                    path_type = PathType::fix_drt;
+                else if (drt_first && !drt_second)
+                    path_type = PathType::drt_fix;
+                else if (!drt_first && !drt_second)
+                    path_type = PathType::fix_fix;
+            }
+        }
+    }
+    return path_type;
+}
+
 size_t Pass_path::count_flexible_legs() const
 {
 	size_t num_flex_legs = 0;
