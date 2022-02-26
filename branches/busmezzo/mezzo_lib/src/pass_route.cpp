@@ -722,7 +722,7 @@ PARTC::PathType Pass_path::get_pathtype(Pass_path* path)
 size_t Pass_path::count_flexible_legs() const
 {
 	size_t num_flex_legs = 0;
-	for (auto line_leg : alt_lines)
+	for (const auto &line_leg : alt_lines)
 	{
 		if (check_all_flexible_lines(line_leg)) // recall fixed and flexible lines are currently never mixed within the same vector of alt_lines
 		{
@@ -750,7 +750,7 @@ bool Pass_path::check_all_flexible_lines(const vector<Busline*>& line_vec)
 
 bool Pass_path::check_any_flexible_lines() const
 {
-	for (auto line_leg : alt_lines)
+	for (const auto &line_leg : alt_lines)
 	{
 		if (check_all_flexible_lines(line_leg)) // recall fixed and flexible lines are currently never mixed within the same vector of alt_lines
 		{

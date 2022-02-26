@@ -4934,9 +4934,6 @@ int Network::drottningholm_path_filtering()
     int total_paths_checked = 0;
     int filtered_path_count = 0;
 
-    int b2c_drt_to_first_common_stop_only = 0;
-    int c2b_drt_from_first_common_stop_only = 0;
-
     for (auto o_stop : busstops)
     {
         for (auto d_stop : busstops)
@@ -5007,7 +5004,6 @@ int Network::drottningholm_path_filtering()
                                 if (!is_transfer_stop(transfer_stop->get_id())) // delete all paths that do not have transfer point at first common stop in the west-east direction when first leg DRT
                                 {
                                     paths_to_be_deleted[path] = true;
-                                    ++b2c_drt_to_first_common_stop_only;
                                     ++filtered_path_counts[od_category][path_type];
                                 }
                                 break;
@@ -5029,7 +5025,6 @@ int Network::drottningholm_path_filtering()
                                 if (!is_transfer_stop(transfer_stop->get_id())) // delete all paths that do not have transfer point at first common stop in the east_west when first leg FIX
                                 {
                                     paths_to_be_deleted[path] = true;
-                                    ++c2b_drt_from_first_common_stop_only;
                                     ++filtered_path_counts[od_category][path_type];
                                 }
                                 break;
@@ -5089,9 +5084,10 @@ int Network::drottningholm_path_filtering()
     cout << "Original path-set size                \t : " << total_paths_checked << endl;
     cout << "Total number deleted paths            \t : "  << filtered_path_count << endl;
 
-    cout << "\tb2c_drt_to_first_common_stop_only  : " << b2c_drt_to_first_common_stop_only << endl;
-    cout << "\tc2b_drt_from_first_common_stop_only: " << c2b_drt_from_first_common_stop_only << endl;
-    int total_filter_categories = b2c_drt_to_first_common_stop_only+c2b_drt_from_first_common_stop_only;
+//    cout << "\tb2c_drt_to_first_common_stop_only  : " << b2c_drt_to_first_common_stop_only << endl;
+//    cout << "\tc2b_drt_from_first_common_stop_only: " << c2b_drt_from_first_common_stop_only << endl;
+//    int total_filter_categories = b2c_drt_to_first_common_stop_only+c2b_drt_from_first_common_stop_only;
+    int total_filter_categories = 0;
     for(auto odcat : {ODCategory::b2b, ODCategory::b2c, ODCategory::c2b, ODCategory::c2c})
     {
         for(auto ptype : {PathType::other, PathType::fix, PathType::drt, PathType::drt_fix, PathType::fix_drt, PathType::drt_drt, PathType::fix_fix})
