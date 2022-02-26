@@ -29,6 +29,7 @@ const vector<QString> d2d_output_filenames =
     "o_fwf_day2day_modesplit.dat",
     "o_fwf_day2day_boardings.dat",
     "o_fwf_convergence_odcategory.dat",
+    "o_fwf_convergence_odcategory_mode.dat",
     "o_fwf_day2day_boardings.dat",
     "o_fwf_day2day_modesplit.dat",
     "o_fwf_day2day_modesplit_odcategory.dat"
@@ -187,8 +188,8 @@ void TestDrottningholmBidirectional_mixed_day2day::testInitNetwork()
     qDebug() << "Initializing network in " + QString::fromStdString(network_path_1);
 
     ::fwf_wip::autogen_drt_lines_with_intermediate_stops = true;  //set manually (default false)
-    ::fwf_wip::csgm_no_merging_rules = true; //set manually (default false)
-    ::fwf_wip::csgm_no_filtering_dominancy_rules = true; //set manually (default false)
+//    ::fwf_wip::csgm_no_merging_rules = true; //set manually (default false)
+//    ::fwf_wip::csgm_no_filtering_dominancy_rules = true; //set manually (default false)
     ::fwf_wip::write_all_d2d_alphas = true; // set manually (default false)
     
     
@@ -232,7 +233,7 @@ void TestDrottningholmBidirectional_mixed_day2day::testInitParameters()
     //demand params
     QVERIFY(theParameters->empirical_demand == true);
     vector<pair<ODstops*, double> > empirical_passenger_arrivals = net->get_empirical_passenger_arrivals();
-    QVERIFY2(empirical_passenger_arrivals.size() == 255, "Failure, there should be 255 empirical passenger arrivals");
+    QVERIFY2(empirical_passenger_arrivals.size() == 163, "Failure, there should be 255 empirical passenger arrivals");
     
     // Passenger cost parameters
     QVERIFY(AproxEqual(theParameters->transfer_coefficient,-0.334));

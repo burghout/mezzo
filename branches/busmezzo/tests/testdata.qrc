@@ -283,5 +283,6 @@
         <file>networks/Drottningholm_bidirectional_fixed/ExpectedOutputs/o_trip_total_travel_time.dat</file>
         <file>networks/Drottningholm_bidirectional_fixed/ExpectedOutputs/o_vkt.dat</file>
         <file>networks/Drottningholm_collection_fixed/ExpectedOutputs/o_time_spent_in_state_at_stop.dat</file>
+        <file>networks/Drottningholm_bidirectional_mixed_d2d/ExpectedOutputs/o_fwf_convergence_odcategory_mode.dat</file>
     </qresource>
 </RCC>
