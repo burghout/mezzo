@@ -4784,11 +4784,16 @@ void Network::static_filtering_rules (Busstop* stop)
                 double min_total_scheduled_in_vehicle_time = path_set.front()->calc_total_scheduled_in_vehicle_time(0.0);
                 for (auto path_iter = path_set.begin(); path_iter < path_set.end(); path_iter++)
                 {
+                    if((*path_iter)->check_any_flexible_lines()) // skip comparing with flexible lines
+                        continue;
                     min_total_scheduled_in_vehicle_time = min (min_total_scheduled_in_vehicle_time, (*path_iter)->calc_total_scheduled_in_vehicle_time(0.0));
                     paths_to_be_deleted[(*path_iter)] = false;
                 }
                 for (auto path = path_set.begin(); path < path_set.end(); path++)
                 {
+                    if((*path)->check_any_flexible_lines())  // skip comparing with flexible lines
+                        continue;
+
                     // more than max. transfers
                     if ((*path)->get_number_of_transfers() > odpairs->get_min_transfers() + theParameters->max_nr_extra_transfers)
                     {
