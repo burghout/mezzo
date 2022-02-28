@@ -149,10 +149,10 @@ namespace fwf_outputs {
     }
 
     //!< @brief write out vkt results for each replication, should be one row per replication @note Check Link::is_dummylink definition whether these are skipped or not for the current case
-    void writeVKT(ostream& out, const FWF_vehdata& fix_vehdata, const FWF_vehdata& drt_vehdata)
+    void writeVKT(ostream& out, const FWF_vehdata& fix_vehdata, const FWF_vehdata& drt_vehdata, const FWF_passdata& total_passdata)
     {
-        out << drt_vehdata.total_vkt << "\t" << drt_vehdata.total_occupied_vkt << "\t" << drt_vehdata.total_empty_vkt << "\t"
-            << fix_vehdata.total_vkt << "\t" << fix_vehdata.total_occupied_vkt << "\t" << fix_vehdata.total_empty_vkt << endl;
+        out << drt_vehdata.total_vkt << "\t" << drt_vehdata.total_occupied_vkt << "\t" << drt_vehdata.total_empty_vkt << "\t" << total_passdata.total_pass_drt_vkt << "\t"
+            << fix_vehdata.total_vkt << "\t" << fix_vehdata.total_occupied_vkt << "\t" << fix_vehdata.total_empty_vkt << "\t" << total_passdata.total_pass_fix_vkt << endl;
 
         /*out << "\nDRT VKT                     : " << drt_vehdata.total_vkt;
     out << "\nDRT occupied VKT            : " << drt_vehdata.total_occupied_vkt;
@@ -8329,7 +8329,7 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
             }
         }
         
-        fwf_outputs::writeVKT(out21, fix_vehdata, drt_vehdata);// out21 "o_drtvkt.dat" 
+        fwf_outputs::writeVKT(out21, fix_vehdata, drt_vehdata, total_passdata);// out21 "o_drtvkt.dat" 
 
         total_vehdata = fix_vehdata + drt_vehdata;
         writeFWFsummary(out18, total_passdata, fix_passdata, drt_passdata, total_vehdata, fix_vehdata, drt_vehdata, cc_summarydata, drt_tripdata, pass_ignored);
