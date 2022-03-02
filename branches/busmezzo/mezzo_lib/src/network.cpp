@@ -39,6 +39,118 @@ bool fwf_wip::csgm_no_filtering_dominancy_rules = false; //set manually (default
 
 bool PARTC::drottningholm_case = false; //set manually (default false)
 
+void print_fwf_wip_parameters() // @todo remove
+{    
+    cout << "--- read_fwf_wip_parameters:                 " << endl;
+    cout << "\tday2day_drt_no_rti:                        " << fwf_wip::day2day_drt_no_rti << endl;
+    cout << "\twrite_all_d2d_alphas:                      "	<< fwf_wip::write_all_d2d_alphas << endl;
+    cout << "\twrite_all_pass_experiences:                " << fwf_wip::write_all_pass_experiences << endl;
+    cout << "\trandomize_pass_arrivals:                   " << fwf_wip::randomize_pass_arrivals << endl;
+    cout << "\tday2day_no_convergence_criterium:          " << fwf_wip::day2day_no_convergence_criterium << endl;
+    cout << "\tzero_pk_fixed:                             "	<< fwf_wip::zero_pk_fixed << endl;
+    cout << "\tautogen_drt_lines_with_intermediate_stops: "	<< fwf_wip::autogen_drt_lines_with_intermediate_stops << endl;
+    cout << "\tcsgm_no_merging_rules:                     " << fwf_wip::csgm_no_merging_rules << endl;
+    cout << "\tcsgm_no_filtering_dominancy_rules:         "	<< fwf_wip::csgm_no_filtering_dominancy_rules << endl;
+    cout << "\tdrottningholm_case:                        " << PARTC::drottningholm_case << endl;
+}
+bool read_fwf_wip_parameters(const string& filename="fwf_wip_parameters.dat") // @todo remove
+{
+    ifstream in{ filename.c_str() }; // open input file
+    if (!in)
+    {
+        cout << "WARNING ::read_fwf_wip_parameters() - file " << filename << " not found. Using default values..." << endl;
+        return false;
+    }
+    else
+    {
+        cout << "reading fwf_wip parameters...." << endl;
+    }
+
+    string keyword;
+    in >> keyword;
+    if (keyword != "day2day_drt_no_rti:")
+    {
+        DEBUG_MSG("read_fwf_wip_parameters:: no day2day_drt_no_rti keyword, read: " << keyword);
+        in.close();
+        return false;
+    }
+    in >> fwf_wip::day2day_drt_no_rti;
+    in >> keyword;
+    if (keyword != "write_all_d2d_alphas:")
+    {
+        DEBUG_MSG("read_fwf_wip_parameters:: no write_all_d2d_alphas keyword, read: " << keyword);
+        in.close();
+        return false;
+    }
+    in >> fwf_wip::write_all_d2d_alphas;
+    in >> keyword;
+    if (keyword != "write_all_pass_experiences:")
+    {
+        DEBUG_MSG("read_fwf_wip_parameters:: no write_all_pass_experiences keyword, read: " << keyword);
+        in.close();
+        return false;
+    }
+    in >> fwf_wip::write_all_pass_experiences;
+    in >> keyword;
+    if (keyword != "randomize_pass_arrivals:")
+    {
+        DEBUG_MSG("read_fwf_wip_parameters:: no randomize_pass_arrivals keyword, read: " << keyword);
+        in.close();
+        return false;
+    }
+    in >> fwf_wip::randomize_pass_arrivals;
+    in >> keyword;
+    if (keyword != "day2day_no_convergence_criterium:")
+    {
+        DEBUG_MSG("read_fwf_wip_parameters:: no day2day_no_convergence_criterium keyword, read: " << keyword);
+        in.close();
+        return false;
+    }
+    in >> fwf_wip::day2day_no_convergence_criterium;
+    in >> keyword;
+    if (keyword != "zero_pk_fixed:")
+    {
+        DEBUG_MSG("read_fwf_wip_parameters:: no zero_pk_fixed keyword, read: " << keyword);
+        in.close();
+        return false;
+    }
+    in >> fwf_wip::zero_pk_fixed;
+    in >> keyword;
+    if (keyword != "autogen_drt_lines_with_intermediate_stops:")
+    {
+        DEBUG_MSG("read_fwf_wip_parameters:: no autogen_drt_lines_with_intermediate_stops keyword, read: " << keyword);
+        in.close();
+        return false;
+    }
+    in >> fwf_wip::autogen_drt_lines_with_intermediate_stops;
+    in >> keyword;
+    if (keyword != "csgm_no_merging_rules:")
+    {
+        DEBUG_MSG("read_fwf_wip_parameters:: no csgm_no_merging_rules keyword, read: " << keyword);
+        in.close();
+        return false;
+    }
+    in >> fwf_wip::csgm_no_merging_rules;
+    in >> keyword;
+    if (keyword != "csgm_no_filtering_dominancy_rules:")
+    {
+        DEBUG_MSG("read_fwf_wip_parameters:: no csgm_no_filtering_dominancy_rules keyword, read: " << keyword);
+        in.close();
+        return false;
+    }
+    in >> fwf_wip::csgm_no_filtering_dominancy_rules;
+    in >> keyword;
+    if (keyword != "drottningholm_case:")
+    {
+        DEBUG_MSG("read_fwf_wip_parameters:: no drottningholm_case keyword, read: " << keyword);
+        in.close();
+        return false;
+    }
+    in >> PARTC::drottningholm_case;
+
+    return true;
+}
+
 pair<Busstop*,Busstop*> PARTC::transfer_stops = make_pair(nullptr,nullptr);
 
 long int randseed=0;
@@ -153,15 +265,6 @@ namespace fwf_outputs {
     {
         out << drt_vehdata.total_vkt << "\t" << drt_vehdata.total_occupied_vkt << "\t" << drt_vehdata.total_empty_vkt << "\t" << total_passdata.total_pass_drt_vkt << "\t"
             << fix_vehdata.total_vkt << "\t" << fix_vehdata.total_occupied_vkt << "\t" << fix_vehdata.total_empty_vkt << "\t" << total_passdata.total_pass_fix_vkt << endl;
-
-        /*out << "\nDRT VKT                     : " << drt_vehdata.total_vkt;
-    out << "\nDRT occupied VKT            : " << drt_vehdata.total_occupied_vkt;
-    out << "\nDRT empty VKT               : " << drt_vehdata.total_empty_vkt;
-    out << "\nDRT occupied time           : " << drt_vehdata.total_occupied_time;
-    out << "\nDRT empty time              : " << drt_vehdata.total_empty_time;
-    out << "\nDRT driving time            : " << drt_vehdata.total_driving_time;
-    out << "\nDRT idle time               : " << drt_vehdata.total_idle_time;
-    out << "\nDRT oncall time             : " << drt_vehdata.total_oncall_time;*/
     }
 
     //!< @brief write out time and vkt spent in different states for a DRT vehicle for e.g. analysis of distributions. Corresponds to one row of "o_fwf_drtvehicle_states.dat"
@@ -9843,6 +9946,9 @@ double Network::executemaster()
 
     readsignalcontrols(filenames[2]);
 #ifdef _BUSES
+    ::read_fwf_wip_parameters(workingdir + "fwf_wip_parameters.dat");
+    ::print_fwf_wip_parameters();
+
     // read the transit system input
     this->readtransitroutes(workingdir + "transit_routes.dat"); //FIX IN THE MAIN READ & WRITE
     this->readtransitnetwork(workingdir + "transit_network.dat"); //FIX IN THE MAIN READ & WRITE
