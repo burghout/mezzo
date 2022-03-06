@@ -10,11 +10,11 @@ using namespace std;
 
 struct ODSL //structure for comparing ODSL combinations
 {
-	int pid;
-	int orig;
-	int dest;
-	int stop;
-	int line;
+	int pid = -1;
+	int orig = -1;
+	int dest = -1;
+	int stop = -1;
+	int line = -1;
 
 	bool operator == (const ODSL& rhs) const
 	{
@@ -44,12 +44,12 @@ struct ODSL //structure for comparing ODSL combinations
 
 struct ODSLL
 {
-	int pid;
-	int orig;
-	int dest;
-	int stop;
-	int line;
-	int leg;
+	int pid = -1;
+	int orig = -1;
+	int dest = -1;
+	int stop = -1;
+	int line = -1;
+	int leg = -1;
 
 	bool operator == (const ODSLL& rhs) const
 	{
@@ -82,13 +82,13 @@ struct ODSLL
 
 struct Travel_time //structure for saving and adding data
 {
-	int counter;
-	int day; // @note, not sure if this actually corresponds to the day of the travel time record, seems to grow faster than the actual day in Day2Day::day or Network::day
-	float tt[5]; // EXP, PK, RTI (or crowding for ivt), anticip, anticip_EXP
-	float alpha[3]; // EXP, PK, RTI (or crowding for ivt)
-	float convergence;
-	float temp_kapa_ATT = 0.0; // temporary placeholder for outputting the most recent weight used for discounting more recent travel time experiences when updating anticipated travel time
-    
+    int counter = 0;
+    int day = -1; // @note, not sure if this actually corresponds to the day of the travel time record, seems to grow faster than the actual day in Day2Day::day or Network::day
+    float tt[5] = { 0.0,0.0,0.0,0.0,0.0 }; // EXP, PK, RTI (or crowding for ivt), anticip, anticip_EXP
+    float alpha[3] = { 0.0,0.0,0.0 }; // EXP, PK, RTI (or crowding for ivt)
+    float convergence = 0.0;
+    float temp_kapa_ATT = 0.0; // temporary placeholder for outputting the most recent weight used for discounting more recent travel time experiences when updating anticipated travel time
+
     friend float operator/ (const Travel_time& lhs, const Travel_time& rhs);
 
 	Travel_time& operator += (const Travel_time& rhs)
@@ -129,7 +129,7 @@ struct Travel_time //structure for saving and adding data
 		qDebug() << "\t alpha_exp     : " << alpha[0];
 		qDebug() << "\t alpha_pk      : " << alpha[1];
 		qDebug() << "\t alpha_rti     : " << alpha[2] << Qt::endl;
-		qDebug() << "\t kapa_AWT   : " << temp_kapa_ATT;
+		qDebug() << "\t kapa_AWT      : " << temp_kapa_ATT;
 		qDebug() << "\t convergence   : " << convergence;
 		qDebug() << "\t counter       : " << counter;
 	}
@@ -145,7 +145,7 @@ struct Travel_time //structure for saving and adding data
 		qDebug() << "\t alpha_exp      : " << alpha[0];
 		qDebug() << "\t alpha_pk       : " << alpha[1];
 		qDebug() << "\t alpha_crowding : " << alpha[2] << Qt::endl;
-		qDebug() << "\t kapa_AIVT   : " << temp_kapa_ATT;
+		qDebug() << "\t kapa_AIVT      : " << temp_kapa_ATT;
 		qDebug() << "\t convergence    : " << convergence;
 		qDebug() << "\t counter        : " << counter;
 	}
@@ -162,10 +162,10 @@ private:
 	map<ODSL, Travel_time> wt_day; //record of ODSL data for the current day
 	map<ODSLL, Travel_time> ivt_day; //record of ODSL data for the current day
 
-	float wt_alpha_base[3];
-	float ivt_alpha_base[3];
+    float wt_alpha_base[3] = { 0.0,0.0,0.0 };
+    float ivt_alpha_base[3] = { 0.0,0.0,0.0 };
 
-	float kapa[4];
+    float kapa[4] = { 0.0,0.0,0.0,0.0 };
 
 	float v = 0; //salience parameter
 	float v_c = 3; //crowding salience parameter
