@@ -846,8 +846,12 @@ void Day2day::calc_anticipated_wt (Travel_time& row, bool is_flexible_leg)
 	if (awtEXP >= 0) //If there is prior experience
 	{
 		awtG = alphaRTI * wtRTI + alphaEXP * awtEXP + alphaPK * wtPK;
-		//float kapaAWT = 1 / pow(1 + row.day / pow(abs(awtEXP / wtEXP - 1) + 1, v), r); // @note discount factor with prediction accuracy measure weighted into discount step size
-		float kapaAWT = 1 / pow(row.day,r);
+		float kapaAWT;
+		if(fwf_wip::day2day_drt_no_rti)
+		    kapaAWT = 1 / pow(row.day,r);
+		else
+		    kapaAWT = 1 / pow(1 + row.day / pow(abs(awtEXP / wtEXP - 1) + 1, v), r); // @note discount factor with prediction accuracy measure weighted into discount step size
+
 		awtEXP = (1 - kapaAWT) * awtEXP + kapaAWT * wtEXP;
 		row.temp_kapa_ATT = kapaAWT;
 	}
