@@ -260,6 +260,8 @@ public:
 	static void write_ivt_alphas_header(string filename);
 	static void write_ivt_alphas(string filename, const map<ODSLL, Travel_time>& ivt_records, int day); //write out all ODSLL alphas to a csv file
 
+	void print_parameter_state(); // print parameter state of this day2day
+
 	// temp for Drottningholms case
 	void write_convergence_per_od_header(const string& filename = "o_fwf_convergence_odcategory.dat");
 	void write_convergence_per_od(const string& filename = "o_fwf_convergence_odcategory.dat"); //write average day results per OD category

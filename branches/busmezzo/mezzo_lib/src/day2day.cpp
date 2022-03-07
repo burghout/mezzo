@@ -804,6 +804,28 @@ void Day2day::write_ivt_alphas(string filename, const map<ODSLL, Travel_time>& i
 
 }
 
+void Day2day::print_parameter_state()
+{
+	qDebug() << "Printing day2day parameter state for day " << day;
+	qDebug() << "\twt_alpha_base_EXP :" << wt_alpha_base[EXP];
+	qDebug() << "\twt_alpha_base_PK  :" << wt_alpha_base[PK];
+	qDebug() << "\twt_alpha_base_RTI :" << wt_alpha_base[RTI] << Qt::endl;
+
+	qDebug() << "\tivt_alpha_base_EXP     :" << ivt_alpha_base[EXP];
+	qDebug() << "\tivt_alpha_base_PK      :" << ivt_alpha_base[PK];
+	qDebug() << "\tivt_alpha_base_crowding:" << ivt_alpha_base[crowding] << Qt::endl;
+
+	qDebug() << "\tsalience         :" << v;
+	qDebug() << "\tcrowding salience:" << v_c;
+	qDebug() << "\ttrust            :" << v1;
+	qDebug() << "\trecency          :" << r << Qt::endl;
+
+    qDebug() << "\tnr_of_reps       :" << nr_of_reps;
+	qDebug() << "\taggregate        :" << aggregate;
+	qDebug() << "\tindividual_wt    :" << individual_wt;
+	qDebug() << "\tindividual_ivt   :" << individual_ivt;
+}
+
 
 void Day2day::calc_anticipated_wt (Travel_time& row, bool is_flexible_leg)
 {
@@ -824,7 +846,8 @@ void Day2day::calc_anticipated_wt (Travel_time& row, bool is_flexible_leg)
 	if (awtEXP >= 0) //If there is prior experience
 	{
 		awtG = alphaRTI * wtRTI + alphaEXP * awtEXP + alphaPK * wtPK;
-		float kapaAWT = 1 / pow(1 + row.day / pow(abs(awtEXP / wtEXP - 1) + 1, v), r);
+		//float kapaAWT = 1 / pow(1 + row.day / pow(abs(awtEXP / wtEXP - 1) + 1, v), r); // @note discount factor with prediction accuracy measure weighted into discount step size
+		float kapaAWT = 1 / pow(row.day,r);
 		awtEXP = (1 - kapaAWT) * awtEXP + kapaAWT * wtEXP;
 		row.temp_kapa_ATT = kapaAWT;
 	}
