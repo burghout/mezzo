@@ -1,22 +1,22 @@
 ### Passenger per OD category summary: 	B2B	B2C	C2C	C2B	Total
 Passenger journeys completed                 :	10	31	109	13	163
 
-Average GTC:	-52.27	-54.73	-63.11	-117.02	-65.15
-Stdev GTC  :	28.12	58.05	34.36	42.85	43.28
+Average GTC:	-60.25	-83.17	-65.03	-123.81	-72.87
+Stdev GTC  :	38.66	85.22	36.10	49.93	53.11
 
-Average waiting time           :	151.60	141.53	225.39	641.97	238.14
-Stdev waiting time             :	297.14	376.03	153.33	554.84	296.53
-Maximum waiting time           :	1024.50	1483.89	696.33	1819.65	1819.65
-Median waiting time            :	35.56	2.60	190.05	372.10	165.65
+Average waiting time           :	252.98	380.72	245.45	727.61	310.09
+Stdev waiting time             :	417.15	610.07	162.44	728.16	399.05
+Maximum waiting time           :	1178.07	1762.51	566.89	2183.46	2183.46
+Median waiting time            :	22.95	3.41	249.05	242.72	221.97
 
 Average denied waiting time    :	0.00	0.00	0.00	0.00	0.00
 Stdev denied waiting time      :	0.00	0.00	0.00	0.00	0.00
 
-Average in-vehicle time        :	1096.15	1179.42	1245.57	1888.67	1275.11
-Stdev in-vehicle time          :	342.73	917.22	861.19	762.52	862.46
+Average in-vehicle time        :	1119.43	1487.46	1259.04	1909.03	1345.76
+Stdev in-vehicle time          :	379.18	1267.45	867.53	790.07	951.16
 
-Average crowded in-vehicle time:	1041.34	1120.45	1183.29	1794.23	1211.36
-Stdev crowded in-vehicle time  :	325.59	871.36	818.13	724.39	819.34
+Average crowded in-vehicle time:	1063.45	1413.08	1196.09	1813.58	1278.47
+Stdev crowded in-vehicle time  :	360.23	1204.08	824.16	750.56	903.60
 
 Total passengers ignored (trip out of pass-generation start-stop interval):	0
 
