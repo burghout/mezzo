@@ -847,10 +847,10 @@ void Day2day::calc_anticipated_wt (Travel_time& row, bool is_flexible_leg)
 	{
 		awtG = alphaRTI * wtRTI + alphaEXP * awtEXP + alphaPK * wtPK;
 		float kapaAWT;
-		if(fwf_wip::day2day_drt_no_rti)
-		    kapaAWT = 1 / pow(row.day,r);
-		else
-		    kapaAWT = 1 / pow(1 + row.day / pow(abs(awtEXP / wtEXP - 1) + 1, v), r); // @note discount factor with prediction accuracy measure weighted into discount step size
+        if (fwf_wip::day2day_drt_no_rti)
+            kapaAWT = 1 / pow(row.day, r);
+        else
+            kapaAWT = 1 / pow(1 + row.day / pow(abs(awtEXP / wtEXP - 1) + 1, v), r); // @note discount factor with prediction accuracy measure weighted into discount step size
 
 		awtEXP = (1 - kapaAWT) * awtEXP + kapaAWT * wtEXP;
 		row.temp_kapa_ATT = kapaAWT;
@@ -938,15 +938,25 @@ void Day2day::calc_anticipated_ivt (Travel_time& row, bool is_flexible_leg)
 	//calc aivt
 	if (aivtEXP >= 0)  //If there is prior experience
 	{
-		float kapaAWT = 1 / (1 + row.day / pow(abs(aivtEXP / ivtEXP - 1) + 1, v));
-		aivtEXP = (1 - kapaAWT) * aivtEXP + kapaAWT * ivtEXP;
-		row.temp_kapa_ATT = kapaAWT;
+		float kapaAIVT;
+        if (fwf_wip::day2day_drt_no_rti)
+            kapaAIVT = 1 / pow(row.day, r);
+        else
+            kapaAIVT = 1 / (1 + row.day / pow(abs(aivtEXP / ivtEXP - 1) + 1, v));
+
+		aivtEXP = (1 - kapaAIVT) * aivtEXP + kapaAIVT * ivtEXP;
+		row.temp_kapa_ATT = kapaAIVT;
 	}
 	else
 	{
 		aivtEXP = ivtEXP;
 	}
-	float kapaCrowd = 1 / (1 + row.day / pow(abs(acrowdingEXP / crowdingEXP - 1) + 1, v_c));
+	float kapaCrowd;
+    if (fwf_wip::day2day_drt_no_rti)
+        kapaCrowd = 1 / pow(row.day, r);
+    else
+        kapaCrowd = 1 / (1 + row.day / pow(abs(acrowdingEXP / crowdingEXP - 1) + 1, v_c));
+	
 	acrowdingEXP = (1 - kapaCrowd) * acrowdingEXP + kapaCrowd * crowdingEXP;
 
 	//calc temporary trust parameters for the alphas, to decide for which alpha trust should increase
