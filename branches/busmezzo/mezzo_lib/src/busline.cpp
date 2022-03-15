@@ -114,26 +114,30 @@ bool Busline::execute(Eventlist* eventlist, double time)
 		//int busid = curr_trip->first->get_busv()->get_bus_id();
 		//if(curr_trip->first->is_flex_trip())
 		//	DEBUG_MSG("Busline " << id << " activating trip " << curr_trip->first->get_id() << " for bus " << busid);
-        assert(curr_trip != trips.end());
-		if(!curr_trip->first->is_activated()) // a trip that is successfully activated should not be activated twice
-			curr_trip->first->activate(time, busroute, odpair, eventlist); // activates the trip, generates bus etc.
-		/*else
-		{
-			qDebug() << "Warning - Busline::execute ignored double activation of trip " << curr_trip->first->get_id();
-		}*/
+        if(curr_trip == trips.end())
+            qDebug() << "Warning - Busline " << this->get_id() << " execute called with curr_trip == trips.end() at time " << time;
+        else
+        {
+            if(!curr_trip->first->is_activated()) // a trip that is successfully activated should not be activated twice
+                curr_trip->first->activate(time, busroute, odpair, eventlist); // activates the trip, generates bus etc.
+            /*else
+            {
+                qDebug() << "Warning - Busline::execute ignored double activation of trip " << curr_trip->first->get_id();
+            }*/
 
-		curr_trip++; // now points to next trip
-		if (curr_trip != trips.end()) // if there exists a next trip
-		{
-			if (!curr_trip->first->is_scheduled_for_dispatch()) //if trip has not already been scheduled for dispatch
-			{
-				double next_time = curr_trip->second;
-				eventlist->add_event(next_time, this); // add itself to the eventlist, with the time the next trip is starting
-				curr_trip->first->set_scheduled_for_dispatch(true); //trip now has a dispatch event scheduled for it in the eventlist
-				return true;
-			}
-		}
-	}
+            curr_trip++; // now points to next trip
+            if (curr_trip != trips.end()) // if there exists a next trip
+            {
+                if (!curr_trip->first->is_scheduled_for_dispatch()) //if trip has not already been scheduled for dispatch
+                {
+                    double next_time = curr_trip->second;
+                    eventlist->add_event(next_time, this); // add itself to the eventlist, with the time the next trip is starting
+                    curr_trip->first->set_scheduled_for_dispatch(true); //trip now has a dispatch event scheduled for it in the eventlist
+                    return true;
+                }
+            }
+        }
+    }
 	return true;
 }
 
