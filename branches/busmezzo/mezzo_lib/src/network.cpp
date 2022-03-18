@@ -10700,7 +10700,7 @@ double Network::step(double timestep)
 
         day++;
         day2day->update_day(day); // clears the 'wt_day' and 'ivt_day' internal states of day2day, updates the kapas (decaying learning weights) with the current day
-        bool convergence_reached = fwf_wip::day2day_no_convergence_criterium ? false : (crit[wt] < theta || crit[ivt] < theta);
+        bool convergence_reached = fwf_wip::day2day_no_convergence_criterium ? false : ((crit[wt] < theta) && (crit[ivt] < theta));
         if (!convergence_reached && day <= theParameters->max_days)
         {
             reset();
