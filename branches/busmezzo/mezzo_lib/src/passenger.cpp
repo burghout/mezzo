@@ -406,6 +406,12 @@ void Passenger::walk (double time)
 	if (this_is_the_last_stop == true ||  this->get_OD_stop()->check_path_set() == false || OD_stop->get_origin()->get_id() == OD_stop->get_destination()->get_id()) 
 	// this may happend if the passenger walked to his final stop or final destination (zonal)
 	{
+		if(this->get_OD_stop()->check_path_set() == false)
+		{
+			qDebug() << "Warning - passenger" << this->get_id() << "with original origin" << this->get_original_origin()->get_id() 
+					 << "and final destination" << this->get_OD_stop()->get_destination()->get_id() << "walked to stop" << OD_stop->get_origin()->get_id()
+				     << "with no paths available to final destination. Registering trip as completed...";
+		}
 		end_time = time;
 		//pass_recycler.addPassenger(this); // terminate passenger
 	}

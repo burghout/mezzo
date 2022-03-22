@@ -2150,6 +2150,13 @@ void Busstop::passenger_activity_at_stop (Eventlist* eventlist, Bustrip* trip, d
 			
 			if (id == (*alighting_passenger)->get_OD_stop()->get_destination()->get_id() || (*alighting_passenger)->get_OD_stop()->check_path_set() == false) // if this stop is passenger's destination
 			{
+				if((*alighting_passenger)->get_OD_stop()->check_path_set() == false)
+				{
+				    qDebug() << "Warning - passenger" << (*alighting_passenger)->get_id() << "with original origin" << (*alighting_passenger)->get_original_origin()->get_id() 
+						     << "and final destination" << (*alighting_passenger)->get_OD_stop()->get_destination()->get_id() << "alighted at stop" << this->get_id()
+				             << "with no paths available to final destination. Registering trip as completed...";
+				}
+					
 				// passenger has no further conection choice
 				next_stop = this;
 				final_stop = true;
