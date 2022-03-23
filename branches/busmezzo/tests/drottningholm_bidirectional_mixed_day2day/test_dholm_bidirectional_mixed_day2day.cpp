@@ -233,7 +233,7 @@ void TestDrottningholmBidirectional_mixed_day2day::testInitParameters()
     //demand params
     QVERIFY(theParameters->empirical_demand == true);
     vector<pair<ODstops*, double> > empirical_passenger_arrivals = net->get_empirical_passenger_arrivals();
-    QVERIFY2(empirical_passenger_arrivals.size() == 163, "Failure, there should be 255 empirical passenger arrivals");
+    QVERIFY2(empirical_passenger_arrivals.size() == 808, "Failure, there should be 808 empirical passenger arrivals");
     
     // Passenger cost parameters
     QVERIFY(AproxEqual(theParameters->transfer_coefficient,-0.334));
