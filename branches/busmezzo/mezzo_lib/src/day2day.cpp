@@ -4,6 +4,8 @@
 #include <fstream>
 #include <string>
 
+#include "network.h"
+
 enum k {EXP, PK, RTI, anticip, anticip_EXP};
 enum l {e0, e1, crowding, e3, e4};
 enum m {wt, ivt};
@@ -241,6 +243,7 @@ void Day2day::write_convergence_per_od_header(const string& filename)
         << "avg_wt_exp" << '\t'
         << "avg_wt_anticip" << '\t'
         << "avg_ivt" << '\t'
+	    << "avg_ivt_weighted" << '\t'
         << "avg_ivt_pk" << '\t'
         << "avg_ivt_exp" << '\t'
         << "avg_ivt_anticip" << '\t'
@@ -256,7 +259,7 @@ void Day2day::write_convergence_per_od(const string& filename)
 	using namespace PARTC;
     ofstream out1(filename.c_str(), ios_base::app); //o_fwf_convergence_odcategory.dat
 
-    for (ODCategory odcat : { ODCategory::b2b, ODCategory::b2c, ODCategory::c2c, ODCategory::c2b })
+    for (ODCategory odcat : { ODCategory::Null, ODCategory::b2b, ODCategory::b2c, ODCategory::c2c, ODCategory::c2b })
     {
         int nr_of_passengers = npass_per_odcat[odcat];
         double total_crowding = total_ivt_crowding_per_odcat[odcat];
@@ -272,6 +275,7 @@ void Day2day::write_convergence_per_od(const string& filename)
         double average_wt_anticip = total_wt_anticip_per_odcat[odcat] / nr_of_passengers;
 
         double average_in_vehicle_time = total_ivt_per_odcat[odcat] / nr_of_passengers;
+		double average_weighted_in_vehicle_time = total_ivt_weighted_per_odcat[odcat] / nr_of_passengers;
         double average_ivt_pk = total_ivt_pk_per_odcat[odcat] / nr_of_passengers;
         double average_ivt_exp = total_ivt_exp_per_odcat[odcat] / nr_of_passengers;
         double average_ivt_anticip = total_ivt_anticip_per_odcat[odcat] / nr_of_passengers;
@@ -289,6 +293,7 @@ void Day2day::write_convergence_per_od(const string& filename)
             << average_wt_exp << "\t"
             << average_wt_anticip << "\t"
             << average_in_vehicle_time << "\t"
+		    << average_weighted_in_vehicle_time << "\t"
             << average_ivt_pk << "\t"
             << average_ivt_exp << "\t"
             << average_ivt_anticip << "\t"
@@ -314,6 +319,7 @@ void Day2day::write_convergence_per_od_and_mode_header(const string& filename)
         << "avg_wt_exp" << '\t'
         << "avg_wt_anticip" << '\t'
         << "avg_ivt" << '\t'
+	    << "avg_ivt_weighted" << '\t'
         << "avg_ivt_pk" << '\t'
         << "avg_ivt_exp" << '\t'
         << "avg_ivt_anticip" << '\t'
@@ -473,7 +479,8 @@ map<ODSL, Travel_time>& Day2day::process_wt_replication (vector<ODstops*>& odsto
 		for (auto pass_iter1 = pass_list.begin(); pass_iter1 != pass_list.end(); ++pass_iter1)
 		{
 			nr_of_passengers++;
-			list<Pass_waiting_experience> waiting_experience_list = (*pass_iter1).second;
+			list<Pass_waiting_experience> waiting_experience_list = (*pass_iter1).second; 
+			Passenger* curr_pass = (*pass_iter1).first;
 			for (auto exp_iter = waiting_experience_list.begin(); exp_iter != waiting_experience_list.end(); ++exp_iter)
 			{
 				Travel_time wt;
@@ -529,6 +536,9 @@ map<ODSL, Travel_time>& Day2day::process_wt_replication (vector<ODstops*>& odsto
 
 				if(PARTC::drottningholm_case)
 				{
+					if(!Network::finished_trip_within_pass_generation_interval(curr_pass)) // skip all passengers outside pass generation period in final average
+						continue;
+
                     PARTC::ODCategory odcat = PARTC::get_od_category(orig, dest);
 					assert(odcat != PARTC::ODCategory::Null); // all ods should have a category
 
@@ -537,6 +547,19 @@ map<ODSL, Travel_time>& Day2day::process_wt_replication (vector<ODstops*>& odsto
 						mode = TransitModeType::Flexible;
 					else
 						mode = TransitModeType::Fixed;
+
+					// save total results in the 'null' bucket
+					++npass_per_odcat[PARTC::ODCategory::Null];
+					++ntrans_per_odcat[PARTC::ODCategory::Null];
+
+                    total_wt_per_odcat[PARTC::ODCategory::Null] += wt.tt[EXP];
+                    total_wt_pk_per_odcat[PARTC::ODCategory::Null] += wt.tt[PK];
+                    total_wt_rti_per_odcat[PARTC::ODCategory::Null] += wt.tt[RTI];
+                    total_wt_exp_per_odcat[PARTC::ODCategory::Null] += wt.tt[anticip_EXP];
+                    total_wt_anticip_per_odcat[PARTC::ODCategory::Null] += wt.tt[anticip];
+
+					nmissed_per_odcat[PARTC::ODCategory::Null] += exp_iter->nr_missed;
+
 
 					// avg over all pass in each category
 					++npass_per_odcat[odcat];
@@ -597,6 +620,7 @@ map<ODSLL, Travel_time>& Day2day::process_ivt_replication (vector<ODstops*>& ods
 	{
 		nlegs_per_odcat.clear();
 		total_ivt_per_odcat.clear();
+		total_ivt_weighted_per_odcat.clear();
 		total_ivt_pk_per_odcat.clear();
 		total_ivt_exp_per_odcat.clear();
 		total_ivt_anticip_per_odcat.clear();
@@ -604,6 +628,7 @@ map<ODSLL, Travel_time>& Day2day::process_ivt_replication (vector<ODstops*>& ods
 		total_ivt_acrowding_per_odcat.clear();
 
 		total_ivt_per_odcat_mode.clear();
+		total_ivt_weighted_per_odcat_mode.clear();
         total_ivt_pk_per_odcat_mode.clear();
         total_ivt_exp_per_odcat_mode.clear();
         total_ivt_anticip_per_odcat_mode.clear();
@@ -618,6 +643,7 @@ map<ODSLL, Travel_time>& Day2day::process_ivt_replication (vector<ODstops*>& ods
 		for (auto pass_iter = pass_list.begin(); pass_iter != pass_list.end(); ++pass_iter)
 		{
 			list<Pass_onboard_experience> onboard_experience_list = (*pass_iter).second;
+			Passenger* curr_pass = (*pass_iter).first;
 			for (auto exp_iter = onboard_experience_list.begin(); exp_iter != onboard_experience_list.end(); ++exp_iter)
 			{
 				nr_of_legs++;
@@ -670,6 +696,8 @@ map<ODSLL, Travel_time>& Day2day::process_ivt_replication (vector<ODstops*>& ods
 
                 if (PARTC::drottningholm_case)
                 {
+					if(!Network::finished_trip_within_pass_generation_interval(curr_pass)) // do not count passengers outside of interval in these outputs
+						continue; 
 					PARTC::ODCategory odcat = PARTC::get_od_category(orig, dest);
                     assert(odcat != PARTC::ODCategory::Null); // all ods should have a category
 
@@ -679,12 +707,24 @@ map<ODSLL, Travel_time>& Day2day::process_ivt_replication (vector<ODstops*>& ods
 					else
 						mode = TransitModeType::Fixed;
 
+					// keep track of the total over all pass in the 'null' bucket
+					++nlegs_per_odcat[PARTC::ODCategory::Null];
+
+                    total_ivt_per_odcat[PARTC::ODCategory::Null] += ivt.tt[EXP];
+                    total_ivt_pk_per_odcat[PARTC::ODCategory::Null] += ivt.tt[PK];
+                    total_ivt_exp_per_odcat[PARTC::ODCategory::Null] += ivt.tt[anticip_EXP];
+					total_ivt_weighted_per_odcat[PARTC::ODCategory::Null] += ivt.tt[EXP] * ivt.tt[crowding];
+                    total_ivt_anticip_per_odcat[PARTC::ODCategory::Null] += ivt.alpha[EXP] * ivt.tt[anticip_EXP] + ivt.alpha[PK] * ivt.tt[PK];
+                    total_ivt_crowding_per_odcat[PARTC::ODCategory::Null] += ivt.tt[crowding];
+                    total_ivt_acrowding_per_odcat[PARTC::ODCategory::Null] += ivt.alpha[crowding];
+
 					// avg over all pass in each category
                     ++nlegs_per_odcat[odcat];
 
                     total_ivt_per_odcat[odcat] += ivt.tt[EXP];
                     total_ivt_pk_per_odcat[odcat] += ivt.tt[PK];
                     total_ivt_exp_per_odcat[odcat] += ivt.tt[anticip_EXP];
+					total_ivt_weighted_per_odcat[odcat] += ivt.tt[EXP] * ivt.tt[crowding];
                     total_ivt_anticip_per_odcat[odcat] += ivt.alpha[EXP] * ivt.tt[anticip_EXP] + ivt.alpha[PK] * ivt.tt[PK];
                     total_ivt_crowding_per_odcat[odcat] += ivt.tt[crowding];
                     total_ivt_acrowding_per_odcat[odcat] += ivt.alpha[crowding];
@@ -693,6 +733,7 @@ map<ODSLL, Travel_time>& Day2day::process_ivt_replication (vector<ODstops*>& ods
 					++nlegs_per_odcat_mode[mode][odcat];
 
                     total_ivt_per_odcat_mode[mode][odcat] += ivt.tt[EXP];
+					total_ivt_weighted_per_odcat_mode[mode][odcat] += ivt.tt[EXP] * ivt.tt[crowding];
                     total_ivt_pk_per_odcat_mode[mode][odcat] += ivt.tt[PK];
                     total_ivt_exp_per_odcat_mode[mode][odcat] += ivt.tt[anticip_EXP];
                     total_ivt_anticip_per_odcat_mode[mode][odcat] += ivt.alpha[EXP] * ivt.tt[anticip_EXP] + ivt.alpha[PK] * ivt.tt[PK];

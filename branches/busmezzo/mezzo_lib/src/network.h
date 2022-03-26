@@ -491,6 +491,7 @@ public:
     /** @ingroup DRT
       @{
   */
+    static bool finished_trip_within_pass_generation_interval(Passenger* pass);
     bool readcontrolcenters(const string& name); //!< reads global DRT parameters, control centers and initial strategy configurations
     bool read_unassignedvehicle(istream& in); //!< reads a bus vehicles that are initialized without a trip assigned to them
     ODstops* get_ODstop_from_odstops_demand(int os_id,int ds_id); //!< returns the ODstop with origin stop id os_id and destination stop id ds_id from odstops_demand, nullptr if not found

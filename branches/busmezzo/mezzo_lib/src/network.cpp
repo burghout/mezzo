@@ -248,18 +248,18 @@ string To_String(T val)
     return stream.str();
 }
 
-namespace fwf_outputs {
-    bool finished_trip_within_pass_generation_interval(Passenger* pass)
-    {
-        if (pass->get_end_time() <= 0)
-            return false;
-        if (pass->get_end_time() > theParameters->stop_pass_generation)
-            return false;
-        if (pass->get_start_time() < theParameters->start_pass_generation)
-            return false;
-        return true;
-    }
+bool Network::finished_trip_within_pass_generation_interval(Passenger* pass)
+{
+    if (pass->get_end_time() <= 0)
+        return false;
+    if (pass->get_end_time() > theParameters->stop_pass_generation)
+        return false;
+    if (pass->get_start_time() < theParameters->start_pass_generation)
+        return false;
+    return true;
+}
 
+namespace fwf_outputs {
     //!< @brief write out vkt results for each replication, should be one row per replication @note Check Link::is_dummylink definition whether these are skipped or not for the current case
     void writeVKT(ostream& out, const FWF_vehdata& fix_vehdata, const FWF_vehdata& drt_vehdata, const FWF_passdata& total_passdata)
     {
@@ -7989,7 +7989,7 @@ bool Network::write_day2day_modesplit_odcategory(const string& filename)
         od_category = get_od_category(ostop, dstop);
         assert(od_category != PARTC::ODCategory::Null); // each od should have a category
 
-        if (fwf_outputs::finished_trip_within_pass_generation_interval(pass))
+        if (finished_trip_within_pass_generation_interval(pass))
         {
             allpass_per_od[od_category].push_back(pass);
         }
@@ -8289,7 +8289,7 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
         {
             for (auto pass : all_pass) // only check pass who started and completed trip within the pass generation time interval
             {
-                if (fwf_outputs::finished_trip_within_pass_generation_interval(pass))
+                if (finished_trip_within_pass_generation_interval(pass))
                 {
                     allpass_within_passgen.push_back(pass);
                     PARTC::ODCategory od_category = PARTC::ODCategory::Null;
@@ -8337,7 +8337,7 @@ bool Network::write_busstop_output(string name1, string name2, string name3, str
             Q_UNUSED(name22);
             for (auto pass : all_pass) // only check pass who started and completed trip within the pass generation time interval
             {
-                if (fwf_outputs::finished_trip_within_pass_generation_interval(pass))
+                if (finished_trip_within_pass_generation_interval(pass))
                 {
                     allpass_within_passgen.push_back(pass);
                 }

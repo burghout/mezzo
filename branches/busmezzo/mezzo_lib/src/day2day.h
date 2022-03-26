@@ -207,6 +207,7 @@ private:
 	map<PARTC::ODCategory, double> total_wt_exp_per_odcat;
 	map<PARTC::ODCategory, double> total_wt_anticip_per_odcat;
 	map<PARTC::ODCategory, double> total_ivt_per_odcat;
+	map<PARTC::ODCategory, double> total_ivt_weighted_per_odcat;
 	map<PARTC::ODCategory, double> total_ivt_pk_per_odcat;
 	map<PARTC::ODCategory, double> total_ivt_exp_per_odcat;
 	map<PARTC::ODCategory, double> total_ivt_anticip_per_odcat;
@@ -223,6 +224,7 @@ private:
 	map<TransitModeType,map <PARTC::ODCategory, double> >  total_wt_rti_per_odcat_mode;
 	map<TransitModeType,map <PARTC::ODCategory, double> >  total_wt_anticip_per_odcat_mode;
 	map<TransitModeType,map <PARTC::ODCategory, double> >  total_ivt_per_odcat_mode;
+	map<TransitModeType,map <PARTC::ODCategory, double> >  total_ivt_weighted_per_odcat_mode;
 	map<TransitModeType,map <PARTC::ODCategory, double> >  total_ivt_pk_per_odcat_mode;
 	map<TransitModeType,map <PARTC::ODCategory, double> >  total_ivt_exp_per_odcat_mode;
 	map<TransitModeType,map <PARTC::ODCategory, double> >  total_ivt_anticip_per_odcat_mode;
