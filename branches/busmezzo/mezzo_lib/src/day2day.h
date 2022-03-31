@@ -16,6 +16,7 @@ struct ODSL //structure for comparing ODSL combinations
 	int stop = -1;
 	int line = -1;
 
+    ODSL(int pid_, int orig_, int dest_, int stop_,int line_): pid(pid_), orig(orig_), dest(dest_), stop(stop_), line(line_) {}
 	bool operator == (const ODSL& rhs) const
 	{
 		return (pid == rhs.pid && orig == rhs.orig && dest == rhs.dest && stop == rhs.stop && line == rhs.line);
@@ -50,6 +51,9 @@ struct ODSLL
 	int stop = -1;
 	int line = -1;
 	int leg = -1;
+
+    ODSLL(int pid_, int orig_, int dest_, int stop_,int line_, int leg_):
+        pid(pid_), orig(orig_), dest(dest_), stop(stop_), line(line_), leg(leg_) {}
 
 	bool operator == (const ODSLL& rhs) const
 	{

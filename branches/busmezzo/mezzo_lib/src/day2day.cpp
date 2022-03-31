@@ -395,8 +395,8 @@ void Day2day::write_output (string filename, string addition)
 	map<ODSL, Travel_time> temp_output;
 	for (auto row = wt_day.begin(); row != wt_day.end(); ++row)
 	{
-		const ODSL temp_odsl = {0, row->first.orig, row->first.dest, row->first.stop, row->first.line};
-		pair<const ODSL, Travel_time> temp_row (temp_odsl, row->second);
+        const  ODSL temp_odsl {0, row->first.orig, row->first.dest, row->first.stop, row->first.line};
+        pair<const  ODSL, Travel_time> temp_row (temp_odsl, row->second);
 		temp_output += temp_row;
 	}
 	for (auto row = temp_output.begin(); row != temp_output.end(); ++row) //aggregate over replications
