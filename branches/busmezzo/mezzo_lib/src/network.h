@@ -344,6 +344,12 @@ public:
     bool writeFWFsummary(ostream& out, const FWF_passdata& total_passdata, const FWF_passdata& fix_passdata, const FWF_passdata& drt_passdata, const FWF_vehdata& total_vehdata, const FWF_vehdata& fix_vehdata, const FWF_vehdata& drt_vehdata, const FWF_ccdata& cc_data, const FWF_tripdata& drt_tripdata, int pass_ignored); //!< summary of output for debugging fixed with flexible implementation
     bool write_day2day_passenger_waiting_experience_header(string filename);
     bool write_day2day_passenger_waiting_experience(string filename);
+
+    bool write_fwf_day2day_avg_los(const string& workingdir); //!< creates 3 output files: sum of individual ivt and wt experiences per traveler in separate files as well as aggregates them per od category and path type in a third file
+    bool write_fwf_d2d_avg_los_header(const string& workingdir, const string& filename);
+    bool write_fwf_d2d_pass_wt_experience_header(const string& workingdir, const string& filename);
+    bool write_fwf_d2d_pass_ivt_experience_header(const string& workingdir, const string& filename);
+    
     bool write_day2day_passenger_onboard_experience_header(string filename);
     bool write_day2day_passenger_onboard_experience(string filename);
     bool write_day2day_passenger_transitmode_header(string filename);

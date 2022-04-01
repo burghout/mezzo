@@ -7743,6 +7743,238 @@ bool Network::write_day2day_passenger_waiting_experience(string filename)
     }
     return true;
 }
+
+bool Network::write_fwf_d2d_avg_los_header(const string& workingdir, const string& filename="o_fwf_d2d_avg_los.dat")
+{
+    string filepath = workingdir + filename;
+    ofstream out(filepath.c_str(), ios_base::app); //"o_fwf_d2d_avg_los.dat"
+    out << "day" << '\t'
+        << "od_category" << '\t'
+        << "drt_path" << '\t'
+        << "avg_wt_exp" << '\t'
+        << "avg_wt_anticip" << '\t'
+        << "avg_ivt_exp" << '\t'
+        << "avg_ivt_exp_weighted" << '\t'
+        << "avg_ivt_anticip" << '\t'
+        << "avg_nr_missed" << endl;
+    return true;
+}
+bool Network::write_fwf_d2d_pass_wt_experience_header(const string& workingdir, const string& filename="o_fwf_d2d_pass_wt_experience.dat")
+{
+    string filepath = workingdir + filename;
+    ofstream out(filepath.c_str(), ios_base::app); //"o_fwf_d2d_pass_wt_experience.dat"
+    out << "day" << '\t'
+        << "pass_id" << '\t'
+        << "od_category" << '\t'
+        << "drt_path" << '\t'
+        << "wt_exp" << '\t'
+        << "wt_anticip" << '\t'
+        << "nr_missed" << endl;
+    return true;
+}
+bool Network::write_fwf_d2d_pass_ivt_experience_header(const string& workingdir, const string& filename="o_fwf_d2d_pass_ivt_experience.dat")
+{
+    string filepath = workingdir + filename;
+    ofstream out(filepath.c_str(), ios_base::app); //"o_fwf_d2d_pass_ivt_experience.dat"
+    out << "day" << '\t'
+        << "pass_id" << '\t'
+        << "od_category" << '\t'
+        << "drt_path" << '\t'
+        << "ivt_exp" << '\t'
+        << "ivt_exp_weighted" << '\t'
+        << "ivt_anticip" << '\t'
+        << endl;
+    return true;
+}
+bool Network::write_fwf_day2day_avg_los(const string& workingdir)
+{
+    /**
+     Constructs drottningholm-specific day2day learning tables        
+           fwf_d2d_avg_los_table = table( ... 8 rows per day here (4 od_categories x 2 drt_path)
+                    day, ...
+                    od_category, ...
+                    drt_path, ...
+                    avg_wt_exp, ...
+                    avg_wt_anticip, ...
+                    avg_ivt_exp, ...
+                    avg_ivt_exp_weighted, ...
+                    avg_ivt_anticip, ...
+                    avg_nr_missed ...
+                    );
+            fwf_d2d_pass_wt_experience_table = table( ... N (total pass) rows per day here (11000ish per day)
+                day, ...
+                pass_id, ...
+                od_category, ...
+                drt_path, ...
+                wt_exp, ...
+                wt_anticip, ...
+                nr_missed, ...
+                )
+            fwf_d2d_pass_ivt_experience_table = table( ... N (total pass) rows per day here (11000ish per day)
+                day
+                pass_id
+                od_category
+                drt_path
+                ivt_exp
+                ivt_exp_weighted
+                ivt_anticip
+                )
+                
+    */
+    assert(PARTC::drottningholm_case);
+    string filepath_avg_los = workingdir + "o_fwf_d2d_avg_los.dat";
+    string filepath_wt_exp = workingdir + "o_fwf_d2d_pass_wt_experience.dat";
+    string filepath_ivt_exp = workingdir + "o_fwf_d2d_pass_ivt_experience.dat";
+
+    ofstream out_los(filepath_avg_los.c_str(), ios_base::app); // "o_fwf_d2d_avg_los.dat"
+    ofstream out_wt(filepath_wt_exp.c_str(), ios_base::app); // "o_fwf_d2d_pass_wt_experience.dat"
+    ofstream out_ivt(filepath_ivt_exp.c_str(), ios_base::app); // "o_fwf_d2d_pass_ivt_experience.dat"
+
+    out_los << std::fixed;
+    out_los.precision(5);
+    out_wt << std::fixed;
+    out_wt.precision(5);
+    out_ivt << std::fixed;
+    out_ivt.precision(5);
+
+    using namespace PARTC;
+
+    if(day == 1) // write headers for first day
+    {
+        write_fwf_d2d_avg_los_header(workingdir,"o_fwf_d2d_avg_los.dat");
+        write_fwf_d2d_pass_wt_experience_header(workingdir,"o_fwf_d2d_pass_wt_experience.dat");
+        write_fwf_d2d_pass_ivt_experience_header(workingdir,"o_fwf_d2d_pass_ivt_experience.dat");
+    }
+
+    // store per od category and drt path label for later averaging
+    map<ODCategory, map<bool, vector<double>>> wt_exp_per_odcat_drtpath;
+    map<ODCategory, map<bool, vector<double>>> wt_anticip_per_odcat_drtpath;
+    map<ODCategory, map<bool, vector<double>>> nr_missed_per_odcat_drtpath;
+    map<ODCategory, map<bool, vector<double>>> ivt_exp_per_odcat_drtpath;
+    map<ODCategory, map<bool, vector<double>>> ivt_exp_weighted_per_odcat_drtpath;
+    map<ODCategory, map<bool, vector<double>>> ivt_anticip_per_odcat_drtpath;
+
+    for (auto stop_iter = busstops.begin(); stop_iter != busstops.end(); ++stop_iter) // for stops
+    {
+        ODs_for_stop stop_as_origin = (*stop_iter)->get_stop_as_origin();
+        for (auto od_iter = stop_as_origin.begin(); od_iter != stop_as_origin.end(); ++od_iter)
+        {
+            // WT aggregate ODSL into individual passengers
+            map <Passenger*, list<Pass_waiting_experience>, ptr_less<Passenger*> > all_waiting_experiences = od_iter->second->get_waiting_output();
+            for (const auto& pass_wt_exp : all_waiting_experiences)
+            {
+                Passenger* pass = pass_wt_exp.first;
+                int o = pass->get_original_origin()->get_id();
+                int d = pass->get_OD_stop()->get_destination()->get_id();
+                ODCategory odcat = get_od_category(o, d);
+                bool drt_path = pass->get_num_drt_mode_choice() > 0; // passenger used drt at least once
+
+                double sum_wt_exp = 0.0;
+                double sum_wt_anticip = 0.0;
+                int sum_nr_missed = 0;
+                list<Pass_waiting_experience> waiting_experience_list = pass_wt_exp.second;
+                for (const auto& waiting_experience : waiting_experience_list) // sum wt experiences for this passenger
+                {
+                    sum_wt_exp += waiting_experience.wt_exp;
+                    sum_wt_anticip += waiting_experience.wt_anticip;
+                    sum_nr_missed += waiting_experience.nr_missed;
+                }
+
+                wt_exp_per_odcat_drtpath[odcat][drt_path].push_back(sum_wt_exp);
+                wt_anticip_per_odcat_drtpath[odcat][drt_path].push_back(sum_wt_anticip);
+                nr_missed_per_odcat_drtpath[odcat][drt_path].push_back(static_cast<double>(sum_nr_missed));
+
+                // output one row per passenger
+                out_wt << day << '\t'
+                    << pass->get_id() << '\t'
+                    << static_cast<underlying_type<ODCategory>::type>(odcat) << '\t'
+                    << drt_path << '\t'
+                    << sum_wt_exp << '\t'
+                    << sum_wt_anticip << '\t'
+                    << sum_nr_missed << endl;
+            } // WT pass experiences
+
+            // IVT aggregate ODSLL into individual passengers
+            map <Passenger*, list<Pass_onboard_experience>, ptr_less<Passenger*> > all_onboard_experiences = od_iter->second->get_onboard_output();
+            for (const auto& pass_ivt_exp : all_onboard_experiences)
+            {
+                Passenger* pass = pass_ivt_exp.first;
+                int o = pass->get_original_origin()->get_id();
+                int d = pass->get_OD_stop()->get_destination()->get_id();
+                ODCategory odcat = get_od_category(o, d);
+                bool drt_path = pass->get_num_drt_mode_choice() > 0; // passenger used drt at least once
+
+                double sum_ivt_exp = 0.0;
+                double sum_ivt_exp_weighted = 0.0;
+                double sum_ivt_anticip = 0.0;
+                
+                list<Pass_onboard_experience> onboard_experience_list = pass_ivt_exp.second;
+                for (const auto& onboard_experience : onboard_experience_list) // sum wt experiences for this passenger
+                {
+                    sum_ivt_exp += onboard_experience.ivt_exp.first;
+                    sum_ivt_exp_weighted += onboard_experience.ivt_exp.first * onboard_experience.ivt_exp.second;
+                    sum_ivt_anticip += onboard_experience.ivt_anticip;
+                }
+
+                ivt_exp_per_odcat_drtpath[odcat][drt_path].push_back(sum_ivt_exp);
+                ivt_exp_weighted_per_odcat_drtpath[odcat][drt_path].push_back(sum_ivt_exp_weighted);
+                ivt_anticip_per_odcat_drtpath[odcat][drt_path].push_back(sum_ivt_anticip);
+
+                // one IVT output per passenger
+                out_ivt << day << '\t'
+                    << pass->get_id() << '\t'
+                    << static_cast<underlying_type<ODCategory>::type>(odcat) << '\t'
+                    << drt_path << '\t'
+                    << sum_ivt_exp << '\t'
+                    << sum_ivt_exp_weighted << '\t'
+                    << sum_ivt_anticip << endl;
+
+            } // IVT pass experiences
+        } // stop ods
+    }  // stops
+
+    // Now create average table over all experiences per OD category and per drt path
+    for (ODCategory odcat : { ODCategory::b2b, ODCategory::b2c, ODCategory::c2c, ODCategory::c2b })
+    {
+        if(wt_exp_per_odcat_drtpath.count(odcat) == 0) // if no passengers were registered in this category
+            continue;
+
+        for(bool drt_path : {false, true})
+        {
+            if (wt_exp_per_odcat_drtpath[odcat].count(drt_path) == 0) // skip output row if this odcat was never registered (e.g. drt for C2C group)
+                continue;
+
+            const vector<double>& wt_exp_vec = wt_exp_per_odcat_drtpath[odcat][drt_path];
+            const vector<double>& wt_anticip_vec = wt_anticip_per_odcat_drtpath[odcat][drt_path];
+            const vector<double>& nr_missed_vec = nr_missed_per_odcat_drtpath[odcat][drt_path];
+            const vector<double>& ivt_exp_vec = ivt_exp_per_odcat_drtpath[odcat][drt_path];
+            const vector<double>& ivt_exp_weighted_vec = ivt_exp_weighted_per_odcat_drtpath[odcat][drt_path];
+            const vector<double>& ivt_anticip_vec = ivt_anticip_per_odcat_drtpath[odcat][drt_path];
+
+            // now do the averaging and plotting, check for empty vectors
+            double avg_wt_exp = fwf_stats::calcMeanAndStdev(wt_exp_vec).first;
+            double avg_wt_anticip = fwf_stats::calcMeanAndStdev(wt_anticip_vec).first;
+            double avg_nr_missed = fwf_stats::calcMeanAndStdev(nr_missed_vec).first;
+            double avg_ivt_exp = fwf_stats::calcMeanAndStdev(ivt_exp_vec).first;
+            double avg_ivt_exp_weighted = fwf_stats::calcMeanAndStdev(ivt_exp_weighted_vec).first;
+            double avg_ivt_anticip = fwf_stats::calcMeanAndStdev(ivt_anticip_vec).first;
+
+            // one avg level-of-service output per od category and drt path
+            out_los << day << '\t'
+                    << static_cast<underlying_type<ODCategory>::type>(odcat) << '\t'
+                    << drt_path << '\t'
+                    << avg_wt_exp << '\t'
+                    << avg_wt_anticip << '\t'
+                    << avg_ivt_exp << '\t'
+                    << avg_ivt_exp_weighted << '\t'
+                    << avg_ivt_anticip << '\t'
+                    << avg_nr_missed << endl;
+        }
+    }
+
+    return true;
+}
+
 bool Network::write_day2day_passenger_onboard_experience_header(string filename)
 {
     ofstream out(filename.c_str(), ios_base::app); //"o_fwf_day2day_passenger_onboard_experience.dat"
