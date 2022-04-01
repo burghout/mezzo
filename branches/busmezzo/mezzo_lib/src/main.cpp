@@ -51,8 +51,6 @@ int main(int argc, char** argv)
     {
         for (unsigned int rep = 1; rep <= replications; rep++)
         {
-            if(fwf_wip::write_all_pass_experiences && rep > 1)
-                fwf_wip::write_all_pass_experiences = false; // only print all individual passenger output once
             net1->start(QThread::HighestPriority);
             net1->wait();
             net1->saveresults(rep);
