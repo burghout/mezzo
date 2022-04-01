@@ -10894,9 +10894,9 @@ double Network::step(double timestep)
                 }
                 if (fwf_wip::write_all_pass_experiences)
                 {
-                    write_day2day_passenger_waiting_experience_header(workingdir + "o_fwf_day2day_passenger_waiting_experience.dat");
-                    write_day2day_passenger_onboard_experience_header(workingdir + "o_fwf_day2day_passenger_onboard_experience.dat");
-                    write_day2day_passenger_transitmode_header(workingdir + "o_fwf_day2day_passenger_transitmode.dat");
+                    //write_day2day_passenger_waiting_experience_header(workingdir + "o_fwf_day2day_passenger_waiting_experience.dat");
+                    //write_day2day_passenger_onboard_experience_header(workingdir + "o_fwf_day2day_passenger_onboard_experience.dat");
+                    //write_day2day_passenger_transitmode_header(workingdir + "o_fwf_day2day_passenger_transitmode.dat");
                 }
                 if(PARTC::drottningholm_case)
                 {
@@ -10916,9 +10916,13 @@ double Network::step(double timestep)
             }
             if (fwf_wip::write_all_pass_experiences)
             {
-                write_day2day_passenger_waiting_experience(workingdir + "o_fwf_day2day_passenger_waiting_experience.dat");
-                write_day2day_passenger_onboard_experience(workingdir + "o_fwf_day2day_passenger_onboard_experience.dat");
-                write_day2day_passenger_transitmode(workingdir + "o_fwf_day2day_passenger_transitmode.dat");
+
+                if(PARTC::drottningholm_case) // uses 'od categories'
+                    write_fwf_day2day_avg_los(workingdir); // also takes care of headers and filenames
+
+                //write_day2day_passenger_waiting_experience(workingdir + "o_fwf_day2day_passenger_waiting_experience.dat");
+                //write_day2day_passenger_onboard_experience(workingdir + "o_fwf_day2day_passenger_onboard_experience.dat");
+                //write_day2day_passenger_transitmode(workingdir + "o_fwf_day2day_passenger_transitmode.dat");
             }
             if(PARTC::drottningholm_case)
             {
