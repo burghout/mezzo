@@ -7756,7 +7756,9 @@ bool Network::write_fwf_d2d_avg_los_header(const string& workingdir, const strin
         << "avg_ivt_exp" << '\t'
         << "avg_ivt_exp_weighted" << '\t'
         << "avg_ivt_anticip" << '\t'
-        << "avg_nr_missed" << endl;
+        << "avg_nr_missed" << '\t'
+        << "wt_npass" << '\t' // number of individual passengers we calculated wt averages over
+        << "ivt_npass" << endl; // number of individual passengers we calculated ivt averages over
     return true;
 }
 bool Network::write_fwf_d2d_pass_wt_experience_header(const string& workingdir, const string& filename="o_fwf_d2d_pass_wt_experience.dat")
@@ -7782,8 +7784,7 @@ bool Network::write_fwf_d2d_pass_ivt_experience_header(const string& workingdir,
         << "drt_path" << '\t'
         << "ivt_exp" << '\t'
         << "ivt_exp_weighted" << '\t'
-        << "ivt_anticip" << '\t'
-        << endl;
+        << "ivt_anticip" << endl;
     return true;
 }
 bool Network::write_fwf_day2day_avg_los(const string& workingdir)
@@ -7959,6 +7960,9 @@ bool Network::write_fwf_day2day_avg_los(const string& workingdir)
             double avg_ivt_exp_weighted = fwf_stats::calcMeanAndStdev(ivt_exp_weighted_vec).first;
             double avg_ivt_anticip = fwf_stats::calcMeanAndStdev(ivt_anticip_vec).first;
 
+            size_t wt_npass = wt_exp_vec.size();
+            size_t ivt_npass = ivt_exp_vec.size();
+
             // one avg level-of-service output per od category and drt path
             out_los << day << '\t'
                     << static_cast<underlying_type<ODCategory>::type>(odcat) << '\t'
@@ -7968,7 +7972,9 @@ bool Network::write_fwf_day2day_avg_los(const string& workingdir)
                     << avg_ivt_exp << '\t'
                     << avg_ivt_exp_weighted << '\t'
                     << avg_ivt_anticip << '\t'
-                    << avg_nr_missed << endl;
+                    << avg_nr_missed << '\t'
+                    << wt_npass << '\t'
+                    << ivt_npass << endl;
         }
     }
 
