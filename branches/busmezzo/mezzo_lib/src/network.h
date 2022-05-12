@@ -67,7 +67,7 @@
 #ifndef _NO_GUI
 #include <QPixmap>
 #include <qpixmap.h>
-#include <QMatrix>
+//#include <QMatrix>
 #endif // _NO_GUI
 
 //thread support

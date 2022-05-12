@@ -27,7 +27,7 @@
 
 //#include <Qt3Support>
 #include <QFileDialog>
-#include <QMatrix>
+//#include <QMatrix>
 #include "ui_canvas_qt4.h"
 #include "parametersdialog_qt4.h"
 #include "../mezzo_lib/src/parameters.h"
