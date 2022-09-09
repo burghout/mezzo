@@ -4263,6 +4263,7 @@ void Network::find_all_paths_fast ()
     if (PARTC::drottningholm_case) // apply drottningholm case specific path filtering
     {
         int paths_filtered = drottningholm_path_filtering();
+        Q_UNUSED(paths_filtered)
     }
 
     // report generated choice-sets
@@ -7123,7 +7124,7 @@ bool Network::add_od_routes()
     multimap<odval,Route*>::iterator route_m;
     multimap<odval,Route*>::iterator route_l;
     multimap<odval,Route*>::iterator route_u;
-    vector <Route*>::iterator route;
+    //vector <Route*>::iterator route;
     for (; del < deleted_routes.end(); del++)
     {
         odval val=(*del)->get_oid_did();
@@ -9295,9 +9296,11 @@ bool Network::init_shortest_path()
     int out;
     int routenr;
     routenr=static_cast<int>(routemap.size());
+    Q_UNUSED(routenr) // in case the DEBUG flags are off
     double cost;
     double mu;
     double sd;
+    Q_UNUSED(sd)
     random=new (Random);
 
     if (randseed != 0) {

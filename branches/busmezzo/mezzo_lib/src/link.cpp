@@ -875,12 +875,12 @@ unsigned int Link::nr_alternative_routes(int dest, int incidentlink_id)
 	}
   return count;
 }
-void Link::set_incident(Sdfunc* sdptr, bool blocked_, double blocked_until)
+void Link::set_incident(Sdfunc* sdptr, bool blocked_, double blocked_until_)
 {
 	temp_sdfunc=sdfunc;
 	sdfunc=sdptr;
 	blocked=blocked_;
-	blocked_until=-2.0; 
+    blocked_until=blocked_until_;
 }
 
 void Link::unset_incident()
