@@ -27,10 +27,10 @@ const vector<QString> d2d_output_filenames =
     "o_fwf_ivt_alphas.dat",
     "o_fwf_wt_alphas.dat",
     "o_fwf_day2day_modesplit.dat",
-    "o_fwf_day2day_boardings.dat",
-    "o_fwf_day2day_passenger_waiting_experience.dat",
-    "o_fwf_day2day_passenger_onboard_experience.dat",
-    "o_fwf_day2day_passenger_transitmode.dat"
+    "o_fwf_day2day_boardings.dat"//,
+    //"o_fwf_day2day_passenger_waiting_experience.dat",
+    //"o_fwf_day2day_passenger_onboard_experience.dat",
+    //"o_fwf_day2day_passenger_transitmode.dat"
 };
 const vector<QString> output_filenames =
 {

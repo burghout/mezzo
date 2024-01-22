@@ -236,6 +236,4 @@ Line_ID	Trip_ID	Vehicle_ID	Start_stop_ID	Start_stop_name	End_stop_id	End_stop_na
 8023	802308	8004	4	Stop_4	3	Stop_3	0	
 8003	800378	8004	3	Stop_3	4	Stop_4	13	
 8023	802309	8005	4	Stop_4	3	Stop_3	0	
-8023	802310	8006	4	Stop_4	3	Stop_3	0	
-8003	800392	8006	3	Stop_3	4	Stop_4	0	
 8003	800391	8005	3	Stop_3	4	Stop_4	2	

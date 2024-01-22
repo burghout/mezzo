@@ -63,8 +63,8 @@ DRT empty time              : 0.00
 DRT driving time            : 0.00
 DRT idle time               : 0.00
 DRT oncall time             : 0.00
-DRT occ/total VKT ratio     : -nan(ind)
-DRT PKT/VKT ratio           : -nan(ind)
+DRT occ/total VKT ratio     : nan
+DRT PKT/VKT ratio           : nan
 
 ### DRT trip summary ###
 Total trips                            : 0

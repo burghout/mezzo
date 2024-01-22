@@ -51,8 +51,8 @@ Fixed empty time            : 0.00
 Fixed driving time          : 0.00
 Fixed idle time             : 0.00
 Fixed oncall time           : 0.00
-Fixed occ/total VKT ratio   : -nan(ind)
-Fixed PKT/VKT ratio         : -nan(ind)
+Fixed occ/total VKT ratio   : nan
+Fixed PKT/VKT ratio         : nan
 
 ### DRT vehicle summary ###
 DRT VKT                     : 107.88
