@@ -259,5 +259,27 @@
         <file>networks/Drottningholm_bidirectional_fixed/ExpectedOutputs/o_vkt.dat</file>
         <file>networks/Drottningholm_collection_fixed/ExpectedOutputs/o_time_spent_in_state_at_stop.dat</file>
         <file>networks/Drottningholm_bidirectional_mixed_d2d/ExpectedOutputs/o_fwf_convergence_odcategory_mode.dat</file>
+        <file>networks/FWF_testnetwork1_d2d/ExpectedOutputs/o_vkt.dat</file>
+        <file>networks/FWF_testnetwork1_d2d/ExpectedOutputs/o_trip_total_travel_time.dat</file>
+        <file>networks/FWF_testnetwork1_d2d/ExpectedOutputs/o_transitstop_sum.dat</file>
+        <file>networks/FWF_testnetwork1_d2d/ExpectedOutputs/o_transitlog_out.dat</file>
+        <file>networks/FWF_testnetwork1_d2d/ExpectedOutputs/o_transitline_sum.dat</file>
+        <file>networks/FWF_testnetwork1_d2d/ExpectedOutputs/o_transit_trajectory.dat</file>
+        <file>networks/FWF_testnetwork1_d2d/ExpectedOutputs/o_transit_routes.dat</file>
+        <file>networks/FWF_testnetwork1_d2d/ExpectedOutputs/o_time_spent_in_state_at_stop.dat</file>
+        <file>networks/FWF_testnetwork1_d2d/ExpectedOutputs/o_selected_paths.dat</file>
+        <file>networks/FWF_testnetwork1_d2d/ExpectedOutputs/o_segments_trip_loads.dat</file>
+        <file>networks/FWF_testnetwork1_d2d/ExpectedOutputs/o_segments_line_loads.dat</file>
+        <file>networks/FWF_testnetwork1_d2d/ExpectedOutputs/o_passenger_welfare_summary.dat</file>
+        <file>networks/FWF_testnetwork1_d2d/ExpectedOutputs/o_passenger_trajectory.dat</file>
+        <file>networks/FWF_testnetwork1_d2d/ExpectedOutputs/o_od_stops_summary.dat</file>
+        <file>networks/FWF_testnetwork1_d2d/ExpectedOutputs/o_od_stop_summary_without_paths.dat</file>
+        <file>networks/FWF_testnetwork1_d2d/ExpectedOutputs/o_fwf_wt_alphas.dat</file>
+        <file>networks/FWF_testnetwork1_d2d/ExpectedOutputs/o_fwf_summary.dat</file>
+        <file>networks/FWF_testnetwork1_d2d/ExpectedOutputs/o_fwf_ivt_alphas.dat</file>
+        <file>networks/FWF_testnetwork1_d2d/ExpectedOutputs/o_fwf_drtvehicle_states.dat</file>
+        <file>networks/FWF_testnetwork1_d2d/ExpectedOutputs/o_fwf_day2day_modesplit.dat</file>
+        <file>networks/FWF_testnetwork1_d2d/ExpectedOutputs/o_fwf_day2day_boardings.dat</file>
+        <file>networks/FWF_testnetwork1_d2d/ExpectedOutputs/o_convergence.dat</file>
     </qresource>
 </RCC>
