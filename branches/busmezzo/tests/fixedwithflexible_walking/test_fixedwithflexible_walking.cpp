@@ -94,6 +94,7 @@ void TestFixedWithFlexible_walking::testInitNetwork()
     qDebug() << "Initializing network in " + QString::fromStdString(network_path);
     
     ::fwf_wip::autogen_drt_lines_with_intermediate_stops = false;  //set manually (default false)
+    //::fwf_wip::autogen_drt_lines_with_intermediate_stops = true;  //set manually (default false)
     ::fwf_wip::csgm_no_merging_rules = false; //set manually (default false)
     ::fwf_wip::csgm_no_filtering_dominancy_rules = false; //set manually (default false)
     
@@ -1048,7 +1049,7 @@ void TestFixedWithFlexible_walking::testPassAssignment()
        @todo need to change how decisions of each passenger are retrieved
         - Currently done via the initial OD of the traveler, however this of course will change. Perhaps store the history of passenger decisions within the passenger instead and retrieve from there...
     */
-    
+
     vector<ODstops*> odstops_demand = net->get_odstops_demand();
     //QVERIFY2(odstops_demand.size() == 1, "Failure, network should have 1 od stop pairs (with non-zero demand defined in transit_demand.dat) ");
 
